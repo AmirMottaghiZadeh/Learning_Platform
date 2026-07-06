@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {Pressable, StyleSheet, Text, View} from "react-native";
-import {Bookmark, CheckCircle2, Eye, Layers, Plus, RotateCcw, Trash2, XCircle} from "lucide-react-native";
+import {Bookmark, CheckCircle2, ChevronLeft, ChevronRight, Eye, Layers, Plus, RotateCcw, Trash2, XCircle} from "lucide-react-native";
 
 import {platformApi} from "../api/platform";
 import {EmptyState, ErrorState, LearningCard, LoadingState, PrimaryButton, ScreenContainer, ScreenHeader, SecondaryButton} from "../components/ui";
@@ -37,6 +37,7 @@ export function FlashcardsScreen() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [savedDeck, setSavedDeck] = useState<SavedFlashcardDeck | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [cardIndex, setCardIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,11 +72,13 @@ export function FlashcardsScreen() {
       }
       avoidNextCardIdRef.current = null;
       setCards(nextCards);
+      setCardIndex(0);
       setBoxSummary(boxPayload);
       setDeckSummary(deckPayload);
       setCategories(categoryPayload);
       if (selectedCategory && !categoryPayload.some((category) => category.key === selectedCategory)) {
         setCards([]);
+        setCardIndex(0);
         setSelectedCategory("");
         setSelectedBox(null);
       }
@@ -83,6 +86,7 @@ export function FlashcardsScreen() {
     } catch (exc) {
       if (requestId !== loadRequestRef.current) return;
       setCards([]);
+      setCardIndex(0);
       setBoxSummary(null);
       setDeckSummary(null);
       setError(exc instanceof Error ? exc.message : "Flashcards unavailable.");
@@ -122,12 +126,14 @@ export function FlashcardsScreen() {
   }, [user?.id]);
 
   async function review(rating: FlashcardRating) {
-    if (!token || !cards[0]) return;
-    const currentCardId = cards[0].id;
+    const currentCard = cards[cardIndex] ?? cards[0];
+    if (!token || !currentCard) return;
+    const currentCardId = currentCard.id;
     setBusy(true);
     setLoading(true);
     avoidNextCardIdRef.current = currentCardId;
     setCards([]);
+    setCardIndex(0);
     setRevealed(false);
     try {
       await platformApi.reviewFlashcard(token, currentCardId, rating);
@@ -144,6 +150,7 @@ export function FlashcardsScreen() {
     setBusy(true);
     setLoading(true);
     setCards([]);
+    setCardIndex(0);
     setError(null);
     try {
       await platformApi.seedFlashcards(token, selectedCategory, selectedQuestionType);
@@ -157,8 +164,9 @@ export function FlashcardsScreen() {
 
   function resetVisibleCards() {
     loadRequestRef.current += 1;
-    avoidNextCardIdRef.current = cards[0]?.id ?? null;
+    avoidNextCardIdRef.current = (cards[cardIndex] ?? cards[0])?.id ?? null;
     setCards([]);
+    setCardIndex(0);
     setBoxSummary(null);
     setDeckSummary(null);
     setRevealed(false);
@@ -221,7 +229,19 @@ export function FlashcardsScreen() {
     setSavedDeck(null);
   }
 
-  const card = cards[0];
+  function goToPreviousCard() {
+    if (cards.length <= 1) return;
+    setRevealed(false);
+    setCardIndex((index) => (index - 1 + cards.length) % cards.length);
+  }
+
+  function goToNextCard() {
+    if (cards.length <= 1) return;
+    setRevealed(false);
+    setCardIndex((index) => (index + 1) % cards.length);
+  }
+
+  const card = cards[cardIndex] ?? cards[0];
   const selectedCategoryLabel = categories.find((category) => category.key === selectedCategory)?.label ?? "All";
   const selectedQuestionLabel = QUESTION_TYPES.find((type) => type.key === selectedQuestionType)?.label ?? "";
   const dueCount = deckSummary?.due_cards ?? boxSummary?.new ?? cards.length;
@@ -352,30 +372,50 @@ export function FlashcardsScreen() {
         </>
       ) : (
         <>
-          <Pressable
-            key={`${selectedQuestionType}:${selectedCategory}:${selectedBox ?? "due"}:${card.id}:${revealed ? "back" : "front"}`}
-            accessibilityRole="button"
-            onPress={() => setRevealed((value) => !value)}
-            style={[styles.flashcard, revealed ? styles.flashcardBack : styles.flashcardFront]}
-          >
-            <View style={styles.cardTop}>
-              <View style={styles.badge}>
-                <Layers size={20} color={revealed ? colors.rose : colors.sage} />
+          <View style={styles.flashcardShell}>
+            <Pressable
+              accessibilityLabel="کارت قبلی"
+              accessibilityRole="button"
+              disabled={cards.length <= 1 || busy}
+              onPress={goToPreviousCard}
+              style={[styles.cardNavButton, styles.cardNavButtonLeft, (cards.length <= 1 || busy) && styles.cardNavButtonDisabled]}
+            >
+              <ChevronLeft size={22} color={colors.muted} />
+            </Pressable>
+            <Pressable
+              key={`${selectedQuestionType}:${selectedCategory}:${selectedBox ?? "due"}:${card.id}:${revealed ? "back" : "front"}`}
+              accessibilityRole="button"
+              onPress={() => setRevealed((value) => !value)}
+              style={[styles.flashcard, revealed ? styles.flashcardBack : styles.flashcardFront]}
+            >
+              <View style={styles.cardTop}>
+                <View style={styles.badge}>
+                  <Layers size={20} color={revealed ? colors.rose : colors.sage} />
+                </View>
+                <View>
+                  <Text style={styles.state}>{revealed ? "پشت کارت" : "روی کارت"}</Text>
+                  <Text style={styles.stateMeta}>{card.box ? `Box ${card.box}` : "New"}</Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.state}>{revealed ? "پشت کارت" : "روی کارت"}</Text>
-                <Text style={styles.stateMeta}>{card.box ? `Box ${card.box}` : "New"}</Text>
-              </View>
-            </View>
-            {revealed ? (
-              <>
-                <Text style={styles.answer}>{card.correct_answer}</Text>
-                {card.feedback ? <Text style={styles.feedback}>{card.feedback}</Text> : null}
-              </>
-            ) : (
-              <Text style={styles.prompt}>{card.prompt}</Text>
-            )}
-          </Pressable>
+              {revealed ? (
+                <>
+                  <Text style={styles.answer}>{card.correct_answer}</Text>
+                  {card.feedback ? <Text style={styles.feedback}>{card.feedback}</Text> : null}
+                </>
+              ) : (
+                <Text style={styles.prompt}>{card.prompt}</Text>
+              )}
+            </Pressable>
+            <Pressable
+              accessibilityLabel="کارت بعدی"
+              accessibilityRole="button"
+              disabled={cards.length <= 1 || busy}
+              onPress={goToNextCard}
+              style={[styles.cardNavButton, styles.cardNavButtonRight, (cards.length <= 1 || busy) && styles.cardNavButtonDisabled]}
+            >
+              <ChevronRight size={22} color={colors.muted} />
+            </Pressable>
+          </View>
 
           <View style={styles.actionGrid}>
             <SecondaryButton
@@ -508,12 +548,16 @@ const styles = StyleSheet.create({
   boxTextActive: {
     color: "#FFFFFF",
   },
+  flashcardShell: {
+    minHeight: 280,
+    marginBottom: spacing.md,
+    position: "relative",
+  },
   flashcard: {
     minHeight: 280,
     borderRadius: radius.md,
     borderWidth: 1,
     padding: spacing.xl,
-    marginBottom: spacing.md,
     justifyContent: "space-between",
     shadowColor: "#24172A",
     shadowOpacity: 0.08,
@@ -528,6 +572,33 @@ const styles = StyleSheet.create({
   flashcardBack: {
     backgroundColor: colors.roseSoft,
     borderColor: colors.rose,
+  },
+  cardNavButton: {
+    position: "absolute",
+    top: "45%",
+    zIndex: 5,
+    width: 38,
+    height: 38,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#24172A",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: {width: 0, height: 4},
+    elevation: 2,
+  },
+  cardNavButtonLeft: {
+    left: spacing.sm,
+  },
+  cardNavButtonRight: {
+    right: spacing.sm,
+  },
+  cardNavButtonDisabled: {
+    opacity: 0.35,
   },
   cardTop: {
     flexDirection: "row",
