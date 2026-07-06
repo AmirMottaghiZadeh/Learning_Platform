@@ -7,7 +7,7 @@ import {platformApi} from "../api/platform";
 import {EmptyState, ErrorState, LearningCard, LoadingState, PrimaryButton, ScreenContainer, ScreenHeader, SecondaryButton} from "../components/ui";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
-import type {FlashcardBoxSummary, FlashcardDeckSummary, FlashcardState, QuestionType, TargetCategory} from "../types/api";
+import type {FlashcardBoxSummary, FlashcardDeckSummary, FlashcardRating, FlashcardState, QuestionType, TargetCategory} from "../types/api";
 
 const QUESTION_TYPES: Array<{key: QuestionType; label: string}> = [
   {key: "brandGeneric", label: "نام تجاری"},
@@ -121,7 +121,7 @@ export function FlashcardsScreen() {
     };
   }, [user?.id]);
 
-  async function review(rating: "known" | "unknown") {
+  async function review(rating: FlashcardRating) {
     if (!token || !cards[0]) return;
     const currentCardId = cards[0].id;
     setBusy(true);
@@ -388,8 +388,10 @@ export function FlashcardsScreen() {
 
           {revealed ? (
             <View style={styles.reviewGrid}>
-              <SecondaryButton label="نمی‌دانستم" Icon={XCircle} onPress={() => review("unknown")} disabled={busy} />
-              <PrimaryButton label="می‌دانستم" Icon={CheckCircle2} onPress={() => review("known")} disabled={busy} />
+              <SecondaryButton label="Again" Icon={RotateCcw} onPress={() => review("again")} disabled={busy} />
+              <SecondaryButton label="Hard" Icon={XCircle} onPress={() => review("hard")} disabled={busy} />
+              <PrimaryButton label="Good" Icon={CheckCircle2} onPress={() => review("good")} disabled={busy} />
+              <PrimaryButton label="Easy" Icon={CheckCircle2} onPress={() => review("easy")} disabled={busy} />
             </View>
           ) : null}
         </>
@@ -550,7 +552,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   reviewGrid: {
-    minHeight: 112,
-    justifyContent: "space-between",
+    gap: spacing.sm,
   },
 });

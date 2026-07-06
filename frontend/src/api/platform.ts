@@ -4,6 +4,7 @@ import type {
   FlashcardBoxSummary,
   Dashboard,
   FlashcardDeckSummary,
+  FlashcardRating,
   FlashcardState,
   GameAnswerResult,
   GameSession,
@@ -82,7 +83,7 @@ export const platformApi = {
     params.set("source_type", source_type);
     return apiFetch(`/flashcards/decks/?${params.toString()}`, {}, token) as Promise<FlashcardDeckSummary>;
   },
-  reviewFlashcard(token: string, id: number, rating: "known" | "unknown") {
+  reviewFlashcard(token: string, id: number, rating: FlashcardRating) {
     return apiFetch(`/flashcards/${id}/review/`, json({rating}), token) as Promise<FlashcardState>;
   },
   seedFlashcards(token: string, target_category_key = "", source_type: QuestionType = "brandGeneric") {

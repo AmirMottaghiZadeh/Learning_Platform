@@ -61,6 +61,13 @@ Type check:
 npm run typecheck
 ```
 
+Frontend details:
+
+- `frontend/README.md`
+- Expo + React Native Web
+- mobile-first browser experience
+- backend-owned learning rules
+
 ## AI Data Pipeline
 
 The AI data pipeline is safe-by-default:

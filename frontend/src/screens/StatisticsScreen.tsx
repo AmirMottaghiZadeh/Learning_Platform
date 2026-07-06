@@ -38,7 +38,7 @@ export function StatisticsScreen() {
   return (
     <ScreenContainer>
       <ScreenHeader
-        eyebrow="Progress"
+        eyebrow={`${statistics.start_date} to ${statistics.end_date}`}
         title="Statistics"
         action={<SecondaryButton label="Refresh" Icon={RefreshCw} onPress={load} />}
       />
@@ -65,6 +65,27 @@ export function StatisticsScreen() {
           );
         })}
       </LearningCard>
+
+      <SectionTitle>Weak topics</SectionTitle>
+      {statistics.weak_topics.length ? (
+        statistics.weak_topics.map((topic) => (
+          <LearningCard key={topic.topic_key} tone="rose">
+            <View style={styles.topicTop}>
+              <Text style={styles.topicTitle}>{topic.topic_label}</Text>
+              <Text style={styles.topicPercent}>{topic.accuracy_percent}%</Text>
+            </View>
+            <ProgressBar value={topic.accuracy_percent} />
+            <Text style={styles.topicMeta}>
+              {topic.wrong_answers} wrong · {topic.due_flashcards} due cards · {topic.mastery_state}
+            </Text>
+          </LearningCard>
+        ))
+      ) : (
+        <LearningCard tone="sage">
+          <Text style={styles.topicTitle}>No weak topics</Text>
+          <Text style={styles.topicMeta}>Current progress has no weak-topic signal.</Text>
+        </LearningCard>
+      )}
 
       <SectionTitle>Topics</SectionTitle>
       {statistics.topics.map((topic) => (

@@ -21,6 +21,23 @@ export class ApiError extends Error {
   }
 }
 
+const RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+const RETRY_DELAY_MS = 350;
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function requestMethod(options: RequestInit) {
+  return (options.method ?? "GET").toUpperCase();
+}
+
+function canRetry(method: string, response?: Response) {
+  if (method !== "GET") return false;
+  if (!response) return true;
+  return RETRYABLE_STATUSES.has(response.status);
+}
+
 async function readErrorBody(response: Response): Promise<ApiErrorBody> {
   try {
     const body = await response.json();
@@ -46,7 +63,20 @@ export async function apiFetch(path: string, options: RequestInit = {}, token?: 
 
   if (token) headers.Authorization = `Token ${token}`;
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {...options, headers});
+  const method = requestMethod(options);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {...options, headers});
+  } catch (exc) {
+    if (!canRetry(method)) throw exc;
+    await delay(RETRY_DELAY_MS);
+    response = await fetch(`${API_BASE_URL}${path}`, {...options, headers});
+  }
+
+  if (!response.ok && canRetry(method, response)) {
+    await delay(RETRY_DELAY_MS);
+    response = await fetch(`${API_BASE_URL}${path}`, {...options, headers});
+  }
 
   if (!response.ok) {
     const body = await readErrorBody(response);

@@ -22,6 +22,7 @@ export type TargetCategory = {
 };
 
 export type QuestionType = "brandGeneric" | "timing" | "indication" | "sideEffects";
+export type FlashcardRating = "again" | "hard" | "good" | "easy" | "known" | "unknown";
 
 export type WeakTopic = {
   topic_key: string;
