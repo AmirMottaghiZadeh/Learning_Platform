@@ -65,7 +65,7 @@ class RecommendationSerializer(serializers.Serializer):
     count = serializers.IntegerField()
 
 
-class LeagueSummarySerializer(serializers.Serializer):
+class DashboardLeagueSummarySerializer(serializers.Serializer):
     season_key = serializers.CharField()
     rank = serializers.IntegerField(allow_null=True)
     total_participants = serializers.IntegerField()
@@ -75,7 +75,7 @@ class LearningDashboardSerializer(serializers.Serializer):
     product_id = serializers.CharField()
     summary = LearningProgressSummarySerializer()
     recommendations = RecommendationSerializer(many=True)
-    league = LeagueSummarySerializer()
+    league = DashboardLeagueSummarySerializer()
 
 
 class DailyActivitySerializer(serializers.Serializer):

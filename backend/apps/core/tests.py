@@ -1,4 +1,7 @@
-from django.test import SimpleTestCase
+from io import StringIO
+
+from django.core.management import call_command
+from django.test import Client, SimpleTestCase, TestCase
 
 from apps.core.events import LearningEvent, NullLearningEventPublisher, build_learning_event
 
@@ -25,3 +28,28 @@ class LearningEventTests(SimpleTestCase):
         event = build_learning_event(event_type="HealthChecked", learner_id=None)
 
         self.assertIsNone(NullLearningEventPublisher().publish(event))
+
+
+class HealthCheckTests(TestCase):
+    def test_health_check_returns_release_metadata_and_database_status(self):
+        response = Client().get("/api/v1/health/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "ok")
+        self.assertEqual(response.json()["checks"]["database"], "ok")
+        self.assertIn("database_latency_ms", response.json()["checks"])
+        self.assertIn("X-Request-ID", response)
+
+    def test_liveness_check_does_not_require_database_probe(self):
+        response = Client().get("/api/v1/live/", HTTP_X_REQUEST_ID="test-request-id")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["checks"]["database"], "not_checked")
+        self.assertEqual(response["X-Request-ID"], "test-request-id")
+
+    def test_backup_command_supports_dry_run(self):
+        output = StringIO()
+
+        call_command("backup_database", "--dry-run", stdout=output)
+
+        self.assertIn("database-", output.getvalue())

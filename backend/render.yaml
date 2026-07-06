@@ -3,9 +3,31 @@ services:
     name: k-game-backend
     env: python
     buildCommand: ./build.sh
-    startCommand: gunicorn config.wsgi:application
+    startCommand: gunicorn config.wsgi:application --config gunicorn.conf.py
+    healthCheckPath: /api/v1/health/
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.production
       - key: SECRET_KEY
         generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_FORMAT
+        value: json
+      - key: AI_DATA_PIPELINE_PROVIDER
+        value: rules
+      - key: DATABASE_URL
+        fromDatabase:
+          name: k-game-db
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+databases:
+  - name: k-game-db
+    databaseName: k_game
+    user: k_game

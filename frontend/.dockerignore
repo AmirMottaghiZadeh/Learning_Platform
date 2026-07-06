@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+npm-debug.log*
+*.log
