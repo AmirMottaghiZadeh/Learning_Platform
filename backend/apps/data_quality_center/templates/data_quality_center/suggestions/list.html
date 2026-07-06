@@ -1,0 +1,81 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Suggestions | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Suggestion Review Center</h1>
+    <p>Search, filter, bulk review, and move safe suggestions through the approval workflow.</p>
+  </div>
+</section>
+
+<section class="panel" style="margin-bottom:16px;">
+  <form class="filter-bar" method="get">
+    {% for field in form %}
+      <div class="field">
+        <label>{{ field.label|default:field.name }}</label>
+        {{ field }}
+      </div>
+    {% endfor %}
+    <button class="button" type="submit">Filter</button>
+  </form>
+</section>
+
+<form method="post">
+  {% csrf_token %}
+  <section class="panel" style="margin-bottom:16px;">
+    <div class="action-bar">
+      <label class="chip"><input type="checkbox" data-select-all> Select all</label>
+      <button class="button" type="submit" name="action" value="approve">Approve safe selected</button>
+      <button class="button-danger" type="submit" name="action" value="reject">Reject selected</button>
+      <button class="button-secondary" type="submit" name="action" value="mark_review">Mark as needs review</button>
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label>Reviewer notes for bulk review</label>
+      <textarea name="reviewer_notes" rows="3"></textarea>
+    </div>
+  </section>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="checkbox-column"></th>
+          <th>Record</th>
+          <th>Table</th>
+          <th>Field</th>
+          <th>Old value</th>
+          <th>Suggested value</th>
+          <th>Confidence</th>
+          <th>Risk</th>
+          <th>Provider</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for suggestion in suggestions %}
+          <tr>
+            <td class="checkbox-column"><input type="checkbox" name="selected_ids" value="{{ suggestion.id }}" data-bulk-select></td>
+            <td><a href="{% url 'data_quality_center:suggestion_detail' suggestion.id %}">{{ suggestion.record_id }}</a></td>
+            <td>{{ suggestion.table_name }}</td>
+            <td>{{ suggestion.field_name }}</td>
+            <td class="prewrap">{{ suggestion.old_value|truncatechars:90 }}</td>
+            <td class="prewrap">{{ suggestion.suggested_value|truncatechars:90 }}</td>
+            <td>{{ suggestion.confidence_score }}</td>
+            <td><span class="chip">{{ suggestion.risk_level }}</span></td>
+            <td><span class="chip">{{ suggestion.provider }}</span></td>
+            <td>{{ suggestion.suggestion_type }}</td>
+            <td><span class="chip">{{ suggestion.status }}</span></td>
+            <td class="prewrap">{{ suggestion.reason|truncatechars:120 }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="12" class="muted">No suggestions match the current filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</form>
+
+{% include "data_quality_center/pagination.html" with page_obj=page_obj %}
+{% endblock %}

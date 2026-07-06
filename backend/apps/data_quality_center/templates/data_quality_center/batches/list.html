@@ -1,0 +1,54 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Batches | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Batch Center</h1>
+    <p>Review batch runs, provider context, outcomes, and linked reports or jobs.</p>
+  </div>
+</section>
+
+<section class="panel" style="margin-bottom:16px;">
+  <form class="filter-bar" method="get">
+    {% for field in form %}
+      <div class="field">
+        <label>{{ field.label|default:field.name }}</label>
+        {{ field }}
+      </div>
+    {% endfor %}
+    <button class="button" type="submit">Filter</button>
+  </form>
+</section>
+
+<section class="grid two">
+  {% for batch in batches %}
+    <article class="panel stack">
+      <div class="status-line">
+        <strong>#{{ batch.id }}</strong>
+        <span class="chip">{{ batch.batch_type }}</span>
+        <span class="chip">{{ batch.status }}</span>
+      </div>
+      <div class="muted">{{ batch.config.batch_name|default:"Unnamed batch" }}</div>
+      <div class="mini-grid">
+        <div class="mini-box"><div class="label">Total</div><div class="value">{{ batch.total_suggestions }}</div></div>
+        <div class="mini-box"><div class="label">Pending</div><div class="value">{{ batch.pending_suggestions }}</div></div>
+        <div class="mini-box"><div class="label">Approved</div><div class="value">{{ batch.approved_suggestions }}</div></div>
+        <div class="mini-box"><div class="label">Applied</div><div class="value">{{ batch.applied_suggestions }}</div></div>
+      </div>
+      <div class="muted">{{ batch.created_at }} · {{ batch.created_by|default:"system" }}</div>
+      <div class="toolbar">
+        <a class="button-secondary" href="{% url 'data_quality_center:batch_detail' batch.id %}">Open batch</a>
+        <a class="button-secondary" href="{% url 'data_quality_center:batch_compare' batch.id %}">Compare</a>
+        <form method="post" action="{% url 'data_quality_center:batch_generate_report' batch.id %}">
+          {% csrf_token %}
+          <button class="button" type="submit">Generate report</button>
+        </form>
+      </div>
+    </article>
+  {% empty %}
+    <div class="panel muted">No batches found.</div>
+  {% endfor %}
+</section>
+
+{% include "data_quality_center/pagination.html" with page_obj=page_obj %}
+{% endblock %}

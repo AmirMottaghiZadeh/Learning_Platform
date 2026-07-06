@@ -1,0 +1,48 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Jobs | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Job Center</h1>
+    <p>Monitor running and completed jobs with progress, duration, and error state.</p>
+  </div>
+</section>
+
+<section class="panel" style="margin-bottom:16px;">
+  <form class="filter-bar" method="get">
+    {% for field in form %}
+      <div class="field">
+        <label>{{ field.label|default:field.name }}</label>
+        {{ field }}
+      </div>
+    {% endfor %}
+    <button class="button" type="submit">Filter</button>
+  </form>
+</section>
+
+<section class="stack">
+  {% for job in jobs %}
+    <article class="panel">
+      <div class="status-line">
+        <strong>{{ job.job_type }}</strong>
+        <span class="chip">{{ job.status }}</span>
+        <span class="chip">{{ job.provider }}</span>
+        <span class="chip">{{ job.progress_percent }}%</span>
+      </div>
+      <div class="mini-grid" style="margin-top:12px;">
+        <div class="mini-box"><div class="label">Batch</div><div class="value">#{{ job.batch_id }}</div></div>
+        <div class="mini-box"><div class="label">Processed</div><div class="value">{{ job.processed_records }}/{{ job.total_records }}</div></div>
+        <div class="mini-box"><div class="label">Suggestions</div><div class="value">{{ job.suggestions_created }}</div></div>
+        <div class="mini-box"><div class="label">Duration</div><div class="value">{{ job.duration_display }}</div></div>
+      </div>
+      {% if job.error_message %}
+        <div class="note" style="margin-top:12px;">{{ job.error_message }}</div>
+      {% endif %}
+    </article>
+  {% empty %}
+    <div class="panel muted">No jobs found.</div>
+  {% endfor %}
+</section>
+
+{% include "data_quality_center/pagination.html" with page_obj=page_obj %}
+{% endblock %}

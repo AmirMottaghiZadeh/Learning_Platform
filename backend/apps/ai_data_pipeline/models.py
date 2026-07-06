@@ -168,6 +168,21 @@ class AIDataJob(models.Model):
             return 0
         return round((self.processed_records / self.total_records) * 100, 1)
 
+    @property
+    def duration_display(self):
+        if not self.started_at:
+            return "-"
+        end_at = self.completed_at or timezone.now()
+        delta = end_at - self.started_at
+        total_seconds = int(delta.total_seconds())
+        minutes, seconds = divmod(total_seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+        if hours:
+            return f"{hours}h {minutes}m"
+        if minutes:
+            return f"{minutes}m {seconds}s"
+        return f"{seconds}s"
+
     def mark_running(self):
         self.status = constants.JOB_STATUS_RUNNING
         self.started_at = timezone.now()

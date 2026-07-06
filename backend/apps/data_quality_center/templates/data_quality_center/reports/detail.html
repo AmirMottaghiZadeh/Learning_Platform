@@ -1,0 +1,27 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Report {{ report.id }} | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Report #{{ report.id }}</h1>
+    <p>{{ report.report_type }} · {{ report.format }} · Batch #{{ report.batch_id }}</p>
+  </div>
+  <div class="toolbar">
+    <a class="button-secondary" href="{% url 'data_quality_center:report_download' report.id 'json' %}">JSON</a>
+    <a class="button-secondary" href="{% url 'data_quality_center:report_download' report.id 'html' %}">HTML</a>
+    <a class="button-secondary" href="{% url 'data_quality_center:report_download' report.id 'csv' %}">CSV</a>
+  </div>
+</section>
+
+<section class="grid cards">
+  <article class="panel metric"><div class="metric-label">Records scanned</div><div class="metric-value">{{ report.total_records_scanned }}</div></article>
+  <article class="panel metric"><div class="metric-label">Issues found</div><div class="metric-value">{{ report.issues_found }}</div></article>
+  <article class="panel metric"><div class="metric-label">Duplicate candidates</div><div class="metric-value">{{ report.duplicate_candidates }}</div></article>
+  <article class="panel metric"><div class="metric-label">Created</div><div class="metric-value text-small">{{ report.created_at }}</div></article>
+</section>
+
+<section class="panel" style="margin-top:16px;">
+  <h2>Raw content</h2>
+  <pre class="prewrap">{{ raw_content }}</pre>
+</section>
+{% endblock %}

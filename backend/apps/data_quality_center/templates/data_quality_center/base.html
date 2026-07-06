@@ -1,0 +1,44 @@
+{% load static %}
+<!doctype html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Data Quality Center{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'data_quality_center/styles.css' %}">
+  <script defer src="{% static 'data_quality_center/app.js' %}"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">DQ</div>
+        <div>
+          <div class="brand-title">Data Quality Center</div>
+          <div class="brand-subtitle">Internal review workspace for AI and rule-based data improvements</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="{% url 'data_quality_center:dashboard' %}" class="{% if nav_section == 'dashboard' %}active{% endif %}">Dashboard</a>
+        <a href="{% url 'data_quality_center:batch_list' %}" class="{% if nav_section == 'batches' %}active{% endif %}">Batches</a>
+        <a href="{% url 'data_quality_center:job_list' %}" class="{% if nav_section == 'jobs' %}active{% endif %}">Jobs</a>
+        <a href="{% url 'data_quality_center:suggestion_list' %}" class="{% if nav_section == 'suggestions' %}active{% endif %}">Suggestions</a>
+        <a href="{% url 'data_quality_center:health' %}" class="{% if nav_section == 'health' %}active{% endif %}">Health</a>
+        <a href="{% url 'data_quality_center:report_list' %}" class="{% if nav_section == 'reports' %}active{% endif %}">Reports</a>
+        <a href="/admin/" class="ghost">Admin</a>
+      </nav>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle theme">Theme</button>
+    </header>
+    <main class="container">
+      {% if messages %}
+        <section class="messages">
+          {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

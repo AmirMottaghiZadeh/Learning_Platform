@@ -1,0 +1,46 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Health Center | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Health Center</h1>
+    <p>Database quality overview, duplicate analysis, formatting issues, and validation warnings.</p>
+  </div>
+</section>
+
+<section class="grid cards">
+  <article class="panel metric"><div class="metric-label">Health score</div><div class="metric-value">{{ dashboard.health_score }}</div></article>
+  <article class="panel metric"><div class="metric-label">Total records</div><div class="metric-value">{{ summary.total_records_scanned|default:0 }}</div></article>
+  <article class="panel metric"><div class="metric-label">Issues found</div><div class="metric-value">{{ summary.issue_count|default:0 }}</div></article>
+  <article class="panel metric"><div class="metric-label">Duplicate candidates</div><div class="metric-value">{{ dashboard.duplicate_candidates }}</div></article>
+</section>
+
+<section class="split" style="margin-top:16px;">
+  <article class="panel">
+    <h2>Latest health summary</h2>
+    <div class="mini-grid">
+      <div class="mini-box"><div class="label">Formatting</div><div class="value">{{ summary.issue_counts.formatting|default:0 }}</div></div>
+      <div class="mini-box"><div class="label">Medical</div><div class="value">{{ summary.issue_counts.medical_warning|default:0 }}</div></div>
+      <div class="mini-box"><div class="label">Terminology</div><div class="value">{{ summary.issue_counts.terminology|default:0 }}</div></div>
+      <div class="mini-box"><div class="label">Translations</div><div class="value">{{ dashboard.translation_suggestions }}</div></div>
+    </div>
+    <svg class="chart" viewBox="0 0 240 70"><path d="{{ dashboard.trend_path }}" fill="none" stroke="currentColor" stroke-width="3" /></svg>
+  </article>
+  <article class="panel">
+    <h2>Issue trend</h2>
+    {% if latest_report %}
+      <div class="note">Latest report #{{ latest_report.id }} · {{ latest_report.created_at }}</div>
+    {% endif %}
+    <div class="stack" style="margin-top:12px;">
+      {% for report in reports %}
+        <a class="mini-box" href="{% url 'data_quality_center:report_detail' report.id %}">
+          <div class="status-line"><strong>{{ report.created_at }}</strong><span class="chip">{{ report.format }}</span></div>
+          <div class="muted">Issues {{ report.issues_found }} · Duplicate candidates {{ report.duplicate_candidates }}</div>
+        </a>
+      {% empty %}
+        <div class="muted">No health reports available.</div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

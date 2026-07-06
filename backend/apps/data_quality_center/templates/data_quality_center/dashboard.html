@@ -1,0 +1,127 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Dashboard | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Dashboard</h1>
+    <p>Operational overview of data health, review workload, and the current batch pipeline.</p>
+  </div>
+  <div class="status-line">
+    <span class="chip">Health score {{ health_score }}</span>
+    <span class="chip">Records {{ total_records }}</span>
+    <span class="chip">Issues {{ total_issues }}</span>
+  </div>
+</section>
+
+<section class="grid cards">
+  <article class="panel metric"><div class="metric-label">Pending suggestions</div><div class="metric-value">{{ pending_suggestions }}</div></article>
+  <article class="panel metric"><div class="metric-label">Approved suggestions</div><div class="metric-value">{{ approved_suggestions }}</div></article>
+  <article class="panel metric"><div class="metric-label">Applied suggestions</div><div class="metric-value">{{ applied_suggestions }}</div></article>
+  <article class="panel metric"><div class="metric-label">Rejected suggestions</div><div class="metric-value">{{ rejected_suggestions }}</div></article>
+  <article class="panel metric"><div class="metric-label">Needs review</div><div class="metric-value">{{ needs_review_suggestions }}</div></article>
+  <article class="panel metric"><div class="metric-label">Risky suggestions</div><div class="metric-value">{{ risky_suggestions }}</div></article>
+  <article class="panel metric"><div class="metric-label">Duplicate candidates</div><div class="metric-value">{{ duplicate_candidates }}</div></article>
+  <article class="panel metric"><div class="metric-label">Medical warnings</div><div class="metric-value">{{ medical_validation_warnings }}</div></article>
+  <article class="panel metric"><div class="metric-label">Translation suggestions</div><div class="metric-value">{{ translation_suggestions }}</div></article>
+  <article class="panel metric"><div class="metric-label">Normalization suggestions</div><div class="metric-value">{{ normalization_suggestions }}</div></article>
+</section>
+
+<section class="split" style="margin-top:16px;">
+  <article class="panel">
+    <h2>Quality trend</h2>
+    <svg class="chart" viewBox="0 0 240 70" aria-label="Quality trend">
+      <path d="{{ trend_path }}" fill="none" stroke="currentColor" stroke-width="3" />
+    </svg>
+    <div class="mini-grid">
+      {% for point in health_trend %}
+        <div class="mini-box">
+          <div class="label">{{ point.label }}</div>
+          <div class="value">{{ point.score }}</div>
+          <div class="muted text-small">{{ point.issue_count }} issues</div>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="panel">
+    <h2>Suggestion mix</h2>
+    <div class="stack">
+      {% for label, value in suggestion_type_counts.items %}
+        {% widthratio value suggestion_type_max 100 as bar_width %}
+        <div>
+          <div class="status-line"><strong>{{ label }}</strong><span class="muted">{{ value }}</span></div>
+          <div class="bar"><span style="display:block;height:10px;border-radius:999px;background:var(--accent);width:{{ bar_width }}%;"></span></div>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="split" style="margin-top:16px;">
+  <article class="panel">
+    <h2>Most problematic tables</h2>
+    <div class="stack">
+      {% for item in problem_tables %}
+        {% widthratio item.total problem_table_max 100 as bar_width %}
+        <div>
+          <div class="status-line"><strong>{{ item.table_name }}</strong><span class="muted">{{ item.total }}</span></div>
+          <div><span style="display:block;height:10px;border-radius:999px;background:var(--accent);width:{{ bar_width }}%;"></span></div>
+        </div>
+      {% empty %}
+        <div class="muted">No suggestion data yet.</div>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="panel">
+    <h2>Most problematic fields</h2>
+    <div class="stack">
+      {% for item in problem_fields %}
+        {% widthratio item.total problem_field_max 100 as bar_width %}
+        <div>
+          <div class="status-line"><strong>{{ item.field_name }}</strong><span class="muted">{{ item.total }}</span></div>
+          <div><span style="display:block;height:10px;border-radius:999px;background:var(--accent);width:{{ bar_width }}%;"></span></div>
+        </div>
+      {% empty %}
+        <div class="muted">No field data yet.</div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="split" style="margin-top:16px;">
+  <article class="panel">
+    <h2>Latest batches</h2>
+    <div class="stack">
+      {% for batch in latest_batches %}
+        <a class="mini-box" href="{% url 'data_quality_center:batch_detail' batch.id %}">
+          <div class="status-line">
+            <strong>#{{ batch.id }}</strong>
+            <span class="chip">{{ batch.batch_type }}</span>
+            <span class="chip">{{ batch.status }}</span>
+          </div>
+          <div class="muted">{{ batch.created_at }}</div>
+        </a>
+      {% empty %}
+        <div class="muted">No batches available.</div>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="panel">
+    <h2>Latest suggestions</h2>
+    <div class="stack">
+      {% for suggestion in latest_suggestions %}
+        <a class="mini-box" href="{% url 'data_quality_center:suggestion_detail' suggestion.id %}">
+          <div class="status-line">
+            <strong>{{ suggestion.table_name }}</strong>
+            <span class="chip">{{ suggestion.status }}</span>
+            <span class="chip">{{ suggestion.risk_level }}</span>
+          </div>
+          <div class="muted">{{ suggestion.field_name }} · {{ suggestion.record_id }}</div>
+          <div class="prewrap light">{{ suggestion.suggested_value|truncatechars:120 }}</div>
+        </a>
+      {% empty %}
+        <div class="muted">No suggestions available.</div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

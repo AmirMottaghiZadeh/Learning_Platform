@@ -69,6 +69,8 @@ The AI data pipeline is safe-by-default:
 - `openai` and `ollama` providers are placeholders only
 - suggestions are saved as pending review items
 - original drug records are not modified until approved suggestions are applied through the safe apply command
+- day-to-day review happens in the dedicated internal **Data Quality Center** at `/data-quality/`
+- Django Admin remains available for developers, but it is no longer the primary review interface
 
 Useful commands:
 
@@ -85,7 +87,11 @@ Apply approved suggestions only after manual review:
 python manage.py ai_apply_approved --batch-id 1 --applied-by amir
 ```
 
+Reference docs:
+
+- `backend/apps/data_quality_center/README.md`
+- `backend/apps/ai_data_pipeline/README.md`
+
 ## GitHub Private Repo Setup
 
 See `docs/GITHUB_PRIVATE_SETUP.md`.
-

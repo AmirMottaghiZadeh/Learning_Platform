@@ -1,0 +1,74 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Record {{ record.id }} | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Record Inspector</h1>
+    <p>{{ table_name }} · Record {{ record.id }}</p>
+  </div>
+  <span class="chip">Quality score {{ quality_score }}</span>
+</section>
+
+<section class="grid two">
+  <article class="panel">
+    <h2>Current values</h2>
+    <div class="stack">
+      {% for field in fields %}
+        <div class="record-field">
+          <div class="name">{{ field.verbose_name }}</div>
+          <div class="value prewrap">{{ field.value|default:"-" }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="panel">
+    <h2>Record quality</h2>
+    <div class="mini-grid">
+      <div class="mini-box"><div class="label">Suggestions</div><div class="value">{{ suggestions|length }}</div></div>
+      <div class="mini-box"><div class="label">Warnings</div><div class="value">{{ warnings|length }}</div></div>
+      <div class="mini-box"><div class="label">Translations</div><div class="value">{{ translations|length }}</div></div>
+      <div class="mini-box"><div class="label">Terminology</div><div class="value">{{ terminology|length }}</div></div>
+    </div>
+    <div class="stack" style="margin-top:12px;">
+      <div class="note"><strong>Duplicates:</strong> {{ duplicates.exact|length }} exact, {{ duplicates.near|length }} near</div>
+      {% for warning in warnings %}
+        <div class="mini-box">
+          <div class="label">Warning</div>
+          <div class="prewrap">{{ warning.reason }}</div>
+        </div>
+      {% empty %}
+        <div class="muted">No medical warnings for this record.</div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="split" style="margin-top:16px;">
+  <article class="panel">
+    <h2>Suggestion history</h2>
+    <div class="stack">
+      {% for item in suggestions %}
+        <a class="mini-box" href="{% url 'data_quality_center:suggestion_detail' item.id %}">
+          <div class="status-line"><strong>{{ item.field_name }}</strong><span class="chip">{{ item.status }}</span></div>
+          <div class="prewrap">{{ item.reason|truncatechars:120 }}</div>
+        </a>
+      {% empty %}
+        <div class="muted">No suggestions linked to this record.</div>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="panel">
+    <h2>Applied history</h2>
+    <div class="stack">
+      {% for item in history %}
+        <div class="mini-box">
+          <div class="status-line"><strong>{{ item.field_name }}</strong><span class="chip">{{ item.applied_at }}</span></div>
+          <div class="prewrap">{{ item.old_value }} → {{ item.new_value }}</div>
+        </div>
+      {% empty %}
+        <div class="muted">No applied history.</div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Reports | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Reports</h1>
+    <p>Download JSON, CSV, or HTML snapshots for batch and health analysis.</p>
+  </div>
+</section>
+
+<section class="stack">
+  {% for report in reports %}
+    <article class="panel">
+      <div class="status-line">
+        <strong>#{{ report.id }}</strong>
+        <span class="chip">{{ report.report_type }}</span>
+        <span class="chip">{{ report.format }}</span>
+        <span class="chip">Batch #{{ report.batch_id }}</span>
+      </div>
+      <div class="muted">{{ report.created_at }}</div>
+      <div class="toolbar" style="margin-top:12px;">
+        <a class="button-secondary" href="{% url 'data_quality_center:report_detail' report.id %}">Open</a>
+        <a class="button-secondary" href="{% url 'data_quality_center:report_download' report.id 'json' %}">JSON</a>
+        <a class="button-secondary" href="{% url 'data_quality_center:report_download' report.id 'html' %}">HTML</a>
+        <a class="button-secondary" href="{% url 'data_quality_center:report_download' report.id 'csv' %}">CSV</a>
+      </div>
+    </article>
+  {% empty %}
+    <div class="panel muted">No reports found.</div>
+  {% endfor %}
+</section>
+
+{% include "data_quality_center/pagination.html" with page_obj=page_obj %}
+{% endblock %}

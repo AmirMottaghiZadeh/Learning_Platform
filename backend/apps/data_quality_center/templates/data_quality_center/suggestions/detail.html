@@ -1,0 +1,91 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Suggestion {{ suggestion.id }} | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Suggestion #{{ suggestion.id }}</h1>
+    <p>{{ suggestion.table_name }} · {{ suggestion.field_name }} · record {{ suggestion.record_id }}</p>
+  </div>
+  <div class="status-line">
+    <span class="chip">{{ suggestion.status }}</span>
+    <span class="chip">{{ suggestion.risk_level }}</span>
+    <span class="chip">{{ suggestion.provider }}</span>
+  </div>
+</section>
+
+<section class="split">
+  <article class="panel">
+    <h2>Diff viewer</h2>
+    {{ diff_html|safe }}
+    <div class="note" style="margin-top:12px;">
+      <strong>Reason:</strong> {{ suggestion.reason|default:"-" }}
+    </div>
+  </article>
+  <article class="panel">
+    <h2>Review workflow</h2>
+    <form method="post" class="stack">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit">
+      <div class="field">
+        <label>Suggested value</label>
+        <textarea name="suggested_value" rows="5">{{ edit_form.suggested_value.value|default:suggestion.suggested_value }}</textarea>
+      </div>
+      <div class="field">
+        <label>Reason</label>
+        <textarea name="reason" rows="4">{{ edit_form.reason.value|default:suggestion.reason }}</textarea>
+      </div>
+      <div class="split">
+        <div class="field">
+          <label>Confidence</label>
+          <input type="number" step="0.01" min="0" max="1" name="confidence_score" value="{{ edit_form.confidence_score.value|default:suggestion.confidence_score }}">
+        </div>
+        <div class="field">
+          <label>Risk level</label>
+          <select name="risk_level">
+            {% for value,label in suggestion.RISK_CHOICES %}
+              <option value="{{ value }}" {% if value == suggestion.risk_level %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Reviewer notes</label>
+        <textarea name="reviewer_notes" rows="3">{{ edit_form.reviewer_notes.value|default:reviewer_notes_value }}</textarea>
+      </div>
+      <div class="toolbar">
+        <button class="button" type="submit">Save edit</button>
+      </div>
+    </form>
+    <div class="toolbar" style="margin-top:12px;">
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="approve"><button class="button" type="submit">Approve</button></form>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="reject"><button class="button-danger" type="submit">Reject</button></form>
+      <a class="button-secondary" href="{{ record_url }}">Open record</a>
+    </div>
+  </article>
+</section>
+
+<section class="split" style="margin-top:16px;">
+  <article class="panel">
+    <h2>Metadata</h2>
+    <div class="mini-grid">
+      <div class="mini-box"><div class="label">Confidence</div><div class="value">{{ suggestion.confidence_score }}</div></div>
+      <div class="mini-box"><div class="label">Created</div><div class="value">{{ suggestion.created_at }}</div></div>
+      <div class="mini-box"><div class="label">Reviewed by</div><div class="value">{{ suggestion.reviewed_by|default:"-" }}</div></div>
+      <div class="mini-box"><div class="label">Reviewed at</div><div class="value">{{ suggestion.reviewed_at|default:"-" }}</div></div>
+    </div>
+  </article>
+  <article class="panel">
+    <h2>Raw values</h2>
+    <div class="diff-grid">
+      <div class="mini-box">
+        <div class="label">Old value</div>
+        <div class="prewrap">{{ suggestion.old_value|default:"-" }}</div>
+      </div>
+      <div class="mini-box">
+        <div class="label">Suggested value</div>
+        <div class="prewrap">{{ suggestion.suggested_value|default:"-" }}</div>
+      </div>
+    </div>
+  </article>
+</section>
+{% endblock %}

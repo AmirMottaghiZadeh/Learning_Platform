@@ -281,6 +281,22 @@ rtk .venv/bin/python manage.py ai_apply_approved --batch-id 1 --applied-by amir
 
 Applied changes appear in `AI data change history`. Reports are available in `AI data reports` and as JSON/HTML files under `exports/ai_data_pipeline`.
 
+## Data Quality Center
+
+The primary day-to-day review interface is now the dedicated internal web app at `/data-quality/`.
+
+Use it for:
+
+- dashboard review
+- batch inspection
+- job monitoring
+- suggestion review and diff inspection
+- record inspection
+- report downloads
+- health analysis
+
+See [`apps/data_quality_center/README.md`](../data_quality_center/README.md) for URL structure, navigation, and workflow details.
+
 ## Admin Reports And Dashboard Helpers
 
 The current admin-facing dashboard is model-based:

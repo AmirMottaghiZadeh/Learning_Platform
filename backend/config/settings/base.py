@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "apps.league",
     "apps.flashcards",
     "apps.ai_data_pipeline",
+    "apps.data_quality_center",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware", "django.middleware.security.SecurityMiddleware",
