@@ -7,7 +7,7 @@ import {platformApi} from "../api/platform";
 import {EmptyState, ErrorState, LearningCard, LoadingState, PrimaryButton, ScreenContainer, ScreenHeader, SecondaryButton} from "../components/ui";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
-import type {FlashcardBoxSummary, FlashcardState, QuestionType, TargetCategory} from "../types/api";
+import type {FlashcardBoxSummary, FlashcardDeckSummary, FlashcardState, QuestionType, TargetCategory} from "../types/api";
 
 const QUESTION_TYPES: Array<{key: QuestionType; label: string}> = [
   {key: "brandGeneric", label: "نام تجاری"},
@@ -30,6 +30,7 @@ export function FlashcardsScreen() {
   const {token, user} = useAuth();
   const [cards, setCards] = useState<FlashcardState[]>([]);
   const [boxSummary, setBoxSummary] = useState<FlashcardBoxSummary | null>(null);
+  const [deckSummary, setDeckSummary] = useState<FlashcardDeckSummary | null>(null);
   const [categories, setCategories] = useState<TargetCategory[]>([]);
   const [selectedQuestionType, setSelectedQuestionType] = useState<QuestionType>("brandGeneric");
   const [selectedBox, setSelectedBox] = useState<number | null>(null);
@@ -49,9 +50,10 @@ export function FlashcardsScreen() {
     setLoading(true);
     setError(null);
     try {
-      const [cardPayload, boxPayload, categoryPayload] = await Promise.all([
+      const [cardPayload, boxPayload, deckPayload, categoryPayload] = await Promise.all([
         platformApi.flashcards(token, selectedBox ?? undefined, selectedCategory, selectedQuestionType),
         platformApi.flashcardBoxes(token, selectedCategory, selectedQuestionType),
+        platformApi.flashcardDeckSummary(token, selectedCategory, selectedQuestionType),
         platformApi.targetCategories(token, selectedQuestionType),
       ]);
       if (requestId !== loadRequestRef.current) return;
@@ -70,6 +72,7 @@ export function FlashcardsScreen() {
       avoidNextCardIdRef.current = null;
       setCards(nextCards);
       setBoxSummary(boxPayload);
+      setDeckSummary(deckPayload);
       setCategories(categoryPayload);
       if (selectedCategory && !categoryPayload.some((category) => category.key === selectedCategory)) {
         setCards([]);
@@ -81,6 +84,7 @@ export function FlashcardsScreen() {
       if (requestId !== loadRequestRef.current) return;
       setCards([]);
       setBoxSummary(null);
+      setDeckSummary(null);
       setError(exc instanceof Error ? exc.message : "Flashcards unavailable.");
     } finally {
       if (requestId === loadRequestRef.current) setLoading(false);
@@ -156,6 +160,7 @@ export function FlashcardsScreen() {
     avoidNextCardIdRef.current = cards[0]?.id ?? null;
     setCards([]);
     setBoxSummary(null);
+    setDeckSummary(null);
     setRevealed(false);
     setError(null);
     setLoading(true);
@@ -219,7 +224,7 @@ export function FlashcardsScreen() {
   const card = cards[0];
   const selectedCategoryLabel = categories.find((category) => category.key === selectedCategory)?.label ?? "All";
   const selectedQuestionLabel = QUESTION_TYPES.find((type) => type.key === selectedQuestionType)?.label ?? "";
-  const dueCount = boxSummary?.new ?? cards.length;
+  const dueCount = deckSummary?.due_cards ?? boxSummary?.new ?? cards.length;
   const savedDeckQuestionLabel = savedDeck
     ? QUESTION_TYPES.find((type) => type.key === savedDeck.questionType)?.label ?? savedDeck.questionType
     : "";
@@ -288,6 +293,22 @@ export function FlashcardsScreen() {
       </LearningCard>
       <LearningCard>
         <Text style={styles.sectionLabel}>Leitner boxes</Text>
+        {deckSummary ? (
+          <View style={styles.deckStats}>
+            <View style={styles.deckStat}>
+              <Text style={styles.deckStatValue}>{deckSummary.eligible_sources}</Text>
+              <Text style={styles.deckStatLabel}>Sources</Text>
+            </View>
+            <View style={styles.deckStat}>
+              <Text style={styles.deckStatValue}>{deckSummary.scheduled_cards}</Text>
+              <Text style={styles.deckStatLabel}>Cards</Text>
+            </View>
+            <View style={styles.deckStat}>
+              <Text style={styles.deckStatValue}>{deckSummary.unscheduled_sources}</Text>
+              <Text style={styles.deckStatLabel}>New</Text>
+            </View>
+          </View>
+        ) : null}
         <View style={styles.boxRow}>
           <Pressable
             accessibilityRole="button"
@@ -322,7 +343,12 @@ export function FlashcardsScreen() {
       ) : !card ? (
         <>
           <EmptyState title={selectedBox ? "This box is empty" : "No cards in this deck"} />
-          <PrimaryButton label="Create all cards" Icon={Plus} onPress={seedCards} disabled={busy} />
+          <PrimaryButton
+            label={deckSummary?.unscheduled_sources ? "Create all cards" : "Refresh deck"}
+            Icon={Plus}
+            onPress={seedCards}
+            disabled={busy}
+          />
         </>
       ) : (
         <>
@@ -392,6 +418,31 @@ const styles = StyleSheet.create({
   boxRow: {
     flexDirection: "row",
     flexWrap: "wrap",
+  },
+  deckStats: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  deckStat: {
+    flex: 1,
+    minHeight: 64,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+  },
+  deckStatValue: {
+    color: colors.ink,
+    fontSize: typography.heading,
+    fontWeight: "900",
+  },
+  deckStatLabel: {
+    color: colors.muted,
+    fontSize: typography.small,
+    fontWeight: "800",
   },
   boxChip: {
     minHeight: 40,

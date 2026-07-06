@@ -3,10 +3,12 @@ import type {
   AuthResponse,
   FlashcardBoxSummary,
   Dashboard,
+  FlashcardDeckSummary,
   FlashcardState,
   GameAnswerResult,
   GameSession,
   LeaderboardEntry,
+  LeagueFullSummary,
   Mistake,
   MyLeagueRank,
   Recommendation,
@@ -74,13 +76,19 @@ export const platformApi = {
     params.set("source_type", source_type);
     return apiFetch(`/flashcards/boxes/?${params.toString()}`, {}, token) as Promise<FlashcardBoxSummary>;
   },
+  flashcardDeckSummary(token: string, target_category_key = "", source_type: QuestionType = "brandGeneric") {
+    const params = new URLSearchParams({product_id: "k_game"});
+    if (target_category_key) params.set("target_category_key", target_category_key);
+    params.set("source_type", source_type);
+    return apiFetch(`/flashcards/decks/?${params.toString()}`, {}, token) as Promise<FlashcardDeckSummary>;
+  },
   reviewFlashcard(token: string, id: number, rating: "known" | "unknown") {
     return apiFetch(`/flashcards/${id}/review/`, json({rating}), token) as Promise<FlashcardState>;
   },
-  seedFlashcards(token: string, target_category_key = "", source_type: QuestionType = "brandGeneric", count = 0) {
+  seedFlashcards(token: string, target_category_key = "", source_type: QuestionType = "brandGeneric") {
     return apiFetch(
       "/flashcards/seed/",
-      json({product_id: "k_game", count, target_category_key, source_type}),
+      json({product_id: "k_game", target_category_key, source_type}),
       token,
     ) as Promise<FlashcardState[]>;
   },
@@ -128,5 +136,8 @@ export const platformApi = {
   },
   myLeagueRank(token: string) {
     return apiFetch("/league/me/?product_id=k_game", {}, token) as Promise<MyLeagueRank>;
+  },
+  leagueSummary(token: string) {
+    return apiFetch("/league/summary/?product_id=k_game", {}, token) as Promise<LeagueFullSummary>;
   },
 };

@@ -34,6 +34,10 @@ class WeakTopicSerializer(serializers.Serializer):
     questions_answered = serializers.IntegerField()
     accuracy_percent = serializers.IntegerField()
     wrong_answers = serializers.IntegerField()
+    review_count = serializers.IntegerField()
+    mistake_count = serializers.IntegerField()
+    due_flashcards = serializers.IntegerField()
+    xp = serializers.IntegerField()
     mastery_state = serializers.CharField()
 
 
@@ -84,6 +88,10 @@ class DailyActivitySerializer(serializers.Serializer):
 
 class LearningStatisticsSerializer(serializers.Serializer):
     product_id = serializers.CharField()
+    days = serializers.IntegerField()
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
     summary = LearningProgressSummarySerializer()
     topics = LearnerProgressSerializer(many=True)
     daily_activity = DailyActivitySerializer(many=True)
+    weak_topics = WeakTopicSerializer(many=True)

@@ -11,6 +11,7 @@ from apps.flashcards.serializers import FlashcardStateSerializer
 from apps.flashcards.services import (
     REVIEW_SCHEDULE_RULE_VERSION,
     calculate_review_schedule,
+    get_flashcard_deck_summary,
     get_leitner_box_counts,
     review_card,
     seed_flashcards_for_user,
@@ -174,10 +175,19 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             prompt="Prompt",
             correct_answer="Answer",
         )
+        KnowledgeSource.objects.create(
+            product_id="k_game",
+            external_id="source-2",
+            learning_object=learning_object,
+            topic=topic,
+            source_type="timing",
+            prompt="Prompt 2",
+            correct_answer="Answer 2",
+        )
 
         states = seed_flashcards_for_user(user=user, product_id="k_game", count=1)
 
-        self.assertEqual(len(states), 1)
+        self.assertEqual(len(states), 2)
         self.assertEqual(states[0].box, 0)
         self.assertEqual(states[0].review_state, FlashcardState.REVIEW_STATE_NEW)
         self.assertLessEqual(states[0].due_at, django_timezone.now())
@@ -322,3 +332,62 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         )
         self.assertEqual(box_after_review.status_code, 200)
         self.assertEqual(box_after_review.data["count"], 1)
+
+    def test_flashcard_deck_summary_reports_full_selected_deck(self):
+        user = User.objects.create_user(username="learner")
+        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        learning_object = LearningObject.objects.create(
+            product_id="k_game",
+            external_id="drug-1",
+            display_name="Drug 1",
+            topic=topic,
+            metadata={"target_category_key": "cardiovascular"},
+        )
+        for index in range(3):
+            KnowledgeSource.objects.create(
+                product_id="k_game",
+                external_id=f"source-{index}",
+                learning_object=learning_object,
+                topic=topic,
+                source_type="timing",
+                prompt=f"Prompt {index}",
+                correct_answer=f"Answer {index}",
+                metadata={"target_category_key": "cardiovascular"},
+            )
+
+        before_seed = get_flashcard_deck_summary(
+            user=user,
+            product_id="k_game",
+            target_category_key="cardiovascular",
+            source_type="timing",
+        )
+        self.assertEqual(before_seed["eligible_sources"], 3)
+        self.assertEqual(before_seed["unscheduled_sources"], 3)
+
+        seed_flashcards_for_user(
+            user=user,
+            product_id="k_game",
+            target_category_key="cardiovascular",
+            source_type="timing",
+        )
+        after_seed = get_flashcard_deck_summary(
+            user=user,
+            product_id="k_game",
+            target_category_key="cardiovascular",
+            source_type="timing",
+        )
+
+        self.assertEqual(after_seed["eligible_sources"], 3)
+        self.assertEqual(after_seed["scheduled_cards"], 3)
+        self.assertEqual(after_seed["unscheduled_sources"], 0)
+        self.assertEqual(after_seed["due_cards"], 3)
+
+        client = APIClient()
+        client.force_authenticate(user=user)
+        response = client.get(
+            "/api/v1/flashcards/decks/?product_id=k_game&target_category_key=cardiovascular&source_type=timing"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["eligible_sources"], 3)
+        self.assertEqual(response.data["scheduled_cards"], 3)

@@ -6,12 +6,13 @@ import {platformApi} from "../api/platform";
 import {EmptyState, ErrorState, LearningCard, LoadingState, ScreenContainer, ScreenHeader, SecondaryButton} from "../components/ui";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
-import type {LeaderboardEntry, MyLeagueRank} from "../types/api";
+import type {LeaderboardEntry, LeagueFullSummary, MyLeagueRank} from "../types/api";
 
 export function LeagueScreen() {
   const {token} = useAuth();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [myRank, setMyRank] = useState<MyLeagueRank | null>(null);
+  const [summary, setSummary] = useState<LeagueFullSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,12 +21,10 @@ export function LeagueScreen() {
     setLoading(true);
     setError(null);
     try {
-      const [leaderboard, rank] = await Promise.all([
-        platformApi.leaderboard(token),
-        platformApi.myLeagueRank(token),
-      ]);
-      setEntries(leaderboard);
-      setMyRank(rank);
+      const payload = await platformApi.leagueSummary(token);
+      setSummary(payload);
+      setEntries(payload.leaderboard);
+      setMyRank(payload.my_rank);
     } catch (exc) {
       setError(exc instanceof Error ? exc.message : "League unavailable.");
     } finally {
@@ -43,7 +42,7 @@ export function LeagueScreen() {
   return (
     <ScreenContainer>
       <ScreenHeader
-        eyebrow="Weekly season"
+        eyebrow={summary?.season_key ? `Weekly season · ${summary.season_key}` : "Weekly season"}
         title="League"
         action={<SecondaryButton label="Refresh" Icon={RefreshCw} onPress={load} />}
       />
@@ -59,6 +58,7 @@ export function LeagueScreen() {
           </View>
           <Text style={styles.participants}>{myRank?.total_participants ?? 0} learners</Text>
         </View>
+        {summary?.rule_version ? <Text style={styles.ruleVersion}>{summary.rule_version}</Text> : null}
       </LearningCard>
 
       {!entries.length ? (
@@ -116,6 +116,12 @@ const styles = StyleSheet.create({
   participants: {
     color: colors.ink,
     fontWeight: "900",
+  },
+  ruleVersion: {
+    color: colors.muted,
+    fontSize: typography.small,
+    fontWeight: "800",
+    marginTop: spacing.sm,
   },
   row: {
     flexDirection: "row",

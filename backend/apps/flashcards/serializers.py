@@ -109,7 +109,13 @@ class FlashcardReviewRequestSerializer(serializers.Serializer):
 
 class FlashcardSeedRequestSerializer(serializers.Serializer):
     product_id = serializers.CharField(default="k_game")
-    count = serializers.IntegerField(default=0, min_value=0, max_value=10000)
+    count = serializers.IntegerField(
+        default=0,
+        min_value=0,
+        max_value=10000,
+        required=False,
+        help_text="Deprecated and ignored. Deck creation always schedules the full selected source set.",
+    )
     target_category_key = serializers.CharField(required=False, allow_blank=True, default="")
     source_type = serializers.ChoiceField(
         choices=["brandGeneric", "timing", "indication", "sideEffects"],
@@ -127,3 +133,15 @@ class FlashcardBoxSerializer(serializers.Serializer):
 class FlashcardBoxSummarySerializer(serializers.Serializer):
     new = serializers.IntegerField()
     boxes = FlashcardBoxSerializer(many=True)
+
+
+class FlashcardDeckSummarySerializer(serializers.Serializer):
+    product_id = serializers.CharField()
+    target_category_key = serializers.CharField(allow_blank=True)
+    source_type = serializers.CharField(allow_blank=True)
+    eligible_sources = serializers.IntegerField()
+    scheduled_cards = serializers.IntegerField()
+    unscheduled_sources = serializers.IntegerField()
+    active_cards = serializers.IntegerField()
+    due_cards = serializers.IntegerField()
+    leitner = FlashcardBoxSummarySerializer()

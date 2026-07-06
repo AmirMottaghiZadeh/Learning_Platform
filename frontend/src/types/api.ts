@@ -29,6 +29,10 @@ export type WeakTopic = {
   questions_answered: number;
   accuracy_percent: number;
   wrong_answers: number;
+  review_count: number;
+  mistake_count: number;
+  due_flashcards: number;
+  xp: number;
   mastery_state: string;
 };
 
@@ -96,9 +100,13 @@ export type DailyActivity = {
 
 export type Statistics = {
   product_id: string;
+  days: number;
+  start_date: string;
+  end_date: string;
   summary: ProgressSummary;
   topics: TopicProgress[];
   daily_activity: DailyActivity[];
+  weak_topics: WeakTopic[];
 };
 
 export type GameQuestion = {
@@ -194,6 +202,18 @@ export type FlashcardBoxSummary = {
   boxes: FlashcardBox[];
 };
 
+export type FlashcardDeckSummary = {
+  product_id: string;
+  target_category_key: string;
+  source_type: string;
+  eligible_sources: number;
+  scheduled_cards: number;
+  unscheduled_sources: number;
+  active_cards: number;
+  due_cards: number;
+  leitner: FlashcardBoxSummary;
+};
+
 export type LeagueSeason = {
   id: number;
   product_id: string;
@@ -233,4 +253,14 @@ export type MyLeagueRank = {
   rank: number | null;
   result: LeagueResult | null;
   total_participants: number;
+};
+
+export type LeagueFullSummary = {
+  season: LeagueSeason | null;
+  season_key: string;
+  topic_key: string;
+  leaderboard: LeaderboardEntry[];
+  my_rank: MyLeagueRank;
+  total_participants: number;
+  rule_version: string;
 };

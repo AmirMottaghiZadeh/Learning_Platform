@@ -5,11 +5,12 @@ from django.utils import timezone
 from .models import FlashcardState
 from .serializers import (
     FlashcardBoxSummarySerializer,
+    FlashcardDeckSummarySerializer,
     FlashcardReviewRequestSerializer,
     FlashcardSeedRequestSerializer,
     FlashcardStateSerializer,
 )
-from .services import get_leitner_box_counts, review_card, seed_flashcards_for_user
+from .services import get_flashcard_deck_summary, get_leitner_box_counts, review_card, seed_flashcards_for_user
 
 class FlashcardListView(generics.ListAPIView):
     serializer_class = FlashcardStateSerializer
@@ -54,7 +55,6 @@ class FlashcardSeedView(views.APIView):
         states = seed_flashcards_for_user(
             user=request.user,
             product_id=serializer.validated_data["product_id"],
-            count=serializer.validated_data["count"],
             target_category_key=serializer.validated_data["target_category_key"],
             source_type=serializer.validated_data["source_type"],
         )
@@ -74,3 +74,18 @@ class FlashcardBoxSummaryView(views.APIView):
             source_type=source_type,
         )
         return Response(FlashcardBoxSummarySerializer(counts).data)
+
+
+class FlashcardDeckSummaryView(views.APIView):
+    @extend_schema(responses=FlashcardDeckSummarySerializer)
+    def get(self, request):
+        product_id = request.query_params.get("product_id") or "k_game"
+        target_category_key = request.query_params.get("target_category_key") or ""
+        source_type = request.query_params.get("source_type") or ""
+        summary = get_flashcard_deck_summary(
+            user=request.user,
+            product_id=product_id,
+            target_category_key=target_category_key,
+            source_type=source_type,
+        )
+        return Response(FlashcardDeckSummarySerializer(summary).data)

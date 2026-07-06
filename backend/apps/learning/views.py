@@ -8,6 +8,7 @@ from .selectors import (
     get_learning_progress_summary,
     get_learning_recommendations,
     get_learning_statistics,
+    get_weak_topics,
     progress_queryset_for_user,
 )
 from .serializers import (
@@ -16,7 +17,16 @@ from .serializers import (
     LearningProgressSummarySerializer,
     LearningStatisticsSerializer,
     RecommendationSerializer,
+    WeakTopicSerializer,
 )
+
+
+def bounded_int(value, *, default, minimum, maximum):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = default
+    return min(max(parsed, minimum), maximum)
 
 
 class LearningProgressSummaryView(views.APIView):
@@ -51,9 +61,19 @@ class LearningRecommendationView(views.APIView):
         return Response(RecommendationSerializer(recommendations, many=True).data)
 
 
+class WeakTopicListView(views.APIView):
+    @extend_schema(responses=WeakTopicSerializer(many=True))
+    def get(self, request):
+        product_id = request.query_params.get("product_id") or "k_game"
+        limit = bounded_int(request.query_params.get("limit"), default=10, minimum=1, maximum=50)
+        weak_topics = get_weak_topics(request.user, product_id=product_id, limit=limit)
+        return Response(WeakTopicSerializer(weak_topics, many=True).data)
+
+
 class LearningStatisticsView(views.APIView):
     @extend_schema(responses=LearningStatisticsSerializer)
     def get(self, request):
         product_id = request.query_params.get("product_id") or "k_game"
-        statistics = get_learning_statistics(request.user, product_id=product_id)
+        days = bounded_int(request.query_params.get("days"), default=7, minimum=1, maximum=90)
+        statistics = get_learning_statistics(request.user, product_id=product_id, days=days)
         return Response(LearningStatisticsSerializer(statistics).data)

@@ -51,19 +51,6 @@ def get_learning_progress_summary(user, *, product_id=None):
     active_flashcards = flashcards.exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED).count()
     latest_session = sessions.order_by("-started_at").first()
 
-    weak_topics = []
-    for progress in progress_qs.filter(wrong_answers__gt=0).order_by("-wrong_answers", "topic__label")[:5]:
-        weak_topics.append(
-            {
-                "topic_key": progress.topic.key,
-                "topic_label": progress.topic.label,
-                "questions_answered": progress.questions_answered,
-                "accuracy_percent": progress.accuracy_percent,
-                "wrong_answers": progress.wrong_answers,
-                "mastery_state": progress.mastery_state,
-            }
-        )
-
     return {
         "product_id": product_id,
         "questions_answered": questions_answered,
@@ -75,8 +62,33 @@ def get_learning_progress_summary(user, *, product_id=None):
         "due_flashcards": due_flashcards,
         "active_flashcards": active_flashcards,
         "current_streak": latest_session.streak if latest_session else 0,
-        "weak_topics": weak_topics,
+        "weak_topics": get_weak_topics(user, product_id=product_id, limit=5),
     }
+
+
+def get_weak_topics(user, *, product_id=None, limit=10):
+    progress_qs = progress_queryset_for_user(user, product_id=product_id)
+    weak_topics = []
+    for progress in progress_qs.filter(wrong_answers__gt=0).order_by("-wrong_answers", "topic__label")[:limit]:
+        flashcards = FlashcardState.objects.filter(user=user, knowledge_source__topic=progress.topic)
+        if product_id:
+            flashcards = flashcards.filter(knowledge_source__product_id=product_id)
+        due_flashcards = flashcards.filter(due_at__lte=timezone.now()).count()
+        weak_topics.append(
+            {
+                "topic_key": progress.topic.key,
+                "topic_label": progress.topic.label,
+                "questions_answered": progress.questions_answered,
+                "accuracy_percent": progress.accuracy_percent,
+                "wrong_answers": progress.wrong_answers,
+                "review_count": progress.review_count,
+                "mistake_count": progress.mistake_count,
+                "due_flashcards": due_flashcards,
+                "xp": progress.xp,
+                "mastery_state": progress.mastery_state,
+            }
+        )
+    return weak_topics
 
 
 def get_learning_recommendations(user, *, product_id="k_game"):
@@ -155,9 +167,11 @@ def get_learning_dashboard(user, *, product_id="k_game"):
 
 
 def get_learning_statistics(user, *, product_id="k_game", days=7):
+    days = min(max(int(days), 1), 90)
     summary = get_learning_progress_summary(user, product_id=product_id)
     topics = list(progress_queryset_for_user(user, product_id=product_id))
     start_date = timezone.localdate() - timedelta(days=days - 1)
+    end_date = timezone.localdate()
     daily = {
         start_date + timedelta(days=offset): {
             "date": start_date + timedelta(days=offset),
@@ -193,7 +207,11 @@ def get_learning_statistics(user, *, product_id="k_game", days=7):
 
     return {
         "product_id": product_id,
+        "days": days,
+        "start_date": start_date,
+        "end_date": end_date,
         "summary": summary,
         "topics": topics,
         "daily_activity": list(daily.values()),
+        "weak_topics": get_weak_topics(user, product_id=product_id, limit=10),
     }

@@ -86,3 +86,31 @@ class LeagueAPITests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["product_id"], "k_game")
         self.assertIn("W", response.data["key"])
+
+    def test_season_list_endpoint_returns_recent_seasons(self):
+        user = User.objects.create_user(username="learner")
+        get_current_season(product_id="k_game")
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        response = client.get("/api/v1/league/seasons/?product_id=k_game")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertGreaterEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["product_id"], "k_game")
+
+    def test_league_summary_returns_season_rank_and_leaderboard(self):
+        first = User.objects.create_user(username="first")
+        second = User.objects.create_user(username="second")
+        self.create_result(first, raw_score=220, league_rating="4.40")
+        self.create_result(second, raw_score=180, league_rating="3.60")
+        client = APIClient()
+        client.force_authenticate(user=second)
+
+        response = client.get("/api/v1/league/summary/?product_id=k_game&topic_key=timing")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("season", response.data)
+        self.assertEqual(response.data["my_rank"]["rank"], 2)
+        self.assertEqual(response.data["total_participants"], 2)
+        self.assertEqual(response.data["leaderboard"][0]["result"]["username"], "first")

@@ -47,6 +47,16 @@ class LeagueUserRankSerializer(serializers.Serializer):
     total_participants = serializers.IntegerField()
 
 
+class LeagueSummarySerializer(serializers.Serializer):
+    season = LeagueSeasonSerializer(allow_null=True)
+    season_key = serializers.CharField(allow_blank=True)
+    topic_key = serializers.CharField(allow_blank=True)
+    leaderboard = LeagueLeaderboardEntrySerializer(many=True)
+    my_rank = LeagueUserRankSerializer()
+    total_participants = serializers.IntegerField()
+    rule_version = serializers.CharField()
+
+
 class StartLeagueSerializer(serializers.Serializer):
     topic_key = serializers.CharField(default="timing")
     timer_seconds = serializers.IntegerField(default=30, min_value=5, max_value=120)

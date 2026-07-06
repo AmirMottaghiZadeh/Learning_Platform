@@ -44,6 +44,10 @@ def get_current_season(*, product_id="k_game", now=None):
     return season
 
 
+def list_league_seasons(*, product_id="k_game", limit=12):
+    return LeagueSeason.objects.filter(product_id=product_id).order_by("-starts_at")[:limit]
+
+
 def session_product_id(session):
     question = (
         session.questions
@@ -166,4 +170,34 @@ def get_user_league_rank(user, *, product_id="k_game", topic_key=None, season_ke
         "rank": None,
         "result": None,
         "total_participants": len(entries),
+    }
+
+
+def get_league_summary(user, *, product_id="k_game", topic_key=None, season_key=None, limit=100):
+    season = (
+        LeagueSeason.objects.filter(product_id=product_id, key=season_key).first()
+        if season_key
+        else get_current_season(product_id=product_id)
+    )
+    resolved_season_key = season.key if season else season_key
+    leaderboard = get_leaderboard_entries(
+        product_id=product_id,
+        topic_key=topic_key,
+        season_key=resolved_season_key,
+        limit=limit,
+    )
+    rank = get_user_league_rank(
+        user,
+        product_id=product_id,
+        topic_key=topic_key,
+        season_key=resolved_season_key,
+    )
+    return {
+        "season": season,
+        "season_key": resolved_season_key or "",
+        "topic_key": topic_key or "",
+        "leaderboard": leaderboard,
+        "my_rank": rank,
+        "total_participants": rank["total_participants"],
+        "rule_version": LEAGUE_RULE_VERSION,
     }

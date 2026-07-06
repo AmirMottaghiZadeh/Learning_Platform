@@ -142,11 +142,53 @@ def seed_flashcards_for_user(
         sources = sources.filter(source_type=source_type)
 
     states = []
-    if count and count > 0:
-        sources = sources[:count]
     for source in sources:
         states.append(schedule_flashcard_from_source(user=user, knowledge_source=source, due_at=due_at))
     return states
+
+
+def get_flashcard_deck_summary(*, user, product_id="k_game", target_category_key="", source_type=""):
+    sources = (
+        KnowledgeSource.objects
+        .filter(product_id=product_id, is_active=True)
+        .exclude(prompt="")
+        .exclude(correct_answer="")
+        .select_related("learning_object", "topic")
+    )
+    if target_category_key:
+        sources = sources.filter(metadata__target_category_key=target_category_key)
+    if source_type:
+        sources = sources.filter(source_type=source_type)
+
+    states = FlashcardState.objects.filter(
+        user=user,
+        knowledge_source__product_id=product_id,
+    )
+    if target_category_key:
+        states = states.filter(knowledge_source__metadata__target_category_key=target_category_key)
+    if source_type:
+        states = states.filter(knowledge_source__source_type=source_type)
+
+    scheduled_source_ids = set(states.values_list("knowledge_source_id", flat=True))
+    eligible_source_ids = set(sources.values_list("id", flat=True))
+    active_states = states.exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED)
+
+    return {
+        "product_id": product_id,
+        "target_category_key": target_category_key,
+        "source_type": source_type,
+        "eligible_sources": len(eligible_source_ids),
+        "scheduled_cards": len(eligible_source_ids & scheduled_source_ids),
+        "unscheduled_sources": len(eligible_source_ids - scheduled_source_ids),
+        "active_cards": active_states.count(),
+        "due_cards": active_states.filter(due_at__lte=timezone.now()).count(),
+        "leitner": get_leitner_box_counts(
+            user=user,
+            product_id=product_id,
+            target_category_key=target_category_key,
+            source_type=source_type,
+        ),
+    }
 
 
 def schedule_flashcard_from_source(*, user, knowledge_source, due_at=None):
