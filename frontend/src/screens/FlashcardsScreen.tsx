@@ -387,12 +387,38 @@ export function FlashcardsScreen() {
           </View>
 
           {revealed ? (
-            <View style={styles.reviewGrid}>
-              <SecondaryButton label="Again" Icon={RotateCcw} onPress={() => review("again")} disabled={busy} />
-              <SecondaryButton label="Hard" Icon={XCircle} onPress={() => review("hard")} disabled={busy} />
-              <PrimaryButton label="Good" Icon={CheckCircle2} onPress={() => review("good")} disabled={busy} />
-              <PrimaryButton label="Easy" Icon={CheckCircle2} onPress={() => review("easy")} disabled={busy} />
-            </View>
+            <>
+              <View style={styles.feedbackBar}>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={busy}
+                  onPress={() => review("hard")}
+                  style={({pressed}) => [styles.feedbackChip, pressed && !busy && styles.feedbackChipPressed]}
+                >
+                  <Text style={styles.feedbackChipText}>Hard</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={busy}
+                  onPress={() => review("good")}
+                  style={({pressed}) => [styles.feedbackChip, pressed && !busy && styles.feedbackChipPressed]}
+                >
+                  <Text style={styles.feedbackChipText}>Good</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={busy}
+                  onPress={() => review("easy")}
+                  style={({pressed}) => [styles.feedbackChip, pressed && !busy && styles.feedbackChipPressed]}
+                >
+                  <Text style={styles.feedbackChipText}>Easy</Text>
+                </Pressable>
+              </View>
+              <View style={styles.reviewGrid}>
+                <SecondaryButton label="بلد نبودم" Icon={XCircle} onPress={() => review("unknown")} disabled={busy} />
+                <PrimaryButton label="بلد بودم" Icon={CheckCircle2} onPress={() => review("known")} disabled={busy} />
+              </View>
+            </>
           ) : null}
         </>
       )}
@@ -550,6 +576,34 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: "center",
     marginTop: spacing.sm,
+  },
+  feedbackBar: {
+    minHeight: 38,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  feedbackChip: {
+    minWidth: 74,
+    minHeight: 32,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+  },
+  feedbackChipPressed: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+  },
+  feedbackChipText: {
+    color: colors.muted,
+    fontSize: typography.small,
+    fontWeight: "900",
   },
   reviewGrid: {
     gap: spacing.sm,
