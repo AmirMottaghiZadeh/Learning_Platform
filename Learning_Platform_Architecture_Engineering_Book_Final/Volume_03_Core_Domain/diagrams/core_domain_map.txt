@@ -1,0 +1,4 @@
+Learner -> Learning Session -> Assessment Item -> Answer
+Learning Object -> Knowledge Source -> Assessment Item
+Answer -> Event -> Progress -> Mastery
+Mistake -> Review Item -> Review Session

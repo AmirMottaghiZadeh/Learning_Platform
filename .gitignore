@@ -1,0 +1,75 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+*.sqlite3
+*.sqlite3-*
+db.sqlite3
+media/
+staticfiles/
+
+# Backend generated artifacts
+backend/db.sqlite3
+backend/db.sqlite3-*
+backend/exports/
+backend/backups/
+backend/staticfiles/
+backend/media/
+
+# Node / Expo / React Native
+node_modules/
+frontend/node_modules/
+frontend/.expo/
+frontend/.expo-shared/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+web-build/
+dist/
+build/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.kate-swp
+*~
+.idea/
+.vscode/
+
+# Codex/local agent workspace metadata
+.codex/
+.agents/
+**/.codex/
+**/.agents/
+
+# Logs and runtime files
+*.log
+logs/
+.run.txt*
+run.txt
+resume.txt
+
+# GitHub helper output
+*.bak
+*.tmp
+

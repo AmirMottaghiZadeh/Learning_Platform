@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "K_Game Learning",
+    "slug": "k-game-learning",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "kgame",
+    "userInterfaceStyle": "light",
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

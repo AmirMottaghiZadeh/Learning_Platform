@@ -1,0 +1,1 @@
+Product Vision -> MVP -> Learning Loop -> Metrics -> Release Strategy

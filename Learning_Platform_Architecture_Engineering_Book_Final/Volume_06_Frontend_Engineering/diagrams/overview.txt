@@ -1,0 +1,1 @@
+Mobile/Web UI -> API Client -> Server State -> Platform API. UI renders; backend decides learning truth.

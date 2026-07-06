@@ -1,0 +1,1 @@
+Normalize medical data text by removing extra whitespace, converting Arabic ي/ك to Persian ی/ک where appropriate, standardizing dosage forms and units, and preserving clinical meaning. Return suggestions only.

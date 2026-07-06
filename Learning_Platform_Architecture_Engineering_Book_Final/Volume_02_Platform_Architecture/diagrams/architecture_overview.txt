@@ -1,0 +1,3 @@
+Clients -> API -> Application Services -> Rule Engines -> Domain -> Infrastructure
+Products extend the platform through plugins.
+Platform Core never imports product code.

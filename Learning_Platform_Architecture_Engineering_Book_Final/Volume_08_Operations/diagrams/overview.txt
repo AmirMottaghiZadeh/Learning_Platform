@@ -1,0 +1,1 @@
+CI/CD -> Staging -> Production -> Monitoring -> Incident Response -> Improvement
