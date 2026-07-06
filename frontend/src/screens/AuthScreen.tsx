@@ -42,7 +42,7 @@ export function AuthScreen() {
         </View>
       </View>
 
-      <LearningCard tone="primary">
+      <LearningCard tone="mint">
         <View style={styles.segment}>
           <Pressable
             accessibilityRole="button"
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   brandMark: {
     width: 58,
     height: 58,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.primary,
     color: "#FFFFFF",
     fontSize: 34,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   segment: {
     minHeight: 46,
     flexDirection: "row",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: radius.pill,
     padding: spacing.xs,
     marginBottom: spacing.lg,
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: 50,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,

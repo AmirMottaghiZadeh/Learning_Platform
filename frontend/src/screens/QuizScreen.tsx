@@ -328,7 +328,7 @@ export function QuizScreen() {
 
   return (
     <ScreenContainer>
-      <ScreenHeader eyebrow="Practice" title="Quiz" />
+      <ScreenHeader eyebrow="Focused practice" title="Quiz" />
       {error ? <ErrorState message={error} onRetry={loadCategories} /> : null}
 
       {!session ? (
@@ -353,7 +353,7 @@ export function QuizScreen() {
               </View>
             </LearningCard>
           ) : null}
-          <LearningCard>
+          <LearningCard tone="lavender">
             <Text style={styles.label}>نوع سؤال</Text>
             <View style={styles.topicWrap}>
               {QUESTION_TYPES.map((type) => (
@@ -370,7 +370,7 @@ export function QuizScreen() {
               ))}
             </View>
           </LearningCard>
-          <LearningCard tone="blue">
+          <LearningCard tone="mint">
             <Text style={styles.label}>Mode</Text>
             <View style={styles.topicWrap}>
               {(["random", "category"] as const).map((mode) => (
@@ -387,7 +387,7 @@ export function QuizScreen() {
               ))}
             </View>
           </LearningCard>
-          <LearningCard>
+          <LearningCard tone="blue">
             <Text style={styles.label}>Questions</Text>
             <View style={styles.topicWrap}>
               {GAME_COUNTS.map((count) => (
@@ -405,7 +405,7 @@ export function QuizScreen() {
             </View>
           </LearningCard>
           {selectedMode === "category" ? (
-            <LearningCard>
+            <LearningCard tone="sage">
               <Text style={styles.label}>Category</Text>
               <View style={styles.topicWrap}>
                 {categories.map((category) => (
@@ -427,7 +427,7 @@ export function QuizScreen() {
         </>
       ) : (
         <>
-          <LearningCard tone="primary">
+          <LearningCard tone="lavender">
             <View style={styles.sessionTop}>
               <Text style={styles.sessionMeta}>{session.mode}</Text>
               <Text style={styles.sessionMeta}>Score {session.score}</Text>
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: "rgba(255,255,255,0.72)",
     borderWidth: 1,
     borderColor: colors.border,
     marginRight: spacing.sm,
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: "rgba(255,255,255,0.72)",
     borderWidth: 1,
     borderColor: colors.border,
     marginRight: spacing.sm,
@@ -619,11 +619,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   timerPanel: {
-    minHeight: 48,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceMuted,
+    minHeight: 52,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySoft,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.primaryMuted,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginBottom: spacing.sm,
@@ -673,22 +673,23 @@ const styles = StyleSheet.create({
     color: colors.softText,
   },
   timerTrack: {
-    height: 8,
+    height: 9,
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceMuted,
     overflow: "hidden",
     marginBottom: spacing.lg,
   },
   timerFill: {
-    height: 8,
+    height: 9,
     borderRadius: radius.pill,
   },
   prompt: {
     color: colors.ink,
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: "900",
-    lineHeight: 29,
-    marginBottom: spacing.sm,
+    lineHeight: 32,
+    marginBottom: spacing.md,
+    textAlign: "center",
   },
   subtitle: {
     color: colors.muted,
@@ -711,7 +712,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
     alignItems: "center",
     justifyContent: "center",
@@ -726,10 +727,10 @@ const styles = StyleSheet.create({
   },
   choice: {
     minHeight: 58,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
     paddingHorizontal: spacing.lg,
     marginTop: spacing.md,
     flexDirection: "row",
@@ -744,7 +745,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   feedbackBox: {
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.sageSoft,
     padding: spacing.lg,
     flexDirection: "row",

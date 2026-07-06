@@ -43,7 +43,7 @@ export function LearningCard({
   tone = "plain",
 }: {
   children: React.ReactNode;
-  tone?: "plain" | "primary" | "sage" | "rose" | "amber" | "blue";
+  tone?: "plain" | "primary" | "sage" | "rose" | "amber" | "blue" | "lavender" | "mint";
 }) {
   return <View style={[styles.card, toneStyles[tone]]}>{children}</View>;
 }
@@ -173,10 +173,10 @@ export function SectionTitle({children}: {children: React.ReactNode}) {
 }
 
 const baseShadow = {
-  shadowColor: "#24172A",
-  shadowOpacity: 0.07,
-  shadowRadius: 18,
-  shadowOffset: {width: 0, height: 8},
+  shadowColor: "#17343A",
+  shadowOpacity: 0.06,
+  shadowRadius: 20,
+  shadowOffset: {width: 0, height: 10},
   elevation: 2,
 };
 
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 760,
     alignSelf: "center",
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.xl,
     paddingBottom: 112,
   },
@@ -205,19 +205,20 @@ const styles = StyleSheet.create({
     paddingRight: spacing.md,
   },
   eyebrow: {
-    color: colors.muted,
+    color: colors.primary,
     fontSize: typography.small,
-    fontWeight: "700",
+    fontWeight: "900",
     marginBottom: spacing.xs,
+    textTransform: "uppercase",
   },
   title: {
     color: colors.ink,
     fontSize: typography.title,
-    fontWeight: "800",
-    lineHeight: 34,
+    fontWeight: "900",
+    lineHeight: 36,
   },
   card: {
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -233,6 +234,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
   primaryButtonText: {
     color: "#FFFFFF",
@@ -243,7 +246,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     minHeight: 44,
     borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
     paddingHorizontal: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
@@ -264,8 +267,8 @@ const styles = StyleSheet.create({
     transform: [{scale: 0.99}],
   },
   iconBadge: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -274,7 +277,7 @@ const styles = StyleSheet.create({
   statTile: {
     width: "48%",
     minHeight: 132,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -295,7 +298,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     height: 10,
     borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.backgroundElevated,
     overflow: "hidden",
   },
   progressFill: {
@@ -305,7 +308,7 @@ const styles = StyleSheet.create({
   },
   stateBox: {
     minHeight: 150,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -339,11 +342,13 @@ const styles = StyleSheet.create({
 
 const toneStyles = StyleSheet.create({
   plain: {},
-  primary: {backgroundColor: colors.primarySoft},
-  sage: {backgroundColor: colors.sageSoft},
-  rose: {backgroundColor: colors.roseSoft},
-  amber: {backgroundColor: colors.amberSoft},
-  blue: {backgroundColor: colors.blueSoft},
+  primary: {backgroundColor: colors.primarySoft, borderColor: colors.primaryMuted},
+  sage: {backgroundColor: colors.sageSoft, borderColor: "#BFD6CB"},
+  rose: {backgroundColor: colors.roseSoft, borderColor: "#E2C0C7"},
+  amber: {backgroundColor: colors.amberSoft, borderColor: "#E2CCA7"},
+  blue: {backgroundColor: colors.blueSoft, borderColor: "#BED4E5"},
+  lavender: {backgroundColor: colors.lavenderSoft, borderColor: "#CEC7DC"},
+  mint: {backgroundColor: colors.mintSoft, borderColor: "#BBDACF"},
 });
 
 const badgeStyles = StyleSheet.create({
@@ -352,4 +357,6 @@ const badgeStyles = StyleSheet.create({
   rose: {backgroundColor: colors.roseSoft},
   amber: {backgroundColor: colors.amberSoft},
   blue: {backgroundColor: colors.blueSoft},
+  lavender: {backgroundColor: colors.lavenderSoft},
+  mint: {backgroundColor: colors.mintSoft},
 });

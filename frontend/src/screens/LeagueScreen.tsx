@@ -47,10 +47,10 @@ export function LeagueScreen() {
         action={<SecondaryButton label="Refresh" Icon={RefreshCw} onPress={load} />}
       />
 
-      <LearningCard tone="amber">
+      <LearningCard tone="lavender">
         <View style={styles.rankTop}>
           <View style={styles.trophy}>
-            <Trophy size={24} color={colors.amber} />
+            <Trophy size={24} color={colors.lavender} />
           </View>
           <View style={styles.rankText}>
             <Text style={styles.rankLabel}>My rank</Text>
@@ -65,7 +65,7 @@ export function LeagueScreen() {
         <EmptyState title="No league results" />
       ) : (
         entries.map((entry) => (
-          <LearningCard key={`${entry.rank}-${entry.result.id}`}>
+          <LearningCard key={`${entry.rank}-${entry.result.id}`} tone={entry.rank <= 3 ? "amber" : "plain"}>
             <View style={styles.row}>
               <View style={styles.rankPill}>
                 <Medal size={16} color={colors.primary} />
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   trophy: {
     width: 52,
     height: 52,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",

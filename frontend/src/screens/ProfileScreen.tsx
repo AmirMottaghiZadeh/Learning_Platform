@@ -12,12 +12,12 @@ export function ProfileScreen() {
   return (
     <ScreenContainer>
       <ScreenHeader eyebrow="Account" title="Profile" />
-      <LearningCard tone="blue">
-        <UserRound size={28} color={colors.blue} />
+      <LearningCard tone="mint">
+        <UserRound size={28} color={colors.primary} />
         <Text style={styles.name}>{user?.username}</Text>
         <Text style={styles.meta}>{user?.email || "No email"}</Text>
       </LearningCard>
-      <LearningCard>
+      <LearningCard tone="blue">
         <Server size={24} color={colors.primary} />
         <Text style={styles.label}>API</Text>
         <Text style={styles.meta}>{API_BASE_URL}</Text>

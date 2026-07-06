@@ -41,7 +41,7 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
   return (
     <ScreenContainer>
       <ScreenHeader
-        eyebrow={`Hello ${user?.username ?? "learner"}`}
+        eyebrow={`Clinical learning · ${user?.username ?? "learner"}`}
         title="K_Game"
         action={
           <Pressable accessibilityRole="button" onPress={load} style={styles.refresh}>
@@ -50,17 +50,27 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
         }
       />
 
-      <LearningCard tone="primary">
+      <LearningCard tone="mint">
         <View style={styles.heroTop}>
           <View style={styles.heroIcon}>
             <Sparkles size={24} color={colors.primary} />
           </View>
           <View style={styles.heroTextWrap}>
-            <Text style={styles.heroTitle}>Today</Text>
-            <Text style={styles.heroMeta}>{summary.accuracy_percent}% accuracy</Text>
+            <Text style={styles.heroTitle}>Today's learning plan</Text>
+            <Text style={styles.heroMeta}>Accuracy {summary.accuracy_percent}% · {summary.due_flashcards} cards due</Text>
           </View>
         </View>
         <ProgressBar value={summary.accuracy_percent} />
+        <View style={styles.heroStats}>
+          <View style={styles.heroStatPill}>
+            <Text style={styles.heroStatValue}>{summary.xp}</Text>
+            <Text style={styles.heroStatLabel}>XP</Text>
+          </View>
+          <View style={styles.heroStatPill}>
+            <Text style={styles.heroStatValue}>{summary.current_streak}</Text>
+            <Text style={styles.heroStatLabel}>Streak</Text>
+          </View>
+        </View>
         <View style={styles.quickRow}>
           <Pressable style={styles.quickAction} onPress={() => onNavigate("quiz")}>
             <Brain size={18} color={colors.ink} />
@@ -74,10 +84,10 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
       </LearningCard>
 
       <View style={styles.statGrid}>
-        <StatTile label="XP" value={summary.xp} Icon={Target} tone="amber" />
+        <StatTile label="XP" value={summary.xp} Icon={Target} tone="mint" />
         <StatTile label="Streak" value={summary.current_streak} Icon={Flame} tone="rose" />
         <StatTile label="Due cards" value={summary.due_flashcards} Icon={Layers} tone="blue" />
-        <StatTile label="League rank" value={dashboard.league.rank ?? "-"} Icon={Trophy} tone="sage" />
+        <StatTile label="League rank" value={dashboard.league.rank ?? "-"} Icon={Trophy} tone="lavender" />
       </View>
 
       <SectionTitle>Recommendations</SectionTitle>
@@ -135,7 +145,7 @@ const styles = StyleSheet.create({
   heroIcon: {
     width: 52,
     height: 52,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
@@ -146,7 +156,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     color: colors.ink,
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: "900",
   },
   heroMeta: {
@@ -157,6 +167,7 @@ const styles = StyleSheet.create({
   quickRow: {
     flexDirection: "row",
     marginTop: spacing.lg,
+    gap: spacing.sm,
   },
   quickAction: {
     flex: 1,
@@ -166,7 +177,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-    marginRight: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   quickText: {
     color: colors.ink,
@@ -177,6 +189,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+  },
+  heroStats: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  heroStatPill: {
+    minHeight: 46,
+    flex: 1,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    justifyContent: "center",
+  },
+  heroStatValue: {
+    color: colors.ink,
+    fontWeight: "900",
+    fontSize: typography.heading,
+  },
+  heroStatLabel: {
+    color: colors.muted,
+    fontWeight: "800",
+    fontSize: typography.small,
   },
   cardTitle: {
     color: colors.ink,

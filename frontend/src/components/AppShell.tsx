@@ -77,14 +77,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
-    backgroundColor: "rgba(244,241,238,0.92)",
+    backgroundColor: "rgba(245,248,247,0.94)",
   },
   nav: {
     maxWidth: 760,
     alignSelf: "center",
     width: "100%",
     minHeight: 72,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -92,6 +92,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.xs,
+    shadowColor: "#17343A",
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: {width: 0, height: 8},
+    elevation: 3,
   },
   navItem: {
     width: "14.2%",
@@ -102,6 +107,8 @@ const styles = StyleSheet.create({
   },
   navItemActive: {
     backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.primaryMuted,
   },
   navText: {
     color: colors.muted,

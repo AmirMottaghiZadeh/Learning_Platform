@@ -47,11 +47,11 @@ export function StatisticsScreen() {
         <StatTile label="Answered" value={statistics.summary.questions_answered} Icon={Activity} tone="blue" />
         <StatTile label="Accuracy" value={`${statistics.summary.accuracy_percent}%`} Icon={CheckCircle2} tone="sage" />
         <StatTile label="XP" value={statistics.summary.xp} Icon={Target} tone="amber" />
-        <StatTile label="Reviews" value={statistics.summary.review_count} Icon={BarChart3} tone="primary" />
+        <StatTile label="Reviews" value={statistics.summary.review_count} Icon={BarChart3} tone="lavender" />
       </View>
 
       <SectionTitle>Daily activity</SectionTitle>
-      <LearningCard>
+      <LearningCard tone="mint">
         {statistics.daily_activity.map((day) => {
           const total = day.questions_answered + day.reviews_completed + day.mistakes_created;
           return (
@@ -89,7 +89,7 @@ export function StatisticsScreen() {
 
       <SectionTitle>Topics</SectionTitle>
       {statistics.topics.map((topic) => (
-        <LearningCard key={topic.id}>
+          <LearningCard key={topic.id} tone="blue">
           <View style={styles.topicTop}>
             <Text style={styles.topicTitle}>{topic.topic_label}</Text>
             <Text style={styles.topicPercent}>{topic.accuracy_percent}%</Text>

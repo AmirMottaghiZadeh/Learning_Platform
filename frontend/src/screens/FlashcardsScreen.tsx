@@ -255,7 +255,7 @@ export function FlashcardsScreen() {
   return (
     <ScreenContainer>
       <ScreenHeader
-        eyebrow={selectedBox ? `${selectedQuestionLabel} · ${selectedCategoryLabel} · Box ${selectedBox}` : `${selectedQuestionLabel} · ${selectedCategoryLabel}`}
+        eyebrow={selectedBox ? `Leitner review · ${selectedQuestionLabel} · ${selectedCategoryLabel} · Box ${selectedBox}` : `Leitner review · ${selectedQuestionLabel} · ${selectedCategoryLabel}`}
         title="Flashcards"
       />
       {savedDeck ? (
@@ -270,7 +270,7 @@ export function FlashcardsScreen() {
           </View>
         </LearningCard>
       ) : null}
-      <LearningCard>
+      <LearningCard tone="lavender">
         <Text style={styles.sectionLabel}>نوع سؤال</Text>
         <View style={styles.boxRow}>
           {QUESTION_TYPES.map((type) => (
@@ -287,7 +287,7 @@ export function FlashcardsScreen() {
           ))}
         </View>
       </LearningCard>
-      <LearningCard tone="blue">
+      <LearningCard tone="mint">
         <Text style={styles.sectionLabel}>Category</Text>
         <View style={styles.boxRow}>
           <Pressable
@@ -311,7 +311,7 @@ export function FlashcardsScreen() {
           ))}
         </View>
       </LearningCard>
-      <LearningCard>
+      <LearningCard tone="blue">
         <Text style={styles.sectionLabel}>Leitner boxes</Text>
         {deckSummary ? (
           <View style={styles.deckStats}>
@@ -394,7 +394,9 @@ export function FlashcardsScreen() {
                 </View>
                 <View>
                   <Text style={styles.state}>{revealed ? "پشت کارت" : "روی کارت"}</Text>
-                  <Text style={styles.stateMeta}>{card.box ? `Box ${card.box}` : "New"}</Text>
+                  <Text style={styles.stateMeta}>
+                    {card.box ? `Box ${card.box}` : "New"} · {cardIndex + 1}/{cards.length}
+                  </Text>
                 </View>
               </View>
               {revealed ? (
@@ -495,8 +497,8 @@ const styles = StyleSheet.create({
   deckStat: {
     flex: 1,
     minHeight: 64,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.lg,
+    backgroundColor: "rgba(255,255,255,0.72)",
     borderWidth: 1,
     borderColor: colors.border,
     justifyContent: "center",
@@ -516,7 +518,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
     minWidth: 78,
     borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: "rgba(255,255,255,0.74)",
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: "center",
@@ -528,7 +530,7 @@ const styles = StyleSheet.create({
   categoryChip: {
     minHeight: 40,
     borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: "rgba(255,255,255,0.74)",
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: "center",
@@ -549,15 +551,16 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   flashcardShell: {
-    minHeight: 280,
+    minHeight: 304,
     marginBottom: spacing.md,
     position: "relative",
   },
   flashcard: {
-    minHeight: 280,
-    borderRadius: radius.md,
+    minHeight: 304,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    padding: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xl,
     justifyContent: "space-between",
     shadowColor: "#24172A",
     shadowOpacity: 0.08,
@@ -566,12 +569,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   flashcardFront: {
-    backgroundColor: colors.sageSoft,
-    borderColor: colors.sage,
+    backgroundColor: colors.surface,
+    borderColor: colors.primaryMuted,
   },
   flashcardBack: {
-    backgroundColor: colors.roseSoft,
-    borderColor: colors.rose,
+    backgroundColor: colors.mintSoft,
+    borderColor: "#BBDACF",
   },
   cardNavButton: {
     position: "absolute",
@@ -592,10 +595,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardNavButtonLeft: {
-    left: spacing.sm,
+    left: spacing.xs,
   },
   cardNavButtonRight: {
-    right: spacing.sm,
+    right: spacing.xs,
   },
   cardNavButtonDisabled: {
     opacity: 0.35,
@@ -611,7 +614,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceMuted,
     marginRight: spacing.md,
   },
   state: {
@@ -627,7 +630,7 @@ const styles = StyleSheet.create({
   },
   prompt: {
     color: colors.ink,
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "900",
     lineHeight: 34,
     textAlign: "center",
@@ -662,7 +665,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.md,
