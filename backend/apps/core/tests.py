@@ -53,3 +53,23 @@ class HealthCheckTests(TestCase):
         call_command("backup_database", "--dry-run", stdout=output)
 
         self.assertIn("database-", output.getvalue())
+
+
+class OpenAPISchemaTests(TestCase):
+    def test_versioned_schema_includes_platform_api_paths(self):
+        response = Client().get("/api/v1/schema/?format=json")
+
+        self.assertEqual(response.status_code, 200)
+        paths = response.json()["paths"]
+        expected_paths = {
+            "/api/v1/health/",
+            "/api/v1/auth/login/",
+            "/api/v1/me/dashboard/",
+            "/api/v1/drugs/",
+            "/api/v1/games/",
+            "/api/v1/league/summary/",
+            "/api/v1/flashcards/",
+        }
+
+        self.assertTrue(expected_paths.issubset(paths.keys()))
+        self.assertGreater(len(paths), len(expected_paths))

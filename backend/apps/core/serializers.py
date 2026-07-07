@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 class HealthChecksSerializer(serializers.Serializer):
     database = serializers.CharField()
-    database_latency_ms = serializers.FloatField(required=False)
+    database_latency_ms = serializers.FloatField(required=False, allow_null=True)
 
 
 class HealthCheckSerializer(serializers.Serializer):

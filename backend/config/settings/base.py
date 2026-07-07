@@ -96,7 +96,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Versioned API contract for the reusable Learning Platform and K_Game reference implementation.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    "SERVE_URLCONF": "config.api_urls",
+    "SCHEMA_PATH_PREFIX": r"/api/v1",
     "PREPROCESSING_HOOKS": [
         "apps.core.schema.filter_versioned_api_paths",
     ],
