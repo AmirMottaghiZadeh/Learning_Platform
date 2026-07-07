@@ -50,3 +50,8 @@ export const typography = {
   body: 15,
   small: 12,
 };
+
+export const layout = {
+  bottomNavHeight: 72,
+  bottomNavReservedSpace: 152,
+};

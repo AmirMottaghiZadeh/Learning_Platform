@@ -4,7 +4,7 @@ import type {DimensionValue} from "react-native";
 import type {LucideIcon} from "lucide-react-native";
 import {AlertCircle, RefreshCw} from "lucide-react-native";
 
-import {colors, radius, spacing, typography} from "../design/tokens";
+import {colors, layout, radius, spacing, typography} from "../design/tokens";
 
 export function ScreenContainer({children}: {children: React.ReactNode}) {
   return (
@@ -14,6 +14,7 @@ export function ScreenContainer({children}: {children: React.ReactNode}) {
       showsVerticalScrollIndicator={false}
     >
       {children}
+      <View pointerEvents="none" style={styles.bottomNavSpacer} />
     </ScrollView>
   );
 }
@@ -191,7 +192,10 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xl,
-    paddingBottom: 112,
+    paddingBottom: spacing.xl,
+  },
+  bottomNavSpacer: {
+    height: layout.bottomNavReservedSpace,
   },
   header: {
     minHeight: 72,

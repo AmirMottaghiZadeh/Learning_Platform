@@ -12,7 +12,7 @@ import {
 import type {LucideIcon} from "lucide-react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 
-import {colors, radius, spacing} from "../design/tokens";
+import {colors, layout, radius, spacing} from "../design/tokens";
 import type {ScreenKey} from "../navigation/types";
 
 const navItems: Array<{key: ScreenKey; label: string; Icon: LucideIcon}> = [
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     maxWidth: 760,
     alignSelf: "center",
     width: "100%",
-    minHeight: 72,
+    minHeight: layout.bottomNavHeight,
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
