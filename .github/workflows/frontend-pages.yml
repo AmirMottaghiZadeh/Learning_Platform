@@ -22,7 +22,7 @@ jobs:
         working-directory: frontend
     env:
       EXPO_BASE_URL: /Learning_Platform
-      EXPO_PUBLIC_API_BASE_URL: http://amirmtz.runflare.run/api/v1
+      EXPO_PUBLIC_API_BASE_URL: https://amirmtz.runflare.run/api/v1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -39,7 +39,7 @@ https://AmirMottaghiZadeh.github.io/Learning_Platform/
 Production API base:
 
 ```text
-http://amirmtz.runflare.run/api/v1
+https://amirmtz.runflare.run/api/v1
 ```
 
 Deployment is handled by `.github/workflows/frontend-pages.yml` on every push to `main`.
@@ -55,7 +55,7 @@ Required build-time environment variables:
 
 ```text
 EXPO_BASE_URL=/Learning_Platform
-EXPO_PUBLIC_API_BASE_URL=http://amirmtz.runflare.run/api/v1
+EXPO_PUBLIC_API_BASE_URL=https://amirmtz.runflare.run/api/v1
 ```
 
 `EXPO_BASE_URL` is used only for hosted builds so Expo emits asset paths under `/Learning_Platform/`.
