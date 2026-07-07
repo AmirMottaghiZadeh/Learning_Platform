@@ -28,6 +28,45 @@ Override with:
 EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api/v1
 ```
 
+## GitHub Pages Deployment
+
+Production frontend URL:
+
+```text
+https://AmirMottaghiZadeh.github.io/Learning_Platform/
+```
+
+Production API base:
+
+```text
+http://amirmtz.runflare.run/api/v1
+```
+
+Deployment is handled by `.github/workflows/frontend-pages.yml` on every push to `main`.
+
+The workflow:
+
+- uses Node 20
+- runs `npm ci` inside `frontend`
+- builds with `npm run build:web`
+- deploys `frontend/dist` to GitHub Pages
+
+Required build-time environment variables:
+
+```text
+EXPO_BASE_URL=/Learning_Platform
+EXPO_PUBLIC_API_BASE_URL=http://amirmtz.runflare.run/api/v1
+```
+
+`EXPO_BASE_URL` is used only for hosted builds so Expo emits asset paths under `/Learning_Platform/`.
+Local development does not need it and still runs at the root path:
+
+```bash
+npm run web -- --port 8081
+```
+
+For client-side routing fallback on GitHub Pages, the workflow copies `dist/index.html` to `dist/404.html` and writes `dist/.nojekyll`.
+
 ## Architecture Rules
 
 - Frontend renders platform state.
@@ -54,4 +93,3 @@ EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api/v1
 - League consumes the unified backend league summary.
 - Statistics shows daily activity, topic progress, and weak-topic signals.
 - The app remains mobile-first and runs on React Native Web.
-
