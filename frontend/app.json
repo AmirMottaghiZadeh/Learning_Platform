@@ -4,11 +4,13 @@
     "slug": "k-game-learning",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "scheme": "kgame",
     "userInterfaceStyle": "light",
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [],
     "experiments": {
