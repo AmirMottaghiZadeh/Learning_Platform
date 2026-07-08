@@ -1,23 +1,30 @@
 import React from "react";
 import {ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
-import type {DimensionValue} from "react-native";
+import type {DimensionValue, ScrollViewProps, ViewProps} from "react-native";
 import type {LucideIcon} from "lucide-react-native";
 import {AlertCircle, RefreshCw} from "lucide-react-native";
 
 import {colors, layout, radius, spacing, typography} from "../design/tokens";
 
-export function ScreenContainer({children}: {children: React.ReactNode}) {
+type ScreenContainerProps = {children: React.ReactNode} & ScrollViewProps;
+
+export const ScreenContainer = React.forwardRef<ScrollView, ScreenContainerProps>(function ScreenContainer(
+  {children, ...scrollViewProps},
+  ref,
+) {
   return (
     <ScrollView
+      ref={ref}
       style={styles.screen}
       contentContainerStyle={styles.screenContent}
       showsVerticalScrollIndicator={false}
+      {...scrollViewProps}
     >
       {children}
       <View pointerEvents="none" style={styles.bottomNavSpacer} />
     </ScrollView>
   );
-}
+});
 
 export function ScreenHeader({
   eyebrow,
@@ -42,11 +49,16 @@ export function ScreenHeader({
 export function LearningCard({
   children,
   tone = "plain",
+  ...viewProps
 }: {
   children: React.ReactNode;
   tone?: "plain" | "primary" | "sage" | "rose" | "amber" | "blue" | "lavender" | "mint";
-}) {
-  return <View style={[styles.card, toneStyles[tone]]}>{children}</View>;
+} & ViewProps) {
+  return (
+    <View {...viewProps} style={[styles.card, toneStyles[tone], viewProps.style]}>
+      {children}
+    </View>
+  );
 }
 
 export function IconBadge({Icon, tone = "primary"}: {Icon: LucideIcon; tone?: keyof typeof badgeStyles}) {

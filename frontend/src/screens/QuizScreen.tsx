@@ -14,6 +14,7 @@ import {
   ScreenHeader,
   SecondaryButton,
 } from "../components/ui";
+import {useSectionAutoScroll} from "../components/useSectionAutoScroll";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
 import type {GameAnswer, GameQuestion, GameSession, QuestionType, TargetCategory} from "../types/api";
@@ -42,6 +43,8 @@ type SavedQuizSession = {
   savedAt: string;
 };
 
+type QuizSetupSection = "mode" | "count" | "category" | "start";
+
 function isQuestionType(value: string): value is QuestionType {
   return QUESTION_TYPES.some((type) => type.key === value);
 }
@@ -62,6 +65,7 @@ export function QuizScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const categoryRequestRef = useRef(0);
+  const {scrollRef, registerSection, scrollToSection} = useSectionAutoScroll<QuizSetupSection>();
 
   const resetCurrentQuiz = useCallback(() => {
     setSession(null);
@@ -149,34 +153,50 @@ export function QuizScreen() {
   }
 
   function chooseQuestionType(questionType: QuestionType) {
-    if (questionType === selectedQuestionType) return;
+    if (questionType === selectedQuestionType) {
+      scrollToSection("mode");
+      return;
+    }
     resetSelectionQuestions();
     setSelectedQuestionType(questionType);
     setSelectedCategory("");
+    scrollToSection("mode");
   }
 
   function chooseMode(mode: "random" | "category") {
-    if (mode === selectedMode) return;
+    if (mode === selectedMode) {
+      scrollToSection(mode === "category" ? "category" : "count");
+      return;
+    }
     resetCurrentQuiz();
     setAnswer(null);
     setAnsweredQuestion(null);
     setSelectedMode(mode);
+    scrollToSection(mode === "category" ? "category" : "count");
   }
 
   function chooseCount(count: number) {
-    if (count === selectedCount) return;
+    if (count === selectedCount) {
+      scrollToSection(selectedMode === "category" ? "category" : "start");
+      return;
+    }
     resetCurrentQuiz();
     setAnswer(null);
     setAnsweredQuestion(null);
     setSelectedCount(count);
+    scrollToSection(selectedMode === "category" ? "category" : "start");
   }
 
   function chooseCategory(categoryKey: string) {
-    if (categoryKey === selectedCategory) return;
+    if (categoryKey === selectedCategory) {
+      scrollToSection("start");
+      return;
+    }
     resetCurrentQuiz();
     setAnswer(null);
     setAnsweredQuestion(null);
     setSelectedCategory(categoryKey);
+    scrollToSection("start");
   }
 
   async function saveCurrentQuizForLater() {
@@ -327,7 +347,7 @@ export function QuizScreen() {
   if (loading && !session) return <LoadingState label="Loading quiz" />;
 
   return (
-    <ScreenContainer>
+    <ScreenContainer ref={scrollRef}>
       <ScreenHeader eyebrow="Focused practice" title="Quiz" />
       {error ? <ErrorState message={error} onRetry={loadCategories} /> : null}
 
@@ -370,7 +390,7 @@ export function QuizScreen() {
               ))}
             </View>
           </LearningCard>
-          <LearningCard tone="mint">
+          <LearningCard tone="mint" onLayout={registerSection("mode")}>
             <Text style={styles.label}>Mode</Text>
             <View style={styles.topicWrap}>
               {(["random", "category"] as const).map((mode) => (
@@ -387,7 +407,7 @@ export function QuizScreen() {
               ))}
             </View>
           </LearningCard>
-          <LearningCard tone="blue">
+          <LearningCard tone="blue" onLayout={registerSection("count")}>
             <Text style={styles.label}>Questions</Text>
             <View style={styles.topicWrap}>
               {GAME_COUNTS.map((count) => (
@@ -405,7 +425,7 @@ export function QuizScreen() {
             </View>
           </LearningCard>
           {selectedMode === "category" ? (
-            <LearningCard tone="sage">
+            <LearningCard tone="sage" onLayout={registerSection("category")}>
               <Text style={styles.label}>Category</Text>
               <View style={styles.topicWrap}>
                 {categories.map((category) => (
@@ -423,7 +443,9 @@ export function QuizScreen() {
               </View>
             </LearningCard>
           ) : null}
-          <PrimaryButton label="Start quiz" Icon={PlayCircle} onPress={start} disabled={busy} />
+          <View onLayout={registerSection("start")}>
+            <PrimaryButton label="Start quiz" Icon={PlayCircle} onPress={start} disabled={busy} />
+          </View>
         </>
       ) : (
         <>

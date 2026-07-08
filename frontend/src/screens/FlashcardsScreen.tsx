@@ -5,6 +5,7 @@ import {Bookmark, CheckCircle2, ChevronLeft, ChevronRight, Eye, Layers, Plus, Ro
 
 import {platformApi} from "../api/platform";
 import {EmptyState, ErrorState, LearningCard, LoadingState, PrimaryButton, ScreenContainer, ScreenHeader, SecondaryButton} from "../components/ui";
+import {useSectionAutoScroll} from "../components/useSectionAutoScroll";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
 import type {FlashcardBoxSummary, FlashcardDeckSummary, FlashcardRating, FlashcardState, QuestionType, TargetCategory} from "../types/api";
@@ -26,6 +27,8 @@ type SavedFlashcardDeck = {
   savedAt: string;
 };
 
+type FlashcardSection = "category" | "box" | "deck";
+
 export function FlashcardsScreen() {
   const {token, user} = useAuth();
   const [cards, setCards] = useState<FlashcardState[]>([]);
@@ -43,6 +46,7 @@ export function FlashcardsScreen() {
   const [error, setError] = useState<string | null>(null);
   const loadRequestRef = useRef(0);
   const avoidNextCardIdRef = useRef<number | null>(null);
+  const {scrollRef, registerSection, scrollToSection} = useSectionAutoScroll<FlashcardSection>();
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -175,24 +179,36 @@ export function FlashcardsScreen() {
   }
 
   function chooseCategory(categoryKey: string) {
-    if (categoryKey === selectedCategory) return;
+    if (categoryKey === selectedCategory) {
+      scrollToSection("box");
+      return;
+    }
     resetVisibleCards();
     setSelectedCategory(categoryKey);
     setSelectedBox(null);
+    scrollToSection("box");
   }
 
   function chooseQuestionType(questionType: QuestionType) {
-    if (questionType === selectedQuestionType) return;
+    if (questionType === selectedQuestionType) {
+      scrollToSection("category");
+      return;
+    }
     resetVisibleCards();
     setSelectedQuestionType(questionType);
     setSelectedCategory("");
     setSelectedBox(null);
+    scrollToSection("category");
   }
 
   function chooseBox(box: number | null) {
-    if (box === selectedBox) return;
+    if (box === selectedBox) {
+      scrollToSection("deck");
+      return;
+    }
     resetVisibleCards();
     setSelectedBox(box);
+    scrollToSection("deck");
   }
 
   async function saveCurrentDeckForLater() {
@@ -253,7 +269,7 @@ export function FlashcardsScreen() {
     : "All";
 
   return (
-    <ScreenContainer>
+    <ScreenContainer ref={scrollRef}>
       <ScreenHeader
         eyebrow={selectedBox ? `Leitner review · ${selectedQuestionLabel} · ${selectedCategoryLabel} · Box ${selectedBox}` : `Leitner review · ${selectedQuestionLabel} · ${selectedCategoryLabel}`}
         title="Flashcards"
@@ -287,7 +303,7 @@ export function FlashcardsScreen() {
           ))}
         </View>
       </LearningCard>
-      <LearningCard tone="mint">
+      <LearningCard tone="mint" onLayout={registerSection("category")}>
         <Text style={styles.sectionLabel}>Category</Text>
         <View style={styles.boxRow}>
           <Pressable
@@ -311,7 +327,7 @@ export function FlashcardsScreen() {
           ))}
         </View>
       </LearningCard>
-      <LearningCard tone="blue">
+      <LearningCard tone="blue" onLayout={registerSection("box")}>
         <Text style={styles.sectionLabel}>Leitner boxes</Text>
         {deckSummary ? (
           <View style={styles.deckStats}>
@@ -356,12 +372,13 @@ export function FlashcardsScreen() {
           <SecondaryButton label="ذخیره روند فعلی" Icon={Bookmark} onPress={saveCurrentDeckForLater} disabled={busy} />
         </View>
       </LearningCard>
-      {loading ? (
-        <LoadingState label="Loading flashcards" />
-      ) : error ? (
-        <ErrorState message={error} onRetry={load} />
-      ) : !card ? (
-        <>
+      <View onLayout={registerSection("deck")}>
+        {loading ? (
+          <LoadingState label="Loading flashcards" />
+        ) : error ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : !card ? (
+          <>
           <EmptyState title={selectedBox ? "This box is empty" : "No cards in this deck"} />
           <PrimaryButton
             label={deckSummary?.unscheduled_sources ? "Create all cards" : "Refresh deck"}
@@ -369,9 +386,9 @@ export function FlashcardsScreen() {
             onPress={seedCards}
             disabled={busy}
           />
-        </>
-      ) : (
-        <>
+          </>
+        ) : (
+          <>
           <View style={styles.flashcardShell}>
             <Pressable
               accessibilityLabel="کارت قبلی"
@@ -470,9 +487,9 @@ export function FlashcardsScreen() {
               <ChevronRight size={22} color={colors.muted} />
             </Pressable>
           </View>
-
-        </>
-      )}
+          </>
+        )}
+      </View>
     </ScreenContainer>
   );
 }
