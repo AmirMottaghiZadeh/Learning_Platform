@@ -401,11 +401,63 @@ export function FlashcardsScreen() {
               </View>
               {revealed ? (
                 <>
-                  <Text style={styles.answer}>{card.correct_answer}</Text>
-                  {card.feedback ? <Text style={styles.feedback}>{card.feedback}</Text> : null}
+                  <View style={styles.cardBody}>
+                    <Text style={styles.answer}>{card.correct_answer}</Text>
+                    {card.feedback ? <Text style={styles.feedback}>{card.feedback}</Text> : null}
+                  </View>
+                  <View style={styles.cardStageActions}>
+                    <View style={styles.feedbackBar}>
+                      <Pressable
+                        accessibilityRole="button"
+                        disabled={busy}
+                        onPress={() => review("hard")}
+                        style={({pressed}) => [styles.feedbackChip, pressed && !busy && styles.feedbackChipPressed]}
+                      >
+                        <Text style={styles.feedbackChipText}>Hard</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        disabled={busy}
+                        onPress={() => review("good")}
+                        style={({pressed}) => [styles.feedbackChip, pressed && !busy && styles.feedbackChipPressed]}
+                      >
+                        <Text style={styles.feedbackChipText}>Good</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        disabled={busy}
+                        onPress={() => review("easy")}
+                        style={({pressed}) => [styles.feedbackChip, pressed && !busy && styles.feedbackChipPressed]}
+                      >
+                        <Text style={styles.feedbackChipText}>Easy</Text>
+                      </Pressable>
+                    </View>
+                    <View style={styles.reviewGrid}>
+                      <SecondaryButton label="بلد نبودم" Icon={XCircle} onPress={() => review("unknown")} disabled={busy} />
+                      <PrimaryButton label="بلد بودم" Icon={CheckCircle2} onPress={() => review("known")} disabled={busy} />
+                    </View>
+                    <SecondaryButton
+                      label="نمایش سؤال"
+                      Icon={RotateCcw}
+                      onPress={() => setRevealed(false)}
+                      disabled={busy}
+                    />
+                  </View>
                 </>
               ) : (
-                <Text style={styles.prompt}>{card.prompt}</Text>
+                <>
+                  <View style={styles.cardBody}>
+                    <Text style={styles.prompt}>{card.prompt}</Text>
+                  </View>
+                  <View style={styles.cardStageActions}>
+                    <SecondaryButton
+                      label="نمایش پاسخ"
+                      Icon={Eye}
+                      onPress={() => setRevealed(true)}
+                      disabled={busy}
+                    />
+                  </View>
+                </>
               )}
             </Pressable>
             <Pressable
@@ -419,49 +471,6 @@ export function FlashcardsScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.actionGrid}>
-            <SecondaryButton
-              label={revealed ? "نمایش سؤال" : "نمایش پاسخ"}
-              Icon={revealed ? RotateCcw : Eye}
-              onPress={() => setRevealed((value) => !value)}
-              disabled={busy}
-            />
-          </View>
-
-          {revealed ? (
-            <>
-              <View style={styles.feedbackBar}>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={busy}
-                  onPress={() => review("hard")}
-                  style={({pressed}) => [styles.feedbackChip, pressed && !busy && styles.feedbackChipPressed]}
-                >
-                  <Text style={styles.feedbackChipText}>Hard</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={busy}
-                  onPress={() => review("good")}
-                  style={({pressed}) => [styles.feedbackChip, pressed && !busy && styles.feedbackChipPressed]}
-                >
-                  <Text style={styles.feedbackChipText}>Good</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={busy}
-                  onPress={() => review("easy")}
-                  style={({pressed}) => [styles.feedbackChip, pressed && !busy && styles.feedbackChipPressed]}
-                >
-                  <Text style={styles.feedbackChipText}>Easy</Text>
-                </Pressable>
-              </View>
-              <View style={styles.reviewGrid}>
-                <SecondaryButton label="بلد نبودم" Icon={XCircle} onPress={() => review("unknown")} disabled={busy} />
-                <PrimaryButton label="بلد بودم" Icon={CheckCircle2} onPress={() => review("known")} disabled={busy} />
-              </View>
-            </>
-          ) : null}
         </>
       )}
     </ScreenContainer>
@@ -551,12 +560,12 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   flashcardShell: {
-    minHeight: 304,
+    minHeight: 430,
     marginBottom: spacing.md,
     position: "relative",
   },
   flashcard: {
-    minHeight: 304,
+    minHeight: 430,
     borderRadius: radius.lg,
     borderWidth: 1,
     paddingHorizontal: spacing.xl,
@@ -636,6 +645,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginVertical: spacing.xl,
   },
+  cardBody: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  cardStageActions: {
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
   answer: {
     color: colors.ink,
     fontSize: 25,
@@ -654,10 +671,10 @@ const styles = StyleSheet.create({
   feedbackBar: {
     minHeight: 38,
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
-    marginBottom: spacing.sm,
   },
   feedbackChip: {
     minWidth: 74,
