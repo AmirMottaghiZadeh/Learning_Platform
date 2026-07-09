@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   },
   screenContent: {
     width: "100%",
-    maxWidth: 760,
+    maxWidth: layout.appShellMaxWidth,
     alignSelf: "center",
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xl,

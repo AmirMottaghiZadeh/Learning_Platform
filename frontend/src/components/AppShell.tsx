@@ -1,12 +1,10 @@
 import React from "react";
 import {Pressable, StyleSheet, Text, View} from "react-native";
 import {
-  BarChart3,
-  BookOpenCheck,
   Brain,
+  CalendarCheck,
   Home,
   Layers,
-  Trophy,
   UserRound,
 } from "lucide-react-native";
 import type {LucideIcon} from "lucide-react-native";
@@ -17,11 +15,9 @@ import type {ScreenKey} from "../navigation/types";
 
 const navItems: Array<{key: ScreenKey; label: string; Icon: LucideIcon}> = [
   {key: "dashboard", label: "Home", Icon: Home},
-  {key: "quiz", label: "Quiz", Icon: Brain},
-  {key: "flashcards", label: "Cards", Icon: Layers},
-  {key: "mistakes", label: "Mistakes", Icon: BookOpenCheck},
-  {key: "league", label: "League", Icon: Trophy},
-  {key: "statistics", label: "Stats", Icon: BarChart3},
+  {key: "quiz", label: "Learn", Icon: Brain},
+  {key: "flashcards", label: "Review", Icon: Layers},
+  {key: "planning", label: "Plan", Icon: CalendarCheck},
   {key: "profile", label: "Profile", Icon: UserRound},
 ];
 
@@ -36,7 +32,11 @@ export function AppShell({
 }) {
   return (
     <SafeAreaView style={styles.shell}>
-      <View style={styles.content}>{children}</View>
+      <View style={styles.stage}>
+        <View style={styles.appFrame}>
+          <View style={styles.content}>{children}</View>
+        </View>
+      </View>
       <View style={styles.navWrap}>
         <View style={styles.nav}>
           {navItems.map(({key, label, Icon}) => {
@@ -67,6 +67,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  stage: {
+    flex: 1,
+    alignItems: "center",
+    backgroundColor: colors.background,
+  },
+  appFrame: {
+    width: "100%",
+    maxWidth: layout.appShellMaxWidth,
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   content: {
     flex: 1,
   },
@@ -80,7 +91,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(245,248,247,0.94)",
   },
   nav: {
-    maxWidth: 760,
+    maxWidth: layout.appShellMaxWidth,
     alignSelf: "center",
     width: "100%",
     minHeight: layout.bottomNavHeight,
@@ -99,7 +110,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   navItem: {
-    width: "14.2%",
+    width: "20%",
     minHeight: 58,
     alignItems: "center",
     justifyContent: "center",

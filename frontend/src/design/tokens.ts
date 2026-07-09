@@ -1,14 +1,15 @@
 export const colors = {
-  background: "#F5F8F7",
-  backgroundElevated: "#ECF3F1",
+  background: "#F6FBFA",
+  backgroundElevated: "#EAF5F3",
   surface: "#FFFFFF",
   surfaceMuted: "#EEF4F2",
   ink: "#24313A",
   muted: "#62727C",
   softText: "#8CA0A8",
-  primary: "#276B7A",
-  primarySoft: "#DDEDEF",
-  primaryMuted: "#A9D0D5",
+  primary: "#1F8F8B",
+  primaryStrong: "#176A72",
+  primarySoft: "#DDF2F0",
+  primaryMuted: "#9DD8D4",
   lavender: "#6D6388",
   lavenderSoft: "#E8E4F1",
   rose: "#B06472",
@@ -38,8 +39,9 @@ export const spacing = {
 
 export const radius = {
   sm: 6,
-  md: 8,
-  lg: 8,
+  md: 12,
+  lg: 18,
+  xl: 28,
   pill: 999,
 };
 
@@ -54,4 +56,5 @@ export const typography = {
 export const layout = {
   bottomNavHeight: 72,
   bottomNavReservedSpace: 152,
+  appShellMaxWidth: 430,
 };

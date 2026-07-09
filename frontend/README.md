@@ -76,16 +76,28 @@ For client-side routing fallback on GitHub Pages, the workflow copies `dist/inde
 - Safe `GET` requests use limited retry behavior in `src/api/client.ts`.
 - Reusable UI lives in `src/components/ui.tsx`.
 - Design tokens live in `src/design/tokens.ts`.
+- PWA assets and HTML shell live in `public/` and are copied into `dist/` during `npm run build:web`.
+- Onboarding and planning are product-layer UX flows; they do not change platform learning rules.
 
 ## Screens
 
 - Dashboard
+- Onboarding
 - Quiz
 - Flashcards
+- Planning
 - Mistakes
 - League
 - Statistics
 - Profile
+
+## UX Direction
+
+- Mobile-first app shell with a 430px maximum content width.
+- Dashboard answers “what should I do today?” before listing secondary content.
+- Learning loop is visible as learn, review, relearn, and check.
+- Onboarding uses short story steps, progress, skip, and fast text reveal.
+- Install guidance and PWA metadata support standalone web-app usage.
 
 ## Phase 7 Notes
 

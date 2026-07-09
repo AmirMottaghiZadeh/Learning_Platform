@@ -1,9 +1,33 @@
 import React, {useCallback, useEffect, useState} from "react";
 import {Pressable, StyleSheet, Text, View} from "react-native";
-import {BarChart3, Brain, Flame, Layers, RefreshCw, Sparkles, Target, Trophy} from "lucide-react-native";
+import {
+  AlertTriangle,
+  BarChart3,
+  Brain,
+  CalendarCheck,
+  Flame,
+  Layers,
+  RefreshCw,
+  RotateCcw,
+  SearchCheck,
+  Sparkles,
+  Target,
+  Trophy,
+} from "lucide-react-native";
 
 import {platformApi} from "../api/platform";
-import {LearningCard, LoadingState, ErrorState, ProgressBar, ScreenContainer, ScreenHeader, SectionTitle, StatTile} from "../components/ui";
+import {InstallPrompt} from "../components/InstallPrompt";
+import {
+  LearningCard,
+  LoadingState,
+  ErrorState,
+  ProgressBar,
+  PrimaryButton,
+  ScreenContainer,
+  ScreenHeader,
+  SectionTitle,
+  StatTile,
+} from "../components/ui";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import type {ScreenKey} from "../navigation/types";
 import {useAuth} from "../store/auth";
@@ -37,6 +61,12 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
   if (!dashboard) return null;
 
   const summary = dashboard.summary;
+  const reviewCount = summary.due_flashcards;
+  const relearnCount = summary.mistake_count;
+  const learnCount = Math.max(5, 10 - Math.min(5, reviewCount));
+  const estimatedMinutes = Math.max(10, Math.round(learnCount * 1.5 + reviewCount * 2 + relearnCount * 1.2));
+  const nextAction: ScreenKey = reviewCount > 0 ? "flashcards" : relearnCount > 0 ? "mistakes" : "quiz";
+  const nextActionLabel = reviewCount > 0 ? "Start review" : relearnCount > 0 ? "Fix mistakes" : "Start quiz";
 
   return (
     <ScreenContainer>
@@ -49,6 +79,7 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
           </Pressable>
         }
       />
+      <InstallPrompt />
 
       <LearningCard tone="mint">
         <View style={styles.heroTop}>
@@ -56,32 +87,54 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
             <Sparkles size={24} color={colors.primary} />
           </View>
           <View style={styles.heroTextWrap}>
-            <Text style={styles.heroTitle}>Today's learning plan</Text>
-            <Text style={styles.heroMeta}>Accuracy {summary.accuracy_percent}% · {summary.due_flashcards} cards due</Text>
+            <Text style={styles.heroTitle}>Today's exact plan</Text>
+            <Text style={styles.heroMeta}>
+              {estimatedMinutes} min · {learnCount + reviewCount + relearnCount} learning actions
+            </Text>
           </View>
         </View>
         <ProgressBar value={summary.accuracy_percent} />
+        <Text style={styles.guidance}>Focus on the next best action, then let the loop update from backend progress.</Text>
         <View style={styles.heroStats}>
           <View style={styles.heroStatPill}>
-            <Text style={styles.heroStatValue}>{summary.xp}</Text>
-            <Text style={styles.heroStatLabel}>XP</Text>
+            <Text style={styles.heroStatValue}>{learnCount}</Text>
+            <Text style={styles.heroStatLabel}>Learn</Text>
           </View>
           <View style={styles.heroStatPill}>
-            <Text style={styles.heroStatValue}>{summary.current_streak}</Text>
-            <Text style={styles.heroStatLabel}>Streak</Text>
+            <Text style={styles.heroStatValue}>{reviewCount}</Text>
+            <Text style={styles.heroStatLabel}>Review</Text>
+          </View>
+          <View style={styles.heroStatPill}>
+            <Text style={styles.heroStatValue}>{relearnCount}</Text>
+            <Text style={styles.heroStatLabel}>Relearn</Text>
           </View>
         </View>
-        <View style={styles.quickRow}>
-          <Pressable style={styles.quickAction} onPress={() => onNavigate("quiz")}>
-            <Brain size={18} color={colors.ink} />
-            <Text style={styles.quickText}>Quiz</Text>
-          </Pressable>
-          <Pressable style={styles.quickAction} onPress={() => onNavigate("flashcards")}>
-            <Layers size={18} color={colors.ink} />
-            <Text style={styles.quickText}>Review</Text>
-          </Pressable>
-        </View>
+        <PrimaryButton label={nextActionLabel} Icon={Sparkles} onPress={() => onNavigate(nextAction)} />
       </LearningCard>
+
+      <SectionTitle>Learning cycle</SectionTitle>
+      <View style={styles.loopGrid}>
+        <LearningCard tone="blue" style={styles.loopCard}>
+          <Brain size={22} color={colors.primary} />
+          <Text style={styles.loopTitle}>Learn</Text>
+          <Text style={styles.loopMeta}>{learnCount} new prompts</Text>
+        </LearningCard>
+        <LearningCard tone="mint" style={styles.loopCard}>
+          <Layers size={22} color={colors.primary} />
+          <Text style={styles.loopTitle}>Review</Text>
+          <Text style={styles.loopMeta}>{reviewCount} due cards</Text>
+        </LearningCard>
+        <LearningCard tone="rose" style={styles.loopCard}>
+          <RotateCcw size={22} color={colors.primary} />
+          <Text style={styles.loopTitle}>Relearn</Text>
+          <Text style={styles.loopMeta}>{relearnCount} mistakes</Text>
+        </LearningCard>
+        <LearningCard tone="lavender" style={styles.loopCard}>
+          <SearchCheck size={22} color={colors.primary} />
+          <Text style={styles.loopTitle}>Check</Text>
+          <Text style={styles.loopMeta}>{summary.accuracy_percent}% accuracy</Text>
+        </LearningCard>
+      </View>
 
       <View style={styles.statGrid}>
         <StatTile label="XP" value={summary.xp} Icon={Target} tone="mint" />
@@ -92,7 +145,11 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
 
       <SectionTitle>Recommendations</SectionTitle>
       {dashboard.recommendations.map((item) => (
-        <LearningCard key={item.id}>
+        <LearningCard key={item.id} tone="plain">
+          <View style={styles.recommendationTop}>
+            <AlertTriangle size={18} color={colors.primary} />
+            <Text style={styles.priority}>Priority {item.priority}</Text>
+          </View>
           <Text style={styles.cardTitle}>{item.title}</Text>
           <Text style={styles.cardMeta}>{item.reason}</Text>
         </LearningCard>
@@ -121,6 +178,10 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
       <Pressable style={styles.statsLink} onPress={() => onNavigate("statistics")}>
         <BarChart3 size={18} color={colors.primary} />
         <Text style={styles.statsText}>Open statistics</Text>
+      </Pressable>
+      <Pressable style={styles.statsLink} onPress={() => onNavigate("planning")}>
+        <CalendarCheck size={18} color={colors.primary} />
+        <Text style={styles.statsText}>Adjust study plan</Text>
       </Pressable>
     </ScreenContainer>
   );
@@ -164,6 +225,12 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: spacing.xs,
   },
+  guidance: {
+    color: colors.muted,
+    fontWeight: "800",
+    lineHeight: 22,
+    marginTop: spacing.md,
+  },
   quickRow: {
     flexDirection: "row",
     marginTop: spacing.lg,
@@ -194,6 +261,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
     marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
   heroStatPill: {
     minHeight: 46,
@@ -208,7 +276,7 @@ const styles = StyleSheet.create({
   heroStatValue: {
     color: colors.ink,
     fontWeight: "900",
-    fontSize: typography.heading,
+    fontSize: 18,
   },
   heroStatLabel: {
     color: colors.muted,
@@ -219,6 +287,37 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontSize: typography.body,
     fontWeight: "900",
+  },
+  loopGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  loopCard: {
+    width: "48%",
+    minHeight: 136,
+  },
+  loopTitle: {
+    color: colors.ink,
+    fontWeight: "900",
+    marginTop: spacing.md,
+  },
+  loopMeta: {
+    color: colors.muted,
+    fontSize: typography.small,
+    fontWeight: "800",
+    marginTop: spacing.xs,
+  },
+  recommendationTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  priority: {
+    color: colors.primary,
+    fontSize: typography.small,
+    fontWeight: "900",
+    marginLeft: spacing.sm,
   },
   cardMeta: {
     color: colors.muted,
