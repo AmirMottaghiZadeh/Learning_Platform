@@ -6,7 +6,21 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "kgame",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#031820"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#031820"
+      }
+    },
+    "ios": {
+      "supportsTablet": true
+    },
     "web": {
       "bundler": "metro",
       "output": "single",
@@ -14,8 +28,8 @@
       "name": "K_Game Learning",
       "shortName": "K_Game",
       "description": "Mobile-first adaptive learning dashboard for daily quizzes, mistakes, and flashcard review.",
-      "themeColor": "#1F8F8B",
-      "backgroundColor": "#F6FBFA",
+      "themeColor": "#031820",
+      "backgroundColor": "#031820",
       "lang": "en"
     },
     "plugins": [],

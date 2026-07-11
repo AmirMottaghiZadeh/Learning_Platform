@@ -5,11 +5,14 @@
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="K_Game" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#031820" />
+    <meta name="msapplication-TileColor" content="#031820" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="./pwa-icon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
     <title>%WEB_TITLE%</title>
     <style id="expo-reset">
       html,
@@ -19,20 +22,136 @@
       body {
         overflow: hidden;
         margin: 0;
-        background: #f6fbfa;
+        background: #031820;
       }
       #root {
         display: flex;
         height: 100%;
         flex: 1;
       }
+      #app-launch {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 38%, rgba(32, 242, 138, 0.12), transparent 32%),
+          radial-gradient(circle at 15% 100%, rgba(34, 215, 197, 0.08), transparent 38%),
+          #031820;
+        transition: opacity 280ms ease, visibility 280ms ease;
+      }
+      #app-launch::before {
+        content: "";
+        position: absolute;
+        width: min(74vw, 430px);
+        height: min(74vw, 430px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        box-shadow:
+          0 0 0 28px rgba(255, 255, 255, 0.015),
+          0 0 90px rgba(32, 242, 138, 0.06);
+      }
+      #app-launch.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .launch-brand {
+        position: relative;
+        display: grid;
+        justify-items: center;
+        gap: 18px;
+        animation: launch-in 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+      .launch-icon {
+        width: min(42vw, 210px);
+        height: min(42vw, 210px);
+        object-fit: contain;
+        filter: drop-shadow(0 22px 38px rgba(0, 0, 0, 0.34));
+      }
+      .launch-name {
+        color: #f5fbf8;
+        font: 800 18px/1.2 Inter, Manrope, system-ui, sans-serif;
+        letter-spacing: 0.08em;
+      }
+      .launch-loader {
+        width: 58px;
+        height: 3px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .launch-loader::after {
+        content: "";
+        display: block;
+        width: 46%;
+        height: 100%;
+        border-radius: inherit;
+        background: #20f28a;
+        animation: launch-loading 900ms ease-in-out infinite alternate;
+      }
+      @keyframes launch-in {
+        from {
+          opacity: 0;
+          transform: translateY(12px) scale(0.94);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes launch-loading {
+        from {
+          transform: translateX(-110%);
+        }
+        to {
+          transform: translateX(225%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .launch-brand,
+        .launch-loader::after {
+          animation: none;
+        }
+      }
     </style>
   </head>
 
   <body>
+    <div id="app-launch" role="status" aria-label="K_Game is loading">
+      <div class="launch-brand">
+        <img class="launch-icon" src="./launch-mark.png" alt="" />
+        <div class="launch-name">K_GAME LEARNING</div>
+        <div class="launch-loader" aria-hidden="true"></div>
+      </div>
+    </div>
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
     <div id="root"></div>
+    <script>
+      (function () {
+        var launch = document.getElementById("app-launch");
+        var root = document.getElementById("root");
+        if (!launch || !root) return;
+
+        function hideLaunch() {
+          if (!root.childNodes.length) return;
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              launch.classList.add("is-hidden");
+              window.setTimeout(function () {
+                launch.remove();
+              }, 320);
+            });
+          });
+        }
+
+        new MutationObserver(hideLaunch).observe(root, {childList: true});
+        window.setTimeout(hideLaunch, 4000);
+      })();
+    </script>
   </body>
 </html>

@@ -1,5 +1,14 @@
-const CACHE_NAME = "k-game-learning-v1";
-const APP_SHELL = ["./", "./manifest.webmanifest", "./pwa-icon.svg"];
+const CACHE_NAME = "k-game-learning-v2";
+const APP_SHELL = [
+  "./",
+  "./manifest.webmanifest",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-maskable-512.png",
+  "./apple-touch-icon.png",
+  "./favicon-32.png",
+  "./launch-mark.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

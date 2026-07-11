@@ -161,6 +161,15 @@ The default theme tokens are:
 
 Pastel colors may only appear as low-opacity semantic glows. They are not the primary surface language.
 
+Brand and launch assets follow the same visual contract:
+- The product-provided Pharmexa artwork is the source of truth for application icons.
+- Square application icons place the artwork on the official deep navy-green background.
+- PWA icon sets provide both standard and maskable variants with platform-safe padding.
+- Browser favicon and Apple touch icons derive from the same source artwork.
+- Native and PWA launch surfaces use the official background color and a centered brand icon.
+- The initial web document paints the launch surface before JavaScript loads so a white flash is never visible.
+- Launch motion is a short opacity and scale transition and must not delay application readiness.
+
 ---
 
 # 6. Navigation Architecture
