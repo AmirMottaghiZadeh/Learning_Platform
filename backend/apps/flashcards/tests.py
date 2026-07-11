@@ -157,7 +157,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertIn("ReviewCompleted", event_types)
         self.assertIn("TopicProgressUpdated", event_types)
 
-    def test_seed_flashcards_creates_due_cards_from_active_sources(self):
+    def test_seed_flashcards_creates_new_cards_outside_due_queue(self):
         user = User.objects.create_user(username="learner")
         topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
@@ -190,7 +190,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(len(states), 2)
         self.assertEqual(states[0].box, 0)
         self.assertEqual(states[0].review_state, FlashcardState.REVIEW_STATE_NEW)
-        self.assertLessEqual(states[0].due_at, django_timezone.now())
+        self.assertIsNone(states[0].due_at)
 
     def test_leitner_box_counts_include_only_active_boxes(self):
         user = User.objects.create_user(username="learner")
@@ -220,6 +220,8 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
         counts = get_leitner_box_counts(user=user, product_id="k_game")
 
+        self.assertEqual(counts["new"], 0)
+        self.assertEqual(counts["total"], 1)
         self.assertEqual(counts["boxes"][1]["box"], 2)
         self.assertEqual(counts["boxes"][1]["count"], 1)
 
@@ -298,7 +300,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(seed_response.data[0]["source_type"], "timing")
 
         list_response = client.get(
-            "/api/v1/flashcards/?product_id=k_game&target_category_key=cardiovascular&source_type=timing"
+            "/api/v1/flashcards/?product_id=k_game&mode=new&target_category_key=cardiovascular&source_type=timing"
         )
         self.assertEqual(list_response.status_code, 200)
         self.assertEqual(list_response.data["count"], 2)
@@ -311,7 +313,8 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             "/api/v1/flashcards/boxes/?product_id=k_game&target_category_key=cardiovascular&source_type=timing"
         )
         self.assertEqual(box_response.status_code, 200)
-        self.assertEqual(box_response.data["new"], 2)
+        self.assertEqual(box_response.data["new"], 0)
+        self.assertEqual(box_response.data["total"], 0)
 
         review_response = client.post(
             f"/api/v1/flashcards/{list_response.data['results'][0]['id']}/review/",
@@ -322,16 +325,18 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(review_response.data["box"], 1)
 
         due_after_review = client.get(
-            "/api/v1/flashcards/?product_id=k_game&target_category_key=cardiovascular&source_type=timing"
+            "/api/v1/flashcards/?product_id=k_game&mode=new&target_category_key=cardiovascular&source_type=timing"
         )
         self.assertEqual(due_after_review.status_code, 200)
         self.assertEqual(due_after_review.data["count"], 1)
 
         box_after_review = client.get(
-            "/api/v1/flashcards/?product_id=k_game&target_category_key=cardiovascular&source_type=timing&box=1"
+            "/api/v1/flashcards/?product_id=k_game&mode=leitner&target_category_key=cns&source_type=indication"
         )
         self.assertEqual(box_after_review.status_code, 200)
         self.assertEqual(box_after_review.data["count"], 1)
+        self.assertEqual(box_after_review.data["results"][0]["box"], 1)
+        self.assertEqual(box_after_review.data["results"][0]["source_type"], "timing")
 
     def test_flashcard_deck_summary_reports_full_selected_deck(self):
         user = User.objects.create_user(username="learner")
@@ -380,7 +385,8 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(after_seed["eligible_sources"], 3)
         self.assertEqual(after_seed["scheduled_cards"], 3)
         self.assertEqual(after_seed["unscheduled_sources"], 0)
-        self.assertEqual(after_seed["due_cards"], 3)
+        self.assertEqual(after_seed["new_cards"], 3)
+        self.assertEqual(after_seed["due_cards"], 0)
 
         client = APIClient()
         client.force_authenticate(user=user)
@@ -391,3 +397,71 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["eligible_sources"], 3)
         self.assertEqual(response.data["scheduled_cards"], 3)
+        self.assertEqual(response.data["new_cards"], 3)
+        self.assertEqual(response.data["due_cards"], 0)
+
+    def test_known_new_card_completes_without_entering_leitner(self):
+        user = User.objects.create_user(username="learner")
+        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        learning_object = LearningObject.objects.create(
+            product_id="k_game",
+            external_id="drug-1",
+            display_name="Drug 1",
+            topic=topic,
+        )
+        knowledge_source = KnowledgeSource.objects.create(
+            product_id="k_game",
+            external_id="source-1",
+            learning_object=learning_object,
+            topic=topic,
+            source_type="timing",
+            prompt="Prompt",
+            correct_answer="Answer",
+        )
+        state = FlashcardState.objects.create(
+            user=user,
+            knowledge_source=knowledge_source,
+            box=0,
+            review_state=FlashcardState.REVIEW_STATE_NEW,
+            due_at=None,
+        )
+
+        review_card(state, "known")
+        state.refresh_from_db()
+
+        self.assertEqual(state.box, 0)
+        self.assertEqual(state.review_state, FlashcardState.REVIEW_STATE_SUSPENDED)
+        self.assertIsNone(state.due_at)
+        self.assertEqual(get_leitner_box_counts(user=user, product_id="k_game")["total"], 0)
+
+    def test_known_box_one_card_leaves_global_leitner_queue(self):
+        user = User.objects.create_user(username="learner")
+        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        learning_object = LearningObject.objects.create(
+            product_id="k_game",
+            external_id="drug-1",
+            display_name="Drug 1",
+            topic=topic,
+        )
+        knowledge_source = KnowledgeSource.objects.create(
+            product_id="k_game",
+            external_id="source-1",
+            learning_object=learning_object,
+            topic=topic,
+            source_type="timing",
+            prompt="Prompt",
+            correct_answer="Answer",
+        )
+        state = FlashcardState.objects.create(
+            user=user,
+            knowledge_source=knowledge_source,
+            box=1,
+            review_state=FlashcardState.REVIEW_STATE_LEARNING,
+        )
+
+        review_card(state, "known")
+        state.refresh_from_db()
+
+        self.assertEqual(state.box, 0)
+        self.assertEqual(state.review_state, FlashcardState.REVIEW_STATE_SUSPENDED)
+        self.assertEqual(get_leitner_box_counts(user=user, product_id="k_game")["total"], 0)

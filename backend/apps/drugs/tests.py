@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -6,7 +7,7 @@ from django.test import TestCase
 
 from apps.drugs.learning_adapter import KGameLearningAdapter
 from apps.drugs.learning_sync import drug_question_source_external_id, sync_drug_question_source
-from apps.drugs.models import Drug, DrugQuestionSource, DrugTopic
+from apps.drugs.models import Drug, DrugDatasetDocument, DrugQuestionSource, DrugTopic
 from apps.drugs.services import list_target_categories
 from apps.learning.models import KnowledgeSource
 from apps.quizzes.contracts import QuestionGenerationContext
@@ -42,7 +43,7 @@ class KGameLearningAdapterTests(TestCase):
         self.assertEqual(len(sources), 1)
         knowledge_source = KnowledgeSource.objects.get(
             product_id="k_game",
-            external_id=drug_question_source_external_id(source.id),
+            external_id=drug_question_source_external_id(source),
         )
         self.assertEqual(sources[0].id, knowledge_source.id)
         self.assertEqual(sources[0].source_type, "timing")
@@ -212,3 +213,150 @@ class KGameLearningAdapterTests(TestCase):
         self.assertIn("endocrine", records)
         self.assertIn("Metformin", records)
         self.assertIn("Glucophage", records)
+
+
+class DrugJsonImportTests(TestCase):
+    def write_dataset(self, directory):
+        payload = {
+            "schema_version": "1.0",
+            "source": {
+                "file_name": "Endo.docx",
+                "path": "/source/Endo.docx",
+                "format": "docx",
+                "size_bytes": 1234,
+                "sha256": "a" * 64,
+                "metadata": {
+                    "creator": "Author",
+                    "pages": 2,
+                },
+            },
+            "extraction": {
+                "mode": "all",
+                "method": "docx_xml",
+                "ocr_used": False,
+                "extracted_at": "2026-07-11T10:00:00+00:00",
+            },
+            "content": {
+                "full_text": "ignored audit content",
+                "paragraphs": [],
+                "sections": [],
+                "tables": [
+                    {
+                        "index": 2,
+                        "records": [
+                            {
+                                "_source_row": 3,
+                                "نام دارو": "متفورمین\nMetformin",
+                                "English Generic Name": "Metformin",
+                                "Persian Generic Name": "متفورمین",
+                                "نام تجاری": "Glucophage",
+                                "اشکال دارویی": "Tab 500 mg",
+                                "دوزینگ و دستور مصرف": "500 mg twice daily",
+                                "اندیکاسیون": "دیابت نوع دو",
+                                "رابطه با غذا": "همراه غذا",
+                                "بارداری و شیردهی": "رده B",
+                                "تنظیم دوز": "تنظیم بر اساس eGFR",
+                                "عوارض": "تهوع",
+                                "سایر نکات": "مانیتورینگ کلیه",
+                                "atc_code": "A10BA02",
+                                "class": "ALIMENTARY TRACT AND METABOLISM",
+                                "sub_class": "DRUGS USED IN DIABETES",
+                                "category": "Biguanides",
+                                "نیمه عمر دقیقه": "390",
+                            }
+                        ],
+                    }
+                ],
+            },
+            "warnings": [],
+            "enrichment": {
+                "drug_names": {
+                    "version": "1.0",
+                    "method": "test",
+                    "records_seen": 1,
+                    "matched": 1,
+                }
+            },
+        }
+        report = {
+            "files": {
+                "Endo.docx.json": {
+                    "issues": [],
+                }
+            }
+        }
+        Path(directory, "Endo.docx.json").write_text(
+            json.dumps(payload, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        Path(directory, "drug_enrichment_report.json").write_text(
+            json.dumps(report, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    def test_import_replaces_legacy_metadata_and_preserves_json_provenance(self):
+        Drug.objects.create(external_id="legacy", name="Legacy")
+
+        with TemporaryDirectory() as directory:
+            self.write_dataset(directory)
+            call_command("import_drug_json", directory)
+
+        self.assertFalse(Drug.objects.filter(external_id="legacy").exists())
+        self.assertEqual(DrugDatasetDocument.objects.count(), 1)
+        document = DrugDatasetDocument.objects.get()
+        drug = Drug.objects.get()
+
+        self.assertEqual(document.schema_version, "1.0")
+        self.assertEqual(document.source_sha256, "a" * 64)
+        self.assertEqual(document.source_metadata["creator"], "Author")
+        self.assertEqual(document.extraction_metadata["method"], "docx_xml")
+        self.assertEqual(drug.dataset_document, document)
+        self.assertEqual(drug.generic_name, "Metformin")
+        self.assertEqual(drug.persian_name, "متفورمین")
+        self.assertEqual(drug.consumption_time_sorted, "با غذا")
+        self.assertEqual(drug.atc_codes, ["A10BA02"])
+        self.assertEqual(drug.source_table, 2)
+        self.assertEqual(drug.source_row, 3)
+        self.assertEqual(drug.extra_attributes["نیمه عمر دقیقه"], "390")
+        self.assertEqual(
+            set(drug.question_sources.values_list("question_type", flat=True)),
+            {
+                "brandGeneric",
+                "timing",
+                "indication",
+                "sideEffects",
+                "classification",
+                "dosageForm",
+                "dosing",
+                "pregnancy",
+                "doseAdjustment",
+            },
+        )
+        self.assertEqual(
+            KnowledgeSource.objects.filter(
+                product_id="k_game",
+                learning_object__external_id=drug.external_id,
+                is_active=True,
+            ).count(),
+            9,
+        )
+
+        with TemporaryDirectory() as directory:
+            self.write_dataset(directory)
+            call_command("import_drug_json", directory)
+
+        self.assertEqual(Drug.objects.count(), 1)
+        self.assertEqual(DrugDatasetDocument.objects.count(), 1)
+        self.assertEqual(DrugQuestionSource.objects.count(), 9)
+        self.assertEqual(KnowledgeSource.objects.filter(product_id="k_game").count(), 9)
+
+    def test_validate_only_does_not_change_existing_metadata(self):
+        Drug.objects.create(external_id="legacy", name="Legacy")
+
+        with TemporaryDirectory() as directory:
+            self.write_dataset(directory)
+            call_command("import_drug_json", directory, validate_only=True)
+
+        self.assertEqual(Drug.objects.count(), 1)
+        self.assertTrue(Drug.objects.filter(external_id="legacy").exists())
+        self.assertEqual(DrugDatasetDocument.objects.count(), 0)

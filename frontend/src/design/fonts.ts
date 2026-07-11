@@ -18,7 +18,7 @@ function injectWebFonts() {
 }
 @font-face {
   font-family: "KGameUIFont";
-  src: local("Calibri"), local("Carlito");
+  src: local("Inter"), local("Manrope"), local("Aptos"), local("Calibri"), local("Carlito");
   font-weight: 100 900;
   font-style: normal;
   unicode-range: U+0000-00FF, U+0100-024F;
@@ -27,7 +27,7 @@ html,
 body,
 #root,
 #root * {
-  font-family: "KGameUIFont", Calibri, Carlito, "B Mitra", "B Nazanin", Arial, sans-serif !important;
+  font-family: "KGameUIFont", Inter, Manrope, Aptos, Calibri, Carlito, "B Mitra", "B Nazanin", Arial, sans-serif !important;
   font-synthesis: weight;
 }
 `;

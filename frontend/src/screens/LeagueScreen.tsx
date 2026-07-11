@@ -1,15 +1,24 @@
 import React, {useCallback, useEffect, useState} from "react";
-import {StyleSheet, Text, View} from "react-native";
-import {Medal, RefreshCw, Trophy} from "lucide-react-native";
+import {Pressable, StyleSheet, Text, View} from "react-native";
+import {Crown, RefreshCw, Trophy} from "lucide-react-native";
 
 import {platformApi} from "../api/platform";
-import {EmptyState, ErrorState, LearningCard, LoadingState, ScreenContainer, ScreenHeader, SecondaryButton} from "../components/ui";
+import {
+  Avatar,
+  EmptyState,
+  ErrorState,
+  LearningCard,
+  LoadingState,
+  MetricPill,
+  ScreenContainer,
+  ScreenHeader,
+} from "../components/ui";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
 import type {LeaderboardEntry, LeagueFullSummary, MyLeagueRank} from "../types/api";
 
 export function LeagueScreen() {
-  const {token} = useAuth();
+  const {token, user} = useAuth();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [myRank, setMyRank] = useState<MyLeagueRank | null>(null);
   const [summary, setSummary] = useState<LeagueFullSummary | null>(null);
@@ -39,111 +48,238 @@ export function LeagueScreen() {
   if (loading) return <LoadingState label="Loading league" />;
   if (error) return <ErrorState message={error} onRetry={load} />;
 
+  const podiumEntries = entries.slice(0, 3);
+  const podiumOrder = [podiumEntries[1], podiumEntries[0], podiumEntries[2]].filter(Boolean);
+
   return (
     <ScreenContainer>
       <ScreenHeader
         eyebrow={summary?.season_key ? `Weekly season · ${summary.season_key}` : "Weekly season"}
-        title="League"
-        action={<SecondaryButton label="Refresh" Icon={RefreshCw} onPress={load} />}
+        title="Leaderboard"
+        action={
+          <Pressable accessibilityRole="button" onPress={load} style={styles.refresh}>
+            <RefreshCw size={18} color={colors.primary} />
+          </Pressable>
+        }
       />
 
-      <LearningCard tone="lavender">
-        <View style={styles.rankTop}>
-          <View style={styles.trophy}>
-            <Trophy size={24} color={colors.lavender} />
+      <LearningCard tone="primary" style={styles.hero}>
+        <View style={styles.heroTop}>
+          <View>
+            <Text style={styles.heroEyebrow}>YOUR POSITION</Text>
+            <Text style={styles.heroRank}>#{myRank?.rank ?? "-"}</Text>
           </View>
-          <View style={styles.rankText}>
-            <Text style={styles.rankLabel}>My rank</Text>
-            <Text style={styles.rankValue}>{myRank?.rank ?? "-"}</Text>
+          <View style={styles.heroMetrics}>
+            <MetricPill label="learners" value={myRank?.total_participants ?? 0} />
+            <MetricPill label="season" value="weekly" />
           </View>
-          <Text style={styles.participants}>{myRank?.total_participants ?? 0} learners</Text>
         </View>
-        {summary?.rule_version ? <Text style={styles.ruleVersion}>{summary.rule_version}</Text> : null}
+        <Text style={styles.heroText}>Every focused session moves you closer to the podium.</Text>
       </LearningCard>
+
+      {podiumOrder.length ? (
+        <View style={styles.podium}>
+          {podiumOrder.map((entry) => {
+            const isWinner = entry.rank === 1;
+            return (
+              <View key={`${entry.rank}-${entry.result.id}`} style={[styles.podiumItem, isWinner && styles.podiumWinner]}>
+                {isWinner ? <Crown size={21} color={colors.amber} style={styles.crown} /> : null}
+                <View style={[styles.avatarRing, isWinner && styles.avatarRingWinner]}>
+                  <Avatar name={entry.result.username} size={isWinner ? 66 : 54} />
+                </View>
+                <Text style={styles.podiumName} numberOfLines={1}>{entry.result.username}</Text>
+                <Text style={styles.podiumScore}>{entry.result.league_rating} XP</Text>
+                <View style={[styles.podiumBlock, isWinner && styles.podiumBlockWinner]}>
+                  <Text style={[styles.podiumRank, isWinner && styles.podiumRankWinner]}>{entry.rank}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
 
       {!entries.length ? (
         <EmptyState title="No league results" />
       ) : (
-        entries.map((entry) => (
-          <LearningCard key={`${entry.rank}-${entry.result.id}`} tone={entry.rank <= 3 ? "amber" : "plain"}>
-            <View style={styles.row}>
-              <View style={styles.rankPill}>
-                <Medal size={16} color={colors.primary} />
-                <Text style={styles.rankNumber}>{entry.rank}</Text>
+        <View style={styles.list}>
+          {entries.map((entry) => {
+            const isCurrentUser = entry.result.username === user?.username;
+            return (
+              <View
+                key={`${entry.rank}-${entry.result.id}`}
+                style={[styles.row, isCurrentUser && styles.currentRow]}
+              >
+                <View style={[styles.rankBadge, entry.rank <= 3 && styles.topRankBadge]}>
+                  <Text style={[styles.rankNumber, entry.rank <= 3 && styles.topRankNumber]}>{entry.rank}</Text>
+                </View>
+                <Avatar name={entry.result.username} size={42} />
+                <View style={styles.userBlock}>
+                  <Text style={styles.username}>
+                    {entry.result.username}{isCurrentUser ? " (You)" : ""}
+                  </Text>
+                  <Text style={styles.meta}>{entry.result.topic_key} · {entry.result.percent}% accuracy</Text>
+                </View>
+                <View style={styles.scoreBlock}>
+                  <Text style={styles.score}>{entry.result.league_rating}</Text>
+                  <Text style={styles.meta}>XP</Text>
+                </View>
               </View>
-              <View style={styles.userBlock}>
-                <Text style={styles.username}>{entry.result.username}</Text>
-                <Text style={styles.meta}>{entry.result.topic_key}</Text>
-              </View>
-              <View style={styles.scoreBlock}>
-                <Text style={styles.score}>{entry.result.league_rating}</Text>
-                <Text style={styles.meta}>{entry.result.percent}%</Text>
-              </View>
-            </View>
-          </LearningCard>
-        ))
+            );
+          })}
+        </View>
       )}
+
+      {summary?.rule_version ? (
+        <View style={styles.rules}>
+          <Trophy size={16} color={colors.muted} />
+          <Text style={styles.ruleText}>{summary.rule_version}</Text>
+        </View>
+      ) : null}
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  rankTop: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  trophy: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.lg,
+  refresh: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: spacing.md,
   },
-  rankText: {
-    flex: 1,
+  hero: {
+    backgroundColor: colors.surfaceElevated,
   },
-  rankLabel: {
-    color: colors.muted,
-    fontWeight: "800",
+  heroTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  rankValue: {
+  heroEyebrow: {
+    color: colors.primary,
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+  },
+  heroRank: {
     color: colors.ink,
-    fontSize: 28,
+    fontSize: 34,
     fontWeight: "900",
   },
-  participants: {
-    color: colors.ink,
-    fontWeight: "900",
+  heroMetrics: {
+    alignItems: "flex-end",
+    gap: spacing.sm,
   },
-  ruleVersion: {
+  heroText: {
     color: colors.muted,
+    fontWeight: "700",
+    marginTop: spacing.md,
+  },
+  podium: {
+    minHeight: 230,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  podiumItem: {
+    width: "31%",
+    alignItems: "center",
+  },
+  podiumWinner: {
+    marginBottom: spacing.lg,
+  },
+  crown: {
+    marginBottom: spacing.xs,
+  },
+  avatarRing: {
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: colors.borderStrong,
+    padding: 3,
+  },
+  avatarRingWinner: {
+    borderColor: colors.primary,
+  },
+  podiumName: {
+    maxWidth: "92%",
+    color: colors.ink,
     fontSize: typography.small,
-    fontWeight: "800",
+    fontWeight: "900",
     marginTop: spacing.sm,
   },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
+  podiumScore: {
+    color: colors.muted,
+    fontSize: 10,
+    fontWeight: "800",
+    marginTop: 2,
   },
-  rankPill: {
-    minWidth: 58,
-    minHeight: 40,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-    flexDirection: "row",
+  podiumBlock: {
+    width: "88%",
+    minHeight: 60,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: spacing.md,
+    marginTop: spacing.sm,
+  },
+  podiumBlockWinner: {
+    minHeight: 86,
+    backgroundColor: colors.primary,
+  },
+  podiumRank: {
+    color: colors.ink,
+    fontSize: 25,
+    fontWeight: "900",
+  },
+  podiumRankWinner: {
+    color: colors.black,
+  },
+  list: {
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+  row: {
+    minHeight: 74,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  currentRow: {
+    backgroundColor: colors.primarySoft,
+  },
+  rankBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.sm,
+  },
+  topRankBadge: {
+    backgroundColor: colors.primary,
   },
   rankNumber: {
-    color: colors.primary,
+    color: colors.muted,
     fontWeight: "900",
-    marginLeft: spacing.xs,
+  },
+  topRankNumber: {
+    color: colors.black,
   },
   userBlock: {
     flex: 1,
+    marginLeft: spacing.md,
   },
   username: {
     color: colors.ink,
@@ -152,16 +288,29 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: colors.muted,
-    fontSize: typography.small,
-    fontWeight: "800",
-    marginTop: spacing.xs,
+    fontSize: 10,
+    fontWeight: "700",
+    marginTop: 2,
   },
   scoreBlock: {
     alignItems: "flex-end",
+    marginLeft: spacing.sm,
   },
   score: {
-    color: colors.ink,
-    fontSize: typography.heading,
+    color: colors.primary,
+    fontSize: 17,
     fontWeight: "900",
+  },
+  rules: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.lg,
+  },
+  ruleText: {
+    color: colors.muted,
+    fontSize: typography.small,
+    fontWeight: "700",
+    marginLeft: spacing.sm,
   },
 });

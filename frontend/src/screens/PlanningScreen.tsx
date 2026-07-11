@@ -44,7 +44,7 @@ export function PlanningScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =>
           <Target size={24} color={colors.primary} />
           <Text style={styles.title}>هدفت چیست؟</Text>
           <Text style={styles.text}>هدف باید کوتاه و قابل اقدام باشد تا داشبورد امروز بتواند قدم بعدی را پیشنهاد کند.</Text>
-          <TextInput value={goal} onChangeText={setGoal} style={styles.input} placeholder="مثلاً آماده‌سازی آزمون ماه آینده" />
+          <TextInput value={goal} onChangeText={setGoal} style={styles.input} placeholder="مثلاً آماده‌سازی آزمون ماه آینده" placeholderTextColor={colors.softText} />
         </LearningCard>
       ) : null}
 
@@ -76,7 +76,7 @@ export function PlanningScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =>
           <CalendarDays size={24} color={colors.primary} />
           <Text style={styles.title}>تا کی وقت داری؟</Text>
           <Text style={styles.text}>فعلاً این برنامه در فرانت‌اند پیش‌نمایش می‌شود و قوانین زمان‌بندی اصلی همچنان سمت بک‌اند می‌ماند.</Text>
-          <TextInput keyboardType="numeric" value={deadline} onChangeText={setDeadline} style={styles.input} placeholder="روز باقی‌مانده" />
+          <TextInput keyboardType="numeric" value={deadline} onChangeText={setDeadline} style={styles.input} placeholder="روز باقی‌مانده" placeholderTextColor={colors.softText} />
         </LearningCard>
       ) : null}
 
@@ -85,7 +85,7 @@ export function PlanningScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =>
           <Clock3 size={24} color={colors.primary} />
           <Text style={styles.title}>روزی چقدر زمان می‌گذاری؟</Text>
           <Text style={styles.text}>زمان روزانه به تخمین کارت و آزمون تبدیل می‌شود؛ تصمیم آموزشی نهایی هنوز از API می‌آید.</Text>
-          <TextInput keyboardType="numeric" value={dailyMinutes} onChangeText={setDailyMinutes} style={styles.input} placeholder="دقیقه در روز" />
+          <TextInput keyboardType="numeric" value={dailyMinutes} onChangeText={setDailyMinutes} style={styles.input} placeholder="دقیقه در روز" placeholderTextColor={colors.softText} />
         </LearningCard>
       ) : null}
 
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   chipTextActive: {
-    color: "#FFFFFF",
+    color: colors.black,
   },
   summary: {
     color: colors.ink,

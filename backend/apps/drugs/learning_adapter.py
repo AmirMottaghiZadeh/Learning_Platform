@@ -55,7 +55,7 @@ class KGameLearningAdapter:
             return sync_drug_question_source(legacy_source)
 
     def get_knowledge_source_for_legacy_source(self, source: DrugQuestionSource) -> KnowledgeSource:
-        external_id = drug_question_source_external_id(source.id)
+        external_id = drug_question_source_external_id(source)
         try:
             return KnowledgeSource.objects.get(product_id=self.product_id, external_id=external_id)
         except KnowledgeSource.DoesNotExist:

@@ -121,6 +121,13 @@ Services coordinate rules, persistence and events.
 
 They should not become unstructured scripts.
 
+Flashcard APIs must expose new learning and Leitner review as explicit modes:
+- New mode filters by product, source type and optional target category.
+- New items have `box = 0`, `review_state = new` and `due_at = null`.
+- Leitner mode returns active items with `box >= 1`.
+- Leitner mode is global for the learner within the product and ignores source type and target category filters.
+- Dashboard review counts exclude unseen new cards.
+
 ---
 
 # 5. Rule Engine Implementation
@@ -246,6 +253,15 @@ Database design should support:
 
 High-volume event data may require separate storage strategy later.
 
+For versioned JSON datasets, the backend should separate:
+
+- a dataset-document record for checksum, source metadata, extraction metadata, warnings and enrichment provenance
+- normalized product records for fields consumed by application rules
+- a source-specific JSON attribute map for valid but non-standard headers
+- the original source record for audit and deterministic re-import
+
+Dataset replacement must run inside a transaction after full-batch validation. Existing product metadata may be removed only after the incoming batch is known to be valid. Historical assessment and review records must retain their generic Knowledge Source references even when legacy product-source links are detached.
+
 ---
 
 # 12. Caching Strategy
@@ -274,6 +290,8 @@ Background jobs should handle:
 - Backup tasks
 
 Jobs must be retry-safe and observable.
+
+JSON import jobs must be idempotent by source checksum, schema version, table index and source row. Re-importing an unchanged dataset must update existing records instead of creating duplicates.
 
 ---
 

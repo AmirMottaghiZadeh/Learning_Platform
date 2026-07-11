@@ -20,8 +20,8 @@ def drug_learning_object_external_id(drug) -> str:
     return drug.external_id or f"drug:{drug.id}"
 
 
-def drug_question_source_external_id(source_id: int) -> str:
-    return f"drug-question-source:{source_id}"
+def drug_question_source_external_id(source: DrugQuestionSource) -> str:
+    return f"drug-question-source:{source.drug.external_id}:{source.question_type}"
 
 
 def generic_drug_name(drug) -> str:
@@ -54,6 +54,16 @@ def prompt_for_source(source: DrugQuestionSource) -> str:
         return f"کاربرد اصلی داروی {generic_drug_name(drug)} کدام است؟"
     if source.question_type == "sideEffects":
         return f"کدام مورد از عوارض جانبی مهم داروی {generic_drug_name(drug)} است؟"
+    if source.question_type == "classification":
+        return f"داروی {generic_drug_name(drug)} در کدام دسته دارویی قرار می‌گیرد؟"
+    if source.question_type == "dosageForm":
+        return f"اشکال دارویی {generic_drug_name(drug)} کدام است؟"
+    if source.question_type == "dosing":
+        return f"دوز و دستور مصرف {generic_drug_name(drug)} کدام است؟"
+    if source.question_type == "pregnancy":
+        return f"نکته صحیح درباره مصرف {generic_drug_name(drug)} در بارداری یا شیردهی کدام است؟"
+    if source.question_type == "doseAdjustment":
+        return f"تنظیم دوز {generic_drug_name(drug)} چگونه انجام می‌شود؟"
     return source.prompt
 
 
@@ -91,6 +101,10 @@ def sync_drug_question_source(source: DrugQuestionSource) -> KnowledgeSource:
                 "legacy_model": "drugs.Drug",
                 "legacy_id": drug.id,
                 "source_file": drug.source_file,
+                "source_table": drug.source_table,
+                "source_row": drug.source_row,
+                "atc_codes": drug.atc_codes,
+                "extra_attributes": drug.extra_attributes,
                 "domain": "pharmacology",
                 **category_payload,
             },
@@ -100,7 +114,7 @@ def sync_drug_question_source(source: DrugQuestionSource) -> KnowledgeSource:
 
     knowledge_source, _ = KnowledgeSource.objects.update_or_create(
         product_id=PRODUCT_ID,
-        external_id=drug_question_source_external_id(source.id),
+        external_id=drug_question_source_external_id(source),
         defaults={
             "learning_object": learning_object,
             "topic": topic,
@@ -113,6 +127,11 @@ def sync_drug_question_source(source: DrugQuestionSource) -> KnowledgeSource:
                 "legacy_id": source.id,
                 "subtitle": source.subtitle,
                 "chip": source.chip,
+                "dataset_schema_version": (
+                    drug.dataset_document.schema_version
+                    if drug.dataset_document_id
+                    else ""
+                ),
                 **category_payload,
             },
             "is_active": source.is_active,
@@ -126,7 +145,11 @@ def sync_all_drug_question_sources() -> LearningSyncResult:
     drug_ids = set()
     knowledge_source_count = 0
 
-    queryset = DrugQuestionSource.objects.select_related("drug", "topic").all()
+    queryset = DrugQuestionSource.objects.select_related(
+        "drug",
+        "drug__dataset_document",
+        "topic",
+    ).all()
     for source in queryset.iterator():
         sync_drug_question_source(source)
         topic_ids.add(source.topic_id)

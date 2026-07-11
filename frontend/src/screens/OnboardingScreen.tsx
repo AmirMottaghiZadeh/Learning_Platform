@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   visual: {
     minHeight: 180,
     borderRadius: radius.xl,
-    backgroundColor: "rgba(255,255,255,0.58)",
+    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.xl,

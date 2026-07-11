@@ -62,19 +62,26 @@ export const platformApi = {
   statistics(token: string) {
     return apiFetch("/me/statistics/?product_id=k_game", {}, token) as Promise<Statistics>;
   },
-  async flashcards(token: string, box?: number, target_category_key = "", source_type: QuestionType = "brandGeneric") {
+  async flashcards(
+    token: string,
+    mode: "new" | "leitner",
+    target_category_key = "",
+    source_type?: QuestionType,
+    exclude_ids: number[] = [],
+  ) {
     const params = new URLSearchParams({product_id: "k_game"});
-    if (box) params.set("box", String(box));
-    if (target_category_key) params.set("target_category_key", target_category_key);
-    params.set("source_type", source_type);
+    params.set("mode", mode);
+    if (mode === "new") {
+      if (target_category_key) params.set("target_category_key", target_category_key);
+      if (source_type) params.set("source_type", source_type);
+    }
+    if (exclude_ids.length) params.set("exclude_ids", exclude_ids.join(","));
     const query = `?${params.toString()}`;
     const payload = await apiFetch(`/flashcards/${query}`, {}, token);
     return unwrapList<FlashcardState>(payload);
   },
-  flashcardBoxes(token: string, target_category_key = "", source_type: QuestionType = "brandGeneric") {
+  flashcardBoxes(token: string) {
     const params = new URLSearchParams({product_id: "k_game"});
-    if (target_category_key) params.set("target_category_key", target_category_key);
-    params.set("source_type", source_type);
     return apiFetch(`/flashcards/boxes/?${params.toString()}`, {}, token) as Promise<FlashcardBoxSummary>;
   },
   flashcardDeckSummary(token: string, target_category_key = "", source_type: QuestionType = "brandGeneric") {

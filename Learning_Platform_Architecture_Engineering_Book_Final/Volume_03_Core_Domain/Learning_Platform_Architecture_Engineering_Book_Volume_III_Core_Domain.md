@@ -426,6 +426,29 @@ A product may import Knowledge Sources from:
 
 Every import must produce validation reports.
 
+## 8.4 Source Metadata Boundaries
+
+Imported knowledge must preserve three distinct metadata layers:
+
+1. Dataset document metadata
+   - schema version
+   - source file identity and checksum
+   - authoring metadata
+   - extraction method and timestamp
+   - extraction warnings
+   - enrichment method and reference checksum
+2. Learning-object metadata
+   - normalized domain fields used by product rules
+   - stable source row identity
+   - classification and taxonomy values
+3. Source-specific attributes
+   - validated columns that are meaningful in the source dataset but are not part of the shared product schema
+   - original header names and values retained without data loss
+
+Operational extraction metadata must not be mixed with clinical learning fields. The normalized fields are the primary application contract; the original record remains available for traceability and future remapping.
+
+Importers must reject unsupported schema versions, validate the complete batch before replacement, and derive stable identifiers from immutable source identity rather than database sequence values.
+
 ---
 
 # 9. Assessment Item

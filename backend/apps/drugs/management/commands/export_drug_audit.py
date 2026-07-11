@@ -10,12 +10,27 @@ from apps.drugs.models import Drug, DrugQuestionSource
 from apps.drugs.services import generic_drug_signature, normalize_option
 
 
-QUESTION_TYPES = ("brandGeneric", "timing", "indication", "sideEffects")
+QUESTION_TYPES = (
+    "brandGeneric",
+    "timing",
+    "indication",
+    "sideEffects",
+    "classification",
+    "dosageForm",
+    "dosing",
+    "pregnancy",
+    "doseAdjustment",
+)
 QUESTION_TYPE_LABELS = {
     "brandGeneric": "brand/generic",
     "timing": "food timing",
     "indication": "indication",
     "sideEffects": "side effects",
+    "classification": "classification",
+    "dosageForm": "dosage form",
+    "dosing": "dosing",
+    "pregnancy": "pregnancy/breastfeeding",
+    "doseAdjustment": "dose adjustment",
 }
 
 
@@ -98,17 +113,7 @@ class Command(BaseCommand):
 
         write_csv(
             output_dir / "category_summary.csv",
-            [
-                "category_key",
-                "category_label",
-                "drug_rows",
-                "unique_generics",
-                "rows_missing_generic_identity",
-                "brandGeneric_sources",
-                "timing_sources",
-                "indication_sources",
-                "sideEffects_sources",
-            ],
+            list(summary[0].keys()) if summary else [],
             summary,
         )
         write_csv(output_dir / "drug_records.csv", list(records[0].keys()) if records else [], records)
@@ -149,10 +154,10 @@ class Command(BaseCommand):
                 "drug_rows": 0,
                 "unique_generics": set(),
                 "rows_missing_generic_identity": 0,
-                "brandGeneric_sources": 0,
-                "timing_sources": 0,
-                "indication_sources": 0,
-                "sideEffects_sources": 0,
+                **{
+                    f"{question_type}_sources": 0
+                    for question_type in QUESTION_TYPES
+                },
             }
             for category in TARGET_CATEGORIES
         }
@@ -202,14 +207,25 @@ class Command(BaseCommand):
                     "consumption_time": clean(drug.consumption_time),
                     "indication_answer": clean(drug.indication_answer),
                     "side_effects_answer": clean(drug.side_effects_answer),
-                    "has_brandGeneric": bool_text(active_counts["brandGeneric"]),
-                    "has_timing": bool_text(active_counts["timing"]),
-                    "has_indication": bool_text(active_counts["indication"]),
-                    "has_sideEffects": bool_text(active_counts["sideEffects"]),
-                    "active_brandGeneric_sources": active_counts["brandGeneric"],
-                    "active_timing_sources": active_counts["timing"],
-                    "active_indication_sources": active_counts["indication"],
-                    "active_sideEffects_sources": active_counts["sideEffects"],
+                    "dosing_and_administration": clean(drug.dosing_and_administration),
+                    "pregnancy": clean(drug.pregnancy),
+                    "breastfeeding": clean(drug.breastfeeding),
+                    "dose_adjustment": clean(drug.dose_adjustment),
+                    "clinical_notes": clean(drug.clinical_notes),
+                    "atc_codes": join_unique(drug.atc_codes),
+                    "atc_classes": join_unique(drug.atc_classes),
+                    "atc_subclasses": join_unique(drug.atc_subclasses),
+                    "atc_categories": join_unique(drug.atc_categories),
+                    "source_table": drug.source_table,
+                    "source_row": drug.source_row,
+                    **{
+                        f"has_{question_type}": bool_text(active_counts[question_type])
+                        for question_type in QUESTION_TYPES
+                    },
+                    **{
+                        f"active_{question_type}_sources": active_counts[question_type]
+                        for question_type in QUESTION_TYPES
+                    },
                     "total_question_sources": sum(total_counts.values()),
                     "active_question_sources": sum(active_counts.values()),
                 }
@@ -236,10 +252,10 @@ class Command(BaseCommand):
                     "dosage_forms": [],
                     "classifications": [],
                     "source_topics": [],
-                    "brandGeneric_sources": 0,
-                    "timing_sources": 0,
-                    "indication_sources": 0,
-                    "sideEffects_sources": 0,
+                    **{
+                        f"{question_type}_sources": 0
+                        for question_type in QUESTION_TYPES
+                    },
                 }
             group = groups[key]
             group["drug_rows"] += 1

@@ -12,7 +12,7 @@ class TopicListView(generics.ListAPIView):
 
 class DrugListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
-    queryset = Drug.objects.all().order_by("id")
+    queryset = Drug.objects.select_related("dataset_document").all().order_by("id")
     serializer_class = DrugSerializer
 
 

@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: radius.lg,
     backgroundColor: colors.primary,
-    color: "#FFFFFF",
+    color: colors.black,
     fontSize: 34,
     fontWeight: "900",
     textAlign: "center",
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   segmentTextActive: {
-    color: "#FFFFFF",
+    color: colors.black,
   },
   input: {
     minHeight: 50,

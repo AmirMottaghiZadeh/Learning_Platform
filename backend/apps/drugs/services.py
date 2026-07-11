@@ -9,11 +9,16 @@ TOPIC_DEFS = {
     "brandGeneric": {"label": "نام تجاری / ژنریک", "detail": "تطبیق Brand name با Generic name"},
     "indication": {"label": "اندیکاسیون", "detail": "کاربرد یا مورد مصرف دارو"},
     "sideEffects": {"label": "عوارض جانبی", "detail": "Side effects مهم دارو"},
+    "classification": {"label": "دسته‌بندی", "detail": "کلاس و رده ATC دارو"},
+    "dosageForm": {"label": "اشکال دارویی", "detail": "فرم‌ها و قدرت‌های دارویی"},
+    "dosing": {"label": "دوزینگ", "detail": "دوز و دستور مصرف"},
+    "pregnancy": {"label": "بارداری و شیردهی", "detail": "اطلاعات مصرف در بارداری و شیردهی"},
+    "doseAdjustment": {"label": "تنظیم دوز", "detail": "تنظیم دوز کلیوی، کبدی و بالینی"},
 }
 
 def ensure_topics():
     for key, item in TOPIC_DEFS.items():
-        DrugTopic.objects.get_or_create(key=key, defaults=item)
+        DrugTopic.objects.update_or_create(key=key, defaults=item)
 
 def normalize_option(value):
     return " ".join(str(value or "").split()).strip()

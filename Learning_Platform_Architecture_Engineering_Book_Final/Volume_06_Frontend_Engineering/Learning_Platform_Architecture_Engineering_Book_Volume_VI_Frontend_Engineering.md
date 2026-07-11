@@ -133,19 +133,33 @@ Products may theme the design system but should not rewrite it.
 
 # 5. Official Visual Direction
 
-The official product UI direction is a calm, pastel, mobile-first education dashboard.
+The official product UI direction is an immersive, dark, mobile-first learning game dashboard.
 
 Characteristics:
-- Rounded cards
-- Soft contrast
-- Pastel visual language
-- Dashboard-first layout
-- Progress-driven feedback
-- Clean typography
-- Friendly learning tone
-- Lightweight gamification
+- Deep navy and blue-green foundations with high-contrast off-white text
+- Electric green and turquoise accents reserved for progress, selection and primary actions
+- Rounded, layered cards with translucent borders and controlled depth
+- Dashboard-first information hierarchy with one obvious next action
+- Compact metric pills, progress rings, streak indicators and leaderboard states
+- Floating pill-shaped bottom navigation
+- Clean, bold typography with restrained supporting copy
+- Purposeful motion for entrance, selection, progress and answer feedback
+- Premium game-like energy without sacrificing clinical-learning clarity
+- Responsive mobile composition centered inside a wider atmospheric web stage
 
 K_Game uses this direction as its first reference implementation.
+
+The default theme tokens are:
+- Background: deep navy-green
+- Surface: dark teal
+- Elevated surface: brighter blue-green
+- Primary accent: electric green
+- Secondary accent: turquoise
+- Primary text: cool off-white
+- Secondary text: muted blue-gray
+- Border: translucent white
+
+Pastel colors may only appear as low-opacity semantic glows. They are not the primary surface language.
 
 ---
 
@@ -164,7 +178,16 @@ Core areas:
 - Profile
 - Admin if web-based
 
-Navigation must be simple enough for daily use.
+The persistent mobile navigation contains five destinations:
+- Home
+- Quiz
+- Review
+- League
+- Profile
+
+Planning, Mistakes and Statistics remain first-class screens but are entered contextually from dashboard cards, profile shortcuts or learning-result actions.
+
+The mobile navigation is a floating rounded dock. The active destination uses an accent-filled capsule and may display its label; inactive destinations remain compact and icon-led. Navigation must be simple enough for daily use, preserve safe-area spacing and remain usable at narrow widths.
 
 ---
 
@@ -211,10 +234,16 @@ Core components:
 
 - AppShell
 - ScreenContainer
+- BrandMark
 - LearningCard
+- GlassCard
 - QuizCard
 - ChoiceButton
 - ProgressRing
+- MetricPill
+- SectionHeader
+- AnimatedEntrance
+- Avatar
 - StreakBadge
 - XPBadge
 - Flashcard
@@ -225,6 +254,8 @@ Core components:
 - LoadingState
 
 Components must be documented and reusable.
+
+Shared components must use semantic design tokens rather than screen-specific literal colors. Pressable components provide visible pressed, selected, disabled and keyboard-focus states. Repeated information patterns such as metrics, ranking rows, choice states and progress visualization belong in the component library instead of individual screens.
 
 ---
 
@@ -242,6 +273,8 @@ Required elements:
 - Next action
 
 Correct answer should only be shown after backend evaluation.
+
+The active quiz state uses a focused single-task composition: compact session metrics, a prominent timer/progress visualization, one question card and clearly separated answers. Selection and backend feedback are visually distinct. Setup controls may use horizontally wrapping chips, but must preserve all supported question types.
 
 ---
 
@@ -261,11 +294,29 @@ It should include:
 
 Dashboard should create a reason to return tomorrow.
 
+The dashboard visual hierarchy is:
+1. Personal greeting and account affordance
+2. Daily mission with progress ring and primary CTA
+3. Compact learning-mode shortcuts
+4. Actionable upcoming or recommended sessions
+5. Performance, weak-topic and league summaries
+
+Secondary metrics must not compete visually with the primary next action.
+
 ---
 
 # 12. Flashcard UI
 
 Flashcard UI should support quick review.
+
+The K_Game flashcard entry is a progressive flow rather than one long configuration page:
+1. Choose one question type or open the global Leitner box.
+2. For a new-card path, choose a target category.
+3. Enter the focused card stage.
+
+Only the current step is presented as the primary surface. Back navigation may return to the previous choice without mixing all configuration controls into the card stage.
+
+The global Leitner action is displayed beside the question-type choices in the first step. It is independent of question type and category. Unseen cards are labelled New and are never presented as Due or as members of a Leitner box.
 
 Required controls:
 - Again
@@ -329,6 +380,9 @@ Future internationalization should support:
 Animations should support comprehension, not distract.
 
 Use animation for:
+- Screen fade and short vertical entrance
+- Card stagger on first presentation
+- Press scale and selected-state transitions
 - Answer feedback
 - Card transitions
 - Progress changes
@@ -339,6 +393,13 @@ Haptics may support:
 - Wrong answer
 - Streak milestone
 - Review completion
+
+Default motion is short and responsive:
+- Micro interaction: 120–180 ms
+- Component transition: 180–260 ms
+- Screen entrance: 260–360 ms
+
+Movement should use opacity and transform where possible. Continuous decorative motion is avoided. Reduced-motion preferences must disable non-essential movement while retaining state feedback.
 
 ---
 

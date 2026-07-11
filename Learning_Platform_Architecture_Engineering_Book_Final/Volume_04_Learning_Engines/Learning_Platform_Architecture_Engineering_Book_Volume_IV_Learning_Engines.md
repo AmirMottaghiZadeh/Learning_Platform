@@ -257,6 +257,13 @@ Flashcard states:
 - Mature
 - Suspended
 
+New learning cards and Leitner review items are separate queues:
+- A new card is selected by source type and target category.
+- A new card has no due date and is never counted as a due review.
+- A new card enters Leitner box 1 only after an Unknown response.
+- A Known response on a new card completes that card without adding it to Leitner review.
+- Leitner review is a learner-wide queue and must not be scoped by the source type or category used to discover the card.
+
 Minimum review responses:
 - Known
 - Unknown

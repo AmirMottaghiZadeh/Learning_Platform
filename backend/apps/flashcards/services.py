@@ -120,7 +120,7 @@ def seed_flashcards_for_user(
     target_category_key="",
     source_type="",
 ):
-    due_at = timezone.now()
+    created_at = timezone.now()
     existing_source_ids = set(
         FlashcardState.objects
         .filter(user=user, knowledge_source__isnull=False)
@@ -143,7 +143,7 @@ def seed_flashcards_for_user(
 
     states = []
     for source in sources:
-        states.append(schedule_flashcard_from_source(user=user, knowledge_source=source, due_at=due_at))
+        states.append(schedule_flashcard_from_source(user=user, knowledge_source=source, created_at=created_at))
     return states
 
 
@@ -171,7 +171,10 @@ def get_flashcard_deck_summary(*, user, product_id="k_game", target_category_key
 
     scheduled_source_ids = set(states.values_list("knowledge_source_id", flat=True))
     eligible_source_ids = set(sources.values_list("id", flat=True))
-    active_states = states.exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED)
+    new_states = states.filter(box=0, review_state=FlashcardState.REVIEW_STATE_NEW)
+    leitner_states = states.filter(box__gte=LEITNER_MIN_BOX).exclude(
+        review_state=FlashcardState.REVIEW_STATE_SUSPENDED
+    )
 
     return {
         "product_id": product_id,
@@ -180,8 +183,9 @@ def get_flashcard_deck_summary(*, user, product_id="k_game", target_category_key
         "eligible_sources": len(eligible_source_ids),
         "scheduled_cards": len(eligible_source_ids & scheduled_source_ids),
         "unscheduled_sources": len(eligible_source_ids - scheduled_source_ids),
-        "active_cards": active_states.count(),
-        "due_cards": active_states.filter(due_at__lte=timezone.now()).count(),
+        "active_cards": leitner_states.count(),
+        "new_cards": new_states.count(),
+        "due_cards": leitner_states.count(),
         "leitner": get_leitner_box_counts(
             user=user,
             product_id=product_id,
@@ -191,15 +195,15 @@ def get_flashcard_deck_summary(*, user, product_id="k_game", target_category_key
     }
 
 
-def schedule_flashcard_from_source(*, user, knowledge_source, due_at=None):
-    due_at = due_at or timezone.now()
+def schedule_flashcard_from_source(*, user, knowledge_source, created_at=None):
+    created_at = created_at or timezone.now()
     state, created = FlashcardState.objects.get_or_create(
         user=user,
         knowledge_source=knowledge_source,
         defaults={
             "box": 0,
             "review_state": FlashcardState.REVIEW_STATE_NEW,
-            "due_at": due_at,
+            "due_at": None,
             "interval_days": 0,
             "schedule_rule_version": REVIEW_SCHEDULE_RULE_VERSION,
         },
@@ -209,7 +213,7 @@ def schedule_flashcard_from_source(*, user, knowledge_source, due_at=None):
             user=user,
             knowledge_source=knowledge_source,
             state=state,
-            occurred_at=due_at,
+            occurred_at=created_at,
             correlation_id=f"flashcard-seed:{state.id}",
             reason="learning_seed",
             created=True,
@@ -220,15 +224,16 @@ def schedule_flashcard_from_source(*, user, knowledge_source, due_at=None):
 def get_leitner_box_counts(*, user, product_id="k_game", target_category_key="", source_type=""):
     queryset = (
         FlashcardState.objects
-        .filter(user=user, knowledge_source__product_id=product_id)
+        .filter(
+            user=user,
+            knowledge_source__product_id=product_id,
+            box__gte=LEITNER_MIN_BOX,
+        )
         .exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED)
     )
-    if target_category_key:
-        queryset = queryset.filter(knowledge_source__metadata__target_category_key=target_category_key)
-    if source_type:
-        queryset = queryset.filter(knowledge_source__source_type=source_type)
     return {
-        "new": queryset.filter(box=0, review_state=FlashcardState.REVIEW_STATE_NEW).count(),
+        "new": 0,
+        "total": queryset.count(),
         "boxes": [
             {"box": box, "count": queryset.filter(box=box).count()}
             for box in range(LEITNER_MIN_BOX, LEITNER_MAX_BOX + 1)

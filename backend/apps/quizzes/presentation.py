@@ -5,6 +5,11 @@ QUESTION_TYPE_LABELS = {
     "brandGeneric": "نام تجاری / ژنریک",
     "indication": "کاربرد",
     "sideEffects": "عوارض جانبی",
+    "classification": "دسته‌بندی",
+    "dosageForm": "اشکال دارویی",
+    "dosing": "دوزینگ",
+    "pregnancy": "بارداری و شیردهی",
+    "doseAdjustment": "تنظیم دوز",
 }
 
 
@@ -80,4 +85,14 @@ def instruction_for(question_type):
         return "کاربرد اصلی را انتخاب کن."
     if question_type == "sideEffects":
         return "عوارض مرتبط را انتخاب کن."
+    if question_type == "classification":
+        return "دسته دارویی درست را انتخاب کن."
+    if question_type == "dosageForm":
+        return "شکل دارویی درست را انتخاب کن."
+    if question_type == "dosing":
+        return "دستور مصرف درست را انتخاب کن."
+    if question_type == "pregnancy":
+        return "گزینه صحیح بارداری یا شیردهی را انتخاب کن."
+    if question_type == "doseAdjustment":
+        return "گزینه صحیح تنظیم دوز را انتخاب کن."
     return "گزینه درست را انتخاب کن."

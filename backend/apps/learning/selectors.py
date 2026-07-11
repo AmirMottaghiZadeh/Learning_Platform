@@ -47,8 +47,11 @@ def get_learning_progress_summary(user, *, product_id=None):
         flashcards = flashcards.filter(knowledge_source__product_id=product_id)
         mistakes = mistakes.filter(knowledge_source__product_id=product_id)
 
-    due_flashcards = flashcards.filter(due_at__lte=timezone.now()).count()
-    active_flashcards = flashcards.exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED).count()
+    leitner_flashcards = flashcards.filter(box__gte=1).exclude(
+        review_state=FlashcardState.REVIEW_STATE_SUSPENDED
+    )
+    due_flashcards = leitner_flashcards.count()
+    active_flashcards = leitner_flashcards.count()
     latest_session = sessions.order_by("-started_at").first()
 
     return {
@@ -73,7 +76,12 @@ def get_weak_topics(user, *, product_id=None, limit=10):
         flashcards = FlashcardState.objects.filter(user=user, knowledge_source__topic=progress.topic)
         if product_id:
             flashcards = flashcards.filter(knowledge_source__product_id=product_id)
-        due_flashcards = flashcards.filter(due_at__lte=timezone.now()).count()
+        due_flashcards = (
+            flashcards
+            .filter(box__gte=1)
+            .exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED)
+            .count()
+        )
         weak_topics.append(
             {
                 "topic_key": progress.topic.key,

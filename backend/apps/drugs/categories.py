@@ -139,6 +139,7 @@ TARGET_CATEGORIES: tuple[TargetCategory, ...] = (
     TargetCategory(
         key="pain_inflammation",
         label="درد / التهاب",
+        source_values=("pain_inflammation",),
         keywords=(
             "nsaid",
             "pain",
@@ -198,7 +199,10 @@ def category_for_drug(drug) -> TargetCategory:
     return category_for_values(
         source_topic=getattr(drug, "source_topic", ""),
         source_file=getattr(drug, "source_file", ""),
-        drug_classification=getattr(drug, "drug_classification", ""),
+        drug_classification=(
+            getattr(drug, "drug_classification", "")
+            or " ".join(getattr(drug, "atc_categories", []) or [])
+        ),
     )
 
 

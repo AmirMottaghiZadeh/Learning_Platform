@@ -1,7 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, views
 from rest_framework.response import Response
-from django.utils import timezone
 from .models import FlashcardState
 from .serializers import (
     FlashcardBoxSummarySerializer,
@@ -14,16 +13,36 @@ from .services import get_flashcard_deck_summary, get_leitner_box_counts, review
 
 class FlashcardListView(generics.ListAPIView):
     serializer_class = FlashcardStateSerializer
+
     def get_queryset(self):
         queryset = (
             FlashcardState.objects
             .filter(user=self.request.user)
-            .exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED)
             .select_related("knowledge_source", "source")
         )
         product_id = self.request.query_params.get("product_id")
         if product_id:
             queryset = queryset.filter(knowledge_source__product_id=product_id)
+        exclude_ids = [
+            int(value)
+            for value in self.request.query_params.get("exclude_ids", "").split(",")
+            if value.isdigit()
+        ]
+        if exclude_ids:
+            queryset = queryset.exclude(id__in=exclude_ids)
+        mode = self.request.query_params.get("mode") or "new"
+        if mode == "leitner":
+            return (
+                queryset
+                .filter(box__gte=1)
+                .exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED)
+                .order_by("box", "last_reviewed_at", "id")
+            )
+
+        queryset = queryset.filter(
+            box=0,
+            review_state=FlashcardState.REVIEW_STATE_NEW,
+        )
         target_category_key = self.request.query_params.get("target_category_key")
         if target_category_key:
             queryset = queryset.filter(
@@ -32,10 +51,7 @@ class FlashcardListView(generics.ListAPIView):
         source_type = self.request.query_params.get("source_type")
         if source_type:
             queryset = queryset.filter(knowledge_source__source_type=source_type)
-        box = self.request.query_params.get("box")
-        if box:
-            return queryset.filter(box=box).order_by("last_reviewed_at", "id")
-        return queryset.filter(due_at__lte=timezone.now()).order_by("box", "due_at", "id")
+        return queryset.order_by("id")
 
 class FlashcardReviewView(views.APIView):
     @extend_schema(request=FlashcardReviewRequestSerializer, responses=FlashcardStateSerializer)
@@ -65,13 +81,9 @@ class FlashcardBoxSummaryView(views.APIView):
     @extend_schema(responses=FlashcardBoxSummarySerializer)
     def get(self, request):
         product_id = request.query_params.get("product_id") or "k_game"
-        target_category_key = request.query_params.get("target_category_key") or ""
-        source_type = request.query_params.get("source_type") or ""
         counts = get_leitner_box_counts(
             user=request.user,
             product_id=product_id,
-            target_category_key=target_category_key,
-            source_type=source_type,
         )
         return Response(FlashcardBoxSummarySerializer(counts).data)
 

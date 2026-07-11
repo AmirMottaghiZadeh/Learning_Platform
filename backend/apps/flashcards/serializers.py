@@ -118,7 +118,17 @@ class FlashcardSeedRequestSerializer(serializers.Serializer):
     )
     target_category_key = serializers.CharField(required=False, allow_blank=True, default="")
     source_type = serializers.ChoiceField(
-        choices=["brandGeneric", "timing", "indication", "sideEffects"],
+        choices=[
+            "brandGeneric",
+            "timing",
+            "indication",
+            "sideEffects",
+            "classification",
+            "dosageForm",
+            "dosing",
+            "pregnancy",
+            "doseAdjustment",
+        ],
         required=False,
         allow_blank=True,
         default="",
@@ -132,6 +142,7 @@ class FlashcardBoxSerializer(serializers.Serializer):
 
 class FlashcardBoxSummarySerializer(serializers.Serializer):
     new = serializers.IntegerField()
+    total = serializers.IntegerField()
     boxes = FlashcardBoxSerializer(many=True)
 
 
@@ -143,5 +154,6 @@ class FlashcardDeckSummarySerializer(serializers.Serializer):
     scheduled_cards = serializers.IntegerField()
     unscheduled_sources = serializers.IntegerField()
     active_cards = serializers.IntegerField()
+    new_cards = serializers.IntegerField()
     due_cards = serializers.IntegerField()
     leitner = FlashcardBoxSummarySerializer()

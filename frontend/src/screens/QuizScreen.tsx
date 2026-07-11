@@ -10,6 +10,7 @@ import {
   LearningCard,
   LoadingState,
   PrimaryButton,
+  ProgressRing,
   ScreenContainer,
   ScreenHeader,
   SecondaryButton,
@@ -25,6 +26,11 @@ const QUESTION_TYPES: Array<{key: QuestionType; label: string}> = [
   {key: "timing", label: "با غذا / بی غذا"},
   {key: "sideEffects", label: "عوارض"},
   {key: "indication", label: "اندیکاسیون"},
+  {key: "classification", label: "دسته‌بندی"},
+  {key: "dosageForm", label: "اشکال دارویی"},
+  {key: "dosing", label: "دوزینگ"},
+  {key: "pregnancy", label: "بارداری / شیردهی"},
+  {key: "doseAdjustment", label: "تنظیم دوز"},
 ];
 
 const SAVED_QUIZ_SESSION_KEY = "k_game_saved_quiz_session";
@@ -449,7 +455,7 @@ export function QuizScreen() {
         </>
       ) : (
         <>
-          <LearningCard tone="lavender">
+          <LearningCard tone="primary" style={styles.sessionCard}>
             <View style={styles.sessionTop}>
               <Text style={styles.sessionMeta}>{session.mode}</Text>
               <Text style={styles.sessionMeta}>Score {session.score}</Text>
@@ -472,28 +478,36 @@ export function QuizScreen() {
               </View>
             </LearningCard>
           ) : question ? (
-            <LearningCard>
+            <LearningCard style={styles.questionCard}>
               <View style={styles.timerPanel}>
-                <View style={styles.timerMain}>
-                  <Clock3 size={18} color={remainingSeconds <= 0 ? colors.danger : colors.primary} />
-                  <Text style={[styles.timerText, remainingSeconds <= 0 && styles.timerTextDanger]}>
-                    {timerStatus}
-                  </Text>
+                <ProgressRing
+                  value={timerPercent}
+                  size={86}
+                  strokeWidth={8}
+                  label={timerStatus}
+                />
+                <View style={styles.timerCopy}>
+                  <View style={styles.timerMain}>
+                    <Clock3 size={18} color={remainingSeconds <= 0 ? colors.danger : colors.primary} />
+                    <Text style={[styles.timerText, remainingSeconds <= 0 && styles.timerTextDanger]}>
+                      Focus timer
+                    </Text>
+                  </View>
                   <Text style={styles.timerMeta}>
-                    / {timerTotalSeconds}s
+                    {remainingSeconds}s remaining from {timerTotalSeconds}s
                   </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={!canExtendTimer}
+                    onPress={extendTimer}
+                    style={[styles.extendButton, !canExtendTimer && styles.extendButtonDisabled]}
+                  >
+                    <TimerReset size={16} color={canExtendTimer ? colors.primary : colors.softText} />
+                    <Text style={[styles.extendButtonText, !canExtendTimer && styles.extendButtonTextDisabled]}>
+                      +{TIMER_EXTENSION_SECONDS}s
+                    </Text>
+                  </Pressable>
                 </View>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={!canExtendTimer}
-                  onPress={extendTimer}
-                  style={[styles.extendButton, !canExtendTimer && styles.extendButtonDisabled]}
-                >
-                  <TimerReset size={16} color={canExtendTimer ? colors.primary : colors.softText} />
-                  <Text style={[styles.extendButtonText, !canExtendTimer && styles.extendButtonTextDisabled]}>
-                    +{TIMER_EXTENSION_SECONDS}s
-                  </Text>
-                </Pressable>
               </View>
               <View style={styles.timerTrack}>
                 <View
@@ -584,7 +598,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.72)",
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
     marginRight: spacing.sm,
@@ -596,7 +610,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.72)",
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
     marginRight: spacing.sm,
@@ -611,7 +625,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   topicTextActive: {
-    color: "#FFFFFF",
+    color: colors.black,
   },
   spacer: {
     height: spacing.md,
@@ -630,6 +644,12 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontWeight: "800",
   },
+  sessionCard: {
+    backgroundColor: colors.surfaceElevated,
+  },
+  questionCard: {
+    paddingTop: spacing.lg,
+  },
   chip: {
     alignSelf: "flex-start",
     color: colors.primary,
@@ -641,17 +661,20 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   timerPanel: {
-    minHeight: 52,
+    minHeight: 112,
     borderRadius: radius.lg,
     backgroundColor: colors.primarySoft,
     borderWidth: 1,
     borderColor: colors.primaryMuted,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+  },
+  timerCopy: {
+    flex: 1,
+    marginLeft: spacing.lg,
   },
   timerMain: {
     flexDirection: "row",
@@ -659,7 +682,7 @@ const styles = StyleSheet.create({
   },
   timerText: {
     color: colors.primary,
-    fontSize: typography.heading,
+    fontSize: typography.body,
     fontWeight: "900",
     marginLeft: spacing.sm,
   },
@@ -669,12 +692,14 @@ const styles = StyleSheet.create({
   timerMeta: {
     color: colors.muted,
     fontWeight: "800",
-    marginLeft: spacing.xs,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
   extendButton: {
     minHeight: 34,
     borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
+    alignSelf: "flex-start",
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.primary,
     paddingHorizontal: spacing.md,
@@ -734,7 +759,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceMuted,
     paddingHorizontal: spacing.md,
     alignItems: "center",
     justifyContent: "center",
@@ -752,7 +777,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceMuted,
     paddingHorizontal: spacing.lg,
     marginTop: spacing.md,
     flexDirection: "row",
@@ -768,7 +793,7 @@ const styles = StyleSheet.create({
   },
   feedbackBox: {
     borderRadius: radius.lg,
-    backgroundColor: colors.sageSoft,
+    backgroundColor: colors.primarySoft,
     padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",

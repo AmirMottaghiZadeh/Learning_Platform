@@ -21,7 +21,16 @@ export type TargetCategory = {
   count: number;
 };
 
-export type QuestionType = "brandGeneric" | "timing" | "indication" | "sideEffects";
+export type QuestionType =
+  | "brandGeneric"
+  | "timing"
+  | "indication"
+  | "sideEffects"
+  | "classification"
+  | "dosageForm"
+  | "dosing"
+  | "pregnancy"
+  | "doseAdjustment";
 export type FlashcardRating = "again" | "hard" | "good" | "easy" | "known" | "unknown";
 
 export type WeakTopic = {
@@ -200,6 +209,7 @@ export type FlashcardBox = {
 
 export type FlashcardBoxSummary = {
   new: number;
+  total: number;
   boxes: FlashcardBox[];
 };
 
@@ -211,6 +221,7 @@ export type FlashcardDeckSummary = {
   scheduled_cards: number;
   unscheduled_sources: number;
   active_cards: number;
+  new_cards: number;
   due_cards: number;
   leitner: FlashcardBoxSummary;
 };

@@ -2,9 +2,9 @@ import React from "react";
 import {Pressable, StyleSheet, Text, View} from "react-native";
 import {
   Brain,
-  CalendarCheck,
   Home,
   Layers,
+  Trophy,
   UserRound,
 } from "lucide-react-native";
 import type {LucideIcon} from "lucide-react-native";
@@ -15,9 +15,9 @@ import type {ScreenKey} from "../navigation/types";
 
 const navItems: Array<{key: ScreenKey; label: string; Icon: LucideIcon}> = [
   {key: "dashboard", label: "Home", Icon: Home},
-  {key: "quiz", label: "Learn", Icon: Brain},
+  {key: "quiz", label: "Quiz", Icon: Brain},
   {key: "flashcards", label: "Review", Icon: Layers},
-  {key: "planning", label: "Plan", Icon: CalendarCheck},
+  {key: "league", label: "League", Icon: Trophy},
   {key: "profile", label: "Profile", Icon: UserRound},
 ];
 
@@ -30,9 +30,14 @@ export function AppShell({
   onNavigate: (screen: ScreenKey) => void;
   children: React.ReactNode;
 }) {
+  const activeNavKey: ScreenKey =
+    active === "planning" || active === "mistakes" || active === "statistics" ? "dashboard" : active;
+
   return (
     <SafeAreaView style={styles.shell}>
       <View style={styles.stage}>
+        <View pointerEvents="none" style={styles.glowTop} />
+        <View pointerEvents="none" style={styles.glowBottom} />
         <View style={styles.appFrame}>
           <View style={styles.content}>{children}</View>
         </View>
@@ -40,7 +45,7 @@ export function AppShell({
       <View style={styles.navWrap}>
         <View style={styles.nav}>
           {navItems.map(({key, label, Icon}) => {
-            const selected = key === active;
+            const selected = key === activeNavKey;
             return (
               <Pressable
                 key={key}
@@ -49,7 +54,7 @@ export function AppShell({
                 onPress={() => onNavigate(key)}
                 style={[styles.navItem, selected && styles.navItemActive]}
               >
-                <Icon size={20} color={selected ? colors.primary : colors.muted} strokeWidth={2.2} />
+                <Icon size={20} color={selected ? colors.black : colors.muted} strokeWidth={2.2} />
                 <Text style={[styles.navText, selected && styles.navTextActive]} numberOfLines={1}>
                   {label}
                 </Text>
@@ -66,11 +71,30 @@ const styles = StyleSheet.create({
   shell: {
     flex: 1,
     backgroundColor: colors.background,
+    overflow: "hidden",
   },
   stage: {
     flex: 1,
     alignItems: "center",
     backgroundColor: colors.background,
+  },
+  glowTop: {
+    position: "absolute",
+    top: -190,
+    right: -130,
+    width: 390,
+    height: 390,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(32,242,138,0.07)",
+  },
+  glowBottom: {
+    position: "absolute",
+    bottom: -210,
+    left: -150,
+    width: 420,
+    height: 420,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(34,215,197,0.05)",
   },
   appFrame: {
     width: "100%",
@@ -88,38 +112,36 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
-    backgroundColor: "rgba(245,248,247,0.94)",
+    backgroundColor: "transparent",
   },
   nav: {
     maxWidth: layout.appShellMaxWidth,
     alignSelf: "center",
     width: "100%",
     minHeight: layout.bottomNavHeight,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(8,38,48,0.96)",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.xs,
-    shadowColor: "#17343A",
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    shadowOffset: {width: 0, height: 8},
-    elevation: 3,
+    paddingHorizontal: spacing.sm,
+    shadowColor: "#000000",
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    shadowOffset: {width: 0, height: 12},
+    elevation: 12,
   },
   navItem: {
     width: "20%",
-    minHeight: 58,
+    minHeight: 50,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
   },
   navItemActive: {
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: colors.primaryMuted,
+    backgroundColor: colors.primary,
   },
   navText: {
     color: colors.muted,
@@ -128,6 +150,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   navTextActive: {
-    color: colors.primary,
+    color: colors.black,
   },
 });
