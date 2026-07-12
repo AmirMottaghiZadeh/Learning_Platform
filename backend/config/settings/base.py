@@ -75,7 +75,7 @@ CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=True, cast=boo
 CSRF_TRUSTED_ORIGINS = [o for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",") if o]
 LEARNING_PRODUCT_ADAPTER = config(
     "LEARNING_PRODUCT_ADAPTER",
-    default="apps.drugs.learning_adapter.KGameLearningAdapter",
+    default="apps.drugs.learning_adapter.PharmexaLearningAdapter",
 )
 AI_DATA_PIPELINE_PROVIDER = config("AI_DATA_PIPELINE_PROVIDER", default="rules")
 REST_FRAMEWORK = {

@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from django.core.management import call_command
 from django.test import TestCase
 
-from apps.drugs.learning_adapter import KGameLearningAdapter
+from apps.drugs.learning_adapter import PharmexaLearningAdapter
 from apps.drugs.learning_sync import drug_question_source_external_id, sync_drug_question_source
 from apps.drugs.models import Drug, DrugDatasetDocument, DrugQuestionSource, DrugTopic
 from apps.drugs.services import list_target_categories
@@ -13,7 +13,7 @@ from apps.learning.models import KnowledgeSource
 from apps.quizzes.contracts import QuestionGenerationContext
 
 
-class KGameLearningAdapterTests(TestCase):
+class PharmexaLearningAdapterTests(TestCase):
     def test_maps_drug_question_source_to_platform_knowledge_source(self):
         topic = DrugTopic.objects.create(
             key="timing",
@@ -36,7 +36,7 @@ class KGameLearningAdapterTests(TestCase):
             feedback="Take with food.",
         )
 
-        sources = KGameLearningAdapter().list_knowledge_sources(
+        sources = PharmexaLearningAdapter().list_knowledge_sources(
             QuestionGenerationContext(topic_key="timing")
         )
 

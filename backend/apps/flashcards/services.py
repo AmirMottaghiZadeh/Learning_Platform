@@ -16,7 +16,7 @@ from .models import FlashcardReview, FlashcardState
 
 LEITNER_MIN_BOX = 1
 LEITNER_MAX_BOX = 5
-REVIEW_SCHEDULE_RULE_VERSION = "k-game-leitner-box-v1"
+REVIEW_SCHEDULE_RULE_VERSION = "pharmexa-leitner-box-v1"
 KNOWN_RATINGS = {"known", "good", "easy"}
 UNKNOWN_RATINGS = {"unknown", "again", "hard"}
 

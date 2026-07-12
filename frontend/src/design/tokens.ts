@@ -51,7 +51,7 @@ export const radius = {
 };
 
 export const typography = {
-  fontFamily: "KGameUIFont",
+  fontFamily: "PharmexaUIFont",
   title: 31,
   heading: 21,
   body: 15,

@@ -6,7 +6,7 @@ Pharmexa is not designed as a one-off quiz app. It is the first implementation o
 
 ## Languages
 
-- [English](#learning-platform--k_game)
+- [English](#learning-platform--pharmexa)
 - [فارسی](#نسخه-فارسی)
 
 ## Table Of Contents

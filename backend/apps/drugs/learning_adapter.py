@@ -15,7 +15,7 @@ from .categories import category_for_drug, category_payload_for_drug
 from .models import DrugQuestionSource
 
 
-class KGameLearningAdapter:
+class PharmexaLearningAdapter:
     product_id = PRODUCT_ID
 
     def list_knowledge_sources(

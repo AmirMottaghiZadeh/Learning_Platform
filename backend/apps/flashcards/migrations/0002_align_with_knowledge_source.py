@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db import migrations, models
 
 
-PRODUCT_ID = "k_game"
+PRODUCT_ID = "pharmexa"
 
 
 def drug_learning_object_external_id(drug):

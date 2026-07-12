@@ -1,4 +1,4 @@
-const CACHE_NAME = "k-game-learning-v2";
+const CACHE_NAME = "pharmexa-learning-v2";
 const APP_SHELL = [
   "./",
   "./manifest.webmanifest",

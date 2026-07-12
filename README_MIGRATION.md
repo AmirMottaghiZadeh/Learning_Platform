@@ -87,7 +87,7 @@ These contracts keep Pharmexa-specific data mapped onto reusable platform concep
 
 Pharmexa now provides the first product adapter:
 
-- `apps.drugs.learning_adapter.KGameLearningAdapter`
+- `apps.drugs.learning_adapter.PharmexaLearningAdapter`
 
 The Quiz and Game session services use the learning adapter contract instead of importing `DrugQuestionSource` directly. Current `games` and `flashcards` persistence models still reference the Pharmexa source model and should be migrated in a later persistence-focused phase.
 
@@ -153,7 +153,7 @@ New lifecycle endpoints:
 Rule versions introduced in this phase:
 
 - `mvp-scoring-v1`
-- `k-game-leitner-box-v1`
+- `pharmexa-leitner-box-v1`
 
 ## Review, flashcard, and progress foundation
 
@@ -206,7 +206,7 @@ Dashboard-oriented progress endpoints:
 Rule versions introduced or used in this phase:
 
 - `mvp-topic-progress-v1`
-- `k-game-leitner-box-v1`
+- `pharmexa-leitner-box-v1`
 
 ## Pharmexa game modes and Leitner flashcards
 
@@ -230,7 +230,7 @@ Broad target category metadata is stored on Pharmexa `LearningObject` and `Knowl
 
 The frontend can list available categories through:
 
-- `GET /api/v1/target-categories/?product_id=k_game`
+- `GET /api/v1/target-categories/?product_id=pharmexa`
 
 Flashcards are now a learning engine for all active Pharmexa Knowledge Sources. Flashcard deck creation is category-based and independent of quiz mistakes.
 Flashcard decks are filtered by both source type and optional target category.
@@ -253,11 +253,11 @@ Pharmexa uses a five-box Leitner policy:
 
 The frontend can open boxes through:
 
-- `GET /api/v1/flashcards/?product_id=k_game&box=1`
-- `GET /api/v1/flashcards/?product_id=k_game&source_type=timing`
-- `GET /api/v1/flashcards/?product_id=k_game&source_type=timing&target_category_key=cardiovascular`
-- `GET /api/v1/flashcards/boxes/?product_id=k_game`
-- `GET /api/v1/flashcards/boxes/?product_id=k_game&source_type=timing&target_category_key=cardiovascular`
+- `GET /api/v1/flashcards/?product_id=pharmexa&box=1`
+- `GET /api/v1/flashcards/?product_id=pharmexa&source_type=timing`
+- `GET /api/v1/flashcards/?product_id=pharmexa&source_type=timing&target_category_key=cardiovascular`
+- `GET /api/v1/flashcards/boxes/?product_id=pharmexa`
+- `GET /api/v1/flashcards/boxes/?product_id=pharmexa&source_type=timing&target_category_key=cardiovascular`
 
 ## Phase 7 product-behavior cleanup
 

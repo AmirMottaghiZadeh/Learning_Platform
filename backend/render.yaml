@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: k-game-backend
+    name: pharmexa-backend
     env: python
     buildCommand: ./build.sh
     startCommand: gunicorn config.wsgi:application --config gunicorn.conf.py
@@ -18,7 +18,7 @@ services:
         value: rules
       - key: DATABASE_URL
         fromDatabase:
-          name: k-game-db
+          name: pharmexa-db
           property: connectionString
       - key: ALLOWED_HOSTS
         sync: false
@@ -28,6 +28,6 @@ services:
         sync: false
 
 databases:
-  - name: k-game-db
-    databaseName: k_game
-    user: k_game
+  - name: pharmexa-db
+    databaseName: pharmexa
+    user: pharmexa

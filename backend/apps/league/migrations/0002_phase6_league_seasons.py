@@ -28,7 +28,7 @@ def backfill_league_seasons(apps, schema_editor):
     LeagueSeason = apps.get_model("league", "LeagueSeason")
 
     for result in LeagueResult.objects.filter(season__isnull=True):
-        product_id = result.product_id or "k_game"
+        product_id = result.product_id or "pharmexa"
         starts_at, ends_at = week_bounds(result.created_at)
         key = season_key_for(starts_at)
         season, _ = LeagueSeason.objects.get_or_create(
@@ -73,7 +73,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='leagueresult',
             name='product_id',
-            field=models.CharField(default='k_game', max_length=80),
+            field=models.CharField(default='pharmexa', max_length=80),
         ),
         migrations.AddField(
             model_name='leagueresult',
@@ -89,7 +89,7 @@ class Migration(migrations.Migration):
             name='LeagueSeason',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('product_id', models.CharField(default='k_game', max_length=80)),
+                ('product_id', models.CharField(default='pharmexa', max_length=80)),
                 ('key', models.CharField(max_length=40)),
                 ('starts_at', models.DateTimeField()),
                 ('ends_at', models.DateTimeField()),

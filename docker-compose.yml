@@ -4,11 +4,11 @@ services:
     environment:
       POSTGRES_DB: pharmexa
       POSTGRES_USER: pharmexa
-      POSTGRES_PASSWORD: k_game_local_password
+      POSTGRES_PASSWORD: pharmexa_local_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U k_game -d k_game"]
+      test: ["CMD-SHELL", "pg_isready -U pharmexa -d pharmexa"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,7 +24,7 @@ services:
       ENVIRONMENT: docker
       SECRET_KEY: docker-local-secret-change-before-production
       DEBUG: "False"
-      DATABASE_URL: postgresql://k_game:k_game_local_password@db:5432/k_game
+      DATABASE_URL: postgresql://pharmexa:pharmexa_local_password@db:5432/pharmexa
       ALLOWED_HOSTS: localhost,127.0.0.1,backend
       CSRF_TRUSTED_ORIGINS: http://localhost:8000,http://127.0.0.1:8000
       CORS_ALLOWED_ORIGINS: http://localhost:8081,http://127.0.0.1:8081
