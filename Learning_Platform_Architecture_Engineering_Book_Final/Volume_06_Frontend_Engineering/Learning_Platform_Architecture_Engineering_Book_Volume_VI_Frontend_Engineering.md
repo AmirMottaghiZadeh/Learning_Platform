@@ -6,7 +6,7 @@
 **Version:** 1.0  
 **Status:** Architecture Specification  
 **Scope:** Platform-level specification  
-**Reference Implementation:** K_Game is used only as a mapping example.
+**Reference Implementation:** Pharmexa is used only as a mapping example.
 
 ---
 
@@ -147,7 +147,7 @@ Characteristics:
 - Premium game-like energy without sacrificing clinical-learning clarity
 - Responsive mobile composition centered inside a wider atmospheric web stage
 
-K_Game uses this direction as its first reference implementation.
+Pharmexa uses this direction as its first reference implementation.
 
 The default theme tokens are:
 - Background: deep navy-green
@@ -318,7 +318,7 @@ Secondary metrics must not compete visually with the primary next action.
 
 Flashcard UI should support quick review.
 
-The K_Game flashcard entry is a progressive flow rather than one long configuration page:
+The Pharmexa flashcard entry is a progressive flow rather than one long configuration page:
 1. Choose one question type or open the global Leitner box.
 2. For a new-card path, choose a target category.
 3. Enter the focused card stage.

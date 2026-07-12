@@ -6,7 +6,7 @@
 **Version:** 1.0  
 **Status:** Architecture Specification  
 **Scope:** Platform-level specification  
-**Reference Implementation:** K_Game is used only as a mapping example.
+**Reference Implementation:** Pharmexa is used only as a mapping example.
 
 ---
 
@@ -505,6 +505,6 @@ Volume IV defines the reusable learning engines of the platform.
 
 The platform becomes valuable because these engines can be reused across many products.
 
-K_Game validates the engines, but does not define them.
+Pharmexa validates the engines, but does not define them.
 
 ---

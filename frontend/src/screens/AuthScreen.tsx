@@ -37,7 +37,7 @@ export function AuthScreen() {
       <View style={styles.brand}>
         <Text style={styles.brandMark}>K</Text>
         <View>
-          <Text style={styles.brandTitle}>K_Game</Text>
+          <Text style={styles.brandTitle}>Pharmexa</Text>
           <Text style={styles.brandSubtitle}>Learning Platform</Text>
         </View>
       </View>

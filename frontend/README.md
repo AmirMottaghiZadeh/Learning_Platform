@@ -1,6 +1,6 @@
-# K_Game Frontend
+# Pharmexa Frontend
 
-Expo + React Native Web client for the K_Game reference implementation.
+Expo + React Native Web client for the Pharmexa reference implementation.
 
 The frontend is a universal runtime surface:
 

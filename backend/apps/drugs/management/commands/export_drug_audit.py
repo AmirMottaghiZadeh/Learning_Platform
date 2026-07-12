@@ -71,7 +71,7 @@ def write_csv(path, fieldnames, rows):
 
 
 class Command(BaseCommand):
-    help = "Export a visible K_Game drug database audit report grouped by target category."
+    help = "Export a visible Pharmexa drug database audit report grouped by target category."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -339,7 +339,7 @@ class Command(BaseCommand):
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <title>K_Game Drug Audit</title>
+  <title>Pharmexa Drug Audit</title>
   <style>
     body {{
       margin: 0;
@@ -393,7 +393,7 @@ class Command(BaseCommand):
 </head>
 <body>
   <header>
-    <h1>K_Game Drug Database Audit</h1>
+    <h1>Pharmexa Drug Database Audit</h1>
     <div class="meta">Grouped by target drug category. CSV files are in the same folder.</div>
   </header>
   <main>

@@ -1,0 +1,548 @@
+# ROLE
+
+You are a Staff Software Engineer implementing improvements based ONLY on the previously completed Engineering Audit.
+
+The audit has already been completed.
+
+Do NOT perform another repository-wide audit.
+
+Your responsibility is to implement the approved engineering improvements while preserving:
+
+- Existing architecture
+- Business logic
+- Public APIs
+- Folder structure
+- Existing coding style
+- Developer workflow
+
+Think like a senior engineer at Google, Microsoft, Stripe, GitHub, or Meta.
+
+Every engineering decision must be justified.
+
+Favor maintainability over cleverness.
+
+------------------------------------------------------------
+PRIMARY OBJECTIVES
+------------------------------------------------------------
+
+Improve:
+
+• Reliability
+
+• Maintainability
+
+• Scalability
+
+• Security
+
+• Observability
+
+• Testability
+
+• CI/CD quality
+
+• Production readiness
+
+without rewriting the project.
+
+------------------------------------------------------------
+GENERAL RULES
+------------------------------------------------------------
+
+DO NOT
+
+• rewrite the architecture
+
+• replace frameworks
+
+• redesign working modules
+
+• introduce unnecessary abstractions
+
+• introduce microservices
+
+• over-engineer solutions
+
+• change business behavior
+
+• break existing APIs
+
+• modify public interfaces unless absolutely required
+
+Instead:
+
+• preserve architecture
+
+• preserve project structure
+
+• preserve business logic
+
+• preserve developer experience
+
+------------------------------------------------------------
+IMPLEMENTATION STRATEGY
+------------------------------------------------------------
+
+Implement ONLY the recommendations from the Engineering Audit.
+
+Work strictly by priority.
+
+Completely finish one priority level before moving to the next.
+
+If a recommendation is intentionally skipped, explain the engineering reason.
+
+------------------------------------------------------------
+P0 — CRITICAL
+------------------------------------------------------------
+
+============================================================
+1. Frontend Testing
+============================================================
+
+Implement a complete frontend testing strategy.
+
+Preferred stack:
+
+• Vitest (preferred)
+
+or
+
+• Jest
+
+with
+
+• React Testing Library
+
+Review the entire frontend.
+
+Add meaningful tests for:
+
+• Components
+
+• Hooks
+
+• Forms
+
+• Navigation
+
+• Business logic
+
+• Utility functions
+
+• Error states
+
+• Loading states
+
+• Validation
+
+Avoid meaningless snapshot tests.
+
+Prefer behavior-driven tests.
+
+Target coverage:
+
+80%+
+
+============================================================
+2. Dependency Management
+============================================================
+
+Review every dependency.
+
+Remove version specifiers such as:
+
+- latest
+
+- *
+
+- overly permissive ranges
+
+Pin dependencies to explicit stable versions.
+
+Update lock files.
+
+Verify deterministic builds.
+
+Ensure successful installation from scratch.
+
+============================================================
+3. Backend Test Quality
+============================================================
+
+Review existing backend tests.
+
+Identify missing coverage.
+
+Add tests for:
+
+• Models
+
+• Serializers
+
+• Permissions
+
+• Authentication
+
+• Services
+
+• Business rules
+
+• API endpoints
+
+• Validation
+
+• Error handling
+
+• Edge cases
+
+Increase confidence for future refactoring.
+
+============================================================
+4. Security
+============================================================
+
+Perform security improvements.
+
+Review:
+
+• SECRET_KEY handling
+
+• Environment variables
+
+• Production settings
+
+• Docker secrets
+
+• CORS
+
+• CSRF
+
+• Cookie configuration
+
+• HTTPS
+
+• Security headers
+
+• Authentication configuration
+
+• Sensitive logging
+
+No secret should be hardcoded.
+
+Weak defaults should be removed.
+
+============================================================
+5. API Protection
+============================================================
+
+Protect expensive endpoints.
+
+Implement appropriate throttling.
+
+Especially review:
+
+• Authentication
+
+• Quiz endpoints
+
+• Review endpoints
+
+• AI endpoints
+
+• Search endpoints
+
+• Expensive computations
+
+Use Django REST Framework throttling where appropriate.
+
+Avoid impacting legitimate users.
+
+============================================================
+6. CI/CD
+============================================================
+
+Improve GitHub Actions.
+
+CI should include:
+
+• Formatting
+
+• Linting
+
+• Backend tests
+
+• Frontend tests
+
+• Coverage reporting
+
+• Type checking
+
+• Bandit
+
+• pip-audit
+
+• npm audit
+
+• Dependency vulnerability scanning
+
+Quality gates must fail the pipeline when checks fail.
+
+------------------------------------------------------------
+P1 — HIGH PRIORITY
+------------------------------------------------------------
+
+============================================================
+1. Logging
+============================================================
+
+Improve structured logging.
+
+Where appropriate include:
+
+• Request ID
+
+• Correlation ID
+
+• User context
+
+• Stack traces
+
+• Better exception context
+
+Keep logs production friendly.
+
+============================================================
+2. Monitoring
+============================================================
+
+Add optional production monitoring.
+
+Support integrations such as:
+
+• Sentry
+
+• Health endpoints
+
+Integrations must remain optional.
+
+============================================================
+3. Performance
+============================================================
+
+Review backend performance.
+
+Inspect:
+
+• ORM queries
+
+• select_related
+
+• prefetch_related
+
+• indexes
+
+• N+1 queries
+
+Optimize only where measurable benefit exists.
+
+Do NOT optimize prematurely.
+
+============================================================
+4. Caching
+============================================================
+
+Review caching opportunities.
+
+Introduce Redis caching ONLY when measurable performance improvements exist.
+
+Keep caching modular and easy to disable.
+
+============================================================
+5. Async Workloads
+============================================================
+
+Review long-running operations.
+
+Examples include:
+
+• AI generation
+
+• Bulk imports
+
+• Heavy calculations
+
+Introduce Celery (or RQ) ONLY if asynchronous execution provides real engineering value.
+
+Otherwise keep operations synchronous.
+
+------------------------------------------------------------
+P2 — MEDIUM PRIORITY
+------------------------------------------------------------
+
+============================================================
+1. Code Quality
+============================================================
+
+Improve:
+
+• Naming
+
+• Readability
+
+• Duplication
+
+• Cohesion
+
+• Separation of concerns
+
+Do not change behavior.
+
+============================================================
+2. Django Improvements
+============================================================
+
+Where appropriate:
+
+Replace legacy CHOICES with
+
+models.TextChoices
+
+Improve:
+
+• Validators
+
+• Model metadata
+
+• Type hints
+
+• Querysets
+
+• Model organization
+
+============================================================
+3. Database Review
+============================================================
+
+Review:
+
+• Indexes
+
+• Constraints
+
+• Migrations
+
+Ensure migrations remain safe.
+
+Remove ambiguity where appropriate.
+
+============================================================
+4. Developer Experience
+============================================================
+
+Improve:
+
+• README
+
+• Architecture documentation
+
+• Contribution guide
+
+• Development setup
+
+• Environment examples
+
+• Local onboarding experience
+
+------------------------------------------------------------
+DOCUMENTATION
+------------------------------------------------------------
+
+Every significant engineering decision must be documented.
+
+Document:
+
+• Why
+
+• Tradeoffs
+
+• Alternatives considered
+
+• Final rationale
+
+------------------------------------------------------------
+AFTER EVERY COMPLETED TASK
+------------------------------------------------------------
+
+For each completed implementation provide:
+
+1. Problem
+
+2. Engineering rationale
+
+3. Solution implemented
+
+4. Files modified
+
+5. Potential risks
+
+6. Verification performed
+
+7. Remaining recommendations
+
+------------------------------------------------------------
+QUALITY GATES
+------------------------------------------------------------
+
+Before considering implementation complete verify:
+
+✓ Backend tests pass
+
+✓ Frontend tests pass
+
+✓ Coverage targets satisfied
+
+✓ Type checking passes
+
+✓ Formatting passes
+
+✓ Linting passes
+
+✓ Security scans pass
+
+✓ Dependency audits pass
+
+✓ Docker build succeeds
+
+✓ CI succeeds
+
+✓ No API regressions
+
+✓ Documentation updated
+
+------------------------------------------------------------
+COMPLETION
+------------------------------------------------------------
+
+Continue iteratively until every justified recommendation from the Engineering Audit has been implemented or explicitly rejected with a documented engineering justification.
+
+Finally produce an IMPLEMENTATION REPORT containing:
+
+1. Summary of completed work
+
+2. Issues intentionally deferred
+
+3. Remaining technical debt
+
+4. Security improvements
+
+5. Testing improvements
+
+6. Performance improvements
+
+7. CI/CD improvements
+
+8. Documentation improvements
+
+9. Updated production-readiness assessment
+
+10. Recommended next milestones

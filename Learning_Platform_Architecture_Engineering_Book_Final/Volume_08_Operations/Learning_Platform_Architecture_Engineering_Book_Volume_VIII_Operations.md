@@ -6,7 +6,7 @@
 **Version:** 1.0  
 **Status:** Architecture Specification  
 **Scope:** Platform-level specification  
-**Reference Implementation:** K_Game is used only as a mapping example.
+**Reference Implementation:** Pharmexa is used only as a mapping example.
 
 ---
 

@@ -19,7 +19,7 @@ def text(value):
     return str(value or "").strip()
 
 class Command(BaseCommand):
-    help = "Import K_Game static JS drug datasets into Django models."
+    help = "Import Pharmexa static JS drug datasets into Django models."
 
     def add_arguments(self, parser):
         parser.add_argument("--drugs-js", required=True)

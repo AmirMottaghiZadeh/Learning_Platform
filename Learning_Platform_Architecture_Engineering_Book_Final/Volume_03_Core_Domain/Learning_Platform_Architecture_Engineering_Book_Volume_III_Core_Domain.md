@@ -6,7 +6,7 @@
 **Version:** 1.0  
 **Status:** Architecture Specification  
 **Scope:** Core domain model of the Learning Platform Framework  
-**Reference Implementation:** K_Game is used only as a mapping example.
+**Reference Implementation:** Pharmexa is used only as a mapping example.
 
 ---
 
@@ -112,7 +112,7 @@ Instead, every product maps its own domain to the platform domain.
 
 Example:
 
-| Platform Concept | K_Game Product Mapping |
+| Platform Concept | Pharmexa Product Mapping |
 |---|---|
 | Learning Object | Drug |
 | Learning Topic | Drug Topic |
@@ -312,7 +312,7 @@ Product plugins define domain-specific fields.
 
 ## 6.3 Example Mapping
 
-K_Game:
+Pharmexa:
 
 Learning Object = Drug
 
@@ -373,7 +373,7 @@ It is the raw material for learning activities.
 
 Examples:
 
-K_Game:
+Pharmexa:
 - Generic name
 - Brand name
 - Side effect
@@ -975,7 +975,7 @@ The domain should not know how data is stored.
 
 Products implement mapping from their domain to the core model.
 
-## 24.1 K_Game Mapping
+## 24.1 Pharmexa Mapping
 
 Learning Object:
 Drug
@@ -1116,6 +1116,6 @@ The central domain concepts are:
 
 These concepts allow the same platform to power many educational products.
 
-K_Game is one mapping of this domain.
+Pharmexa is one mapping of this domain.
 
 Future products will define their own mappings while reusing the same core.

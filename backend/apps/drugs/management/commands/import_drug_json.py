@@ -7,7 +7,7 @@ from apps.drugs.json_import import parse_json_directory, replace_drug_metadata_f
 
 
 class Command(BaseCommand):
-    help = "Validate and atomically replace K_Game drug metadata from versioned JSON documents."
+    help = "Validate and atomically replace Pharmexa drug metadata from versioned JSON documents."
 
     def add_arguments(self, parser):
         parser.add_argument("directory")
@@ -37,7 +37,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Replaced K_Game metadata with {result.documents} documents, "
+                f"Replaced Pharmexa metadata with {result.documents} documents, "
                 f"{result.drugs} drugs and {result.question_sources} question sources; "
                 f"{result.skipped_rows} rows skipped."
             )

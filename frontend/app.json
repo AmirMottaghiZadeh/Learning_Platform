@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "K_Game Learning",
+    "name": "Pharmexa",
     "slug": "k-game-learning",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "kgame",
+    "scheme": "Pharmexa",
     "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -25,8 +25,8 @@
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/favicon.png",
-      "name": "K_Game Learning",
-      "shortName": "K_Game",
+      "name": "Pharmexa",
+      "shortName": "Pharmexa",
       "description": "Mobile-first adaptive learning dashboard for daily quizzes, mistakes, and flashcard review.",
       "themeColor": "#031820",
       "backgroundColor": "#031820",

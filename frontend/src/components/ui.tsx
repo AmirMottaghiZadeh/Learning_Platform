@@ -53,7 +53,7 @@ export function BrandMark({compact = false}: {compact?: boolean}) {
       <View style={[styles.brandIcon, compact && styles.brandIconCompact]}>
         <Sparkles size={compact ? 15 : 18} color={colors.black} strokeWidth={2.8} />
       </View>
-      {compact ? null : <Text style={styles.brandText}>K_Game</Text>}
+      {compact ? null : <Text style={styles.brandText}>Pharmexa</Text>}
     </View>
   );
 }

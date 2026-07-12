@@ -2,11 +2,11 @@
 
 # Volume X — Reference Implementations
 
-**Subtitle:** Mapping the Learning Platform Framework to Real Products such as K_Game  
+**Subtitle:** Mapping the Learning Platform Framework to Real Products such as Pharmexa  
 **Version:** 1.0  
 **Status:** Architecture Specification  
 **Scope:** Reference implementations and product mappings  
-**Primary Reference Implementation:** K_Game
+**Primary Reference Implementation:** Pharmexa
 
 ---
 
@@ -14,25 +14,25 @@
 
 1. Purpose of This Volume
 2. Reference Implementation Philosophy
-3. K_Game Product Overview
-4. K_Game Domain Mapping
-5. K_Game Dataset Model
-6. K_Game Knowledge Source Mapping
-7. K_Game Question Types
-8. K_Game Quiz Flow
-9. K_Game Answer Rules
-10. K_Game Scoring Rules
-11. K_Game Flashcard Mapping
-12. K_Game Mistake Review
-13. K_Game League Mapping
-14. K_Game Progress Mapping
-15. K_Game Admin CMS
-16. K_Game API Mapping
-17. K_Game Frontend Mapping
-18. K_Game Design System Mapping
-19. K_Game Backend Mapping
-20. K_Game Deployment Mapping
-21. K_Game MVP Definition
+3. Pharmexa Product Overview
+4. Pharmexa Domain Mapping
+5. Pharmexa Dataset Model
+6. Pharmexa Knowledge Source Mapping
+7. Pharmexa Question Types
+8. Pharmexa Quiz Flow
+9. Pharmexa Answer Rules
+10. Pharmexa Scoring Rules
+11. Pharmexa Flashcard Mapping
+12. Pharmexa Mistake Review
+13. Pharmexa League Mapping
+14. Pharmexa Progress Mapping
+15. Pharmexa Admin CMS
+16. Pharmexa API Mapping
+17. Pharmexa Frontend Mapping
+18. Pharmexa Design System Mapping
+19. Pharmexa Backend Mapping
+20. Pharmexa Deployment Mapping
+21. Pharmexa MVP Definition
 22. Future Reference Implementations
 23. Reference Implementation ADRs
 24. Reference Implementation Anti-Patterns
@@ -51,9 +51,9 @@ This volume is different.
 
 It maps the abstract platform concepts to real products.
 
-The first reference implementation is K_Game.
+The first reference implementation is Pharmexa.
 
-K_Game proves that the framework can support a real learning product with:
+Pharmexa proves that the framework can support a real learning product with:
 - Domain dataset
 - Question generation
 - Quiz engine
@@ -92,9 +92,9 @@ A reference implementation should not:
 
 ---
 
-# 3. K_Game Product Overview
+# 3. Pharmexa Product Overview
 
-K_Game is the first product built on the Learning Platform Framework.
+Pharmexa is the first product built on the Learning Platform Framework.
 
 It focuses on pharmacology and drug learning.
 
@@ -106,17 +106,17 @@ Main user value:
 - Compete through league
 - Use flashcards for reinforcement
 
-K_Game is not only a quiz app.
+Pharmexa is not only a quiz app.
 
 It is a pharmacology learning product powered by the platform.
 
 ---
 
-# 4. K_Game Domain Mapping
+# 4. Pharmexa Domain Mapping
 
-K_Game maps platform concepts as follows:
+Pharmexa maps platform concepts as follows:
 
-| Platform Concept | K_Game Mapping |
+| Platform Concept | Pharmexa Mapping |
 |---|---|
 | Learning Object | Drug |
 | Learning Topic | Drug Topic |
@@ -133,9 +133,9 @@ This mapping must remain explicit.
 
 ---
 
-# 5. K_Game Dataset Model
+# 5. Pharmexa Dataset Model
 
-K_Game datasets may include:
+Pharmexa datasets may include:
 
 - Drug list
 - Generic names
@@ -152,7 +152,7 @@ K_Game datasets may include:
 - Educational notes
 - Source metadata
 
-The canonical K_Game import format is a versioned JSON document bundle. Each document contains:
+The canonical Pharmexa import format is a versioned JSON document bundle. Each document contains:
 
 - `schema_version`
 - `source` file identity, SHA-256 checksum and authoring metadata
@@ -197,15 +197,15 @@ Replacement import rules:
 - accept only supported schema versions
 - skip rows explicitly classified as headings or non-generic products by the enrichment report
 - generate stable IDs from source checksum, table index and source row
-- replace the previous K_Game drug metadata in one transaction
+- replace the previous Pharmexa drug metadata in one transaction
 - preserve generic Knowledge Source links used by historical learning records
 - synchronize all active question sources after import
 
 ---
 
-# 6. K_Game Knowledge Source Mapping
+# 6. Pharmexa Knowledge Source Mapping
 
-A Drug Question Source is a K_Game implementation of Knowledge Source.
+A Drug Question Source is a Pharmexa implementation of Knowledge Source.
 
 Examples:
 
@@ -233,7 +233,7 @@ Each source must be traceable to a Drug and a Topic.
 
 ---
 
-# 7. K_Game Question Types
+# 7. Pharmexa Question Types
 
 MVP question types:
 
@@ -257,9 +257,9 @@ Each question type should have:
 
 ---
 
-# 8. K_Game Quiz Flow
+# 8. Pharmexa Quiz Flow
 
-K_Game quiz flow:
+Pharmexa quiz flow:
 
 1. User starts game in random mode or target-category mode.
 2. Backend creates GameSession.
@@ -275,16 +275,16 @@ K_Game quiz flow:
 
 Frontend must not calculate correctness or score.
 
-K_Game game modes:
+Pharmexa game modes:
 - User first selects question type: brand/generic, food timing, indication or side effects.
-- Random mode selects from active K_Game Knowledge Sources.
+- Random mode selects from active Pharmexa Knowledge Sources.
 - Random mode accepts a learner-selected question count from 10 to 100 in multiples of 10.
 - Target-category mode filters by broad drug category such as cardiovascular, CNS, respiratory, endocrine, GI or infection.
 - Target-category mode still uses server-side source selection and scoring.
 
 ---
 
-# 9. K_Game Answer Rules
+# 9. Pharmexa Answer Rules
 
 Answer evaluation rules:
 
@@ -300,7 +300,7 @@ This preserves analytics integrity.
 
 ---
 
-# 10. K_Game Scoring Rules
+# 10. Pharmexa Scoring Rules
 
 MVP scoring:
 
@@ -317,18 +317,18 @@ Historical results should preserve original score calculation.
 
 ---
 
-# 11. K_Game Flashcard Mapping
+# 11. Pharmexa Flashcard Mapping
 
 Flashcard State maps to Review Item.
 
 Flashcards may be created from:
-- All active K_Game Knowledge Sources
+- All active Pharmexa Knowledge Sources
 - Saved questions
 - Weak topics
 - Important knowledge sources
 
-For K_Game MVP, the primary new-card entry point is category-based deck creation from active Knowledge Sources. Quiz mistakes remain independent and do not automatically create flashcards.
-The flashcard flow starts with a choice between a question type and the learner's global Leitner queue. Choosing a question type advances to target-category selection and then directly to the focused card stage. Opening Leitner bypasses question type and category because its records are learner-wide within K_Game.
+For Pharmexa MVP, the primary new-card entry point is category-based deck creation from active Knowledge Sources. Quiz mistakes remain independent and do not automatically create flashcards.
+The flashcard flow starts with a choice between a question type and the learner's global Leitner queue. Choosing a question type advances to target-category selection and then directly to the focused card stage. Opening Leitner bypasses question type and category because its records are learner-wide within Pharmexa.
 Deck creation schedules every active Knowledge Source matching the selected question type and category. It must not sample a random fixed-size subset.
 
 New-card rules:
@@ -346,7 +346,7 @@ Review responses:
 - Known
 - Unknown
 
-K_Game uses a five-box Leitner review policy:
+Pharmexa uses a five-box Leitner review policy:
 - Unknown on a new card enters box 1.
 - Unknown in an active box moves one box forward.
 - Unknown in box 5 remains in box 5.
@@ -355,11 +355,11 @@ K_Game uses a five-box Leitner review policy:
 - Leitner contents are not filtered by their original question type or category.
 - A reviewed card leaves the current box immediately and follows the box-transition rule.
 
-Flashcards are a learning surface for the full K_Game knowledge graph, not a mistake queue.
+Flashcards are a learning surface for the full Pharmexa knowledge graph, not a mistake queue.
 
 ---
 
-# 12. K_Game Mistake Review
+# 12. Pharmexa Mistake Review
 
 Mistake review is required for MVP.
 
@@ -379,9 +379,9 @@ Mistakes power:
 
 ---
 
-# 13. K_Game League Mapping
+# 13. Pharmexa League Mapping
 
-K_Game league is a product implementation of competitive learning.
+Pharmexa league is a product implementation of competitive learning.
 
 MVP league:
 - Weekly season
@@ -396,9 +396,9 @@ Leaderboard should use server-side results only.
 
 ---
 
-# 14. K_Game Progress Mapping
+# 14. Pharmexa Progress Mapping
 
-K_Game progress includes:
+Pharmexa progress includes:
 
 - Questions answered
 - Accuracy
@@ -415,9 +415,9 @@ Dashboard should surface the most actionable progress information.
 
 ---
 
-# 15. K_Game Admin CMS
+# 15. Pharmexa Admin CMS
 
-K_Game Admin CMS must support:
+Pharmexa Admin CMS must support:
 
 - Drug management
 - Topic management
@@ -438,9 +438,9 @@ Admin CMS is part of MVP.
 
 ---
 
-# 16. K_Game API Mapping
+# 16. Pharmexa API Mapping
 
-K_Game API groups:
+Pharmexa API groups:
 
 Auth:
 - register
@@ -485,11 +485,11 @@ Admin:
 
 ---
 
-# 17. K_Game Frontend Mapping
+# 17. Pharmexa Frontend Mapping
 
-K_Game frontend uses the platform design system.
+Pharmexa frontend uses the platform design system.
 
-K_Game uses Expo with React Native Web as its reference frontend runtime.
+Pharmexa uses Expo with React Native Web as its reference frontend runtime.
 
 The same product codebase should support:
 
@@ -523,9 +523,9 @@ Official UI direction:
 
 ---
 
-# 18. K_Game Design System Mapping
+# 18. Pharmexa Design System Mapping
 
-K_Game theme should define:
+Pharmexa theme should define:
 
 - Primary colors
 - Accent colors
@@ -544,9 +544,9 @@ Product themes should not rewrite component logic.
 
 ---
 
-# 19. K_Game Backend Mapping
+# 19. Pharmexa Backend Mapping
 
-K_Game backend implements product-specific apps or modules:
+Pharmexa backend implements product-specific apps or modules:
 
 - accounts
 - drugs
@@ -564,9 +564,9 @@ Reusable logic should be extracted into platform-level modules if needed by futu
 
 ---
 
-# 20. K_Game Deployment Mapping
+# 20. Pharmexa Deployment Mapping
 
-K_Game MVP deployment may include:
+Pharmexa MVP deployment may include:
 
 - Backend web service
 - PostgreSQL database
@@ -586,9 +586,9 @@ Future scaling may add:
 
 ---
 
-# 21. K_Game MVP Definition
+# 21. Pharmexa MVP Definition
 
-K_Game MVP includes:
+Pharmexa MVP includes:
 
 - Authentication
 - Learning dashboard
@@ -634,7 +634,7 @@ Examples:
 
 # 23. Reference Implementation ADRs
 
-ADR-0046: K_Game is the first reference implementation.
+ADR-0046: Pharmexa is the first reference implementation.
 ADR-0047: Product mappings must be explicit.
 ADR-0048: Product-specific code must remain outside platform core.
 ADR-0049: Admin CMS is required for each serious product.
@@ -646,7 +646,7 @@ ADR-0050: Future products must follow the mapping template defined in this volum
 
 Anti-patterns:
 
-- Treating K_Game as the platform.
+- Treating Pharmexa as the platform.
 - Moving Drug concepts into platform core.
 - Duplicating platform engines inside product code.
 - Calculating score in mobile app.
@@ -682,7 +682,7 @@ For each product implementation:
 
 Volume X explains how products are built on top of the Learning Platform Framework.
 
-K_Game is the first reference implementation.
+Pharmexa is the first reference implementation.
 
 It validates the framework for a real pharmacology learning product.
 

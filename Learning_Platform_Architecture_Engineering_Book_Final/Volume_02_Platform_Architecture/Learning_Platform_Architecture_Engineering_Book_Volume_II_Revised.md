@@ -6,7 +6,7 @@
 **Version:** 1.1 Revised  
 **Status:** Architecture Specification  
 **Scope:** Platform-level architecture, independent from any single product  
-**Reference Implementation:** K_Game appears only as a validation example, not as the architecture itself.
+**Reference Implementation:** Pharmexa appears only as a validation example, not as the architecture itself.
 
 ---
 
@@ -75,9 +75,9 @@ The goal of this volume is to answer one central question:
 
 This volume is intentionally product-independent.
 
-It does not design K_Game directly.
+It does not design Pharmexa directly.
 
-It designs the platform that K_Game and future products will use.
+It designs the platform that Pharmexa and future products will use.
 
 ---
 
@@ -88,7 +88,7 @@ The architecture must make this possible:
 ```text
 Learning Platform Core
         |
-        |-- K_Game
+        |-- Pharmexa
         |-- K_Anatomy
         |-- K_Physiology
         |-- K_Nursing
@@ -168,7 +168,7 @@ Product Extensions define domain-specific behavior.
 
 Examples:
 
-K_Game extension:
+Pharmexa extension:
 - Drug dataset importer
 - Drug question generators
 - Drug admin views
@@ -904,7 +904,7 @@ Learning Platform
   ├── Shared Admin CMS
   ├── Shared Mobile Design System
   └── Product Extensions
-       ├── K_Game
+       ├── Pharmexa
        ├── K_Anatomy
        └── K_Chemistry
 ```
@@ -919,7 +919,7 @@ Shared improvements should move into the platform only when they are useful acro
 
 Reference implementations validate the platform.
 
-K_Game validates:
+Pharmexa validates:
 
 - Domain mapping
 - Dataset import
@@ -1066,4 +1066,4 @@ The platform is:
 
 This architecture enables multiple learning products to be built from one core foundation.
 
-K_Game is the first validation of this architecture, not the architecture itself.
+Pharmexa is the first validation of this architecture, not the architecture itself.

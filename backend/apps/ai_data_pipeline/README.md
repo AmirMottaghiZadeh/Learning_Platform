@@ -1,6 +1,6 @@
 # AI Data Pipeline
 
-This app adds a safe, batch-based data quality pipeline for the K_Game drug database.
+This app adds a safe, batch-based data quality pipeline for the Pharmexa drug database.
 
 ## Safety Model
 

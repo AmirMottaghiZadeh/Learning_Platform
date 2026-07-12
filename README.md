@@ -1,8 +1,8 @@
-# Learning Platform / K_Game
+# Learning Platform / Pharmexa
 
-Reusable learning-platform architecture with a Django REST backend, a K_Game reference implementation, an Expo + React Native Web client, and an internal data-quality workflow for safe medical/drug data improvement.
+Reusable learning-platform architecture with a Django REST backend, a Pharmexa reference implementation, an Expo + React Native Web client, and an internal data-quality workflow for safe medical/drug data improvement.
 
-K_Game is not designed as a one-off quiz app. It is the first implementation of a broader Learning Platform: a backend-owned learning system where products can plug into shared learning objects, question sources, game rules, review logic, progress tracking, league mechanics, and operational tooling.
+Pharmexa is not designed as a one-off quiz app. It is the first implementation of a broader Learning Platform: a backend-owned learning system where products can plug into shared learning objects, question sources, game rules, review logic, progress tracking, league mechanics, and operational tooling.
 
 ## Languages
 
@@ -30,14 +30,14 @@ K_Game is not designed as a one-off quiz app. It is the first implementation of 
 
 ## Purpose
 
-The project exists to build a professional learning platform that can support multiple domain-specific learning products. K_Game is the current reference implementation focused on drug knowledge training.
+The project exists to build a professional learning platform that can support multiple domain-specific learning products. Pharmexa is the current reference implementation focused on drug knowledge training.
 
 The platform separates reusable learning infrastructure from product-specific content:
 
 - The platform owns authentication, learning objects, knowledge sources, progress, review scheduling, game/session lifecycle, statistics, league primitives, API contracts, operations, and data governance.
-- K_Game owns drug-specific datasets, drug categories, question types, prompt generation, and the user-facing learning experience.
+- Pharmexa owns drug-specific datasets, drug categories, question types, prompt generation, and the user-facing learning experience.
 
-This separation keeps the project extensible. A future implementation should be able to reuse the platform without copying K_Game-specific assumptions.
+This separation keeps the project extensible. A future implementation should be able to reuse the platform without copying Pharmexa-specific assumptions.
 
 ## Problem
 
@@ -57,7 +57,7 @@ This project addresses those issues by treating learning as a platform problem, 
 The platform provides a backend-first learning system with:
 
 - Structured learning objects and knowledge sources.
-- Drug-specific K_Game data adapters.
+- Drug-specific Pharmexa data adapters.
 - Quiz generation and game sessions controlled by backend rules.
 - Flashcards built from the same knowledge-source layer.
 - Leitner review logic for independent flashcard learning.
@@ -70,7 +70,7 @@ The frontend is intentionally a consumer of backend state. It renders the learni
 
 ## Product Scope
 
-Current K_Game learning dimensions:
+Current Pharmexa learning dimensions:
 
 - Brand/generic name learning.
 - Food/timing learning.
@@ -89,7 +89,7 @@ The UI direction is a calm clinical learning dashboard: mobile-first, card-based
 ```text
                     +-----------------------------+
                     | Expo + React Native Web     |
-                    | Mobile-first K_Game client  |
+                    | Mobile-first Pharmexa client  |
                     +--------------+--------------+
                                    |
                                    | REST / Token Auth
@@ -100,7 +100,7 @@ The UI direction is a calm clinical learning dashboard: mobile-first, card-based
 |  accounts        auth, tokens, current user                         |
 |  core            health, errors, pagination, schema, logging        |
 |  learning        learning objects, progress, dashboard, stats       |
-|  drugs           K_Game drug data, categories, source sync          |
+|  drugs           Pharmexa drug data, categories, source sync          |
 |  quizzes         selectors and question generation                  |
 |  games           sessions, answers, scoring, timer, lifecycle       |
 |  flashcards      Leitner states, review, deck summaries             |
@@ -511,15 +511,15 @@ Long-term:
 
 This repository is prepared for private GitHub hosting. Keep generated data, backups, local databases, virtual environments, and frontend build output out of version control.
 
-Use the architecture book as the source of product and engineering direction. Code changes should preserve the platform/implementation boundary: K_Game is an implementation; the learning platform is the reusable system.
+Use the architecture book as the source of product and engineering direction. Code changes should preserve the platform/implementation boundary: Pharmexa is an implementation; the learning platform is the reusable system.
 
 ---
 
 # نسخه فارسی
 
-این مخزن یک سکوی یادگیریِ قابل استفاده دوباره است که شامل پشتیبان مبتنی بر Django REST، پیاده‌سازی مرجع K_Game، رابط کاربری مبتنی بر Expo و React Native Web، و مسیر داخلی کنترل کیفیت داده‌های دارویی و پزشکی است.
+این مخزن یک سکوی یادگیریِ قابل استفاده دوباره است که شامل پشتیبان مبتنی بر Django REST، پیاده‌سازی مرجع Pharmexa، رابط کاربری مبتنی بر Expo و React Native Web، و مسیر داخلی کنترل کیفیت داده‌های دارویی و پزشکی است.
 
-K_Game فقط یک برنامه ساده آزمون نیست. این پروژه نخستین پیاده‌سازی از یک سکوی یادگیری بزرگ‌تر است؛ یعنی سامانه‌ای که منطق اصلی یادگیری در پشتیبان قرار دارد و پیاده‌سازی‌های مختلف می‌توانند از شیءهای یادگیری، منابع پرسش، قوانین بازی، مرور، آمار، لیگ و ابزارهای عملیاتی مشترک استفاده کنند.
+Pharmexa فقط یک برنامه ساده آزمون نیست. این پروژه نخستین پیاده‌سازی از یک سکوی یادگیری بزرگ‌تر است؛ یعنی سامانه‌ای که منطق اصلی یادگیری در پشتیبان قرار دارد و پیاده‌سازی‌های مختلف می‌توانند از شیءهای یادگیری، منابع پرسش، قوانین بازی، مرور، آمار، لیگ و ابزارهای عملیاتی مشترک استفاده کنند.
 
 ## فهرست فارسی
 
@@ -542,14 +542,14 @@ K_Game فقط یک برنامه ساده آزمون نیست. این پروژه 
 
 ## هدف
 
-هدف پروژه ساخت یک سکوی یادگیری حرفه‌ای است که بتواند چند محصول آموزشی تخصصی را پشتیبانی کند. در وضعیت فعلی، K_Game پیاده‌سازی مرجع این سکو برای آموزش دانش دارویی است.
+هدف پروژه ساخت یک سکوی یادگیری حرفه‌ای است که بتواند چند محصول آموزشی تخصصی را پشتیبانی کند. در وضعیت فعلی، Pharmexa پیاده‌سازی مرجع این سکو برای آموزش دانش دارویی است.
 
 پروژه بین زیرساخت قابل استفاده دوباره و منطق اختصاصی محصول مرز مشخص ایجاد می‌کند:
 
 - سکو مسئول احراز هویت، شیءهای یادگیری، منابع دانش، پیشرفت، زمان‌بندی مرور، چرخه عمر بازی و نشست، آمار، لیگ، قراردادهای رابط برنامه‌نویسی، عملیات تولید و حاکمیت داده است.
-- K_Game مسئول مجموعه داده دارویی، دسته‌بندی‌های دارویی، نوع پرسش‌ها، تولید درخواست متنی و تجربه کاربری آموزش دارویی است.
+- Pharmexa مسئول مجموعه داده دارویی، دسته‌بندی‌های دارویی، نوع پرسش‌ها، تولید درخواست متنی و تجربه کاربری آموزش دارویی است.
 
-این جداسازی باعث می‌شود پروژه در آینده قابل گسترش باشد. پیاده‌سازی‌های بعدی باید بتوانند از هسته سکو استفاده کنند، بدون اینکه به فرضیات اختصاصی K_Game وابسته باشند.
+این جداسازی باعث می‌شود پروژه در آینده قابل گسترش باشد. پیاده‌سازی‌های بعدی باید بتوانند از هسته سکو استفاده کنند، بدون اینکه به فرضیات اختصاصی Pharmexa وابسته باشند.
 
 ## مسئله
 
@@ -569,7 +569,7 @@ K_Game فقط یک برنامه ساده آزمون نیست. این پروژه 
 این سکو یک سامانه یادگیری با محوریت پشتیبان فراهم می‌کند:
 
 - شیءهای یادگیری و منابع دانش ساختاریافته.
-- مبدل‌های اختصاصی برای داده‌های دارویی K_Game.
+- مبدل‌های اختصاصی برای داده‌های دارویی Pharmexa.
 - تولید پرسش و نشست بازی تحت کنترل قوانین پشتیبان.
 - فلش‌کارت‌هایی که از همان منبع دانش مشترک تغذیه می‌شوند.
 - منطق Leitner برای مرور مستقل فلش‌کارت.
@@ -582,7 +582,7 @@ K_Game فقط یک برنامه ساده آزمون نیست. این پروژه 
 
 ## محدوده محصول
 
-در K_Game فعلی این حوزه‌های یادگیری پوشش داده شده‌اند:
+در Pharmexa فعلی این حوزه‌های یادگیری پوشش داده شده‌اند:
 
 - یادگیری نام تجاری و ژنریک.
 - یادگیری مصرف با غذا یا بدون غذا و زمان مصرف.
@@ -601,7 +601,7 @@ K_Game فقط یک برنامه ساده آزمون نیست. این پروژه 
 ```text
                     +-----------------------------+
                     | Expo + React Native Web     |
-                    | رابط موبایل‌محور K_Game    |
+                    | رابط موبایل‌محور Pharmexa    |
                     +--------------+--------------+
                                    |
                                    | REST / احراز هویت توکنی
@@ -612,7 +612,7 @@ K_Game فقط یک برنامه ساده آزمون نیست. این پروژه 
 |  accounts        احراز هویت، توکن‌ها، کاربر فعلی                  |
 |  core            سلامت، خطاها، صفحه‌بندی، طرح‌واره، رخدادنگاری    |
 |  learning        شیءهای یادگیری، پیشرفت، پیشخوان، آمار            |
-|  drugs           داده دارویی K_Game، دسته‌ها، همگام‌سازی منابع    |
+|  drugs           داده دارویی Pharmexa، دسته‌ها، همگام‌سازی منابع    |
 |  quizzes         انتخاب‌گرها و تولید پرسش                         |
 |  games           نشست‌ها، پاسخ‌ها، امتیازدهی، زمان‌سنج، چرخه عمر  |
 |  flashcards      وضعیت‌های Leitner، مرور، خلاصه دسته‌ها           |
@@ -1023,4 +1023,4 @@ npm run build:web
 
 این مخزن برای میزبانی خصوصی در GitHub آماده شده است. فایل‌های تولیدی، پشتیبان‌ها، پایگاه داده محلی، محیط مجازی و خروجی ساخت رابط کاربری نباید وارد سامانه کنترل نسخه شوند.
 
-کتاب معماری پروژه منبع اصلی جهت‌گیری محصولی و مهندسی است. تغییرات کد باید مرز بین سکو و پیاده‌سازی را حفظ کنند: K_Game یک پیاده‌سازی است و سکوی یادگیری سامانه قابل استفاده دوباره پروژه است.
+کتاب معماری پروژه منبع اصلی جهت‌گیری محصولی و مهندسی است. تغییرات کد باید مرز بین سکو و پیاده‌سازی را حفظ کنند: Pharmexa یک پیاده‌سازی است و سکوی یادگیری سامانه قابل استفاده دوباره پروژه است.

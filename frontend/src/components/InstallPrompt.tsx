@@ -58,7 +58,7 @@ export function InstallPrompt() {
           <Smartphone size={20} color={colors.primary} />
         </View>
         <View style={styles.copy}>
-          <Text style={styles.title}>Install K_Game like an app</Text>
+          <Text style={styles.title}>Install Pharmexa like an app</Text>
           <Text style={styles.text}>
             For iPhone: Share → Add to Home Screen. On desktop or Android, use the install button when it appears.
           </Text>

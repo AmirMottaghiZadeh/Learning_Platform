@@ -5,7 +5,7 @@
 **Subtitle:** Building Reusable, Enterprise-Grade Learning Platforms  
 **Version:** 1.0  
 **Status:** Architecture Specification  
-**Reference Implementation:** K_Game  
+**Reference Implementation:** Pharmexa  
 **Primary Scope:** Platform architecture, not a single product  
 **Date:** 2026-07-04
 
@@ -17,7 +17,7 @@ This document defines the foundational principles of a reusable Learning Platfor
 
 The framework is intended to support multiple learning products such as:
 
-- K_Game
+- Pharmexa
 - K_Anatomy
 - K_Physiology
 - K_Nursing
@@ -26,7 +26,7 @@ The framework is intended to support multiple learning products such as:
 - K_Chemistry
 - Future learning products
 
-K_Game is the first reference implementation, but it is not the center of the architecture. The platform is the center.
+Pharmexa is the first reference implementation, but it is not the center of the architecture. The platform is the center.
 
 ---
 
@@ -61,7 +61,7 @@ This book defines the architecture and engineering foundation for a reusable Lea
 
 The purpose of the platform is not to build one quiz application. The purpose is to build a reusable foundation that can support many educational products across different knowledge domains.
 
-A product such as K_Game is only one implementation of the platform.
+A product such as Pharmexa is only one implementation of the platform.
 
 The platform must remain useful even if the first product changes, is replaced, or becomes only one of many products.
 
@@ -138,7 +138,7 @@ A product solves a specific user problem.
 
 Examples:
 
-- K_Game helps learners study pharmacology and drug-related knowledge.
+- Pharmexa helps learners study pharmacology and drug-related knowledge.
 - K_Anatomy could help learners study anatomical structures.
 - K_Language could help learners memorize words, phrases and grammar.
 - K_Chemistry could help learners study formulas, reactions and concepts.
@@ -564,9 +564,9 @@ The platform uses generic concepts.
 
 Each product maps its domain to platform abstractions.
 
-Example for K_Game:
+Example for Pharmexa:
 
-| Platform Concept | K_Game Mapping |
+| Platform Concept | Pharmexa Mapping |
 |---|---|
 | Learning Object | Drug |
 | Learning Topic | Drug Topic |
@@ -843,7 +843,7 @@ The platform must not depend on a plugin.
 
 ## 13.4 Example
 
-K_Game may provide:
+Pharmexa may provide:
 
 - Drug dataset importer
 - Drug question generator
@@ -860,11 +860,11 @@ But the platform core must not import drug-specific code.
 
 Reference implementations prove that the platform architecture works.
 
-K_Game is the first reference implementation.
+Pharmexa is the first reference implementation.
 
-## 14.2 Role of K_Game
+## 14.2 Role of Pharmexa
 
-K_Game validates:
+Pharmexa validates:
 
 - Quiz engine
 - Flashcard engine
@@ -878,7 +878,7 @@ K_Game validates:
 
 ## 14.3 Rule
 
-If a feature is useful only for K_Game, it belongs to K_Game.
+If a feature is useful only for Pharmexa, it belongs to Pharmexa.
 
 If it is useful for every learning product, it belongs to the platform.
 
@@ -1095,7 +1095,7 @@ The platform is not a quiz app.
 
 The platform is a reusable learning framework.
 
-K_Game is the first reference implementation, not the architecture itself.
+Pharmexa is the first reference implementation, not the architecture itself.
 
 Future volumes define the architecture, core domain, learning engines, backend engineering, frontend engineering, product engineering, operations and reference implementations.
 

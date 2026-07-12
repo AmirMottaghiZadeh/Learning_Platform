@@ -1,6 +1,6 @@
 # Learning Platform migration starter
 
-This starter is being refactored from a K_Game-only backend into a reusable Learning Platform backend, with K_Game as the first reference implementation.
+This starter is being refactored from a Pharmexa-only backend into a reusable Learning Platform backend, with Pharmexa as the first reference implementation.
 
 ## API contract
 
@@ -83,13 +83,13 @@ The backend now exposes explicit, testable contracts for the next platformizatio
 - `apps.flashcards.contracts.ReviewScheduleResult`
 - `apps.core.events.LearningEvent`
 
-These contracts keep K_Game-specific data mapped onto reusable platform concepts without moving `Drug` concepts into platform core.
+These contracts keep Pharmexa-specific data mapped onto reusable platform concepts without moving `Drug` concepts into platform core.
 
-K_Game now provides the first product adapter:
+Pharmexa now provides the first product adapter:
 
 - `apps.drugs.learning_adapter.KGameLearningAdapter`
 
-The Quiz and Game session services use the learning adapter contract instead of importing `DrugQuestionSource` directly. Current `games` and `flashcards` persistence models still reference the K_Game source model and should be migrated in a later persistence-focused phase.
+The Quiz and Game session services use the learning adapter contract instead of importing `DrugQuestionSource` directly. Current `games` and `flashcards` persistence models still reference the Pharmexa source model and should be migrated in a later persistence-focused phase.
 
 Generic platform domain models introduced in `apps.learning`:
 
@@ -98,7 +98,7 @@ Generic platform domain models introduced in `apps.learning`:
 - `KnowledgeSource`
 - `LearningEventRecord`
 
-These models represent the platform concepts from the Architecture Book. K_Game still keeps its product-specific `Drug`, `DrugTopic`, and `DrugQuestionSource` models as the current reference implementation dataset.
+These models represent the platform concepts from the Architecture Book. Pharmexa still keeps its product-specific `Drug`, `DrugTopic`, and `DrugQuestionSource` models as the current reference implementation dataset.
 
 ## Persistence alignment
 
@@ -114,7 +114,7 @@ The legacy `source` fields remain nullable fallback fields during migration:
 - `Mistake.source`
 - `FlashcardState.source`
 
-To sync K_Game's current dataset into generic learning sources:
+To sync Pharmexa's current dataset into generic learning sources:
 
 ```bash
 python manage.py sync_learning_sources
@@ -208,9 +208,9 @@ Rule versions introduced or used in this phase:
 - `mvp-topic-progress-v1`
 - `k-game-leitner-box-v1`
 
-## K_Game game modes and Leitner flashcards
+## Pharmexa game modes and Leitner flashcards
 
-K_Game now supports two primary game start modes:
+Pharmexa now supports two primary game start modes:
 
 - `random`: user-selected question count, restricted to multiples of 10 from 10 to 100.
 - `category`: same count contract, filtered by a broad target category such as cardiovascular, CNS, respiratory, endocrine, GI or infection.
@@ -222,7 +222,7 @@ Game start also requires a learning source type through `topic_key`:
 - `indication`
 - `sideEffects`
 
-Broad target category metadata is stored on K_Game `LearningObject` and `KnowledgeSource` records:
+Broad target category metadata is stored on Pharmexa `LearningObject` and `KnowledgeSource` records:
 
 - `target_category_key`
 - `target_category_label`
@@ -232,7 +232,7 @@ The frontend can list available categories through:
 
 - `GET /api/v1/target-categories/?product_id=k_game`
 
-Flashcards are now a learning engine for all active K_Game Knowledge Sources. Flashcard deck creation is category-based and independent of quiz mistakes.
+Flashcards are now a learning engine for all active Pharmexa Knowledge Sources. Flashcard deck creation is category-based and independent of quiz mistakes.
 Flashcard decks are filtered by both source type and optional target category.
 When the learner creates a flashcard deck, all matching sources for the selected source type and category are scheduled, not a random fixed-size subset.
 
@@ -242,7 +242,7 @@ Question prompt naming rules:
 - `timing`, `indication`, and `sideEffects` prompts use the generic drug name when available.
 - fallback naming may use the imported generic/name field when a dedicated generic field is absent.
 
-K_Game uses a five-box Leitner policy:
+Pharmexa uses a five-box Leitner policy:
 
 - `unknown` on a new card places it into box 1.
 - `unknown` moves an active card one box forward.

@@ -4,7 +4,7 @@ from apps.drugs.learning_sync import sync_all_drug_question_sources
 
 
 class Command(BaseCommand):
-    help = "Sync K_Game drug question sources into generic platform learning sources."
+    help = "Sync Pharmexa drug question sources into generic platform learning sources."
 
     def handle(self, *args, **options):
         result = sync_all_drug_question_sources()

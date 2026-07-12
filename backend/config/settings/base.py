@@ -93,7 +93,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Learning Platform API",
-    "DESCRIPTION": "Versioned API contract for the reusable Learning Platform and K_Game reference implementation.",
+    "DESCRIPTION": "Versioned API contract for the reusable Learning Platform and Pharmexa reference implementation.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api/v1",
