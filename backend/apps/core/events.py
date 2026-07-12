@@ -37,7 +37,7 @@ def build_learning_event(
     *,
     event_type: str,
     learner_id: int | None,
-    product_id: str = "k_game",
+    product_id: str = "pharmexa",
     payload: dict[str, Any] | None = None,
     correlation_id: str | None = None,
     source: str = "backend",

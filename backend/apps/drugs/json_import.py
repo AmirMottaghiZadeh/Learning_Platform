@@ -333,8 +333,8 @@ def replace_drug_metadata_from_json(directory):
     DrugQuestionSource.objects.all().delete()
     Drug.objects.all().delete()
     DrugDatasetDocument.objects.all().delete()
-    KnowledgeSource.objects.filter(product_id="k_game").update(is_active=False)
-    LearningObject.objects.filter(product_id="k_game").update(is_active=False)
+    KnowledgeSource.objects.filter(product_id="pharmexa").update(is_active=False)
+    LearningObject.objects.filter(product_id="pharmexa").update(is_active=False)
 
     ensure_topics()
     topics = {topic.key: topic for topic in DrugTopic.objects.all()}
@@ -363,14 +363,14 @@ def replace_drug_metadata_from_json(directory):
 
     sync_all_drug_question_sources()
     KnowledgeSource.objects.filter(
-        product_id="k_game",
+        product_id="pharmexa",
         is_active=False,
         game_questions__isnull=True,
         mistakes__isnull=True,
         flashcard_states__isnull=True,
     ).delete()
     LearningObject.objects.filter(
-        product_id="k_game",
+        product_id="pharmexa",
         is_active=False,
         knowledge_sources__isnull=True,
     ).delete()

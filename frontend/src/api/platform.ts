@@ -44,23 +44,23 @@ export const platformApi = {
     return unwrapList<Topic>(payload);
   },
   async targetCategories(token?: string, source_type?: QuestionType) {
-    const params = new URLSearchParams({product_id: "k_game"});
+    const params = new URLSearchParams({product_id: "pharmexa"});
     if (source_type) params.set("source_type", source_type);
     const payload = await apiFetch(`/target-categories/?${params.toString()}`, {}, token);
     return unwrapList<TargetCategory>(payload);
   },
   dashboard(token: string) {
-    return apiFetch("/me/dashboard/?product_id=k_game", {}, token) as Promise<Dashboard>;
+    return apiFetch("/me/dashboard/?product_id=pharmexa", {}, token) as Promise<Dashboard>;
   },
   recommendations(token: string) {
-    return apiFetch("/me/recommendations/?product_id=k_game", {}, token) as Promise<Recommendation[]>;
+    return apiFetch("/me/recommendations/?product_id=pharmexa", {}, token) as Promise<Recommendation[]>;
   },
   async progress(token: string) {
-    const payload = await apiFetch("/me/progress/?product_id=k_game", {}, token);
+    const payload = await apiFetch("/me/progress/?product_id=pharmexa", {}, token);
     return unwrapList<TopicProgress>(payload);
   },
   statistics(token: string) {
-    return apiFetch("/me/statistics/?product_id=k_game", {}, token) as Promise<Statistics>;
+    return apiFetch("/me/statistics/?product_id=pharmexa", {}, token) as Promise<Statistics>;
   },
   async flashcards(
     token: string,
@@ -69,7 +69,7 @@ export const platformApi = {
     source_type?: QuestionType,
     exclude_ids: number[] = [],
   ) {
-    const params = new URLSearchParams({product_id: "k_game"});
+    const params = new URLSearchParams({product_id: "pharmexa"});
     params.set("mode", mode);
     if (mode === "new") {
       if (target_category_key) params.set("target_category_key", target_category_key);
@@ -81,11 +81,11 @@ export const platformApi = {
     return unwrapList<FlashcardState>(payload);
   },
   flashcardBoxes(token: string) {
-    const params = new URLSearchParams({product_id: "k_game"});
+    const params = new URLSearchParams({product_id: "pharmexa"});
     return apiFetch(`/flashcards/boxes/?${params.toString()}`, {}, token) as Promise<FlashcardBoxSummary>;
   },
   flashcardDeckSummary(token: string, target_category_key = "", source_type: QuestionType = "brandGeneric") {
-    const params = new URLSearchParams({product_id: "k_game"});
+    const params = new URLSearchParams({product_id: "pharmexa"});
     if (target_category_key) params.set("target_category_key", target_category_key);
     params.set("source_type", source_type);
     return apiFetch(`/flashcards/decks/?${params.toString()}`, {}, token) as Promise<FlashcardDeckSummary>;
@@ -96,7 +96,7 @@ export const platformApi = {
   seedFlashcards(token: string, target_category_key = "", source_type: QuestionType = "brandGeneric") {
     return apiFetch(
       "/flashcards/seed/",
-      json({product_id: "k_game", target_category_key, source_type}),
+      json({product_id: "pharmexa", target_category_key, source_type}),
       token,
     ) as Promise<FlashcardState[]>;
   },
@@ -140,12 +140,12 @@ export const platformApi = {
     return apiFetch(`/games/${gameId}/finish/`, {method: "POST"}, token) as Promise<GameSession>;
   },
   leaderboard(token: string) {
-    return apiFetch("/league/?product_id=k_game", {}, token) as Promise<LeaderboardEntry[]>;
+    return apiFetch("/league/?product_id=pharmexa", {}, token) as Promise<LeaderboardEntry[]>;
   },
   myLeagueRank(token: string) {
-    return apiFetch("/league/me/?product_id=k_game", {}, token) as Promise<MyLeagueRank>;
+    return apiFetch("/league/me/?product_id=pharmexa", {}, token) as Promise<MyLeagueRank>;
   },
   leagueSummary(token: string) {
-    return apiFetch("/league/summary/?product_id=k_game", {}, token) as Promise<LeagueFullSummary>;
+    return apiFetch("/league/summary/?product_id=pharmexa", {}, token) as Promise<LeagueFullSummary>;
   },
 };

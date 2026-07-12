@@ -24,7 +24,7 @@ def bounded_int(value, *, default, minimum, maximum):
 class LeagueView(views.APIView):
     @extend_schema(responses=LeagueLeaderboardEntrySerializer(many=True))
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         topic_key = request.query_params.get("topic_key") or None
         season_key = request.query_params.get("season_key") or None
         entries = get_leaderboard_entries(
@@ -38,7 +38,7 @@ class LeagueView(views.APIView):
 class MyLeagueRankView(views.APIView):
     @extend_schema(responses=LeagueUserRankSerializer)
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         topic_key = request.query_params.get("topic_key") or None
         season_key = request.query_params.get("season_key") or None
         rank = get_user_league_rank(
@@ -53,7 +53,7 @@ class MyLeagueRankView(views.APIView):
 class CurrentLeagueSeasonView(views.APIView):
     @extend_schema(responses=LeagueSeasonSerializer)
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         season = get_current_season(product_id=product_id)
         return Response(LeagueSeasonSerializer(season).data)
 
@@ -61,7 +61,7 @@ class CurrentLeagueSeasonView(views.APIView):
 class LeagueSeasonListView(views.APIView):
     @extend_schema(responses=LeagueSeasonSerializer(many=True))
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         limit = bounded_int(request.query_params.get("limit"), default=12, minimum=1, maximum=52)
         seasons = list_league_seasons(product_id=product_id, limit=limit)
         return Response(LeagueSeasonSerializer(seasons, many=True).data)
@@ -70,7 +70,7 @@ class LeagueSeasonListView(views.APIView):
 class LeagueSummaryView(views.APIView):
     @extend_schema(responses=LeagueSummarySerializer)
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         topic_key = request.query_params.get("topic_key") or None
         season_key = request.query_params.get("season_key") or None
         summary = get_league_summary(

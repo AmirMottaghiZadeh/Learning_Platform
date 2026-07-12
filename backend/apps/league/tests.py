@@ -12,7 +12,7 @@ from apps.league.services import get_current_season
 
 class LeagueAPITests(TestCase):
     def create_result(self, user, *, raw_score, league_rating, topic_key="timing"):
-        season = get_current_season(product_id="k_game")
+        season = get_current_season(product_id="pharmexa")
         session = GameSession.objects.create(
             user=user,
             topic_key=topic_key,
@@ -28,7 +28,7 @@ class LeagueAPITests(TestCase):
         return LeagueResult.objects.create(
             user=user,
             session=session,
-            product_id="k_game",
+            product_id="pharmexa",
             season=season,
             season_key=season.key,
             topic_key=topic_key,
@@ -51,7 +51,7 @@ class LeagueAPITests(TestCase):
         client = APIClient()
         client.force_authenticate(user=first)
 
-        response = client.get("/api/v1/league/?product_id=k_game&topic_key=timing")
+        response = client.get("/api/v1/league/?product_id=pharmexa&topic_key=timing")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -69,7 +69,7 @@ class LeagueAPITests(TestCase):
         client = APIClient()
         client.force_authenticate(user=second)
 
-        response = client.get("/api/v1/league/me/?product_id=k_game&topic_key=timing")
+        response = client.get("/api/v1/league/me/?product_id=pharmexa&topic_key=timing")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["rank"], 2)
@@ -81,23 +81,23 @@ class LeagueAPITests(TestCase):
         client = APIClient()
         client.force_authenticate(user=user)
 
-        response = client.get("/api/v1/league/seasons/current/?product_id=k_game")
+        response = client.get("/api/v1/league/seasons/current/?product_id=pharmexa")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["product_id"], "k_game")
+        self.assertEqual(response.data["product_id"], "pharmexa")
         self.assertIn("W", response.data["key"])
 
     def test_season_list_endpoint_returns_recent_seasons(self):
         user = User.objects.create_user(username="learner")
-        get_current_season(product_id="k_game")
+        get_current_season(product_id="pharmexa")
         client = APIClient()
         client.force_authenticate(user=user)
 
-        response = client.get("/api/v1/league/seasons/?product_id=k_game")
+        response = client.get("/api/v1/league/seasons/?product_id=pharmexa")
 
         self.assertEqual(response.status_code, 200)
         self.assertGreaterEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["product_id"], "k_game")
+        self.assertEqual(response.data[0]["product_id"], "pharmexa")
 
     def test_league_summary_returns_season_rank_and_leaderboard(self):
         first = User.objects.create_user(username="first")
@@ -107,7 +107,7 @@ class LeagueAPITests(TestCase):
         client = APIClient()
         client.force_authenticate(user=second)
 
-        response = client.get("/api/v1/league/summary/?product_id=k_game&topic_key=timing")
+        response = client.get("/api/v1/league/summary/?product_id=pharmexa&topic_key=timing")
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("season", response.data)

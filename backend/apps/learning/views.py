@@ -48,7 +48,7 @@ class LearnerProgressListView(generics.ListAPIView):
 class LearningDashboardView(views.APIView):
     @extend_schema(responses=LearningDashboardSerializer)
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         dashboard = get_learning_dashboard(request.user, product_id=product_id)
         return Response(LearningDashboardSerializer(dashboard).data)
 
@@ -56,7 +56,7 @@ class LearningDashboardView(views.APIView):
 class LearningRecommendationView(views.APIView):
     @extend_schema(responses=RecommendationSerializer(many=True))
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         recommendations = get_learning_recommendations(request.user, product_id=product_id)
         return Response(RecommendationSerializer(recommendations, many=True).data)
 
@@ -64,7 +64,7 @@ class LearningRecommendationView(views.APIView):
 class WeakTopicListView(views.APIView):
     @extend_schema(responses=WeakTopicSerializer(many=True))
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         limit = bounded_int(request.query_params.get("limit"), default=10, minimum=1, maximum=50)
         weak_topics = get_weak_topics(request.user, product_id=product_id, limit=limit)
         return Response(WeakTopicSerializer(weak_topics, many=True).data)
@@ -73,7 +73,7 @@ class WeakTopicListView(views.APIView):
 class LearningStatisticsView(views.APIView):
     @extend_schema(responses=LearningStatisticsSerializer)
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         days = bounded_int(request.query_params.get("days"), default=7, minimum=1, maximum=90)
         statistics = get_learning_statistics(request.user, product_id=product_id, days=days)
         return Response(LearningStatisticsSerializer(statistics).data)

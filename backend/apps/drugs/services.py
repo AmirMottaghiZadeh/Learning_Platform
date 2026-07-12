@@ -67,8 +67,8 @@ def generic_drug_signature(drug):
     return signature(value)
 
 
-def list_target_categories(product_id="k_game", source_type=""):
-    if product_id != "k_game":
+def list_target_categories(product_id="pharmexa", source_type=""):
+    if product_id != "pharmexa":
         return []
 
     sources = (

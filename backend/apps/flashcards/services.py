@@ -115,7 +115,7 @@ def _review_state_for_box(box):
 def seed_flashcards_for_user(
     *,
     user,
-    product_id="k_game",
+    product_id="pharmexa",
     count=0,
     target_category_key="",
     source_type="",
@@ -147,7 +147,7 @@ def seed_flashcards_for_user(
     return states
 
 
-def get_flashcard_deck_summary(*, user, product_id="k_game", target_category_key="", source_type=""):
+def get_flashcard_deck_summary(*, user, product_id="pharmexa", target_category_key="", source_type=""):
     sources = (
         KnowledgeSource.objects
         .filter(product_id=product_id, is_active=True)
@@ -221,7 +221,7 @@ def schedule_flashcard_from_source(*, user, knowledge_source, created_at=None):
     return state
 
 
-def get_leitner_box_counts(*, user, product_id="k_game", target_category_key="", source_type=""):
+def get_leitner_box_counts(*, user, product_id="pharmexa", target_category_key="", source_type=""):
     queryset = (
         FlashcardState.objects
         .filter(

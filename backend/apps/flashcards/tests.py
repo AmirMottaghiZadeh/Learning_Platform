@@ -79,15 +79,15 @@ class ReviewSchedulingRuleTests(SimpleTestCase):
 class FlashcardPersistenceAlignmentTests(TestCase):
     def test_serializer_reads_generic_knowledge_source_without_legacy_source(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="drug-1",
             display_name="Drug 1",
             topic=topic,
         )
         knowledge_source = KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="source-1",
             learning_object=learning_object,
             topic=topic,
@@ -110,15 +110,15 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
     def test_review_card_records_schedule_snapshot_and_progress_event(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="drug-1",
             display_name="Drug 1",
             topic=topic,
         )
         knowledge_source = KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="source-1",
             learning_object=learning_object,
             topic=topic,
@@ -159,15 +159,15 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
     def test_seed_flashcards_creates_new_cards_outside_due_queue(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="drug-1",
             display_name="Drug 1",
             topic=topic,
         )
         KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="source-1",
             learning_object=learning_object,
             topic=topic,
@@ -176,7 +176,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             correct_answer="Answer",
         )
         KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="source-2",
             learning_object=learning_object,
             topic=topic,
@@ -185,7 +185,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             correct_answer="Answer 2",
         )
 
-        states = seed_flashcards_for_user(user=user, product_id="k_game", count=1)
+        states = seed_flashcards_for_user(user=user, product_id="pharmexa", count=1)
 
         self.assertEqual(len(states), 2)
         self.assertEqual(states[0].box, 0)
@@ -194,15 +194,15 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
     def test_leitner_box_counts_include_only_active_boxes(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="drug-1",
             display_name="Drug 1",
             topic=topic,
         )
         knowledge_source = KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="source-1",
             learning_object=learning_object,
             topic=topic,
@@ -218,7 +218,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             due_at=django_timezone.now(),
         )
 
-        counts = get_leitner_box_counts(user=user, product_id="k_game")
+        counts = get_leitner_box_counts(user=user, product_id="pharmexa")
 
         self.assertEqual(counts["new"], 0)
         self.assertEqual(counts["total"], 1)
@@ -227,23 +227,23 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
     def test_flashcard_api_uses_category_deck_independent_of_quiz_mistakes(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         cardio_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="cardio-drug-1",
             display_name="Cardio Drug",
             topic=topic,
             metadata={"target_category_key": "cardiovascular"},
         )
         cns_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="cns-drug-1",
             display_name="CNS Drug",
             topic=topic,
             metadata={"target_category_key": "cns"},
         )
         KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="cardio-source-1",
             learning_object=cardio_object,
             topic=topic,
@@ -253,7 +253,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             metadata={"target_category_key": "cardiovascular", "target_category_label": "Cardio"},
         )
         KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="cardio-source-1b",
             learning_object=cardio_object,
             topic=topic,
@@ -263,7 +263,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             metadata={"target_category_key": "cardiovascular", "target_category_label": "Cardio"},
         )
         KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="cardio-source-2",
             learning_object=cardio_object,
             topic=topic,
@@ -273,7 +273,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             metadata={"target_category_key": "cardiovascular", "target_category_label": "Cardio"},
         )
         KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="cns-source-1",
             learning_object=cns_object,
             topic=topic,
@@ -288,7 +288,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         seed_response = client.post(
             "/api/v1/flashcards/seed/",
             {
-                "product_id": "k_game",
+                "product_id": "pharmexa",
                 "target_category_key": "cardiovascular",
                 "source_type": "timing",
             },
@@ -300,7 +300,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(seed_response.data[0]["source_type"], "timing")
 
         list_response = client.get(
-            "/api/v1/flashcards/?product_id=k_game&mode=new&target_category_key=cardiovascular&source_type=timing"
+            "/api/v1/flashcards/?product_id=pharmexa&mode=new&target_category_key=cardiovascular&source_type=timing"
         )
         self.assertEqual(list_response.status_code, 200)
         self.assertEqual(list_response.data["count"], 2)
@@ -310,7 +310,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         )
 
         box_response = client.get(
-            "/api/v1/flashcards/boxes/?product_id=k_game&target_category_key=cardiovascular&source_type=timing"
+            "/api/v1/flashcards/boxes/?product_id=pharmexa&target_category_key=cardiovascular&source_type=timing"
         )
         self.assertEqual(box_response.status_code, 200)
         self.assertEqual(box_response.data["new"], 0)
@@ -325,13 +325,13 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(review_response.data["box"], 1)
 
         due_after_review = client.get(
-            "/api/v1/flashcards/?product_id=k_game&mode=new&target_category_key=cardiovascular&source_type=timing"
+            "/api/v1/flashcards/?product_id=pharmexa&mode=new&target_category_key=cardiovascular&source_type=timing"
         )
         self.assertEqual(due_after_review.status_code, 200)
         self.assertEqual(due_after_review.data["count"], 1)
 
         box_after_review = client.get(
-            "/api/v1/flashcards/?product_id=k_game&mode=leitner&target_category_key=cns&source_type=indication"
+            "/api/v1/flashcards/?product_id=pharmexa&mode=leitner&target_category_key=cns&source_type=indication"
         )
         self.assertEqual(box_after_review.status_code, 200)
         self.assertEqual(box_after_review.data["count"], 1)
@@ -340,9 +340,9 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
     def test_flashcard_deck_summary_reports_full_selected_deck(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="drug-1",
             display_name="Drug 1",
             topic=topic,
@@ -350,7 +350,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         )
         for index in range(3):
             KnowledgeSource.objects.create(
-                product_id="k_game",
+                product_id="pharmexa",
                 external_id=f"source-{index}",
                 learning_object=learning_object,
                 topic=topic,
@@ -362,7 +362,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
         before_seed = get_flashcard_deck_summary(
             user=user,
-            product_id="k_game",
+            product_id="pharmexa",
             target_category_key="cardiovascular",
             source_type="timing",
         )
@@ -371,13 +371,13 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
         seed_flashcards_for_user(
             user=user,
-            product_id="k_game",
+            product_id="pharmexa",
             target_category_key="cardiovascular",
             source_type="timing",
         )
         after_seed = get_flashcard_deck_summary(
             user=user,
-            product_id="k_game",
+            product_id="pharmexa",
             target_category_key="cardiovascular",
             source_type="timing",
         )
@@ -391,7 +391,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         client = APIClient()
         client.force_authenticate(user=user)
         response = client.get(
-            "/api/v1/flashcards/decks/?product_id=k_game&target_category_key=cardiovascular&source_type=timing"
+            "/api/v1/flashcards/decks/?product_id=pharmexa&target_category_key=cardiovascular&source_type=timing"
         )
 
         self.assertEqual(response.status_code, 200)
@@ -402,15 +402,15 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
     def test_known_new_card_completes_without_entering_leitner(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="drug-1",
             display_name="Drug 1",
             topic=topic,
         )
         knowledge_source = KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="source-1",
             learning_object=learning_object,
             topic=topic,
@@ -432,19 +432,19 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(state.box, 0)
         self.assertEqual(state.review_state, FlashcardState.REVIEW_STATE_SUSPENDED)
         self.assertIsNone(state.due_at)
-        self.assertEqual(get_leitner_box_counts(user=user, product_id="k_game")["total"], 0)
+        self.assertEqual(get_leitner_box_counts(user=user, product_id="pharmexa")["total"], 0)
 
     def test_known_box_one_card_leaves_global_leitner_queue(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="drug-1",
             display_name="Drug 1",
             topic=topic,
         )
         knowledge_source = KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="source-1",
             learning_object=learning_object,
             topic=topic,
@@ -464,4 +464,4 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
         self.assertEqual(state.box, 0)
         self.assertEqual(state.review_state, FlashcardState.REVIEW_STATE_SUSPENDED)
-        self.assertEqual(get_leitner_box_counts(user=user, product_id="k_game")["total"], 0)
+        self.assertEqual(get_leitner_box_counts(user=user, product_id="pharmexa")["total"], 0)

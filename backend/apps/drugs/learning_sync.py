@@ -6,7 +6,7 @@ from .categories import category_payload_for_drug
 from .models import DrugQuestionSource
 
 
-PRODUCT_ID = "k_game"
+PRODUCT_ID = "pharmexa"
 
 
 @dataclass(frozen=True)

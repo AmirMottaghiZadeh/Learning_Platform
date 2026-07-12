@@ -14,7 +14,7 @@ type AuthState = {
   signOut: () => Promise<void>;
 };
 
-const TOKEN_KEY = "k_game_auth_token";
+const TOKEN_KEY = "pharmexa_auth_token";
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({children}: {children: React.ReactNode}) {

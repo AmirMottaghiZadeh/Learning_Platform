@@ -33,7 +33,7 @@ const QUESTION_TYPES: Array<{key: QuestionType; label: string}> = [
   {key: "doseAdjustment", label: "تنظیم دوز"},
 ];
 
-const SAVED_QUIZ_SESSION_KEY = "k_game_saved_quiz_session";
+const SAVED_QUIZ_SESSION_KEY = "pharmexa_saved_quiz_session";
 const DEFAULT_QUESTION_SECONDS = 30;
 const TIMER_EXTENSION_SECONDS = 30;
 

@@ -109,18 +109,18 @@ class GameSessionServiceBoundaryTests(SimpleTestCase):
 
 def create_knowledge_source(index: int, *, answer: str | None = None) -> KnowledgeSource:
     topic, _ = LearningTopic.objects.get_or_create(
-        product_id="k_game",
+        product_id="pharmexa",
         key="timing",
         defaults={"label": "Timing"},
     )
     learning_object = LearningObject.objects.create(
-        product_id="k_game",
+        product_id="pharmexa",
         external_id=f"drug-{index}",
         display_name=f"Drug {index}",
         topic=topic,
     )
     return KnowledgeSource.objects.create(
-        product_id="k_game",
+        product_id="pharmexa",
         external_id=f"source-{index}",
         learning_object=learning_object,
         topic=topic,
@@ -148,20 +148,20 @@ class GamePersistenceAlignmentTests(TestCase):
     def test_start_game_can_filter_by_target_category(self):
         user = User.objects.create_user(username="learner")
         topic, _ = LearningTopic.objects.get_or_create(
-            product_id="k_game",
+            product_id="pharmexa",
             key="timing",
             defaults={"label": "Timing"},
         )
         for index in range(1, 5):
             learning_object = LearningObject.objects.create(
-                product_id="k_game",
+                product_id="pharmexa",
                 external_id=f"cardio-drug-{index}",
                 display_name=f"Cardio Drug {index}",
                 topic=topic,
                 metadata={"target_category_key": "cardiovascular"},
             )
             KnowledgeSource.objects.create(
-                product_id="k_game",
+                product_id="pharmexa",
                 external_id=f"cardio-source-{index}",
                 learning_object=learning_object,
                 topic=topic,
@@ -172,14 +172,14 @@ class GamePersistenceAlignmentTests(TestCase):
             )
         for index in range(1, 5):
             learning_object = LearningObject.objects.create(
-                product_id="k_game",
+                product_id="pharmexa",
                 external_id=f"cns-drug-{index}",
                 display_name=f"CNS Drug {index}",
                 topic=topic,
                 metadata={"target_category_key": "cns"},
             )
             KnowledgeSource.objects.create(
-                product_id="k_game",
+                product_id="pharmexa",
                 external_id=f"cns-source-{index}",
                 learning_object=learning_object,
                 topic=topic,

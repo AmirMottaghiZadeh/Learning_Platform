@@ -29,7 +29,7 @@ def season_key_for(starts_at):
     return f"{year}-W{week:02d}"
 
 
-def get_current_season(*, product_id="k_game", now=None):
+def get_current_season(*, product_id="pharmexa", now=None):
     starts_at, ends_at = get_week_bounds(now)
     key = season_key_for(starts_at)
     season, _ = LeagueSeason.objects.get_or_create(
@@ -44,7 +44,7 @@ def get_current_season(*, product_id="k_game", now=None):
     return season
 
 
-def list_league_seasons(*, product_id="k_game", limit=12):
+def list_league_seasons(*, product_id="pharmexa", limit=12):
     return LeagueSeason.objects.filter(product_id=product_id).order_by("-starts_at")[:limit]
 
 
@@ -58,7 +58,7 @@ def session_product_id(session):
     )
     if question and question.knowledge_source_id:
         return question.knowledge_source.product_id
-    return "k_game"
+    return "pharmexa"
 
 
 def save_league_result(session):
@@ -85,7 +85,7 @@ def save_league_result(session):
     return result
 
 
-def base_leaderboard_queryset(*, product_id="k_game", topic_key=None, season_key=None):
+def base_leaderboard_queryset(*, product_id="pharmexa", topic_key=None, season_key=None):
     if season_key is None:
         season_key = get_current_season(product_id=product_id).key
     qs = (
@@ -129,7 +129,7 @@ def calculate_result_rank(result):
     return better_results.count() + 1
 
 
-def get_leaderboard_entries(*, product_id="k_game", topic_key=None, season_key=None, limit=100):
+def get_leaderboard_entries(*, product_id="pharmexa", topic_key=None, season_key=None, limit=100):
     qs = base_leaderboard_queryset(
         product_id=product_id,
         topic_key=topic_key,
@@ -152,7 +152,7 @@ def get_leaderboard_entries(*, product_id="k_game", topic_key=None, season_key=N
     return entries
 
 
-def get_user_league_rank(user, *, product_id="k_game", topic_key=None, season_key=None):
+def get_user_league_rank(user, *, product_id="pharmexa", topic_key=None, season_key=None):
     entries = get_leaderboard_entries(
         product_id=product_id,
         topic_key=topic_key,
@@ -173,7 +173,7 @@ def get_user_league_rank(user, *, product_id="k_game", topic_key=None, season_ke
     }
 
 
-def get_league_summary(user, *, product_id="k_game", topic_key=None, season_key=None, limit=100):
+def get_league_summary(user, *, product_id="pharmexa", topic_key=None, season_key=None, limit=100):
     season = (
         LeagueSeason.objects.filter(product_id=product_id, key=season_key).first()
         if season_key

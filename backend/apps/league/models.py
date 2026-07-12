@@ -10,7 +10,7 @@ class LeagueSeason(models.Model):
         (STATUS_ARCHIVED, "Archived"),
     ]
 
-    product_id = models.CharField(max_length=80, default="k_game")
+    product_id = models.CharField(max_length=80, default="pharmexa")
     key = models.CharField(max_length=40)
     starts_at = models.DateTimeField()
     ends_at = models.DateTimeField()
@@ -38,7 +38,7 @@ class LeagueSeason(models.Model):
 class LeagueResult(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="league_results")
     session = models.OneToOneField("games.GameSession", on_delete=models.CASCADE, related_name="league_result")
-    product_id = models.CharField(max_length=80, default="k_game")
+    product_id = models.CharField(max_length=80, default="pharmexa")
     season = models.ForeignKey(
         LeagueSeason,
         on_delete=models.SET_NULL,

@@ -42,7 +42,7 @@ class KGameLearningAdapterTests(TestCase):
 
         self.assertEqual(len(sources), 1)
         knowledge_source = KnowledgeSource.objects.get(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id=drug_question_source_external_id(source),
         )
         self.assertEqual(sources[0].id, knowledge_source.id)
@@ -334,7 +334,7 @@ class DrugJsonImportTests(TestCase):
         )
         self.assertEqual(
             KnowledgeSource.objects.filter(
-                product_id="k_game",
+                product_id="pharmexa",
                 learning_object__external_id=drug.external_id,
                 is_active=True,
             ).count(),
@@ -348,7 +348,7 @@ class DrugJsonImportTests(TestCase):
         self.assertEqual(Drug.objects.count(), 1)
         self.assertEqual(DrugDatasetDocument.objects.count(), 1)
         self.assertEqual(DrugQuestionSource.objects.count(), 9)
-        self.assertEqual(KnowledgeSource.objects.filter(product_id="k_game").count(), 9)
+        self.assertEqual(KnowledgeSource.objects.filter(product_id="pharmexa").count(), 9)
 
     def test_validate_only_does_not_change_existing_metadata(self):
         Drug.objects.create(external_id="legacy", name="Legacy")

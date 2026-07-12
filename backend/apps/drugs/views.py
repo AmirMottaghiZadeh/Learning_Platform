@@ -21,7 +21,7 @@ class TargetCategoryListView(views.APIView):
 
     @extend_schema(responses=TargetCategorySerializer(many=True))
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         source_type = request.query_params.get("source_type") or ""
         categories = list_target_categories(product_id=product_id, source_type=source_type)
         return Response(TargetCategorySerializer(categories, many=True).data)

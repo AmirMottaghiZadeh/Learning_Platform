@@ -108,7 +108,7 @@ class FlashcardReviewRequestSerializer(serializers.Serializer):
 
 
 class FlashcardSeedRequestSerializer(serializers.Serializer):
-    product_id = serializers.CharField(default="k_game")
+    product_id = serializers.CharField(default="pharmexa")
     count = serializers.IntegerField(
         default=0,
         min_value=0,

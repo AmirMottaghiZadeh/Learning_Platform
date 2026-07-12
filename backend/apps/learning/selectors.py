@@ -99,7 +99,7 @@ def get_weak_topics(user, *, product_id=None, limit=10):
     return weak_topics
 
 
-def get_learning_recommendations(user, *, product_id="k_game"):
+def get_learning_recommendations(user, *, product_id="pharmexa"):
     summary = get_learning_progress_summary(user, product_id=product_id)
     recommendations = []
 
@@ -159,7 +159,7 @@ def get_learning_recommendations(user, *, product_id="k_game"):
     return sorted(recommendations, key=lambda item: item["priority"])
 
 
-def get_learning_dashboard(user, *, product_id="k_game"):
+def get_learning_dashboard(user, *, product_id="pharmexa"):
     season = get_current_season(product_id=product_id)
     rank = get_user_league_rank(user, product_id=product_id, season_key=season.key)
     return {
@@ -174,7 +174,7 @@ def get_learning_dashboard(user, *, product_id="k_game"):
     }
 
 
-def get_learning_statistics(user, *, product_id="k_game", days=7):
+def get_learning_statistics(user, *, product_id="pharmexa", days=7):
     days = min(max(int(days), 1), 90)
     summary = get_learning_progress_summary(user, product_id=product_id)
     topics = list(progress_queryset_for_user(user, product_id=product_id))

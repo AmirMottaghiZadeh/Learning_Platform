@@ -8,7 +8,7 @@ type OnboardingState = {
   resetOnboarding: () => Promise<void>;
 };
 
-const ONBOARDING_KEY = "k_game_onboarding_complete";
+const ONBOARDING_KEY = "pharmexa_onboarding_complete";
 const OnboardingContext = createContext<OnboardingState | undefined>(undefined);
 
 export function OnboardingProvider({children}: {children: React.ReactNode}) {

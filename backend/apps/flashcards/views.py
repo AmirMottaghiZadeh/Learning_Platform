@@ -80,7 +80,7 @@ class FlashcardSeedView(views.APIView):
 class FlashcardBoxSummaryView(views.APIView):
     @extend_schema(responses=FlashcardBoxSummarySerializer)
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         counts = get_leitner_box_counts(
             user=request.user,
             product_id=product_id,
@@ -91,7 +91,7 @@ class FlashcardBoxSummaryView(views.APIView):
 class FlashcardDeckSummaryView(views.APIView):
     @extend_schema(responses=FlashcardDeckSummarySerializer)
     def get(self, request):
-        product_id = request.query_params.get("product_id") or "k_game"
+        product_id = request.query_params.get("product_id") or "pharmexa"
         target_category_key = request.query_params.get("target_category_key") or ""
         source_type = request.query_params.get("source_type") or ""
         summary = get_flashcard_deck_summary(

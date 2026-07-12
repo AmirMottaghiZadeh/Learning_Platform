@@ -16,15 +16,15 @@ from apps.learning.models import (
 class LearningProgressAPITests(TestCase):
     def test_progress_summary_returns_dashboard_metrics(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="drug-1",
             display_name="Drug 1",
             topic=topic,
         )
         knowledge_source = KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="source-1",
             learning_object=learning_object,
             topic=topic,
@@ -34,7 +34,7 @@ class LearningProgressAPITests(TestCase):
         )
         LearnerProgress.objects.create(
             learner=user,
-            product_id="k_game",
+            product_id="pharmexa",
             topic=topic,
             questions_answered=4,
             correct_answers=3,
@@ -53,7 +53,7 @@ class LearningProgressAPITests(TestCase):
         client = APIClient()
         client.force_authenticate(user=user)
 
-        response = client.get("/api/v1/me/progress/summary/?product_id=k_game")
+        response = client.get("/api/v1/me/progress/summary/?product_id=pharmexa")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["questions_answered"], 4)
@@ -67,15 +67,15 @@ class LearningProgressAPITests(TestCase):
 
     def test_dashboard_returns_recommendations_and_league_summary(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="drug-1",
             display_name="Drug 1",
             topic=topic,
         )
         knowledge_source = KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="source-1",
             learning_object=learning_object,
             topic=topic,
@@ -85,7 +85,7 @@ class LearningProgressAPITests(TestCase):
         )
         LearnerProgress.objects.create(
             learner=user,
-            product_id="k_game",
+            product_id="pharmexa",
             topic=topic,
             questions_answered=4,
             correct_answers=3,
@@ -102,20 +102,20 @@ class LearningProgressAPITests(TestCase):
         client = APIClient()
         client.force_authenticate(user=user)
 
-        response = client.get("/api/v1/me/dashboard/?product_id=k_game")
+        response = client.get("/api/v1/me/dashboard/?product_id=pharmexa")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["product_id"], "k_game")
+        self.assertEqual(response.data["product_id"], "pharmexa")
         self.assertEqual(response.data["summary"]["due_flashcards"], 1)
         self.assertEqual(response.data["recommendations"][0]["action"], "review_flashcards")
         self.assertIn("season_key", response.data["league"])
 
     def test_statistics_returns_daily_activity_from_learning_events(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         LearnerProgress.objects.create(
             learner=user,
-            product_id="k_game",
+            product_id="pharmexa",
             topic=topic,
             questions_answered=1,
             correct_answers=1,
@@ -124,14 +124,14 @@ class LearningProgressAPITests(TestCase):
         LearningEventRecord.objects.create(
             event_type="QuestionAnswered",
             learner=user,
-            product_id="k_game",
+            product_id="pharmexa",
             occurred_at=timezone.now(),
             payload={"xp_delta": 10},
         )
         client = APIClient()
         client.force_authenticate(user=user)
 
-        response = client.get("/api/v1/me/statistics/?product_id=k_game&days=14")
+        response = client.get("/api/v1/me/statistics/?product_id=pharmexa&days=14")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["days"], 14)
@@ -142,15 +142,15 @@ class LearningProgressAPITests(TestCase):
 
     def test_weak_topics_endpoint_returns_actionable_topic_signals(self):
         user = User.objects.create_user(username="learner")
-        topic = LearningTopic.objects.create(product_id="k_game", key="timing", label="Timing")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
         learning_object = LearningObject.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="drug-1",
             display_name="Drug 1",
             topic=topic,
         )
         knowledge_source = KnowledgeSource.objects.create(
-            product_id="k_game",
+            product_id="pharmexa",
             external_id="source-1",
             learning_object=learning_object,
             topic=topic,
@@ -160,7 +160,7 @@ class LearningProgressAPITests(TestCase):
         )
         LearnerProgress.objects.create(
             learner=user,
-            product_id="k_game",
+            product_id="pharmexa",
             topic=topic,
             questions_answered=10,
             correct_answers=4,
@@ -179,7 +179,7 @@ class LearningProgressAPITests(TestCase):
         client = APIClient()
         client.force_authenticate(user=user)
 
-        response = client.get("/api/v1/me/weak-topics/?product_id=k_game")
+        response = client.get("/api/v1/me/weak-topics/?product_id=pharmexa")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0]["topic_key"], "timing")
