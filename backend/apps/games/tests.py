@@ -260,6 +260,15 @@ class GamePersistenceAlignmentTests(TestCase):
         self.assertIsNone(questions[1].question_started_at)
         self.assertIsNone(questions[2].question_started_at)
 
+    def test_start_game_persists_unstarted_followup_questions_without_timestamps(self):
+        user = User.objects.create_user(username="learner_followup")
+        for index in range(1, 5):
+            create_knowledge_source(index)
+
+        session = start_game(user, topic_key="timing", count=10)
+
+        self.assertEqual(session.questions.filter(question_started_at__isnull=True).count(), 9)
+
     def test_cannot_answer_question_that_has_not_started(self):
         user = User.objects.create_user(username="learner")
         knowledge_source = create_knowledge_source(1, answer="Correct")
