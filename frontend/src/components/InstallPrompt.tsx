@@ -64,20 +64,20 @@ export function InstallPrompt() {
           </Text>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Dismiss install guide" onPress={() => setDismissed(true)}>
-          <X size={18} color={colors.muted} />
+          <X size={18} color="#64748B" />
         </Pressable>
       </View>
       <View style={styles.steps}>
         <View style={styles.step}>
-          <Share2 size={16} color={colors.ink} />
+          <Share2 size={16} color="#0F172A" />
           <Text style={styles.stepText}>Share</Text>
         </View>
         <View style={styles.step}>
-          <Smartphone size={16} color={colors.ink} />
+          <Smartphone size={16} color="#0F172A" />
           <Text style={styles.stepText}>Add to Home</Text>
         </View>
         <View style={styles.step}>
-          <Download size={16} color={colors.ink} />
+          <Download size={16} color="#0F172A" />
           <Text style={styles.stepText}>Open standalone</Text>
         </View>
       </View>
@@ -93,16 +93,16 @@ export function InstallPrompt() {
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius.xl,
-    backgroundColor: "rgba(255,255,255,0.94)",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: colors.primaryMuted,
+    borderColor: "#D9E5E7",
     padding: spacing.lg,
     marginBottom: spacing.md,
     shadowColor: "#17343A",
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.12,
     shadowRadius: 24,
-    shadowOffset: {width: 0, height: 10},
-    elevation: 2,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 3,
   },
   top: {
     flexDirection: "row",
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: "#E7F8F5",
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
@@ -123,13 +123,13 @@ const styles = StyleSheet.create({
     paddingRight: spacing.sm,
   },
   title: {
-    color: colors.ink,
+    color: "#0F172A",
     fontSize: typography.body,
     fontWeight: "900",
   },
   text: {
-    color: colors.muted,
-    fontWeight: "700",
+    color: "#475569",
+    fontWeight: "600",
     lineHeight: 20,
     marginTop: spacing.xs,
   },
@@ -142,15 +142,17 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 54,
     borderRadius: radius.lg,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: "#EAF8F7",
+    borderWidth: 1,
+    borderColor: "#D6ECE8",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.sm,
   },
   stepText: {
-    color: colors.ink,
+    color: "#0F172A",
     fontSize: typography.small,
-    fontWeight: "900",
+    fontWeight: "800",
     marginTop: spacing.xs,
     textAlign: "center",
   },
