@@ -175,13 +175,17 @@ The normalized drug contract contains:
 - Dose adjustment
 - Side effects
 - Clinical notes
+- Precomputed `consumption_time_sorted`
 - ATC code, class, subclass and category
+- Structured `atc_codes`, `atc_classes`, `atc_subclasses`, `atc_categories` and source `category`
 - Source category
 - Source document, table and row identity
 
 Header aliases such as `رابطه با غذا` and `فاصله با غذا`, `تنظیم دوز` and `تنطیم دوز`, or combined dosing/indication columns must map into the normalized contract. Valid document-specific columns such as opioid equivalence, duration of action or corticosteroid potency remain in `extra_attributes` with their original header names.
 
 `full_text`, table cell geometry and extraction internals are audit material, not duplicated learning-object columns. The complete original record is retained for traceability.
+
+When a curated backup fixture such as `backend/data_backup.json` already contains enriched pharmacology metadata, Pharmexa should persist those prepared values directly. In particular, `consumption_time_sorted` should be imported as provided instead of being recomputed from free-text timing normalization rules.
 
 Dataset import must produce:
 - Created records
@@ -195,6 +199,7 @@ Replacement import rules:
 
 - validate every JSON document before changing active metadata
 - accept only supported schema versions
+- accept a PostgreSQL-ready backup fixture file when it contains canonical `drugs.drugdatasetdocument` and `drugs.drug` records
 - skip rows explicitly classified as headings or non-generic products by the enrichment report
 - generate stable IDs from source checksum, table index and source row
 - replace the previous Pharmexa drug metadata in one transaction

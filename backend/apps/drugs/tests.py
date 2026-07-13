@@ -254,10 +254,15 @@ class DrugJsonImportTests(TestCase):
                                 "دوزینگ و دستور مصرف": "500 mg twice daily",
                                 "اندیکاسیون": "دیابت نوع دو",
                                 "رابطه با غذا": "همراه غذا",
+                                "consumption_time_sorted": "با غذا",
                                 "بارداری و شیردهی": "رده B",
                                 "تنظیم دوز": "تنظیم بر اساس eGFR",
                                 "عوارض": "تهوع",
                                 "سایر نکات": "مانیتورینگ کلیه",
+                                "atc_codes": ["A10BA02"],
+                                "atc_classes": ["ALIMENTARY TRACT AND METABOLISM"],
+                                "atc_subclasses": ["DRUGS USED IN DIABETES"],
+                                "atc_categories": ["Biguanides"],
                                 "atc_code": "A10BA02",
                                 "class": "ALIMENTARY TRACT AND METABOLISM",
                                 "sub_class": "DRUGS USED IN DIABETES",
@@ -294,6 +299,65 @@ class DrugJsonImportTests(TestCase):
             encoding="utf-8",
         )
 
+    def write_backup_fixture(self, path):
+        payload = [
+            {
+                "model": "drugs.drugdatasetdocument",
+                "pk": 1,
+                "fields": {
+                    "schema_version": "1.0",
+                    "source_file": "Endo.docx",
+                    "source_path": "/source/Endo.docx",
+                    "source_format": "docx",
+                    "source_size_bytes": 1234,
+                    "source_sha256": "b" * 64,
+                    "source_metadata": {"creator": "Author"},
+                    "extraction_metadata": {"method": "fixture"},
+                    "warnings": [],
+                    "enrichment_metadata": {"source": "backup"},
+                },
+            },
+            {
+                "model": "drugs.drug",
+                "pk": 1,
+                "fields": {
+                    "dataset_document": 1,
+                    "external_id": "json-backup-1",
+                    "name": "Metformin",
+                    "persian_name": "متفورمین",
+                    "brand_name": "Glucophage",
+                    "generic_name": "Metformin",
+                    "dosage_form": "Tab 500 mg",
+                    "drug_classification": "Biguanides",
+                    "consumption_time": "همراه غذا",
+                    "consumption_time_sorted": "فرقی نمی‌کند",
+                    "indication": "دیابت نوع دو",
+                    "indication_answer": "دیابت نوع دو",
+                    "side_effects": "تهوع",
+                    "side_effects_answer": "تهوع",
+                    "dosing_and_administration": "500 mg twice daily",
+                    "pregnancy": "رده B",
+                    "breastfeeding": "رده B",
+                    "dose_adjustment": "تنظیم بر اساس eGFR",
+                    "clinical_notes": "مانیتورینگ کلیه",
+                    "atc_codes": ["A10BA02"],
+                    "atc_classes": ["ALIMENTARY TRACT AND METABOLISM"],
+                    "atc_subclasses": ["DRUGS USED IN DIABETES"],
+                    "atc_categories": ["Biguanides"],
+                    "category": ["Biguanides", "Oral blood glucose lowering drugs"],
+                    "source_topic": "endo",
+                    "source_file": "Endo.docx",
+                    "source_table": 2,
+                    "source_row": 3,
+                    "extra_attributes": {"نیمه عمر دقیقه": "390"},
+                    "raw": {
+                        "category": ["Biguanides", "Oral blood glucose lowering drugs"],
+                    },
+                },
+            },
+        ]
+        Path(path).write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
     def test_import_replaces_legacy_metadata_and_preserves_json_provenance(self):
         Drug.objects.create(external_id="legacy", name="Legacy")
 
@@ -315,6 +379,7 @@ class DrugJsonImportTests(TestCase):
         self.assertEqual(drug.persian_name, "متفورمین")
         self.assertEqual(drug.consumption_time_sorted, "با غذا")
         self.assertEqual(drug.atc_codes, ["A10BA02"])
+        self.assertEqual(drug.category, ["Biguanides"])
         self.assertEqual(drug.source_table, 2)
         self.assertEqual(drug.source_row, 3)
         self.assertEqual(drug.extra_attributes["نیمه عمر دقیقه"], "390")
@@ -360,3 +425,31 @@ class DrugJsonImportTests(TestCase):
         self.assertEqual(Drug.objects.count(), 1)
         self.assertTrue(Drug.objects.filter(external_id="legacy").exists())
         self.assertEqual(DrugDatasetDocument.objects.count(), 0)
+
+    def test_import_accepts_backup_fixture_and_uses_precomputed_timing(self):
+        with TemporaryDirectory() as directory:
+            fixture_path = Path(directory) / "data_backup.json"
+            self.write_backup_fixture(fixture_path)
+            call_command("import_drug_json", str(fixture_path))
+
+        drug = Drug.objects.get(external_id="json-backup-1")
+
+        self.assertEqual(drug.consumption_time_sorted, "فرقی نمی‌کند")
+        self.assertEqual(
+            drug.category,
+            ["Biguanides", "Oral blood glucose lowering drugs"],
+        )
+        self.assertTrue(
+            drug.question_sources.filter(
+                question_type="timing",
+                correct_answer="فرقی نمی‌کند",
+            ).exists()
+        )
+        knowledge_source = KnowledgeSource.objects.get(
+            product_id="pharmexa",
+            external_id="drug-question-source:json-backup-1:timing",
+        )
+        self.assertEqual(
+            knowledge_source.learning_object.metadata["category"],
+            ["Biguanides", "Oral blood glucose lowering drugs"],
+        )

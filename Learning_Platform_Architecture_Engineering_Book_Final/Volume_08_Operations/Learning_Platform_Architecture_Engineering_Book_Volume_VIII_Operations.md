@@ -67,7 +67,7 @@ Production readiness requires:
 Required environments:
 
 Local:
-Developer machine.
+Developer machine with local PostgreSQL.
 
 Development:
 Shared unstable environment if needed.
@@ -146,6 +146,8 @@ Database operations include:
 - Slow query analysis
 - Data import safety
 - Production data protection
+
+The production-aligned default database profile is PostgreSQL. Local, staging and production operational runbooks should use PostgreSQL backup and restore procedures so dataset imports and JSON metadata behavior match the deployed environment.
 
 Migrations must be reviewed before production deployment.
 

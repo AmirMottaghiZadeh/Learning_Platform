@@ -26,19 +26,6 @@ class Command(BaseCommand):
         prefix = options["name"] or "database"
         timestamp = timezone.now().strftime("%Y%m%d-%H%M%S")
 
-        if "sqlite" in engine:
-            source = Path(database["NAME"])
-            target = output_dir / f"{prefix}-{timestamp}.sqlite3"
-            if options["dry_run"]:
-                self.stdout.write(str(target))
-                return
-            if not source.exists():
-                raise CommandError(f"SQLite database was not found: {source}")
-            output_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, target)
-            self.stdout.write(self.style.SUCCESS(f"SQLite backup created: {target}"))
-            return
-
         if "postgresql" in engine:
             target = output_dir / f"{prefix}-{timestamp}.dump"
             database_url = getattr(settings, "DATABASE_URL", None)
@@ -54,7 +41,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"PostgreSQL backup created: {target}"))
             return
 
-        raise CommandError(f"Unsupported database engine for backup: {engine}")
+        raise CommandError(f"Unsupported database engine for backup: {engine}. Expected PostgreSQL.")
 
     def _build_postgres_url(self, database):
         user = database.get("USER") or ""

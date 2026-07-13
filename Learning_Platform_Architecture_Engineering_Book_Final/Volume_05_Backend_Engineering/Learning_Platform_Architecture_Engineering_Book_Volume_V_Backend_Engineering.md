@@ -258,6 +258,8 @@ For versioned JSON datasets, the backend should separate:
 - a dataset-document record for checksum, source metadata, extraction metadata, warnings and enrichment provenance
 - normalized product records for fields consumed by application rules
 - a source-specific JSON attribute map for valid but non-standard headers
+
+For PostgreSQL-backed products, JSON metadata such as ATC structures, source category arrays and import provenance should be stored in `JSONField` columns so the runtime contract matches production storage semantics instead of a SQLite-only fallback profile.
 - the original source record for audit and deterministic re-import
 
 Dataset replacement must run inside a transaction after full-batch validation. Existing product metadata may be removed only after the incoming batch is known to be valid. Historical assessment and review records must retain their generic Knowledge Source references even when legacy product-source links are detached.

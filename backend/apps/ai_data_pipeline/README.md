@@ -13,7 +13,7 @@ Flow:
 3. Review suggestions manually: approve, reject, or edit.
 4. Apply only approved suggestions through `ai_apply_approved`.
 5. Every applied change is written to `ai_data_change_history`.
-6. SQLite is backed up before applying changes.
+6. The active database is backed up before applying changes.
 7. Persian originals are preserved for translation suggestions; approved English translations are stored in `ai_data_translations`.
 
 ## Commands
@@ -214,7 +214,7 @@ rtk .venv/bin/python manage.py ai_apply_approved --batch-id 1 --applied-by amir
 
 The apply command:
 
-- creates a SQLite backup before writes
+- creates a database backup before writes
 - runs inside a transaction
 - applies only approved suggestions
 - skips rejected, pending, edited, failed, or already applied suggestions

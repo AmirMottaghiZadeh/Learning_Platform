@@ -4,7 +4,7 @@ This runbook follows Volume VIII of the Learning Platform Architecture & Enginee
 
 ## Environments
 
-- Local: developer machine, SQLite or local PostgreSQL.
+- Local: developer machine with local PostgreSQL.
 - Docker: production-like local stack with PostgreSQL.
 - Staging: production-like validation environment.
 - Production: live user environment.
@@ -93,12 +93,6 @@ Recommended policy:
 - Test restore at least monthly.
 
 ## Restore
-
-SQLite restore:
-
-```bash
-cp backups/<backup>.sqlite3 db.sqlite3
-```
 
 PostgreSQL restore:
 

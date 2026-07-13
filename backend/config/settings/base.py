@@ -52,7 +52,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.debug", "django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
-DATABASE_URL = config("DATABASE_URL", default="sqlite:///db.sqlite3")
+DATABASE_URL = config("DATABASE_URL", default="postgresql://postgres:postgres@127.0.0.1:5432/pharmexa")
 DATABASES = {"default": dj_database_url.config(default=DATABASE_URL, conn_max_age=600)}
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 LANGUAGE_CODE = "fa-ir"

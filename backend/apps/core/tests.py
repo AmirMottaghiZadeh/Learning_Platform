@@ -1,6 +1,7 @@
 from io import StringIO
 
 from django.core.management import call_command
+from django.test import override_settings
 from django.test import Client, SimpleTestCase, TestCase
 
 from apps.core.events import LearningEvent, NullLearningEventPublisher, build_learning_event
@@ -50,9 +51,23 @@ class HealthCheckTests(TestCase):
     def test_backup_command_supports_dry_run(self):
         output = StringIO()
 
-        call_command("backup_database", "--dry-run", stdout=output)
+        with override_settings(
+            DATABASES={
+                "default": {
+                    "ENGINE": "django.db.backends.postgresql",
+                    "NAME": "pharmexa",
+                    "USER": "postgres",
+                    "PASSWORD": "postgres",
+                    "HOST": "127.0.0.1",
+                    "PORT": "5432",
+                    "CONN_HEALTH_CHECKS": True,
+                }
+            },
+            DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/pharmexa",
+        ):
+            call_command("backup_database", "--dry-run", stdout=output)
 
-        self.assertIn("database-", output.getvalue())
+        self.assertIn(".dump", output.getvalue())
 
 
 class OpenAPISchemaTests(TestCase):

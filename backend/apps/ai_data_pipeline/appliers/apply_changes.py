@@ -1,4 +1,5 @@
 import shutil
+import subprocess
 from pathlib import Path
 
 from django.apps import apps
@@ -28,7 +29,7 @@ class ApplyResult:
 
 def apply_approved_suggestions(*, batch_id, applied_by="", backup_dir=None, min_confidence=0.8, include_risky=False):
     batch = AIDataBatch.objects.get(id=batch_id)
-    backup_path = create_sqlite_backup(batch_id=batch.id, backup_dir=backup_dir)
+    backup_path = create_database_backup(batch_id=batch.id, backup_dir=backup_dir)
     queryset = AIDataSuggestion.objects.select_for_update().filter(
         batch=batch,
         status=constants.SUGGESTION_STATUS_APPROVED,
@@ -65,18 +66,26 @@ def apply_approved_suggestions(*, batch_id, applied_by="", backup_dir=None, min_
     return ApplyResult(applied=applied, skipped=skipped, failed=failed, backup_path=backup_path)
 
 
-def create_sqlite_backup(*, batch_id, backup_dir=None):
-    database_name = settings.DATABASES["default"].get("NAME")
-    if not database_name or database_name == ":memory:":
-        return ""
-    db_path = Path(database_name)
-    if not db_path.exists() or db_path.suffix != ".sqlite3":
-        return ""
+def create_database_backup(*, batch_id, backup_dir=None):
+    database = settings.DATABASES["default"]
+    engine = database.get("ENGINE", "")
     backup_root = Path(backup_dir) if backup_dir else Path(settings.BASE_DIR) / "backups" / "ai_data_pipeline"
-    backup_root.mkdir(parents=True, exist_ok=True)
-    backup_path = backup_root / f"db.sqlite3.batch-{batch_id}.{timezone.now().strftime('%Y%m%d%H%M%S')}.bak"
-    shutil.copy2(db_path, backup_path)
-    return str(backup_path)
+    timestamp = timezone.now().strftime("%Y%m%d%H%M%S")
+
+    if "postgresql" in engine:
+        database_url = getattr(settings, "DATABASE_URL", "")
+        if not database_url:
+            return ""
+        if not shutil.which("pg_dump"):
+            return ""
+        backup_root.mkdir(parents=True, exist_ok=True)
+        backup_path = backup_root / f"database.batch-{batch_id}.{timestamp}.dump"
+        subprocess.run(
+            ["pg_dump", database_url, "--format=custom", "--file", str(backup_path)],
+            check=True,
+        )
+        return str(backup_path)
+    return ""
 
 
 def _model_for_table(table_name):

@@ -28,7 +28,7 @@ class LearningTopic(models.Model):
 class LearningObject(models.Model):
     product_id = models.CharField(max_length=80, default="platform")
     external_id = models.CharField(max_length=120)
-    display_name = models.CharField(max_length=255)
+    display_name = models.TextField()
     subtitle = models.CharField(max_length=255, blank=True)
     topic = models.ForeignKey(
         LearningTopic,

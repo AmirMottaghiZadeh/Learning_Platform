@@ -201,6 +201,7 @@ def category_for_drug(drug) -> TargetCategory:
         source_file=getattr(drug, "source_file", ""),
         drug_classification=(
             getattr(drug, "drug_classification", "")
+            or " ".join(getattr(drug, "category", []) or [])
             or " ".join(getattr(drug, "atc_categories", []) or [])
         ),
     )

@@ -113,7 +113,7 @@ The UI direction is a calm clinical learning dashboard: mobile-first, card-based
                                    | ORM / migrations
                                    |
                     +--------------v--------------+
-                    | SQLite local / PostgreSQL   |
+                    | PostgreSQL local and        |
                     | production-like deployment  |
                     +-----------------------------+
 ```
@@ -181,8 +181,7 @@ Technology:
 - Django REST Framework
 - Token Authentication
 - drf-spectacular OpenAPI
-- SQLite for local development
-- PostgreSQL for production-like deployment
+- PostgreSQL for local and production-like deployment
 - Gunicorn and WhiteNoise for production serving
 
 Important local URLs:
@@ -426,7 +425,6 @@ Do not commit secrets or generated runtime data.
 Ignored examples:
 
 - `backend/.env`
-- `backend/db.sqlite3`
 - `backend/.venv/`
 - `backend/backups/`
 - `backend/exports/`
@@ -625,7 +623,7 @@ Pharmexa فقط یک برنامه ساده آزمون نیست. این پروژ�
                                    | ORM / مهاجرت‌ها
                                    |
                     +--------------v--------------+
-                    | SQLite محلی / PostgreSQL    |
+                    | PostgreSQL محلی و           |
                     | استقرار شبیه تولید          |
                     +-----------------------------+
 ```
@@ -693,8 +691,7 @@ Pharmexa فقط یک برنامه ساده آزمون نیست. این پروژ�
 - Django REST Framework
 - احراز هویت با توکن
 - مستندسازی OpenAPI با drf-spectacular
-- SQLite برای توسعه محلی
-- PostgreSQL برای استقرار شبیه تولید
+- PostgreSQL برای توسعه محلی و استقرار شبیه تولید
 - Gunicorn و WhiteNoise برای اجرای محیط تولید
 
 آدرس‌های مهم محلی:
@@ -938,7 +935,6 @@ npm run build:web
 نمونه موارد نادیده‌گرفته‌شده:
 
 - `backend/.env`
-- `backend/db.sqlite3`
 - `backend/.venv/`
 - `backend/backups/`
 - `backend/exports/`

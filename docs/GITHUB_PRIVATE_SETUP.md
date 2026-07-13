@@ -22,8 +22,8 @@ git status --ignored --short
 Expected ignored examples:
 
 - `backend/.env`
-- `backend/db.sqlite3`
 - `backend/.venv/`
+- `backend/backups/`
 - `frontend/node_modules/`
 - `frontend/.expo/`
 
@@ -46,4 +46,3 @@ rtk .venv/bin/python manage.py test
 cd ../frontend
 rtk npm run typecheck
 ```
-
