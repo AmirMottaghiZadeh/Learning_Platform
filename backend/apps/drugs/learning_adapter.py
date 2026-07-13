@@ -136,3 +136,7 @@ class PharmexaLearningAdapter:
                 **category_payload,
             },
         )
+
+
+class KGameLearningAdapter(PharmexaLearningAdapter):
+    pass
