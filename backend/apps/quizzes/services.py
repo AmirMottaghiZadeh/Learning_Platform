@@ -3,7 +3,7 @@ import random
 from apps.learning.contracts import KnowledgeSourceRef, LearningProductAdapter
 from apps.learning.registry import get_learning_adapter
 from apps.quizzes.contracts import GeneratedQuestion, QuestionGenerationContext
-from apps.quizzes.presentation import choices_for_source
+from apps.quizzes.presentation import choices_for_source, option_count_for_source
 
 
 class QuizGenerator:
@@ -31,9 +31,12 @@ class QuizGenerator:
             source.correct_answer
             for source in sources
         )
+        correct_position_pools = self._correct_answer_position_pools(selected_sources)
         questions = []
 
         for source in selected_sources:
+            option_count = option_count_for_source(source.source_type, source.correct_answer)
+            correct_answer_position = correct_position_pools[option_count].pop()
             wrong_answers = self._sample_unique_wrong_answers(
                 answers_by_type.get(source.source_type, []),
                 source.correct_answer,
@@ -46,7 +49,11 @@ class QuizGenerator:
                 )
                 wrong_answers.extend(fallback_answers[: 3 - len(wrong_answers)])
             questions.append(
-                self._build_generated_question(source, wrong_answers)
+                self._build_generated_question(
+                    source,
+                    wrong_answers,
+                    correct_answer_position=correct_answer_position,
+                )
             )
 
         return questions
@@ -55,11 +62,18 @@ class QuizGenerator:
         self,
         source: KnowledgeSourceRef,
         wrong_answers: list[str],
+        *,
+        correct_answer_position: int | None = None,
     ) -> GeneratedQuestion:
         return GeneratedQuestion(
             question_type=source.source_type,
             text=source.prompt,
-            choices=choices_for_source(source.source_type, source.correct_answer, wrong_answers),
+            choices=choices_for_source(
+                source.source_type,
+                source.correct_answer,
+                wrong_answers,
+                correct_answer_position=correct_answer_position,
+            ),
             correct_answer=source.correct_answer,
             knowledge_source_id=source.id,
             explanation=source.explanation,
@@ -100,6 +114,41 @@ class QuizGenerator:
             seen_answers.add(answer)
             unique_answers.append(answer)
         return unique_answers
+
+    def _correct_answer_position_pools(
+        self,
+        sources: list[KnowledgeSourceRef],
+    ) -> dict[int, list[int]]:
+        counts_by_option_count: dict[int, int] = {}
+        for source in sources:
+            option_count = option_count_for_source(source.source_type, source.correct_answer)
+            counts_by_option_count[option_count] = counts_by_option_count.get(option_count, 0) + 1
+        return {
+            option_count: self._balanced_correct_answer_positions(
+                question_count=count,
+                option_count=option_count,
+            )
+            for option_count, count in counts_by_option_count.items()
+        }
+
+    def _balanced_correct_answer_positions(
+        self,
+        *,
+        question_count: int,
+        option_count: int,
+    ) -> list[int]:
+        if question_count <= 0:
+            return []
+        if option_count <= 1:
+            return [0 for _ in range(question_count)]
+        positions = list(range(option_count))
+        full_rounds, remainder = divmod(question_count, option_count)
+        balanced_positions = positions * full_rounds
+        extra_positions = positions.copy()
+        random.shuffle(extra_positions)
+        balanced_positions.extend(extra_positions[:remainder])
+        random.shuffle(balanced_positions)
+        return balanced_positions
 
     def _sample_unique_wrong_answers(
         self,

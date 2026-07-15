@@ -13,10 +13,20 @@ QUESTION_TYPE_LABELS = {
 }
 
 
-def choices_for_source(source_type, correct_answer, wrong_answers):
+def choices_for_source(source_type, correct_answer, wrong_answers, correct_answer_position=None):
     if source_type == "timing" and canonical_timing_answer(correct_answer) in TIMING_CHOICES:
-        return TIMING_CHOICES.copy()
-    return unique_choices(correct_answer, wrong_answers)
+        return place_correct_answer(
+            TIMING_CHOICES,
+            canonical_timing_answer(correct_answer),
+            correct_answer_position,
+        )
+    return unique_choices(correct_answer, wrong_answers, correct_answer_position=correct_answer_position)
+
+
+def option_count_for_source(source_type, correct_answer, total=4):
+    if source_type == "timing" and canonical_timing_answer(correct_answer) in TIMING_CHOICES:
+        return len(TIMING_CHOICES)
+    return total
 
 
 def _answer_signature(value):
@@ -45,7 +55,29 @@ def answers_match(*, question_type, selected_answer, correct_answer):
     return str(selected_answer or "").strip() == str(correct_answer or "").strip()
 
 
-def unique_choices(correct_answer, wrong_answers, total=4):
+def place_correct_answer(choices, correct_answer, correct_answer_position=None):
+    wrong_choices = []
+    for choice in choices:
+        if not choice:
+            continue
+        if choice == correct_answer:
+            continue
+        if choice in wrong_choices:
+            continue
+        wrong_choices.append(choice)
+    position = bounded_correct_answer_position(correct_answer_position, len(wrong_choices) + 1)
+    return wrong_choices[:position] + [correct_answer] + wrong_choices[position:]
+
+
+def bounded_correct_answer_position(position, option_count):
+    if option_count <= 1:
+        return 0
+    if position is None:
+        return option_count - 1
+    return max(0, min(option_count - 1, int(position)))
+
+
+def unique_choices(correct_answer, wrong_answers, total=4, correct_answer_position=None):
     unique_wrong = []
     for answer in wrong_answers:
         if not answer:
@@ -55,7 +87,11 @@ def unique_choices(correct_answer, wrong_answers, total=4):
         if answer in unique_wrong:
             continue
         unique_wrong.append(answer)
-    return unique_wrong[: total - 1] + [correct_answer]
+    return place_correct_answer(
+        unique_wrong[: total - 1],
+        correct_answer,
+        correct_answer_position,
+    )
 
 
 def interaction_type_for(question_type, options):

@@ -103,6 +103,16 @@ class QuestionGenerationContractTests(SimpleTestCase):
         self.assertEqual(len(choices), len(set(choices)))
         self.assertLessEqual(len(choices), 3)
 
+    def test_quiz_generator_balances_correct_answer_positions(self):
+        questions = QuizGenerator(adapter=FakeLearningAdapter()).generate(
+            context=QuestionGenerationContext(question_count=5)
+        )
+
+        positions = [question.choices.index(question.correct_answer) for question in questions]
+
+        self.assertGreater(len(set(positions)), 1)
+        self.assertLessEqual(max(positions.count(index) for index in set(positions)), 2)
+
     def test_timing_questions_use_canonical_timing_choices(self):
         questions = QuizGenerator(adapter=FakeTimingAdapter()).generate(
             context=QuestionGenerationContext(question_count=5, topic_key="timing")
@@ -110,7 +120,7 @@ class QuestionGenerationContractTests(SimpleTestCase):
 
         for question in questions:
             self.assertEqual(question.question_type, "timing")
-            self.assertEqual(question.choices, TIMING_CHOICES)
+            self.assertCountEqual(question.choices, TIMING_CHOICES)
             self.assertIn(question.correct_answer, TIMING_CHOICES)
 
     def test_quiz_generator_uses_learning_adapter_contract(self):
