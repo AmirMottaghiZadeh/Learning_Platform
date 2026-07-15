@@ -276,7 +276,7 @@ export function ProgressBar({value}: {value: number}) {
   );
 }
 
-export function LoadingState({label = "Loading"}: {label?: string}) {
+export function LoadingState({label = "در حال بارگذاری"}: {label?: string}) {
   return (
     <View style={styles.stateBox}>
       <ActivityIndicator color={colors.primary} />
@@ -298,7 +298,7 @@ export function ErrorState({message, onRetry}: {message: string; onRetry?: () =>
     <View style={styles.stateBox}>
       <AlertCircle size={24} color={colors.danger} />
       <Text style={styles.stateText}>{message}</Text>
-      {onRetry ? <SecondaryButton label="Retry" Icon={RefreshCw} onPress={onRetry} /> : null}
+      {onRetry ? <SecondaryButton label="تلاش دوباره" Icon={RefreshCw} onPress={onRetry} /> : null}
     </View>
   );
 }
@@ -320,6 +320,10 @@ export function SectionHeader({
       {action}
     </View>
   );
+}
+
+export function SkeletonCard({height = 120, style}: {height?: number; style?: ViewProps["style"]}) {
+  return <View style={[styles.skeletonCard, {height}, style]} />;
 }
 
 const baseShadow = {
@@ -362,7 +366,6 @@ const styles = StyleSheet.create({
     fontSize: typography.small,
     fontWeight: "900",
     marginBottom: spacing.xs,
-    textTransform: "uppercase",
   },
   title: {
     color: colors.ink,
@@ -523,6 +526,14 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginTop: spacing.sm,
     marginBottom: spacing.md,
+  },
+  skeletonCard: {
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.md,
+    opacity: 0.7,
   },
   sectionHeader: {
     minHeight: 38,

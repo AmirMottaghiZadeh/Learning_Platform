@@ -39,3 +39,6 @@ class LearningProductAdapter(Protocol):
 
     def get_source_instance(self, knowledge_source_id: int):
         ...
+
+    def get_source_instances(self, knowledge_source_ids: list[int]) -> dict[int, Any]:
+        ...

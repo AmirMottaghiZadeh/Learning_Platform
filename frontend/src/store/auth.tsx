@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from "react";
 
 import {platformApi} from "../api/platform";
-import type {User} from "../types/api";
+import type {RegisterPayload, User} from "../types/api";
 
 type AuthState = {
   token: string | null;
@@ -10,7 +10,7 @@ type AuthState = {
   loading: boolean;
   error: string | null;
   signIn: (username: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (payload: RegisterPayload) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -59,7 +59,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
         const response = await platformApi.login(username, password);
         await applyAuth(response.token, response.user);
       } catch (exc) {
-        setError(exc instanceof Error ? exc.message : "Login failed.");
+        setError(exc instanceof Error ? exc.message : "ورود با خطا مواجه شد.");
         throw exc;
       } finally {
         setLoading(false);
@@ -69,13 +69,13 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
   );
 
   const register = useCallback(
-    async (username: string, email: string, password: string) => {
+    async (payload: RegisterPayload) => {
       setLoading(true);
       try {
-        const response = await platformApi.register(username, email, password);
+        const response = await platformApi.register(payload);
         await applyAuth(response.token, response.user);
       } catch (exc) {
-        setError(exc instanceof Error ? exc.message : "Registration failed.");
+        setError(exc instanceof Error ? exc.message : "ثبت‌نام با خطا مواجه شد.");
         throw exc;
       } finally {
         setLoading(false);

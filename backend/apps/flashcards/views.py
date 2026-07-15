@@ -1,4 +1,5 @@
 from drf_spectacular.utils import extend_schema
+from django.db.models import Q
 from rest_framework import generics, views
 from rest_framework.response import Response
 from .models import FlashcardState
@@ -18,6 +19,7 @@ class FlashcardListView(generics.ListAPIView):
         queryset = (
             FlashcardState.objects
             .filter(user=self.request.user)
+            .filter(Q(knowledge_source__isnull=True) | Q(knowledge_source__is_active=True))
             .select_related("knowledge_source", "source")
         )
         product_id = self.request.query_params.get("product_id")
@@ -32,6 +34,9 @@ class FlashcardListView(generics.ListAPIView):
             queryset = queryset.exclude(id__in=exclude_ids)
         mode = self.request.query_params.get("mode") or "new"
         if mode == "leitner":
+            selected_box = self.request.query_params.get("box")
+            if selected_box and selected_box.isdigit():
+                queryset = queryset.filter(box=int(selected_box))
             return (
                 queryset
                 .filter(box__gte=1)

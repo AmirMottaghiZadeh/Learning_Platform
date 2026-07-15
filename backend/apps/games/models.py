@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 
+
 class GameSession(models.Model):
     MODE_CHOICES = [
         ("random", "Random"),
@@ -36,6 +37,7 @@ class GameSession(models.Model):
     finished_at = models.DateTimeField(null=True, blank=True)
     is_finished = models.BooleanField(default=False)
 
+
 class GameQuestion(models.Model):
     session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name="questions")
     knowledge_source = models.ForeignKey(
@@ -59,6 +61,7 @@ class GameQuestion(models.Model):
         unique_together = [("session", "order")]
         ordering = ["order"]
 
+
 class GameAnswer(models.Model):
     session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name="answers")
     question = models.OneToOneField(GameQuestion, on_delete=models.CASCADE, related_name="answer")
@@ -72,6 +75,7 @@ class GameAnswer(models.Model):
     scoring_rule_version = models.CharField(max_length=80, default="mvp-scoring-v1")
     client_answered_at = models.DateTimeField(null=True, blank=True)
     answered_at = models.DateTimeField(auto_now_add=True)
+
 
 class Mistake(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="mistakes")
@@ -94,5 +98,52 @@ class Mistake(models.Model):
             models.UniqueConstraint(
                 fields=["user", "topic_key", "knowledge_source"],
                 name="unique_user_topic_knowledge_mistake",
+            ),
+        ]
+
+
+class QuizReminder(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="quiz_reminders",
+    )
+    game_session = models.ForeignKey(
+        GameSession,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reminders",
+    )
+    game_question = models.ForeignKey(
+        GameQuestion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reminders",
+    )
+    knowledge_source = models.ForeignKey(
+        "learning.KnowledgeSource",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="quiz_reminders",
+    )
+    question_type = models.CharField(max_length=50)
+    prompt = models.TextField()
+    selected_answer = models.TextField(blank=True)
+    correct_answer = models.TextField()
+    explanation = models.TextField(blank=True)
+    options = models.JSONField(default=list, blank=True)
+    is_reviewed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["is_reviewed", "-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "game_question"],
+                name="unique_user_game_question_reminder",
             ),
         ]

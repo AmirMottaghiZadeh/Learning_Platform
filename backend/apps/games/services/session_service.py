@@ -8,12 +8,12 @@ from apps.quizzes.services import QuizGenerator
 from apps.games.models import GameSession, GameQuestion
 
 
-VALID_GAME_COUNTS = tuple(range(10, 101, 10))
+VALID_GAME_COUNTS = tuple(range(5, 51, 5))
 
 
 def validate_game_start(*, mode, count, target_category_key=""):
     if count not in VALID_GAME_COUNTS:
-        raise ValueError("Question count must be a multiple of 10 between 10 and 100.")
+        raise ValueError("Question count must be a multiple of 5 between 5 and 50.")
     if mode == "category" and not target_category_key:
         raise ValueError("Category mode requires target_category_key.")
 
@@ -40,6 +40,8 @@ def start_game(
             learner_id=user.id,
         ),
     )
+    if not generated_questions:
+        raise ValueError("هیچ سؤال فعالی برای این تنظیمات پیدا نشد.")
 
     session = GameSession.objects.create(
         user=user,
@@ -51,8 +53,16 @@ def start_game(
         timer_seconds=timer_seconds,
     )
 
+    source_ids = [generated.knowledge_source_id for generated in generated_questions]
+    unique_source_ids = list(dict.fromkeys(source_ids))
+    source_instances = adapter.get_source_instances(unique_source_ids)
+    for source_id in unique_source_ids:
+        if source_id in source_instances:
+            continue
+        source_instances[source_id] = adapter.get_source_instance(source_id)
+
     for index, generated in enumerate(generated_questions):
-        knowledge_source = adapter.get_source_instance(generated.knowledge_source_id)
+        knowledge_source = source_instances[generated.knowledge_source_id]
 
         GameQuestion.objects.create(
             session=session,

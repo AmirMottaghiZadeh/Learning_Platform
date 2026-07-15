@@ -78,7 +78,7 @@ def chip_for(question_type, metadata):
 
 def instruction_for(question_type):
     if question_type == "timing":
-        return "زمان مصرف مناسب را انتخاب کن."
+        return ""
     if question_type == "brandGeneric":
         return "نام درست را انتخاب کن."
     if question_type == "indication":

@@ -14,11 +14,11 @@ import {colors, layout, radius, spacing} from "../design/tokens";
 import type {ScreenKey} from "../navigation/types";
 
 const navItems: Array<{key: ScreenKey; label: string; Icon: LucideIcon}> = [
-  {key: "dashboard", label: "Home", Icon: Home},
-  {key: "quiz", label: "Quiz", Icon: Brain},
-  {key: "flashcards", label: "Review", Icon: Layers},
-  {key: "league", label: "League", Icon: Trophy},
-  {key: "profile", label: "Profile", Icon: UserRound},
+  {key: "dashboard", label: "خانه", Icon: Home},
+  {key: "quiz", label: "آزمون", Icon: Brain},
+  {key: "flashcards", label: "فلش‌کارت", Icon: Layers},
+  {key: "league", label: "لیگ", Icon: Trophy},
+  {key: "profile", label: "پروفایل", Icon: UserRound},
 ];
 
 export function AppShell({

@@ -1,7 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, {useCallback, useEffect, useRef, useState} from "react";
+import Slider from "@react-native-community/slider";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import React, {useEffect, useMemo, useState} from "react";
 import {Pressable, StyleSheet, Text, View} from "react-native";
-import {Bookmark, CheckCircle2, Clock3, PlayCircle, RotateCcw, Send, Square, TimerReset, Trash2} from "lucide-react-native";
+import {Bookmark, CheckCircle2, Clock3, PlayCircle, RefreshCw, Square, TimerReset, Trash2, XCircle} from "lucide-react-native";
 
 import {platformApi} from "../api/platform";
 import {
@@ -10,28 +12,16 @@ import {
   LearningCard,
   LoadingState,
   PrimaryButton,
+  ProgressBar,
   ProgressRing,
   ScreenContainer,
-  ScreenHeader,
   SecondaryButton,
+  SkeletonCard,
 } from "../components/ui";
-import {useSectionAutoScroll} from "../components/useSectionAutoScroll";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
-import type {GameAnswer, GameQuestion, GameSession, QuestionType, TargetCategory} from "../types/api";
-
-const GAME_COUNTS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-const QUESTION_TYPES: Array<{key: QuestionType; label: string}> = [
-  {key: "brandGeneric", label: "نام تجاری"},
-  {key: "timing", label: "با غذا / بی غذا"},
-  {key: "sideEffects", label: "عوارض"},
-  {key: "indication", label: "اندیکاسیون"},
-  {key: "classification", label: "دسته‌بندی"},
-  {key: "dosageForm", label: "اشکال دارویی"},
-  {key: "dosing", label: "دوزینگ"},
-  {key: "pregnancy", label: "بارداری / شیردهی"},
-  {key: "doseAdjustment", label: "تنظیم دوز"},
-];
+import {AVAILABLE_QUIZ_TYPES, useQuizStore} from "../store/quiz";
+import type {GameAnswer, GameQuestion, GameSession, TargetCategory, Topic} from "../types/api";
 
 const SAVED_QUIZ_SESSION_KEY = "pharmexa_saved_quiz_session";
 const DEFAULT_QUESTION_SECONDS = 30;
@@ -40,7 +30,7 @@ const TIMER_EXTENSION_SECONDS = 30;
 type SavedQuizSession = {
   id: number;
   userId: number | null;
-  questionType: QuestionType;
+  questionType: string;
   mode: "random" | "category";
   count: number;
   targetCategoryKey: string;
@@ -49,63 +39,56 @@ type SavedQuizSession = {
   savedAt: string;
 };
 
-type QuizSetupSection = "mode" | "count" | "category" | "start";
+type QuizStep = "type" | "mode" | "count" | "category" | "play" | "result";
 
-function isQuestionType(value: string): value is QuestionType {
-  return QUESTION_TYPES.some((type) => type.key === value);
+function formatMode(mode: "random" | "category") {
+  return mode === "category" ? "دسته‌بندی‌شده" : "تصادفی";
 }
 
 export function QuizScreen() {
   const {token, user} = useAuth();
-  const [categories, setCategories] = useState<TargetCategory[]>([]);
-  const [selectedQuestionType, setSelectedQuestionType] = useState<QuestionType>("brandGeneric");
-  const [selectedMode, setSelectedMode] = useState<"random" | "category">("random");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedCount, setSelectedCount] = useState(10);
+  const queryClient = useQueryClient();
+  const {
+    selectedQuestionTypeKey,
+    selectedQuestionTypeId,
+    selectedTopicId,
+    selectedMode,
+    selectedCategoryKey,
+    selectedCount,
+    setQuestionType,
+    syncTopicFromTopics,
+    setMode,
+    setCategoryKey,
+    setCount,
+    resetSetup,
+  } = useQuizStore();
+
+  const [step, setStep] = useState<QuizStep>("type");
   const [session, setSession] = useState<GameSession | null>(null);
   const [savedSession, setSavedSession] = useState<SavedQuizSession | null>(null);
   const [answer, setAnswer] = useState<GameAnswer | null>(null);
   const [answeredQuestion, setAnsweredQuestion] = useState<GameQuestion | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(DEFAULT_QUESTION_SECONDS);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const categoryRequestRef = useRef(0);
-  const {scrollRef, registerSection, scrollToSection} = useSectionAutoScroll<QuizSetupSection>();
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [showReminderCallout, setShowReminderCallout] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  const resetCurrentQuiz = useCallback(() => {
-    setSession(null);
-    setAnswer(null);
-    setAnsweredQuestion(null);
-    setRemainingSeconds(DEFAULT_QUESTION_SECONDS);
-  }, []);
+  const topicsQuery = useQuery({
+    queryKey: ["quiz-topics", token],
+    queryFn: () => platformApi.topics(token!),
+    enabled: Boolean(token),
+  });
 
-  const loadCategories = useCallback(async () => {
-    if (!token) return;
-    const requestId = categoryRequestRef.current + 1;
-    categoryRequestRef.current = requestId;
-    setLoading(true);
-    setError(null);
-    try {
-      const payload = await platformApi.targetCategories(token, selectedQuestionType);
-      if (requestId !== categoryRequestRef.current) return;
-      setCategories(payload);
-      if (!payload.some((category) => category.key === selectedCategory)) {
-        setSelectedCategory(payload[0]?.key ?? "");
-      } else if (payload[0]?.key && !selectedCategory) {
-        setSelectedCategory(payload[0].key);
-      }
-    } catch (exc) {
-      if (requestId !== categoryRequestRef.current) return;
-      setError(exc instanceof Error ? exc.message : "Categories unavailable.");
-    } finally {
-      if (requestId === categoryRequestRef.current) setLoading(false);
-    }
-  }, [selectedCategory, selectedQuestionType, token]);
+  const categoriesQuery = useQuery({
+    queryKey: ["target-categories", token, selectedQuestionTypeKey],
+    queryFn: () => platformApi.targetCategories(token!, selectedQuestionTypeKey),
+    enabled: Boolean(token) && Boolean(selectedQuestionTypeKey),
+  });
 
   useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
+    if (!topicsQuery.data?.length) return;
+    syncTopicFromTopics(topicsQuery.data);
+  }, [syncTopicFromTopics, topicsQuery.data]);
 
   useEffect(() => {
     let active = true;
@@ -150,72 +133,98 @@ export function QuizScreen() {
     return () => clearInterval(interval);
   }, [answer, session?.current_question?.id, session?.status]);
 
-  function resetSelectionQuestions() {
-    categoryRequestRef.current += 1;
-    resetCurrentQuiz();
-    setCategories([]);
-    setError(null);
-    setLoading(true);
-  }
+  const categories = categoriesQuery.data ?? [];
+  const availableTopics = useMemo(
+    () => (topicsQuery.data ?? []).filter((topic) => AVAILABLE_QUIZ_TYPES.some((item) => item.key === topic.key)),
+    [topicsQuery.data],
+  );
+  const questionTypeLabel =
+    AVAILABLE_QUIZ_TYPES.find((item) => item.key === selectedQuestionTypeKey)?.label ?? "";
+  const selectedCategory = categories.find((item) => item.key === selectedCategoryKey);
+  const activeQuestion = session?.current_question ?? null;
+  const displayQuestion = answer && answeredQuestion ? answeredQuestion : activeQuestion;
+  const timerTotalSeconds = activeQuestion?.timer_total_seconds ?? session?.timer_seconds ?? DEFAULT_QUESTION_SECONDS;
+  const timerPercent = timerTotalSeconds ? (remainingSeconds / timerTotalSeconds) * 100 : 0;
+  const canExtendTimer = Boolean(activeQuestion?.timer_extension_available && !answer);
+  const choiceState = useMemo(() => {
+    if (!answer || !displayQuestion) return new Map<string, "neutral" | "correct" | "wrong">();
+    const map = new Map<string, "neutral" | "correct" | "wrong">();
+    displayQuestion.options.forEach((option) => {
+      if (option === answer.correct_answer) {
+        map.set(option, "correct");
+      } else if (option === selectedOption && !answer.is_correct) {
+        map.set(option, "wrong");
+      } else {
+        map.set(option, "neutral");
+      }
+    });
+    return map;
+  }, [answer, displayQuestion, selectedOption]);
 
-  function chooseQuestionType(questionType: QuestionType) {
-    if (questionType === selectedQuestionType) {
-      scrollToSection("mode");
-      return;
-    }
-    resetSelectionQuestions();
-    setSelectedQuestionType(questionType);
-    setSelectedCategory("");
-    scrollToSection("mode");
-  }
+  const startMutation = useMutation({
+    mutationFn: () =>
+      platformApi.startGame(
+        token!,
+        selectedTopicId!,
+        selectedMode,
+        selectedCount,
+        selectedMode === "category" ? selectedCategoryKey : "",
+      ),
+    onSuccess: (nextSession) => {
+      setSession(nextSession);
+      setStep("play");
+      setAnswer(null);
+      setAnsweredQuestion(null);
+      setSelectedOption(null);
+      setShowReminderCallout(false);
+    },
+  });
 
-  function chooseMode(mode: "random" | "category") {
-    if (mode === selectedMode) {
-      scrollToSection(mode === "category" ? "category" : "count");
-      return;
-    }
-    resetCurrentQuiz();
-    setAnswer(null);
-    setAnsweredQuestion(null);
-    setSelectedMode(mode);
-    scrollToSection(mode === "category" ? "category" : "count");
-  }
+  const answerMutation = useMutation({
+    mutationFn: (selected_answer: string) =>
+      platformApi.answerQuestion(token!, session!.id, activeQuestion!.id, selected_answer),
+    onSuccess: (result, selected_answer) => {
+      setSelectedOption(selected_answer);
+      setAnswer(result.answer);
+      setAnsweredQuestion(activeQuestion);
+      setSession(result.game);
+      setShowReminderCallout(true);
+      setFeedbackMessage(
+        result.answer.is_correct
+          ? "آفرین! پاسخ درست بود."
+          : "این سؤال را برای مرور ذخیره کن.",
+      );
+    },
+  });
 
-  function chooseCount(count: number) {
-    if (count === selectedCount) {
-      scrollToSection(selectedMode === "category" ? "category" : "start");
-      return;
-    }
-    resetCurrentQuiz();
-    setAnswer(null);
-    setAnsweredQuestion(null);
-    setSelectedCount(count);
-    scrollToSection(selectedMode === "category" ? "category" : "start");
-  }
+  const finishMutation = useMutation({
+    mutationFn: () => platformApi.finishGame(token!, session!.id),
+    onSuccess: async (nextSession) => {
+      setSession(nextSession);
+      setStep("result");
+      setAnswer(null);
+      setSelectedOption(null);
+      setShowReminderCallout(false);
+      await AsyncStorage.removeItem(SAVED_QUIZ_SESSION_KEY);
+      setSavedSession(null);
+      queryClient.invalidateQueries({queryKey: ["dashboard"]});
+      queryClient.invalidateQueries({queryKey: ["statistics"]});
+      queryClient.invalidateQueries({queryKey: ["quiz-history"]});
+    },
+  });
 
-  function chooseCategory(categoryKey: string) {
-    if (categoryKey === selectedCategory) {
-      scrollToSection("start");
-      return;
-    }
-    resetCurrentQuiz();
-    setAnswer(null);
-    setAnsweredQuestion(null);
-    setSelectedCategory(categoryKey);
-    scrollToSection("start");
-  }
+  const extendMutation = useMutation({
+    mutationFn: () => platformApi.extendGameTimer(token!, session!.id),
+    onSuccess: (nextSession) => setSession(nextSession),
+  });
 
-  async function saveCurrentQuizForLater() {
-    if (!token || !session) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const paused = await platformApi.pauseGame(token, session.id);
-      const questionType = isQuestionType(paused.topic_key) ? paused.topic_key : selectedQuestionType;
+  const pauseMutation = useMutation({
+    mutationFn: () => platformApi.pauseGame(token!, session!.id),
+    onSuccess: async (paused) => {
       const payload: SavedQuizSession = {
         id: paused.id,
         userId: user?.id ?? null,
-        questionType,
+        questionType: paused.topic_key,
         mode: paused.mode === "category" ? "category" : "random",
         count: paused.total_questions,
         targetCategoryKey: paused.target_category_key,
@@ -225,34 +234,66 @@ export function QuizScreen() {
       };
       await AsyncStorage.setItem(SAVED_QUIZ_SESSION_KEY, JSON.stringify(payload));
       setSavedSession(payload);
-      resetCurrentQuiz();
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Could not save quiz.");
-    } finally {
-      setBusy(false);
-    }
-  }
+      setSession(null);
+      setStep("type");
+    },
+  });
 
-  async function resumeSavedQuiz() {
-    if (!token || !savedSession) return;
-    setBusy(true);
-    setError(null);
-    setAnswer(null);
-    setAnsweredQuestion(null);
-    try {
-      const resumed = await platformApi.resumeGame(token, savedSession.id);
-      const questionType = isQuestionType(resumed.topic_key) ? resumed.topic_key : savedSession.questionType;
-      setSelectedQuestionType(questionType);
-      setSelectedMode(resumed.mode === "category" ? "category" : "random");
-      setSelectedCount(resumed.total_questions || savedSession.count);
-      setSelectedCategory(resumed.target_category_key || savedSession.targetCategoryKey);
-      setSession(resumed);
+  const resumeMutation = useMutation({
+    mutationFn: () => platformApi.resumeGame(token!, savedSession!.id),
+    onSuccess: async (nextSession) => {
+      setSession(nextSession);
+      const nextTopic = topicsQuery.data?.find((item) => item.key === nextSession.topic_key);
+      if (nextTopic) setQuestionType(nextTopic);
+      setMode(nextSession.mode === "category" ? "category" : "random");
+      setCount(nextSession.total_questions);
+      setCategoryKey(nextSession.target_category_key);
+      setStep("play");
       await AsyncStorage.removeItem(SAVED_QUIZ_SESSION_KEY);
       setSavedSession(null);
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Could not resume saved quiz.");
-    } finally {
-      setBusy(false);
+    },
+  });
+
+  const reminderMutation = useMutation({
+    mutationFn: () =>
+      platformApi.createQuizReminder(token!, {
+        game_session_id: session?.id,
+        game_question_id: answeredQuestion?.id,
+        knowledge_source_id: undefined,
+        question_type: answeredQuestion?.question_type ?? selectedQuestionTypeId,
+        prompt: answeredQuestion?.prompt ?? "",
+        selected_answer: selectedOption ?? "",
+        correct_answer: answer?.correct_answer ?? "",
+        explanation: feedbackMessage,
+        options: answeredQuestion?.options ?? [],
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ["quiz-reminders"]});
+      setShowReminderCallout(false);
+      setFeedbackMessage("سؤال برای مرور بعدی ذخیره شد.");
+    },
+  });
+
+  function resetQuizFlow() {
+    resetSetup();
+    setSession(null);
+    setSavedSession(null);
+    setAnswer(null);
+    setAnsweredQuestion(null);
+    setSelectedOption(null);
+    setShowReminderCallout(false);
+    setFeedbackMessage("");
+    setStep("type");
+  }
+
+  function openNextQuestion() {
+    setAnswer(null);
+    setAnsweredQuestion(null);
+    setSelectedOption(null);
+    setShowReminderCallout(false);
+    setFeedbackMessage("");
+    if (!session?.current_question) {
+      setStep("result");
     }
   }
 
@@ -261,548 +302,608 @@ export function QuizScreen() {
     setSavedSession(null);
   }
 
-  async function start() {
-    if (!token) return;
-    if (selectedMode === "category" && !selectedCategory) {
-      setError("Select a category first.");
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    setAnswer(null);
-    setAnsweredQuestion(null);
-    try {
-      setSession(
-        await platformApi.startGame(
-          token,
-          selectedQuestionType,
-          selectedMode,
-          selectedCount,
-          selectedMode === "category" ? selectedCategory : "",
-        ),
-      );
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Could not start quiz.");
-    } finally {
-      setBusy(false);
-    }
+  if (categoriesQuery.isLoading && selectedMode === "category" && step === "category") {
+    return (
+      <ScreenContainer>
+        <SkeletonCard height={72} />
+        <SkeletonCard height={260} />
+      </ScreenContainer>
+    );
   }
 
-  async function extendTimer() {
-    if (!token || !session?.current_question) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const updatedSession = await platformApi.extendGameTimer(token, session.id);
-      setSession(updatedSession);
-      setAnswer(null);
-      setAnsweredQuestion(null);
-      const updatedQuestion = updatedSession.current_question;
-      if (updatedQuestion) {
-        setRemainingSeconds(updatedQuestion.timer_remaining_seconds);
-      }
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Could not extend timer.");
-    } finally {
-      setBusy(false);
-    }
+  if (topicsQuery.isLoading || startMutation.isPending || resumeMutation.isPending) {
+    return (
+      <ScreenContainer>
+        <SkeletonCard height={72} />
+        <SkeletonCard height={220} />
+        <SkeletonCard height={96} />
+      </ScreenContainer>
+    );
   }
 
-  async function submit(selected_answer: string) {
-    if (!token || !session?.current_question) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const currentQuestion = session.current_question;
-      const result = await platformApi.answerQuestion(
-        token,
-        session.id,
-        currentQuestion.id,
-        selected_answer,
-      );
-      setAnswer(result.answer);
-      setAnsweredQuestion(currentQuestion);
-      setSession(result.game);
-      setRemainingSeconds(result.answer.remaining_seconds);
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Answer failed.");
-    } finally {
-      setBusy(false);
-    }
+  if (topicsQuery.error) {
+    return (
+      <ErrorState
+        message={topicsQuery.error instanceof Error ? topicsQuery.error.message : "بارگذاری نوع سؤال ممکن نیست."}
+        onRetry={() => topicsQuery.refetch()}
+      />
+    );
   }
 
-  async function finish() {
-    if (!token || !session) return;
-    setBusy(true);
-    try {
-      setSession(await platformApi.finishGame(token, session.id));
-      setAnswer(null);
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Finish failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const question = session?.current_question ?? null;
-  const timerTotalSeconds = question?.timer_total_seconds ?? session?.timer_seconds ?? DEFAULT_QUESTION_SECONDS;
-  const timerPercent = timerTotalSeconds ? (remainingSeconds / timerTotalSeconds) * 100 : 0;
-  const canExtendTimer = Boolean(question?.timer_extension_available && !answer && !busy);
-  const timerStatus = remainingSeconds <= 0 ? "تمام شد" : `${remainingSeconds}s`;
-
-  if (loading && !session) return <LoadingState label="Loading quiz" />;
+  const resultAccuracy = session?.total_questions
+    ? Math.round(((session.correct_count ?? 0) / Math.max(1, session.total_questions)) * 100)
+    : 0;
 
   return (
-    <ScreenContainer ref={scrollRef}>
-      <ScreenHeader eyebrow="Focused practice" title="Quiz" />
-      {error ? <ErrorState message={error} onRetry={loadCategories} /> : null}
+    <ScreenContainer>
+      <View style={styles.quizTitleWrap}>
+        <Text style={styles.quizTitle}>آزمون مرحله‌ای</Text>
+        {session ? <Text style={styles.quizSubtitle}>{questionTypeLabel} · {formatMode(selectedMode)}</Text> : null}
+      </View>
 
-      {!session ? (
-        <>
-          {savedSession ? (
-            <LearningCard tone="amber">
-              <View style={styles.savedTop}>
-                <View>
-                  <Text style={styles.label}>روند ذخیره‌شده</Text>
-                  <Text style={styles.savedMeta}>
-                    {QUESTION_TYPES.find((type) => type.key === savedSession.questionType)?.label ?? savedSession.questionType}
-                    {" · "}
-                    {savedSession.mode === "category" ? "Category" : "Random"}
-                    {" · "}
-                    Score {savedSession.score}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.actionGrid}>
-                <PrimaryButton label="ادامه" Icon={RotateCcw} onPress={resumeSavedQuiz} disabled={busy} />
-                <SecondaryButton label="حذف" Icon={Trash2} onPress={discardSavedQuiz} disabled={busy} />
-              </View>
-            </LearningCard>
-          ) : null}
-          <LearningCard tone="lavender">
-            <Text style={styles.label}>نوع سؤال</Text>
-            <View style={styles.topicWrap}>
-              {QUESTION_TYPES.map((type) => (
+      {startMutation.error ? (
+        <ErrorState
+          message={startMutation.error instanceof Error ? startMutation.error.message : "شروع آزمون با خطا مواجه شد."}
+          onRetry={() => startMutation.mutate()}
+        />
+      ) : null}
+      {answerMutation.error ? (
+        <ErrorState
+          message={answerMutation.error instanceof Error ? answerMutation.error.message : "ثبت پاسخ با خطا مواجه شد."}
+        />
+      ) : null}
+
+      {savedSession && !session ? (
+        <LearningCard tone="amber">
+          <Text style={styles.label}>آزمون ذخیره‌شده</Text>
+          <Text style={styles.helperText}>
+            {savedSession.score} امتیاز · {savedSession.correctCount} پاسخ صحیح
+          </Text>
+          <View style={styles.actionRow}>
+            <PrimaryButton label="ادامه آزمون" Icon={RefreshCw} onPress={() => resumeMutation.mutate()} />
+            <SecondaryButton label="حذف" Icon={Trash2} onPress={discardSavedQuiz} />
+          </View>
+        </LearningCard>
+      ) : null}
+
+      {step === "type" ? (
+        <LearningCard>
+          <Text style={styles.selectionTitle}>نوع سؤال</Text>
+          <View style={styles.selectionGrid}>
+            {availableTopics.map((item: Topic) => {
+              const active = selectedTopicId === item.id;
+              return (
                 <Pressable
-                  key={type.key}
+                  key={item.id}
                   accessibilityRole="button"
-                  onPress={() => chooseQuestionType(type.key)}
-                  style={[styles.topicChip, selectedQuestionType === type.key && styles.topicChipActive]}
+                  onPress={() => {
+                    setQuestionType(item);
+                    setStep("mode");
+                  }}
+                  style={[styles.selectionBox, active && styles.selectionBoxActive]}
                 >
-                  <Text style={[styles.topicText, selectedQuestionType === type.key && styles.topicTextActive]}>
-                    {type.label}
-                  </Text>
+                  {active ? (
+                    <View style={styles.selectionCheck}>
+                      <CheckCircle2 size={16} color="#FFFFFF" />
+                    </View>
+                  ) : null}
+                  <Text style={[styles.selectionText, active && styles.selectionTextActive]}>{item.label}</Text>
+                  {item.detail ? <Text style={[styles.selectionMeta, active && styles.selectionMetaActive]}>{item.detail}</Text> : null}
                 </Pressable>
-              ))}
-            </View>
-          </LearningCard>
-          <LearningCard tone="mint" onLayout={registerSection("mode")}>
-            <Text style={styles.label}>Mode</Text>
-            <View style={styles.topicWrap}>
-              {(["random", "category"] as const).map((mode) => (
+              );
+            })}
+          </View>
+        </LearningCard>
+      ) : null}
+
+      {step === "mode" ? (
+        <LearningCard tone="mint">
+          <Text style={styles.selectionTitle}>شیوه آزمون</Text>
+          <View style={styles.selectionGrid}>
+            {([
+              {key: "random", label: "تصادفی", meta: "سؤال‌ها از همه منابع فعال همین نوع انتخاب می‌شوند."},
+              {key: "category", label: "دسته‌بندی‌شده", meta: "بعد از تعداد، دسته‌بندی دارویی را انتخاب می‌کنی."},
+            ] as const).map((item) => {
+              const active = selectedMode === item.key;
+              return (
                 <Pressable
-                  key={mode}
+                  key={item.key}
                   accessibilityRole="button"
-                  onPress={() => chooseMode(mode)}
-                  style={[styles.topicChip, selectedMode === mode && styles.topicChipActive]}
+                  onPress={() => {
+                    setMode(item.key);
+                    setStep("count");
+                  }}
+                  style={[styles.selectionBox, active && styles.selectionBoxActive]}
                 >
-                  <Text style={[styles.topicText, selectedMode === mode && styles.topicTextActive]}>
-                    {mode === "random" ? "Random" : "Category"}
-                  </Text>
+                  {active ? (
+                    <View style={styles.selectionCheck}>
+                      <CheckCircle2 size={16} color="#FFFFFF" />
+                    </View>
+                  ) : null}
+                  <Text style={[styles.selectionText, active && styles.selectionTextActive]}>{item.label}</Text>
+                  <Text style={[styles.selectionMeta, active && styles.selectionMetaActive]}>{item.meta}</Text>
                 </Pressable>
-              ))}
-            </View>
-          </LearningCard>
-          <LearningCard tone="blue" onLayout={registerSection("count")}>
-            <Text style={styles.label}>Questions</Text>
-            <View style={styles.topicWrap}>
-              {GAME_COUNTS.map((count) => (
-                <Pressable
-                  key={count}
-                  accessibilityRole="button"
-                  onPress={() => chooseCount(count)}
-                  style={[styles.countChip, selectedCount === count && styles.topicChipActive]}
-                >
-                  <Text style={[styles.topicText, selectedCount === count && styles.topicTextActive]}>
-                    {count}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </LearningCard>
-          {selectedMode === "category" ? (
-            <LearningCard tone="sage" onLayout={registerSection("category")}>
-              <Text style={styles.label}>Category</Text>
-              <View style={styles.topicWrap}>
-                {categories.map((category) => (
+              );
+            })}
+          </View>
+          <View style={styles.actionRow}>
+            <SecondaryButton label="مرحله قبل" onPress={() => setStep("type")} />
+          </View>
+        </LearningCard>
+      ) : null}
+
+      {step === "count" ? (
+        <LearningCard tone="blue">
+          <Text style={styles.label}>تعداد سؤال</Text>
+          <Text style={styles.sliderValue}>{selectedCount} سؤال</Text>
+          <Slider
+            minimumValue={5}
+            maximumValue={50}
+            step={5}
+            inverted
+            minimumTrackTintColor={colors.primary}
+            maximumTrackTintColor={colors.borderStrong}
+            thumbTintColor={colors.primary}
+            value={selectedCount}
+            onValueChange={(value) => setCount(Math.round(value / 5) * 5)}
+          />
+          <View style={styles.sliderLabels}>
+            <Text style={styles.sliderLabel}>50</Text>
+            <Text style={styles.sliderLabel}>5</Text>
+          </View>
+          <View style={styles.actionRow}>
+            <SecondaryButton label="مرحله قبل" onPress={() => setStep("mode")} />
+            <PrimaryButton
+              label={selectedMode === "category" ? "مرحله بعد" : "شروع آزمون"}
+              onPress={() => {
+                if (selectedMode === "category") {
+                  setStep("category");
+                  return;
+                }
+                startMutation.mutate();
+              }}
+              disabled={!selectedTopicId}
+            />
+          </View>
+        </LearningCard>
+      ) : null}
+
+      {step === "category" ? (
+        <LearningCard tone="sage">
+          <Text style={styles.selectionTitle}>انتخاب دسته‌بندی</Text>
+          {categoriesQuery.error ? (
+            <ErrorState
+              message={categoriesQuery.error instanceof Error ? categoriesQuery.error.message : "بارگذاری دسته‌بندی‌ها ممکن نیست."}
+              onRetry={() => categoriesQuery.refetch()}
+            />
+          ) : categories.length ? (
+            <View style={styles.selectionGrid}>
+              {categories.map((category: TargetCategory) => {
+                const active = selectedCategoryKey === category.key;
+                return (
                   <Pressable
                     key={category.key}
                     accessibilityRole="button"
-                    onPress={() => chooseCategory(category.key)}
-                    style={[styles.topicChip, selectedCategory === category.key && styles.topicChipActive]}
+                    onPress={() => setCategoryKey(category.key)}
+                    style={[styles.selectionBox, active && styles.selectionBoxActive]}
                   >
-                    <Text style={[styles.topicText, selectedCategory === category.key && styles.topicTextActive]}>
-                      {category.label} · {category.count}
-                    </Text>
+                    {active ? (
+                      <View style={styles.selectionCheck}>
+                        <CheckCircle2 size={16} color="#FFFFFF" />
+                      </View>
+                    ) : null}
+                    <Text style={[styles.selectionText, active && styles.selectionTextActive]}>{category.label}</Text>
+                    <Text style={[styles.selectionMeta, active && styles.selectionMetaActive]}>{category.count} سؤال آماده</Text>
                   </Pressable>
-                ))}
-              </View>
-            </LearningCard>
-          ) : null}
-          <View onLayout={registerSection("start")}>
-            <PrimaryButton label="Start quiz" Icon={PlayCircle} onPress={start} disabled={busy} />
-          </View>
-        </>
-      ) : (
-        <>
-          <LearningCard tone="primary" style={styles.sessionCard}>
-            <View style={styles.sessionTop}>
-              <Text style={styles.sessionMeta}>{session.mode}</Text>
-              <Text style={styles.sessionMeta}>Score {session.score}</Text>
+                );
+              })}
             </View>
-            <View style={styles.sessionTop}>
-              <Text style={styles.sessionMetric}>Correct {session.correct_count}</Text>
-              <Text style={styles.sessionMetric}>Streak {session.streak}</Text>
-              <Text style={styles.sessionMetric}>{session.status}</Text>
+          ) : (
+            <EmptyState title="دسته‌ای برای این نوع سؤال پیدا نشد" />
+          )}
+          <View style={styles.actionRow}>
+            <SecondaryButton label="مرحله قبل" onPress={() => setStep("count")} />
+            <PrimaryButton
+              label="شروع آزمون"
+              onPress={() => startMutation.mutate()}
+              disabled={!selectedCategoryKey || !selectedTopicId}
+            />
+          </View>
+        </LearningCard>
+      ) : null}
+
+      {step === "play" && session ? (
+        <>
+          <LearningCard tone="primary">
+            <View style={styles.playHeader}>
+              <View>
+                <Text style={styles.sessionMeta}>{questionTypeLabel}</Text>
+                <Text style={styles.helperText}>
+                  {formatMode(selectedMode)} · {session.correct_count} صحیح · {session.score} امتیاز
+                </Text>
+              </View>
+              <ProgressRing value={timerPercent} size={86} strokeWidth={8} label={`${remainingSeconds}`} />
+            </View>
+            <View style={styles.playHeaderMeta}>
+              <Text style={styles.timerText}>
+                <Clock3 size={16} color={remainingSeconds <= 5 ? colors.danger : colors.primary} />{" "}
+                {remainingSeconds <= 0 ? "زمان تمام شد" : `${remainingSeconds} ثانیه باقی مانده`}
+              </Text>
+              <SecondaryButton
+                label={`+${TIMER_EXTENSION_SECONDS} ثانیه`}
+                Icon={TimerReset}
+                onPress={() => extendMutation.mutate()}
+                disabled={!canExtendTimer || extendMutation.isPending}
+              />
             </View>
           </LearningCard>
 
-          {answer && answeredQuestion ? (
-            <LearningCard>
-              <Text style={styles.prompt}>{answeredQuestion.prompt}</Text>
-              <View style={styles.feedbackBox}>
-                <CheckCircle2 size={20} color={answer.is_correct ? colors.success : colors.danger} />
-                <Text style={styles.feedbackText}>
-                  {answer.is_correct ? "Correct" : "Needs review"} · {answer.correct_answer}
-                </Text>
-              </View>
-            </LearningCard>
-          ) : question ? (
+          {displayQuestion ? (
             <LearningCard style={styles.questionCard}>
-              <View style={styles.timerPanel}>
-                <ProgressRing
-                  value={timerPercent}
-                  size={86}
-                  strokeWidth={8}
-                  label={timerStatus}
-                />
-                <View style={styles.timerCopy}>
-                  <View style={styles.timerMain}>
-                    <Clock3 size={18} color={remainingSeconds <= 0 ? colors.danger : colors.primary} />
-                    <Text style={[styles.timerText, remainingSeconds <= 0 && styles.timerTextDanger]}>
-                      Focus timer
-                    </Text>
+              {displayQuestion.instruction ? <Text style={styles.instruction}>{displayQuestion.instruction}</Text> : null}
+              <Text style={styles.prompt}>{displayQuestion.prompt}</Text>
+              {displayQuestion.subtitle ? <Text style={styles.subtitle}>{displayQuestion.subtitle}</Text> : null}
+              <View style={styles.choicesWrap}>
+                {displayQuestion.options.map((option) => {
+                  const state = choiceState.get(option) ?? "neutral";
+                  const selected = selectedOption === option;
+                  return (
+                    <Pressable
+                      key={option}
+                      accessibilityRole="button"
+                      disabled={Boolean(answer) || answerMutation.isPending}
+                      onPress={() => answerMutation.mutate(option)}
+                      style={[
+                        styles.choice,
+                        state === "correct" && styles.choiceCorrect,
+                        state === "wrong" && styles.choiceWrong,
+                        selected && !answer && styles.choiceSelected,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.choiceText,
+                          (state === "correct" || state === "wrong" || (selected && !answer)) && styles.choiceTextActive,
+                        ]}
+                      >
+                        {option}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {answer ? (
+                <View style={styles.feedbackPanel}>
+                  <View style={styles.feedbackTop}>
+                    {answer.is_correct ? (
+                      <CheckCircle2 size={20} color={colors.success} />
+                    ) : (
+                      <XCircle size={20} color={colors.danger} />
+                    )}
+                    <Text style={styles.feedbackTitle}>{feedbackMessage}</Text>
                   </View>
-                  <Text style={styles.timerMeta}>
-                    {remainingSeconds}s remaining from {timerTotalSeconds}s
-                  </Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    disabled={!canExtendTimer}
-                    onPress={extendTimer}
-                    style={[styles.extendButton, !canExtendTimer && styles.extendButtonDisabled]}
-                  >
-                    <TimerReset size={16} color={canExtendTimer ? colors.primary : colors.softText} />
-                    <Text style={[styles.extendButtonText, !canExtendTimer && styles.extendButtonTextDisabled]}>
-                      +{TIMER_EXTENSION_SECONDS}s
-                    </Text>
-                  </Pressable>
+                  <Text style={styles.feedbackText}>پاسخ صحیح: {answer.correct_answer}</Text>
+                  {answeredQuestion?.explanation ? (
+                    <Text style={styles.feedbackDescription}>{answeredQuestion.explanation}</Text>
+                  ) : null}
+                  {showReminderCallout ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => reminderMutation.mutate()}
+                      style={styles.reminderBox}
+                    >
+                      <Bookmark size={18} color={colors.primary} />
+                      <Text style={styles.reminderText}>یادآوری</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
-              </View>
-              <View style={styles.timerTrack}>
-                <View
-                  style={[
-                    styles.timerFill,
-                    {
-                      width: `${Math.max(0, Math.min(100, timerPercent))}%`,
-                      backgroundColor: remainingSeconds <= 5 ? colors.danger : colors.primary,
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.prompt}>{question.prompt}</Text>
-              <View style={question.option_layout === "compact" ? styles.compactOptions : undefined}>
-                {question.options.map((option) => (
-                  <Pressable
-                    key={option}
-                    accessibilityRole="button"
-                    disabled={busy}
-                    onPress={() => submit(option)}
-                    style={question.option_layout === "compact" ? styles.compactChoice : styles.choice}
-                  >
-                    <Text style={question.option_layout === "compact" ? styles.compactChoiceText : styles.choiceText}>
-                      {option}
-                    </Text>
-                    {question.option_layout === "compact" ? null : <Send size={16} color={colors.muted} />}
-                  </Pressable>
-                ))}
-              </View>
+              ) : null}
             </LearningCard>
           ) : (
-            <EmptyState title={session.is_finished ? "Session finished" : "No active question"} />
+            <EmptyState title="سؤال فعالی باقی نمانده است" />
           )}
 
-          {answer && session.current_question ? (
-            <PrimaryButton
-              label="Next question"
-              Icon={PlayCircle}
-              onPress={() => {
-                setAnswer(null);
-                setAnsweredQuestion(null);
-              }}
+          <View style={styles.actionColumn}>
+            {answer && session.current_question ? (
+              <PrimaryButton label="سؤال بعدی" Icon={PlayCircle} onPress={openNextQuestion} />
+            ) : null}
+            {!session.current_question ? (
+              <PrimaryButton
+                label="اتمام آزمون"
+                Icon={Square}
+                onPress={() => finishMutation.mutate()}
+                disabled={finishMutation.isPending}
+              />
+            ) : null}
+            <SecondaryButton
+              label="ذخیره برای بعد"
+              Icon={Bookmark}
+              onPress={() => pauseMutation.mutate()}
+              disabled={pauseMutation.isPending}
             />
-          ) : null}
-          {!session.current_question && !session.is_finished ? (
-            <PrimaryButton label="Finish session" Icon={Square} onPress={finish} disabled={busy} />
-          ) : null}
-          {session.is_finished ? (
-            <SecondaryButton label="New quiz" Icon={PlayCircle} onPress={() => setSession(null)} />
-          ) : (
-            <View style={styles.actionGrid}>
-              <SecondaryButton label="Save for later" Icon={Bookmark} onPress={saveCurrentQuizForLater} disabled={busy} />
-              <SecondaryButton label="New setup" Icon={PlayCircle} onPress={resetCurrentQuiz} disabled={busy} />
-            </View>
-          )}
+            <SecondaryButton label="بازنشانی تنظیمات" Icon={RefreshCw} onPress={resetQuizFlow} />
+          </View>
         </>
-      )}
+      ) : null}
+
+      {step === "result" && session ? (
+        <LearningCard tone="mint">
+          <Text style={styles.wizardTitle}>اتمام آزمون</Text>
+          <Text style={styles.resultValue}>{resultAccuracy}%</Text>
+          <Text style={styles.helperText}>
+            {session.correct_count} پاسخ صحیح از {session.total_questions} سؤال
+          </Text>
+          <Text style={styles.helperText}>امتیاز نهایی: {session.score}</Text>
+          <View style={styles.actionRow}>
+            <PrimaryButton label="آزمون جدید" Icon={PlayCircle} onPress={resetQuizFlow} />
+          </View>
+        </LearningCard>
+      ) : null}
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  quizTitleWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.lg,
+  },
+  quizTitle: {
+    color: colors.ink,
+    fontSize: 28,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  quizSubtitle: {
+    color: colors.muted,
+    fontWeight: "800",
+    marginTop: spacing.xs,
+    textAlign: "center",
+  },
+  wizardTitle: {
+    color: colors.ink,
+    fontSize: typography.heading,
+    fontWeight: "900",
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
   label: {
     color: colors.ink,
     fontSize: typography.body,
     fontWeight: "900",
     marginBottom: spacing.md,
   },
-  savedTop: {
+  helperText: {
+    color: colors.muted,
+    fontWeight: "700",
+    lineHeight: 22,
+    marginTop: spacing.xs,
     marginBottom: spacing.sm,
   },
-  savedMeta: {
-    color: colors.muted,
-    fontWeight: "800",
-    lineHeight: 20,
+  selectionTitle: {
+    color: colors.ink,
+    fontSize: typography.heading,
+    fontWeight: "900",
+    textAlign: "center",
+    marginBottom: spacing.lg,
   },
-  actionGrid: {
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  topicWrap: {
+  selectionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    justifyContent: "space-between",
   },
-  topicChip: {
-    minHeight: 42,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceMuted,
+  selectionBox: {
+    width: "48%",
+    minHeight: 124,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
+    padding: spacing.md,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    position: "relative",
   },
-  countChip: {
-    width: 58,
-    minHeight: 42,
+  selectionBoxActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: {width: 0, height: 8},
+    elevation: 4,
+  },
+  selectionCheck: {
+    position: "absolute",
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 24,
+    height: 24,
     borderRadius: radius.pill,
+    backgroundColor: "rgba(15,23,42,0.22)",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
   },
-  topicChipActive: {
+  selectionText: {
+    color: colors.ink,
+    fontSize: typography.body,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  selectionTextActive: {
+    color: colors.black,
+  },
+  selectionMeta: {
+    color: colors.muted,
+    fontSize: typography.small,
+    fontWeight: "700",
+    lineHeight: 19,
+    textAlign: "center",
+    marginTop: spacing.sm,
+  },
+  selectionMetaActive: {
+    color: "rgba(0,16,20,0.72)",
+  },
+  optionChipActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
-  topicText: {
+  optionText: {
     color: colors.muted,
     fontWeight: "900",
   },
-  topicTextActive: {
+  optionTextActive: {
     color: colors.black,
   },
-  spacer: {
-    height: spacing.md,
+  sliderValue: {
+    color: colors.ink,
+    fontSize: 26,
+    fontWeight: "900",
+    textAlign: "center",
+    marginBottom: spacing.sm,
   },
-  sessionTop: {
+  sliderLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: spacing.sm,
+  },
+  sliderLabel: {
+    color: colors.muted,
+    fontWeight: "700",
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  actionColumn: {
+    gap: spacing.sm,
+  },
+  playHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  playHeaderMeta: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
   },
   sessionMeta: {
     color: colors.ink,
     fontSize: typography.heading,
     fontWeight: "900",
   },
-  sessionMetric: {
-    color: colors.muted,
+  timerText: {
+    color: colors.ink,
     fontWeight: "800",
-  },
-  sessionCard: {
-    backgroundColor: colors.surfaceElevated,
   },
   questionCard: {
-    paddingTop: spacing.lg,
+    backgroundColor: colors.surfaceElevated,
   },
-  chip: {
-    alignSelf: "flex-start",
-    color: colors.primary,
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+  instruction: {
+    color: colors.secondary,
     fontWeight: "900",
-    marginBottom: spacing.md,
-  },
-  timerPanel: {
-    minHeight: 112,
-    borderRadius: radius.lg,
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: colors.primaryMuted,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  timerCopy: {
-    flex: 1,
-    marginLeft: spacing.lg,
-  },
-  timerMain: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  timerText: {
-    color: colors.primary,
-    fontSize: typography.body,
-    fontWeight: "900",
-    marginLeft: spacing.sm,
-  },
-  timerTextDanger: {
-    color: colors.danger,
-  },
-  timerMeta: {
-    color: colors.muted,
-    fontWeight: "800",
-    marginTop: spacing.xs,
     marginBottom: spacing.sm,
-  },
-  extendButton: {
-    minHeight: 34,
-    borderRadius: radius.pill,
-    alignSelf: "flex-start",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  extendButtonDisabled: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-  },
-  extendButtonText: {
-    color: colors.primary,
-    fontWeight: "900",
-    marginLeft: spacing.xs,
-  },
-  extendButtonTextDisabled: {
-    color: colors.softText,
-  },
-  timerTrack: {
-    height: 9,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
-    overflow: "hidden",
-    marginBottom: spacing.lg,
-  },
-  timerFill: {
-    height: 9,
-    borderRadius: radius.pill,
+    textAlign: "center",
   },
   prompt: {
     color: colors.ink,
-    fontSize: 23,
+    fontSize: 22,
     fontWeight: "900",
-    lineHeight: 32,
-    marginBottom: spacing.md,
+    lineHeight: 31,
     textAlign: "center",
+    marginBottom: spacing.md,
   },
   subtitle: {
     color: colors.muted,
     fontWeight: "700",
+    textAlign: "center",
     marginBottom: spacing.lg,
   },
-  instruction: {
-    color: colors.muted,
-    fontWeight: "800",
-    marginBottom: spacing.md,
-  },
-  compactOptions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: spacing.md,
-  },
-  compactChoice: {
-    minHeight: 50,
-    minWidth: "31%",
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: spacing.md,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  compactChoiceText: {
-    color: colors.ink,
-    fontSize: typography.body,
-    fontWeight: "900",
-    textAlign: "center",
+  choicesWrap: {
+    gap: spacing.sm,
   },
   choice: {
-    minHeight: 58,
+    minHeight: 54,
     borderRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+  },
+  choiceSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  choiceCorrect: {
+    borderColor: colors.success,
+    backgroundColor: colors.primarySoft,
+  },
+  choiceWrong: {
+    borderColor: colors.danger,
+    backgroundColor: colors.roseSoft,
   },
   choiceText: {
-    flex: 1,
     color: colors.ink,
-    fontSize: typography.body,
     fontWeight: "800",
-    marginRight: spacing.md,
+    textAlign: "center",
   },
-  feedbackBox: {
+  choiceTextActive: {
+    color: colors.black,
+    fontWeight: "900",
+  },
+  feedbackPanel: {
     borderRadius: radius.lg,
-    backgroundColor: colors.primarySoft,
-    padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    padding: spacing.md,
     marginTop: spacing.lg,
   },
-  feedbackText: {
-    flex: 1,
+  feedbackTop: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  feedbackTitle: {
     color: colors.ink,
     fontWeight: "900",
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm,
+  },
+  feedbackText: {
+    color: colors.muted,
+    fontWeight: "700",
+    marginTop: spacing.sm,
+  },
+  feedbackDescription: {
+    color: colors.muted,
+    fontWeight: "700",
+    lineHeight: 22,
+    marginTop: spacing.sm,
+  },
+  reminderBox: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
+    minHeight: 36,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+  },
+  reminderText: {
+    color: colors.primary,
+    fontWeight: "900",
+    marginLeft: spacing.xs,
+  },
+  resultValue: {
+    color: colors.primary,
+    fontSize: 42,
+    fontWeight: "900",
+    textAlign: "center",
+    marginVertical: spacing.md,
   },
 });

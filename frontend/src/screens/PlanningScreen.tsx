@@ -25,15 +25,15 @@ export function PlanningScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =>
 
   return (
     <ScreenContainer>
-      <ScreenHeader eyebrow="Adaptive planning" title="Study plan" />
+      <ScreenHeader eyebrow="برنامه‌ریزی" title="برنامه مطالعه" />
       <LearningCard tone="mint">
         <View style={styles.stepTop}>
           <View style={styles.stepIcon}>
             <CalendarDays size={22} color={colors.primary} />
           </View>
           <View style={styles.stepCopy}>
-            <Text style={styles.stepLabel}>Step {step + 1} of 5</Text>
-            <Text style={styles.stepTitle}>Build a focused daily route</Text>
+            <Text style={styles.stepLabel}>مرحله {step + 1} از 5</Text>
+            <Text style={styles.stepTitle}>مسیر روزانه متمرکز بساز</Text>
           </View>
         </View>
         <ProgressBar value={progress} />
@@ -84,7 +84,7 @@ export function PlanningScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =>
         <LearningCard tone="rose">
           <Clock3 size={24} color={colors.primary} />
           <Text style={styles.title}>روزی چقدر زمان می‌گذاری؟</Text>
-          <Text style={styles.text}>زمان روزانه به تخمین کارت و آزمون تبدیل می‌شود؛ تصمیم آموزشی نهایی هنوز از API می‌آید.</Text>
+          <Text style={styles.text}>زمان روزانه به تخمین کارت و آزمون تبدیل می‌شود؛ تصمیم آموزشی نهایی همچنان از سرور می‌آید.</Text>
           <TextInput keyboardType="numeric" value={dailyMinutes} onChangeText={setDailyMinutes} style={styles.input} placeholder="دقیقه در روز" placeholderTextColor={colors.softText} />
         </LearningCard>
       ) : null}
@@ -93,16 +93,16 @@ export function PlanningScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =>
         <LearningCard tone="sage">
           <ListChecks size={24} color={colors.primary} />
           <Text style={styles.title}>خلاصه مسیر</Text>
-          <Text style={styles.summary}>Goal: {goal}</Text>
-          <Text style={styles.summary}>Subjects: {selectedSubjects.join(" · ") || "No subjects selected"}</Text>
-          <Text style={styles.summary}>{deadline || 0} days · {dailyMinutes || 0} minutes/day · about {dailyCards} cards/day</Text>
-          <PrimaryButton label="Start from today" Icon={CheckCircle2} onPress={() => onNavigate("dashboard")} />
+          <Text style={styles.summary}>هدف: {goal}</Text>
+          <Text style={styles.summary}>موضوعات: {selectedSubjects.join(" · ") || "موضوعی انتخاب نشده است"}</Text>
+          <Text style={styles.summary}>{deadline || 0} روز · {dailyMinutes || 0} دقیقه در روز · حدود {dailyCards} کارت روزانه</Text>
+          <PrimaryButton label="شروع از امروز" Icon={CheckCircle2} onPress={() => onNavigate("dashboard")} />
         </LearningCard>
       ) : null}
 
       <View style={styles.actions}>
-        <SecondaryButton label="Back" onPress={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} />
-        <PrimaryButton label={step === 4 ? "Open dashboard" : "Continue"} onPress={() => (step === 4 ? onNavigate("dashboard") : setStep((value) => value + 1))} />
+        <SecondaryButton label="بازگشت" onPress={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} />
+        <PrimaryButton label={step === 4 ? "ورود به داشبورد" : "ادامه"} onPress={() => (step === 4 ? onNavigate("dashboard") : setStep((value) => value + 1))} />
       </View>
     </ScreenContainer>
   );

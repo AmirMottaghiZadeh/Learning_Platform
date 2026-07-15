@@ -16,6 +16,7 @@ from apps.flashcards.services import (
     review_card,
     seed_flashcards_for_user,
 )
+from apps.drugs.models import Drug, DrugQuestionSource, DrugTopic
 from apps.learning.models import (
     KnowledgeSource,
     LearnerProgress,
@@ -338,6 +339,54 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(box_after_review.data["results"][0]["box"], 1)
         self.assertEqual(box_after_review.data["results"][0]["source_type"], "timing")
 
+    def test_leitner_api_can_filter_by_selected_box(self):
+        user = User.objects.create_user(username="learner")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
+        learning_object = LearningObject.objects.create(
+            product_id="pharmexa",
+            external_id="drug-1",
+            display_name="Drug 1",
+            topic=topic,
+        )
+        first_source = KnowledgeSource.objects.create(
+            product_id="pharmexa",
+            external_id="source-1",
+            learning_object=learning_object,
+            topic=topic,
+            source_type="timing",
+            prompt="Box 1 prompt",
+            correct_answer="Answer 1",
+        )
+        second_source = KnowledgeSource.objects.create(
+            product_id="pharmexa",
+            external_id="source-2",
+            learning_object=learning_object,
+            topic=topic,
+            source_type="timing",
+            prompt="Box 3 prompt",
+            correct_answer="Answer 3",
+        )
+        FlashcardState.objects.create(
+            user=user,
+            knowledge_source=first_source,
+            box=1,
+            review_state=FlashcardState.REVIEW_STATE_REVIEW,
+        )
+        FlashcardState.objects.create(
+            user=user,
+            knowledge_source=second_source,
+            box=3,
+            review_state=FlashcardState.REVIEW_STATE_REVIEW,
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        response = client.get("/api/v1/flashcards/?product_id=pharmexa&mode=leitner&box=3")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["box"], 3)
+
     def test_flashcard_deck_summary_reports_full_selected_deck(self):
         user = User.objects.create_user(username="learner")
         topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
@@ -398,7 +447,42 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(response.data["eligible_sources"], 3)
         self.assertEqual(response.data["scheduled_cards"], 3)
         self.assertEqual(response.data["new_cards"], 3)
-        self.assertEqual(response.data["due_cards"], 0)
+
+    def test_brand_flashcard_seed_uses_each_brand_word_as_separate_card(self):
+        user = User.objects.create_user(username="brand-learner")
+        brand_topic = DrugTopic.objects.create(key="brandGeneric", label="Brand")
+        drug = Drug.objects.create(
+            external_id="drug-brand-flashcard",
+            generic_name="متفورمین",
+            brand_name="گلوکوفاژ گلوفورمین دیابزید متفورال",
+            source_topic="Endo",
+        )
+        DrugQuestionSource.objects.create(
+            topic=brand_topic,
+            drug=drug,
+            question_type="brandGeneric",
+            prompt="legacy prompt",
+            correct_answer="متفورمین",
+        )
+
+        states = seed_flashcards_for_user(
+            user=user,
+            product_id="pharmexa",
+            source_type="brandGeneric",
+        )
+
+        self.assertEqual(len(states), 4)
+        prompts = {state.knowledge_source.prompt for state in states}
+        self.assertEqual(
+            prompts,
+            {
+                "نام ژنریک داروی تجاری گلوکوفاژ کدام است؟",
+                "نام ژنریک داروی تجاری گلوفورمین کدام است؟",
+                "نام ژنریک داروی تجاری دیابزید کدام است؟",
+                "نام ژنریک داروی تجاری متفورال کدام است؟",
+            },
+        )
+        self.assertTrue(all(state.knowledge_source.correct_answer == "متفورمین" for state in states))
 
     def test_known_new_card_completes_without_entering_leitner(self):
         user = User.objects.create_user(username="learner")

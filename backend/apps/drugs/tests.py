@@ -6,14 +6,24 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from apps.drugs.learning_adapter import PharmexaLearningAdapter
-from apps.drugs.learning_sync import drug_question_source_external_id, sync_drug_question_source
+from apps.drugs.learning_sync import (
+    drug_question_source_external_id,
+    sync_drug_question_source,
+    sync_drug_question_sources,
+)
 from apps.drugs.models import Drug, DrugDatasetDocument, DrugQuestionSource, DrugTopic
-from apps.drugs.services import list_target_categories
+from apps.drugs.services import list_target_categories, split_brand_names
 from apps.learning.models import KnowledgeSource
 from apps.quizzes.contracts import QuestionGenerationContext
 
 
 class PharmexaLearningAdapterTests(TestCase):
+    def test_split_brand_names_treats_each_word_as_independent_brand(self):
+        self.assertEqual(
+            split_brand_names("گلوکوفاژ گلوفورمین / دیابزید، Gluco XR"),
+            ["گلوکوفاژ", "گلوفورمین", "دیابزید", "Gluco", "XR"],
+        )
+
     def test_maps_drug_question_source_to_platform_knowledge_source(self):
         topic = DrugTopic.objects.create(
             key="timing",
@@ -104,12 +114,12 @@ class PharmexaLearningAdapterTests(TestCase):
         self.assertIn("آتورواستاتین", side_effect_knowledge.prompt)
         self.assertNotIn("Lipitor", side_effect_knowledge.prompt)
 
-    def test_target_category_counts_unique_generic_names_not_brands_or_sources(self):
+    def test_target_category_counts_reflect_all_available_brand_questions(self):
         brand_topic = DrugTopic.objects.create(key="brandGeneric", label="Brand")
         timing_topic = DrugTopic.objects.create(key="timing", label="Timing")
         first_brand = Drug.objects.create(
             external_id="brand-1",
-            brand_name="Brand A",
+            brand_name="BrandA BrandB BrandC",
             generic_name="متفورمین",
             source_topic="Endo",
         )
@@ -179,9 +189,77 @@ class PharmexaLearningAdapterTests(TestCase):
             for item in list_target_categories(source_type="timing")
         }
 
-        self.assertEqual(all_counts["endocrine"], 2)
-        self.assertEqual(brand_counts["endocrine"], 2)
+        self.assertEqual(all_counts["endocrine"], 8)
+        self.assertEqual(brand_counts["endocrine"], 7)
         self.assertEqual(timing_counts["endocrine"], 1)
+
+    def test_sync_creates_distinct_knowledge_sources_for_each_brand_name(self):
+        brand_topic = DrugTopic.objects.create(key="brandGeneric", label="Brand")
+        drug = Drug.objects.create(
+            external_id="drug-brand-multi",
+            generic_name="متفورمین",
+            brand_name="گلوکوفاژ گلوفورمین / دیابزید",
+        )
+        source = DrugQuestionSource.objects.create(
+            topic=brand_topic,
+            drug=drug,
+            question_type="brandGeneric",
+            prompt="legacy prompt",
+            correct_answer="متفورمین",
+        )
+
+        synced_sources = sync_drug_question_sources(source)
+
+        self.assertEqual(len(synced_sources), 3)
+        self.assertTrue(all("نام ژنریک داروی تجاری" in item.prompt for item in synced_sources))
+        self.assertFalse(any("گلوکوفاژ گلوفورمین" in item.prompt for item in synced_sources))
+        self.assertEqual(
+            {
+                item.metadata["brand_name_variant"]
+                for item in synced_sources
+            },
+            {"گلوکوفاژ", "گلوفورمین", "دیابزید"},
+        )
+
+    def test_adapter_repairs_stale_brand_knowledge_sources_before_listing(self):
+        brand_topic = DrugTopic.objects.create(key="brandGeneric", label="Brand")
+        drug = Drug.objects.create(
+            external_id="drug-brand-stale",
+            generic_name="متفورمین",
+            brand_name="گلوکوفاژ / دیابزید",
+        )
+        source = DrugQuestionSource.objects.create(
+            topic=brand_topic,
+            drug=drug,
+            question_type="brandGeneric",
+            prompt="legacy prompt",
+            correct_answer="متفورمین",
+        )
+
+        synced_sources = sync_drug_question_sources(source)
+        stale_source = KnowledgeSource.objects.create(
+            product_id="pharmexa",
+            external_id=f"drug-question-source:{drug.external_id}:brandGeneric",
+            learning_object=synced_sources[0].learning_object,
+            topic=synced_sources[0].topic,
+            source_type="brandGeneric",
+            prompt="stale prompt",
+            correct_answer="متفورمین",
+            metadata={},
+            is_active=True,
+        )
+
+        sources = PharmexaLearningAdapter().list_knowledge_sources(
+            QuestionGenerationContext(topic_key="brandGeneric")
+        )
+
+        stale_source.refresh_from_db()
+        self.assertFalse(stale_source.is_active)
+        self.assertEqual(len(sources), 2)
+        self.assertEqual(
+            {source.metadata["brand_name_variant"] for source in KnowledgeSource.objects.filter(product_id="pharmexa", source_type="brandGeneric", is_active=True)},
+            {"گلوکوفاژ", "دیابزید"},
+        )
 
     def test_export_drug_audit_command_writes_visible_report_files(self):
         topic = DrugTopic.objects.create(key="timing", label="Timing")

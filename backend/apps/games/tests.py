@@ -6,9 +6,11 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from apps.drugs.models import Drug, DrugQuestionSource, DrugTopic
 from apps.games.contracts import ScoringContext
-from apps.games.models import GameQuestion, GameSession, Mistake
+from apps.games.models import GameQuestion, GameSession, Mistake, QuizReminder
 from apps.games.services.answer_service import answer_question
+from apps.games.services.reminder_service import create_quiz_reminder
 from apps.games.services.assessment_service import evaluate_answer
 from apps.games.services.scoring_service import (
     SCORING_RULE_VERSION,
@@ -204,6 +206,42 @@ class GamePersistenceAlignmentTests(TestCase):
                 "cardiovascular",
             )
 
+    def test_start_game_uses_each_brand_word_as_separate_question_source(self):
+        user = User.objects.create_user(username="brand-quiz")
+        brand_topic = DrugTopic.objects.create(key="brandGeneric", label="Brand")
+        drug = Drug.objects.create(
+            external_id="drug-brand-quiz",
+            generic_name="متفورمین",
+            brand_name="گلوکوفاژ گلوفورمین دیابزید متفورال",
+            source_topic="Endo",
+        )
+        DrugQuestionSource.objects.create(
+            topic=brand_topic,
+            drug=drug,
+            question_type="brandGeneric",
+            prompt="legacy prompt",
+            correct_answer="متفورمین",
+        )
+
+        session = start_game(
+            user,
+            topic_key="brandGeneric",
+            count=5,
+        )
+
+        prompts = {
+            question.knowledge_source.prompt
+            for question in session.questions.select_related("knowledge_source")
+        }
+        self.assertGreaterEqual(len(prompts), 1)
+        self.assertTrue(prompts <= {
+            "نام ژنریک داروی تجاری گلوکوفاژ کدام است؟",
+            "نام ژنریک داروی تجاری گلوفورمین کدام است؟",
+            "نام ژنریک داروی تجاری دیابزید کدام است؟",
+            "نام ژنریک داروی تجاری متفورال کدام است؟",
+        })
+        self.assertFalse(any("گلوکوفاژ گلوفورمین" in prompt for prompt in prompts))
+
     def test_wrong_answer_creates_mistake_on_generic_knowledge_source(self):
         user = User.objects.create_user(username="learner")
         knowledge_source = create_knowledge_source(1, answer="Correct")
@@ -329,6 +367,43 @@ class GamePersistenceAlignmentTests(TestCase):
         self.assertEqual(progress.questions_answered, 1)
         self.assertEqual(progress.correct_answers, 1)
         self.assertEqual(progress.xp, 10)
+
+    def test_create_quiz_reminder_persists_question_snapshot(self):
+        user = User.objects.create_user(username="learner_reminder")
+        knowledge_source = create_knowledge_source(1, answer="Correct")
+        session = GameSession.objects.create(
+            user=user,
+            topic_key="timing",
+            mode="random",
+            total_questions=1,
+            timer_seconds=30,
+            is_finished=True,
+            finished_at=timezone.now(),
+        )
+        question = GameQuestion.objects.create(
+            session=session,
+            knowledge_source=knowledge_source,
+            order=0,
+            options=["Correct", "Wrong"],
+            question_started_at=timezone.now(),
+        )
+
+        reminder = create_quiz_reminder(
+            user=user,
+            game_session_id=session.id,
+            game_question_id=question.id,
+            question_type="timing",
+            prompt="Prompt 1",
+            correct_answer="Correct",
+            selected_answer="Wrong",
+            explanation="Explanation 1",
+            options=["Correct", "Wrong"],
+        )
+
+        self.assertEqual(QuizReminder.objects.count(), 1)
+        self.assertEqual(reminder.knowledge_source, knowledge_source)
+        self.assertEqual(reminder.selected_answer, "Wrong")
+        self.assertEqual(reminder.options, ["Correct", "Wrong"])
 
     def test_timing_question_serializer_hides_raw_dosage_chip(self):
         user = User.objects.create_user(username="learner")

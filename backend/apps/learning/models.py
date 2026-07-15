@@ -55,7 +55,7 @@ class LearningObject(models.Model):
 
 class KnowledgeSource(models.Model):
     product_id = models.CharField(max_length=80, default="platform")
-    external_id = models.CharField(max_length=160)
+    external_id = models.CharField(max_length=255)
     learning_object = models.ForeignKey(
         LearningObject,
         on_delete=models.CASCADE,

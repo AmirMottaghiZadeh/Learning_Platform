@@ -17,6 +17,15 @@ import {colors, radius, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
 import type {LeaderboardEntry, LeagueFullSummary, MyLeagueRank} from "../types/api";
 
+function topicLabel(topicKey: string) {
+  if (topicKey === "brandGeneric") return "نام تجاری";
+  if (topicKey === "timing") return "با غذا / بی غذا";
+  if (topicKey === "indication") return "اندیکاسیون";
+  if (topicKey === "sideEffects") return "عوارض";
+  if (topicKey === "dosing") return "دوزینگ";
+  return "ترکیبی";
+}
+
 export function LeagueScreen() {
   const {token, user} = useAuth();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -35,7 +44,7 @@ export function LeagueScreen() {
       setEntries(payload.leaderboard);
       setMyRank(payload.my_rank);
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "League unavailable.");
+      setError(exc instanceof Error ? exc.message : "بارگذاری لیگ ممکن نیست.");
     } finally {
       setLoading(false);
     }
@@ -45,7 +54,7 @@ export function LeagueScreen() {
     load();
   }, [load]);
 
-  if (loading) return <LoadingState label="Loading league" />;
+  if (loading) return <LoadingState label="در حال بارگذاری لیگ" />;
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   const podiumEntries = entries.slice(0, 3);
@@ -54,8 +63,8 @@ export function LeagueScreen() {
   return (
     <ScreenContainer>
       <ScreenHeader
-        eyebrow={summary?.season_key ? `Weekly season · ${summary.season_key}` : "Weekly season"}
-        title="Leaderboard"
+        eyebrow={summary?.season_key ? `فصل هفتگی · ${summary.season_key}` : "فصل هفتگی"}
+        title="جدول رتبه‌بندی"
         action={
           <Pressable accessibilityRole="button" onPress={load} style={styles.refresh}>
             <RefreshCw size={18} color={colors.primary} />
@@ -66,15 +75,15 @@ export function LeagueScreen() {
       <LearningCard tone="primary" style={styles.hero}>
         <View style={styles.heroTop}>
           <View>
-            <Text style={styles.heroEyebrow}>YOUR POSITION</Text>
+            <Text style={styles.heroEyebrow}>رتبه شما</Text>
             <Text style={styles.heroRank}>#{myRank?.rank ?? "-"}</Text>
           </View>
           <View style={styles.heroMetrics}>
-            <MetricPill label="learners" value={myRank?.total_participants ?? 0} />
-            <MetricPill label="season" value="weekly" />
+            <MetricPill label="کاربر" value={myRank?.total_participants ?? 0} />
+            <MetricPill label="فصل" value="هفتگی" />
           </View>
         </View>
-        <Text style={styles.heroText}>Every focused session moves you closer to the podium.</Text>
+        <Text style={styles.heroText}>هر تمرین متمرکز، شما را به صدر جدول نزدیک‌تر می‌کند.</Text>
       </LearningCard>
 
       {podiumOrder.length ? (
@@ -88,7 +97,7 @@ export function LeagueScreen() {
                   <Avatar name={entry.result.username} size={isWinner ? 66 : 54} />
                 </View>
                 <Text style={styles.podiumName} numberOfLines={1}>{entry.result.username}</Text>
-                <Text style={styles.podiumScore}>{entry.result.league_rating} XP</Text>
+                <Text style={styles.podiumScore}>{entry.result.league_rating} امتیاز لیگ</Text>
                 <View style={[styles.podiumBlock, isWinner && styles.podiumBlockWinner]}>
                   <Text style={[styles.podiumRank, isWinner && styles.podiumRankWinner]}>{entry.rank}</Text>
                 </View>
@@ -99,7 +108,7 @@ export function LeagueScreen() {
       ) : null}
 
       {!entries.length ? (
-        <EmptyState title="No league results" />
+        <EmptyState title="نتیجه‌ای برای لیگ ثبت نشده است" />
       ) : (
         <View style={styles.list}>
           {entries.map((entry) => {
@@ -115,13 +124,13 @@ export function LeagueScreen() {
                 <Avatar name={entry.result.username} size={42} />
                 <View style={styles.userBlock}>
                   <Text style={styles.username}>
-                    {entry.result.username}{isCurrentUser ? " (You)" : ""}
+                    {entry.result.username}{isCurrentUser ? " (شما)" : ""}
                   </Text>
-                  <Text style={styles.meta}>{entry.result.topic_key} · {entry.result.percent}% accuracy</Text>
+                  <Text style={styles.meta}>{topicLabel(entry.result.topic_key)} · {entry.result.percent}% دقت</Text>
                 </View>
                 <View style={styles.scoreBlock}>
                   <Text style={styles.score}>{entry.result.league_rating}</Text>
-                  <Text style={styles.meta}>XP</Text>
+                  <Text style={styles.meta}>امتیاز</Text>
                 </View>
               </View>
             );
@@ -132,7 +141,7 @@ export function LeagueScreen() {
       {summary?.rule_version ? (
         <View style={styles.rules}>
           <Trophy size={16} color={colors.muted} />
-          <Text style={styles.ruleText}>{summary.rule_version}</Text>
+          <Text style={styles.ruleText}>نسخه قوانین لیگ: {summary.rule_version}</Text>
         </View>
       ) : null}
     </ScreenContainer>

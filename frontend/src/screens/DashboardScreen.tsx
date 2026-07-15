@@ -1,8 +1,7 @@
-import React, {useCallback, useEffect, useState} from "react";
-import {Pressable, StyleSheet, Text, View} from "react-native";
+import React from "react";
+import {Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
 import {
   AlertTriangle,
-  BarChart3,
   Brain,
   CalendarCheck,
   Flame,
@@ -14,6 +13,7 @@ import {
   Trophy,
 } from "lucide-react-native";
 import type {LucideIcon} from "lucide-react-native";
+import {useQuery} from "@tanstack/react-query";
 
 import {platformApi} from "../api/platform";
 import {InstallPrompt} from "../components/InstallPrompt";
@@ -23,13 +23,13 @@ import {
   BrandMark,
   ErrorState,
   LearningCard,
-  LoadingState,
   MetricPill,
   PrimaryButton,
   ProgressBar,
   ProgressRing,
   ScreenContainer,
   SectionHeader,
+  SkeletonCard,
 } from "../components/ui";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import type {ScreenKey} from "../navigation/types";
@@ -46,29 +46,36 @@ type QuickAction = {
 
 export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) => void}) {
   const {token, user} = useAuth();
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const dashboardQuery = useQuery({
+    queryKey: ["dashboard", token],
+    queryFn: () => platformApi.dashboard(token!),
+    enabled: Boolean(token),
+  });
 
-  const load = useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    setError(null);
-    try {
-      setDashboard(await platformApi.dashboard(token));
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Dashboard unavailable.");
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  if (loading) return <LoadingState label="Loading dashboard" />;
-  if (error) return <ErrorState message={error} onRetry={load} />;
+  if (dashboardQuery.isLoading) {
+    return (
+      <ScreenContainer>
+        <View style={styles.skeletonTopbar}>
+          <SkeletonCard height={46} />
+          <SkeletonCard height={46} />
+        </View>
+        <SkeletonCard height={118} />
+        <SkeletonCard height={236} />
+        <View style={styles.skeletonQuickGrid}>
+          <SkeletonCard height={112} style={styles.skeletonQuickItem} />
+          <SkeletonCard height={112} style={styles.skeletonQuickItem} />
+          <SkeletonCard height={112} style={styles.skeletonQuickItem} />
+          <SkeletonCard height={112} style={styles.skeletonQuickItem} />
+        </View>
+        <SkeletonCard height={170} />
+        <SkeletonCard height={150} />
+      </ScreenContainer>
+    );
+  }
+  if (dashboardQuery.error) {
+    return <ErrorState message={dashboardQuery.error instanceof Error ? dashboardQuery.error.message : "بارگذاری داشبورد ممکن نیست."} onRetry={() => dashboardQuery.refetch()} />;
+  }
+  const dashboard = dashboardQuery.data as Dashboard | undefined;
   if (!dashboard) return null;
 
   const summary = dashboard.summary;
@@ -78,12 +85,12 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
   const totalActions = learnCount + reviewCount + relearnCount;
   const estimatedMinutes = Math.max(10, Math.round(learnCount * 1.5 + reviewCount * 2 + relearnCount * 1.2));
   const nextAction: ScreenKey = reviewCount > 0 ? "flashcards" : relearnCount > 0 ? "mistakes" : "quiz";
-  const nextActionLabel = reviewCount > 0 ? "Start review" : relearnCount > 0 ? "Fix mistakes" : "Start quiz";
+  const nextActionLabel = reviewCount > 0 ? "شروع مرور" : relearnCount > 0 ? "مرور اشتباهات" : "شروع آزمون";
   const quickActions: QuickAction[] = [
-    {key: "quiz", label: "Quiz", meta: `${learnCount} new`, Icon: Brain, color: colors.primary},
-    {key: "flashcards", label: "Review", meta: `${reviewCount} due`, Icon: Layers, color: colors.secondary},
-    {key: "mistakes", label: "Relearn", meta: `${relearnCount} items`, Icon: RotateCcw, color: colors.rose},
-    {key: "league", label: "League", meta: `#${dashboard.league.rank ?? "-"}`, Icon: Trophy, color: colors.amber},
+    {key: "quiz", label: "آزمون", meta: `${learnCount} مورد جدید`, Icon: Brain, color: colors.primary},
+    {key: "flashcards", label: "فلش‌کارت", meta: `${reviewCount} مورد`, Icon: Layers, color: colors.secondary},
+    {key: "mistakes", label: "اشتباهات", meta: `${relearnCount} مورد`, Icon: RotateCcw, color: colors.rose},
+    {key: "league", label: "لیگ", meta: `رتبه ${dashboard.league.rank ?? "-"}`, Icon: Trophy, color: colors.amber},
   ];
 
   return (
@@ -91,7 +98,7 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
       <View style={styles.topbar}>
         <BrandMark />
         <View style={styles.topActions}>
-          <Pressable accessibilityRole="button" onPress={load} style={styles.iconButton}>
+          <Pressable accessibilityRole="button" onPress={() => dashboardQuery.refetch()} style={styles.iconButton}>
             <RefreshCw size={17} color={colors.muted} />
           </Pressable>
           <Pressable accessibilityRole="button" onPress={() => onNavigate("profile")}>
@@ -103,8 +110,8 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
 
       <AnimatedEntrance>
         <View style={styles.greeting}>
-          <Text style={styles.welcome}>Welcome back, {user?.username ?? "learner"}!</Text>
-          <Text style={styles.welcomeMeta}>Ready to level up your clinical knowledge?</Text>
+          <Text style={styles.welcome}>خوش برگشتی، {user?.username ?? "کاربر"}!</Text>
+          <Text style={styles.welcomeMeta}>آماده‌ای امروز یادگیریت را جلو ببری؟</Text>
         </View>
       </AnimatedEntrance>
 
@@ -115,18 +122,18 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
             <View style={styles.heroCopy}>
               <View style={styles.todayPill}>
                 <Sparkles size={14} color={colors.primary} />
-                <Text style={styles.todayPillText}>TODAY'S MISSION</Text>
+                <Text style={styles.todayPillText}>ماموریت امروز</Text>
               </View>
               <Text style={styles.heroTitle}>{nextActionLabel}</Text>
               <Text style={styles.heroMeta}>
-                {estimatedMinutes} min · {totalActions} focused actions
+                {estimatedMinutes} دقیقه · {totalActions} اقدام متمرکز
               </Text>
               <View style={styles.metricRow}>
-                <MetricPill label="XP" value={summary.xp} Icon={Target} />
-                <MetricPill label="streak" value={summary.current_streak} Icon={Flame} />
+                <MetricPill label="امتیاز" value={summary.xp} Icon={Target} />
+                <MetricPill label="توالی" value={summary.current_streak} Icon={Flame} />
               </View>
             </View>
-            <ProgressRing value={summary.accuracy_percent} label="accuracy" size={112} />
+            <ProgressRing value={summary.accuracy_percent} label="دقت" size={112} />
           </View>
           <ProgressBar value={summary.accuracy_percent} />
           <View style={styles.heroButton}>
@@ -156,10 +163,10 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
 
       <AnimatedEntrance delay={170}>
         <SectionHeader
-          title="Next up"
+          title="پیشنهاد بعدی"
           action={
             <Pressable onPress={() => onNavigate("planning")}>
-              <Text style={styles.sectionAction}>Edit plan</Text>
+              <Text style={styles.sectionAction}>ویرایش برنامه</Text>
             </Pressable>
           }
         />
@@ -169,20 +176,20 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
               <CalendarCheck size={22} color={colors.black} />
             </View>
             <View style={styles.eventCopy}>
-              <Text style={styles.eventEyebrow}>PERSONAL LEARNING ROUTE</Text>
+              <Text style={styles.eventEyebrow}>مسیر پیشنهادی امروز</Text>
               <Text style={styles.eventTitle}>
-                {dashboard.recommendations[0]?.title ?? "Keep your learning streak alive"}
+                {dashboard.recommendations[0]?.title ?? "روند یادگیریت را حفظ کن"}
               </Text>
               <Text style={styles.eventMeta}>
-                {dashboard.recommendations[0]?.reason ?? "Complete one focused session today."}
+                {dashboard.recommendations[0]?.reason ?? "امروز یک جلسه متمرکز کامل کن."}
               </Text>
             </View>
           </View>
           <View style={styles.eventFooter}>
-            <MetricPill label="minutes" value={estimatedMinutes} />
-            <MetricPill label="actions" value={totalActions} />
+            <MetricPill label="دقیقه" value={estimatedMinutes} />
+            <MetricPill label="اقدام" value={totalActions} />
             <Pressable style={styles.eventJoin} onPress={() => onNavigate(nextAction)}>
-              <Text style={styles.eventJoinText}>Open</Text>
+              <Text style={styles.eventJoinText}>باز کردن</Text>
             </Pressable>
           </View>
         </LearningCard>
@@ -190,28 +197,45 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
 
       <AnimatedEntrance delay={220}>
         <SectionHeader
-          title="Performance"
+          title="آمار فعالیت"
           action={
             <Pressable onPress={() => onNavigate("statistics")}>
-              <Text style={styles.sectionAction}>View all</Text>
+              <Text style={styles.sectionAction}>مشاهده همه</Text>
             </Pressable>
           }
         />
-        <View style={styles.performanceGrid}>
-          <LearningCard tone="blue" style={styles.performanceCard}>
-            <BarChart3 size={22} color={colors.blue} />
-            <Text style={styles.performanceValue}>{summary.accuracy_percent}%</Text>
-            <Text style={styles.performanceLabel}>Accuracy</Text>
-          </LearningCard>
-          <LearningCard tone="amber" style={styles.performanceCard}>
-            <Trophy size={22} color={colors.amber} />
-            <Text style={styles.performanceValue}>#{dashboard.league.rank ?? "-"}</Text>
-            <Text style={styles.performanceLabel}>League rank</Text>
-          </LearningCard>
-        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.performanceScroller}
+        >
+          {[
+            {tone: "blue" as const, value: dashboard.activity_summary.completed_quizzes, label: "آزمون کامل‌شده"},
+            {tone: "amber" as const, value: dashboard.activity_summary.answered_questions, label: "سؤال پاسخ‌داده"},
+            {tone: "sage" as const, value: dashboard.activity_summary.correct_answers, label: "پاسخ صحیح"},
+            {tone: "rose" as const, value: dashboard.activity_summary.wrong_answers, label: "پاسخ غلط"},
+            {tone: "lavender" as const, value: dashboard.activity_summary.flashcard_reviews, label: "مرور فلش‌کارت"},
+            {tone: "mint" as const, value: dashboard.activity_summary.total_study_minutes, label: "دقیقه مطالعه"},
+          ].map((item) => (
+            <LearningCard key={item.label} tone={item.tone} style={styles.performanceCard}>
+              <Text style={styles.performanceValue}>{item.value}</Text>
+              <Text style={styles.performanceLabel}>{item.label}</Text>
+            </LearningCard>
+          ))}
+        </ScrollView>
+        <LearningCard tone="mint" style={styles.reminderCard}>
+          <Text style={styles.performanceValue}>{dashboard.activity_summary.pending_reminders}</Text>
+          <Text style={styles.performanceLabel}>یادآوری آماده مرور</Text>
+          <Text style={styles.reminderDetail}>
+            {dashboard.activity_summary.saved_reminders} مورد ذخیره شده · {dashboard.activity_summary.quiz_accuracy_percent}% دقت آزمون
+          </Text>
+          <View style={styles.reminderAction}>
+            <PrimaryButton label="مشاهده در پروفایل" onPress={() => onNavigate("profile")} />
+          </View>
+        </LearningCard>
       </AnimatedEntrance>
 
-      <SectionHeader title="Focus areas" />
+      <SectionHeader title="نقاط ضعف" />
       {summary.weak_topics.length ? (
         summary.weak_topics.slice(0, 3).map((topic) => (
           <Pressable key={topic.topic_key} onPress={() => onNavigate("mistakes")}>
@@ -221,7 +245,7 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
               </View>
               <View style={styles.topicCopy}>
                 <Text style={styles.topicTitle}>{topic.topic_label}</Text>
-                <Text style={styles.topicMeta}>{topic.wrong_answers} mistakes to revisit</Text>
+                <Text style={styles.topicMeta}>{topic.wrong_answers} خطا برای مرور</Text>
               </View>
               <Text style={styles.topicScore}>{topic.accuracy_percent}%</Text>
             </LearningCard>
@@ -231,8 +255,8 @@ export function DashboardScreen({onNavigate}: {onNavigate: (screen: ScreenKey) =
         <LearningCard tone="sage" style={styles.clearCard}>
           <Sparkles size={20} color={colors.primary} />
           <View style={styles.topicCopy}>
-            <Text style={styles.topicTitle}>All clear</Text>
-            <Text style={styles.topicMeta}>No weak-topic signal in your current progress.</Text>
+            <Text style={styles.topicTitle}>وضعیت خوب است</Text>
+            <Text style={styles.topicMeta}>فعلاً موضوع ضعیف برجسته‌ای دیده نمی‌شود.</Text>
           </View>
         </LearningCard>
       )}
@@ -247,6 +271,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: spacing.md,
+  },
+  skeletonTopbar: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  skeletonQuickGrid: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  skeletonQuickItem: {
+    flex: 1,
   },
   topActions: {
     flexDirection: "row",
@@ -440,13 +475,26 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontWeight: "900",
   },
-  performanceGrid: {
+  performanceScroller: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: spacing.md,
+    paddingBottom: spacing.xs,
   },
   performanceCard: {
-    width: "48%",
+    width: 150,
     minHeight: 138,
+    marginBottom: 0,
+  },
+  reminderCard: {
+    marginTop: spacing.md,
+  },
+  reminderAction: {
+    marginTop: spacing.md,
+  },
+  reminderDetail: {
+    color: colors.muted,
+    fontWeight: "700",
+    marginTop: spacing.sm,
   },
   performanceValue: {
     color: colors.ink,

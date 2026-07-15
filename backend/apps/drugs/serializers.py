@@ -5,7 +5,7 @@ from .services import build_options
 class DrugTopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = DrugTopic
-        fields = ["key", "label", "detail"]
+        fields = ["id", "key", "label", "detail"]
 
 
 class TargetCategorySerializer(serializers.Serializer):

@@ -71,9 +71,22 @@ class DashboardLeagueSummarySerializer(serializers.Serializer):
     total_participants = serializers.IntegerField()
 
 
+class ActivitySummarySerializer(serializers.Serializer):
+    completed_quizzes = serializers.IntegerField()
+    answered_questions = serializers.IntegerField()
+    correct_answers = serializers.IntegerField()
+    wrong_answers = serializers.IntegerField()
+    quiz_accuracy_percent = serializers.IntegerField()
+    flashcard_reviews = serializers.IntegerField()
+    saved_reminders = serializers.IntegerField()
+    pending_reminders = serializers.IntegerField()
+    total_study_minutes = serializers.IntegerField()
+
+
 class LearningDashboardSerializer(serializers.Serializer):
     product_id = serializers.CharField()
     summary = LearningProgressSummarySerializer()
+    activity_summary = ActivitySummarySerializer()
     recommendations = RecommendationSerializer(many=True)
     league = DashboardLeagueSummarySerializer()
 
@@ -92,6 +105,7 @@ class LearningStatisticsSerializer(serializers.Serializer):
     start_date = serializers.DateField()
     end_date = serializers.DateField()
     summary = LearningProgressSummarySerializer()
+    activity_summary = ActivitySummarySerializer()
     topics = LearnerProgressSerializer(many=True)
     daily_activity = DailyActivitySerializer(many=True)
     weak_topics = WeakTopicSerializer(many=True)

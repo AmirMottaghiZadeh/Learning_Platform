@@ -3,8 +3,8 @@ from datetime import timedelta
 from django.db.models import Sum
 from django.utils import timezone
 
-from apps.flashcards.models import FlashcardState
-from apps.games.models import GameSession, Mistake
+from apps.flashcards.models import FlashcardReview, FlashcardState
+from apps.games.models import GameAnswer, GameSession, Mistake, QuizReminder
 from apps.league.services import get_current_season, get_user_league_rank
 
 from .models import LearnerProgress, LearningEventRecord
@@ -109,8 +109,8 @@ def get_learning_recommendations(user, *, product_id="pharmexa"):
                 "id": "review-due-flashcards",
                 "priority": 10,
                 "action": "review_flashcards",
-                "title": "Review due flashcards",
-                "reason": "Spaced repetition items are due now.",
+                "title": "مرور فلش‌کارت‌های آماده",
+                "reason": "الان بهترین زمان برای مرور کارت‌های زمان‌دار است.",
                 "topic_key": None,
                 "count": summary["due_flashcards"],
             }
@@ -123,8 +123,8 @@ def get_learning_recommendations(user, *, product_id="pharmexa"):
                 "id": f"practice-weak-topic-{weakest['topic_key']}",
                 "priority": 20,
                 "action": "start_topic_quiz",
-                "title": "Practice weak topic",
-                "reason": f"{weakest['topic_label']} has the most recent mistakes.",
+                "title": "تمرین موضوع ضعیف‌تر",
+                "reason": f"در {weakest['topic_label']} بیشترین خطای اخیر ثبت شده است.",
                 "topic_key": weakest["topic_key"],
                 "count": weakest["wrong_answers"],
             }
@@ -136,8 +136,8 @@ def get_learning_recommendations(user, *, product_id="pharmexa"):
                 "id": "review-mistakes",
                 "priority": 30,
                 "action": "review_mistakes",
-                "title": "Review mistakes",
-                "reason": "Mistakes are active learning signals.",
+                "title": "مرور اشتباهات",
+                "reason": "اشتباهات، مهم‌ترین سیگنال برای تمرین هدفمند هستند.",
                 "topic_key": None,
                 "count": summary["mistake_count"],
             }
@@ -149,8 +149,8 @@ def get_learning_recommendations(user, *, product_id="pharmexa"):
                 "id": "continue-learning",
                 "priority": 40,
                 "action": "start_quiz",
-                "title": "Continue learning",
-                "reason": "Start a short quiz to keep progress moving.",
+                "title": "ادامه مسیر یادگیری",
+                "reason": "یک آزمون کوتاه، روند پیشرفت امروز را فعال نگه می‌دارد.",
                 "topic_key": None,
                 "count": 0,
             }
@@ -159,12 +159,51 @@ def get_learning_recommendations(user, *, product_id="pharmexa"):
     return sorted(recommendations, key=lambda item: item["priority"])
 
 
+def get_activity_summary(user, *, product_id="pharmexa"):
+    sessions = GameSession.objects.filter(user=user, is_finished=True).order_by("-finished_at")
+    answers = GameAnswer.objects.filter(session__user=user)
+    if product_id and product_id != "pharmexa":
+        sessions = sessions.none()
+        answers = answers.none()
+
+    answered_questions = answers.count()
+    correct_answers = answers.filter(is_correct=True).count()
+    wrong_answers = max(0, answered_questions - correct_answers)
+    flashcard_reviews = FlashcardReview.objects.filter(state__user=user)
+    if product_id:
+        flashcard_reviews = flashcard_reviews.filter(state__knowledge_source__product_id=product_id)
+    reminders = QuizReminder.objects.filter(user=user)
+
+    total_seconds = 0
+    for session in sessions:
+        if not session.started_at:
+            continue
+        finished_at = session.finished_at or session.started_at
+        total_seconds += max(
+            0,
+            int((finished_at - session.started_at).total_seconds()) - session.total_paused_seconds,
+        )
+
+    return {
+        "completed_quizzes": sessions.count(),
+        "answered_questions": answered_questions,
+        "correct_answers": correct_answers,
+        "wrong_answers": wrong_answers,
+        "quiz_accuracy_percent": round((correct_answers / answered_questions) * 100) if answered_questions else 0,
+        "flashcard_reviews": flashcard_reviews.count(),
+        "saved_reminders": reminders.count(),
+        "pending_reminders": reminders.filter(is_reviewed=False).count(),
+        "total_study_minutes": round(total_seconds / 60),
+    }
+
+
 def get_learning_dashboard(user, *, product_id="pharmexa"):
     season = get_current_season(product_id=product_id)
     rank = get_user_league_rank(user, product_id=product_id, season_key=season.key)
     return {
         "product_id": product_id,
         "summary": get_learning_progress_summary(user, product_id=product_id),
+        "activity_summary": get_activity_summary(user, product_id=product_id),
         "recommendations": get_learning_recommendations(user, product_id=product_id),
         "league": {
             "season_key": season.key,
@@ -219,6 +258,7 @@ def get_learning_statistics(user, *, product_id="pharmexa", days=7):
         "start_date": start_date,
         "end_date": end_date,
         "summary": summary,
+        "activity_summary": get_activity_summary(user, product_id=product_id),
         "topics": topics,
         "daily_activity": list(daily.values()),
         "weak_topics": get_weak_topics(user, product_id=product_id, limit=10),

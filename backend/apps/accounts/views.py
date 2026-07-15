@@ -6,7 +6,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import AuthTokenResponseSerializer, LoginSerializer, RegisterSerializer, UserSerializer
+from .serializers import (
+    AuthTokenResponseSerializer,
+    LoginSerializer,
+    PasswordResetRequestSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 
 
 class RegisterView(APIView):
@@ -53,6 +59,23 @@ class LoginView(APIView):
             {
                 "user": UserSerializer(user).data,
                 "token": token.key,
+            }
+        )
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(request=PasswordResetRequestSerializer, responses={200: dict})
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"].strip().lower()
+        return Response(
+            {
+                "message": "اگر این ایمیل در Pharmexa ثبت شده باشد، ساختار بازیابی رمز برای آن آماده می‌شود.",
+                "email": email,
+                "ready_for_email_service": True,
             }
         )
 

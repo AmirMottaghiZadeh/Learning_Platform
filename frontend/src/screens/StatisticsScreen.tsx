@@ -1,6 +1,7 @@
-import React, {useCallback, useEffect, useState} from "react";
+import React from "react";
 import {StyleSheet, Text, View} from "react-native";
 import {Activity, BarChart3, CheckCircle2, RefreshCw, Target} from "lucide-react-native";
+import {useQuery} from "@tanstack/react-query";
 
 import {platformApi} from "../api/platform";
 import {ErrorState, LearningCard, LoadingState, ProgressBar, ScreenContainer, ScreenHeader, SectionTitle, SecondaryButton, StatTile} from "../components/ui";
@@ -8,49 +9,58 @@ import {colors, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
 import type {Statistics} from "../types/api";
 
+function masteryLabel(value: string) {
+  if (value === "mastered") return "مسلط";
+  if (value === "reviewing") return "در حال مرور";
+  if (value === "practicing") return "در حال تمرین";
+  if (value === "seen") return "دیده‌شده";
+  return "شروع‌نشده";
+}
+
 export function StatisticsScreen() {
   const {token} = useAuth();
-  const [statistics, setStatistics] = useState<Statistics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const statisticsQuery = useQuery({
+    queryKey: ["statistics", token],
+    queryFn: () => platformApi.statistics(token!),
+    enabled: Boolean(token),
+  });
 
-  const load = useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    setError(null);
-    try {
-      setStatistics(await platformApi.statistics(token));
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Statistics unavailable.");
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  if (loading) return <LoadingState label="Loading statistics" />;
-  if (error) return <ErrorState message={error} onRetry={load} />;
+  if (statisticsQuery.isLoading) return <LoadingState label="در حال بارگذاری آمار" />;
+  if (statisticsQuery.error) {
+    return (
+      <ErrorState
+        message={statisticsQuery.error instanceof Error ? statisticsQuery.error.message : "بارگذاری آمار ممکن نیست."}
+        onRetry={() => statisticsQuery.refetch()}
+      />
+    );
+  }
+  const statistics = statisticsQuery.data as Statistics | undefined;
   if (!statistics) return null;
 
   return (
     <ScreenContainer>
       <ScreenHeader
-        eyebrow={`${statistics.start_date} to ${statistics.end_date}`}
-        title="Statistics"
-        action={<SecondaryButton label="Refresh" Icon={RefreshCw} onPress={load} />}
+        eyebrow={`${statistics.start_date} تا ${statistics.end_date}`}
+        title="آمار"
+        action={<SecondaryButton label="بروزرسانی" Icon={RefreshCw} onPress={() => statisticsQuery.refetch()} />}
       />
 
       <View style={styles.statGrid}>
-        <StatTile label="Answered" value={statistics.summary.questions_answered} Icon={Activity} tone="blue" />
-        <StatTile label="Accuracy" value={`${statistics.summary.accuracy_percent}%`} Icon={CheckCircle2} tone="sage" />
-        <StatTile label="XP" value={statistics.summary.xp} Icon={Target} tone="amber" />
-        <StatTile label="Reviews" value={statistics.summary.review_count} Icon={BarChart3} tone="lavender" />
+        <StatTile label="پاسخ داده‌شده" value={statistics.summary.questions_answered} Icon={Activity} tone="blue" />
+        <StatTile label="دقت" value={`${statistics.summary.accuracy_percent}%`} Icon={CheckCircle2} tone="sage" />
+        <StatTile label="امتیاز" value={statistics.summary.xp} Icon={Target} tone="amber" />
+        <StatTile label="مرور" value={statistics.summary.review_count} Icon={BarChart3} tone="lavender" />
       </View>
 
-      <SectionTitle>Daily activity</SectionTitle>
+      <SectionTitle>خلاصه فعالیت</SectionTitle>
+      <LearningCard tone="blue">
+        <Text style={styles.topicMeta}>آزمون کامل‌شده: {statistics.activity_summary.completed_quizzes}</Text>
+        <Text style={styles.topicMeta}>فلش‌کارت مرورشده: {statistics.activity_summary.flashcard_reviews}</Text>
+        <Text style={styles.topicMeta}>یادآوری ذخیره‌شده: {statistics.activity_summary.saved_reminders}</Text>
+        <Text style={styles.topicMeta}>زمان مطالعه: {statistics.activity_summary.total_study_minutes} دقیقه</Text>
+      </LearningCard>
+
+      <SectionTitle>فعالیت روزانه</SectionTitle>
       <LearningCard tone="mint">
         {statistics.daily_activity.map((day) => {
           const total = day.questions_answered + day.reviews_completed + day.mistakes_created;
@@ -66,7 +76,7 @@ export function StatisticsScreen() {
         })}
       </LearningCard>
 
-      <SectionTitle>Weak topics</SectionTitle>
+      <SectionTitle>موضوعات ضعیف</SectionTitle>
       {statistics.weak_topics.length ? (
         statistics.weak_topics.map((topic) => (
           <LearningCard key={topic.topic_key} tone="rose">
@@ -75,19 +85,19 @@ export function StatisticsScreen() {
               <Text style={styles.topicPercent}>{topic.accuracy_percent}%</Text>
             </View>
             <ProgressBar value={topic.accuracy_percent} />
-            <Text style={styles.topicMeta}>
-              {topic.wrong_answers} wrong · {topic.due_flashcards} due cards · {topic.mastery_state}
+          <Text style={styles.topicMeta}>
+              {topic.wrong_answers} غلط · {topic.due_flashcards} کارت در انتظار · {masteryLabel(topic.mastery_state)}
             </Text>
           </LearningCard>
         ))
       ) : (
         <LearningCard tone="sage">
-          <Text style={styles.topicTitle}>No weak topics</Text>
-          <Text style={styles.topicMeta}>Current progress has no weak-topic signal.</Text>
+          <Text style={styles.topicTitle}>موضوع ضعیفی دیده نمی‌شود</Text>
+          <Text style={styles.topicMeta}>در وضعیت فعلی، سیگنال ضعیف برجسته‌ای وجود ندارد.</Text>
         </LearningCard>
       )}
 
-      <SectionTitle>Topics</SectionTitle>
+      <SectionTitle>همه موضوعات</SectionTitle>
       {statistics.topics.map((topic) => (
           <LearningCard key={topic.id} tone="blue">
           <View style={styles.topicTop}>
@@ -96,7 +106,7 @@ export function StatisticsScreen() {
           </View>
           <ProgressBar value={topic.accuracy_percent} />
           <Text style={styles.topicMeta}>
-            {topic.questions_answered} answered · {topic.mastery_state}
+            {topic.questions_answered} پاسخ · {masteryLabel(topic.mastery_state)}
           </Text>
         </LearningCard>
       ))}

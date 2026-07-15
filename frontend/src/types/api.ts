@@ -1,5 +1,7 @@
 export type User = {
   id: number;
+  first_name: string;
+  last_name: string;
   username: string;
   email: string;
 };
@@ -9,7 +11,23 @@ export type AuthResponse = {
   token: string;
 };
 
+export type RegisterPayload = {
+  first_name: string;
+  last_name: string;
+  username: string;
+  email: string;
+  password: string;
+  password_confirm: string;
+};
+
+export type PasswordResetResponse = {
+  message: string;
+  email: string;
+  ready_for_email_service: boolean;
+};
+
 export type Topic = {
+  id: number;
   key: string;
   label: string;
   detail: string;
@@ -60,6 +78,18 @@ export type ProgressSummary = {
   weak_topics: WeakTopic[];
 };
 
+export type ActivitySummary = {
+  completed_quizzes: number;
+  answered_questions: number;
+  correct_answers: number;
+  wrong_answers: number;
+  quiz_accuracy_percent: number;
+  flashcard_reviews: number;
+  saved_reminders: number;
+  pending_reminders: number;
+  total_study_minutes: number;
+};
+
 export type Recommendation = {
   id: string;
   priority: number;
@@ -79,6 +109,7 @@ export type LeagueSummary = {
 export type Dashboard = {
   product_id: string;
   summary: ProgressSummary;
+  activity_summary: ActivitySummary;
   recommendations: Recommendation[];
   league: LeagueSummary;
 };
@@ -114,6 +145,7 @@ export type Statistics = {
   start_date: string;
   end_date: string;
   summary: ProgressSummary;
+  activity_summary: ActivitySummary;
   topics: TopicProgress[];
   daily_activity: DailyActivity[];
   weak_topics: WeakTopic[];
@@ -129,6 +161,7 @@ export type GameQuestion = {
   prompt: string;
   subtitle: string;
   chip: string;
+  explanation: string;
   options: string[];
   timer_base_seconds: number;
   timer_extension_seconds: number;
@@ -201,6 +234,8 @@ export type FlashcardState = {
   due_at: string | null;
   last_reviewed_at: string | null;
 };
+
+export type FlashcardFlowMode = "new" | "leitner";
 
 export type FlashcardBox = {
   box: number;
@@ -275,4 +310,57 @@ export type LeagueFullSummary = {
   my_rank: MyLeagueRank;
   total_participants: number;
   rule_version: string;
+};
+
+export type QuizReminder = {
+  id: number;
+  question_type: string;
+  question_type_label: string;
+  prompt: string;
+  selected_answer: string;
+  correct_answer: string;
+  explanation: string;
+  options: string[];
+  is_reviewed: boolean;
+  created_at: string;
+};
+
+export type QuizHistoryAnswer = {
+  id: number;
+  question_id: number;
+  prompt: string;
+  question_type: string;
+  question_type_label: string;
+  selected_answer: string;
+  correct_answer: string;
+  is_correct: boolean;
+  time_expired: boolean;
+  remaining_seconds: number;
+  score_delta: number;
+  xp_delta: number;
+  answered_at: string;
+  explanation: string;
+  options: string[];
+};
+
+export type QuizHistorySession = {
+  id: number;
+  topic_key: string;
+  question_type_label: string;
+  target_category_key: string;
+  mode: string;
+  status: string;
+  score: number;
+  total_questions: number;
+  answered_questions: number;
+  correct_count: number;
+  wrong_count: number;
+  accuracy_percent: number;
+  streak: number;
+  timer_seconds: number;
+  total_paused_seconds: number;
+  duration_seconds: number;
+  started_at: string;
+  finished_at: string | null;
+  answers: QuizHistoryAnswer[];
 };

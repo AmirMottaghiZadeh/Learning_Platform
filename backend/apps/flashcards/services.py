@@ -5,6 +5,7 @@ from apps.flashcards.contracts import (
     ReviewScheduleResult,
     ReviewSchedulingContext,
 )
+from apps.drugs.services import is_valid_correct_answer
 from apps.learning.models import KnowledgeSource
 from apps.learning.services import (
     EVENT_REVIEW_SCHEDULED,
@@ -120,10 +121,15 @@ def seed_flashcards_for_user(
     target_category_key="",
     source_type="",
 ):
+    if source_type == "brandGeneric":
+        from apps.drugs.learning_sync import ensure_brand_generic_knowledge_sources
+
+        ensure_brand_generic_knowledge_sources(target_category_key=target_category_key)
+
     created_at = timezone.now()
     existing_source_ids = set(
         FlashcardState.objects
-        .filter(user=user, knowledge_source__isnull=False)
+        .filter(user=user, knowledge_source__isnull=False, knowledge_source__is_active=True)
         .values_list("knowledge_source_id", flat=True)
     )
 
@@ -143,11 +149,18 @@ def seed_flashcards_for_user(
 
     states = []
     for source in sources:
+        if not is_valid_correct_answer(source.correct_answer):
+            continue
         states.append(schedule_flashcard_from_source(user=user, knowledge_source=source, created_at=created_at))
     return states
 
 
 def get_flashcard_deck_summary(*, user, product_id="pharmexa", target_category_key="", source_type=""):
+    if source_type == "brandGeneric":
+        from apps.drugs.learning_sync import ensure_brand_generic_knowledge_sources
+
+        ensure_brand_generic_knowledge_sources(target_category_key=target_category_key)
+
     sources = (
         KnowledgeSource.objects
         .filter(product_id=product_id, is_active=True)
@@ -163,6 +176,7 @@ def get_flashcard_deck_summary(*, user, product_id="pharmexa", target_category_k
     states = FlashcardState.objects.filter(
         user=user,
         knowledge_source__product_id=product_id,
+        knowledge_source__is_active=True,
     )
     if target_category_key:
         states = states.filter(knowledge_source__metadata__target_category_key=target_category_key)
@@ -227,6 +241,7 @@ def get_leitner_box_counts(*, user, product_id="pharmexa", target_category_key="
         .filter(
             user=user,
             knowledge_source__product_id=product_id,
+            knowledge_source__is_active=True,
             box__gte=LEITNER_MIN_BOX,
         )
         .exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED)

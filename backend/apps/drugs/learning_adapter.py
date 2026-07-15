@@ -9,10 +9,13 @@ from apps.quizzes.contracts import QuestionGenerationContext
 from .learning_sync import (
     PRODUCT_ID,
     drug_question_source_external_id,
+    ensure_brand_generic_knowledge_sources,
     sync_drug_question_source,
+    sync_drug_question_sources,
 )
 from .categories import category_for_drug, category_payload_for_drug
 from .models import DrugQuestionSource
+from .services import is_valid_correct_answer
 
 
 class PharmexaLearningAdapter:
@@ -22,6 +25,11 @@ class PharmexaLearningAdapter:
         self,
         context: QuestionGenerationContext,
     ) -> list[KnowledgeSourceRef]:
+        if context.topic_key == "brandGeneric":
+            ensure_brand_generic_knowledge_sources(
+                target_category_key=context.target_category_key or "",
+            )
+
         synced_sources = self._list_synced_knowledge_sources(context)
         if synced_sources:
             return [self._generic_to_knowledge_source_ref(source) for source in synced_sources]
@@ -44,7 +52,10 @@ class PharmexaLearningAdapter:
                 and category_for_drug(source.drug).key != context.target_category_key
             ):
                 continue
-            refs.append(self._generic_to_knowledge_source_ref(sync_drug_question_source(source)))
+            refs.extend(
+                self._generic_to_knowledge_source_ref(item)
+                for item in sync_drug_question_sources(source)
+            )
         return refs
 
     def get_source_instance(self, knowledge_source_id: int) -> KnowledgeSource:
@@ -53,6 +64,14 @@ class PharmexaLearningAdapter:
         except KnowledgeSource.DoesNotExist:
             legacy_source = DrugQuestionSource.objects.get(id=knowledge_source_id)
             return sync_drug_question_source(legacy_source)
+
+    def get_source_instances(self, knowledge_source_ids: list[int]) -> dict[int, KnowledgeSource]:
+        queryset = (
+            KnowledgeSource.objects
+            .filter(id__in=knowledge_source_ids, product_id=self.product_id)
+            .select_related("learning_object", "topic")
+        )
+        return {source.id: source for source in queryset}
 
     def get_knowledge_source_for_legacy_source(self, source: DrugQuestionSource) -> KnowledgeSource:
         external_id = drug_question_source_external_id(source)
@@ -78,7 +97,7 @@ class PharmexaLearningAdapter:
         if context.target_category_key:
             queryset = queryset.filter(metadata__target_category_key=context.target_category_key)
 
-        return list(queryset)
+        return [source for source in queryset if is_valid_correct_answer(source.correct_answer)]
 
     def _generic_to_knowledge_source_ref(self, source: KnowledgeSource) -> KnowledgeSourceRef:
         return KnowledgeSourceRef(

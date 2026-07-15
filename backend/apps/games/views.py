@@ -4,7 +4,8 @@ from rest_framework.response import Response
 
 from apps.core.exceptions import PlatformAPIError
 
-from .models import GameSession, Mistake
+from .models import GameSession, Mistake, QuizReminder
+from .selectors import get_quiz_history_queryset
 from .serializers import (
     StartGameSerializer,
     GameSessionSerializer,
@@ -13,9 +14,14 @@ from .serializers import (
     GameAnswerResultSerializer,
     GameLifecycleSerializer,
     MistakeSerializer,
+    QuizHistorySessionSerializer,
+    QuizReminderCreateSerializer,
+    QuizReminderSerializer,
+    QuizReminderUpdateSerializer,
 )
 from .services import (
     answer_question,
+    create_quiz_reminder,
     extend_current_question_timer,
     finish_game,
     pause_game,
@@ -140,3 +146,35 @@ class MyMistakesView(generics.ListAPIView):
             .select_related("knowledge_source", "source")
             .order_by("-wrong_count", "-last_at")
         )
+
+
+class QuizReminderListCreateView(generics.ListCreateAPIView):
+    serializer_class = QuizReminderSerializer
+
+    def get_queryset(self):
+        return QuizReminder.objects.filter(user=self.request.user).order_by("is_reviewed", "-created_at")
+
+    @extend_schema(request=QuizReminderCreateSerializer, responses={201: QuizReminderSerializer})
+    def post(self, request, *args, **kwargs):
+        serializer = QuizReminderCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reminder = create_quiz_reminder(user=request.user, **serializer.validated_data)
+        return Response(QuizReminderSerializer(reminder).data, status=status.HTTP_201_CREATED)
+
+
+class QuizReminderDetailView(views.APIView):
+    @extend_schema(request=QuizReminderUpdateSerializer, responses=QuizReminderSerializer)
+    def patch(self, request, pk):
+        reminder = QuizReminder.objects.get(pk=pk, user=request.user)
+        serializer = QuizReminderUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reminder.is_reviewed = serializer.validated_data["is_reviewed"]
+        reminder.save(update_fields=["is_reviewed", "updated_at"])
+        return Response(QuizReminderSerializer(reminder).data)
+
+
+class QuizHistoryView(generics.ListAPIView):
+    serializer_class = QuizHistorySessionSerializer
+
+    def get_queryset(self):
+        return get_quiz_history_queryset(user=self.request.user)

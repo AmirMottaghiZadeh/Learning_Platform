@@ -11,7 +11,7 @@ function injectWebFonts() {
   style.textContent = `
 @font-face {
   font-family: "PharmexaUIFont";
-  src: local("B Nazanin"), local("B Mitra"), local("Nazanin"), local("Mitra");
+  src: local("B Roya"), local("B Roya"), local("B Ferdosi"), local("B Nazanin"), local("B Mitra"), local("Nazanin"), local("Mitra");
   font-weight: 100 900;
   font-style: normal;
   unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
@@ -27,7 +27,9 @@ html,
 body,
 #root,
 #root * {
-  font-family: "PharmexaUIFont", Inter, Manrope, Aptos, Calibri, Carlito, "B Mitra", "B Nazanin", Arial, sans-serif !important;
+  direction: rtl;
+  text-align: right;
+  font-family: "PharmexaUIFont", "B Roya", "B Ferdosi", Inter, Manrope, Aptos, Calibri, Carlito, "B Mitra", "B Nazanin", Arial, sans-serif !important;
   font-synthesis: weight;
 }
 `;

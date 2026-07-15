@@ -14,9 +14,8 @@ import {ProfileScreen} from "./src/screens/ProfileScreen";
 import {QuizScreen} from "./src/screens/QuizScreen";
 import {StatisticsScreen} from "./src/screens/StatisticsScreen";
 import {AuthProvider, useAuth} from "./src/store/auth";
-import {OnboardingProvider, useOnboarding} from "./src/store/onboarding";
+import {AppQueryProvider} from "./src/store/query";
 import {configureAppFonts} from "./src/design/fonts";
-import {OnboardingScreen} from "./src/screens/OnboardingScreen";
 
 configureAppFonts();
 
@@ -29,16 +28,14 @@ function registerServiceWorker() {
 
 function MainApp() {
   const {token, loading} = useAuth();
-  const {completed, loading: onboardingLoading, completeOnboarding} = useOnboarding();
   const [screen, setScreen] = useState<ScreenKey>("dashboard");
 
   useEffect(() => {
     registerServiceWorker();
   }, []);
 
-  if (loading || onboardingLoading) return <LoadingState label="Loading session" />;
+  if (loading) return <LoadingState label="در حال آماده‌سازی جلسه" />;
   if (!token) return <AuthScreen />;
-  if (!completed) return <OnboardingScreen onDone={completeOnboarding} />;
 
   return (
     <AppShell active={screen} onNavigate={setScreen}>
@@ -57,11 +54,11 @@ function MainApp() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <OnboardingProvider>
+      <AppQueryProvider>
+        <AuthProvider>
           <MainApp />
-        </OnboardingProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </AppQueryProvider>
     </SafeAreaProvider>
   );
 }

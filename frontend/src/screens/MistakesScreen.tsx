@@ -21,7 +21,7 @@ export function MistakesScreen() {
     try {
       setMistakes(await platformApi.mistakes(token));
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Mistakes unavailable.");
+      setError(exc instanceof Error ? exc.message : "بارگذاری اشتباهات ممکن نیست.");
     } finally {
       setLoading(false);
     }
@@ -31,24 +31,24 @@ export function MistakesScreen() {
     load();
   }, [load]);
 
-  if (loading) return <LoadingState label="Loading mistakes" />;
+  if (loading) return <LoadingState label="در حال بارگذاری اشتباهات" />;
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <ScreenContainer>
       <ScreenHeader
-        eyebrow={`${mistakes.length} items`}
-        title="Mistakes"
-        action={<SecondaryButton label="Refresh" Icon={RefreshCw} onPress={load} />}
+        eyebrow={`${mistakes.length} مورد`}
+        title="اشتباهات"
+        action={<SecondaryButton label="بروزرسانی" Icon={RefreshCw} onPress={load} />}
       />
       {!mistakes.length ? (
-        <EmptyState title="No mistakes" />
+        <EmptyState title="اشتباهی ثبت نشده است" />
       ) : (
         mistakes.map((mistake) => (
           <LearningCard key={mistake.id} tone="rose">
             <View style={styles.top}>
               <AlertTriangle size={20} color={colors.rose} />
-              <Text style={styles.count}>{mistake.wrong_count}x</Text>
+              <Text style={styles.count}>{mistake.wrong_count} بار</Text>
             </View>
             <Text style={styles.prompt}>{mistake.prompt}</Text>
             <Text style={styles.answer}>{mistake.correct_answer}</Text>

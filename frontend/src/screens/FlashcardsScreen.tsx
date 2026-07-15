@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from "react";
+import React from "react";
 import {Pressable, StyleSheet, Text, View} from "react-native";
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
   XCircle,
 } from "lucide-react-native";
 import type {LucideIcon} from "lucide-react-native";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 
 import {platformApi} from "../api/platform";
 import {
@@ -19,183 +20,170 @@ import {
   EmptyState,
   ErrorState,
   LearningCard,
-  LoadingState,
   PrimaryButton,
   ProgressBar,
   ScreenContainer,
   ScreenHeader,
   SecondaryButton,
+  SkeletonCard,
 } from "../components/ui";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
-import type {
-  FlashcardBoxSummary,
-  FlashcardRating,
-  FlashcardState,
-  QuestionType,
-  TargetCategory,
-} from "../types/api";
+import {useFlashcardsStore} from "../store/flashcards";
+import type {FlashcardRating, QuestionType} from "../types/api";
 
 const QUESTION_TYPES: Array<{key: QuestionType; label: string; Icon: LucideIcon}> = [
   {key: "brandGeneric", label: "نام تجاری", Icon: Sparkles},
   {key: "timing", label: "با غذا / بی غذا", Icon: Layers},
-  {key: "indication", label: "اندیکاسیون", Icon: Sparkles},
-  {key: "sideEffects", label: "عوارض", Icon: Layers},
-  {key: "classification", label: "دسته‌بندی", Icon: Sparkles},
-  {key: "dosageForm", label: "اشکال دارویی", Icon: Layers},
-  {key: "dosing", label: "دوزینگ", Icon: Sparkles},
-  {key: "pregnancy", label: "بارداری / شیردهی", Icon: Layers},
-  {key: "doseAdjustment", label: "تنظیم دوز", Icon: Sparkles},
 ];
-
-type FlowStep = "entry" | "category" | "cards";
-type StudyMode = "new" | "leitner";
 
 export function FlashcardsScreen() {
   const {token} = useAuth();
-  const [step, setStep] = useState<FlowStep>("entry");
-  const [mode, setMode] = useState<StudyMode>("new");
-  const [selectedQuestionType, setSelectedQuestionType] = useState<QuestionType | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [categories, setCategories] = useState<TargetCategory[]>([]);
-  const [cards, setCards] = useState<FlashcardState[]>([]);
-  const [boxSummary, setBoxSummary] = useState<FlashcardBoxSummary | null>(null);
-  const [revealed, setRevealed] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const reviewedCardIdsRef = useRef<number[]>([]);
+  const queryClient = useQueryClient();
+  const [leitnerPickerOpen, setLeitnerPickerOpen] = React.useState(false);
+  const {
+    step,
+    mode,
+    selectedQuestionType,
+    selectedCategory,
+    selectedLeitnerBox,
+    categories,
+    cards,
+    revealed,
+    reviewedCardIds,
+    setStep,
+    setMode,
+    setSelectedQuestionType,
+    setSelectedCategory,
+    setSelectedLeitnerBox,
+    setCategories,
+    setCards,
+    setRevealed,
+    pushReviewedCardId,
+    resetReviewedCardIds,
+    resetFlow,
+  } = useFlashcardsStore();
 
-  const loadEntrySummary = useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    setError(null);
-    try {
-      setBoxSummary(await platformApi.flashcardBoxes(token));
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Leitner summary unavailable.");
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+  const entrySummaryQuery = useQuery({
+    queryKey: ["flashcard-boxes", token],
+    queryFn: () => platformApi.flashcardBoxes(token!),
+    enabled: Boolean(token),
+  });
 
-  useEffect(() => {
-    loadEntrySummary();
-  }, [loadEntrySummary]);
+  const categoriesQuery = useQuery({
+    queryKey: ["flashcard-categories", token, selectedQuestionType],
+    queryFn: () => platformApi.targetCategories(token!, selectedQuestionType ?? undefined),
+    enabled: Boolean(token) && step === "category" && Boolean(selectedQuestionType),
+  });
 
-  async function chooseQuestionType(questionType: QuestionType) {
-    if (!token) return;
-    setBusy(true);
-    setError(null);
-    setSelectedQuestionType(questionType);
-    setSelectedCategory("");
-    setMode("new");
-    try {
-      setCategories(await platformApi.targetCategories(token, questionType));
-      setStep("category");
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Categories unavailable.");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const cardsQuery = useQuery({
+    queryKey: [
+      "flashcards",
+      token,
+      mode,
+      selectedCategory,
+      selectedQuestionType,
+      selectedLeitnerBox,
+      reviewedCardIds.join(","),
+    ],
+    queryFn: () =>
+      platformApi.flashcards(
+        token!,
+        mode,
+        selectedCategory,
+        selectedQuestionType ?? undefined,
+        reviewedCardIds,
+        selectedLeitnerBox,
+      ),
+    enabled: Boolean(token) && step === "cards",
+  });
 
-  async function openNewDeck(categoryKey: string) {
-    if (!token || !selectedQuestionType) return;
-    setBusy(true);
-    setLoading(true);
-    setError(null);
-    setSelectedCategory(categoryKey);
-    setMode("new");
-    reviewedCardIdsRef.current = [];
-    try {
-      await platformApi.seedFlashcards(token, categoryKey, selectedQuestionType);
-      setCards(await platformApi.flashcards(token, "new", categoryKey, selectedQuestionType));
+  React.useEffect(() => {
+    if (categoriesQuery.data) setCategories(categoriesQuery.data);
+  }, [categoriesQuery.data, setCategories]);
+
+  React.useEffect(() => {
+    if (cardsQuery.data) setCards(cardsQuery.data);
+  }, [cardsQuery.data, setCards]);
+
+  const openNewDeckMutation = useMutation({
+    mutationFn: async (categoryKey: string) => {
+      await platformApi.seedFlashcards(token!, categoryKey, selectedQuestionType!);
+      return categoryKey;
+    },
+    onSuccess: async (categoryKey) => {
+      setSelectedCategory(categoryKey);
+      setMode("new");
       setRevealed(false);
       setStep("cards");
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Could not open new flashcards.");
-    } finally {
-      setBusy(false);
-      setLoading(false);
-    }
+      await Promise.all([
+        queryClient.invalidateQueries({queryKey: ["flashcards"]}),
+        queryClient.invalidateQueries({queryKey: ["flashcard-boxes", token]}),
+      ]);
+    },
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: ({cardId, rating}: {cardId: number; rating: FlashcardRating}) =>
+      platformApi.reviewFlashcard(token!, cardId, rating),
+    onSuccess: async (_, variables) => {
+      pushReviewedCardId(variables.cardId);
+      setRevealed(false);
+      await Promise.all([
+        queryClient.invalidateQueries({queryKey: ["flashcards"]}),
+        queryClient.invalidateQueries({queryKey: ["flashcard-boxes", token]}),
+        queryClient.invalidateQueries({queryKey: ["statistics"]}),
+        queryClient.invalidateQueries({queryKey: ["dashboard"]}),
+      ]);
+    },
+  });
+
+  function chooseQuestionType(questionType: QuestionType) {
+    setLeitnerPickerOpen(false);
+    setSelectedQuestionType(questionType);
+    setSelectedCategory("");
+    setSelectedLeitnerBox(null);
+    setMode("new");
+    setRevealed(false);
+    resetReviewedCardIds();
+    setStep("category");
   }
 
-  async function openLeitner() {
-    if (!token) return;
-    setBusy(true);
-    setLoading(true);
-    setError(null);
+  function openNewDeck(categoryKey: string) {
+    if (!selectedQuestionType) return;
+    resetReviewedCardIds();
+    openNewDeckMutation.mutate(categoryKey);
+  }
+
+  async function openLeitner(box?: number) {
+    setLeitnerPickerOpen(false);
     setMode("leitner");
     setSelectedQuestionType(null);
     setSelectedCategory("");
-    reviewedCardIdsRef.current = [];
-    try {
-      const [cardPayload, summaryPayload] = await Promise.all([
-        platformApi.flashcards(token, "leitner"),
-        platformApi.flashcardBoxes(token),
-      ]);
-      setCards(cardPayload);
-      setBoxSummary(summaryPayload);
-      setRevealed(false);
-      setStep("cards");
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Could not open Leitner box.");
-    } finally {
-      setBusy(false);
-      setLoading(false);
-    }
+    setSelectedLeitnerBox(box ?? null);
+    resetReviewedCardIds();
+    setRevealed(false);
+    setStep("cards");
+    await Promise.all([
+      queryClient.invalidateQueries({queryKey: ["flashcards"]}),
+      queryClient.invalidateQueries({queryKey: ["flashcard-boxes", token]}),
+    ]);
   }
 
-  async function review(rating: FlashcardRating) {
+  function review(rating: FlashcardRating) {
     const currentCard = cards[0];
-    if (!token || !currentCard) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await platformApi.reviewFlashcard(token, currentCard.id, rating);
-      reviewedCardIdsRef.current = [...reviewedCardIdsRef.current, currentCard.id];
-      const remainingCards = cards.slice(1);
-      if (remainingCards.length) {
-        setCards(remainingCards);
-      } else {
-        setLoading(true);
-        const nextCards = await platformApi.flashcards(
-          token,
-          mode,
-          selectedCategory,
-          selectedQuestionType ?? undefined,
-          reviewedCardIdsRef.current,
-        );
-        setCards(nextCards);
-        setLoading(false);
-      }
-      setRevealed(false);
-      if (mode === "leitner") {
-        setBoxSummary(await platformApi.flashcardBoxes(token));
-      }
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "Review failed.");
-      setLoading(false);
-    } finally {
-      setBusy(false);
-    }
+    if (!currentCard) return;
+    reviewMutation.mutate({cardId: currentCard.id, rating});
   }
 
   function goBack() {
-    setError(null);
     setRevealed(false);
     if (step === "cards" && mode === "new") {
       setCards([]);
       setStep("category");
       return;
     }
-    setCards([]);
-    setCategories([]);
-    setSelectedQuestionType(null);
-    setSelectedCategory("");
-    reviewedCardIdsRef.current = [];
-    setStep("entry");
+    resetFlow();
   }
 
   const currentCard = cards[0];
@@ -204,20 +192,35 @@ export function FlashcardsScreen() {
     QUESTION_TYPES.find((item) => item.key === selectedQuestionType)?.label ?? "";
   const selectedCategoryLabel =
     categories.find((category) => category.key === selectedCategory)?.label ?? "همه دسته‌ها";
+  const selectedLeitnerBoxSummary =
+    entrySummaryQuery.data?.boxes.find((item) => item.box === selectedLeitnerBox) ?? null;
+  const leitnerBoxes =
+    entrySummaryQuery.data?.boxes ?? Array.from({length: 5}, (_, index) => ({box: index + 1, count: 0}));
   const headerEyebrow =
     step === "entry"
-      ? "Step 1 · Choose a path"
+      ? "مرحله ۱ · انتخاب مسیر"
       : step === "category"
-        ? `Step 2 · ${selectedQuestionLabel}`
+        ? `مرحله ۲ · ${selectedQuestionLabel}`
         : mode === "leitner"
-          ? "Global Leitner review"
+          ? selectedLeitnerBox
+            ? `مرور جعبه ${selectedLeitnerBox} لایتنر`
+            : "مرور جعبه لایتنر"
           : `${selectedQuestionLabel} · ${selectedCategoryLabel}`;
+  const loading = entrySummaryQuery.isLoading || cardsQuery.isLoading;
+  const busy = openNewDeckMutation.isPending || reviewMutation.isPending;
+  const error =
+    (entrySummaryQuery.error instanceof Error && entrySummaryQuery.error.message) ||
+    (categoriesQuery.error instanceof Error && categoriesQuery.error.message) ||
+    (cardsQuery.error instanceof Error && cardsQuery.error.message) ||
+    (openNewDeckMutation.error instanceof Error && openNewDeckMutation.error.message) ||
+    (reviewMutation.error instanceof Error && reviewMutation.error.message) ||
+    null;
 
   return (
     <ScreenContainer>
       <ScreenHeader
         eyebrow={headerEyebrow}
-        title={step === "cards" ? (mode === "leitner" ? "Leitner Box" : "New Cards") : "Flashcards"}
+        title={step === "cards" ? (mode === "leitner" ? "جعبه لایتنر" : "فلش‌کارت‌های جدید") : "فلش‌کارت"}
         action={
           step === "entry" ? null : (
             <Pressable accessibilityRole="button" onPress={goBack} style={styles.backButton}>
@@ -227,7 +230,12 @@ export function FlashcardsScreen() {
         }
       />
 
-      {error ? <ErrorState message={error} onRetry={step === "entry" ? loadEntrySummary : undefined} /> : null}
+      {error ? (
+        <ErrorState
+          message={error}
+          onRetry={step === "entry" ? () => entrySummaryQuery.refetch() : undefined}
+        />
+      ) : null}
 
       {step === "entry" ? (
         <AnimatedEntrance>
@@ -236,24 +244,45 @@ export function FlashcardsScreen() {
             یک نوع سؤال برای کارت‌های جدید انتخاب کن، یا مستقیماً وارد جعبه سراسری لایتنر شو.
           </Text>
 
-          <Pressable
-            accessibilityRole="button"
-            disabled={busy}
-            onPress={openLeitner}
-            style={({pressed}) => [styles.leitnerCard, pressed && styles.pressed]}
-          >
-            <View style={styles.leitnerIcon}>
-              <FolderOpen size={28} color={colors.black} />
-            </View>
-            <View style={styles.optionCopy}>
-              <Text style={styles.optionTitle}>باز کردن جعبه لایتنر</Text>
-              <Text style={styles.optionMeta}>صف سراسری رفع اشکال، مستقل از نوع سؤال و دسته‌بندی</Text>
-            </View>
-            <View style={styles.countBadge}>
-              <Text style={styles.countValue}>{loading ? "…" : boxSummary?.total ?? 0}</Text>
-              <Text style={styles.countLabel}>cards</Text>
-            </View>
-          </Pressable>
+          <View style={[styles.leitnerCard, leitnerPickerOpen && styles.leitnerCardExpanded]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{expanded: leitnerPickerOpen, disabled: busy}}
+              disabled={busy}
+              onPress={() => setLeitnerPickerOpen((isOpen) => !isOpen)}
+              style={({pressed}) => [styles.leitnerCardHeader, pressed && styles.pressed]}
+            >
+              <View style={styles.leitnerIcon}>
+                <FolderOpen size={28} color={colors.primary} />
+              </View>
+              <View style={styles.optionCopy}>
+                <Text style={styles.leitnerTitle}>جعبه لایتنر</Text>
+                <Text style={styles.leitnerMeta}>برای مرور، یکی از جعبه‌های ۱ تا ۵ را انتخاب کن</Text>
+              </View>
+              <View style={styles.countBadge}>
+                <Text style={styles.countValue}>{entrySummaryQuery.isLoading ? "…" : entrySummaryQuery.data?.total ?? 0}</Text>
+                <Text style={styles.countLabel}>کارت</Text>
+              </View>
+            </Pressable>
+
+            {leitnerPickerOpen ? (
+              <View style={styles.leitnerBoxGrid}>
+                {leitnerBoxes.map((item) => (
+                <Pressable
+                  key={item.box}
+                  accessibilityRole="button"
+                  disabled={busy || entrySummaryQuery.isLoading}
+                  onPress={() => openLeitner(item.box)}
+                  style={({pressed}) => [styles.leitnerBoxOption, pressed && styles.pressed]}
+                >
+                  <Text style={styles.leitnerBoxNumber}>جعبه {item.box}</Text>
+                  <Text style={styles.leitnerBoxCount}>{entrySummaryQuery.isLoading ? "…" : item.count}</Text>
+                  <Text style={styles.leitnerBoxLabel}>کارت</Text>
+                </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </View>
 
           <Text style={styles.orLabel}>یا یک نوع سؤال انتخاب کن</Text>
           <View style={styles.optionGrid}>
@@ -310,7 +339,7 @@ export function FlashcardsScreen() {
                 </View>
                 <View style={styles.optionCopy}>
                   <Text style={styles.optionTitle}>{category.label}</Text>
-                  <Text style={styles.optionMeta}>{category.count} knowledge sources</Text>
+                  <Text style={styles.optionMeta}>{category.count} منبع سوال</Text>
                 </View>
               </Pressable>
             ))}
@@ -320,14 +349,18 @@ export function FlashcardsScreen() {
 
       {step === "cards" ? (
         loading ? (
-          <LoadingState label={mode === "leitner" ? "Opening Leitner box" : "Preparing new cards"} />
+          <>
+            <SkeletonCard height={92} />
+            <SkeletonCard height={360} />
+            <SkeletonCard height={72} />
+          </>
         ) : !currentCard ? (
           <AnimatedEntrance>
             <EmptyState title={mode === "leitner" ? "جعبه لایتنر خالی است" : "کارت جدیدی در این مسیر باقی نمانده"} />
             <PrimaryButton
               label={mode === "leitner" ? "بررسی دوباره جعبه" : "انتخاب مسیر دیگر"}
               Icon={mode === "leitner" ? RefreshCw : RotateCcw}
-              onPress={mode === "leitner" ? openLeitner : goBack}
+              onPress={mode === "leitner" ? () => openLeitner(selectedLeitnerBox ?? undefined) : goBack}
               disabled={busy}
             />
           </AnimatedEntrance>
@@ -336,17 +369,17 @@ export function FlashcardsScreen() {
             <View style={styles.sessionTop}>
               <View>
                 <Text style={styles.sessionTitle}>
-                  {mode === "leitner" ? `Box ${currentCard.box}` : "New"}
+                  {mode === "leitner" ? `جعبه ${currentCard.box}` : "جدید"}
                 </Text>
                 <Text style={styles.sessionMeta}>
                   {mode === "leitner"
-                    ? `${currentCard.source_type} · ${currentCard.target_category_label || "All"}`
+                    ? `${selectedLeitnerBoxSummary ? `${selectedLeitnerBoxSummary.count} کارت در این جعبه · ` : ""}${QUESTION_TYPES.find((item) => item.key === currentCard.source_type)?.label ?? currentCard.source_type} · ${currentCard.target_category_label || "همه"}`
                     : `${selectedQuestionLabel} · ${selectedCategoryLabel}`}
                 </Text>
               </View>
               <View style={styles.remainingBadge}>
                 <Text style={styles.remainingValue}>{totalCards}</Text>
-                <Text style={styles.remainingLabel}>remaining</Text>
+                <Text style={styles.remainingLabel}>باقی‌مانده</Text>
               </View>
             </View>
             <ProgressBar value={Math.max(8, 100 / Math.max(1, totalCards))} />
@@ -354,7 +387,7 @@ export function FlashcardsScreen() {
             <Pressable
               key={`${currentCard.id}:${revealed ? "answer" : "prompt"}`}
               accessibilityRole="button"
-              onPress={() => setRevealed((value) => !value)}
+              onPress={() => setRevealed(!revealed)}
               style={[styles.flashcard, revealed && styles.flashcardRevealed]}
             >
               <View style={styles.cardTop}>
@@ -362,9 +395,9 @@ export function FlashcardsScreen() {
                   {revealed ? <Eye size={20} color={colors.primary} /> : <Layers size={20} color={colors.secondary} />}
                 </View>
                 <View>
-                  <Text style={styles.cardState}>{revealed ? "ANSWER" : "QUESTION"}</Text>
+                  <Text style={styles.cardState}>{revealed ? "پاسخ" : "سؤال"}</Text>
                   <Text style={styles.cardStateMeta}>
-                    {mode === "leitner" ? `Leitner box ${currentCard.box}` : "Outside Leitner"}
+                    {mode === "leitner" ? `جعبه ${currentCard.box}` : "کارت جدید"}
                   </Text>
                 </View>
               </View>
@@ -400,7 +433,7 @@ export function FlashcardsScreen() {
 
             <Text style={styles.ruleHint}>
               {mode === "new"
-                ? "این کارت Due نیست؛ فقط پاسخ اشتباه آن را وارد جعبه اول می‌کند."
+                ? "این کارت آماده مرور زمان‌دار نیست؛ فقط پاسخ اشتباه آن را وارد جعبه اول می‌کند."
                 : "جعبه سراسری است و به نوع سؤال یا دسته‌بندی وابسته نیست."}
             </Text>
           </AnimatedEntrance>
@@ -437,25 +470,46 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   leitnerCard: {
-    minHeight: 112,
     borderRadius: radius.lg,
-    backgroundColor: colors.primary,
-    padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.primaryMuted,
     shadowColor: colors.primary,
     shadowOpacity: 0.22,
     shadowRadius: 18,
     shadowOffset: {width: 0, height: 8},
+    overflow: "hidden",
+  },
+  leitnerCardExpanded: {
+    borderColor: colors.primary,
+  },
+  leitnerCardHeader: {
+    minHeight: 112,
+    padding: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
   },
   leitnerIcon: {
     width: 54,
     height: 54,
     borderRadius: radius.lg,
-    backgroundColor: "rgba(0,16,20,0.12)",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
+  },
+  leitnerTitle: {
+    color: colors.ink,
+    fontSize: typography.body,
+    fontWeight: "900",
+  },
+  leitnerMeta: {
+    color: colors.ink,
+    opacity: 0.78,
+    fontSize: typography.small,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: spacing.xs,
   },
   optionCopy: {
     flex: 1,
@@ -476,13 +530,15 @@ const styles = StyleSheet.create({
     minWidth: 54,
     height: 54,
     borderRadius: radius.pill,
-    backgroundColor: colors.black,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.primaryMuted,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: spacing.md,
   },
   countValue: {
-    color: colors.primary,
+    color: colors.ink,
     fontSize: 18,
     fontWeight: "900",
   },
@@ -490,6 +546,45 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 9,
     fontWeight: "800",
+  },
+  leitnerBoxGrid: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  leitnerBoxOption: {
+    width: "31%",
+    minHeight: 98,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    padding: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
+  leitnerBoxNumber: {
+    color: colors.ink,
+    fontSize: typography.small,
+    fontWeight: "900",
+  },
+  leitnerBoxCount: {
+    color: colors.primary,
+    fontSize: 23,
+    fontWeight: "900",
+    marginTop: spacing.xs,
+  },
+  leitnerBoxLabel: {
+    color: colors.muted,
+    fontSize: 10,
+    fontWeight: "800",
+    marginTop: 2,
   },
   orLabel: {
     color: colors.muted,
@@ -525,25 +620,20 @@ const styles = StyleSheet.create({
   },
   optionCardTitle: {
     color: colors.ink,
+    fontSize: typography.body,
     fontWeight: "900",
-    textAlign: "right",
   },
   optionCardMeta: {
     color: colors.muted,
     fontSize: typography.small,
     fontWeight: "700",
-    textAlign: "right",
     marginTop: spacing.xs,
-  },
-  pressed: {
-    transform: [{scale: 0.98}],
-    opacity: 0.9,
   },
   categoryList: {
     gap: spacing.md,
   },
   categoryCard: {
-    minHeight: 78,
+    minHeight: 86,
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -553,10 +643,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   categoryIcon: {
-    width: 46,
-    height: 46,
+    width: 42,
+    height: 42,
     borderRadius: radius.md,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
@@ -568,19 +658,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sessionTitle: {
-    color: colors.primary,
+    color: colors.ink,
     fontSize: typography.heading,
     fontWeight: "900",
   },
   sessionMeta: {
     color: colors.muted,
-    fontSize: typography.small,
     fontWeight: "700",
     marginTop: spacing.xs,
   },
   remainingBadge: {
-    minWidth: 70,
-    minHeight: 50,
+    minWidth: 72,
+    minHeight: 72,
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -590,55 +679,49 @@ const styles = StyleSheet.create({
   },
   remainingValue: {
     color: colors.ink,
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "900",
   },
   remainingLabel: {
     color: colors.muted,
-    fontSize: 9,
-    fontWeight: "800",
+    fontSize: typography.small,
+    fontWeight: "700",
   },
   flashcard: {
-    minHeight: 480,
+    minHeight: 360,
     borderRadius: radius.xl,
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: colors.primaryMuted,
-    padding: spacing.xl,
-    justifyContent: "space-between",
+    borderColor: colors.borderStrong,
+    padding: spacing.lg,
     marginTop: spacing.lg,
-    shadowColor: "#000000",
-    shadowOpacity: 0.34,
-    shadowRadius: 26,
-    shadowOffset: {width: 0, height: 12},
+    justifyContent: "space-between",
   },
   flashcardRevealed: {
-    backgroundColor: "#0D3A3B",
+    borderColor: colors.primary,
   },
   cardTop: {
     flexDirection: "row",
     alignItems: "center",
   },
   cardBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
+    width: 52,
+    height: 52,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
   },
   cardState: {
     color: colors.ink,
-    fontSize: typography.small,
     fontWeight: "900",
-    letterSpacing: 0.7,
+    fontSize: typography.body,
   },
   cardStateMeta: {
     color: colors.muted,
-    fontSize: 10,
     fontWeight: "700",
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   cardBody: {
     flex: 1,
@@ -646,16 +729,16 @@ const styles = StyleSheet.create({
   },
   prompt: {
     color: colors.ink,
-    fontSize: 27,
+    fontSize: 24,
     fontWeight: "900",
-    lineHeight: 38,
+    lineHeight: 34,
     textAlign: "center",
   },
   answer: {
     color: colors.primary,
-    fontSize: 27,
+    fontSize: 26,
     fontWeight: "900",
-    lineHeight: 38,
+    lineHeight: 36,
     textAlign: "center",
   },
   feedback: {
@@ -670,10 +753,12 @@ const styles = StyleSheet.create({
   },
   ruleHint: {
     color: colors.muted,
-    fontSize: typography.small,
     fontWeight: "700",
-    lineHeight: 20,
     textAlign: "center",
+    lineHeight: 22,
     marginTop: spacing.md,
+  },
+  pressed: {
+    transform: [{scale: 0.99}],
   },
 });

@@ -23,3 +23,16 @@ def get_game_question(*, session: GameSession, question_id: int) -> GameQuestion
         .select_related("knowledge_source", "source")
         .get(id=question_id)
     )
+
+
+def get_quiz_history_queryset(*, user):
+    return (
+        GameSession.objects
+        .filter(user=user, is_finished=True)
+        .prefetch_related(
+            "answers__question__knowledge_source__topic",
+            "answers__question__knowledge_source__learning_object",
+            "answers__question__source",
+        )
+        .order_by("-finished_at", "-started_at")
+    )

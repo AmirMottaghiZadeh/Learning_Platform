@@ -9,6 +9,9 @@ from .views import (
     GamePauseView,
     GameResumeView,
     MyMistakesView,
+    QuizHistoryView,
+    QuizReminderDetailView,
+    QuizReminderListCreateView,
 )
 
 urlpatterns = [
@@ -20,4 +23,7 @@ urlpatterns = [
     path("games/<int:pk>/resume/", GameResumeView.as_view()),
     path("games/<int:pk>/finish/", GameFinishView.as_view()),
     path("me/mistakes/", MyMistakesView.as_view()),
+    path("me/quiz-history/", QuizHistoryView.as_view()),
+    path("me/quiz-reminders/", QuizReminderListCreateView.as_view()),
+    path("me/quiz-reminders/<int:pk>/", QuizReminderDetailView.as_view()),
 ]

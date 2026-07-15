@@ -12,6 +12,9 @@
   "dependencies": {
     "@expo/metro-runtime": "latest",
     "@react-native-async-storage/async-storage": "latest",
+    "@react-native-community/slider": "^5.2.0",
+    "@tanstack/react-query": "^5.101.2",
+    "axios": "^1.18.1",
     "expo": "latest",
     "lucide-react-native": "latest",
     "react": "latest",
@@ -19,10 +22,11 @@
     "react-native": "latest",
     "react-native-safe-area-context": "latest",
     "react-native-svg": "latest",
-    "react-native-web": "latest"
+    "react-native-web": "latest",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@types/react": "latest",
-    "typescript": "latest"
+    "@types/react": "^19.2.17",
+    "typescript": "^6.0.3"
   }
 }
