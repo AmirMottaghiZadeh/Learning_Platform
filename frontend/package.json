@@ -7,6 +7,8 @@
     "start": "expo start --web --host localhost",
     "web": "expo start --web --host localhost",
     "build:web": "expo export --platform web --clear",
+    "test": "jest",
+    "test:typecheck": "tsc --noEmit --project tsconfig.test.json",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -26,7 +28,11 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "29.5.14",
     "@types/react": "^19.2.17",
+    "jest-expo": "~57.0.2",
+    "react-test-renderer": "^19.2.7",
     "typescript": "^6.0.3"
   }
 }

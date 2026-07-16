@@ -1,4 +1,5 @@
 import axios from "axios";
+import type {AxiosRequestConfig} from "axios";
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
@@ -32,9 +33,23 @@ export const apiClient = axios.create({
   },
 });
 
+type RetryableRequestConfig = AxiosRequestConfig & {
+  retryCount?: number;
+};
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const request = error.config as RetryableRequestConfig | undefined;
+    const retryCount = request?.retryCount ?? 0;
+    if (
+      request?.method?.toLowerCase() === "get" &&
+      error.response?.status === 503 &&
+      retryCount < 1
+    ) {
+      request.retryCount = retryCount + 1;
+      return apiClient.request(request);
+    }
     if (error.response) {
       throw new ApiError(error.response.status, error.response.data ?? {});
     }
