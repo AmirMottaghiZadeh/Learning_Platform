@@ -47,7 +47,10 @@ class FlashcardState(models.Model):
             ),
         ]
         indexes = [
-            models.Index(fields=["user", "box", "review_state"]),
+            models.Index(
+                fields=["user", "box", "review_state"],
+                name="flashcards__user_id_c46a2e_idx",
+            ),
         ]
 
 class FlashcardReview(models.Model):

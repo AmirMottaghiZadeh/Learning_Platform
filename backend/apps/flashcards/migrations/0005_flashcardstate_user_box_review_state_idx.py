@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
             model_name="flashcardstate",
             index=models.Index(
                 fields=["user", "box", "review_state"],
-                name="flashcards__user_id_5be90f_idx",
+                name="flashcards__user_id_c46a2e_idx",
             ),
         ),
     ]
