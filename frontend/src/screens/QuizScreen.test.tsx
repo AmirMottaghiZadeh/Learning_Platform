@@ -18,6 +18,11 @@ jest.mock("../api/platform", () => ({
   },
 }));
 
+jest.mock("../components/ui", () => ({
+  ...jest.requireActual("../components/ui"),
+  CelebrationParticles: () => null,
+}));
+
 jest.mock("../store/auth", () => ({
   useAuth: jest.fn(),
 }));
