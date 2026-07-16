@@ -27,11 +27,22 @@ export const colors = {
   mintSoft: "rgba(82,224,176,0.12)",
   success: "#20F28A",
   danger: "#FF617D",
+  glass: "rgba(8,38,48,0.72)",
+  glassStrong: "rgba(8,38,48,0.9)",
   border: "rgba(255,255,255,0.09)",
   borderStrong: "rgba(255,255,255,0.17)",
   white: "#FFFFFF",
   black: "#001014",
 };
+
+export const featureAccents = {
+  quiz: {color: "#7C83FF", soft: "rgba(124,131,255,0.16)"},
+  flashcards: {color: "#22D7C5", soft: "rgba(34,215,197,0.16)"},
+  leaderboard: {color: "#F4C66A", soft: "rgba(244,198,106,0.16)"},
+  mistakes: {color: "#FF7892", soft: "rgba(255,120,146,0.16)"},
+  profile: {color: "#65D6A4", soft: "rgba(101,214,164,0.16)"},
+  analytics: {color: "#55B8FF", soft: "rgba(85,184,255,0.16)"},
+} as const;
 
 export const spacing = {
   xs: 4,

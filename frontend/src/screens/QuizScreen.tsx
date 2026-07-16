@@ -1,12 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Slider from "@react-native-community/slider";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import React, {useEffect, useMemo, useState} from "react";
-import {Pressable, StyleSheet, Text, View} from "react-native";
-import {Bookmark, CheckCircle2, Clock3, PlayCircle, RefreshCw, Square, TimerReset, Trash2, XCircle} from "lucide-react-native";
+import React, {useEffect, useMemo, useRef, useState} from "react";
+import {Animated, Pressable, StyleSheet, Text, View} from "react-native";
+import {Bookmark, CheckCircle2, Clock3, Flame, PlayCircle, RefreshCw, Sparkles, Square, TimerReset, Trash2, XCircle} from "lucide-react-native";
 
 import {platformApi} from "../api/platform";
 import {
+  CelebrationParticles,
   EmptyState,
   ErrorState,
   LearningCard,
@@ -45,6 +46,36 @@ function formatMode(mode: "random" | "category") {
   return mode === "category" ? "دسته‌بندی‌شده" : "تصادفی";
 }
 
+function StreakFire({streak}: {streak: number}) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    scale.stopAnimation();
+    scale.setValue(1);
+    if (!streak) return;
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, {toValue: 1.18, duration: 520, useNativeDriver: true}),
+        Animated.timing(scale, {toValue: 1, duration: 520, useNativeDriver: true}),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [scale, streak]);
+
+  if (!streak) return null;
+
+  return (
+    <View style={styles.streakBadge}>
+      <Animated.View style={{transform: [{scale}]}}>
+        <Flame size={17} color={colors.amber} fill={colors.amber} />
+      </Animated.View>
+      <Text style={styles.streakText}>{streak} streak</Text>
+    </View>
+  );
+}
+
 export function QuizScreen() {
   const {token, user} = useAuth();
   const queryClient = useQueryClient();
@@ -72,6 +103,7 @@ export function QuizScreen() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showReminderCallout, setShowReminderCallout] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [levelUp, setLevelUp] = useState(false);
 
   const topicsQuery = useQuery({
     queryKey: ["quiz-topics", token],
@@ -133,6 +165,12 @@ export function QuizScreen() {
     return () => clearInterval(interval);
   }, [answer, session?.current_question?.id, session?.status]);
 
+  useEffect(() => {
+    if (!levelUp) return;
+    const timeout = setTimeout(() => setLevelUp(false), 1300);
+    return () => clearTimeout(timeout);
+  }, [levelUp]);
+
   const categories = categoriesQuery.data ?? [];
   const availableTopics = useMemo(
     () => (topicsQuery.data ?? []).filter((topic) => AVAILABLE_QUIZ_TYPES.some((item) => item.key === topic.key)),
@@ -184,10 +222,13 @@ export function QuizScreen() {
     mutationFn: (selected_answer: string) =>
       platformApi.answerQuestion(token!, session!.id, activeQuestion!.id, selected_answer),
     onSuccess: (result, selected_answer) => {
+      const previousLevel = Math.floor((session?.score ?? 0) / 100);
+      const nextLevel = Math.floor((result.game.score ?? 0) / 100);
       setSelectedOption(selected_answer);
       setAnswer(result.answer);
       setAnsweredQuestion(activeQuestion);
       setSession(result.game);
+      setLevelUp(nextLevel > previousLevel);
       setShowReminderCallout(true);
       setFeedbackMessage(
         result.answer.is_correct
@@ -283,6 +324,7 @@ export function QuizScreen() {
     setSelectedOption(null);
     setShowReminderCallout(false);
     setFeedbackMessage("");
+    setLevelUp(false);
     setStep("type");
   }
 
@@ -292,6 +334,7 @@ export function QuizScreen() {
     setSelectedOption(null);
     setShowReminderCallout(false);
     setFeedbackMessage("");
+    setLevelUp(false);
     if (!session?.current_question) {
       setStep("result");
     }
@@ -521,6 +564,7 @@ export function QuizScreen() {
                 <Text style={styles.helperText}>
                   {formatMode(selectedMode)} · {session.correct_count} صحیح · {session.score} امتیاز
                 </Text>
+                <StreakFire streak={session.streak} />
               </View>
               <ProgressRing value={timerPercent} size={86} strokeWidth={8} label={`${remainingSeconds}`} />
             </View>
@@ -540,6 +584,7 @@ export function QuizScreen() {
 
           {displayQuestion ? (
             <LearningCard style={styles.questionCard}>
+              <CelebrationParticles active={Boolean(answer?.is_correct)} />
               {displayQuestion.instruction ? <Text style={styles.instruction}>{displayQuestion.instruction}</Text> : null}
               <Text style={styles.prompt}>{displayQuestion.prompt}</Text>
               {displayQuestion.subtitle ? <Text style={styles.subtitle}>{displayQuestion.subtitle}</Text> : null}
@@ -573,7 +618,13 @@ export function QuizScreen() {
                 })}
               </View>
               {answer ? (
-                <View style={styles.feedbackPanel}>
+                <View style={[styles.feedbackPanel, levelUp && styles.feedbackLevelUp]}>
+                  {levelUp ? (
+                    <View style={styles.levelUpRow}>
+                      <Sparkles size={15} color={colors.primary} />
+                      <Text style={styles.levelUpText}>سطح آزمون بالا رفت!</Text>
+                    </View>
+                  ) : null}
                   <View style={styles.feedbackTop}>
                     {answer.is_correct ? (
                       <CheckCircle2 size={20} color={colors.success} />
@@ -627,13 +678,17 @@ export function QuizScreen() {
       ) : null}
 
       {step === "result" && session ? (
-        <LearningCard tone="mint">
+        <LearningCard tone="mint" style={styles.resultCard}>
+          <CelebrationParticles active />
           <Text style={styles.wizardTitle}>اتمام آزمون</Text>
           <Text style={styles.resultValue}>{resultAccuracy}%</Text>
           <Text style={styles.helperText}>
             {session.correct_count} پاسخ صحیح از {session.total_questions} سؤال
           </Text>
           <Text style={styles.helperText}>امتیاز نهایی: {session.score}</Text>
+          <View style={styles.resultStreak}>
+            <StreakFire streak={session.streak} />
+          </View>
           <View style={styles.actionRow}>
             <PrimaryButton label="آزمون جدید" Icon={PlayCircle} onPress={resetQuizFlow} />
           </View>
@@ -794,12 +849,31 @@ const styles = StyleSheet.create({
     fontSize: typography.heading,
     fontWeight: "900",
   },
+  streakBadge: {
+    alignSelf: "flex-start",
+    minHeight: 30,
+    borderRadius: radius.pill,
+    backgroundColor: colors.amberSoft,
+    borderWidth: 1,
+    borderColor: "rgba(244,198,106,0.38)",
+    paddingHorizontal: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: spacing.sm,
+  },
+  streakText: {
+    color: colors.amber,
+    fontSize: 11,
+    fontWeight: "900",
+    marginLeft: spacing.xs,
+  },
   timerText: {
     color: colors.ink,
     fontWeight: "800",
   },
   questionCard: {
     backgroundColor: colors.surfaceElevated,
+    overflow: "hidden",
   },
   instruction: {
     color: colors.secondary,
@@ -862,6 +936,30 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginTop: spacing.lg,
   },
+  feedbackLevelUp: {
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.38,
+    shadowRadius: 18,
+    shadowOffset: {width: 0, height: 0},
+    elevation: 6,
+  },
+  levelUpRow: {
+    alignSelf: "flex-start",
+    minHeight: 28,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  levelUpText: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: "900",
+    marginLeft: spacing.xs,
+  },
   feedbackTop: {
     flexDirection: "row",
     alignItems: "center",
@@ -898,6 +996,13 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: "900",
     marginLeft: spacing.xs,
+  },
+  resultCard: {
+    overflow: "hidden",
+  },
+  resultStreak: {
+    alignItems: "center",
+    marginTop: spacing.sm,
   },
   resultValue: {
     color: colors.primary,

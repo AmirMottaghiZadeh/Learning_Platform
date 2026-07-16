@@ -1,8 +1,8 @@
 import React, {useEffect, useRef} from "react";
-import {ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
-import type {DimensionValue, ScrollViewProps, ViewProps} from "react-native";
+import {ActivityIndicator, Animated, Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
+import type {ImageStyle, ScrollViewProps, ViewProps} from "react-native";
 import type {LucideIcon} from "lucide-react-native";
-import {AlertCircle, RefreshCw, Sparkles} from "lucide-react-native";
+import {AlertCircle, RefreshCw} from "lucide-react-native";
 import Svg, {Circle} from "react-native-svg";
 
 import {colors, layout, radius, spacing, typography} from "../design/tokens";
@@ -49,12 +49,11 @@ export function ScreenHeader({
 
 export function BrandMark({compact = false}: {compact?: boolean}) {
   return (
-    <View style={styles.brand}>
-      <View style={[styles.brandIcon, compact && styles.brandIconCompact]}>
-        <Sparkles size={compact ? 15 : 18} color={colors.black} strokeWidth={2.8} />
-      </View>
-      {compact ? null : <Text style={styles.brandText}>Pharmexa</Text>}
-    </View>
+    <Image
+      source={require("../../assets/pharmexa-wordmark.png")}
+      resizeMode="contain"
+      style={[styles.brandWordmark, compact && styles.brandWordmarkCompact]}
+    />
   );
 }
 
@@ -73,7 +72,9 @@ export function LearningCard({
   );
 }
 
-export const GlassCard = LearningCard;
+export function GlassCard({children, ...viewProps}: {children: React.ReactNode} & ViewProps) {
+  return <View {...viewProps} style={[styles.glassCard, viewProps.style]}>{children}</View>;
+}
 
 export function AnimatedEntrance({
   children,
@@ -105,6 +106,92 @@ export function AnimatedEntrance({
   }, [delay, opacity, translateY]);
 
   return <Animated.View style={[style, {opacity, transform: [{translateY}]}]}>{children}</Animated.View>;
+}
+
+export function FloatingIllustration({
+  source,
+  size = 120,
+  style,
+}: {
+  source: ImageSourcePropType;
+  size?: number;
+  style?: ImageStyle;
+}) {
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(translateY, {toValue: -8, duration: 2200, useNativeDriver: true}),
+        Animated.timing(translateY, {toValue: 0, duration: 2200, useNativeDriver: true}),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [translateY]);
+
+  return (
+    <Animated.Image
+      source={source}
+      resizeMode="contain"
+      style={[{width: size, height: size, transform: [{translateY}]}, style]}
+    />
+  );
+}
+
+const PARTICLES = [
+  {left: "12%", top: "14%", color: colors.primary, offsetX: -30, offsetY: -38, size: 7},
+  {left: "28%", top: "8%", color: colors.secondary, offsetX: 10, offsetY: -46, size: 5},
+  {left: "47%", top: "18%", color: colors.amber, offsetX: 22, offsetY: -32, size: 8},
+  {left: "66%", top: "9%", color: colors.lavender, offsetX: 30, offsetY: -44, size: 6},
+  {left: "82%", top: "19%", color: colors.mint, offsetX: 40, offsetY: -26, size: 5},
+] as const;
+
+export function CelebrationParticles({active}: {active: boolean}) {
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    progress.stopAnimation();
+    progress.setValue(0);
+    if (!active) return;
+
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 850,
+      useNativeDriver: true,
+    }).start();
+  }, [active, progress]);
+
+  if (!active) return null;
+
+  return (
+    <View pointerEvents="none" style={styles.particleLayer}>
+      {PARTICLES.map((particle, index) => {
+        const translateX = progress.interpolate({inputRange: [0, 1], outputRange: [0, particle.offsetX]});
+        const translateY = progress.interpolate({inputRange: [0, 1], outputRange: [0, particle.offsetY]});
+        const opacity = progress.interpolate({inputRange: [0, 0.15, 1], outputRange: [0, 1, 0]});
+        const scale = progress.interpolate({inputRange: [0, 0.35, 1], outputRange: [0.4, 1, 0.6]});
+        return (
+          <Animated.View
+            key={index}
+            style={[
+              styles.particle,
+              {
+                left: particle.left,
+                top: particle.top,
+                width: particle.size,
+                height: particle.size,
+                borderRadius: particle.size / 2,
+                backgroundColor: particle.color,
+                opacity,
+                transform: [{translateX}, {translateY}, {scale}],
+              },
+            ]}
+          />
+        );
+      })}
+    </View>
+  );
 }
 
 export function MetricPill({
@@ -268,10 +355,26 @@ export function StatTile({
 }
 
 export function ProgressBar({value}: {value: number}) {
-  const width = `${Math.max(0, Math.min(100, value))}%` as DimensionValue;
+  const progress = useRef(new Animated.Value(0)).current;
+  const normalizedValue = Math.max(0, Math.min(100, value));
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: normalizedValue,
+      duration: 760,
+      useNativeDriver: false,
+    }).start();
+  }, [normalizedValue, progress]);
+
+  const width = progress.interpolate({
+    inputRange: [0, 100],
+    outputRange: ["0%", "100%"],
+    extrapolate: "clamp",
+  });
+
   return (
     <View style={styles.progressTrack}>
-      <View style={[styles.progressFill, {width}]} />
+      <Animated.View style={[styles.progressFill, {width}]} />
     </View>
   );
 }
@@ -337,7 +440,7 @@ const baseShadow = {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: "transparent",
   },
   screenContent: {
     width: "100%",
@@ -374,31 +477,13 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     letterSpacing: -0.6,
   },
-  brand: {
-    flexDirection: "row",
-    alignItems: "center",
+  brandWordmark: {
+    width: 142,
+    height: 34,
   },
-  brandIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.primary,
-    shadowOpacity: 0.28,
-    shadowRadius: 12,
-    shadowOffset: {width: 0, height: 4},
-  },
-  brandIconCompact: {
-    width: 30,
-    height: 30,
-  },
-  brandText: {
-    color: colors.ink,
-    fontWeight: "900",
-    fontSize: 17,
-    marginLeft: spacing.sm,
+  brandWordmarkCompact: {
+    width: 112,
+    height: 27,
   },
   card: {
     borderRadius: radius.lg,
@@ -407,6 +492,13 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.lg,
     marginBottom: spacing.md,
+    ...baseShadow,
+  },
+  glassCard: {
+    borderRadius: radius.lg,
+    backgroundColor: colors.glass,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
     ...baseShadow,
   },
   primaryButton: {
@@ -453,7 +545,7 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   pressed: {
-    transform: [{scale: 0.99}],
+    transform: [{scale: 0.97}],
   },
   iconBadge: {
     width: 40,
@@ -494,6 +586,13 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
+  },
+  particleLayer: {
+    ...StyleSheet.absoluteFill,
+    overflow: "hidden",
+  },
+  particle: {
+    position: "absolute",
   },
   stateBox: {
     minHeight: 150,
