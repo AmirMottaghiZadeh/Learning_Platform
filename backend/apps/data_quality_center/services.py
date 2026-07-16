@@ -14,6 +14,7 @@ from django.utils import timezone
 from apps.ai_data_pipeline import constants
 from apps.ai_data_pipeline.analyzers.health_check import run_health_check
 from apps.ai_data_pipeline.models import AIDataBatch, AIDataJob, AIDataReport, AIDataSuggestion, AIDataChangeHistory
+from apps.drugs.learning_sync import regenerate_and_sync_drug_question_sources
 from apps.drugs.models import Drug
 
 
@@ -351,6 +352,7 @@ def update_drug_from_quality_center(*, drug_id, cleaned_data, edited_by):
             return drug, []
 
         drug.save(update_fields=[*(field_name for field_name, _, _ in changes), "updated_at"])
+        regenerate_and_sync_drug_question_sources(drug)
         for field_name, old_value, new_value in changes:
             AIDataChangeHistory.objects.create(
                 table_name=constants.DRUG_TABLE,
@@ -380,6 +382,7 @@ def create_drug_from_quality_center(*, cleaned_data, created_by):
                 for field_name in DRUG_DATABASE_EDITABLE_FIELDS
             },
         )
+        regenerate_and_sync_drug_question_sources(drug)
         AIDataChangeHistory.objects.create(
             table_name=constants.DRUG_TABLE,
             record_id=str(drug.id),

@@ -10,7 +10,7 @@ from apps.flashcards.models import FlashcardState
 from apps.games.models import GameQuestion, Mistake
 from apps.learning.models import KnowledgeSource, LearningObject
 
-from .learning_sync import prompt_for_source, sync_all_drug_question_sources
+from .learning_sync import regenerate_and_sync_drug_question_sources
 from .models import Drug, DrugDatasetDocument, DrugQuestionSource, DrugTopic
 from .services import ensure_topics
 
@@ -555,46 +555,6 @@ def parse_json_source(source):
     raise ValidationError(f"JSON source does not exist: {source}")
 
 
-def question_source_specs(drug):
-    category = getattr(drug, "category", []) or []
-    classification = (
-        drug.drug_classification
-        or (drug.atc_categories[0] if drug.atc_categories else "")
-        or (category[0] if category else "")
-        or (drug.atc_subclasses[0] if drug.atc_subclasses else "")
-    )
-    pregnancy_values = []
-    for value in (drug.pregnancy, drug.breastfeeding):
-        if value and value not in pregnancy_values:
-            pregnancy_values.append(value)
-    pregnancy = "\n\n".join(pregnancy_values)
-    generic_name = drug.generic_name or drug.name or drug.persian_name
-    specs = [
-        ("brandGeneric", drug.generic_name, drug.brand_name, drug.drug_classification),
-        ("timing", drug.consumption_time_sorted, drug.consumption_time, drug.dosage_form),
-        ("indication", drug.indication_answer, drug.indication, drug.drug_classification),
-        ("sideEffects", drug.side_effects_answer, drug.side_effects, drug.drug_classification),
-        ("classification", classification, classification, drug.atc_codes[0] if drug.atc_codes else ""),
-        ("dosageForm", drug.dosage_form, drug.dosage_form, classification),
-        ("dosing", drug.dosing_and_administration, drug.dosing_and_administration, classification),
-        ("pregnancy", pregnancy, pregnancy, classification),
-        ("doseAdjustment", drug.dose_adjustment, drug.dose_adjustment, classification),
-    ]
-    for question_type, answer, feedback, chip in specs:
-        normalized_answer = compact_text(answer) if question_type == "timing" else clean_text(answer)
-        if not normalized_answer or normalized_answer.casefold() in INVALID_VALUES:
-            continue
-        if question_type == "brandGeneric" and not clean_text(drug.brand_name):
-            continue
-        yield {
-            "question_type": question_type,
-            "correct_answer": normalized_answer,
-            "feedback": clean_text(feedback),
-            "chip": clean_text(chip),
-            "subtitle": generic_name,
-        }
-
-
 @transaction.atomic
 def replace_drug_metadata_from_json(source):
     documents, skipped_rows = parse_json_source(source)
@@ -621,19 +581,10 @@ def replace_drug_metadata_from_json(source):
                 **parsed_drug.values,
             )
             result.drugs += 1
-            for spec in question_source_specs(drug):
-                topic = topics[spec["question_type"]]
-                source = DrugQuestionSource.objects.create(
-                    topic=topic,
-                    drug=drug,
-                    prompt="",
-                    **spec,
-                )
-                source.prompt = prompt_for_source(source)
-                source.save(update_fields=["prompt"])
-                result.question_sources += 1
-
-    sync_all_drug_question_sources()
+            result.question_sources += regenerate_and_sync_drug_question_sources(
+                drug,
+                topics=topics,
+            ).question_sources
     KnowledgeSource.objects.filter(
         product_id="pharmexa",
         is_active=False,

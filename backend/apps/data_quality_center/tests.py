@@ -5,7 +5,8 @@ from django.urls import reverse
 from apps.ai_data_pipeline import constants
 from apps.ai_data_pipeline.models import AIDataBatch, AIDataChangeHistory, AIDataJob, AIDataReport, AIDataSuggestion
 from apps.data_quality_center.forms import DrugDatabaseCreateForm, DrugDatabaseEditForm, DrugDatabaseFilterForm
-from apps.drugs.models import Drug
+from apps.drugs.models import Drug, DrugQuestionSource
+from apps.learning.models import KnowledgeSource
 
 
 class DataQualityCenterTests(TestCase):
@@ -109,6 +110,30 @@ class DataQualityCenterTests(TestCase):
         self.drug.refresh_from_db()
         self.assertEqual(self.drug.brand_name, "Glucophage XR")
         self.assertEqual(self.drug.indication, "Type 2 diabetes")
+        question_source = DrugQuestionSource.objects.get(
+            drug=self.drug,
+            question_type="brandGeneric",
+        )
+        self.assertEqual(question_source.correct_answer, "متفورمین")
+        self.assertEqual(
+            question_source.prompt,
+            "نام ژنریک داروی تجاری Glucophage XR کدام است؟",
+        )
+        self.assertSetEqual(
+            set(
+                KnowledgeSource.objects.filter(
+                    product_id="pharmexa",
+                    learning_object__external_id=self.drug.external_id,
+                    source_type="brandGeneric",
+                    correct_answer="متفورمین",
+                    is_active=True,
+                ).values_list("prompt", flat=True)
+            ),
+            {
+                "نام ژنریک داروی تجاری Glucophage کدام است؟",
+                "نام ژنریک داروی تجاری XR کدام است؟",
+            },
+        )
         history = AIDataChangeHistory.objects.filter(
             table_name=constants.DRUG_TABLE,
             record_id=str(self.drug.id),
@@ -136,6 +161,23 @@ class DataQualityCenterTests(TestCase):
         self.assertNotEqual(drug.external_id, payload["external_id"])
         self.assertTrue(drug.external_id.startswith("drug-"))
         self.assertIsNotNone(drug.id)
+        self.assertTrue(
+            DrugQuestionSource.objects.filter(
+                drug=drug,
+                question_type="brandGeneric",
+                correct_answer="New Test Drug",
+                is_active=True,
+            ).exists()
+        )
+        self.assertTrue(
+            KnowledgeSource.objects.filter(
+                product_id="pharmexa",
+                learning_object__external_id=drug.external_id,
+                source_type="brandGeneric",
+                correct_answer="New Test Drug",
+                is_active=True,
+            ).exists()
+        )
         history = AIDataChangeHistory.objects.get(
             table_name=constants.DRUG_TABLE,
             record_id=str(drug.id),

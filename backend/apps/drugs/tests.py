@@ -1,4 +1,5 @@
 import json
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -8,6 +9,8 @@ from django.test import TestCase
 from apps.drugs.learning_adapter import PharmexaLearningAdapter
 from apps.drugs.learning_sync import (
     drug_question_source_external_id,
+    regenerate_and_sync_drug_question_sources,
+    sync_all_drug_question_sources,
     sync_drug_question_source,
     sync_drug_question_sources,
 )
@@ -268,6 +271,80 @@ class PharmexaLearningAdapterTests(TestCase):
                 if source.metadata.get("brand_name_variant")
             },
             {"گلوکوفاژ", "دیابزید"},
+        )
+
+    def test_regenerate_and_sync_for_one_drug_replaces_stale_question_data(self):
+        drug = Drug.objects.create(
+            external_id="drug-targeted-sync",
+            generic_name="Metformin",
+            brand_name="Glucophage",
+            consumption_time_sorted="با غذا",
+            source_topic="endo",
+        )
+
+        result = regenerate_and_sync_drug_question_sources(drug)
+
+        self.assertEqual(result.question_sources, 2)
+        self.assertEqual(result.knowledge_sources, 2)
+        timing_source = DrugQuestionSource.objects.get(
+            drug=drug,
+            question_type="timing",
+        )
+        timing_knowledge_source = KnowledgeSource.objects.get(
+            product_id="pharmexa",
+            external_id=drug_question_source_external_id(timing_source),
+        )
+        self.assertEqual(timing_knowledge_source.correct_answer, "با غذا")
+
+        drug.consumption_time_sorted = "بدون غذا"
+        drug.save(update_fields=["consumption_time_sorted"])
+        regenerate_and_sync_drug_question_sources(drug)
+
+        timing_source.refresh_from_db()
+        timing_knowledge_source.refresh_from_db()
+        self.assertEqual(timing_source.correct_answer, "بدون غذا")
+        self.assertEqual(timing_knowledge_source.correct_answer, "بدون غذا")
+
+    def test_incremental_sync_skips_current_sources_and_reports_progress(self):
+        topic = DrugTopic.objects.create(key="timing", label="Timing")
+        drug = Drug.objects.create(
+            external_id="drug-incremental-sync",
+            generic_name="Metformin",
+            consumption_time_sorted="با غذا",
+        )
+        source = DrugQuestionSource.objects.create(
+            topic=topic,
+            drug=drug,
+            question_type="timing",
+            prompt="Legacy prompt",
+            correct_answer="با غذا",
+        )
+
+        first_result = sync_all_drug_question_sources()
+        second_result = sync_all_drug_question_sources()
+
+        self.assertEqual(first_result.processed_sources, 1)
+        self.assertEqual(first_result.updated_sources, 1)
+        self.assertEqual(second_result.processed_sources, 1)
+        self.assertEqual(second_result.updated_sources, 0)
+
+        stdout = StringIO()
+        call_command(
+            "sync_learning_sources",
+            "--progress-every",
+            "1",
+            stdout=stdout,
+        )
+        output = stdout.getvalue()
+        self.assertIn("Progress: 1/1 question sources checked; 0 updated.", output)
+        self.assertIn("Learning-source sync complete:", output)
+        self.assertEqual(
+            KnowledgeSource.objects.filter(
+                product_id="pharmexa",
+                external_id=drug_question_source_external_id(source),
+                is_active=True,
+            ).count(),
+            1,
         )
 
     def test_export_drug_audit_command_writes_visible_report_files(self):
