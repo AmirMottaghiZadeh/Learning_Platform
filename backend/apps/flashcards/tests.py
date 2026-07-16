@@ -389,6 +389,47 @@ class FlashcardPersistenceAlignmentTests(TestCase):
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["box"], 3)
 
+    def test_flashcard_api_returns_requested_batch_size(self):
+        user = User.objects.create_user(username="batch-learner")
+        topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")
+        learning_object = LearningObject.objects.create(
+            product_id="pharmexa",
+            external_id="batch-drug",
+            display_name="Batch Drug",
+            topic=topic,
+        )
+        for index in range(25):
+            source = KnowledgeSource.objects.create(
+                product_id="pharmexa",
+                external_id=f"batch-source-{index}",
+                learning_object=learning_object,
+                topic=topic,
+                source_type="timing",
+                prompt=f"Batch prompt {index}",
+                correct_answer=f"Batch answer {index}",
+            )
+            FlashcardState.objects.create(
+                user=user,
+                knowledge_source=source,
+                box=0,
+                review_state=FlashcardState.REVIEW_STATE_NEW,
+            )
+
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        first_batch = client.get("/api/v1/flashcards/?product_id=pharmexa&mode=new&page_size=20")
+        self.assertEqual(first_batch.status_code, 200)
+        self.assertEqual(first_batch.data["count"], 25)
+        self.assertEqual(len(first_batch.data["results"]), 20)
+        last_first_batch_id = first_batch.data["results"][-1]["id"]
+        second_batch = client.get(
+            f"/api/v1/flashcards/?product_id=pharmexa&mode=new&page_size=20&after_id={last_first_batch_id}"
+        )
+        self.assertEqual(second_batch.status_code, 200)
+        self.assertEqual(len(second_batch.data["results"]), 5)
+        self.assertGreater(second_batch.data["results"][0]["id"], last_first_batch_id)
+
     def test_flashcard_deck_summary_reports_full_selected_deck(self):
         user = User.objects.create_user(username="learner")
         topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")

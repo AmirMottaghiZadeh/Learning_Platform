@@ -1,302 +1,209 @@
 # Learning Platform / Pharmexa
 
-Reusable learning-platform architecture with a Django REST backend, a Pharmexa reference implementation, an Expo + React Native Web client, and an internal data-quality workflow for safe medical/drug data improvement.
+Pharmexa is a drug-knowledge learning product built on a reusable learning-platform architecture. It combines a Django REST backend, an Expo + React Native Web client, structured drug metadata, quiz and flashcard learning flows, and an internal Data Quality Center for controlled data maintenance.
 
-Pharmexa is not designed as a one-off quiz app. It is the first implementation of a broader Learning Platform: a backend-owned learning system where products can plug into shared learning objects, question sources, game rules, review logic, progress tracking, league mechanics, and operational tooling.
+> Medical safety: this is educational software, not clinical decision support. Drug data and generated learning content must be reviewed by qualified people before production use.
 
-## Languages
+## زبان‌ها
 
-- [English](#learning-platform--pharmexa)
-- [فارسی](#نسخه-فارسی)
+- [English](#overview)
+- [فارسی](#راهنمای-فارسی)
 
-## Table Of Contents
+## Overview
 
-- [Purpose](#purpose)
-- [Problem](#problem)
-- [Solution](#solution)
-- [Product Scope](#product-scope)
-- [Architecture](#architecture)
-- [Repository Layout](#repository-layout)
-- [Backend](#backend)
-- [Frontend](#frontend)
-- [Data Quality Center](#data-quality-center)
-- [AI Data Pipeline](#ai-data-pipeline)
-- [Local Development](#local-development)
-- [Production And Deployment](#production-and-deployment)
-- [Testing And Quality Gates](#testing-and-quality-gates)
-- [Security And Safety](#security-and-safety)
-- [MVP Status](#mvp-status)
-- [Roadmap](#roadmap)
+The project keeps learning rules and sensitive data changes in the backend:
 
-## Purpose
+- The backend owns answer correctness, scoring, review scheduling, progress, and league calculations.
+- The frontend presents the learning experience and sends user actions to the API.
+- Drug metadata is the source for quiz and flashcard learning sources.
+- Data Quality Center changes are controlled, audited, and immediately reflected in the learning data for the changed drug.
 
-The project exists to build a professional learning platform that can support multiple domain-specific learning products. Pharmexa is the current reference implementation focused on drug knowledge training.
+## Product capabilities
 
-The platform separates reusable learning infrastructure from product-specific content:
+Pharmexa currently includes:
 
-- The platform owns authentication, learning objects, knowledge sources, progress, review scheduling, game/session lifecycle, statistics, league primitives, API contracts, operations, and data governance.
-- Pharmexa owns drug-specific datasets, drug categories, question types, prompt generation, and the user-facing learning experience.
+- Token-based authentication.
+- Dashboard, progress, streak, weak-topic, statistics, profile, mistakes, and league views.
+- Drug quizzes with random and category-based sessions.
+- Flashcards with Leitner review.
+- Learning for brand/generic names, indications, food or timing information, side effects, and drug categories.
+- An internal Data Quality Center for reviewing suggestions and managing the drug database.
 
-This separation keeps the project extensible. A future implementation should be able to reuse the platform without copying Pharmexa-specific assumptions.
-
-## Problem
-
-Drug learning is usually fragmented across static lists, flashcard tools, quiz banks, and manually maintained spreadsheets. These approaches create several problems:
-
-- Learning data is duplicated and hard to audit.
-- Quiz logic often lives in the frontend, making correctness difficult to control.
-- Flashcards are disconnected from structured learning objectives.
-- User progress, mistakes, weak topics, and review scheduling are not unified.
-- Medical/drug data quality improvements are risky when edits are made directly in production records.
-- Small MVPs often lack operational maturity: health checks, backups, deploy checks, schema validation, and safe release paths.
-
-This project addresses those issues by treating learning as a platform problem, not only a UI problem.
-
-## Solution
-
-The platform provides a backend-first learning system with:
-
-- Structured learning objects and knowledge sources.
-- Drug-specific Pharmexa data adapters.
-- Quiz generation and game sessions controlled by backend rules.
-- Flashcards built from the same knowledge-source layer.
-- Leitner review logic for independent flashcard learning.
-- League, statistics, mistakes, weak-topic, and dashboard APIs.
-- Mobile-first Expo + React Native Web frontend.
-- Data Quality Center for internal review of rule-based or future AI suggestions.
-- Production operations foundation with Docker, health checks, CI, backups, and deployment workflows.
-
-The frontend is intentionally a consumer of backend state. It renders the learning experience, but it does not own scoring, correctness, review scheduling, league ranking, or data mutation rules.
-
-## Product Scope
-
-Current Pharmexa learning dimensions:
-
-- Brand/generic name learning.
-- Food/timing learning.
-- Indication learning.
-- Side-effect learning.
-- Drug category based study flows.
-- Random and category-based quiz/game sessions.
-- Leitner flashcard boxes.
-- Mistake review.
-- Dashboard, streak, progress, weak-topic, statistics, and league views.
-
-The UI direction is a calm clinical learning dashboard: mobile-first, card-based, educational, soft clinical colors, clear progress indicators, and low visual noise.
+The quiz does not reveal the answer under a question before the user answers. Flashcards show the main answer without the former secondary feedback text.
 
 ## Architecture
 
 ```text
-                    +-----------------------------+
-                    | Expo + React Native Web     |
-                    | Mobile-first Pharmexa client  |
-                    +--------------+--------------+
-                                   |
-                                   | REST / Token Auth
-                                   |
-+----------------------------------v----------------------------------+
-|                         Django REST Backend                         |
-|                                                                     |
-|  accounts        auth, tokens, current user                         |
-|  core            health, errors, pagination, schema, logging        |
-|  learning        learning objects, progress, dashboard, stats       |
-|  drugs           Pharmexa drug data, categories, source sync          |
-|  quizzes         selectors and question generation                  |
-|  games           sessions, answers, scoring, timer, lifecycle       |
-|  flashcards      Leitner states, review, deck summaries             |
-|  league          rankings, seasons, leaderboard summaries           |
-|  ai_data_pipeline safe batch-based data suggestions and apply flow   |
-|  data_quality_center internal review UI                             |
-|                                                                     |
-+----------------------------------+----------------------------------+
-                                   |
-                                   | ORM / migrations
-                                   |
-                    +--------------v--------------+
-                    | PostgreSQL local and        |
-                    | production-like deployment  |
-                    +-----------------------------+
+Expo + React Native Web
+          |
+          | REST API / token authentication
+          v
+Django REST backend
+  ├── accounts              authentication and current user
+  ├── learning              learning objects, progress, dashboard, statistics
+  ├── drugs                 drug metadata and learning-source synchronization
+  ├── quizzes / games       question selection, sessions, answers, scoring
+  ├── flashcards            Leitner review and card state
+  ├── league                rankings and leaderboard data
+  ├── ai_data_pipeline      safe, reviewable rule-based suggestions
+  └── data_quality_center   internal data-management interface
+          |
+          v
+PostgreSQL
 ```
 
-### Platform Principles
-
-- Backend owns learning correctness.
-- Frontend renders state and submits user intent.
-- Product implementations adapt domain data into platform contracts.
-- Medical/drug data changes must be reviewable, auditable, and reversible.
-- Every production path should be observable, deployable, and recoverable.
-- No AI or rule provider directly modifies production data.
-
-## Repository Layout
+## Repository layout
 
 ```text
 .
-├── backend/
-│   ├── apps/
-│   │   ├── accounts/
-│   │   ├── ai_data_pipeline/
-│   │   ├── core/
-│   │   ├── data_quality_center/
-│   │   ├── drugs/
-│   │   ├── flashcards/
-│   │   ├── games/
-│   │   ├── league/
-│   │   ├── learning/
-│   │   └── quizzes/
-│   ├── config/
-│   ├── data/
-│   ├── Dockerfile
-│   ├── build.sh
-│   ├── gunicorn.conf.py
-│   ├── render.yaml
+├── backend/                         Django project
+│   ├── apps/                        domain applications
+│   ├── config/                      Django settings and URLs
+│   ├── data/                        import fixtures and source data
+│   ├── manage.py
 │   └── requirements.txt
-├── frontend/
+├── frontend/                        Expo / React Native Web application
 │   ├── src/
-│   │   ├── api/
-│   │   ├── components/
-│   │   ├── design/
-│   │   ├── navigation/
-│   │   ├── screens/
-│   │   ├── store/
-│   │   └── types/
+│   │   ├── api/ components/ design/ screens/ store/ types/
 │   ├── App.tsx
-│   ├── app.config.js
-│   ├── app.json
-│   ├── Dockerfile
 │   └── package.json
-├── docs/
-│   ├── GITHUB_PRIVATE_SETUP.md
-│   └── OPERATIONS_RUNBOOK.md
-├── Learning_Platform_Architecture_Engineering_Book_Final/
+├── docs/                            operational documentation
 ├── docker-compose.yml
 └── README.md
 ```
 
-## Backend
+## Services and important URLs
 
-Technology:
+When the backend is running locally:
 
-- Python 3.11
-- Django 5
-- Django REST Framework
-- Token Authentication
-- drf-spectacular OpenAPI
-- PostgreSQL for local and production-like deployment
-- Gunicorn and WhiteNoise for production serving
+- Health: `GET /api/v1/health/`
+- Liveness: `GET /api/v1/live/`
+- Readiness: `GET /api/v1/ready/`
+- OpenAPI schema: `GET /api/v1/schema/`
+- API documentation: `/api/v1/docs/`
+- Django admin: `/admin/`
+- Data Quality Center: `/data-quality/`
 
-Important local URLs:
-
-- `GET /api/v1/health/`
-- `GET /api/v1/live/`
-- `GET /api/v1/ready/`
-- `GET /api/v1/schema/`
-- `GET /api/v1/docs/`
-- `/admin/`
-- `/data-quality/`
-
-API modules under `/api/v1/`:
-
-- `auth/`
-- `topics/`
-- `target-categories/`
-- `drugs/`
-- `me/dashboard/`
-- `me/progress/`
-- `me/statistics/`
-- `me/weak-topics/`
-- `games/`
-- `flashcards/`
-- `league/`
-
-## Frontend
-
-Technology:
-
-- Expo
-- React Native Web
-- TypeScript
-- lucide-react-native icons
-- Mobile-first layout
-- Clinical calm dashboard theme
-
-Production frontend:
+Current deployed endpoints:
 
 ```text
-https://AmirMottaghiZadeh.github.io/Learning_Platform/
+Frontend: https://AmirMottaghiZadeh.github.io/Learning_Platform/
+API:      https://amirmtz.runflare.run/api/v1
 ```
 
-Production API base:
-
-```text
-https://amirmtz.runflare.run/api/v1
-```
-
-The GitHub Pages build uses:
+The GitHub Pages deployment is configured with:
 
 ```text
 EXPO_BASE_URL=/Learning_Platform
 EXPO_PUBLIC_API_BASE_URL=https://amirmtz.runflare.run/api/v1
 ```
 
-Local development still uses the local API by default:
+For local frontend development, use:
 
 ```text
-http://127.0.0.1:8000/api/v1
+EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api/v1
 ```
 
 ## Data Quality Center
 
-The Data Quality Center is an internal web application for reviewing and validating data-quality suggestions.
+Data Quality Center is an internal, staff-only web application at `/data-quality/`. It is the normal operational interface for controlled drug-data maintenance; Django Admin remains available for developer administration.
 
-URL:
+### Drug database
+
+The Database area contains:
+
+- `Search`
+- `Search in`
+- Sort controls
+- Key records navigation
+- Clear filters
+
+An administrator can search drug metadata by supported fields such as brand name, generic name, indication, side effects, and other drug attributes; open a matching record; edit its permitted fields; and confirm the change.
+
+Routes:
 
 ```text
-/data-quality/
+/data-quality/database/           search and filter drug records
+/data-quality/database/new/       create a drug record
+/data-quality/database/<id>/      edit a drug record
 ```
 
-It provides:
+Every create or edit action is recorded in `AIDataChangeHistory`.
 
-- Dashboard with health score and issue counts.
-- Batch center.
-- Job center.
-- Suggestion review center.
-- Side-by-side diff review.
-- Record inspector.
-- Health center.
-- Report pages and downloads.
+### Adding a drug
 
-The Data Quality Center is the primary daily interface for reviewing data improvements. Django Admin remains available for developer inspection, but direct admin CRUD is not the preferred operational workflow.
+The **Add Drug** workflow accepts the same drug attributes used by the database. The administrator does not enter a database ID or external identifier:
+
+- The database assigns the primary-key ID.
+- The server assigns a unique `external_id` in the form `drug-<uuid>`.
+
+This prevents accidental identifier collisions.
+
+### Automatic learning-source synchronization
+
+Creating or editing a drug through Data Quality Center automatically regenerates and synchronizes that drug’s quiz and flashcard learning sources. Once the deployed version includes this behavior, no manual synchronization command is required for normal Data Quality Center edits.
+
+## Drug imports and learning-source commands
+
+Run commands from `backend/` after activating the virtual environment.
+
+### Import a JSON or backup dataset
+
+```bash
+python manage.py import_drug_json <directory-or-fixture.json>
+```
+
+Validate an import without changing the database:
+
+```bash
+python manage.py import_drug_json <directory-or-fixture.json> --validate-only
+```
+
+The JSON importer replaces Pharmexa drug metadata atomically and regenerates/synchronizes learning sources for imported drugs.
+
+### Import legacy JavaScript source files
+
+This importer requires both arguments:
+
+```bash
+python manage.py import_drugs --drugs-js <path> --topics-js <path>
+```
+
+Do not run bare `python manage.py import_drugs`; it has no default source files.
+
+### Repair or inspect existing learning sources
+
+For normal maintenance, the default command incrementally checks existing sources and updates only records that differ:
+
+```bash
+python manage.py sync_learning_sources
+```
+
+Synchronize one drug only:
+
+```bash
+python manage.py sync_learning_sources --drug-id 123
+```
+
+Rebuild all drugs only for an explicit recovery, major import, or repair operation:
+
+```bash
+python manage.py sync_learning_sources --all --progress-every 100
+```
+
+`--all` can take a significant amount of time on a populated database and is not a normal post-edit or routine deployment step.
 
 ## AI Data Pipeline
 
-The AI Data Pipeline is currently local and rule-based. It does not call OpenAI, Ollama, or any external AI provider.
+The current AI Data Pipeline is local and rule-based; it does not call an external OpenAI, Ollama, or other AI service.
 
-Safety model:
+Safe workflow:
 
-1. Scan the database.
-2. Generate pending suggestions.
-3. Review suggestions manually.
-4. Approve, reject, or edit suggestions.
-5. Apply only approved suggestions through the safe apply command.
-6. Create backup before applying.
-7. Write all applied changes to audit history.
-
-Provider structure:
-
-- `rules`: deterministic local provider, active today.
-- `mock`: test provider.
-- `openai`: placeholder, disabled.
-- `ollama`: placeholder, disabled.
-- `manual`: manual source marker.
-
-Core tables:
-
-- `ai_data_batches`
-- `ai_data_jobs`
-- `ai_data_suggestions`
-- `ai_data_change_history`
-- `ai_data_reports`
-- `ai_data_translations`
+1. Scan records and create pending suggestions.
+2. Review suggestions in Data Quality Center.
+3. Approve, reject, or edit suggestions.
+4. Apply only approved suggestions.
+5. Keep audit history and create a backup before applying.
 
 Useful commands:
 
@@ -305,17 +212,24 @@ cd backend
 python manage.py ai_health_check
 python manage.py ai_generate_suggestions --provider rules --limit 500 --include-normalization --include-terminology --include-duplicates --include-medical-validation --batch-name "Initial local cleanup review"
 python manage.py ai_generate_report --batch-id 1
-```
-
-Apply approved suggestions only after manual review:
-
-```bash
 python manage.py ai_apply_approved --batch-id 1 --applied-by amir
 ```
 
-## Local Development
+No rule or AI provider directly changes production data without review and approval.
 
-### Backend Setup
+## Local development
+
+### Full stack with Docker
+
+```bash
+docker compose up --build
+```
+
+- Backend: `http://127.0.0.1:8000`
+- Frontend: `http://127.0.0.1:8081`
+- PostgreSQL: internal Docker network
+
+### Backend
 
 ```bash
 cd backend
@@ -325,13 +239,15 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 cp .env.example .env
 python manage.py migrate
-python manage.py import_drugs
-python manage.py sync_learning_sources
 python manage.py createsuperuser
 python manage.py runserver 127.0.0.1:8000
 ```
 
-### Frontend Setup
+`createsuperuser` interactively asks for a username, email when configured, and password. The resulting superuser can access `/admin/` and the staff-only Data Quality Center.
+
+Import drug data only when a valid import source is available. For routine local startup, importing or rebuilding learning sources is not required if the database already contains them.
+
+### Frontend
 
 ```bash
 cd frontend
@@ -340,53 +256,15 @@ cp .env.example .env
 npm run web -- --port 8081
 ```
 
-The frontend expects:
+Set the local API base URL in `frontend/.env`:
 
 ```text
 EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api/v1
 ```
 
-### Docker Production-Like Stack
+## Testing and quality gates
 
-```bash
-docker compose up --build
-```
-
-Services:
-
-- Backend: `http://127.0.0.1:8000`
-- Frontend: `http://127.0.0.1:8081`
-- PostgreSQL: internal Docker network
-
-## Production And Deployment
-
-Backend production support:
-
-- `backend/config/settings/production.py`
-- `backend/render.yaml`
-- `backend/Dockerfile`
-- `backend/gunicorn.conf.py`
-- structured JSON logging
-- request IDs through `X-Request-ID`
-- health, liveness, and readiness endpoints
-- backup command
-
-Frontend production support:
-
-- GitHub Pages workflow in `.github/workflows/frontend-pages.yml`
-- Expo static web export
-- GitHub Pages base path `/Learning_Platform`
-- client-side fallback through `404.html`
-- `.nojekyll` artifact marker
-
-Operational docs:
-
-- `docs/OPERATIONS_RUNBOOK.md`
-- `docs/GITHUB_PRIVATE_SETUP.md`
-
-## Testing And Quality Gates
-
-Backend:
+### Backend
 
 ```bash
 cd backend
@@ -397,435 +275,164 @@ python manage.py backup_database --dry-run
 python manage.py test
 ```
 
-Frontend:
+### Frontend
 
 ```bash
 cd frontend
+npm run test:typecheck
+npm test -- --ci --coverage
 npm run typecheck
 npm run build:web
 ```
 
-CI runs on push to `main` and pull requests:
+GitHub Actions runs these backend and frontend checks on pull requests and pushes to `main`. The frontend GitHub Pages deployment also runs on pushes to `main`.
 
-- Backend install.
-- Django check.
-- Django deploy check.
-- Migration drift check.
-- Backup dry-run.
-- Backend test suite.
-- Frontend typecheck.
-- Frontend web build.
+## Production notes
 
-GitHub Pages deployment runs on push to `main`.
+Backend production support includes Docker, Gunicorn, WhiteNoise, structured logging, request IDs, health endpoints, backup tooling, and production settings in `backend/config/settings/production.py`.
 
-## Security And Safety
+Before production deployment:
 
-Do not commit secrets or generated runtime data.
-
-Ignored examples:
-
-- `backend/.env`
-- `backend/.venv/`
-- `backend/backups/`
-- `backend/exports/`
-- `backend/staticfiles/`
-- `frontend/node_modules/`
-- `frontend/dist/`
-- `frontend/.expo/`
-
-Production expectations:
-
-- Use a strong `SECRET_KEY`.
-- Use PostgreSQL through `DATABASE_URL`.
+- Set a strong `SECRET_KEY`.
+- Configure `DATABASE_URL`.
 - Configure `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, and `CORS_ALLOWED_ORIGINS`.
-- Use HTTPS for browser-facing API calls.
-- Run migrations through controlled deployment.
-- Create backups before data-quality apply operations.
-- Never apply AI/rule suggestions without approval.
+- Use HTTPS for browser-facing API traffic.
+- Run migrations through the deployment process.
+- Back up data before bulk data-apply operations.
 
-Medical safety note:
+Do not commit secrets, local databases, backups, virtual environments, `node_modules`, Expo runtime files, or generated frontend output.
 
-This project is an educational software system. Drug data and generated learning content must be reviewed by qualified humans before production use. The application should not be treated as clinical decision support.
+## Related documentation
 
-## MVP Status
-
-Completed or substantially implemented:
-
-- Project architecture and Django app boundaries.
-- Authentication.
-- Drug database import and learning-source sync.
-- Quiz and question generation.
-- Game/session lifecycle.
-- Timer, scoring, streak, mistakes, pause/resume.
-- Flashcards with Leitner logic.
-- League, statistics, dashboard, weak topics.
-- Expo + React Native Web frontend.
-- Data Quality Center.
-- AI data pipeline with local rules provider.
-- Production operations foundation.
-- GitHub Pages frontend deployment.
-
-Still evolving:
-
-- Full external AI provider integration.
-- Richer Data Quality Center charts and reviewer collaboration.
-- Production monitoring and error tracking integration.
-- Deeper medical validation rules.
-- Native mobile packaging.
-- Expanded test coverage for UI workflows.
-
-## Roadmap
-
-Near-term:
-
-- Validate production GitHub Pages frontend against Runflare backend.
-- Review CORS and HTTPS configuration in production backend.
-- Continue data-quality cleanup through review batches.
-- Improve frontend polish based on real user testing.
-
-Mid-term:
-
-- Add monitored background jobs when async workloads become necessary.
-- Add provider-backed AI suggestions after safety review.
-- Add richer analytics and learning recommendations.
-- Improve report export formats.
-
-Long-term:
-
-- Add additional learning-product implementations on top of the platform.
-- Formalize product plugin contracts.
-- Support multi-product or multi-tenant deployment if needed.
-
-## Related Documentation
-
-- `Learning_Platform_Architecture_Engineering_Book_Final/`
-- `frontend/README.md`
-- `backend/apps/ai_data_pipeline/README.md`
-- `backend/apps/data_quality_center/README.md`
 - `docs/OPERATIONS_RUNBOOK.md`
 - `docs/GITHUB_PRIVATE_SETUP.md`
-
-## Maintainer Notes
-
-This repository is prepared for private GitHub hosting. Keep generated data, backups, local databases, virtual environments, and frontend build output out of version control.
-
-Use the architecture book as the source of product and engineering direction. Code changes should preserve the platform/implementation boundary: Pharmexa is an implementation; the learning platform is the reusable system.
+- `backend/apps/ai_data_pipeline/README.md`
+- `backend/apps/data_quality_center/README.md`
+- `Learning_Platform_Architecture_Engineering_Book_Final/`
 
 ---
 
-# نسخه فارسی
+# راهنمای فارسی
 
-این مخزن یک سکوی یادگیریِ قابل استفاده دوباره است که شامل پشتیبان مبتنی بر Django REST، پیاده‌سازی مرجع Pharmexa، رابط کاربری مبتنی بر Expo و React Native Web، و مسیر داخلی کنترل کیفیت داده‌های دارویی و پزشکی است.
+Pharmexa یک محصول آموزشی برای یادگیری اطلاعات دارویی است که روی یک سکوی یادگیری قابل استفاده مجدد ساخته شده است. پشتیبان Django REST مسئول منطق یادگیری و داده‌ها است و رابط Expo/React Native Web تجربه کاربری را نمایش می‌دهد.
 
-Pharmexa فقط یک برنامه ساده آزمون نیست. این پروژه نخستین پیاده‌سازی از یک سکوی یادگیری بزرگ‌تر است؛ یعنی سامانه‌ای که منطق اصلی یادگیری در پشتیبان قرار دارد و پیاده‌سازی‌های مختلف می‌توانند از شیءهای یادگیری، منابع پرسش، قوانین بازی، مرور، آمار، لیگ و ابزارهای عملیاتی مشترک استفاده کنند.
+> نکته ایمنی پزشکی: این پروژه ابزار آموزشی است، نه سامانه پشتیبان تصمیم‌گیری بالینی. داده‌های دارویی و محتوای آموزشی باید پیش از استفاده عملی توسط فرد متخصص بازبینی شوند.
 
-## فهرست فارسی
+## قابلیت‌های فعلی
 
-- [هدف](#هدف)
-- [مسئله](#مسئله)
-- [راه حل](#راه-حل)
-- [محدوده محصول](#محدوده-محصول)
-- [معماری](#معماری)
-- [ساختار مخزن](#ساختار-مخزن)
-- [پشتیبان](#پشتیبان)
-- [رابط کاربری](#رابط-کاربری)
-- [مرکز کنترل کیفیت داده](#مرکز-کنترل-کیفیت-داده)
-- [مسیر داده هوشمند](#مسیر-داده-هوشمند)
-- [اجرای محلی](#اجرای-محلی)
-- [تولید و استقرار](#تولید-و-استقرار)
-- [آزمون و کنترل کیفیت](#آزمون-و-کنترل-کیفیت)
-- [امنیت و ایمنی](#امنیت-و-ایمنی)
-- [وضعیت نسخه اولیه](#وضعیت-نسخه-اولیه)
-- [نقشه راه](#نقشه-راه)
+- ورود با توکن، پیشخوان، پیشرفت، زنجیره یادگیری، آمار، اشتباهات، موضوع‌های ضعیف، پروفایل و لیگ.
+- آزمون‌های دارویی تصادفی و مبتنی بر دسته‌بندی.
+- فلش‌کارت با مرور Leitner.
+- آموزش نام تجاری/ژنریک، اندیکاسیون، مصرف با غذا یا زمان مصرف، عوارض و دسته‌بندی دارویی.
+- مرکز داخلی کنترل کیفیت داده برای مدیریت امن داده‌های دارویی.
 
-## هدف
-
-هدف پروژه ساخت یک سکوی یادگیری حرفه‌ای است که بتواند چند محصول آموزشی تخصصی را پشتیبانی کند. در وضعیت فعلی، Pharmexa پیاده‌سازی مرجع این سکو برای آموزش دانش دارویی است.
-
-پروژه بین زیرساخت قابل استفاده دوباره و منطق اختصاصی محصول مرز مشخص ایجاد می‌کند:
-
-- سکو مسئول احراز هویت، شیءهای یادگیری، منابع دانش، پیشرفت، زمان‌بندی مرور، چرخه عمر بازی و نشست، آمار، لیگ، قراردادهای رابط برنامه‌نویسی، عملیات تولید و حاکمیت داده است.
-- Pharmexa مسئول مجموعه داده دارویی، دسته‌بندی‌های دارویی، نوع پرسش‌ها، تولید درخواست متنی و تجربه کاربری آموزش دارویی است.
-
-این جداسازی باعث می‌شود پروژه در آینده قابل گسترش باشد. پیاده‌سازی‌های بعدی باید بتوانند از هسته سکو استفاده کنند، بدون اینکه به فرضیات اختصاصی Pharmexa وابسته باشند.
-
-## مسئله
-
-یادگیری داروها معمولا بین فهرست‌های ثابت، فلش‌کارت‌های جدا، بانک پرسش‌های پراکنده و فایل‌های دستی تقسیم می‌شود. این مدل چند مشکل جدی ایجاد می‌کند:
-
-- داده‌های آموزشی تکراری می‌شوند و بازرسی آن‌ها سخت است.
-- منطق آزمون گاهی در رابط کاربری قرار می‌گیرد و کنترل درستی پاسخ‌ها دشوار می‌شود.
-- فلش‌کارت‌ها از هدف‌های یادگیری ساختاریافته جدا هستند.
-- پیشرفت، اشتباهات، موضوع‌های ضعیف و مرور زمان‌بندی‌شده در یک مدل واحد جمع نمی‌شوند.
-- اصلاح داده‌های پزشکی و دارویی اگر مستقیم روی رکوردهای محیط تولید انجام شود پرریسک است.
-- بسیاری از نسخه‌های اولیه از ابتدا بررسی سلامت، پشتیبان‌گیری، بررسی استقرار، اعتبارسنجی طرح‌واره و مسیر انتشار ایمن ندارند.
-
-این پروژه با این نگاه ساخته شده که یادگیری فقط یک رابط کاربری نیست؛ یک مسئله سکویی است.
-
-## راه حل
-
-این سکو یک سامانه یادگیری با محوریت پشتیبان فراهم می‌کند:
-
-- شیءهای یادگیری و منابع دانش ساختاریافته.
-- مبدل‌های اختصاصی برای داده‌های دارویی Pharmexa.
-- تولید پرسش و نشست بازی تحت کنترل قوانین پشتیبان.
-- فلش‌کارت‌هایی که از همان منبع دانش مشترک تغذیه می‌شوند.
-- منطق Leitner برای مرور مستقل فلش‌کارت.
-- رابط‌های برنامه‌نویسی برای پیشخوان، آمار، اشتباهات، موضوع‌های ضعیف و لیگ.
-- رابط کاربری موبایل‌محور با Expo و React Native Web.
-- مرکز کنترل کیفیت داده برای بازبینی داخلی پیشنهادهای قانون‌محور یا هوش مصنوعی در آینده.
-- زیرساخت تولید شامل Docker، بررسی سلامت، یکپارچه‌سازی پیوسته، پشتیبان‌گیری و گردش‌کارهای استقرار.
-
-رابط کاربری فقط وضعیت و تجربه کاربر را نمایش می‌دهد و قصد کاربر را ارسال می‌کند. امتیازدهی، درستی پاسخ‌ها، زمان‌بندی مرور، رتبه‌بندی لیگ و تغییرات مهم داده در پشتیبان کنترل می‌شوند.
-
-## محدوده محصول
-
-در Pharmexa فعلی این حوزه‌های یادگیری پوشش داده شده‌اند:
-
-- یادگیری نام تجاری و ژنریک.
-- یادگیری مصرف با غذا یا بدون غذا و زمان مصرف.
-- یادگیری اندیکاسیون.
-- یادگیری عوارض جانبی.
-- جریان مطالعه بر اساس دسته‌بندی دارویی.
-- آزمون و نشست بازی به صورت تصادفی یا مبتنی بر دسته‌بندی.
-- جعبه‌های Leitner برای فلش‌کارت.
-- مرور اشتباهات.
-- پیشخوان، زنجیره یادگیری، پیشرفت، موضوع‌های ضعیف، آمار و لیگ.
-
-جهت بصری رابط کاربری یک پیشخوان آموزشی آرام و بالینی است: موبایل‌محور، کارت‌محور، با رنگ‌های ملایم، نشانگر پیشرفت واضح و بدون شلوغی بصری.
-
-## معماری
-
-```text
-                    +-----------------------------+
-                    | Expo + React Native Web     |
-                    | رابط موبایل‌محور Pharmexa    |
-                    +--------------+--------------+
-                                   |
-                                   | REST / احراز هویت توکنی
-                                   |
-+----------------------------------v----------------------------------+
-|                         پشتیبان Django REST                         |
-|                                                                     |
-|  accounts        احراز هویت، توکن‌ها، کاربر فعلی                  |
-|  core            سلامت، خطاها، صفحه‌بندی، طرح‌واره، رخدادنگاری    |
-|  learning        شیءهای یادگیری، پیشرفت، پیشخوان، آمار            |
-|  drugs           داده دارویی Pharmexa، دسته‌ها، همگام‌سازی منابع    |
-|  quizzes         انتخاب‌گرها و تولید پرسش                         |
-|  games           نشست‌ها، پاسخ‌ها، امتیازدهی، زمان‌سنج، چرخه عمر  |
-|  flashcards      وضعیت‌های Leitner، مرور، خلاصه دسته‌ها           |
-|  league          رتبه‌ها، فصل‌ها، خلاصه جدول امتیازها             |
-|  ai_data_pipeline پیشنهادهای داده دسته‌ای و اعمال ایمن             |
-|  data_quality_center رابط بازبینی داخلی                            |
-|                                                                     |
-+----------------------------------+----------------------------------+
-                                   |
-                                   | ORM / مهاجرت‌ها
-                                   |
-                    +--------------v--------------+
-                    | PostgreSQL محلی و           |
-                    | استقرار شبیه تولید          |
-                    +-----------------------------+
-```
-
-### اصول سکو
-
-- پشتیبان مالک درستی منطق یادگیری است.
-- رابط کاربری فقط وضعیت را نمایش می‌دهد و قصد کاربر را ارسال می‌کند.
-- پیاده‌سازی‌های محصول، داده تخصصی خود را به قراردادهای سکو تبدیل می‌کنند.
-- تغییرات داده پزشکی و دارویی باید قابل بازبینی، بازرسی و بازگردانی باشند.
-- مسیر تولید باید قابل مشاهده، قابل استقرار و قابل بازیابی باشد.
-- هیچ ارائه‌دهنده هوش مصنوعی یا موتور قانون‌محور اجازه ندارد مستقیم داده تولید را تغییر دهد.
-
-## ساختار مخزن
-
-```text
-.
-├── backend/
-│   ├── apps/
-│   │   ├── accounts/
-│   │   ├── ai_data_pipeline/
-│   │   ├── core/
-│   │   ├── data_quality_center/
-│   │   ├── drugs/
-│   │   ├── flashcards/
-│   │   ├── games/
-│   │   ├── league/
-│   │   ├── learning/
-│   │   └── quizzes/
-│   ├── config/
-│   ├── data/
-│   ├── Dockerfile
-│   ├── build.sh
-│   ├── gunicorn.conf.py
-│   ├── render.yaml
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   ├── components/
-│   │   ├── design/
-│   │   ├── navigation/
-│   │   ├── screens/
-│   │   ├── store/
-│   │   └── types/
-│   ├── App.tsx
-│   ├── app.config.js
-│   ├── app.json
-│   ├── Dockerfile
-│   └── package.json
-├── docs/
-│   ├── GITHUB_PRIVATE_SETUP.md
-│   └── OPERATIONS_RUNBOOK.md
-├── Learning_Platform_Architecture_Engineering_Book_Final/
-├── docker-compose.yml
-└── README.md
-```
-
-## پشتیبان
-
-فناوری‌ها:
-
-- Python 3.11
-- Django 5
-- Django REST Framework
-- احراز هویت با توکن
-- مستندسازی OpenAPI با drf-spectacular
-- PostgreSQL برای توسعه محلی و استقرار شبیه تولید
-- Gunicorn و WhiteNoise برای اجرای محیط تولید
-
-آدرس‌های مهم محلی:
-
-- `GET /api/v1/health/`
-- `GET /api/v1/live/`
-- `GET /api/v1/ready/`
-- `GET /api/v1/schema/`
-- `GET /api/v1/docs/`
-- `/admin/`
-- `/data-quality/`
-
-ماژول‌های رابط برنامه‌نویسی زیر `/api/v1/`:
-
-- `auth/`
-- `topics/`
-- `target-categories/`
-- `drugs/`
-- `me/dashboard/`
-- `me/progress/`
-- `me/statistics/`
-- `me/weak-topics/`
-- `games/`
-- `flashcards/`
-- `league/`
-
-## رابط کاربری
-
-فناوری‌ها:
-
-- Expo
-- React Native Web
-- TypeScript
-- آیکون‌های lucide-react-native
-- طراحی موبایل‌محور
-- ظاهر پیشخوان آرام و بالینی
-
-آدرس رابط کاربری تولید:
-
-```text
-https://AmirMottaghiZadeh.github.io/Learning_Platform/
-```
-
-آدرس رابط برنامه‌نویسی تولید:
-
-```text
-https://amirmtz.runflare.run/api/v1
-```
-
-ساخت مربوط به GitHub Pages از این متغیرهای محیطی استفاده می‌کند:
-
-```text
-EXPO_BASE_URL=/Learning_Platform
-EXPO_PUBLIC_API_BASE_URL=https://amirmtz.runflare.run/api/v1
-```
-
-توسعه محلی به صورت پیش‌فرض از رابط برنامه‌نویسی محلی استفاده می‌کند:
-
-```text
-http://127.0.0.1:8000/api/v1
-```
+در آزمون، پاسخ پیش از انتخاب کاربر زیر سؤال نمایش داده نمی‌شود. در فلش‌کارت نیز فقط پاسخ اصلی نمایش داده می‌شود و متن بازخورد ثانویه قبلی حذف شده است.
 
 ## مرکز کنترل کیفیت داده
 
-مرکز کنترل کیفیت داده یک برنامه وب داخلی برای بازبینی و اعتبارسنجی پیشنهادهای اصلاح داده است.
-
-آدرس:
+آدرس مرکز:
 
 ```text
 /data-quality/
 ```
 
-امکانات:
+این بخش فقط برای کاربران staff/admin است و مسیر اصلی عملیات داخلی داده محسوب می‌شود.
 
-- پیشخوان امتیاز سلامت و تعداد مسئله‌ها.
-- مرکز دسته‌ها.
-- مرکز کارها.
-- مرکز بازبینی پیشنهادها.
-- نمایش تفاوت قبل و بعد.
-- بازرس رکورد.
-- مرکز سلامت.
-- صفحه گزارش‌ها و دانلود خروجی.
+### بخش Database
 
-مرکز کنترل کیفیت داده رابط اصلی روزمره برای بازبینی اصلاحات داده است. مدیریت Django همچنان برای بررسی‌های توسعه‌دهنده موجود است، اما مسیر اصلی عملیات داده نیست.
+در صفحه Database فقط ابزارهای اصلی مدیریت رکورد فعال هستند:
 
-## مسیر داده هوشمند
+- `Search`
+- `Search in`
+- مرتب‌سازی
+- `Key records`
+- `Clear filters`
 
-مسیر داده هوشمند فعلا محلی و قانون‌محور است. در وضعیت فعلی هیچ تماس خارجی با OpenAI، Ollama یا ارائه‌دهنده‌های دیگر انجام نمی‌شود.
+مدیر می‌تواند با ستون‌های داده دارویی مانند نام تجاری، نام ژنریک، اندیکاسیون، عوارض و ویژگی‌های مرتبط جست‌وجو و فیلتر کند؛ رکورد را باز کند؛ فیلدهای مجاز را ویرایش کند؛ و تغییر را تأیید نهایی کند.
 
-مدل ایمنی:
+مسیرها:
 
-1. پایگاه داده پویش می‌شود.
-2. پیشنهادها با وضعیت در انتظار ساخته می‌شوند.
-3. پیشنهادها به صورت دستی بازبینی می‌شوند.
-4. پیشنهادها تأیید، رد یا ویرایش می‌شوند.
-5. فقط پیشنهادهای تأییدشده از طریق فرمان اعمال ایمن اجرا می‌شوند.
-6. پیش از اعمال، پشتیبان گرفته می‌شود.
-7. همه تغییرات اعمال‌شده در تاریخچه بازرسی ذخیره می‌شوند.
-
-ارائه‌دهنده‌ها:
-
-- `rules`: ارائه‌دهنده قطعی و محلی که اکنون فعال است.
-- `mock`: ارائه‌دهنده مخصوص آزمون.
-- `openai`: جایگاه آماده و غیرفعال.
-- `ollama`: جایگاه آماده و غیرفعال.
-- `manual`: نشانگر برای منبع دستی.
-
-جدول‌های اصلی:
-
-- `ai_data_batches`
-- `ai_data_jobs`
-- `ai_data_suggestions`
-- `ai_data_change_history`
-- `ai_data_reports`
-- `ai_data_translations`
-
-دستورهای کاربردی:
-
-```bash
-cd backend
-python manage.py ai_health_check
-python manage.py ai_generate_suggestions --provider rules --limit 500 --include-normalization --include-terminology --include-duplicates --include-medical-validation --batch-name "Initial local cleanup review"
-python manage.py ai_generate_report --batch-id 1
+```text
+/data-quality/database/           جست‌وجو و فیلتر داروها
+/data-quality/database/new/       افزودن داروی جدید
+/data-quality/database/<id>/      ویرایش دارو
 ```
 
-اعمال پیشنهادهای تأییدشده فقط بعد از بازبینی دستی:
+تمام ایجادها و ویرایش‌ها در `AIDataChangeHistory` ثبت می‌شوند.
+
+### افزودن داروی جدید و شناسه یکتا
+
+فرم **Add Drug** همان ویژگی‌های دیتابیس دارویی را از مدیر دریافت می‌کند، اما مدیر نباید شناسه وارد کند:
+
+- شناسه اصلی رکورد را دیتابیس تولید می‌کند.
+- `external_id` توسط سرور و در قالب `drug-<uuid>` تولید می‌شود.
+
+بنابراین خطای انسانی در اختصاص شناسه یکتا رخ نمی‌دهد.
+
+### همگام‌سازی خودکار آزمون و فلش‌کارت
+
+پس از ایجاد یا ویرایش دارو از طریق Data Quality Center، منابع یادگیری آزمون و فلش‌کارت همان دارو به‌صورت خودکار بازتولید و همگام می‌شوند. در ویرایش‌های عادی Data Quality Center نیازی به اجرای دستی دستور sync نیست.
+
+## دستورهای ورود داده و sync
+
+دستورها را از پوشه `backend/` اجرا کنید.
+
+### ورود داده JSON یا نسخه پشتیبان
 
 ```bash
-python manage.py ai_apply_approved --batch-id 1 --applied-by amir
+python manage.py import_drug_json <directory-or-fixture.json>
 ```
+
+بررسی فایل بدون اعمال تغییر:
+
+```bash
+python manage.py import_drug_json <directory-or-fixture.json> --validate-only
+```
+
+این ورود، متادیتای Pharmexa را به‌صورت اتمی جایگزین می‌کند و منابع یادگیری داروهای واردشده را نیز همگام می‌کند.
+
+### ورود فایل JavaScript قدیمی
+
+```bash
+python manage.py import_drugs --drugs-js <path> --topics-js <path>
+```
+
+اجرای `python manage.py import_drugs` بدون آرگومان درست نیست؛ هر دو مسیر فایل لازم هستند.
+
+### بررسی یا ترمیم منابع موجود
+
+برای بررسی افزایشی رکوردهای فعلی:
+
+```bash
+python manage.py sync_learning_sources
+```
+
+برای یک دارو:
+
+```bash
+python manage.py sync_learning_sources --drug-id 123
+```
+
+بازسازی کامل فقط برای ورود عمده داده یا عملیات ترمیم:
+
+```bash
+python manage.py sync_learning_sources --all --progress-every 100
+```
+
+گزینه `--all` روی دیتابیس پرحجم زمان‌بر است و نباید بعد از هر ویرایش یا هر استقرار اجرا شود.
 
 ## اجرای محلی
 
-### راه‌اندازی پشتیبان
+### Docker
+
+```bash
+docker compose up --build
+```
+
+- پشتیبان: `http://127.0.0.1:8000`
+- رابط کاربری: `http://127.0.0.1:8081`
+
+### پشتیبان
 
 ```bash
 cd backend
@@ -835,13 +442,15 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 cp .env.example .env
 python manage.py migrate
-python manage.py import_drugs
-python manage.py sync_learning_sources
 python manage.py createsuperuser
 python manage.py runserver 127.0.0.1:8000
 ```
 
-### راه‌اندازی رابط کاربری
+فرمان `createsuperuser` به‌صورت تعاملی نام کاربری، در صورت نیاز ایمیل، و گذرواژه را می‌پرسد. این کاربر به `/admin/` و بخش staff-only مرکز کنترل کیفیت داده دسترسی خواهد داشت.
+
+اگر دیتابیس قبلاً داده و منابع یادگیری دارد، برای اجرای معمول محلی لازم نیست import یا بازسازی کامل منابع را اجرا کنید.
+
+### رابط کاربری
 
 ```bash
 cd frontend
@@ -850,51 +459,13 @@ cp .env.example .env
 npm run web -- --port 8081
 ```
 
-رابط کاربری این متغیر محیطی را انتظار دارد:
+در `frontend/.env`:
 
 ```text
 EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api/v1
 ```
 
-### اجرای Docker به شکل شبیه تولید
-
-```bash
-docker compose up --build
-```
-
-سرویس‌ها:
-
-- پشتیبان: `http://127.0.0.1:8000`
-- رابط کاربری: `http://127.0.0.1:8081`
-- PostgreSQL داخل شبکه Docker
-
-## تولید و استقرار
-
-پشتیبانی تولید در پشتیبان:
-
-- `backend/config/settings/production.py`
-- `backend/render.yaml`
-- `backend/Dockerfile`
-- `backend/gunicorn.conf.py`
-- ثبت رخداد ساختاریافته با JSON
-- شناسه درخواست از طریق `X-Request-ID`
-- نشانی‌های بررسی سلامت، زنده‌بودن و آمادگی
-- فرمان پشتیبان‌گیری
-
-پشتیبانی تولید در رابط کاربری:
-
-- گردش‌کار مربوط به GitHub Pages در `.github/workflows/frontend-pages.yml`
-- خروجی وب ایستا از Expo
-- مسیر پایه مربوط به GitHub Pages یعنی `/Learning_Platform`
-- مسیر جایگزین برای مسیریابی سمت کاربر از طریق `404.html`
-- نشانگر مربوط به `.nojekyll`
-
-مستندات عملیاتی:
-
-- `docs/OPERATIONS_RUNBOOK.md`
-- `docs/GITHUB_PRIVATE_SETUP.md`
-
-## آزمون و کنترل کیفیت
+## تست و کنترل کیفیت
 
 پشتیبان:
 
@@ -911,112 +482,41 @@ python manage.py test
 
 ```bash
 cd frontend
+npm run test:typecheck
+npm test -- --ci --coverage
 npm run typecheck
 npm run build:web
 ```
 
-یکپارچه‌سازی پیوسته روی ارسال به `main` و درخواست ادغام اجرا می‌شود:
+این کنترل‌ها در GitHub Actions برای pull request و push به شاخه `main` اجرا می‌شوند. استقرار GitHub Pages رابط کاربری نیز با push به `main` انجام می‌شود.
 
-- نصب وابستگی‌های پشتیبان.
-- بررسی معمول Django.
-- بررسی استقرار Django.
-- بررسی اختلاف مهاجرت‌ها.
-- اجرای آزمایشی پشتیبان‌گیری.
-- آزمون پشتیبان.
-- بررسی نوع‌های رابط کاربری.
-- ساخت وب رابط کاربری.
+## آدرس‌های مهم
 
-استقرار مربوط به GitHub Pages روی ارسال به `main` اجرا می‌شود.
+```text
+رابط کاربری تولید: https://AmirMottaghiZadeh.github.io/Learning_Platform/
+API تولید:         https://amirmtz.runflare.run/api/v1
+```
 
-## امنیت و ایمنی
+نشانی‌های مهم پشتیبان:
 
-رازها و داده‌های زمان اجرا نباید ثبت شوند.
+- `/api/v1/health/`
+- `/api/v1/live/`
+- `/api/v1/ready/`
+- `/api/v1/docs/`
+- `/admin/`
+- `/data-quality/`
 
-نمونه موارد نادیده‌گرفته‌شده:
+## امنیت و استقرار
 
-- `backend/.env`
-- `backend/.venv/`
-- `backend/backups/`
-- `backend/exports/`
-- `backend/staticfiles/`
-- `frontend/node_modules/`
-- `frontend/dist/`
-- `frontend/.expo/`
-
-انتظارات تولید:
-
-- استفاده از `SECRET_KEY` قوی.
-- استفاده از PostgreSQL از طریق `DATABASE_URL`.
-- تنظیم `ALLOWED_HOSTS`، `CSRF_TRUSTED_ORIGINS` و `CORS_ALLOWED_ORIGINS`.
-- استفاده از HTTPS برای رابط‌های برنامه‌نویسی مصرفی مرورگر.
-- اجرای مهاجرت‌ها از مسیر کنترل‌شده استقرار.
-- گرفتن پشتیبان قبل از عملیات اعمال اصلاحات داده.
-- عدم اعمال پیشنهادهای هوش مصنوعی یا قانون‌محور بدون تأیید.
-
-نکته ایمنی پزشکی:
-
-این پروژه یک سامانه آموزشی است. داده‌های دارویی و محتوای تولیدشده باید پیش از استفاده در محیط تولید توسط انسان متخصص بازبینی شوند. این نرم‌افزار نباید به عنوان پشتیبان تصمیم‌گیری بالینی استفاده شود.
-
-## وضعیت نسخه اولیه
-
-انجام‌شده یا تا حد زیادی پیاده‌سازی‌شده:
-
-- معماری پروژه و مرزبندی برنامه‌های Django.
-- احراز هویت.
-- ورود پایگاه داده دارویی و همگام‌سازی منابع یادگیری.
-- تولید آزمون و پرسش.
-- چرخه عمر مربوط به بازی و نشست.
-- زمان‌سنج، امتیازدهی، زنجیره یادگیری، اشتباهات، توقف و ادامه.
-- فلش‌کارت با منطق Leitner.
-- لیگ، آمار، پیشخوان و موضوع‌های ضعیف.
-- رابط کاربری مبتنی بر Expo و React Native Web.
-- مرکز کنترل کیفیت داده.
-- مسیر داده هوشمند با ارائه‌دهنده قانون‌محور محلی.
-- زیرساخت عملیات و تولید.
-- استقرار رابط کاربری روی GitHub Pages.
-
-در حال تکامل:
-
-- اتصال ارائه‌دهنده خارجی هوش مصنوعی.
-- نمودارها و همکاری بهتر در مرکز کنترل کیفیت داده.
-- پایش و رهگیری خطا در محیط تولید.
-- قواعد عمیق‌تر اعتبارسنجی پزشکی.
-- بسته‌بندی موبایل بومی.
-- پوشش آزمون بیشتر برای گردش‌کارهای رابط کاربری.
-
-## نقشه راه
-
-نزدیک‌مدت:
-
-- اعتبارسنجی رابط کاربری تولید روی GitHub Pages در کنار پشتیبان Runflare.
-- بررسی CORS و HTTPS در پشتیبان تولید.
-- ادامه پاک‌سازی داده از طریق دسته‌های بازبینی.
-- بهبود رابط کاربری بر اساس آزمون واقعی کاربر.
-
-میان‌مدت:
-
-- اضافه کردن کار پس‌زمینه پایش‌شده در صورت نیاز واقعی.
-- اضافه کردن ارائه‌دهنده‌های هوش مصنوعی پس از بازبینی ایمنی.
-- تحلیل داده و پیشنهادهای آموزشی پیشرفته‌تر.
-- بهبود قالب‌های خروجی گزارش.
-
-بلندمدت:
-
-- اضافه کردن پیاده‌سازی‌های آموزشی دیگر روی همین سکو.
-- رسمی کردن قرارداد افزونه و محصول.
-- پشتیبانی از چندمحصولی یا چندمستاجری در صورت نیاز.
+- رازها، فایل `.env`، دیتابیس محلی، فایل‌های پشتیبان، محیط مجازی، `node_modules` و خروجی‌های build را commit نکنید.
+- برای تولید، `SECRET_KEY` قوی، `DATABASE_URL`، `ALLOWED_HOSTS`، `CSRF_TRUSTED_ORIGINS` و `CORS_ALLOWED_ORIGINS` را تنظیم کنید.
+- پیش از عملیات دسته‌ای اعمال تغییرات داده، پشتیبان تهیه کنید.
+- پیشنهادهای قانون‌محور یا هوش مصنوعی بدون بازبینی و تأیید دستی نباید اعمال شوند.
 
 ## مستندات مرتبط
 
-- `Learning_Platform_Architecture_Engineering_Book_Final/`
-- `frontend/README.md`
-- `backend/apps/ai_data_pipeline/README.md`
-- `backend/apps/data_quality_center/README.md`
 - `docs/OPERATIONS_RUNBOOK.md`
 - `docs/GITHUB_PRIVATE_SETUP.md`
-
-## یادداشت نگهداری
-
-این مخزن برای میزبانی خصوصی در GitHub آماده شده است. فایل‌های تولیدی، پشتیبان‌ها، پایگاه داده محلی، محیط مجازی و خروجی ساخت رابط کاربری نباید وارد سامانه کنترل نسخه شوند.
-
-کتاب معماری پروژه منبع اصلی جهت‌گیری محصولی و مهندسی است. تغییرات کد باید مرز بین سکو و پیاده‌سازی را حفظ کنند: Pharmexa یک پیاده‌سازی است و سکوی یادگیری سامانه قابل استفاده دوباره پروژه است.
+- `backend/apps/ai_data_pipeline/README.md`
+- `backend/apps/data_quality_center/README.md`
+- `Learning_Platform_Architecture_Engineering_Book_Final/`

@@ -36,11 +36,16 @@ const QUESTION_TYPES: Array<{key: QuestionType; label: string; Icon: LucideIcon}
   {key: "brandGeneric", label: "نام تجاری", Icon: Sparkles},
   {key: "timing", label: "با غذا / بی غذا", Icon: Layers},
 ];
+const FLASHCARD_BATCH_SIZE = 20;
+const FLASHCARD_PREFETCH_THRESHOLD = 5;
 
 export function FlashcardsScreen() {
   const {token} = useAuth();
   const queryClient = useQueryClient();
   const [leitnerPickerOpen, setLeitnerPickerOpen] = React.useState(false);
+  const [batchRequest, setBatchRequest] = React.useState(0);
+  const [hasMoreCards, setHasMoreCards] = React.useState(true);
+  const nextBatchAfterId = React.useRef(0);
   const {
     step,
     mode,
@@ -50,7 +55,6 @@ export function FlashcardsScreen() {
     categories,
     cards,
     revealed,
-    reviewedCardIds,
     setStep,
     setMode,
     setSelectedQuestionType,
@@ -58,9 +62,10 @@ export function FlashcardsScreen() {
     setSelectedLeitnerBox,
     setCategories,
     setCards,
+    appendCards,
+    removeCard,
+    prependCard,
     setRevealed,
-    pushReviewedCardId,
-    resetReviewedCardIds,
     resetFlow,
   } = useFlashcardsStore();
 
@@ -78,13 +83,13 @@ export function FlashcardsScreen() {
 
   const cardsQuery = useQuery({
     queryKey: [
-      "flashcards",
+      "flashcard-batch",
       token,
       mode,
       selectedCategory,
       selectedQuestionType,
       selectedLeitnerBox,
-      reviewedCardIds.join(","),
+      batchRequest,
     ],
     queryFn: () =>
       platformApi.flashcards(
@@ -92,10 +97,12 @@ export function FlashcardsScreen() {
         mode,
         selectedCategory,
         selectedQuestionType ?? undefined,
-        reviewedCardIds,
+        [],
         selectedLeitnerBox,
+        FLASHCARD_BATCH_SIZE,
+        nextBatchAfterId.current,
       ),
-    enabled: Boolean(token) && step === "cards",
+    enabled: Boolean(token) && step === "cards" && hasMoreCards,
   });
 
   React.useEffect(() => {
@@ -103,8 +110,36 @@ export function FlashcardsScreen() {
   }, [categoriesQuery.data, setCategories]);
 
   React.useEffect(() => {
-    if (cardsQuery.data) setCards(cardsQuery.data);
-  }, [cardsQuery.data, setCards]);
+    if (!cardsQuery.data) return;
+    appendCards(cardsQuery.data);
+    const lastCardId = cardsQuery.data[cardsQuery.data.length - 1]?.id;
+    if (lastCardId) {
+      nextBatchAfterId.current = lastCardId;
+    }
+    if (cardsQuery.data.length < FLASHCARD_BATCH_SIZE) {
+      setHasMoreCards(false);
+    }
+  }, [appendCards, cardsQuery.data]);
+
+  React.useEffect(() => {
+    if (
+      step !== "cards" ||
+      !hasMoreCards ||
+      cards.length === 0 ||
+      cards.length > FLASHCARD_PREFETCH_THRESHOLD ||
+      cardsQuery.isFetching
+    ) {
+      return;
+    }
+    setBatchRequest((value) => value + 1);
+  }, [batchRequest, cards.length, cardsQuery.isFetching, hasMoreCards, step]);
+
+  function resetCardQueue() {
+    setCards([]);
+    nextBatchAfterId.current = 0;
+    setHasMoreCards(true);
+    setBatchRequest((value) => value + 1);
+  }
 
   const openNewDeckMutation = useMutation({
     mutationFn: async (categoryKey: string) => {
@@ -115,26 +150,34 @@ export function FlashcardsScreen() {
       setSelectedCategory(categoryKey);
       setMode("new");
       setRevealed(false);
+      resetCardQueue();
       setStep("cards");
       await Promise.all([
-        queryClient.invalidateQueries({queryKey: ["flashcards"]}),
         queryClient.invalidateQueries({queryKey: ["flashcard-boxes", token]}),
       ]);
     },
   });
 
   const reviewMutation = useMutation({
-    mutationFn: ({cardId, rating}: {cardId: number; rating: FlashcardRating}) =>
+    mutationFn: ({cardId, rating}: {card: (typeof cards)[number]; cardId: number; rating: FlashcardRating}) =>
       platformApi.reviewFlashcard(token!, cardId, rating),
-    onSuccess: async (_, variables) => {
-      pushReviewedCardId(variables.cardId);
+    onMutate: ({card, cardId}) => {
+      removeCard(cardId);
       setRevealed(false);
-      await Promise.all([
-        queryClient.invalidateQueries({queryKey: ["flashcards"]}),
-        queryClient.invalidateQueries({queryKey: ["flashcard-boxes", token]}),
-        queryClient.invalidateQueries({queryKey: ["statistics"]}),
-        queryClient.invalidateQueries({queryKey: ["dashboard"]}),
-      ]);
+      return {card};
+    },
+    onError: (_error, variables, context) => {
+      if (context?.card) {
+        prependCard(context.card);
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["flashcard-boxes", token],
+        refetchType: "none",
+      });
+      void queryClient.invalidateQueries({queryKey: ["statistics"], refetchType: "none"});
+      void queryClient.invalidateQueries({queryKey: ["dashboard"], refetchType: "none"});
     },
   });
 
@@ -145,41 +188,39 @@ export function FlashcardsScreen() {
     setSelectedLeitnerBox(null);
     setMode("new");
     setRevealed(false);
-    resetReviewedCardIds();
     setStep("category");
   }
 
   function openNewDeck(categoryKey: string) {
     if (!selectedQuestionType) return;
-    resetReviewedCardIds();
     openNewDeckMutation.mutate(categoryKey);
   }
 
-  async function openLeitner(box?: number) {
+  function openLeitner(box?: number) {
     setLeitnerPickerOpen(false);
     setMode("leitner");
     setSelectedQuestionType(null);
     setSelectedCategory("");
     setSelectedLeitnerBox(box ?? null);
-    resetReviewedCardIds();
+    resetCardQueue();
     setRevealed(false);
     setStep("cards");
-    await Promise.all([
-      queryClient.invalidateQueries({queryKey: ["flashcards"]}),
-      queryClient.invalidateQueries({queryKey: ["flashcard-boxes", token]}),
-    ]);
   }
 
   function review(rating: FlashcardRating) {
     const currentCard = cards[0];
     if (!currentCard) return;
-    reviewMutation.mutate({cardId: currentCard.id, rating});
+    reviewMutation.mutate({card: currentCard, cardId: currentCard.id, rating});
   }
 
   function goBack() {
     setRevealed(false);
+    if (step === "cards") {
+      void entrySummaryQuery.refetch();
+    }
     if (step === "cards" && mode === "new") {
       setCards([]);
+      setHasMoreCards(true);
       setStep("category");
       return;
     }
@@ -206,7 +247,7 @@ export function FlashcardsScreen() {
             ? `مرور جعبه ${selectedLeitnerBox} لایتنر`
             : "مرور جعبه لایتنر"
           : `${selectedQuestionLabel} · ${selectedCategoryLabel}`;
-  const loading = entrySummaryQuery.isLoading || cardsQuery.isLoading;
+  const loading = step === "cards" ? cards.length === 0 && cardsQuery.isFetching : entrySummaryQuery.isLoading;
   const busy = openNewDeckMutation.isPending || reviewMutation.isPending;
   const error =
     (entrySummaryQuery.error instanceof Error && entrySummaryQuery.error.message) ||
@@ -379,7 +420,7 @@ export function FlashcardsScreen() {
               </View>
               <View style={styles.remainingBadge}>
                 <Text style={styles.remainingValue}>{totalCards}</Text>
-                <Text style={styles.remainingLabel}>باقی‌مانده</Text>
+                <Text style={styles.remainingLabel}>در صف</Text>
               </View>
             </View>
             <ProgressBar value={Math.max(8, 100 / Math.max(1, totalCards))} />

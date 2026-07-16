@@ -11,7 +11,6 @@ type FlashcardsState = {
   categories: TargetCategory[];
   cards: FlashcardState[];
   revealed: boolean;
-  reviewedCardIds: number[];
   setStep: (step: FlashcardsState["step"]) => void;
   setMode: (mode: FlashcardFlowMode) => void;
   setSelectedQuestionType: (value: QuestionType | null) => void;
@@ -19,9 +18,10 @@ type FlashcardsState = {
   setSelectedLeitnerBox: (value: number | null) => void;
   setCategories: (value: TargetCategory[]) => void;
   setCards: (value: FlashcardState[]) => void;
+  appendCards: (value: FlashcardState[]) => void;
+  removeCard: (id: number) => void;
+  prependCard: (card: FlashcardState) => void;
   setRevealed: (value: boolean) => void;
-  pushReviewedCardId: (id: number) => void;
-  resetReviewedCardIds: () => void;
   resetFlow: () => void;
 };
 
@@ -34,7 +34,6 @@ const initialState = {
   categories: [] as TargetCategory[],
   cards: [] as FlashcardState[],
   revealed: false,
-  reviewedCardIds: [] as number[],
 };
 
 export const useFlashcardsStore = create<FlashcardsState>((set) => ({
@@ -46,11 +45,23 @@ export const useFlashcardsStore = create<FlashcardsState>((set) => ({
   setSelectedLeitnerBox: (selectedLeitnerBox) => set({selectedLeitnerBox}),
   setCategories: (categories) => set({categories}),
   setCards: (cards) => set({cards}),
-  setRevealed: (revealed) => set({revealed}),
-  pushReviewedCardId: (id) =>
+  appendCards: (cards) =>
+    set((state) => {
+      const knownIds = new Set(state.cards.map((card) => card.id));
+      return {
+        cards: [...state.cards, ...cards.filter((card) => !knownIds.has(card.id))],
+      };
+    }),
+  removeCard: (id) =>
     set((state) => ({
-      reviewedCardIds: state.reviewedCardIds.includes(id) ? state.reviewedCardIds : [...state.reviewedCardIds, id],
+      cards: state.cards.filter((card) => card.id !== id),
     })),
-  resetReviewedCardIds: () => set({reviewedCardIds: []}),
+  prependCard: (card) =>
+    set((state) => ({
+      cards: state.cards.some((item) => item.id === card.id)
+        ? state.cards
+        : [card, ...state.cards],
+    })),
+  setRevealed: (revealed) => set({revealed}),
   resetFlow: () => set(initialState),
 }));

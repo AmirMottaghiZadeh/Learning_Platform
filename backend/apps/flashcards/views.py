@@ -26,6 +26,9 @@ class FlashcardListView(generics.ListAPIView):
         product_id = self.request.query_params.get("product_id")
         if product_id:
             queryset = queryset.filter(knowledge_source__product_id=product_id)
+        after_id = self.request.query_params.get("after_id")
+        if after_id and after_id.isdigit():
+            queryset = queryset.filter(id__gt=int(after_id))
         exclude_ids = [
             int(value)
             for value in self.request.query_params.get("exclude_ids", "").split(",")
@@ -42,7 +45,7 @@ class FlashcardListView(generics.ListAPIView):
                 queryset
                 .filter(box__gte=1)
                 .exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED)
-                .order_by("box", "last_reviewed_at", "id")
+                .order_by("id")
             )
 
         queryset = queryset.filter(

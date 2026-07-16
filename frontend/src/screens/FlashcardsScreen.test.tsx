@@ -54,7 +54,6 @@ const secondCard: FlashcardState = {
   correct_answer: "پاسخ دوم",
 };
 const firstDeck = [firstCard, secondCard];
-const remainingDeck = [secondCard];
 const api = platformApi as jest.Mocked<typeof platformApi>;
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockUseQuery = useQuery as jest.MockedFunction<typeof useQuery>;
@@ -67,7 +66,9 @@ type TestQueryOptions = {
 
 type TestMutationOptions = {
   mutationFn: (variables: unknown) => Promise<unknown>;
+  onMutate?: (variables: unknown) => unknown;
   onSuccess?: (result: unknown, variables: unknown) => Promise<void> | void;
+  onError?: (error: unknown, variables: unknown, context: unknown) => void;
 };
 
 describe("FlashcardsScreen", () => {
@@ -82,7 +83,6 @@ describe("FlashcardsScreen", () => {
       categories: [],
       cards: [],
       revealed: false,
-      reviewedCardIds: [],
     });
     mockUseAuth.mockReturnValue({
       token: "token-123",
@@ -106,11 +106,12 @@ describe("FlashcardsScreen", () => {
             refetch: jest.fn(),
           };
         }
-        if (queryKey[0] === "flashcards") {
+        if (queryKey[0] === "flashcard-batch") {
           return {
-            data: queryKey[6] === "1" ? remainingDeck : firstDeck,
+            data: firstDeck,
             error: null,
             isLoading: false,
+            isFetching: false,
             refetch: jest.fn(),
           };
         }
@@ -123,15 +124,20 @@ describe("FlashcardsScreen", () => {
       }) as never,
     );
     mockUseMutation.mockImplementation(
-      (({mutationFn, onSuccess}: TestMutationOptions) => ({
+      (({mutationFn, onMutate, onSuccess, onError}: TestMutationOptions) => ({
         error: null,
         isPending: false,
         mutate: (variables: unknown) => {
           void (async () => {
-            const result = await mutationFn(variables);
-            await act(async () => {
-              await onSuccess?.(result, variables);
-            });
+            const context = await onMutate?.(variables);
+            try {
+              const result = await mutationFn(variables);
+              await act(async () => {
+                await onSuccess?.(result, variables);
+              });
+            } catch (error) {
+              onError?.(error, variables, context);
+            }
           })();
         },
       })) as never,

@@ -75,14 +75,21 @@ export const platformApi = {
     source_type?: QuestionType,
     exclude_ids: number[] = [],
     box?: number | null,
+    page_size = 20,
+    after_id = 0,
   ) {
-    const params = new URLSearchParams({product_id: "pharmexa", mode});
+    const params = new URLSearchParams({
+      product_id: "pharmexa",
+      mode,
+      page_size: String(page_size),
+    });
     if (mode === "new") {
       if (target_category_key) params.set("target_category_key", target_category_key);
       if (source_type) params.set("source_type", source_type);
     }
     if (mode === "leitner" && box) params.set("box", String(box));
     if (exclude_ids.length) params.set("exclude_ids", exclude_ids.join(","));
+    if (after_id > 0) params.set("after_id", String(after_id));
     const {data} = await apiClient.get(`/flashcards/?${params.toString()}`, withToken(token));
     return unwrapList<FlashcardState>(data);
   },

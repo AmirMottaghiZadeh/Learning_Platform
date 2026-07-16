@@ -61,15 +61,18 @@ def start_game(
             continue
         source_instances[source_id] = adapter.get_source_instance(source_id)
 
-    for index, generated in enumerate(generated_questions):
-        knowledge_source = source_instances[generated.knowledge_source_id]
-
-        GameQuestion.objects.create(
-            session=session,
-            knowledge_source=knowledge_source,
-            order=index,
-            options=generated.choices,
-            question_started_at=timezone.now() if index == 0 else None,
-        )
+    started_at = timezone.now()
+    GameQuestion.objects.bulk_create(
+        [
+            GameQuestion(
+                session=session,
+                knowledge_source=source_instances[generated.knowledge_source_id],
+                order=index,
+                options=generated.choices,
+                question_started_at=started_at if index == 0 else None,
+            )
+            for index, generated in enumerate(generated_questions)
+        ]
+    )
 
     return session

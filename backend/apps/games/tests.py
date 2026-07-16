@@ -1,4 +1,5 @@
 import inspect
+from unittest.mock import patch
 from datetime import timedelta
 
 from django.contrib.auth.models import User
@@ -147,6 +148,20 @@ class GamePersistenceAlignmentTests(TestCase):
         self.assertEqual(len(questions), 10)
         self.assertTrue(all(question.knowledge_source_id for question in questions))
         self.assertTrue(all(question.source_id is None for question in questions))
+
+    def test_start_game_persists_the_generated_questions_in_one_bulk_operation(self):
+        user = User.objects.create_user(username="bulk-game-questions")
+        for index in range(1, 5):
+            create_knowledge_source(index)
+
+        with patch(
+            "apps.games.services.session_service.GameQuestion.objects.bulk_create",
+            wraps=GameQuestion.objects.bulk_create,
+        ) as bulk_create:
+            session = start_game(user, topic_key="timing", count=10)
+
+        bulk_create.assert_called_once()
+        self.assertEqual(session.questions.count(), 10)
 
     def test_start_game_can_filter_by_target_category(self):
         user = User.objects.create_user(username="learner")
