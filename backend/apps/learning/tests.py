@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
@@ -11,9 +13,85 @@ from apps.learning.models import (
     LearningObject,
     LearningTopic,
 )
+from apps.learning.selectors import get_learning_dashboard, get_weak_topics
 
 
 class LearningProgressAPITests(TestCase):
+    def test_dashboard_reuses_its_progress_summary_for_recommendations(self):
+        user = User.objects.create_user(username="learner")
+        summary = {
+            "due_flashcards": 2,
+            "weak_topics": [],
+            "mistake_count": 0,
+        }
+
+        with (
+            patch(
+                "apps.learning.selectors.get_current_season",
+                return_value=type("Season", (), {"key": "season-1"})(),
+            ),
+            patch(
+                "apps.learning.selectors.get_user_league_rank",
+                return_value={"rank": 1, "total_participants": 1},
+            ),
+            patch(
+                "apps.learning.selectors.get_learning_progress_summary",
+                return_value=summary,
+            ) as get_summary,
+            patch(
+                "apps.learning.selectors.get_activity_summary",
+                return_value={},
+            ),
+        ):
+            dashboard = get_learning_dashboard(user)
+
+        self.assertEqual(get_summary.call_count, 1)
+        self.assertEqual(dashboard["summary"], summary)
+        self.assertEqual(dashboard["recommendations"][0]["action"], "review_flashcards")
+
+    def test_weak_topics_fetches_due_flashcard_counts_in_one_query(self):
+        user = User.objects.create_user(username="learner")
+        for index in range(5):
+            topic = LearningTopic.objects.create(
+                product_id="pharmexa",
+                key=f"topic-{index}",
+                label=f"Topic {index}",
+            )
+            learning_object = LearningObject.objects.create(
+                product_id="pharmexa",
+                external_id=f"drug-{index}",
+                display_name=f"Drug {index}",
+                topic=topic,
+            )
+            knowledge_source = KnowledgeSource.objects.create(
+                product_id="pharmexa",
+                external_id=f"source-{index}",
+                learning_object=learning_object,
+                topic=topic,
+                source_type="timing",
+                prompt="Prompt",
+                correct_answer="Answer",
+            )
+            LearnerProgress.objects.create(
+                learner=user,
+                product_id="pharmexa",
+                topic=topic,
+                questions_answered=10,
+                correct_answers=4,
+                wrong_answers=index + 1,
+            )
+            FlashcardState.objects.create(
+                user=user,
+                knowledge_source=knowledge_source,
+                review_state=FlashcardState.REVIEW_STATE_LEARNING,
+            )
+
+        with self.assertNumQueries(1):
+            weak_topics = get_weak_topics(user, product_id="pharmexa", limit=5)
+
+        self.assertEqual(len(weak_topics), 5)
+        self.assertEqual([topic["due_flashcards"] for topic in weak_topics], [1, 1, 1, 1, 1])
+
     def test_progress_summary_returns_dashboard_metrics(self):
         user = User.objects.create_user(username="learner")
         topic = LearningTopic.objects.create(product_id="pharmexa", key="timing", label="Timing")

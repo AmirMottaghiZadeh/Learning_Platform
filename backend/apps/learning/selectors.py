@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.db.models import Sum
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 from apps.flashcards.models import FlashcardReview, FlashcardState
@@ -51,7 +51,6 @@ def get_learning_progress_summary(user, *, product_id=None):
         review_state=FlashcardState.REVIEW_STATE_SUSPENDED
     )
     due_flashcards = leitner_flashcards.count()
-    active_flashcards = leitner_flashcards.count()
     latest_session = sessions.order_by("-started_at").first()
 
     return {
@@ -63,7 +62,7 @@ def get_learning_progress_summary(user, *, product_id=None):
         "review_count": totals["review_count"] or 0,
         "mistake_count": mistakes.count() if not product_id else totals["mistake_count"] or 0,
         "due_flashcards": due_flashcards,
-        "active_flashcards": active_flashcards,
+        "active_flashcards": due_flashcards,
         "current_streak": latest_session.streak if latest_session else 0,
         "weak_topics": get_weak_topics(user, product_id=product_id, limit=5),
     }
@@ -71,17 +70,29 @@ def get_learning_progress_summary(user, *, product_id=None):
 
 def get_weak_topics(user, *, product_id=None, limit=10):
     progress_qs = progress_queryset_for_user(user, product_id=product_id)
-    weak_topics = []
-    for progress in progress_qs.filter(wrong_answers__gt=0).order_by("-wrong_answers", "topic__label")[:limit]:
-        flashcards = FlashcardState.objects.filter(user=user, knowledge_source__topic=progress.topic)
-        if product_id:
-            flashcards = flashcards.filter(knowledge_source__product_id=product_id)
-        due_flashcards = (
-            flashcards
-            .filter(box__gte=1)
-            .exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED)
-            .count()
+    due_flashcard_filters = (
+        Q(topic__knowledge_sources__flashcard_states__user=user)
+        & Q(topic__knowledge_sources__flashcard_states__box__gte=1)
+        & ~Q(
+            topic__knowledge_sources__flashcard_states__review_state=FlashcardState.REVIEW_STATE_SUSPENDED
         )
+    )
+    if product_id:
+        due_flashcard_filters &= Q(topic__knowledge_sources__product_id=product_id)
+
+    weak_progress = (
+        progress_qs
+        .filter(wrong_answers__gt=0)
+        .annotate(
+            due_flashcards=Count(
+                "topic__knowledge_sources__flashcard_states",
+                filter=due_flashcard_filters,
+            )
+        )
+        .order_by("-wrong_answers", "topic__label")[:limit]
+    )
+    weak_topics = []
+    for progress in weak_progress:
         weak_topics.append(
             {
                 "topic_key": progress.topic.key,
@@ -91,7 +102,7 @@ def get_weak_topics(user, *, product_id=None, limit=10):
                 "wrong_answers": progress.wrong_answers,
                 "review_count": progress.review_count,
                 "mistake_count": progress.mistake_count,
-                "due_flashcards": due_flashcards,
+                "due_flashcards": progress.due_flashcards,
                 "xp": progress.xp,
                 "mastery_state": progress.mastery_state,
             }
@@ -99,8 +110,9 @@ def get_weak_topics(user, *, product_id=None, limit=10):
     return weak_topics
 
 
-def get_learning_recommendations(user, *, product_id="pharmexa"):
-    summary = get_learning_progress_summary(user, product_id=product_id)
+def get_learning_recommendations(user, *, product_id="pharmexa", summary=None):
+    if summary is None:
+        summary = get_learning_progress_summary(user, product_id=product_id)
     recommendations = []
 
     if summary["due_flashcards"] > 0:
@@ -200,11 +212,16 @@ def get_activity_summary(user, *, product_id="pharmexa"):
 def get_learning_dashboard(user, *, product_id="pharmexa"):
     season = get_current_season(product_id=product_id)
     rank = get_user_league_rank(user, product_id=product_id, season_key=season.key)
+    summary = get_learning_progress_summary(user, product_id=product_id)
     return {
         "product_id": product_id,
-        "summary": get_learning_progress_summary(user, product_id=product_id),
+        "summary": summary,
         "activity_summary": get_activity_summary(user, product_id=product_id),
-        "recommendations": get_learning_recommendations(user, product_id=product_id),
+        "recommendations": get_learning_recommendations(
+            user,
+            product_id=product_id,
+            summary=summary,
+        ),
         "league": {
             "season_key": season.key,
             "rank": rank["rank"],
