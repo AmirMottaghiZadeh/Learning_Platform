@@ -1,3 +1,7 @@
+import random
+
+from django.db.models import Max, Min
+
 from apps.learning.contracts import (
     KnowledgeSourceRef,
     LearningObjectRef,
@@ -9,13 +13,17 @@ from apps.quizzes.contracts import QuestionGenerationContext
 from .learning_sync import (
     PRODUCT_ID,
     drug_question_source_external_id,
-    ensure_brand_generic_knowledge_sources,
     sync_drug_question_source,
     sync_drug_question_sources,
 )
-from .categories import category_for_drug, category_payload_for_drug
+from .categories import category_payload_for_drug
 from .models import DrugQuestionSource
-from .services import is_valid_correct_answer
+from .services import INVALID_ANSWERS, is_valid_correct_answer
+
+
+MIN_QUIZ_SOURCE_CANDIDATES = 40
+QUIZ_SOURCE_CANDIDATE_FACTOR = 8
+MAX_QUIZ_SOURCE_CANDIDATES = 400
 
 
 class PharmexaLearningAdapter:
@@ -25,38 +33,8 @@ class PharmexaLearningAdapter:
         self,
         context: QuestionGenerationContext,
     ) -> list[KnowledgeSourceRef]:
-        if context.topic_key == "brandGeneric":
-            ensure_brand_generic_knowledge_sources(
-                target_category_key=context.target_category_key or "",
-            )
-
         synced_sources = self._list_synced_knowledge_sources(context)
-        if synced_sources:
-            return [self._generic_to_knowledge_source_ref(source) for source in synced_sources]
-
-        queryset = (
-            DrugQuestionSource.objects
-            .filter(is_active=True)
-            .exclude(prompt="")
-            .exclude(correct_answer="")
-            .select_related("drug", "topic")
-        )
-
-        if context.topic_key and context.topic_key != "random":
-            queryset = queryset.filter(topic__key=context.topic_key)
-
-        refs = []
-        for source in queryset:
-            if (
-                context.target_category_key
-                and category_for_drug(source.drug).key != context.target_category_key
-            ):
-                continue
-            refs.extend(
-                self._generic_to_knowledge_source_ref(item)
-                for item in sync_drug_question_sources(source)
-            )
-        return refs
+        return [self._generic_to_knowledge_source_ref(source) for source in synced_sources]
 
     def get_source_instance(self, knowledge_source_id: int) -> KnowledgeSource:
         try:
@@ -89,6 +67,7 @@ class PharmexaLearningAdapter:
             .filter(product_id=self.product_id, is_active=True)
             .exclude(prompt="")
             .exclude(correct_answer="")
+            .exclude(correct_answer__in=INVALID_ANSWERS)
             .select_related("learning_object", "topic")
         )
 
@@ -97,7 +76,32 @@ class PharmexaLearningAdapter:
         if context.target_category_key:
             queryset = queryset.filter(metadata__target_category_key=context.target_category_key)
 
-        return [source for source in queryset if is_valid_correct_answer(source.correct_answer)]
+        candidate_limit = min(
+            MAX_QUIZ_SOURCE_CANDIDATES,
+            max(
+                MIN_QUIZ_SOURCE_CANDIDATES,
+                context.question_count * QUIZ_SOURCE_CANDIDATE_FACTOR,
+            ),
+        )
+        total = queryset.count()
+        if total <= candidate_limit:
+            sources = list(queryset.order_by("id"))
+        else:
+            bounds = queryset.aggregate(
+                minimum_id=Min("id"),
+                maximum_id=Max("id"),
+            )
+            anchor_id = random.randint(bounds["minimum_id"], bounds["maximum_id"])
+            sources = list(
+                queryset.filter(id__gte=anchor_id).order_by("id")[:candidate_limit]
+            )
+            if len(sources) < candidate_limit:
+                sources.extend(
+                    queryset.filter(id__lt=anchor_id).order_by("id")[
+                        :candidate_limit - len(sources)
+                    ]
+                )
+        return [source for source in sources if is_valid_correct_answer(source.correct_answer)]
 
     def _generic_to_knowledge_source_ref(self, source: KnowledgeSource) -> KnowledgeSourceRef:
         return KnowledgeSourceRef(

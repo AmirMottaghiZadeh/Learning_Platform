@@ -46,6 +46,9 @@ class FlashcardState(models.Model):
                 name="unique_user_knowledge_flashcard",
             ),
         ]
+        indexes = [
+            models.Index(fields=["user", "box", "review_state"]),
+        ]
 
 class FlashcardReview(models.Model):
     state = models.ForeignKey(FlashcardState, on_delete=models.CASCADE, related_name="reviews")

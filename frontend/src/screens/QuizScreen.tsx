@@ -587,7 +587,6 @@ export function QuizScreen() {
               <CelebrationParticles active={Boolean(answer?.is_correct)} />
               {displayQuestion.instruction ? <Text style={styles.instruction}>{displayQuestion.instruction}</Text> : null}
               <Text style={styles.prompt}>{displayQuestion.prompt}</Text>
-              {displayQuestion.subtitle ? <Text style={styles.subtitle}>{displayQuestion.subtitle}</Text> : null}
               <View style={styles.choicesWrap}>
                 {displayQuestion.options.map((option) => {
                   const state = choiceState.get(option) ?? "neutral";
@@ -888,12 +887,6 @@ const styles = StyleSheet.create({
     lineHeight: 31,
     textAlign: "center",
     marginBottom: spacing.md,
-  },
-  subtitle: {
-    color: colors.muted,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: spacing.lg,
   },
   choicesWrap: {
     gap: spacing.sm,

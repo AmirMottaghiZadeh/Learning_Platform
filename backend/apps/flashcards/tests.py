@@ -107,7 +107,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
 
         self.assertEqual(data["prompt"], "Prompt")
         self.assertEqual(data["correct_answer"], "Answer")
-        self.assertEqual(data["feedback"], "Explanation")
+        self.assertNotIn("feedback", data)
 
     def test_review_card_records_schedule_snapshot_and_progress_event(self):
         user = User.objects.create_user(username="learner")
@@ -186,12 +186,16 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             correct_answer="Answer 2",
         )
 
-        states = seed_flashcards_for_user(user=user, product_id="pharmexa", count=1)
+        result = seed_flashcards_for_user(user=user, product_id="pharmexa", count=1)
 
-        self.assertEqual(len(states), 2)
-        self.assertEqual(states[0].box, 0)
-        self.assertEqual(states[0].review_state, FlashcardState.REVIEW_STATE_NEW)
-        self.assertIsNone(states[0].due_at)
+        self.assertEqual(result.created_count, 2)
+        states = FlashcardState.objects.filter(user=user).order_by("id")
+        self.assertEqual(states.count(), 2)
+        self.assertTrue(all(state.box == 0 for state in states))
+        self.assertTrue(
+            all(state.review_state == FlashcardState.REVIEW_STATE_NEW for state in states)
+        )
+        self.assertTrue(all(state.due_at is None for state in states))
 
     def test_leitner_box_counts_include_only_active_boxes(self):
         user = User.objects.create_user(username="learner")
@@ -296,9 +300,7 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             format="json",
         )
         self.assertEqual(seed_response.status_code, 200)
-        self.assertEqual(len(seed_response.data), 2)
-        self.assertEqual(seed_response.data[0]["target_category_key"], "cardiovascular")
-        self.assertEqual(seed_response.data[0]["source_type"], "timing")
+        self.assertEqual(seed_response.data["created_count"], 2)
 
         list_response = client.get(
             "/api/v1/flashcards/?product_id=pharmexa&mode=new&target_category_key=cardiovascular&source_type=timing"
@@ -465,13 +467,26 @@ class FlashcardPersistenceAlignmentTests(TestCase):
             correct_answer="متفورمین",
         )
 
-        states = seed_flashcards_for_user(
+        result = seed_flashcards_for_user(
             user=user,
             product_id="pharmexa",
             source_type="brandGeneric",
         )
 
-        self.assertEqual(len(states), 4)
+        self.assertEqual(result.created_count, 0)
+        self.assertEqual(FlashcardState.objects.filter(user=user).count(), 0)
+
+        from apps.drugs.learning_sync import sync_drug_question_sources
+
+        sync_drug_question_sources(DrugQuestionSource.objects.get(drug=drug))
+        result = seed_flashcards_for_user(
+            user=user,
+            product_id="pharmexa",
+            source_type="brandGeneric",
+        )
+
+        self.assertEqual(result.created_count, 4)
+        states = FlashcardState.objects.filter(user=user).select_related("knowledge_source")
         prompts = {state.knowledge_source.prompt for state in states}
         self.assertEqual(
             prompts,

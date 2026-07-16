@@ -406,9 +406,6 @@ export function FlashcardsScreen() {
                 <Text style={revealed ? styles.answer : styles.prompt}>
                   {revealed ? currentCard.correct_answer : currentCard.prompt}
                 </Text>
-                {revealed && currentCard.feedback ? (
-                  <Text style={styles.feedback}>{currentCard.feedback}</Text>
-                ) : null}
               </View>
 
               {!revealed ? (
@@ -740,13 +737,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     lineHeight: 36,
     textAlign: "center",
-  },
-  feedback: {
-    color: colors.muted,
-    fontWeight: "700",
-    lineHeight: 22,
-    textAlign: "center",
-    marginTop: spacing.lg,
   },
   reviewActions: {
     gap: spacing.sm,

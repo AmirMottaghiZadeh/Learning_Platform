@@ -8,6 +8,7 @@ from .serializers import (
     FlashcardDeckSummarySerializer,
     FlashcardReviewRequestSerializer,
     FlashcardSeedRequestSerializer,
+    FlashcardSeedResultSerializer,
     FlashcardStateSerializer,
 )
 from .services import get_flashcard_deck_summary, get_leitner_box_counts, review_card, seed_flashcards_for_user
@@ -69,17 +70,17 @@ class FlashcardReviewView(views.APIView):
 
 
 class FlashcardSeedView(views.APIView):
-    @extend_schema(request=FlashcardSeedRequestSerializer, responses=FlashcardStateSerializer(many=True))
+    @extend_schema(request=FlashcardSeedRequestSerializer, responses=FlashcardSeedResultSerializer)
     def post(self, request):
         serializer = FlashcardSeedRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        states = seed_flashcards_for_user(
+        result = seed_flashcards_for_user(
             user=request.user,
             product_id=serializer.validated_data["product_id"],
             target_category_key=serializer.validated_data["target_category_key"],
             source_type=serializer.validated_data["source_type"],
         )
-        return Response(FlashcardStateSerializer(states, many=True).data)
+        return Response({"created_count": result.created_count})
 
 
 class FlashcardBoxSummaryView(views.APIView):

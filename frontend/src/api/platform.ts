@@ -5,6 +5,7 @@ import type {
   FlashcardBoxSummary,
   FlashcardDeckSummary,
   FlashcardRating,
+  FlashcardSeedResult,
   FlashcardState,
   GameAnswerResult,
   GameSession,
@@ -106,7 +107,7 @@ export const platformApi = {
     return data;
   },
   async seedFlashcards(token: string, target_category_key = "", source_type: QuestionType = "brandGeneric") {
-    const {data} = await apiClient.post<FlashcardState[]>(
+    const {data} = await apiClient.post<FlashcardSeedResult>(
       "/flashcards/seed/",
       {product_id: "pharmexa", target_category_key, source_type},
       withToken(token),

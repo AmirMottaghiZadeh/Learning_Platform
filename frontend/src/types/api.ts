@@ -159,7 +159,6 @@ export type GameQuestion = {
   option_layout: "compact" | "list";
   instruction: string;
   prompt: string;
-  subtitle: string;
   chip: string;
   explanation: string;
   options: string[];
@@ -219,7 +218,6 @@ export type FlashcardState = {
   id: number;
   prompt: string;
   correct_answer: string;
-  feedback: string;
   source_type: string;
   target_category_key: string;
   target_category_label: string;
@@ -233,6 +231,10 @@ export type FlashcardState = {
   schedule_rule_version: string;
   due_at: string | null;
   last_reviewed_at: string | null;
+};
+
+export type FlashcardSeedResult = {
+  created_count: number;
 };
 
 export type FlashcardFlowMode = "new" | "leitner";

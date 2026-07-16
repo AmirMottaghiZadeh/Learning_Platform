@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.drugs.models import Drug, DrugQuestionSource, DrugTopic
+from apps.drugs.learning_sync import sync_drug_question_sources
 from apps.games.contracts import ScoringContext
 from apps.games.models import GameQuestion, GameSession, Mistake, QuizReminder
 from apps.games.services.answer_service import answer_question
@@ -215,13 +216,14 @@ class GamePersistenceAlignmentTests(TestCase):
             brand_name="گلوکوفاژ گلوفورمین دیابزید متفورال",
             source_topic="Endo",
         )
-        DrugQuestionSource.objects.create(
+        source = DrugQuestionSource.objects.create(
             topic=brand_topic,
             drug=drug,
             question_type="brandGeneric",
             prompt="legacy prompt",
             correct_answer="متفورمین",
         )
+        sync_drug_question_sources(source)
 
         session = start_game(
             user,
@@ -435,6 +437,7 @@ class GamePersistenceAlignmentTests(TestCase):
         self.assertEqual(data["interaction_type"], "segmented")
         self.assertEqual(data["option_layout"], "compact")
         self.assertEqual(data["instruction"], "")
+        self.assertNotIn("subtitle", data)
         self.assertNotIn("Tab", data["chip"])
 
     def test_question_serializer_exposes_timer_contract(self):

@@ -46,6 +46,7 @@ class PharmexaLearningAdapterTests(TestCase):
             feedback="Take with food.",
         )
 
+        sync_drug_question_sources(source)
         sources = PharmexaLearningAdapter().list_knowledge_sources(
             QuestionGenerationContext(topic_key="timing")
         )
@@ -221,7 +222,7 @@ class PharmexaLearningAdapterTests(TestCase):
             {"گلوکوفاژ", "گلوفورمین", "دیابزید"},
         )
 
-    def test_adapter_repairs_stale_brand_knowledge_sources_before_listing(self):
+    def test_adapter_reads_pre_synced_brand_knowledge_sources_without_syncing_on_request(self):
         brand_topic = DrugTopic.objects.create(key="brandGeneric", label="Brand")
         drug = Drug.objects.create(
             external_id="drug-brand-stale",
@@ -254,10 +255,18 @@ class PharmexaLearningAdapterTests(TestCase):
         )
 
         stale_source.refresh_from_db()
-        self.assertFalse(stale_source.is_active)
-        self.assertEqual(len(sources), 2)
+        self.assertTrue(stale_source.is_active)
+        self.assertEqual(len(sources), 3)
         self.assertEqual(
-            {source.metadata["brand_name_variant"] for source in KnowledgeSource.objects.filter(product_id="pharmexa", source_type="brandGeneric", is_active=True)},
+            {
+                source.metadata["brand_name_variant"]
+                for source in KnowledgeSource.objects.filter(
+                    product_id="pharmexa",
+                    source_type="brandGeneric",
+                    is_active=True,
+                )
+                if source.metadata.get("brand_name_variant")
+            },
             {"گلوکوفاژ", "دیابزید"},
         )
 

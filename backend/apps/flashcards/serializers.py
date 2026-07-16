@@ -5,7 +5,6 @@ from .models import FlashcardState, FlashcardReview
 class FlashcardStateSerializer(serializers.ModelSerializer):
     prompt = serializers.SerializerMethodField()
     correct_answer = serializers.SerializerMethodField()
-    feedback = serializers.SerializerMethodField()
     source_type = serializers.SerializerMethodField()
     target_category_key = serializers.SerializerMethodField()
     target_category_label = serializers.SerializerMethodField()
@@ -17,7 +16,6 @@ class FlashcardStateSerializer(serializers.ModelSerializer):
             "id",
             "prompt",
             "correct_answer",
-            "feedback",
             "source_type",
             "target_category_key",
             "target_category_label",
@@ -52,13 +50,6 @@ class FlashcardStateSerializer(serializers.ModelSerializer):
         if knowledge_source:
             return knowledge_source.correct_answer
         return self._legacy_source(obj).correct_answer
-
-    @extend_schema_field(serializers.CharField)
-    def get_feedback(self, obj):
-        knowledge_source = self._knowledge_source(obj)
-        if knowledge_source:
-            return knowledge_source.explanation
-        return self._legacy_source(obj).feedback
 
     @extend_schema_field(serializers.CharField)
     def get_source_type(self, obj):
@@ -133,6 +124,10 @@ class FlashcardSeedRequestSerializer(serializers.Serializer):
         allow_blank=True,
         default="",
     )
+
+
+class FlashcardSeedResultSerializer(serializers.Serializer):
+    created_count = serializers.IntegerField()
 
 
 class FlashcardBoxSerializer(serializers.Serializer):

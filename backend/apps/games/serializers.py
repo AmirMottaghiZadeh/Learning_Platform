@@ -21,7 +21,6 @@ from .selectors import get_current_question
 
 class GameQuestionSerializer(serializers.ModelSerializer):
     prompt = serializers.SerializerMethodField()
-    subtitle = serializers.SerializerMethodField()
     chip = serializers.SerializerMethodField()
     explanation = serializers.SerializerMethodField()
     question_type = serializers.SerializerMethodField()
@@ -44,7 +43,6 @@ class GameQuestionSerializer(serializers.ModelSerializer):
             "option_layout",
             "instruction",
             "prompt",
-            "subtitle",
             "chip",
             "explanation",
             "options",
@@ -68,17 +66,6 @@ class GameQuestionSerializer(serializers.ModelSerializer):
         if knowledge_source:
             return knowledge_source.prompt
         return self._legacy_source(obj).prompt
-
-    @extend_schema_field(serializers.CharField)
-    def get_subtitle(self, obj):
-        knowledge_source = self._knowledge_source(obj)
-        if knowledge_source:
-            return (
-                knowledge_source.metadata.get("subtitle")
-                or knowledge_source.learning_object.subtitle
-                or ""
-            )
-        return ""
 
     @extend_schema_field(serializers.CharField)
     def get_chip(self, obj):

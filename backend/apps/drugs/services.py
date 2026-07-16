@@ -1,6 +1,8 @@
 import random
 import re
 
+from django.db.models import Count
+
 from apps.learning.models import KnowledgeSource
 
 from .categories import TARGET_CATEGORIES, TARGET_CATEGORY_BY_KEY, category_for_drug
@@ -95,28 +97,26 @@ def list_target_categories(product_id="pharmexa", source_type=""):
     if product_id != "pharmexa":
         return []
 
-    if source_type == "brandGeneric":
-        from .learning_sync import ensure_brand_generic_knowledge_sources
-
-        ensure_brand_generic_knowledge_sources()
-
     synced_sources = (
         KnowledgeSource.objects
         .filter(product_id=product_id, is_active=True)
         .exclude(prompt="")
         .exclude(correct_answer="")
+        .exclude(correct_answer__in=INVALID_ANSWERS)
     )
     if source_type:
         synced_sources = synced_sources.filter(source_type=source_type)
     if synced_sources.exists():
-        counts = {}
-        for source in synced_sources.iterator():
-            if not is_valid_correct_answer(source.correct_answer):
-                continue
-            key = source.metadata.get("target_category_key", "")
-            if not key:
-                continue
-            counts[key] = counts.get(key, 0) + 1
+        counts = {
+            item["metadata__target_category_key"]: item["count"]
+            for item in (
+                synced_sources
+                .filter(metadata__target_category_key__isnull=False)
+                .exclude(metadata__target_category_key="")
+                .values("metadata__target_category_key")
+                .annotate(count=Count("id"))
+            )
+        }
 
         categories = []
         for category in TARGET_CATEGORIES:

@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Exists, OuterRef, Q
 from django.utils import timezone
 
 from apps.flashcards.contracts import (
@@ -5,8 +9,8 @@ from apps.flashcards.contracts import (
     ReviewScheduleResult,
     ReviewSchedulingContext,
 )
-from apps.drugs.services import is_valid_correct_answer
-from apps.learning.models import KnowledgeSource
+from apps.drugs.services import INVALID_ANSWERS
+from apps.learning.models import KnowledgeSource, LearningEventRecord
 from apps.learning.services import (
     EVENT_REVIEW_SCHEDULED,
     record_learning_event,
@@ -20,6 +24,12 @@ LEITNER_MAX_BOX = 5
 REVIEW_SCHEDULE_RULE_VERSION = "pharmexa-leitner-box-v1"
 KNOWN_RATINGS = {"known", "good", "easy"}
 UNKNOWN_RATINGS = {"unknown", "again", "hard"}
+FLASHCARD_BULK_BATCH_SIZE = 500
+
+
+@dataclass(frozen=True)
+class FlashcardSeedResult:
+    created_count: int
 
 
 def normalize_review_rating(rating):
@@ -121,16 +131,10 @@ def seed_flashcards_for_user(
     target_category_key="",
     source_type="",
 ):
-    if source_type == "brandGeneric":
-        from apps.drugs.learning_sync import ensure_brand_generic_knowledge_sources
-
-        ensure_brand_generic_knowledge_sources(target_category_key=target_category_key)
-
     created_at = timezone.now()
-    existing_source_ids = set(
+    existing_state = (
         FlashcardState.objects
-        .filter(user=user, knowledge_source__isnull=False, knowledge_source__is_active=True)
-        .values_list("knowledge_source_id", flat=True)
+        .filter(user=user, knowledge_source_id=OuterRef("pk"))
     )
 
     sources = (
@@ -138,7 +142,9 @@ def seed_flashcards_for_user(
         .filter(product_id=product_id, is_active=True)
         .exclude(prompt="")
         .exclude(correct_answer="")
-        .exclude(id__in=existing_source_ids)
+        .exclude(correct_answer__in=INVALID_ANSWERS)
+        .annotate(has_flashcard=Exists(existing_state))
+        .filter(has_flashcard=False)
         .select_related("learning_object", "topic")
         .order_by("metadata__target_category_key", "source_type", "id")
     )
@@ -147,59 +153,70 @@ def seed_flashcards_for_user(
     if source_type:
         sources = sources.filter(source_type=source_type)
 
-    states = []
-    for source in sources:
-        if not is_valid_correct_answer(source.correct_answer):
-            continue
-        states.append(schedule_flashcard_from_source(user=user, knowledge_source=source, created_at=created_at))
-    return states
+    created_count = 0
+    source_batch = []
+    for source in sources.iterator(chunk_size=FLASHCARD_BULK_BATCH_SIZE):
+        source_batch.append(source)
+        if len(source_batch) >= FLASHCARD_BULK_BATCH_SIZE:
+            created_count += _bulk_seed_flashcard_states(
+                user=user,
+                sources=source_batch,
+                created_at=created_at,
+            )
+            source_batch = []
+    if source_batch:
+        created_count += _bulk_seed_flashcard_states(
+            user=user,
+            sources=source_batch,
+            created_at=created_at,
+        )
+    return FlashcardSeedResult(created_count=created_count)
 
 
 def get_flashcard_deck_summary(*, user, product_id="pharmexa", target_category_key="", source_type=""):
-    if source_type == "brandGeneric":
-        from apps.drugs.learning_sync import ensure_brand_generic_knowledge_sources
-
-        ensure_brand_generic_knowledge_sources(target_category_key=target_category_key)
-
     sources = (
         KnowledgeSource.objects
         .filter(product_id=product_id, is_active=True)
         .exclude(prompt="")
         .exclude(correct_answer="")
-        .select_related("learning_object", "topic")
+        .exclude(correct_answer__in=INVALID_ANSWERS)
     )
     if target_category_key:
         sources = sources.filter(metadata__target_category_key=target_category_key)
     if source_type:
         sources = sources.filter(source_type=source_type)
 
-    states = FlashcardState.objects.filter(
+    states = _flashcard_states_queryset(
         user=user,
-        knowledge_source__product_id=product_id,
-        knowledge_source__is_active=True,
+        product_id=product_id,
+        target_category_key=target_category_key,
+        source_type=source_type,
     )
-    if target_category_key:
-        states = states.filter(knowledge_source__metadata__target_category_key=target_category_key)
-    if source_type:
-        states = states.filter(knowledge_source__source_type=source_type)
-
-    scheduled_source_ids = set(states.values_list("knowledge_source_id", flat=True))
-    eligible_source_ids = set(sources.values_list("id", flat=True))
-    new_states = states.filter(box=0, review_state=FlashcardState.REVIEW_STATE_NEW)
-    leitner_states = states.filter(box__gte=LEITNER_MIN_BOX).exclude(
-        review_state=FlashcardState.REVIEW_STATE_SUSPENDED
+    state_counts = states.aggregate(
+        scheduled_cards=Count("id"),
+        new_cards=Count(
+            "id",
+            filter=Q(box=0, review_state=FlashcardState.REVIEW_STATE_NEW),
+        ),
+        active_cards=Count(
+            "id",
+            filter=Q(box__gte=LEITNER_MIN_BOX)
+            & ~Q(review_state=FlashcardState.REVIEW_STATE_SUSPENDED),
+        ),
     )
+    eligible_sources = sources.count()
+    scheduled_cards = state_counts["scheduled_cards"] or 0
 
     return {
         "product_id": product_id,
         "target_category_key": target_category_key,
         "source_type": source_type,
-        "eligible_sources": len(eligible_source_ids),
-        "scheduled_cards": len(eligible_source_ids & scheduled_source_ids),
-        "unscheduled_sources": len(eligible_source_ids - scheduled_source_ids),
-        "active_cards": leitner_states.count(),
-        "new_cards": new_states.count(),
-        "due_cards": leitner_states.count(),
+        "eligible_sources": eligible_sources,
+        "scheduled_cards": scheduled_cards,
+        "unscheduled_sources": max(0, eligible_sources - scheduled_cards),
+        "active_cards": state_counts["active_cards"] or 0,
+        "new_cards": state_counts["new_cards"] or 0,
+        "due_cards": state_counts["active_cards"] or 0,
         "leitner": get_leitner_box_counts(
             user=user,
             product_id=product_id,
@@ -236,24 +253,126 @@ def schedule_flashcard_from_source(*, user, knowledge_source, created_at=None):
 
 
 def get_leitner_box_counts(*, user, product_id="pharmexa", target_category_key="", source_type=""):
-    queryset = (
-        FlashcardState.objects
-        .filter(
-            user=user,
-            knowledge_source__product_id=product_id,
-            knowledge_source__is_active=True,
-            box__gte=LEITNER_MIN_BOX,
-        )
-        .exclude(review_state=FlashcardState.REVIEW_STATE_SUSPENDED)
+    queryset = _flashcard_states_queryset(
+        user=user,
+        product_id=product_id,
+        target_category_key=target_category_key,
+        source_type=source_type,
+    ).filter(
+        box__gte=LEITNER_MIN_BOX,
+    ).exclude(
+        review_state=FlashcardState.REVIEW_STATE_SUSPENDED
     )
+    counts_by_box = {
+        item["box"]: item["count"]
+        for item in queryset.values("box").annotate(count=Count("id"))
+    }
+    total = sum(counts_by_box.values())
     return {
         "new": 0,
-        "total": queryset.count(),
+        "total": total,
         "boxes": [
-            {"box": box, "count": queryset.filter(box=box).count()}
+            {"box": box, "count": counts_by_box.get(box, 0)}
             for box in range(LEITNER_MIN_BOX, LEITNER_MAX_BOX + 1)
         ],
     }
+
+
+def _flashcard_states_queryset(*, user, product_id, target_category_key="", source_type=""):
+    queryset = FlashcardState.objects.filter(
+        user=user,
+        knowledge_source__product_id=product_id,
+        knowledge_source__is_active=True,
+    )
+    if target_category_key:
+        queryset = queryset.filter(
+            knowledge_source__metadata__target_category_key=target_category_key
+        )
+    if source_type:
+        queryset = queryset.filter(knowledge_source__source_type=source_type)
+    return queryset
+
+
+def _bulk_seed_flashcard_states(*, user, sources, created_at):
+    states = [
+        FlashcardState(
+            user=user,
+            knowledge_source=source,
+            box=0,
+            review_state=FlashcardState.REVIEW_STATE_NEW,
+            due_at=None,
+            interval_days=0,
+            schedule_rule_version=REVIEW_SCHEDULE_RULE_VERSION,
+        )
+        for source in sources
+    ]
+    try:
+        with transaction.atomic():
+            FlashcardState.objects.bulk_create(
+                states,
+                batch_size=FLASHCARD_BULK_BATCH_SIZE,
+            )
+    except IntegrityError:
+        # Another request may have created a subset after the availability check.
+        # Retry the remaining sources once without failing the user's deck request.
+        existing_source_ids = set(
+            FlashcardState.objects.filter(
+                user=user,
+                knowledge_source_id__in=[source.id for source in sources],
+            ).values_list("knowledge_source_id", flat=True)
+        )
+        sources = [
+            source for source in sources
+            if source.id not in existing_source_ids
+        ]
+        if not sources:
+            return 0
+        states = [
+            FlashcardState(
+                user=user,
+                knowledge_source=source,
+                box=0,
+                review_state=FlashcardState.REVIEW_STATE_NEW,
+                due_at=None,
+                interval_days=0,
+                schedule_rule_version=REVIEW_SCHEDULE_RULE_VERSION,
+            )
+            for source in sources
+        ]
+        FlashcardState.objects.bulk_create(states, batch_size=FLASHCARD_BULK_BATCH_SIZE)
+
+    state_ids_by_source_id = dict(
+        FlashcardState.objects.filter(
+            user=user,
+            knowledge_source_id__in=[source.id for source in sources],
+        ).values_list("knowledge_source_id", "id")
+    )
+    LearningEventRecord.objects.bulk_create(
+        [
+            LearningEventRecord(
+                event_type=EVENT_REVIEW_SCHEDULED,
+                learner=user,
+                product_id=source.product_id,
+                occurred_at=created_at,
+                correlation_id=f"flashcard-seed:{state_ids_by_source_id[source.id]}",
+                payload={
+                    "flashcard_state_id": state_ids_by_source_id[source.id],
+                    "topic_key": source.topic.key,
+                    "knowledge_source_id": source.id,
+                    "learning_object_id": source.learning_object_id,
+                    "target_category_key": source.metadata.get("target_category_key", ""),
+                    "created": True,
+                    "reason": "learning_seed",
+                    "box": 0,
+                    "due_at": None,
+                    "rule_version": REVIEW_SCHEDULE_RULE_VERSION,
+                },
+            )
+            for source in sources
+        ],
+        batch_size=FLASHCARD_BULK_BATCH_SIZE,
+    )
+    return len(states)
 
 
 def _record_review_scheduled(

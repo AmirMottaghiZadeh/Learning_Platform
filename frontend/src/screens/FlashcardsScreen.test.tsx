@@ -33,7 +33,6 @@ const firstCard: FlashcardState = {
   id: 1,
   prompt: "سؤال اول",
   correct_answer: "پاسخ اول",
-  feedback: "",
   source_type: "brandGeneric",
   target_category_key: "",
   target_category_label: "",

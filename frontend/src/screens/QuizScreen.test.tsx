@@ -43,7 +43,6 @@ const question: GameQuestion = {
   option_layout: "list",
   instruction: "",
   prompt: "نام ژنریک دارو چیست؟",
-  subtitle: "",
   chip: "",
   explanation: "توضیح پاسخ",
   options: ["پاسخ درست", "پاسخ نادرست"],
