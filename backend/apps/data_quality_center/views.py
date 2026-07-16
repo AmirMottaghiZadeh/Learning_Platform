@@ -12,22 +12,33 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from apps.ai_data_pipeline import constants
-from apps.ai_data_pipeline.models import AIDataBatch, AIDataJob, AIDataReport, AIDataSuggestion
+from apps.ai_data_pipeline.models import AIDataBatch, AIDataChangeHistory, AIDataJob, AIDataReport, AIDataSuggestion
 from apps.ai_data_pipeline.reports.report_generator import build_batch_report, write_reports
 from apps.ai_data_pipeline.reviewers.approval import review_suggestions
+from apps.drugs.models import Drug
 
-from .forms import BatchFilterForm, JobFilterForm, SuggestionEditForm, SuggestionReviewActionForm, SuggestionFilterForm
+from .forms import (
+    BatchFilterForm,
+    DrugDatabaseCreateForm,
+    DrugDatabaseEditForm,
+    DrugDatabaseFilterForm,
+    JobFilterForm,
+    SuggestionEditForm,
+    SuggestionReviewActionForm,
+    SuggestionFilterForm,
+)
 from .services import (
     build_batch_context,
     build_dashboard_context,
     build_record_context,
+    create_drug_from_quality_center,
     filter_suggestions,
+    filter_drugs,
     get_model_for_table,
     health_summary_snapshot,
     report_csv_content,
+    update_drug_from_quality_center,
 )
-
-
 def _staff_view(view):
     return staff_member_required(view)
 
@@ -305,6 +316,84 @@ def reverse_record_url(suggestion):
         return f"/data-quality/records/{suggestion.table_name}/{suggestion.record_id}/"
     except Exception:
         return ""
+
+
+@_staff_view
+def drug_database_list(request):
+    form = DrugDatabaseFilterForm(request.GET or None)
+    queryset = filter_drugs(form.cleaned_data if form.is_valid() else {})
+    page, paginator = _paginate(request, queryset, per_page=30)
+    return render(
+        request,
+        "data_quality_center/database/list.html",
+        {
+            "nav_section": "database",
+            "form": form,
+            "drugs": page.object_list,
+            "page_obj": page,
+            "paginator": paginator,
+        },
+    )
+
+
+@_staff_view
+@require_http_methods(["GET", "POST"])
+def drug_database_edit(request, drug_id):
+    drug = get_object_or_404(Drug, pk=drug_id)
+    if request.method == "POST":
+        form = DrugDatabaseEditForm(request.POST, instance=drug)
+        if form.is_valid():
+            updated_drug, changes = update_drug_from_quality_center(
+                drug_id=drug.id,
+                cleaned_data=form.cleaned_data,
+                edited_by=request.user.get_username(),
+            )
+            if changes:
+                messages.success(request, f"Saved {len(changes)} database field change(s) for drug #{updated_drug.id}.")
+            else:
+                messages.info(request, "No values changed.")
+            return redirect("data_quality_center:drug_database_edit", drug_id=updated_drug.id)
+    else:
+        form = DrugDatabaseEditForm(instance=drug)
+
+    history = AIDataChangeHistory.objects.filter(
+        table_name=constants.DRUG_TABLE,
+        record_id=str(drug.id),
+    ).order_by("-applied_at")[:30]
+    return render(
+        request,
+        "data_quality_center/database/edit.html",
+        {
+            "nav_section": "database",
+            "drug": drug,
+            "form": form,
+            "history": history,
+        },
+    )
+
+
+@_staff_view
+@require_http_methods(["GET", "POST"])
+def drug_database_create(request):
+    if request.method == "POST":
+        form = DrugDatabaseCreateForm(request.POST)
+        if form.is_valid():
+            drug = create_drug_from_quality_center(
+                cleaned_data=form.cleaned_data,
+                created_by=request.user.get_username(),
+            )
+            messages.success(request, f"Created drug #{drug.id}. Its identifiers were generated automatically.")
+            return redirect("data_quality_center:drug_database_edit", drug_id=drug.id)
+    else:
+        form = DrugDatabaseCreateForm()
+    return render(
+        request,
+        "data_quality_center/database/create.html",
+        {
+            "nav_section": "create_drug",
+            "form": form,
+        },
+    )
 
 
 @_staff_view

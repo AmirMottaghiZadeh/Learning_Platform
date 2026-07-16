@@ -1,7 +1,9 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from apps.ai_data_pipeline import constants
 from apps.ai_data_pipeline.models import AIDataBatch, AIDataJob, AIDataSuggestion
+from apps.drugs.models import Drug
 
 
 class SuggestionFilterForm(forms.Form):
@@ -63,3 +65,145 @@ class JobFilterForm(forms.Form):
     job_type = forms.ChoiceField(required=False, choices=[("", "All jobs"), *AIDataJob.JOB_TYPE_CHOICES])
     status = forms.ChoiceField(required=False, choices=[("", "All statuses"), ("pending", "Pending"), ("running", "Running"), ("completed", "Completed"), ("failed", "Failed"), ("cancelled", "Cancelled")])
     provider = forms.ChoiceField(required=False, choices=[("", "All providers"), *[(item, item) for item in sorted(constants.PROVIDER_CHOICES)]])
+
+
+class DrugDatabaseFilterForm(forms.Form):
+    SEARCH_FIELD_CHOICES = [
+        ("all", "All searchable fields"),
+        ("name", "Name"),
+        ("persian_name", "Persian name"),
+        ("brand_name", "Brand name"),
+        ("generic_name", "Generic name"),
+        ("indication", "Indication"),
+        ("indication_answer", "Indication answer"),
+        ("side_effects", "Side effects"),
+        ("side_effects_answer", "Side effects answer"),
+        ("dosage_form", "Dosage form"),
+        ("drug_classification", "Classification"),
+        ("consumption_time", "Consumption time"),
+        ("consumption_time_sorted", "Consumption time (normalized)"),
+        ("dosing_and_administration", "Dosing and administration"),
+        ("pregnancy", "Pregnancy"),
+        ("breastfeeding", "Breastfeeding"),
+        ("dose_adjustment", "Dose adjustment"),
+        ("clinical_notes", "Clinical notes"),
+        ("source_topic", "Source topic"),
+    ]
+
+    q = forms.CharField(required=False, label="Search", widget=forms.TextInput(attrs={"placeholder": "Search drug information"}))
+    search_field = forms.ChoiceField(required=False, label="Search in", choices=SEARCH_FIELD_CHOICES, initial="all")
+    sort = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("generic_name", "Generic name"),
+            ("brand_name", "Brand name"),
+            ("-updated_at", "Recently updated"),
+            ("-created_at", "Recently added"),
+        ],
+        initial="generic_name",
+    )
+
+
+class DrugDatabaseEditForm(forms.ModelForm):
+    JSON_LIST_FIELDS = ("atc_codes", "atc_classes", "atc_subclasses", "atc_categories", "category")
+
+    class Meta:
+        model = Drug
+        fields = [
+            "name",
+            "persian_name",
+            "brand_name",
+            "generic_name",
+            "dosage_form",
+            "drug_classification",
+            "consumption_time",
+            "consumption_time_sorted",
+            "indication",
+            "indication_answer",
+            "side_effects",
+            "side_effects_answer",
+            "dosing_and_administration",
+            "pregnancy",
+            "breastfeeding",
+            "dose_adjustment",
+            "clinical_notes",
+            "atc_codes",
+            "atc_classes",
+            "atc_subclasses",
+            "atc_categories",
+            "category",
+            "source_topic",
+            "extra_attributes",
+        ]
+        labels = {
+            "name": "Name",
+            "persian_name": "Persian name",
+            "brand_name": "Brand name",
+            "generic_name": "Generic name",
+            "dosage_form": "Dosage form",
+            "drug_classification": "Classification",
+            "consumption_time": "Consumption time",
+            "consumption_time_sorted": "Consumption time (normalized)",
+            "indication": "Indication",
+            "indication_answer": "Indication answer",
+            "side_effects": "Side effects",
+            "side_effects_answer": "Side effects answer",
+            "dosing_and_administration": "Dosing and administration",
+            "pregnancy": "Pregnancy",
+            "breastfeeding": "Breastfeeding",
+            "dose_adjustment": "Dose adjustment",
+            "clinical_notes": "Clinical notes",
+            "atc_codes": "ATC codes (JSON)",
+            "atc_classes": "ATC classes (JSON)",
+            "atc_subclasses": "ATC subclasses (JSON)",
+            "atc_categories": "ATC categories (JSON)",
+            "category": "Categories (JSON)",
+            "source_topic": "Source topic",
+            "extra_attributes": "Extra attributes (JSON)",
+        }
+        widgets = {
+            "name": forms.TextInput(),
+            "persian_name": forms.TextInput(),
+            "brand_name": forms.Textarea(attrs={"rows": 3}),
+            "generic_name": forms.Textarea(attrs={"rows": 3}),
+            "dosage_form": forms.Textarea(attrs={"rows": 3}),
+            "drug_classification": forms.Textarea(attrs={"rows": 3}),
+            "consumption_time": forms.Textarea(attrs={"rows": 3}),
+            "consumption_time_sorted": forms.Textarea(attrs={"rows": 3}),
+            "indication": forms.Textarea(attrs={"rows": 5}),
+            "indication_answer": forms.Textarea(attrs={"rows": 5}),
+            "side_effects": forms.Textarea(attrs={"rows": 5}),
+            "side_effects_answer": forms.Textarea(attrs={"rows": 5}),
+            "dosing_and_administration": forms.Textarea(attrs={"rows": 5}),
+            "pregnancy": forms.Textarea(attrs={"rows": 4}),
+            "breastfeeding": forms.Textarea(attrs={"rows": 4}),
+            "dose_adjustment": forms.Textarea(attrs={"rows": 4}),
+            "clinical_notes": forms.Textarea(attrs={"rows": 5}),
+            "atc_codes": forms.Textarea(attrs={"rows": 3}),
+            "atc_classes": forms.Textarea(attrs={"rows": 3}),
+            "atc_subclasses": forms.Textarea(attrs={"rows": 3}),
+            "atc_categories": forms.Textarea(attrs={"rows": 3}),
+            "category": forms.Textarea(attrs={"rows": 3}),
+            "source_topic": forms.TextInput(),
+            "extra_attributes": forms.Textarea(attrs={"rows": 6}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field_name in self.JSON_LIST_FIELDS:
+            if cleaned_data.get(field_name) is None:
+                cleaned_data[field_name] = []
+        if cleaned_data.get("extra_attributes") is None:
+            cleaned_data["extra_attributes"] = {}
+        return cleaned_data
+
+
+class DrugDatabaseCreateForm(DrugDatabaseEditForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        identity_fields = ("name", "persian_name", "brand_name", "generic_name")
+        if not any(str(cleaned_data.get(field_name, "")).strip() for field_name in identity_fields):
+            raise ValidationError(
+                "Provide at least one identifying name: name, Persian name, brand name, or generic name."
+            )
+        return cleaned_data

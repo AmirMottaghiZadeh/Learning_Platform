@@ -6,7 +6,12 @@
     <h1>Record Inspector</h1>
     <p>{{ table_name }} · Record {{ record.id }}</p>
   </div>
-  <span class="chip">Quality score {{ quality_score }}</span>
+  <div class="status-line">
+    <span class="chip">Quality score {{ quality_score }}</span>
+    {% if table_name == "drugs_drug" %}
+      <a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' record.id %}">Edit in Database</a>
+    {% endif %}
+  </div>
 </section>
 
 <section class="grid two">

@@ -1,0 +1,52 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Add Drug | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Add new drug</h1>
+    <p>Create a new drug record using the same clinical fields as the main database.</p>
+  </div>
+  <a class="button-secondary" href="{% url 'data_quality_center:drug_database_list' %}">Back to Database</a>
+</section>
+
+<section class="split" style="margin-bottom:16px;">
+  <article class="panel">
+    <h2>Automatic identifiers</h2>
+    <div class="stack">
+      <div class="note">The database creates the internal record ID automatically.</div>
+      <div class="note">The system creates a unique external ID automatically. It is not entered by the user.</div>
+      <div class="note">Enter at least one identifying name: name, Persian name, brand name, or generic name.</div>
+    </div>
+  </article>
+  <article class="panel">
+    <h2>Creation safeguards</h2>
+    <div class="stack">
+      <div class="note">The new record is saved directly in the main drug database and is immediately available to the API and application.</div>
+      <div class="note">An audit entry records the creator, time, generated external ID, and initial values.</div>
+      <div class="note">JSON fields must contain valid JSON, for example <code>["A10BA02"]</code> or <code>{"key": "value"}</code>.</div>
+    </div>
+  </article>
+</section>
+
+<form method="post">
+  {% csrf_token %}
+  <section class="panel">
+    <div class="form-grid">
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+    {% if form.non_field_errors %}
+      <div class="field-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <div class="action-bar" style="margin-top:18px;">
+      <button class="button" type="submit" onclick="return confirm('Create this new drug record?');">Confirm and create drug</button>
+      <a class="button-secondary" href="{% url 'data_quality_center:drug_database_list' %}">Cancel</a>
+    </div>
+  </section>
+</form>
+{% endblock %}

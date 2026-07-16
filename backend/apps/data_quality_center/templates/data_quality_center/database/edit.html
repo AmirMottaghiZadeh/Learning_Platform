@@ -1,0 +1,73 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Edit Drug {{ drug.id }} | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Edit drug record</h1>
+    <p>#{{ drug.id }} · {{ drug.brand_name|default:drug.generic_name|default:drug.name|default:drug.external_id }}</p>
+  </div>
+  <div class="status-line">
+    <a class="button-secondary" href="{% url 'data_quality_center:drug_database_list' %}">Back to Database</a>
+    <a class="button-secondary" href="{% url 'data_quality_center:record_inspector' 'drugs_drug' drug.id %}">Record Inspector</a>
+  </div>
+</section>
+
+<section class="split" style="margin-bottom:16px;">
+  <article class="panel">
+    <h2>Record details</h2>
+    <div class="stack">
+      <div class="mini-box"><div class="label">External ID</div><div class="prewrap">{{ drug.external_id }}</div></div>
+      <div class="mini-box"><div class="label">Source</div><div class="prewrap">{{ drug.source_file|default:"-" }} · table {{ drug.source_table }} · row {{ drug.source_row }}</div></div>
+      <div class="mini-box"><div class="label">Last updated</div><div>{{ drug.updated_at }}</div></div>
+    </div>
+  </article>
+  <article class="panel">
+    <h2>Editing safeguards</h2>
+    <div class="stack">
+      <div class="note">Saving writes directly to the production drug record. The application API will use the updated values immediately.</div>
+      <div class="note">Each changed field is written to the audit history with your username and the before/after values.</div>
+      <div class="note">JSON fields must contain valid JSON, for example <code>["A10BA02"]</code> or <code>{"key": "value"}</code>.</div>
+    </div>
+  </article>
+</section>
+
+<form method="post">
+  {% csrf_token %}
+  <section class="panel">
+    <div class="form-grid">
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+    {% if form.non_field_errors %}
+      <div class="field-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <div class="action-bar" style="margin-top:18px;">
+      <button class="button" type="submit" onclick="return confirm('Save these changes to the drug database?');">Confirm and save changes</button>
+      <a class="button-secondary" href="{% url 'data_quality_center:drug_database_list' %}">Cancel</a>
+    </div>
+  </section>
+</form>
+
+<section class="panel" style="margin-top:16px;">
+  <h2>Audit history</h2>
+  <div class="stack">
+    {% for item in history %}
+      <div class="mini-box">
+        <div class="status-line">
+          <strong>{{ item.field_name }}</strong>
+          <span class="chip">{{ item.applied_at }}</span>
+          <span class="chip">{{ item.applied_by|default:"Unknown user" }}</span>
+        </div>
+        <div class="prewrap text-small">{{ item.old_value }} → {{ item.new_value }}</div>
+      </div>
+    {% empty %}
+      <div class="muted">No direct database edits have been recorded for this drug.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

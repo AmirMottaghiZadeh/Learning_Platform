@@ -2,9 +2,11 @@ from collections import Counter
 from csv import writer
 from io import StringIO
 from math import ceil
+from uuid import uuid4
 
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.db.models import Count, Q
 from django.http import Http404
 from django.utils import timezone
@@ -12,6 +14,56 @@ from django.utils import timezone
 from apps.ai_data_pipeline import constants
 from apps.ai_data_pipeline.analyzers.health_check import run_health_check
 from apps.ai_data_pipeline.models import AIDataBatch, AIDataJob, AIDataReport, AIDataSuggestion, AIDataChangeHistory
+from apps.drugs.models import Drug
+
+
+DRUG_DATABASE_EDITABLE_FIELDS = (
+    "name",
+    "persian_name",
+    "brand_name",
+    "generic_name",
+    "dosage_form",
+    "drug_classification",
+    "consumption_time",
+    "consumption_time_sorted",
+    "indication",
+    "indication_answer",
+    "side_effects",
+    "side_effects_answer",
+    "dosing_and_administration",
+    "pregnancy",
+    "breastfeeding",
+    "dose_adjustment",
+    "clinical_notes",
+    "atc_codes",
+    "atc_classes",
+    "atc_subclasses",
+    "atc_categories",
+    "category",
+    "source_topic",
+    "extra_attributes",
+)
+
+DRUG_DATABASE_SEARCH_FIELDS = (
+    "name",
+    "persian_name",
+    "brand_name",
+    "generic_name",
+    "indication",
+    "indication_answer",
+    "side_effects",
+    "side_effects_answer",
+    "dosage_form",
+    "drug_classification",
+    "consumption_time",
+    "consumption_time_sorted",
+    "dosing_and_administration",
+    "pregnancy",
+    "breastfeeding",
+    "dose_adjustment",
+    "clinical_notes",
+    "source_topic",
+)
 
 
 def get_model_for_table(table_name):
@@ -151,6 +203,7 @@ def build_dashboard_context():
         "translation_suggestions": suggestion_type_counts.get(constants.SUGGESTION_TYPE_TRANSLATION, 0),
         "normalization_suggestions": suggestion_type_counts.get(constants.SUGGESTION_TYPE_NORMALIZATION, 0),
         "terminology_suggestions": suggestion_type_counts.get(constants.SUGGESTION_TYPE_TERMINOLOGY, 0),
+        "drug_record_count": Drug.objects.count(),
     }
 
 
@@ -252,6 +305,103 @@ def filter_suggestions(params):
     return queryset
 
 
+def filter_drugs(params):
+    queryset = Drug.objects.select_related("dataset_document")
+    q = params.get("q", "").strip()
+    search_field = params.get("search_field", "all").strip()
+    sort = params.get("sort") or "generic_name"
+
+    if q:
+        if search_field in DRUG_DATABASE_SEARCH_FIELDS:
+            queryset = queryset.filter(**{f"{search_field}__icontains": q})
+        else:
+            matches = Q()
+            for field_name in DRUG_DATABASE_SEARCH_FIELDS:
+                matches |= Q(**{f"{field_name}__icontains": q})
+            queryset = queryset.filter(matches)
+
+    if sort in {"generic_name", "brand_name", "-updated_at", "-created_at"}:
+        queryset = queryset.order_by(sort, "id")
+    else:
+        queryset = queryset.order_by("generic_name", "id")
+    return queryset
+
+
+def _history_value(value):
+    if isinstance(value, (dict, list)):
+        import json
+
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return "" if value is None else str(value)
+
+
+def update_drug_from_quality_center(*, drug_id, cleaned_data, edited_by):
+    """Persist an approved manual edit and record each changed field for audit."""
+    with transaction.atomic():
+        drug = Drug.objects.select_for_update().get(pk=drug_id)
+        changes = []
+        for field_name in DRUG_DATABASE_EDITABLE_FIELDS:
+            new_value = cleaned_data[field_name]
+            old_value = getattr(drug, field_name)
+            if old_value != new_value:
+                changes.append((field_name, old_value, new_value))
+                setattr(drug, field_name, new_value)
+
+        if not changes:
+            return drug, []
+
+        drug.save(update_fields=[*(field_name for field_name, _, _ in changes), "updated_at"])
+        for field_name, old_value, new_value in changes:
+            AIDataChangeHistory.objects.create(
+                table_name=constants.DRUG_TABLE,
+                record_id=str(drug.id),
+                field_name=field_name,
+                old_value=_history_value(old_value),
+                new_value=_history_value(new_value),
+                reason="Manual database update in Data Quality Center.",
+                suggestion_type="manual_edit",
+                applied_by=edited_by,
+                metadata={
+                    "change_source": "data_quality_center",
+                    "manual_edit": True,
+                },
+            )
+    return drug, changes
+
+
+def create_drug_from_quality_center(*, cleaned_data, created_by):
+    """Create an admin-entered drug with server-generated identifiers and audit history."""
+    with transaction.atomic():
+        drug = Drug.objects.create(
+            external_id=f"drug-{uuid4().hex}",
+            raw={"created_via": "data_quality_center"},
+            **{
+                field_name: cleaned_data[field_name]
+                for field_name in DRUG_DATABASE_EDITABLE_FIELDS
+            },
+        )
+        AIDataChangeHistory.objects.create(
+            table_name=constants.DRUG_TABLE,
+            record_id=str(drug.id),
+            field_name="__record__",
+            old_value="",
+            new_value=f"Created drug #{drug.id} ({drug.external_id}).",
+            reason="Manual drug creation in Data Quality Center.",
+            suggestion_type="manual_create",
+            applied_by=created_by,
+            metadata={
+                "change_source": "data_quality_center",
+                "manual_create": True,
+                "external_id": drug.external_id,
+                "initial_values": {
+                    field_name: _history_value(cleaned_data[field_name])
+                    for field_name in DRUG_DATABASE_EDITABLE_FIELDS
+                },
+            },
+        )
+    return drug
+
+
 def build_record_context(model, record_id):
     try:
         record = model.objects.get(pk=record_id)
@@ -321,4 +471,3 @@ def report_csv_content(report):
     for key, value in sorted(suggestions.items()):
         csv_writer.writerow(["suggestions", key, value])
     return buffer.getvalue()
-

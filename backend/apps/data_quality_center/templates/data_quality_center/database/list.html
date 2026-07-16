@@ -1,0 +1,69 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Drug Database | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Drug Database</h1>
+    <p>Find drug records by their clinical attributes, then open a record for controlled editing.</p>
+  </div>
+  <a class="button" href="{% url 'data_quality_center:drug_database_create' %}">Add new drug</a>
+</section>
+
+<section class="panel" style="margin-bottom:16px;">
+  <form class="filter-bar" method="get">
+    {% for field in form %}
+      <div class="field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+      </div>
+    {% endfor %}
+    <button class="button" type="submit">Search records</button>
+    <a class="button-secondary" href="{% url 'data_quality_center:drug_database_list' %}">Clear filters</a>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="status-line" style="margin-bottom:14px;">
+    <h2 style="margin:0;">Drug records</h2>
+    <span class="chip">{{ paginator.count }} matching records</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Brand name</th>
+          <th>Generic name</th>
+          <th>Persian name</th>
+          <th>Dosage form</th>
+          <th>Classification</th>
+          <th>Indication</th>
+          <th>Side effects</th>
+          <th>Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for drug in drugs %}
+          <tr>
+            <td>{{ drug.id }}</td>
+            <td class="prewrap">{{ drug.brand_name|truncatechars:90|default:"-" }}</td>
+            <td class="prewrap">{{ drug.generic_name|truncatechars:90|default:"-" }}</td>
+            <td class="prewrap">{{ drug.persian_name|truncatechars:90|default:"-" }}</td>
+            <td class="prewrap">{{ drug.dosage_form|truncatechars:70|default:"-" }}</td>
+            <td class="prewrap">{{ drug.drug_classification|truncatechars:70|default:"-" }}</td>
+            <td class="prewrap">{{ drug.indication|truncatechars:120|default:"-" }}</td>
+            <td class="prewrap">{{ drug.side_effects|truncatechars:120|default:"-" }}</td>
+            <td>{{ drug.updated_at }}</td>
+            <td><a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' drug.id %}">Open</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="10" class="muted">No drug records match the current filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% include "data_quality_center/pagination.html" with page_obj=page_obj %}
+{% endblock %}

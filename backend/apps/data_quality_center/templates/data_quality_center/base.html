@@ -23,6 +23,8 @@
         <a href="{% url 'data_quality_center:batch_list' %}" class="{% if nav_section == 'batches' %}active{% endif %}">Batches</a>
         <a href="{% url 'data_quality_center:job_list' %}" class="{% if nav_section == 'jobs' %}active{% endif %}">Jobs</a>
         <a href="{% url 'data_quality_center:suggestion_list' %}" class="{% if nav_section == 'suggestions' %}active{% endif %}">Suggestions</a>
+        <a href="{% url 'data_quality_center:drug_database_list' %}" class="{% if nav_section == 'database' %}active{% endif %}">Database</a>
+        <a href="{% url 'data_quality_center:drug_database_create' %}" class="{% if nav_section == 'create_drug' %}active{% endif %}">Add Drug</a>
         <a href="{% url 'data_quality_center:health' %}" class="{% if nav_section == 'health' %}active{% endif %}">Health</a>
         <a href="{% url 'data_quality_center:report_list' %}" class="{% if nav_section == 'reports' %}active{% endif %}">Reports</a>
         <a href="/admin/" class="ghost">Admin</a>

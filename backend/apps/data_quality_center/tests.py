@@ -3,7 +3,8 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.ai_data_pipeline import constants
-from apps.ai_data_pipeline.models import AIDataBatch, AIDataJob, AIDataReport, AIDataSuggestion
+from apps.ai_data_pipeline.models import AIDataBatch, AIDataChangeHistory, AIDataJob, AIDataReport, AIDataSuggestion
+from apps.data_quality_center.forms import DrugDatabaseCreateForm, DrugDatabaseEditForm, DrugDatabaseFilterForm
 from apps.drugs.models import Drug
 
 
@@ -65,6 +66,8 @@ class DataQualityCenterTests(TestCase):
             reverse("data_quality_center:batch_list"),
             reverse("data_quality_center:job_list"),
             reverse("data_quality_center:suggestion_list"),
+            reverse("data_quality_center:drug_database_list"),
+            reverse("data_quality_center:drug_database_create"),
             reverse("data_quality_center:health"),
             reverse("data_quality_center:report_list"),
             reverse("data_quality_center:batch_detail", args=[self.batch.id]),
@@ -76,6 +79,70 @@ class DataQualityCenterTests(TestCase):
         for url in urls:
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
+
+    def test_drug_database_filters_and_records_direct_edits(self):
+        self.assertEqual(list(DrugDatabaseFilterForm().fields), ["q", "search_field", "sort"])
+        response = self.client.get(
+            reverse("data_quality_center:drug_database_list"),
+            {"q": "متفورمین", "search_field": "generic_name"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Glucophage")
+
+        payload = {}
+        form = DrugDatabaseEditForm(instance=self.drug)
+        for field_name in form.fields:
+            value = form[field_name].value()
+            if isinstance(value, (list, dict)):
+                import json
+
+                value = json.dumps(value)
+            payload[field_name] = "" if value is None else value
+        payload["brand_name"] = "Glucophage XR"
+        payload["indication"] = "Type 2 diabetes"
+
+        response = self.client.post(
+            reverse("data_quality_center:drug_database_edit", args=[self.drug.id]),
+            payload,
+        )
+        self.assertEqual(response.status_code, 302)
+        self.drug.refresh_from_db()
+        self.assertEqual(self.drug.brand_name, "Glucophage XR")
+        self.assertEqual(self.drug.indication, "Type 2 diabetes")
+        history = AIDataChangeHistory.objects.filter(
+            table_name=constants.DRUG_TABLE,
+            record_id=str(self.drug.id),
+        )
+        self.assertEqual(history.count(), 2)
+        self.assertSetEqual(set(history.values_list("field_name", flat=True)), {"brand_name", "indication"})
+
+    def test_new_drug_uses_automatic_identifiers_and_creates_an_audit_entry(self):
+        payload = {}
+        form = DrugDatabaseCreateForm()
+        for field_name in form.fields:
+            value = form[field_name].value()
+            if isinstance(value, (list, dict)):
+                import json
+
+                value = json.dumps(value)
+            payload[field_name] = "" if value is None else value
+        payload["generic_name"] = "New Test Drug"
+        payload["brand_name"] = "Test Brand"
+        payload["external_id"] = "user-provided-id-must-not-be-used"
+
+        response = self.client.post(reverse("data_quality_center:drug_database_create"), payload)
+        self.assertEqual(response.status_code, 302)
+        drug = Drug.objects.get(generic_name="New Test Drug")
+        self.assertNotEqual(drug.external_id, payload["external_id"])
+        self.assertTrue(drug.external_id.startswith("drug-"))
+        self.assertIsNotNone(drug.id)
+        history = AIDataChangeHistory.objects.get(
+            table_name=constants.DRUG_TABLE,
+            record_id=str(drug.id),
+            field_name="__record__",
+        )
+        self.assertEqual(history.applied_by, self.user.username)
+        self.assertTrue(history.metadata["manual_create"])
 
     def test_suggestion_detail_edit_and_review_actions_work(self):
         response = self.client.post(

@@ -24,6 +24,8 @@
   <article class="panel metric"><div class="metric-label">Medical warnings</div><div class="metric-value">{{ medical_validation_warnings }}</div></article>
   <article class="panel metric"><div class="metric-label">Translation suggestions</div><div class="metric-value">{{ translation_suggestions }}</div></article>
   <article class="panel metric"><div class="metric-label">Normalization suggestions</div><div class="metric-value">{{ normalization_suggestions }}</div></article>
+  <a class="panel metric" href="{% url 'data_quality_center:drug_database_list' %}"><div class="metric-label">Drug database</div><div class="metric-value">{{ drug_record_count }}</div><div class="metric-foot">Search and edit drug records</div></a>
+  <a class="panel metric" href="{% url 'data_quality_center:drug_database_create' %}"><div class="metric-label">Add drug</div><div class="metric-value">+</div><div class="metric-foot">Create a new drug with automatic identifiers</div></a>
 </section>
 
 <section class="split" style="margin-top:16px;">

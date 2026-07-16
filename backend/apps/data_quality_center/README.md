@@ -19,6 +19,9 @@ This is the primary operational interface for the AI data pipeline. Django Admin
 - `/data-quality/reports/` - reports list
 - `/data-quality/reports/<id>/` - report detail
 - `/data-quality/reports/<id>/download/json|html|csv/` - report download
+- `/data-quality/database/` - drug database search and filter center
+- `/data-quality/database/new/` - create a new drug with automatic identifiers
+- `/data-quality/database/<id>/` - controlled drug record editor
 
 The root URL `/` redirects to `/data-quality/`.
 
@@ -42,6 +45,8 @@ The root URL `/` redirects to `/data-quality/`.
 - Record inspector with current values, history, warnings, and duplicates
 - Health center with report summary and quality trend
 - Reports list and report detail pages with JSON/HTML/CSV download
+- Drug database search by column values and direct, audited editing of drug content
+- New-drug entry form with automatic database IDs and generated unique external IDs
 
 ## Review Workflow
 
@@ -56,9 +61,10 @@ The root URL `/` redirects to `/data-quality/`.
 
 ## Safety
 
-- No production records are modified from this UI.
-- No approval page applies changes directly.
-- Apply logic stays inside the existing transaction/backup/history path.
+- Suggestion approval screens do not apply production changes directly.
+- Database edits are limited to drug-content fields; record identifiers and source coordinates remain read-only.
+- Every changed database field is saved transactionally and written to `AIDataChangeHistory` with the staff username and before/after values.
+- New drugs receive a database-generated primary key and a server-generated UUID external ID; neither identifier is entered by the user.
 - Applied suggestions remain locked.
 
 ## TODO
@@ -68,4 +74,3 @@ The root URL `/` redirects to `/data-quality/`.
 - Add export-to-PDF support for reports.
 - Add comment threading for reviewer discussions.
 - Add a dedicated record change timeline view.
-
