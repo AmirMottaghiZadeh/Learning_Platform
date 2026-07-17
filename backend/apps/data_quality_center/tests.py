@@ -41,10 +41,16 @@ class DataQualityCenterTests(TestCase):
             content={"hello": "world"},
             summary={"total_records_scanned": 20, "issue_count": 5, "exact_duplicate_groups": 1, "near_duplicate_pairs": 2},
         )
+        self.drug = Drug.objects.create(
+            external_id="drug-1",
+            generic_name="متفورمین",
+            brand_name="Glucophage",
+            source_topic="Endo",
+        )
         self.suggestion = AIDataSuggestion.objects.create(
             batch=self.batch,
             table_name=constants.DRUG_TABLE,
-            record_id="1",
+            record_id=str(self.drug.pk),
             field_name="generic_name",
             old_value="متفورمين  ",
             suggested_value="متفورمین",
@@ -54,12 +60,7 @@ class DataQualityCenterTests(TestCase):
             risk_level=constants.RISK_SAFE,
             provider=constants.PROVIDER_RULES,
         )
-        self.drug = Drug.objects.create(
-            external_id="drug-1",
-            generic_name="متفورمین",
-            brand_name="Glucophage",
-            source_topic="Endo",
-        )
+        
         self.client.force_login(self.user)
 
     def test_dashboard_and_core_pages_load(self):
