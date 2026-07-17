@@ -26,6 +26,26 @@ services:
         sync: false
       - key: CORS_ALLOWED_ORIGINS
         sync: false
+      - key: PASSWORD_RESET_FRONTEND_URL
+        value: https://AmirMottaghiZadeh.github.io/Learning_Platform/
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        value: True
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: CACHE_BACKEND
+        sync: false
+      - key: CACHE_LOCATION
+        sync: false
 
 databases:
   - name: pharmexa-db

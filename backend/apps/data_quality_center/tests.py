@@ -82,6 +82,36 @@ class DataQualityCenterTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
 
+    def test_all_data_quality_routes_reject_non_staff_users(self):
+        regular_user = get_user_model().objects.create_user(
+            username="learner",
+            password="pass12345",
+        )
+        self.client.force_login(regular_user)
+        urls = [
+            reverse("data_quality_center:dashboard"),
+            reverse("data_quality_center:health"),
+            reverse("data_quality_center:batch_list"),
+            reverse("data_quality_center:batch_detail", args=[self.batch.id]),
+            reverse("data_quality_center:batch_generate_report", args=[self.batch.id]),
+            reverse("data_quality_center:batch_compare", args=[self.batch.id]),
+            reverse("data_quality_center:job_list"),
+            reverse("data_quality_center:suggestion_list"),
+            reverse("data_quality_center:suggestion_detail", args=[self.suggestion.id]),
+            reverse("data_quality_center:report_list"),
+            reverse("data_quality_center:report_detail", args=[self.report.id]),
+            reverse("data_quality_center:report_download", args=[self.report.id, "json"]),
+            reverse("data_quality_center:drug_database_list"),
+            reverse("data_quality_center:drug_database_create"),
+            reverse("data_quality_center:drug_database_edit", args=[self.drug.id]),
+            reverse("data_quality_center:drug_database_delete", args=[self.drug.id]),
+            reverse("data_quality_center:record_inspector", args=[constants.DRUG_TABLE, self.drug.id]),
+        ]
+        for url in urls:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 302, url)
+            self.assertIn("/admin/login/", response["Location"], url)
+
     def test_drug_database_filters_and_records_direct_edits(self):
         self.assertEqual(list(DrugDatabaseFilterForm().fields), ["q", "search_field", "sort"])
         response = self.client.get(

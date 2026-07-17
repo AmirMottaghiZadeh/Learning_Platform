@@ -9,9 +9,20 @@ import {LearningCard, PrimaryButton, SecondaryButton} from "../components/ui";
 import {colors, radius, spacing, typography} from "../design/tokens";
 import {useAuth} from "../store/auth";
 
+type AuthMode = "login" | "register" | "forgot" | "reset";
+
+function passwordResetParamsFromUrl() {
+  if (typeof window === "undefined" || !window.location) return null;
+  const params = new URLSearchParams(window.location.search);
+  const uid = params.get("reset_uid");
+  const token = params.get("reset_token");
+  return uid && token ? {uid, token} : null;
+}
+
 export function AuthScreen() {
   const {signIn, register, loading, error} = useAuth();
-  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
+  const [resetParams] = useState(passwordResetParamsFromUrl);
+  const [mode, setMode] = useState<AuthMode>(resetParams ? "reset" : "login");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
@@ -31,6 +42,30 @@ export function AuthScreen() {
       setLocalError(exc instanceof Error ? exc.message : "درخواست بازیابی رمز با خطا مواجه شد.");
     },
   });
+  const confirmResetMutation = useMutation({
+    mutationFn: () => {
+      if (!resetParams) throw new Error("پیوند بازیابی رمز نامعتبر است.");
+      return platformApi.confirmPasswordReset(
+        resetParams.uid,
+        resetParams.token,
+        password,
+        passwordConfirm,
+      );
+    },
+    onSuccess: (response) => {
+      setResetMessage(response.message);
+      setLocalError(null);
+      setPassword("");
+      setPasswordConfirm("");
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+      setMode("login");
+    },
+    onError: (exc) => {
+      setLocalError(exc instanceof Error ? exc.message : "تغییر کلمه عبور با خطا مواجه شد.");
+    },
+  });
 
   async function submit() {
     setLocalError(null);
@@ -41,6 +76,18 @@ export function AuthScreen() {
         return;
       }
       resetMutation.mutate();
+      return;
+    }
+    if (mode === "reset") {
+      if (!password || !passwordConfirm) {
+        setLocalError("کلمه عبور جدید و تکرار آن الزامی است.");
+        return;
+      }
+      if (password !== passwordConfirm) {
+        setLocalError("کلمه عبور و تکرار آن یکسان نیست.");
+        return;
+      }
+      confirmResetMutation.mutate();
       return;
     }
     if (!username.trim() || !password.trim()) {
@@ -121,7 +168,7 @@ export function AuthScreen() {
             />
           </>
         ) : null}
-        {mode !== "forgot" ? (
+        {mode !== "forgot" && mode !== "reset" ? (
           <TextInput
             autoCapitalize="none"
             value={username}
@@ -148,11 +195,11 @@ export function AuthScreen() {
               secureTextEntry
               value={password}
               onChangeText={setPassword}
-              placeholder="کلمه عبور"
+              placeholder={mode === "reset" ? "کلمه عبور جدید" : "کلمه عبور"}
               placeholderTextColor={colors.softText}
               style={styles.input}
             />
-            {mode === "register" ? (
+            {mode === "register" || mode === "reset" ? (
               <TextInput
                 secureTextEntry
                 value={passwordConfirm}
@@ -169,17 +216,25 @@ export function AuthScreen() {
         {resetMessage ? <Text style={styles.success}>{resetMessage}</Text> : null}
 
         <PrimaryButton
-          label={mode === "login" ? "ورود" : mode === "register" ? "ایجاد حساب" : "ارسال درخواست بازیابی"}
+          label={
+            mode === "login"
+              ? "ورود"
+              : mode === "register"
+                ? "ایجاد حساب"
+                : mode === "reset"
+                  ? "ثبت کلمه عبور جدید"
+                  : "ارسال درخواست بازیابی"
+          }
           Icon={mode === "login" ? LogIn : mode === "register" ? UserPlus : KeyRound}
           onPress={submit}
-          disabled={loading || resetMutation.isPending}
+          disabled={loading || resetMutation.isPending || confirmResetMutation.isPending}
         />
         {mode === "login" ? (
           <Pressable accessibilityRole="button" onPress={() => setMode("forgot")} style={styles.forgotLink}>
             <Text style={styles.forgotText}>فراموشی کلمه عبور</Text>
           </Pressable>
         ) : null}
-        {mode === "forgot" ? (
+        {mode === "forgot" || mode === "reset" ? (
           <View style={styles.backToLogin}>
             <SecondaryButton label="بازگشت به ورود" onPress={() => setMode("login")} />
           </View>

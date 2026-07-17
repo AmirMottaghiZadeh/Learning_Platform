@@ -22,8 +22,6 @@ export type RegisterPayload = {
 
 export type PasswordResetResponse = {
   message: string;
-  email: string;
-  ready_for_email_service: boolean;
 };
 
 export type Topic = {

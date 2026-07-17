@@ -38,6 +38,20 @@ export const platformApi = {
     const {data} = await apiClient.post<PasswordResetResponse>("/auth/password-reset/", {email});
     return data;
   },
+  async confirmPasswordReset(
+    uid: string,
+    token: string,
+    newPassword: string,
+    newPasswordConfirm: string,
+  ) {
+    const {data} = await apiClient.post<PasswordResetResponse>("/auth/password-reset/confirm/", {
+      uid,
+      token,
+      new_password: newPassword,
+      new_password_confirm: newPasswordConfirm,
+    });
+    return data;
+  },
   async logout(token: string) {
     await apiClient.post("/auth/logout/", {}, withToken(token));
     return null;

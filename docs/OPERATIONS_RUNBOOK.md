@@ -23,7 +23,25 @@ CSRF_TRUSTED_ORIGINS=https://<frontend-host>,https://<api-host>
 CORS_ALLOWED_ORIGINS=https://<frontend-host>
 AI_DATA_PIPELINE_PROVIDER=rules
 LOG_FORMAT=json
+PASSWORD_RESET_FRONTEND_URL=https://<frontend-host>/
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=<smtp-host>
+EMAIL_PORT=587
+EMAIL_HOST_USER=<smtp-user>
+EMAIL_HOST_PASSWORD=<smtp-secret>
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=<verified-sender-email>
+CACHE_BACKEND=django.core.cache.backends.redis.RedisCache
+CACHE_LOCATION=redis://<redis-host>:6379/1
 ```
+
+## Authentication security
+
+- Login, registration, password-reset request, and password-reset confirmation are rate-limited by DRF. Configure the `DRF_*_THROTTLE_RATE` variables for expected traffic.
+- In production, use a shared Redis cache. `LocMemCache` limits one application worker only and is not sufficient when Gunicorn runs multiple workers or instances.
+- Password-reset emails use Django's signed, time-limited reset token. Configure the SMTP variables above and a verified `DEFAULT_FROM_EMAIL`; without them users cannot receive reset emails.
+- API bearer tokens expire after `AUTH_TOKEN_TTL_HOURS` (24 hours by default). Changing a password invalidates all existing API tokens.
+- The Expo web client currently persists its DRF token through AsyncStorage, which maps to browser storage on web. A successful XSS attack could read it. Keep the token lifetime short, use HTTPS, maintain a strict Content Security Policy at the frontend host, and plan a future same-site httpOnly-cookie session architecture before treating the browser client as high-assurance.
 
 For local production-like Docker, use:
 

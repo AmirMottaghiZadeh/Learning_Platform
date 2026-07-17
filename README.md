@@ -297,6 +297,9 @@ Before production deployment:
 - Configure `DATABASE_URL`.
 - Configure `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, and `CORS_ALLOWED_ORIGINS`.
 - Use HTTPS for browser-facing API traffic.
+- Configure password-reset email delivery: `PASSWORD_RESET_FRONTEND_URL`, SMTP variables, and a verified `DEFAULT_FROM_EMAIL`.
+- Use a shared Redis `CACHE_BACKEND`/`CACHE_LOCATION` in production so authentication throttling is enforced across all Gunicorn workers.
+- API tokens expire after `AUTH_TOKEN_TTL_HOURS` (24 hours by default). The current Expo web build stores the DRF token through AsyncStorage (browser storage on web), so it is vulnerable if the frontend suffers XSS. Enforce HTTPS and a strict frontend CSP; migrate to same-site httpOnly cookies for a higher-assurance browser session model.
 - Run migrations through the deployment process.
 - Back up data before bulk data-apply operations.
 
@@ -510,6 +513,9 @@ API تولید:         https://amirmtz.runflare.run/api/v1
 
 - رازها، فایل `.env`، دیتابیس محلی، فایل‌های پشتیبان، محیط مجازی، `node_modules` و خروجی‌های build را commit نکنید.
 - برای تولید، `SECRET_KEY` قوی، `DATABASE_URL`، `ALLOWED_HOSTS`، `CSRF_TRUSTED_ORIGINS` و `CORS_ALLOWED_ORIGINS` را تنظیم کنید.
+- برای بازیابی رمز، `PASSWORD_RESET_FRONTEND_URL`، تنظیمات SMTP و `DEFAULT_FROM_EMAIL` تأییدشده را تنظیم کنید.
+- برای آن‌که محدودسازی درخواست‌های احراز هویت بین همهٔ workerها مشترک باشد، در تولید `CACHE_BACKEND` و `CACHE_LOCATION` را روی Redis مشترک قرار دهید.
+- توکن API پس از `AUTH_TOKEN_TTL_HOURS` (پیش‌فرض ۲۴ ساعت) منقضی می‌شود. توکن در نسخهٔ وب فعلی در AsyncStorage/حافظهٔ مرورگر ذخیره می‌شود و در صورت XSS قابل‌خواندن است؛ HTTPS و CSP سخت‌گیرانه ضروری است و برای سطح اطمینان بالاتر باید در آینده به cookieهای httpOnly هم‌دامنه مهاجرت شود.
 - پیش از عملیات دسته‌ای اعمال تغییرات داده، پشتیبان تهیه کنید.
 - پیشنهادهای قانون‌محور یا هوش مصنوعی بدون بازبینی و تأیید دستی نباید اعمال شوند.
 

@@ -55,6 +55,14 @@ ASGI_APPLICATION = "config.asgi.application"
 DATABASE_URL = config("DATABASE_URL", default="postgresql://postgres:postgres@127.0.0.1:5432/pharmexa")
 DATABASES = {"default": dj_database_url.config(default=DATABASE_URL, conn_max_age=600)}
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+CACHE_BACKEND = config("CACHE_BACKEND", default="django.core.cache.backends.locmem.LocMemCache")
+CACHE_LOCATION = config("CACHE_LOCATION", default="pharmexa-default-cache")
+CACHES = {
+    "default": {
+        "BACKEND": CACHE_BACKEND,
+        "LOCATION": CACHE_LOCATION,
+    }
+}
 LANGUAGE_CODE = "fa-ir"
 TIME_ZONE = "Europe/Berlin"
 USE_I18N = True
@@ -78,9 +86,19 @@ LEARNING_PRODUCT_ADAPTER = config(
     default="apps.drugs.learning_adapter.PharmexaLearningAdapter",
 )
 AI_DATA_PIPELINE_PROVIDER = config("AI_DATA_PIPELINE_PROVIDER", default="rules")
+AUTH_TOKEN_TTL_HOURS = config("AUTH_TOKEN_TTL_HOURS", default=24, cast=int)
+PASSWORD_RESET_TIMEOUT = config("PASSWORD_RESET_TIMEOUT", default=86400, cast=int)
+PASSWORD_RESET_FRONTEND_URL = config("PASSWORD_RESET_FRONTEND_URL", default="http://localhost:8081")
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = config("EMAIL_HOST", default="")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="no-reply@pharmexa.local")
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
+        "apps.accounts.authentication.ExpiringTokenAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -89,6 +107,23 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "apps.core.exceptions.platform_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": config("DRF_ANON_THROTTLE_RATE", default="1000/hour"),
+        "auth_login": config("DRF_AUTH_LOGIN_THROTTLE_RATE", default="5/min"),
+        "auth_register": config("DRF_AUTH_REGISTER_THROTTLE_RATE", default="5/hour"),
+        "auth_password_reset_request": config(
+            "DRF_AUTH_PASSWORD_RESET_REQUEST_THROTTLE_RATE",
+            default="3/hour",
+        ),
+        "auth_password_reset_confirm": config(
+            "DRF_AUTH_PASSWORD_RESET_CONFIRM_THROTTLE_RATE",
+            default="5/hour",
+        ),
+    },
 }
 
 SPECTACULAR_SETTINGS = {
