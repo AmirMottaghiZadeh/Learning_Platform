@@ -280,6 +280,121 @@ class DataQualityCenterTests(TestCase):
         self.assertEqual(self.suggestion.status, constants.SUGGESTION_STATUS_APPROVED)
         self.assertEqual(second.status, constants.SUGGESTION_STATUS_APPROVED)
 
+    def test_rule_based_review_package_is_created_without_changing_drug_data(self):
+        dirty_drug = Drug.objects.create(
+            external_id="drug-dirty",
+            generic_name="متفورمين  ",
+            source_topic="Endo",
+        )
+        original_generic_name = self.drug.generic_name
+
+        response = self.client.post(
+            reverse("data_quality_center:suggestion_list"),
+            {
+                "action": "generate_rule_batch",
+                "batch_name": "UI rules review",
+                "max_suggestions": 20,
+                "include_normalization": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.drug.refresh_from_db()
+        batch = AIDataBatch.objects.get(config__batch_name="UI rules review")
+        job = AIDataJob.objects.get(batch=batch)
+        self.assertEqual(batch.status, constants.BATCH_STATUS_COMPLETED)
+        self.assertEqual(job.provider, constants.PROVIDER_RULES)
+        self.assertEqual(job.status, constants.JOB_STATUS_COMPLETED)
+        self.assertEqual(self.drug.generic_name, original_generic_name)
+        dirty_drug.refresh_from_db()
+        self.assertEqual(dirty_drug.generic_name, "متفورمين  ")
+        self.assertTrue(
+            AIDataSuggestion.objects.filter(
+                batch=batch,
+                provider=constants.PROVIDER_RULES,
+                status=constants.SUGGESTION_STATUS_PENDING,
+            ).exists()
+        )
+
+    def test_selected_rule_based_suggestions_apply_only_selected_approved_change(self):
+        selected = AIDataSuggestion.objects.create(
+            batch=self.batch,
+            table_name=constants.DRUG_TABLE,
+            record_id=str(self.drug.id),
+            field_name="brand_name",
+            old_value="Glucophage",
+            suggested_value="Glucophage XR",
+            suggestion_type=constants.SUGGESTION_TYPE_TERMINOLOGY,
+            reason="Rule-based terminology cleanup.",
+            confidence_score=0.95,
+            risk_level=constants.RISK_SAFE,
+            provider=constants.PROVIDER_RULES,
+        )
+        other_drug = Drug.objects.create(
+            external_id="drug-2",
+            generic_name="Other",
+            brand_name="Other brand  ",
+            source_topic="Other",
+        )
+        unselected = AIDataSuggestion.objects.create(
+            batch=self.batch,
+            table_name=constants.DRUG_TABLE,
+            record_id=str(other_drug.id),
+            field_name="brand_name",
+            old_value="Other brand  ",
+            suggested_value="Other brand",
+            suggestion_type=constants.SUGGESTION_TYPE_NORMALIZATION,
+            reason="Rule-based whitespace cleanup.",
+            confidence_score=0.95,
+            risk_level=constants.RISK_SAFE,
+            provider=constants.PROVIDER_RULES,
+        )
+        for suggestion in (selected, unselected):
+            suggestion.status = constants.SUGGESTION_STATUS_APPROVED
+            suggestion.save(update_fields=["status"])
+
+        response = self.client.post(
+            reverse("data_quality_center:suggestion_list"),
+            {
+                "action": "apply_selected",
+                "selected_ids": [selected.id],
+                "apply_confirmation": "APPLY",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.drug.refresh_from_db()
+        other_drug.refresh_from_db()
+        selected.refresh_from_db()
+        unselected.refresh_from_db()
+        self.assertEqual(self.drug.brand_name, "Glucophage XR")
+        self.assertEqual(other_drug.brand_name, "Other brand  ")
+        self.assertEqual(selected.status, constants.SUGGESTION_STATUS_APPLIED)
+        self.assertEqual(unselected.status, constants.SUGGESTION_STATUS_APPROVED)
+        history = AIDataChangeHistory.objects.get(suggestion=selected)
+        self.assertEqual(history.applied_by, self.user.username)
+
+    def test_apply_all_requires_one_rule_based_package_and_confirmation(self):
+        self.suggestion.old_value = self.drug.generic_name
+        self.suggestion.suggested_value = "متفورمین جدید"
+        self.suggestion.status = constants.SUGGESTION_STATUS_APPROVED
+        self.suggestion.save(update_fields=["old_value", "suggested_value", "status"])
+
+        response = self.client.post(
+            reverse("data_quality_center:suggestion_list"),
+            {
+                "action": "apply_batch",
+                "batch_id": self.batch.id,
+                "apply_confirmation": "APPLY",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.suggestion.refresh_from_db()
+        self.drug.refresh_from_db()
+        self.assertEqual(self.suggestion.status, constants.SUGGESTION_STATUS_APPLIED)
+        self.assertEqual(self.drug.generic_name, "متفورمین جدید")
+
     def test_report_download_routes_work(self):
         response = self.client.get(reverse("data_quality_center:report_download", args=[self.report.id, "json"]))
         self.assertEqual(response.status_code, 200)

@@ -4,8 +4,33 @@
 <section class="page-title">
   <div>
     <h1>Suggestion Review Center</h1>
-    <p>Search, filter, bulk review, and move safe suggestions through the approval workflow.</p>
+    <p>Create rule-based review packages, review suggestions one by one or in bulk, then apply only approved changes.</p>
   </div>
+</section>
+
+<section class="panel" style="margin-bottom:16px;">
+  <h2>Create rule-based review package</h2>
+  <p class="muted">This scans the drug database and creates pending suggestions only. It never changes drug data until you explicitly approve and apply a suggestion.</p>
+  <form method="post" class="form-grid">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="generate_rule_batch">
+    {% for field in rule_batch_form %}
+      <div class="field">
+        {% if field.field.widget.input_type == "checkbox" %}
+          <label class="chip">{{ field }} {{ field.label }}</label>
+        {% else %}
+          <label>{{ field.label }}</label>
+          {{ field }}
+        {% endif %}
+        {% if field.help_text %}<div class="muted text-small">{{ field.help_text }}</div>{% endif %}
+        {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    {% for error in rule_batch_form.non_field_errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+    <div class="toolbar">
+      <button class="button" type="submit">Create pending package</button>
+    </div>
+  </form>
 </section>
 
 <section class="panel" style="margin-bottom:16px;">
@@ -25,10 +50,17 @@
   <section class="panel" style="margin-bottom:16px;">
     <div class="action-bar">
       <label class="chip"><input type="checkbox" data-select-all> Select all</label>
-      <button class="button" type="submit" name="action" value="approve">Approve safe selected</button>
+      <button class="button" type="submit" name="action" value="approve">Approve safe rule-based selected</button>
       <button class="button-danger" type="submit" name="action" value="reject">Reject selected</button>
       <button class="button-secondary" type="submit" name="action" value="mark_review">Mark as needs review</button>
+      <input name="apply_confirmation" aria-label="Type APPLY to confirm application" placeholder="Type APPLY to apply" autocomplete="off">
+      <button class="button" type="submit" name="action" value="apply_selected">Apply approved selected</button>
+      {% if active_batch_is_rules %}
+        <input type="hidden" name="batch_id" value="{{ active_batch.id }}">
+        <button class="button-secondary" type="submit" name="action" value="apply_batch">Apply all approved in package #{{ active_batch.id }}</button>
+      {% endif %}
     </div>
+    <p class="muted text-small" style="margin-bottom:0;">Application is limited to approved, safe policy-allowed changes. Duplicate and medical-warning suggestions remain review-only.</p>
     <div class="field" style="margin-top:12px;">
       <label>Reviewer notes for bulk review</label>
       <textarea name="reviewer_notes" rows="3"></textarea>

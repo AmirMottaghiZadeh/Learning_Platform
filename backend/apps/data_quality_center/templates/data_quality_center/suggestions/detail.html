@@ -58,9 +58,20 @@
     </form>
     <div class="toolbar" style="margin-top:12px;">
       <form method="post">{% csrf_token %}<input type="hidden" name="action" value="approve"><button class="button" type="submit">Approve</button></form>
+      {% if is_rule_based %}
+        <form method="post" class="toolbar">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="apply">
+          <input name="apply_confirmation" aria-label="Type APPLY to confirm application" placeholder="APPLY" autocomplete="off">
+          <button class="button" type="submit">Apply approved change</button>
+        </form>
+      {% endif %}
       <form method="post">{% csrf_token %}<input type="hidden" name="action" value="reject"><button class="button-danger" type="submit">Reject</button></form>
       <a class="button-secondary" href="{{ record_url }}">Open record</a>
     </div>
+    {% if is_rule_based %}
+      <p class="muted text-small">To apply, the suggestion must already be approved and must pass the existing safety, confidence, and allowed-field checks.</p>
+    {% endif %}
   </article>
 </section>
 

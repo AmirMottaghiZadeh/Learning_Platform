@@ -53,6 +53,62 @@ class SuggestionReviewActionForm(forms.Form):
     selected_ids = forms.CharField(required=False, widget=forms.HiddenInput())
 
 
+class RuleBasedSuggestionBatchForm(forms.Form):
+    batch_name = forms.CharField(
+        required=False,
+        max_length=120,
+        label="Package name",
+        widget=forms.TextInput(attrs={"placeholder": "e.g. July normalization review"}),
+    )
+    max_suggestions = forms.IntegerField(
+        min_value=1,
+        max_value=2000,
+        initial=500,
+        label="Maximum suggestions",
+        help_text="The review package stops after this many suggestions are created.",
+    )
+    include_normalization = forms.BooleanField(
+        required=False,
+        initial=True,
+        label="Normalization rules",
+        help_text="Safe spacing, Persian-character, punctuation, and casing fixes.",
+    )
+    include_terminology = forms.BooleanField(
+        required=False,
+        initial=True,
+        label="Terminology rules",
+        help_text="Safe configured terminology and dosage/unit standardization.",
+    )
+    include_medical_validation = forms.BooleanField(
+        required=False,
+        label="Medical validation warnings",
+        help_text="Review-only warnings; they are never automatically applied.",
+    )
+    include_duplicates = forms.BooleanField(
+        required=False,
+        label="Duplicate candidates",
+        help_text="Review-only duplicate candidates; they are never automatically applied.",
+    )
+    include_translations = forms.BooleanField(
+        required=False,
+        label="Translation metadata suggestions",
+        help_text="Creates translation metadata suggestions, not direct drug-field updates.",
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        rule_options = (
+            "include_normalization",
+            "include_terminology",
+            "include_medical_validation",
+            "include_duplicates",
+            "include_translations",
+        )
+        if not any(cleaned_data.get(option) for option in rule_options):
+            raise ValidationError("Select at least one rule group for the review package.")
+        return cleaned_data
+
+
 class BatchFilterForm(forms.Form):
     q = forms.CharField(required=False, widget=forms.TextInput(attrs={"placeholder": "Search batches"}))
     batch_type = forms.ChoiceField(required=False, choices=[("", "All types"), *AIDataBatch.BATCH_TYPE_CHOICES])

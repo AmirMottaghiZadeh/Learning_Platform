@@ -27,13 +27,30 @@ class ApplyResult:
         }
 
 
-def apply_approved_suggestions(*, batch_id, applied_by="", backup_dir=None, min_confidence=0.8, include_risky=False):
+def apply_approved_suggestions(
+    *,
+    batch_id,
+    applied_by="",
+    backup_dir=None,
+    min_confidence=0.8,
+    include_risky=False,
+    suggestion_ids=None,
+):
+    """Apply approved suggestions from one batch.
+
+    When ``suggestion_ids`` is provided, only those suggestions are considered.
+    This keeps a reviewer action scoped to the exact rows selected in the UI
+    instead of applying every approved change in the batch.
+    """
     batch = AIDataBatch.objects.get(id=batch_id)
     backup_path = create_database_backup(batch_id=batch.id, backup_dir=backup_dir)
     queryset = AIDataSuggestion.objects.select_for_update().filter(
         batch=batch,
         status=constants.SUGGESTION_STATUS_APPROVED,
     ).order_by("id")
+    if suggestion_ids is not None:
+        normalized_ids = [int(item) for item in suggestion_ids if str(item).isdigit()]
+        queryset = queryset.filter(id__in=normalized_ids)
 
     applied = 0
     skipped = 0
@@ -55,14 +72,25 @@ def apply_approved_suggestions(*, batch_id, applied_by="", backup_dir=None, min_
                 suggestion.save(update_fields=["status", "metadata", "updated_at"])
                 failed += 1
                 continue
-            if suggestion.suggestion_type == constants.SUGGESTION_TYPE_TRANSLATION:
-                _apply_translation(suggestion, applied_by=applied_by)
-            else:
-                _apply_field_update(suggestion, applied_by=applied_by)
-            suggestion.status = constants.SUGGESTION_STATUS_APPLIED
-            suggestion.applied_at = timezone.now()
-            suggestion.save(update_fields=["status", "applied_at", "updated_at"])
-            applied += 1
+            try:
+                with transaction.atomic():
+                    if suggestion.suggestion_type == constants.SUGGESTION_TYPE_TRANSLATION:
+                        _apply_translation(suggestion, applied_by=applied_by)
+                    else:
+                        instance = _apply_field_update(suggestion, applied_by=applied_by)
+                        _synchronize_changed_record(suggestion, instance)
+                    suggestion.status = constants.SUGGESTION_STATUS_APPLIED
+                    suggestion.applied_at = timezone.now()
+                    suggestion.save(update_fields=["status", "applied_at", "updated_at"])
+                    applied += 1
+            except Exception as exc:
+                suggestion.status = constants.SUGGESTION_STATUS_FAILED
+                suggestion.metadata = {
+                    **suggestion.metadata,
+                    "apply_error": str(exc),
+                }
+                suggestion.save(update_fields=["status", "metadata", "updated_at"])
+                failed += 1
     return ApplyResult(applied=applied, skipped=skipped, failed=failed, backup_path=backup_path)
 
 
@@ -123,6 +151,19 @@ def _apply_field_update(suggestion, *, applied_by):
         risk_level=suggestion.risk_level,
         applied_by=applied_by,
     )
+    return instance
+
+
+def _synchronize_changed_record(suggestion, instance):
+    """Keep learning content aligned after an approved source-data change."""
+    if suggestion.table_name == constants.DRUG_TABLE:
+        from apps.drugs.learning_sync import regenerate_and_sync_drug_question_sources
+
+        regenerate_and_sync_drug_question_sources(instance)
+    elif suggestion.table_name == constants.DRUG_QUESTION_SOURCE_TABLE:
+        from apps.drugs.learning_sync import sync_drug_question_sources
+
+        sync_drug_question_sources(instance)
 
 
 def _apply_translation(suggestion, *, applied_by):

@@ -23,7 +23,7 @@ from apps.ai_data_pipeline.providers.base import get_provider
 from apps.ai_data_pipeline.reports.report_generator import build_dashboard_summary
 from apps.ai_data_pipeline.reviewers.approval import review_suggestions
 from apps.ai_data_pipeline.reviewers.suggestion_generator import generate_suggestions
-from apps.drugs.models import Drug
+from apps.drugs.models import Drug, DrugQuestionSource
 
 
 class AIDataPipelineTests(TestCase):
@@ -166,6 +166,63 @@ class AIDataPipelineTests(TestCase):
         self.assertEqual(drug.persian_name, "دیابت")
         translation = AIDataTranslation.objects.get(table_name=constants.DRUG_TABLE, record_id=str(drug.id))
         self.assertEqual(translation.translated_value, "diabetes mellitus")
+
+    def test_selected_approved_suggestions_apply_only_selected_rows_and_sync_learning_sources(self):
+        first_drug = Drug.objects.create(
+            external_id="drug-1",
+            generic_name="متفورمين  ",
+            brand_name="Glucophage",
+            source_topic="Endo",
+        )
+        second_drug = Drug.objects.create(
+            external_id="drug-2",
+            generic_name="Acetaminophen",
+            brand_name="Tylenol  ",
+            source_topic="Pain",
+        )
+        batch = self.create_batch()
+        selected = self.create_suggestion(
+            batch=batch,
+            record_id=str(first_drug.id),
+            field_name="brand_name",
+            old_value="Glucophage",
+            suggested_value="Glucophage XR",
+        )
+        unselected = self.create_suggestion(
+            batch=batch,
+            record_id=str(second_drug.id),
+            field_name="brand_name",
+            old_value="Tylenol  ",
+            suggested_value="Tylenol",
+        )
+        review_suggestions(
+            suggestion_ids=[selected.id, unselected.id],
+            action="approve",
+            reviewed_by="tester",
+        )
+
+        result = apply_approved_suggestions(
+            batch_id=batch.id,
+            suggestion_ids=[selected.id],
+            applied_by="tester",
+        )
+
+        first_drug.refresh_from_db()
+        second_drug.refresh_from_db()
+        selected.refresh_from_db()
+        unselected.refresh_from_db()
+        self.assertEqual(result.applied, 1)
+        self.assertEqual(first_drug.brand_name, "Glucophage XR")
+        self.assertEqual(second_drug.brand_name, "Tylenol  ")
+        self.assertEqual(selected.status, constants.SUGGESTION_STATUS_APPLIED)
+        self.assertEqual(unselected.status, constants.SUGGESTION_STATUS_APPROVED)
+        self.assertEqual(
+            DrugQuestionSource.objects.get(
+                drug=first_drug,
+                question_type="brandGeneric",
+            ).prompt,
+            "نام ژنریک داروی تجاری Glucophage XR کدام است؟",
+        )
 
     def test_admin_actions_approve_reject_and_mark_needs_review(self):
         model_admin = AIDataSuggestionAdmin(AIDataSuggestion, AdminSite())

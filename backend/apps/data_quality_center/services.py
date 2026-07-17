@@ -5,6 +5,7 @@ from math import ceil
 from uuid import uuid4
 
 from django.apps import apps
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Count, Q
@@ -12,8 +13,11 @@ from django.http import Http404
 from django.utils import timezone
 
 from apps.ai_data_pipeline import constants
+from apps.ai_data_pipeline.appliers.apply_changes import apply_approved_suggestions
 from apps.ai_data_pipeline.analyzers.health_check import run_health_check
 from apps.ai_data_pipeline.models import AIDataBatch, AIDataJob, AIDataReport, AIDataSuggestion, AIDataChangeHistory
+from apps.ai_data_pipeline.providers.base import get_provider
+from apps.ai_data_pipeline.reviewers.suggestion_generator import DEFAULT_FIELDS, generate_suggestions
 from apps.drugs.learning_sync import PRODUCT_ID, regenerate_and_sync_drug_question_sources
 from apps.drugs.models import Drug
 from apps.learning.models import KnowledgeSource, LearningObject
@@ -305,6 +309,82 @@ def filter_suggestions(params):
     if sort in {"created_at", "-created_at", "confidence_score", "-confidence_score"}:
         queryset = queryset.order_by(sort)
     return queryset
+
+
+def create_rule_based_suggestion_batch(*, cleaned_data, created_by):
+    """Create a local rules review package without changing drug records."""
+    provider = get_provider(constants.PROVIDER_RULES)
+    config = {
+        "provider": provider.provider_name,
+        "generation_mode": "rule_based",
+        "batch_name": cleaned_data.get("batch_name", "").strip(),
+        "limit": cleaned_data["max_suggestions"],
+        "include_normalization": cleaned_data["include_normalization"],
+        "include_terminology": cleaned_data["include_terminology"],
+        "include_medical_validation": cleaned_data["include_medical_validation"],
+        "include_duplicates": cleaned_data["include_duplicates"],
+        "include_translations": cleaned_data["include_translations"],
+    }
+    batch = AIDataBatch.objects.create(
+        batch_type=constants.BATCH_TYPE_SUGGESTION_GENERATION,
+        status=constants.BATCH_STATUS_RUNNING,
+        source_database=str(settings.DATABASES["default"].get("NAME", "")),
+        target_scope={"table": constants.DRUG_TABLE, "fields": list(DEFAULT_FIELDS)},
+        config=config,
+        created_by=created_by,
+        started_at=timezone.now(),
+    )
+    job = AIDataJob.objects.create(
+        batch=batch,
+        job_type=constants.JOB_TYPE_FULL_RULES_REVIEW,
+        provider=provider.provider_name,
+        status=constants.JOB_STATUS_PENDING,
+        parameters_json=config,
+        created_by=created_by,
+    )
+    try:
+        summary = generate_suggestions(
+            batch=batch,
+            job=job,
+            fields=DEFAULT_FIELDS,
+            limit=config["limit"],
+            provider=provider,
+            table=constants.DRUG_TABLE,
+            include_normalization=config["include_normalization"],
+            include_terminology=config["include_terminology"],
+            include_medical_validation=config["include_medical_validation"],
+            include_duplicates=config["include_duplicates"],
+            include_translations=config["include_translations"],
+        )
+    except Exception as exc:
+        job.mark_failed(exc)
+        batch.status = constants.BATCH_STATUS_FAILED
+        batch.error_message = str(exc)
+        batch.completed_at = timezone.now()
+        batch.save(update_fields=["status", "error_message", "completed_at"])
+        raise
+    return batch, summary
+
+
+def is_rule_based_batch(batch):
+    return (
+        batch.config.get("provider") == constants.PROVIDER_RULES
+        or batch.jobs.filter(provider=constants.PROVIDER_RULES).exists()
+        or batch.suggestions.filter(provider=constants.PROVIDER_RULES).exists()
+    )
+
+
+def apply_rule_based_suggestions(*, batch, suggestion_ids=None, applied_by=""):
+    """Apply only confirmed, approved, safe rule-based suggestions in a package."""
+    if not is_rule_based_batch(batch):
+        raise ValueError("Only rule-based review packages can be applied from this workspace.")
+    return apply_approved_suggestions(
+        batch_id=batch.id,
+        suggestion_ids=suggestion_ids,
+        applied_by=applied_by,
+        min_confidence=0.8,
+        include_risky=False,
+    )
 
 
 def filter_drugs(params):
