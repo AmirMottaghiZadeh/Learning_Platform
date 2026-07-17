@@ -159,6 +159,7 @@ button, input, select, textarea { font: inherit; }
 .button { background: var(--accent); color: white; border-color: transparent; }
 .button-secondary { background: var(--panel); }
 .button-danger { background: color-mix(in srgb, var(--bad) 16%, var(--panel)); color: var(--bad); }
+.danger-panel { border-color: color-mix(in srgb, var(--bad) 45%, var(--border)); }
 .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 16px; }
 table { width: 100%; border-collapse: collapse; min-width: 980px; background: var(--panel); }
 th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; text-align: right; }

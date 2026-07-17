@@ -207,3 +207,17 @@ class DrugDatabaseCreateForm(DrugDatabaseEditForm):
                 "Provide at least one identifying name: name, Persian name, brand name, or generic name."
             )
         return cleaned_data
+
+
+class DrugDatabaseDeleteForm(forms.Form):
+    confirmation = forms.CharField(
+        label="Deletion confirmation",
+        help_text='Type DELETE exactly to permanently remove this drug record.',
+        widget=forms.TextInput(attrs={"autocomplete": "off", "placeholder": "DELETE"}),
+    )
+
+    def clean_confirmation(self):
+        confirmation = self.cleaned_data["confirmation"].strip()
+        if confirmation != "DELETE":
+            raise ValidationError("Type DELETE exactly to confirm this operation.")
+        return confirmation

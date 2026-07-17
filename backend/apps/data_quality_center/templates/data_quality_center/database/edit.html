@@ -70,4 +70,10 @@
     {% endfor %}
   </div>
 </section>
+
+<section class="panel danger-panel" style="margin-top:16px;">
+  <h2>Danger zone</h2>
+  <p class="muted">Delete this drug record from the main database. This action requires a separate final confirmation.</p>
+  <a class="button-danger" href="{% url 'data_quality_center:drug_database_delete' drug.id %}">Delete drug record</a>
+</section>
 {% endblock %}

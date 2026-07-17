@@ -5,8 +5,9 @@ from django.urls import reverse
 from apps.ai_data_pipeline import constants
 from apps.ai_data_pipeline.models import AIDataBatch, AIDataChangeHistory, AIDataJob, AIDataReport, AIDataSuggestion
 from apps.data_quality_center.forms import DrugDatabaseCreateForm, DrugDatabaseEditForm, DrugDatabaseFilterForm
+from apps.drugs.learning_sync import regenerate_and_sync_drug_question_sources
 from apps.drugs.models import Drug, DrugQuestionSource
-from apps.learning.models import KnowledgeSource
+from apps.learning.models import KnowledgeSource, LearningObject
 
 
 class DataQualityCenterTests(TestCase):
@@ -185,6 +186,48 @@ class DataQualityCenterTests(TestCase):
         )
         self.assertEqual(history.applied_by, self.user.username)
         self.assertTrue(history.metadata["manual_create"])
+
+    def test_drug_database_delete_removes_the_drug_and_preserves_audit_history(self):
+        regenerate_and_sync_drug_question_sources(self.drug)
+        learning_object = LearningObject.objects.get(
+            product_id="pharmexa",
+            external_id=self.drug.external_id,
+        )
+        learning_sources = KnowledgeSource.objects.filter(learning_object=learning_object)
+        learning_source_count = learning_sources.count()
+        delete_url = reverse("data_quality_center:drug_database_delete", args=[self.drug.id])
+
+        confirmation_page = self.client.get(delete_url)
+        self.assertEqual(confirmation_page.status_code, 200)
+        self.assertContains(confirmation_page, "Type DELETE exactly")
+
+        rejected = self.client.post(delete_url, {"confirmation": "remove"})
+        self.assertEqual(rejected.status_code, 200)
+        self.assertTrue(Drug.objects.filter(pk=self.drug.id).exists())
+
+        response = self.client.post(delete_url, {"confirmation": "DELETE"})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Drug.objects.filter(pk=self.drug.id).exists())
+        self.assertFalse(DrugQuestionSource.objects.filter(drug_id=self.drug.id).exists())
+        learning_object.refresh_from_db()
+        self.assertFalse(learning_object.is_active)
+        self.assertEqual(
+            KnowledgeSource.objects.filter(
+                learning_object=learning_object,
+                is_active=False,
+            ).count(),
+            learning_source_count,
+        )
+
+        history = AIDataChangeHistory.objects.get(
+            table_name=constants.DRUG_TABLE,
+            record_id=str(self.drug.id),
+            field_name="__record__",
+            suggestion_type="manual_delete",
+        )
+        self.assertEqual(history.applied_by, self.user.username)
+        self.assertTrue(history.metadata["manual_delete"])
+        self.assertEqual(history.metadata["deleted_record_snapshot"]["external_id"], "drug-1")
 
     def test_suggestion_detail_edit_and_review_actions_work(self):
         response = self.client.post(

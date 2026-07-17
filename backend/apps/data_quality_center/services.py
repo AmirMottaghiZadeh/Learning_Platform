@@ -14,8 +14,9 @@ from django.utils import timezone
 from apps.ai_data_pipeline import constants
 from apps.ai_data_pipeline.analyzers.health_check import run_health_check
 from apps.ai_data_pipeline.models import AIDataBatch, AIDataJob, AIDataReport, AIDataSuggestion, AIDataChangeHistory
-from apps.drugs.learning_sync import regenerate_and_sync_drug_question_sources
+from apps.drugs.learning_sync import PRODUCT_ID, regenerate_and_sync_drug_question_sources
 from apps.drugs.models import Drug
+from apps.learning.models import KnowledgeSource, LearningObject
 
 
 DRUG_DATABASE_EDITABLE_FIELDS = (
@@ -403,6 +404,84 @@ def create_drug_from_quality_center(*, cleaned_data, created_by):
             },
         )
     return drug
+
+
+class DrugDeletionBlocked(ValueError):
+    """Raised when a historical legacy session still protects a drug question source."""
+
+
+def drug_deletion_summary(drug):
+    learning_objects = LearningObject.objects.filter(
+        product_id=PRODUCT_ID,
+        external_id=drug.external_id,
+    )
+    learning_object_ids = list(learning_objects.values_list("id", flat=True))
+    return {
+        "question_sources": drug.question_sources.count(),
+        "learning_objects": len(learning_object_ids),
+        "learning_sources": KnowledgeSource.objects.filter(
+            learning_object_id__in=learning_object_ids,
+        ).count(),
+    }
+
+
+def delete_drug_from_quality_center(*, drug_id, deleted_by):
+    """Delete a drug record while retaining inactive learning history references."""
+    from apps.games.models import GameQuestion
+
+    with transaction.atomic():
+        drug = Drug.objects.select_for_update().get(pk=drug_id)
+        legacy_question_count = GameQuestion.objects.filter(source__drug_id=drug.id).count()
+        if legacy_question_count:
+            raise DrugDeletionBlocked(
+                "This drug is referenced by "
+                f"{legacy_question_count} legacy quiz question(s) and cannot be deleted safely."
+            )
+
+        summary = drug_deletion_summary(drug)
+        record_id = str(drug.id)
+        display_name = drug.brand_name or drug.generic_name or drug.name or drug.persian_name or drug.external_id
+        snapshot = {
+            "id": drug.id,
+            "external_id": drug.external_id,
+            "dataset_document_id": drug.dataset_document_id,
+            **{
+                field_name: getattr(drug, field_name)
+                for field_name in DRUG_DATABASE_EDITABLE_FIELDS
+            },
+        }
+        learning_object_ids = list(
+            LearningObject.objects.filter(
+                product_id=PRODUCT_ID,
+                external_id=drug.external_id,
+            ).values_list("id", flat=True)
+        )
+
+        # Existing game questions use KnowledgeSource with PROTECT. Keep those references
+        # for historical sessions, but make the sources unavailable to future quizzes/cards.
+        KnowledgeSource.objects.filter(learning_object_id__in=learning_object_ids).update(is_active=False)
+        LearningObject.objects.filter(id__in=learning_object_ids).update(is_active=False)
+        drug.delete()
+
+        AIDataChangeHistory.objects.create(
+            table_name=constants.DRUG_TABLE,
+            record_id=record_id,
+            field_name="__record__",
+            old_value=_history_value(display_name),
+            new_value=f"Deleted drug #{record_id}.",
+            reason="Manual drug deletion in Data Quality Center.",
+            suggestion_type="manual_delete",
+            applied_by=deleted_by,
+            metadata={
+                "change_source": "data_quality_center",
+                "manual_delete": True,
+                "deactivated_learning_sources": summary["learning_sources"],
+                "deactivated_learning_objects": summary["learning_objects"],
+                "deleted_question_sources": summary["question_sources"],
+                "deleted_record_snapshot": snapshot,
+            },
+        )
+    return summary
 
 
 def build_record_context(model, record_id):

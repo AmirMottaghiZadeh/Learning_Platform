@@ -20,6 +20,7 @@ from apps.drugs.models import Drug
 from .forms import (
     BatchFilterForm,
     DrugDatabaseCreateForm,
+    DrugDatabaseDeleteForm,
     DrugDatabaseEditForm,
     DrugDatabaseFilterForm,
     JobFilterForm,
@@ -32,6 +33,9 @@ from .services import (
     build_dashboard_context,
     build_record_context,
     create_drug_from_quality_center,
+    delete_drug_from_quality_center,
+    drug_deletion_summary,
+    DrugDeletionBlocked,
     filter_suggestions,
     filter_drugs,
     get_model_for_table,
@@ -392,6 +396,42 @@ def drug_database_create(request):
         {
             "nav_section": "create_drug",
             "form": form,
+        },
+    )
+
+
+@_staff_view
+@require_http_methods(["GET", "POST"])
+def drug_database_delete(request, drug_id):
+    drug = get_object_or_404(Drug, pk=drug_id)
+    if request.method == "POST":
+        form = DrugDatabaseDeleteForm(request.POST)
+        if form.is_valid():
+            try:
+                summary = delete_drug_from_quality_center(
+                    drug_id=drug.id,
+                    deleted_by=request.user.get_username(),
+                )
+            except DrugDeletionBlocked as exc:
+                messages.error(request, str(exc))
+                return redirect("data_quality_center:drug_database_edit", drug_id=drug.id)
+
+            messages.success(
+                request,
+                f"Deleted drug #{drug.id}; {summary['learning_sources']} related learning source(s) were deactivated.",
+            )
+            return redirect("data_quality_center:drug_database_list")
+    else:
+        form = DrugDatabaseDeleteForm()
+
+    return render(
+        request,
+        "data_quality_center/database/delete.html",
+        {
+            "nav_section": "database",
+            "drug": drug,
+            "form": form,
+            "deletion_summary": drug_deletion_summary(drug),
         },
     )
 

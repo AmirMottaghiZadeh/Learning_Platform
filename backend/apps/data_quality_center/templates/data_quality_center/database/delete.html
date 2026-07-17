@@ -1,0 +1,34 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Delete Drug {{ drug.id }} | Data Quality Center{% endblock %}
+{% block content %}
+<section class="page-title">
+  <div>
+    <h1>Delete drug record</h1>
+    <p>#{{ drug.id }} · {{ drug.brand_name|default:drug.generic_name|default:drug.name|default:drug.external_id }}</p>
+  </div>
+  <a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' drug.id %}">Cancel</a>
+</section>
+
+<section class="panel danger-panel">
+  <h2>This action is permanent</h2>
+  <div class="stack">
+    <div class="note">The main drug record and its {{ deletion_summary.question_sources }} question-source definition(s) will be deleted.</div>
+    <div class="note">{{ deletion_summary.learning_sources }} related learning source(s) will be disabled so the drug is removed from future quizzes and flashcards while old user history stays valid.</div>
+    <div class="note">A full snapshot of the deleted record and the responsible username will be retained in the audit history.</div>
+  </div>
+
+  <form method="post" class="stack" style="margin-top:18px; max-width:560px;">
+    {% csrf_token %}
+    <div class="field">
+      <label for="{{ form.confirmation.id_for_label }}">{{ form.confirmation.label }}</label>
+      {{ form.confirmation }}
+      <div class="muted text-small">{{ form.confirmation.help_text }}</div>
+      {% for error in form.confirmation.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="action-bar">
+      <button class="button-danger" type="submit">Permanently delete this drug</button>
+      <a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' drug.id %}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

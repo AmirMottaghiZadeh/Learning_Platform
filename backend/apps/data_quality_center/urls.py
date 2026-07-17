@@ -20,5 +20,6 @@ urlpatterns = [
     path("database/", views.drug_database_list, name="drug_database_list"),
     path("database/new/", views.drug_database_create, name="drug_database_create"),
     path("database/<int:drug_id>/", views.drug_database_edit, name="drug_database_edit"),
+    path("database/<int:drug_id>/delete/", views.drug_database_delete, name="drug_database_delete"),
     path("records/<str:table_name>/<str:record_id>/", views.record_inspector, name="record_inspector"),
 ]
