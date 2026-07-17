@@ -764,6 +764,7 @@ const styles = StyleSheet.create({
   cardBody: {
     flex: 1,
     justifyContent: "center",
+    alignItems: "center",
   },
   prompt: {
     color: colors.ink,
@@ -778,6 +779,8 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     lineHeight: 36,
     textAlign: "center",
+    alignSelf: "center",
+    width: "100%",
   },
   reviewActions: {
     gap: spacing.sm,
