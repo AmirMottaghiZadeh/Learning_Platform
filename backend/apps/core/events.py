@@ -29,6 +29,8 @@ class LearningEventPublisher(Protocol):
 
 
 class NullLearningEventPublisher:
+    """Discards events. Only for tests and products that opt out of eventing."""
+
     def publish(self, event: LearningEvent) -> None:
         return None
 
@@ -41,12 +43,14 @@ def build_learning_event(
     payload: dict[str, Any] | None = None,
     correlation_id: str | None = None,
     source: str = "backend",
+    occurred_at: datetime | None = None,
 ) -> LearningEvent:
     return LearningEvent(
         event_type=event_type,
         learner_id=learner_id,
         product_id=product_id,
         payload=payload or {},
+        occurred_at=occurred_at or timezone.now(),
         correlation_id=correlation_id or str(uuid4()),
         source=source,
     )

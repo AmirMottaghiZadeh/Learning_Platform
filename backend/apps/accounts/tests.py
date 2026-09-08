@@ -1,13 +1,12 @@
-from datetime import timedelta
 from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth import get_user_model
 from django.core import mail
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from django.utils import timezone
-from rest_framework.authtoken.models import Token
+
+from .services import issue_user_session
 
 
 class AuthenticationSecurityTests(TestCase):
@@ -15,17 +14,22 @@ class AuthenticationSecurityTests(TestCase):
         self.user = get_user_model().objects.create_user(
             username="learner",
             email="learner@example.com",
-            password="old-secure-password",
+            password="Old-Secure-Password-2026!",
         )
         cache.clear()
+        caches["throttle"].clear()
 
     def tearDown(self):
         cache.clear()
+        caches["throttle"].clear()
         super().tearDown()
 
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
         PASSWORD_RESET_FRONTEND_URL="https://frontend.example/reset",
+        # Delivery itself is queued; run it in-process so this test can assert
+        # on the message contents rather than on the transport.
+        CELERY_TASK_ALWAYS_EAGER=True,
     )
     def test_password_reset_request_sends_a_signed_link_without_disclosing_account_existence(self):
         known_response = self.client.post(
@@ -54,9 +58,12 @@ class AuthenticationSecurityTests(TestCase):
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
         PASSWORD_RESET_FRONTEND_URL="https://frontend.example/reset",
+        # Delivery itself is queued; run it in-process so this test can assert
+        # on the message contents rather than on the transport.
+        CELERY_TASK_ALWAYS_EAGER=True,
     )
     def test_password_reset_confirmation_changes_password_invalidates_existing_tokens_and_single_uses_link(self):
-        existing_token = Token.objects.create(user=self.user)
+        existing_session = issue_user_session(self.user).session
         response = self.client.post(
             reverse("auth-password-reset"),
             {"email": self.user.email},
@@ -72,8 +79,8 @@ class AuthenticationSecurityTests(TestCase):
         payload = {
             "uid": params["reset_uid"][0],
             "token": params["reset_token"][0],
-            "new_password": "new-secure-password",
-            "new_password_confirm": "new-secure-password",
+            "new_password": "New-Secure-Password-2026!",
+            "new_password_confirm": "New-Secure-Password-2026!",
         }
 
         response = self.client.post(
@@ -82,14 +89,16 @@ class AuthenticationSecurityTests(TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(Token.objects.filter(pk=existing_token.pk).exists())
+        existing_session.refresh_from_db()
+        self.assertIsNotNone(existing_session.revoked_at)
+        self.assertEqual(existing_session.revoke_reason, "password_reset")
 
         self.user.refresh_from_db()
-        self.assertTrue(self.user.check_password("new-secure-password"))
+        self.assertTrue(self.user.check_password("New-Secure-Password-2026!"))
         self.assertEqual(
             self.client.post(
                 reverse("auth-login"),
-                {"username": self.user.username, "password": "old-secure-password"},
+                {"username": self.user.username, "password": "Old-Secure-Password-2026!"},
                 content_type="application/json",
             ).status_code,
             400,
@@ -97,7 +106,7 @@ class AuthenticationSecurityTests(TestCase):
         self.assertEqual(
             self.client.post(
                 reverse("auth-login"),
-                {"username": self.user.username, "password": "new-secure-password"},
+                {"username": self.user.username, "password": "New-Secure-Password-2026!"},
                 content_type="application/json",
             ).status_code,
             200,
@@ -117,15 +126,49 @@ class AuthenticationSecurityTests(TestCase):
             {
                 "uid": "invalid",
                 "token": "invalid",
-                "new_password": "new-secure-password",
-                "new_password_confirm": "new-secure-password",
+                "new_password": "New-Secure-Password-2026!",
+                "new_password_confirm": "New-Secure-Password-2026!",
             },
             content_type="application/json",
         )
 
         self.assertEqual(response.status_code, 400)
         self.user.refresh_from_db()
-        self.assertTrue(self.user.check_password("old-secure-password"))
+        self.assertTrue(self.user.check_password("Old-Secure-Password-2026!"))
+
+    def test_registration_rejects_common_numeric_password(self):
+        response = self.client.post(
+            reverse("auth-register"),
+            {
+                "name": "New Learner",
+                "email": "new-learner@example.com",
+                "password": "123456789012",
+                "password_confirm": "123456789012",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(
+            get_user_model().objects.filter(email__iexact="new-learner@example.com").exists()
+        )
+
+    def test_registration_accepts_password_that_passes_django_validators(self):
+        response = self.client.post(
+            reverse("auth-register"),
+            {
+                "name": "Secure Learner",
+                "email": "secure-learner@example.com",
+                "password": "Saffron-River-Atlas-2026!",
+                "password_confirm": "Saffron-River-Atlas-2026!",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(
+            get_user_model().objects.filter(email__iexact="secure-learner@example.com").exists()
+        )
 
     def test_login_is_rate_limited_by_auth_scope(self):
         payload = {"username": self.user.username, "password": "wrong-password"}
@@ -145,10 +188,10 @@ class AuthenticationSecurityTests(TestCase):
         )
         self.assertEqual(response.status_code, 429)
 
-    @override_settings(AUTH_TOKEN_TTL_HOURS=1)
-    def test_expired_token_is_rejected_and_removed(self):
+    def test_legacy_drf_token_is_not_accepted(self):
+        from rest_framework.authtoken.models import Token
+
         token = Token.objects.create(user=self.user)
-        Token.objects.filter(pk=token.pk).update(created=timezone.now() - timedelta(hours=2))
 
         response = self.client.get(
             reverse("auth-me"),
@@ -156,4 +199,4 @@ class AuthenticationSecurityTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 401)
-        self.assertFalse(Token.objects.filter(pk=token.pk).exists())
+        self.assertTrue(Token.objects.filter(pk=token.pk).exists())

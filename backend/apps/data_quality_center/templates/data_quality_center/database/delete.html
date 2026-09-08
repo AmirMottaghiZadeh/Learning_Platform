@@ -1,12 +1,12 @@
 {% extends "data_quality_center/base.html" %}
-{% block title %}Delete Drug {{ drug.id }} | Data Quality Center{% endblock %}
+{% block title %}Delete Drug {{ drug.drug_key }} | Data Quality Center{% endblock %}
 {% block content %}
 <section class="page-title">
   <div>
     <h1>Delete drug record</h1>
-    <p>#{{ drug.id }} · {{ drug.brand_name|default:drug.generic_name|default:drug.name|default:drug.external_id }}</p>
+    <p>{{ drug.drug_key }} · {{ drug.generic_name|default:drug.drug_key }}</p>
   </div>
-  <a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' drug.id %}">Cancel</a>
+  <a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' drug.drug_key %}">Cancel</a>
 </section>
 
 <section class="panel danger-panel">
@@ -27,7 +27,7 @@
     </div>
     <div class="action-bar">
       <button class="button-danger" type="submit">Permanently delete this drug</button>
-      <a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' drug.id %}">Cancel</a>
+      <a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' drug.drug_key %}">Cancel</a>
     </div>
   </form>
 </section>

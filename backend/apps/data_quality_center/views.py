@@ -1,8 +1,9 @@
 import json
+from html import escape
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
@@ -11,11 +12,25 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from apps.accounts.permissions import (
+    platform_permission_required,
+    require_request_permission,
+)
 from apps.ai_data_pipeline import constants
+from apps.ai_data_pipeline.appliers.apply_changes import BackupUnavailable
+from apps.ai_data_pipeline.audit_service import (
+    DataQualityWorkflowError,
+    review_suggestion,
+    rollback_applied_change,
+)
 from apps.ai_data_pipeline.models import AIDataBatch, AIDataChangeHistory, AIDataJob, AIDataReport, AIDataSuggestion
-from apps.ai_data_pipeline.reports.report_generator import build_batch_report, write_reports
 from apps.ai_data_pipeline.reviewers.approval import review_suggestions
+from apps.ai_data_pipeline.tasks import enqueue_batch_report
+from apps.core.audit import audit_trail_for, verify_audit_chain
+from apps.core.models import AuditEvent
 from apps.drugs.models import Drug
+
+from .step_up import step_up_required
 
 from .forms import (
     BatchFilterForm,
@@ -38,6 +53,7 @@ from .services import (
     delete_drug_from_quality_center,
     drug_deletion_summary,
     DrugDeletionBlocked,
+    MedicalFieldRequiresReview,
     filter_suggestions,
     filter_drugs,
     get_model_for_table,
@@ -48,7 +64,9 @@ from .services import (
     update_drug_from_quality_center,
 )
 def _staff_view(view):
-    return staff_member_required(view)
+    return platform_permission_required(
+        "accounts.view_data_quality_center"
+    )(view)
 
 
 def _paginate(request, queryset, per_page=24):
@@ -66,6 +84,26 @@ def _selected_ids_from_post(request):
 
 def _max_count(mapping):
     return max(mapping.values(), default=1)
+
+
+def _change_reason(request):
+    """The operator's written justification, required for every data change."""
+    return (request.POST.get("change_reason") or "").strip()
+
+
+def _report_workflow_error(request, exc):
+    messages.error(request, str(exc))
+
+
+def _report_refusals(request, refusals):
+    """Surface per-row governance refusals instead of hiding them in a total."""
+    for refusal in refusals[:5]:
+        messages.warning(
+            request,
+            f"Suggestion #{refusal['suggestion_id']} was not changed: {refusal['error']}",
+        )
+    if len(refusals) > 5:
+        messages.warning(request, f"{len(refusals) - 5} further suggestion(s) were refused.")
 
 
 @_staff_view
@@ -142,16 +180,28 @@ def batch_detail(request, batch_id):
 @_staff_view
 @require_http_methods(["POST"])
 def batch_generate_report(request, batch_id):
+    require_request_permission(
+        request,
+        "accounts.review_data_quality_suggestion",
+    )
     batch = get_object_or_404(AIDataBatch, pk=batch_id)
-    health_report = None
-    if batch.batch_type == constants.BATCH_TYPE_HEALTH_CHECK and batch.summary:
-        health_report = {"summary": batch.summary}
-    report = build_batch_report(batch, health_report=health_report)
-    paths = write_reports(batch, report=report)
-    batch.summary = batch.summary or report.get("summary", {})
-    batch.save(update_fields=["summary"])
-    messages.success(request, f"Report generated for batch {batch.id}.")
-    return redirect("data_quality_center:report_detail", report_id=batch.reports.order_by("-created_at").first().id)
+    # Report generation scans the whole corpus, so it runs on the queue rather
+    # than holding a web worker for the duration.
+    job = enqueue_batch_report(batch=batch, actor=request.user)
+    latest_report = batch.reports.order_by("-created_at").first()
+    if latest_report is not None:
+        messages.success(
+            request,
+            f"Report generation queued for batch {batch.id} as job #{job.id}. "
+            "The most recent report is shown until it finishes.",
+        )
+        return redirect("data_quality_center:report_detail", report_id=latest_report.id)
+
+    messages.success(
+        request,
+        f"Report generation queued for batch {batch.id} as job #{job.id}.",
+    )
+    return redirect("data_quality_center:job_list")
 
 
 @_staff_view
@@ -200,6 +250,7 @@ def job_list(request):
 
 
 @_staff_view
+@step_up_required
 def suggestion_list(request):
     form = SuggestionFilterForm(request.GET or None)
     queryset = filter_suggestions(request.GET)
@@ -208,6 +259,10 @@ def suggestion_list(request):
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "generate_rule_batch":
+            require_request_permission(
+                request,
+                "accounts.review_data_quality_suggestion",
+            )
             rule_batch_form = RuleBasedSuggestionBatchForm(request.POST)
             if rule_batch_form.is_valid():
                 try:
@@ -227,9 +282,14 @@ def suggestion_list(request):
             else:
                 messages.error(request, "Correct the rule-package form and try again.")
         elif action == "apply_batch":
+            require_request_permission(
+                request,
+                "accounts.apply_data_quality_change",
+            )
             _apply_all_approved_rule_suggestions(
                 request,
                 request.POST.get("batch_id") or request.GET.get("batch"),
+                _change_reason(request),
             )
             return redirect(request.get_full_path())
         else:
@@ -239,47 +299,65 @@ def suggestion_list(request):
                 return redirect(request.path + ("?" + request.META.get("QUERY_STRING", "") if request.META.get("QUERY_STRING") else ""))
 
             reviewer_notes = request.POST.get("reviewer_notes", "").strip()
+            reason = _change_reason(request) or reviewer_notes
             selected_queryset = queryset.filter(id__in=selected_ids)
-            if action == "approve":
-                safe_queryset = selected_queryset.filter(
-                    provider=constants.PROVIDER_RULES,
-                    risk_level=constants.RISK_SAFE,
-                )
-                count = review_suggestions(
-                    suggestion_ids=list(safe_queryset.values_list("id", flat=True)),
-                    action="approve",
-                    reviewed_by=request.user.get_username(),
-                )
-                messages.success(request, f"Approved {count} safe rule-based suggestion(s).")
-            elif action == "reject":
-                count = review_suggestions(
-                    suggestion_ids=list(selected_queryset.values_list("id", flat=True)),
-                    action="reject",
-                    reviewed_by=request.user.get_username(),
-                )
-                messages.success(request, f"Rejected {count} suggestion(s).")
-            elif action == "mark_review":
-                with transaction.atomic():
-                    updated = (
-                        AIDataSuggestion.objects.select_for_update()
-                        .filter(id__in=selected_queryset.values("id"))
-                        .exclude(status=constants.SUGGESTION_STATUS_APPLIED)
+            try:
+                if action == "approve":
+                    require_request_permission(
+                        request,
+                        "accounts.approve_data_quality_suggestion",
                     )
-                    updated_count = updated.count()
-                    for suggestion in updated:
-                        suggestion.status = constants.SUGGESTION_STATUS_PENDING
-                        suggestion.risk_level = constants.RISK_NEEDS_REVIEW
-                        suggestion.reviewed_by = request.user.get_username()
-                        suggestion.reviewed_at = timezone.now()
-                        if reviewer_notes:
-                            suggestion.metadata = dict(suggestion.metadata or {})
-                            suggestion.metadata["reviewer_notes"] = reviewer_notes
-                        suggestion.save(update_fields=["status", "risk_level", "reviewed_by", "reviewed_at", "metadata", "updated_at"])
-                    messages.success(request, f"Marked {updated_count} suggestion(s) as needs review.")
-            elif action == "apply_selected":
-                _apply_selected_rule_suggestions(request, selected_queryset)
-            else:
-                messages.warning(request, "Unsupported bulk action.")
+                    safe_queryset = selected_queryset.filter(provider=constants.PROVIDER_RULES)
+                    count, refused = review_suggestions(
+                        actor=request.user,
+                        reason=reason,
+                        suggestion_ids=list(safe_queryset.values_list("id", flat=True)),
+                        action="approve",
+                        request=request,
+                        skip_refused=True,
+                    )
+                    messages.success(request, f"Approved {count} rule-based suggestion(s).")
+                    _report_refusals(request, refused)
+                elif action == "reject":
+                    require_request_permission(
+                        request,
+                        "accounts.review_data_quality_suggestion",
+                    )
+                    count, refused = review_suggestions(
+                        actor=request.user,
+                        reason=reason,
+                        suggestion_ids=list(selected_queryset.values_list("id", flat=True)),
+                        action="reject",
+                        request=request,
+                        skip_refused=True,
+                    )
+                    messages.success(request, f"Rejected {count} suggestion(s).")
+                    _report_refusals(request, refused)
+                elif action == "mark_review":
+                    require_request_permission(
+                        request,
+                        "accounts.review_data_quality_suggestion",
+                    )
+                    count, refused = review_suggestions(
+                        actor=request.user,
+                        reason=reason,
+                        suggestion_ids=list(selected_queryset.values_list("id", flat=True)),
+                        action="needs_review",
+                        request=request,
+                        skip_refused=True,
+                    )
+                    messages.success(request, f"Marked {count} suggestion(s) as needs review.")
+                    _report_refusals(request, refused)
+                elif action == "apply_selected":
+                    require_request_permission(
+                        request,
+                        "accounts.apply_data_quality_change",
+                    )
+                    _apply_selected_rule_suggestions(request, selected_queryset, reason)
+                else:
+                    messages.warning(request, "Unsupported bulk action.")
+            except DataQualityWorkflowError as exc:
+                _report_workflow_error(request, exc)
             return redirect(request.get_full_path())
 
     page, paginator = _paginate(request, queryset, per_page=30)
@@ -300,7 +378,7 @@ def suggestion_list(request):
     )
 
 
-def _apply_selected_rule_suggestions(request, selected_queryset):
+def _apply_selected_rule_suggestions(request, selected_queryset, reason):
     if request.POST.get("apply_confirmation", "").strip() != "APPLY":
         messages.error(request, "Type APPLY to confirm applying the selected suggestions.")
         return
@@ -318,23 +396,16 @@ def _apply_selected_rule_suggestions(request, selected_queryset):
         messages.error(request, "Selected suggestions must belong to one rule-based package.")
         return
 
-    try:
-        result = apply_rule_based_suggestions(
-            batch=selected[0].batch,
-            suggestion_ids=[suggestion.id for suggestion in selected],
-            applied_by=request.user.get_username(),
-        )
-    except ValueError as exc:
-        messages.error(request, str(exc))
-        return
-    messages.success(
+    _run_apply(
         request,
-        f"Selected package changes processed: {result.applied} applied, "
-        f"{result.skipped} skipped, {result.failed} failed.",
+        batch=selected[0].batch,
+        reason=reason,
+        suggestion_ids=[suggestion.id for suggestion in selected],
+        label="Selected package changes",
     )
 
 
-def _apply_all_approved_rule_suggestions(request, batch_id):
+def _apply_all_approved_rule_suggestions(request, batch_id, reason):
     if request.POST.get("apply_confirmation", "").strip() != "APPLY":
         messages.error(request, "Type APPLY to confirm applying all approved suggestions in this package.")
         return
@@ -342,22 +413,42 @@ def _apply_all_approved_rule_suggestions(request, batch_id):
         messages.warning(request, "Filter by one rule-based package before applying all approved suggestions.")
         return
     batch = get_object_or_404(AIDataBatch, pk=batch_id)
+    _run_apply(request, batch=batch, reason=reason, label=f"Package #{batch.id}")
+
+
+def _run_apply(request, *, batch, reason, label, suggestion_ids=None):
     try:
         result = apply_rule_based_suggestions(
             batch=batch,
-            applied_by=request.user.get_username(),
+            suggestion_ids=suggestion_ids,
+            actor=request.user,
+            reason=reason,
+            request=request,
         )
-    except ValueError as exc:
+    except BackupUnavailable as exc:
+        # Nothing was changed: the apply refuses to run without a way back.
+        messages.error(request, f"No change was applied because a backup could not be taken: {exc}")
+        return
+    except (DataQualityWorkflowError, ValueError) as exc:
         messages.error(request, str(exc))
         return
+
     messages.success(
         request,
-        f"Package #{batch.id} processed: {result.applied} applied, "
+        f"{label} processed: {result.applied} applied, "
         f"{result.skipped} skipped, {result.failed} failed.",
     )
+    if result.backup_path:
+        messages.info(request, f"Backup written to {result.backup_path}.")
+    for error in result.errors[:5]:
+        messages.warning(
+            request,
+            f"Suggestion #{error['suggestion_id']}: {error['error']}",
+        )
 
 
 @_staff_view
+@step_up_required
 @require_http_methods(["GET", "POST"])
 def suggestion_detail(request, suggestion_id):
     suggestion = get_object_or_404(AIDataSuggestion.objects.select_related("batch"), pk=suggestion_id)
@@ -373,54 +464,83 @@ def suggestion_detail(request, suggestion_id):
 
     if request.method == "POST":
         action = request.POST.get("action")
-        if action == "edit":
-            edit_form = SuggestionEditForm(request.POST)
-            if edit_form.is_valid():
-                suggestion.suggested_value = edit_form.cleaned_data.get("suggested_value", suggestion.suggested_value)
-                suggestion.reason = edit_form.cleaned_data.get("reason", suggestion.reason)
-                if edit_form.cleaned_data.get("confidence_score") is not None:
-                    suggestion.confidence_score = edit_form.cleaned_data["confidence_score"]
-                if edit_form.cleaned_data.get("risk_level"):
-                    suggestion.risk_level = edit_form.cleaned_data["risk_level"]
-                notes = edit_form.cleaned_data.get("reviewer_notes", "").strip()
-                suggestion.metadata = dict(suggestion.metadata or {})
-                if notes:
-                    suggestion.metadata["reviewer_notes"] = notes
-                suggestion.status = constants.SUGGESTION_STATUS_EDITED
-                suggestion.reviewed_by = request.user.get_username()
-                suggestion.reviewed_at = timezone.now()
-                suggestion.save()
-                messages.success(request, "Suggestion updated.")
-                return redirect("data_quality_center:suggestion_detail", suggestion_id=suggestion.id)
-        elif action == "approve":
-            if suggestion.status != constants.SUGGESTION_STATUS_APPLIED:
-                review_suggestions(suggestion_ids=[suggestion.id], action="approve", reviewed_by=request.user.get_username())
-                messages.success(request, "Suggestion approved.")
-                return redirect("data_quality_center:suggestion_detail", suggestion_id=suggestion.id)
-        elif action == "apply":
-            if request.POST.get("apply_confirmation", "").strip() != "APPLY":
-                messages.error(request, "Type APPLY to confirm applying this approved suggestion.")
-            else:
-                try:
-                    result = apply_rule_based_suggestions(
-                        batch=suggestion.batch,
-                        suggestion_ids=[suggestion.id],
-                        applied_by=request.user.get_username(),
+        reason = _change_reason(request)
+        try:
+            if action == "edit":
+                require_request_permission(
+                    request,
+                    "accounts.review_data_quality_suggestion",
+                )
+                edit_form = SuggestionEditForm(request.POST)
+                if edit_form.is_valid():
+                    notes = edit_form.cleaned_data.get("reviewer_notes", "").strip()
+                    review_suggestion(
+                        suggestion=suggestion,
+                        actor=request.user,
+                        action="edit",
+                        reason=reason or notes,
+                        edited_value=edit_form.cleaned_data.get(
+                            "suggested_value", suggestion.suggested_value
+                        ),
+                        risk_level=edit_form.cleaned_data.get("risk_level") or None,
+                        request=request,
                     )
-                except ValueError as exc:
-                    messages.error(request, str(exc))
+                    messages.success(request, "Suggestion updated.")
+                    return redirect("data_quality_center:suggestion_detail", suggestion_id=suggestion.id)
+            elif action == "approve":
+                require_request_permission(
+                    request,
+                    "accounts.approve_data_quality_suggestion",
+                )
+                review_suggestion(
+                    suggestion=suggestion,
+                    actor=request.user,
+                    action="approve",
+                    reason=reason,
+                    request=request,
+                )
+                suggestion.refresh_from_db()
+                if suggestion.is_fully_approved:
+                    messages.success(request, "Suggestion approved.")
                 else:
                     messages.success(
                         request,
-                        f"Suggestion processed: {result.applied} applied, "
-                        f"{result.skipped} skipped, {result.failed} failed.",
+                        "Your approval was recorded. This change is risky or medical, "
+                        "so a second approver must sign off before it can be applied.",
+                    )
+                return redirect("data_quality_center:suggestion_detail", suggestion_id=suggestion.id)
+            elif action == "apply":
+                require_request_permission(
+                    request,
+                    "accounts.apply_data_quality_change",
+                )
+                if request.POST.get("apply_confirmation", "").strip() != "APPLY":
+                    messages.error(request, "Type APPLY to confirm applying this approved suggestion.")
+                else:
+                    _run_apply(
+                        request,
+                        batch=suggestion.batch,
+                        reason=reason,
+                        suggestion_ids=[suggestion.id],
+                        label="Suggestion",
                     )
                     return redirect("data_quality_center:suggestion_detail", suggestion_id=suggestion.id)
-        elif action == "reject":
-            if suggestion.status != constants.SUGGESTION_STATUS_APPLIED:
-                review_suggestions(suggestion_ids=[suggestion.id], action="reject", reviewed_by=request.user.get_username())
+            elif action == "reject":
+                require_request_permission(
+                    request,
+                    "accounts.review_data_quality_suggestion",
+                )
+                review_suggestion(
+                    suggestion=suggestion,
+                    actor=request.user,
+                    action="reject",
+                    reason=reason,
+                    request=request,
+                )
                 messages.success(request, "Suggestion rejected.")
                 return redirect("data_quality_center:suggestion_detail", suggestion_id=suggestion.id)
+        except DataQualityWorkflowError as exc:
+            _report_workflow_error(request, exc)
 
     return render(
         request,
@@ -463,28 +583,36 @@ def drug_database_list(request):
 
 
 @_staff_view
+@step_up_required
 @require_http_methods(["GET", "POST"])
-def drug_database_edit(request, drug_id):
-    drug = get_object_or_404(Drug, pk=drug_id)
+def drug_database_edit(request, drug_key):
+    drug = get_object_or_404(Drug, pk=drug_key)
     if request.method == "POST":
+        require_request_permission(request, "accounts.manage_drug_records")
         form = DrugDatabaseEditForm(request.POST, instance=drug)
         if form.is_valid():
-            updated_drug, changes = update_drug_from_quality_center(
-                drug_id=drug.id,
-                cleaned_data=form.cleaned_data,
-                edited_by=request.user.get_username(),
-            )
-            if changes:
-                messages.success(request, f"Saved {len(changes)} database field change(s) for drug #{updated_drug.id}.")
+            try:
+                updated_drug, changes = update_drug_from_quality_center(
+                    drug_id=drug.drug_key,
+                    cleaned_data=form.cleaned_data,
+                    actor=request.user,
+                    reason=_change_reason(request),
+                    request=request,
+                )
+            except (DataQualityWorkflowError, MedicalFieldRequiresReview) as exc:
+                _report_workflow_error(request, exc)
             else:
-                messages.info(request, "No values changed.")
-            return redirect("data_quality_center:drug_database_edit", drug_id=updated_drug.id)
+                if changes:
+                    messages.success(request, f"Saved {len(changes)} database field change(s) for drug {updated_drug.pk}.")
+                else:
+                    messages.info(request, "No values changed.")
+                return redirect("data_quality_center:drug_database_edit", drug_key=updated_drug.pk)
     else:
         form = DrugDatabaseEditForm(instance=drug)
 
     history = AIDataChangeHistory.objects.filter(
         table_name=constants.DRUG_TABLE,
-        record_id=str(drug.id),
+        record_id=str(drug.pk),
     ).order_by("-applied_at")[:30]
     return render(
         request,
@@ -499,17 +627,25 @@ def drug_database_edit(request, drug_id):
 
 
 @_staff_view
+@step_up_required
 @require_http_methods(["GET", "POST"])
 def drug_database_create(request):
     if request.method == "POST":
+        require_request_permission(request, "accounts.manage_drug_records")
         form = DrugDatabaseCreateForm(request.POST)
         if form.is_valid():
-            drug = create_drug_from_quality_center(
-                cleaned_data=form.cleaned_data,
-                created_by=request.user.get_username(),
-            )
-            messages.success(request, f"Created drug #{drug.id}. Its identifiers were generated automatically.")
-            return redirect("data_quality_center:drug_database_edit", drug_id=drug.id)
+            try:
+                drug = create_drug_from_quality_center(
+                    cleaned_data=form.cleaned_data,
+                    actor=request.user,
+                    reason=_change_reason(request),
+                    request=request,
+                )
+            except DataQualityWorkflowError as exc:
+                _report_workflow_error(request, exc)
+            else:
+                messages.success(request, f"Created drug {drug.pk}.")
+                return redirect("data_quality_center:drug_database_edit", drug_key=drug.pk)
     else:
         form = DrugDatabaseCreateForm()
     return render(
@@ -523,24 +659,31 @@ def drug_database_create(request):
 
 
 @_staff_view
+@step_up_required
 @require_http_methods(["GET", "POST"])
-def drug_database_delete(request, drug_id):
-    drug = get_object_or_404(Drug, pk=drug_id)
+def drug_database_delete(request, drug_key):
+    drug = get_object_or_404(Drug, pk=drug_key)
     if request.method == "POST":
+        require_request_permission(request, "accounts.manage_drug_records")
         form = DrugDatabaseDeleteForm(request.POST)
         if form.is_valid():
             try:
                 summary = delete_drug_from_quality_center(
-                    drug_id=drug.id,
-                    deleted_by=request.user.get_username(),
+                    drug_id=drug.drug_key,
+                    actor=request.user,
+                    reason=_change_reason(request),
+                    request=request,
                 )
+            except DataQualityWorkflowError as exc:
+                _report_workflow_error(request, exc)
+                return redirect("data_quality_center:drug_database_delete", drug_key=drug.pk)
             except DrugDeletionBlocked as exc:
                 messages.error(request, str(exc))
-                return redirect("data_quality_center:drug_database_edit", drug_id=drug.id)
+                return redirect("data_quality_center:drug_database_edit", drug_key=drug.pk)
 
             messages.success(
                 request,
-                f"Deleted drug #{drug.id}; {summary['learning_sources']} related learning source(s) were deactivated.",
+                f"Deleted drug {drug.pk}; {summary['learning_sources']} related learning source(s) were deactivated.",
             )
             return redirect("data_quality_center:drug_database_list")
     else:
@@ -654,8 +797,97 @@ def report_download(request, report_id, format):
 
 
 def build_minimal_report_html(report):
+    # Report content is operator-supplied data. It is escaped before being
+    # embedded, so a crafted value cannot execute in a reviewer's browser.
+    payload = escape(json.dumps(report.content, ensure_ascii=False, indent=2))
     return f"""<!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>Report {report.id}</title></head>
-<body><pre>{json.dumps(report.content, ensure_ascii=False, indent=2)}</pre></body>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<title>Report {report.id}</title>
+</head>
+<body><pre>{payload}</pre></body>
 </html>"""
+
+
+@_staff_view
+def audit_trail(request):
+    """Read-only view of the append-only audit log, with chain verification."""
+    require_request_permission(request, "accounts.view_security_audit")
+
+    queryset = AuditEvent.objects.select_related("actor", "reverts_event")
+    entity_type = request.GET.get("entity_type", "").strip()
+    entity_id = request.GET.get("entity_id", "").strip()
+    action = request.GET.get("action", "").strip()
+    if entity_type:
+        queryset = queryset.filter(entity_type=entity_type)
+    if entity_id:
+        queryset = queryset.filter(entity_id=entity_id)
+    if action:
+        queryset = queryset.filter(action=action)
+
+    page, paginator = _paginate(request, queryset, per_page=40)
+    return render(
+        request,
+        "data_quality_center/audit/list.html",
+        {
+            "nav_section": "audit",
+            "events": page.object_list,
+            "page_obj": page,
+            "paginator": paginator,
+            "verification": verify_audit_chain(limit=settings.DATA_QUALITY_AUDIT_VERIFY_LIMIT),
+            "action_choices": AuditEvent.ACTION_CHOICES,
+            "filters": {
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "action": action,
+            },
+        },
+    )
+
+
+@_staff_view
+@step_up_required
+@require_http_methods(["GET", "POST"])
+def change_rollback(request, history_id):
+    """Undo one applied change by appending a reverting audit event."""
+    history = get_object_or_404(
+        AIDataChangeHistory.objects.select_related("suggestion", "audit_event", "rolled_back_by_user"),
+        pk=history_id,
+    )
+
+    if request.method == "POST":
+        require_request_permission(request, "accounts.apply_data_quality_change")
+        if request.POST.get("rollback_confirmation", "").strip() != "ROLLBACK":
+            messages.error(request, "Type ROLLBACK to confirm undoing this change.")
+        else:
+            try:
+                event = rollback_applied_change(
+                    history=history,
+                    actor=request.user,
+                    reason=_change_reason(request),
+                    request=request,
+                )
+            except DataQualityWorkflowError as exc:
+                _report_workflow_error(request, exc)
+            else:
+                messages.success(
+                    request,
+                    f"Change #{history.id} was rolled back and recorded as audit event #{event.sequence}.",
+                )
+                return redirect(
+                    "data_quality_center:record_inspector",
+                    table_name=history.table_name,
+                    record_id=history.record_id,
+                )
+
+    return render(
+        request,
+        "data_quality_center/records/rollback.html",
+        {
+            "nav_section": "records",
+            "history": history,
+            "trail": audit_trail_for(history.table_name, history.record_id)[:20],
+        },
+    )

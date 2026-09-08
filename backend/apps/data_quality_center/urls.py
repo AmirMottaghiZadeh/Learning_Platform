@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .step_up import step_up_view
 
 app_name = "data_quality_center"
 
@@ -19,7 +20,10 @@ urlpatterns = [
     path("reports/<int:report_id>/download/<str:format>/", views.report_download, name="report_download"),
     path("database/", views.drug_database_list, name="drug_database_list"),
     path("database/new/", views.drug_database_create, name="drug_database_create"),
-    path("database/<int:drug_id>/", views.drug_database_edit, name="drug_database_edit"),
-    path("database/<int:drug_id>/delete/", views.drug_database_delete, name="drug_database_delete"),
+    path("database/<str:drug_key>/", views.drug_database_edit, name="drug_database_edit"),
+    path("database/<str:drug_key>/delete/", views.drug_database_delete, name="drug_database_delete"),
     path("records/<str:table_name>/<str:record_id>/", views.record_inspector, name="record_inspector"),
+    path("changes/<int:history_id>/rollback/", views.change_rollback, name="change_rollback"),
+    path("audit/", views.audit_trail, name="audit_trail"),
+    path("step-up/", step_up_view, name="step_up"),
 ]

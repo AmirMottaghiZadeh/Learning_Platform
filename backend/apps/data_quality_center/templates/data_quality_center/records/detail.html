@@ -1,15 +1,15 @@
 {% extends "data_quality_center/base.html" %}
-{% block title %}Record {{ record.id }} | Data Quality Center{% endblock %}
+{% block title %}Record {{ record.pk }} | Data Quality Center{% endblock %}
 {% block content %}
 <section class="page-title">
   <div>
     <h1>Record Inspector</h1>
-    <p>{{ table_name }} · Record {{ record.id }}</p>
+    <p>{{ table_name }} · Record {{ record.pk }}</p>
   </div>
   <div class="status-line">
     <span class="chip">Quality score {{ quality_score }}</span>
     {% if table_name == "drugs_drug" %}
-      <a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' record.id %}">Edit in Database</a>
+      <a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' record.pk %}">Edit in Database</a>
     {% endif %}
   </div>
 </section>

@@ -3,7 +3,6 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=config.settings.production \
-    SECRET_KEY=docker-build-secret \
     ALLOWED_HOSTS=localhost \
     SECURE_SSL_REDIRECT=False \
     SECURE_HSTS_SECONDS=0
@@ -20,7 +19,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY backend/ .
 
-RUN python manage.py collectstatic --no-input
+RUN DJANGO_SETTINGS_MODULE=config.settings.local python manage.py collectstatic --no-input
 
 EXPOSE 8000
 

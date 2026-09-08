@@ -14,61 +14,37 @@ from django.utils import timezone
 
 from apps.ai_data_pipeline import constants
 from apps.ai_data_pipeline.appliers.apply_changes import apply_approved_suggestions
+from apps.ai_data_pipeline.audit_service import (
+    PERMISSION_MANAGE_RECORDS,
+    require_permission,
+    require_reason,
+)
 from apps.ai_data_pipeline.analyzers.health_check import run_health_check
 from apps.ai_data_pipeline.models import AIDataBatch, AIDataJob, AIDataReport, AIDataSuggestion, AIDataChangeHistory
 from apps.ai_data_pipeline.providers.base import get_provider
 from apps.ai_data_pipeline.reviewers.suggestion_generator import DEFAULT_FIELDS, generate_suggestions
-from apps.drugs.learning_sync import PRODUCT_ID, regenerate_and_sync_drug_question_sources
+from apps.core.audit import record_audit_event
+from apps.core.models import AuditEvent
+from apps.drugs.learning_sync import (
+    PRODUCT_ID,
+    drug_learning_object_external_id,
+    regenerate_and_sync_drug_question_sources,
+)
 from apps.drugs.models import Drug
 from apps.learning.models import KnowledgeSource, LearningObject
 
 
 DRUG_DATABASE_EDITABLE_FIELDS = (
-    "name",
-    "persian_name",
-    "brand_name",
     "generic_name",
-    "dosage_form",
-    "drug_classification",
-    "consumption_time",
-    "consumption_time_sorted",
-    "indication",
-    "indication_answer",
-    "side_effects",
-    "side_effects_answer",
-    "dosing_and_administration",
-    "pregnancy",
-    "breastfeeding",
-    "dose_adjustment",
-    "clinical_notes",
+    "route",
     "atc_codes",
-    "atc_classes",
-    "atc_subclasses",
-    "atc_categories",
-    "category",
-    "source_topic",
-    "extra_attributes",
+    "atc_match_status",
 )
 
 DRUG_DATABASE_SEARCH_FIELDS = (
-    "name",
-    "persian_name",
-    "brand_name",
+    "drug_key",
     "generic_name",
-    "indication",
-    "indication_answer",
-    "side_effects",
-    "side_effects_answer",
-    "dosage_form",
-    "drug_classification",
-    "consumption_time",
-    "consumption_time_sorted",
-    "dosing_and_administration",
-    "pregnancy",
-    "breastfeeding",
-    "dose_adjustment",
-    "clinical_notes",
-    "source_topic",
+    "route",
 )
 
 
@@ -133,12 +109,12 @@ def build_dashboard_context():
     latest_reports = list(AIDataReport.objects.order_by("-created_at")[:8])
     problem_tables = list(
         suggestions.values("table_name")
-        .annotate(total=Count("id"))
+        .annotate(total=Count("pk"))
         .order_by("-total", "table_name")[:8]
     )
     problem_fields = list(
         suggestions.values("field_name")
-        .annotate(total=Count("id"))
+        .annotate(total=Count("pk"))
         .order_by("-total", "field_name")[:8]
     )
 
@@ -374,21 +350,23 @@ def is_rule_based_batch(batch):
     )
 
 
-def apply_rule_based_suggestions(*, batch, suggestion_ids=None, applied_by=""):
+def apply_rule_based_suggestions(*, batch, actor, reason, suggestion_ids=None, request=None):
     """Apply only confirmed, approved, safe rule-based suggestions in a package."""
     if not is_rule_based_batch(batch):
         raise ValueError("Only rule-based review packages can be applied from this workspace.")
     return apply_approved_suggestions(
         batch_id=batch.id,
         suggestion_ids=suggestion_ids,
-        applied_by=applied_by,
+        actor=actor,
+        reason=reason,
+        request=request,
         min_confidence=0.8,
         include_risky=False,
     )
 
 
 def filter_drugs(params):
-    queryset = Drug.objects.select_related("dataset_document")
+    queryset = Drug.objects.all()
     q = params.get("q", "").strip()
     search_field = params.get("search_field", "all").strip()
     sort = params.get("sort") or "generic_name"
@@ -402,11 +380,15 @@ def filter_drugs(params):
                 matches |= Q(**{f"{field_name}__icontains": q})
             queryset = queryset.filter(matches)
 
-    if sort in {"generic_name", "brand_name", "-updated_at", "-created_at"}:
-        queryset = queryset.order_by(sort, "id")
+    if sort in {"generic_name", "route", "-updated_at", "-created_at"}:
+        queryset = queryset.order_by(sort, "drug_key")
     else:
-        queryset = queryset.order_by("generic_name", "id")
+        queryset = queryset.order_by("generic_name", "drug_key")
     return queryset
+
+
+class MedicalFieldRequiresReview(ValueError):
+    """Clinical content may only change through the reviewed suggestion workflow."""
 
 
 def _history_value(value):
@@ -417,8 +399,11 @@ def _history_value(value):
     return "" if value is None else str(value)
 
 
-def update_drug_from_quality_center(*, drug_id, cleaned_data, edited_by):
-    """Persist an approved manual edit and record each changed field for audit."""
+def update_drug_from_quality_center(*, drug_id, cleaned_data, actor, reason, request=None):
+    """Persist a manual edit, one attributable audit entry per changed field."""
+    require_permission(actor, PERMISSION_MANAGE_RECORDS)
+    reason = require_reason(reason)
+
     with transaction.atomic():
         drug = Drug.objects.select_for_update().get(pk=drug_id)
         changes = []
@@ -432,18 +417,46 @@ def update_drug_from_quality_center(*, drug_id, cleaned_data, edited_by):
         if not changes:
             return drug, []
 
+        # Clinical fields are not editable straight into production from this
+        # form; they go through the reviewed suggestion workflow instead.
+        blocked = [
+            field_name
+            for field_name, _, _ in changes
+            if constants.is_medically_sensitive(constants.DRUG_TABLE, field_name)
+        ]
+        if blocked:
+            raise MedicalFieldRequiresReview(
+                "These clinical fields must go through the review workflow: "
+                + ", ".join(sorted(blocked))
+            )
+
         drug.save(update_fields=[*(field_name for field_name, _, _ in changes), "updated_at"])
         regenerate_and_sync_drug_question_sources(drug)
         for field_name, old_value, new_value in changes:
+            audit_event = record_audit_event(
+                action=AuditEvent.ACTION_UPDATED,
+                entity_type=constants.DRUG_TABLE,
+                entity_id=drug.pk,
+                entity_label=str(drug)[:255],
+                field_name=field_name,
+                actor=actor,
+                reason=reason,
+                before={field_name: _history_value(old_value)},
+                after={field_name: _history_value(new_value)},
+                request=request,
+                metadata={"change_source": "data_quality_center", "manual_edit": True},
+            )
             AIDataChangeHistory.objects.create(
                 table_name=constants.DRUG_TABLE,
-                record_id=str(drug.id),
+                record_id=str(drug.pk),
                 field_name=field_name,
                 old_value=_history_value(old_value),
                 new_value=_history_value(new_value),
-                reason="Manual database update in Data Quality Center.",
+                reason=reason,
                 suggestion_type="manual_edit",
-                applied_by=edited_by,
+                applied_by=actor.get_username(),
+                applied_by_user=actor,
+                audit_event=audit_event,
                 metadata={
                     "change_source": "data_quality_center",
                     "manual_edit": True,
@@ -452,35 +465,55 @@ def update_drug_from_quality_center(*, drug_id, cleaned_data, edited_by):
     return drug, changes
 
 
-def create_drug_from_quality_center(*, cleaned_data, created_by):
-    """Create an admin-entered drug with server-generated identifiers and audit history."""
+def create_drug_from_quality_center(*, cleaned_data, actor, reason, request=None):
+    """Create an admin-entered drug with generated identifiers and an audit entry."""
+    require_permission(actor, PERMISSION_MANAGE_RECORDS)
+    reason = require_reason(reason)
+
     with transaction.atomic():
         drug = Drug.objects.create(
-            external_id=f"drug-{uuid4().hex}",
-            raw={"created_via": "data_quality_center"},
+            drug_key=(cleaned_data.get("drug_key") or "").strip() or f"drug-{uuid4().hex}",
             **{
                 field_name: cleaned_data[field_name]
                 for field_name in DRUG_DATABASE_EDITABLE_FIELDS
             },
         )
         regenerate_and_sync_drug_question_sources(drug)
+        initial_values = {
+            field_name: _history_value(cleaned_data[field_name])
+            for field_name in DRUG_DATABASE_EDITABLE_FIELDS
+        }
+        audit_event = record_audit_event(
+            action=AuditEvent.ACTION_CREATED,
+            entity_type=constants.DRUG_TABLE,
+            entity_id=drug.pk,
+            entity_label=str(drug)[:255],
+            actor=actor,
+            reason=reason,
+            before={},
+            after=initial_values,
+            request=request,
+            metadata={
+                "change_source": "data_quality_center",
+                "drug_key": drug.drug_key,
+            },
+        )
         AIDataChangeHistory.objects.create(
             table_name=constants.DRUG_TABLE,
-            record_id=str(drug.id),
+            record_id=str(drug.pk),
             field_name="__record__",
             old_value="",
-            new_value=f"Created drug #{drug.id} ({drug.external_id}).",
-            reason="Manual drug creation in Data Quality Center.",
+            new_value=f"Created drug {drug.drug_key}.",
+            reason=reason,
             suggestion_type="manual_create",
-            applied_by=created_by,
+            applied_by=actor.get_username(),
+            applied_by_user=actor,
+            audit_event=audit_event,
             metadata={
                 "change_source": "data_quality_center",
                 "manual_create": True,
-                "external_id": drug.external_id,
-                "initial_values": {
-                    field_name: _history_value(cleaned_data[field_name])
-                    for field_name in DRUG_DATABASE_EDITABLE_FIELDS
-                },
+                "drug_key": drug.drug_key,
+                "initial_values": initial_values,
             },
         )
     return drug
@@ -490,14 +523,14 @@ class DrugDeletionBlocked(ValueError):
     """Raised when a historical legacy session still protects a drug question source."""
 
 
+
 def drug_deletion_summary(drug):
     learning_objects = LearningObject.objects.filter(
         product_id=PRODUCT_ID,
-        external_id=drug.external_id,
+        external_id=drug_learning_object_external_id(drug),
     )
     learning_object_ids = list(learning_objects.values_list("id", flat=True))
     return {
-        "question_sources": drug.question_sources.count(),
         "learning_objects": len(learning_object_ids),
         "learning_sources": KnowledgeSource.objects.filter(
             learning_object_id__in=learning_object_ids,
@@ -505,26 +538,19 @@ def drug_deletion_summary(drug):
     }
 
 
-def delete_drug_from_quality_center(*, drug_id, deleted_by):
+def delete_drug_from_quality_center(*, drug_id, actor, reason, request=None):
     """Delete a drug record while retaining inactive learning history references."""
-    from apps.games.models import GameQuestion
+    require_permission(actor, PERMISSION_MANAGE_RECORDS)
+    reason = require_reason(reason)
 
     with transaction.atomic():
         drug = Drug.objects.select_for_update().get(pk=drug_id)
-        legacy_question_count = GameQuestion.objects.filter(source__drug_id=drug.id).count()
-        if legacy_question_count:
-            raise DrugDeletionBlocked(
-                "This drug is referenced by "
-                f"{legacy_question_count} legacy quiz question(s) and cannot be deleted safely."
-            )
 
         summary = drug_deletion_summary(drug)
-        record_id = str(drug.id)
-        display_name = drug.brand_name or drug.generic_name or drug.name or drug.persian_name or drug.external_id
+        record_id = str(drug.pk)
+        display_name = drug.generic_name or drug.drug_key
         snapshot = {
-            "id": drug.id,
-            "external_id": drug.external_id,
-            "dataset_document_id": drug.dataset_document_id,
+            "drug_key": drug.drug_key,
             **{
                 field_name: getattr(drug, field_name)
                 for field_name in DRUG_DATABASE_EDITABLE_FIELDS
@@ -533,7 +559,7 @@ def delete_drug_from_quality_center(*, drug_id, deleted_by):
         learning_object_ids = list(
             LearningObject.objects.filter(
                 product_id=PRODUCT_ID,
-                external_id=drug.external_id,
+                external_id=drug_learning_object_external_id(drug),
             ).values_list("id", flat=True)
         )
 
@@ -543,21 +569,38 @@ def delete_drug_from_quality_center(*, drug_id, deleted_by):
         LearningObject.objects.filter(id__in=learning_object_ids).update(is_active=False)
         drug.delete()
 
+        audit_event = record_audit_event(
+            action=AuditEvent.ACTION_DELETED,
+            entity_type=constants.DRUG_TABLE,
+            entity_id=record_id,
+            entity_label=_history_value(display_name)[:255],
+            actor=actor,
+            reason=reason,
+            before={key: _history_value(value) for key, value in snapshot.items()},
+            after={},
+            request=request,
+            metadata={
+                "change_source": "data_quality_center",
+                "deactivated_learning_sources": summary["learning_sources"],
+                "deactivated_learning_objects": summary["learning_objects"],
+            },
+        )
         AIDataChangeHistory.objects.create(
             table_name=constants.DRUG_TABLE,
             record_id=record_id,
             field_name="__record__",
             old_value=_history_value(display_name),
-            new_value=f"Deleted drug #{record_id}.",
-            reason="Manual drug deletion in Data Quality Center.",
+            new_value=f"Deleted drug {record_id}.",
+            reason=reason,
             suggestion_type="manual_delete",
-            applied_by=deleted_by,
+            applied_by=actor.get_username(),
+            applied_by_user=actor,
+            audit_event=audit_event,
             metadata={
                 "change_source": "data_quality_center",
                 "manual_delete": True,
                 "deactivated_learning_sources": summary["learning_sources"],
                 "deactivated_learning_objects": summary["learning_objects"],
-                "deleted_question_sources": summary["question_sources"],
                 "deleted_record_snapshot": snapshot,
             },
         )
@@ -610,17 +653,24 @@ def build_record_context(model, record_id):
 
 
 def _duplicate_candidates_for_drug(record):
+    """Other records sharing this generic name.
+
+    The dataset keys a record by (generic_name, route), so several rows sharing
+    a generic name is normal rather than a defect. They are surfaced so a
+    reviewer can see the family at a glance.
+    """
     from apps.drugs.models import Drug
-    from apps.drugs.services import generic_drug_signature
+    from apps.drugs.services import signature as text_signature
 
     exact = []
-    near = []
-    signature = generic_drug_signature(record)
-    if signature:
-        for drug in Drug.objects.exclude(pk=record.pk).iterator():
-            if generic_drug_signature(drug) == signature:
+    record_signature = text_signature(record.generic_name or "")
+    if record_signature:
+        for drug in Drug.objects.exclude(pk=record.pk).only("drug_key", "generic_name", "route").iterator():
+            if text_signature(drug.generic_name or "") == record_signature:
                 exact.append(drug)
-    return {"exact": exact[:10], "near": near[:10]}
+                if len(exact) >= 10:
+                    break
+    return {"exact": exact, "near": []}
 
 
 def report_csv_content(report):

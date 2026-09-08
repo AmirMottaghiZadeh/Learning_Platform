@@ -1,14 +1,14 @@
 {% extends "data_quality_center/base.html" %}
-{% block title %}Edit Drug {{ drug.id }} | Data Quality Center{% endblock %}
+{% block title %}Edit Drug {{ drug.drug_key }} | Data Quality Center{% endblock %}
 {% block content %}
 <section class="page-title">
   <div>
     <h1>Edit drug record</h1>
-    <p>#{{ drug.id }} · {{ drug.brand_name|default:drug.generic_name|default:drug.name|default:drug.external_id }}</p>
+    <p>{{ drug.drug_key }} · {{ drug.generic_name|default:drug.drug_key }}</p>
   </div>
   <div class="status-line">
     <a class="button-secondary" href="{% url 'data_quality_center:drug_database_list' %}">Back to Database</a>
-    <a class="button-secondary" href="{% url 'data_quality_center:record_inspector' 'drugs_drug' drug.id %}">Record Inspector</a>
+    <a class="button-secondary" href="{% url 'data_quality_center:record_inspector' 'drugs_drug' drug.drug_key %}">Record Inspector</a>
   </div>
 </section>
 
@@ -16,7 +16,7 @@
   <article class="panel">
     <h2>Record details</h2>
     <div class="stack">
-      <div class="mini-box"><div class="label">External ID</div><div class="prewrap">{{ drug.external_id }}</div></div>
+      <div class="mini-box"><div class="label">Drug key</div><div class="prewrap">{{ drug.drug_key }}</div></div>
       <div class="mini-box"><div class="label">Source</div><div class="prewrap">{{ drug.source_file|default:"-" }} · table {{ drug.source_table }} · row {{ drug.source_row }}</div></div>
       <div class="mini-box"><div class="label">Last updated</div><div>{{ drug.updated_at }}</div></div>
     </div>
@@ -74,6 +74,6 @@
 <section class="panel danger-panel" style="margin-top:16px;">
   <h2>Danger zone</h2>
   <p class="muted">Delete this drug record from the main database. This action requires a separate final confirmation.</p>
-  <a class="button-danger" href="{% url 'data_quality_center:drug_database_delete' drug.id %}">Delete drug record</a>
+  <a class="button-danger" href="{% url 'data_quality_center:drug_database_delete' drug.drug_key %}">Delete drug record</a>
 </section>
 {% endblock %}

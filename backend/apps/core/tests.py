@@ -78,12 +78,11 @@ class OpenAPISchemaTests(TestCase):
         paths = response.json()["paths"]
         expected_paths = {
             "/api/v1/health/",
+            "/api/v1/live/",
+            "/api/v1/ready/",
             "/api/v1/auth/login/",
-            "/api/v1/me/dashboard/",
-            "/api/v1/drugs/",
-            "/api/v1/games/",
-            "/api/v1/league/summary/",
-            "/api/v1/flashcards/",
+            "/api/v1/auth/register/",
+            "/api/v1/auth/me/",
         }
 
         self.assertTrue(expected_paths.issubset(paths.keys()))

@@ -1,1 +1,0 @@
-Architecture Book -> Engineering Workflow -> PR Review -> Tests -> Release -> Operations

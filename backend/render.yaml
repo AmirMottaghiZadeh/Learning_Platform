@@ -4,7 +4,7 @@ services:
     env: python
     buildCommand: ./build.sh
     startCommand: gunicorn config.wsgi:application --config gunicorn.conf.py
-    healthCheckPath: /api/v1/health/
+    healthCheckPath: /api/v1/ready/
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.production
@@ -14,12 +14,32 @@ services:
         value: production
       - key: LOG_FORMAT
         value: json
-      - key: AI_DATA_PIPELINE_PROVIDER
-        value: rules
+      - key: QUIZ_API_ENABLED
+        value: False
+      - key: FLASHCARDS_API_ENABLED
+        value: False
+      - key: DATA_QUALITY_CENTER_ENABLED
+        value: False
       - key: DATABASE_URL
         fromDatabase:
           name: pharmexa-db
           property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pharmexa-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: pharmexa-redis
+          property: connectionString
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: False
+      - key: READINESS_REQUIRE_CACHE
+        value: True
+      - key: READINESS_REQUIRE_BROKER
+        value: True
       - key: ALLOWED_HOSTS
         sync: false
       - key: CSRF_TRUSTED_ORIGINS
@@ -46,6 +66,104 @@ services:
         sync: false
       - key: CACHE_LOCATION
         sync: false
+
+  - type: worker
+    name: pharmexa-worker
+    env: python
+    buildCommand: ./build.sh
+    startCommand: >-
+      celery -A config worker --loglevel=info
+      --queues=default,events,maintenance --concurrency=2
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: pharmexa-backend
+          envVarKey: SECRET_KEY
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_FORMAT
+        value: json
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pharmexa-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pharmexa-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: pharmexa-redis
+          property: connectionString
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: False
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: PASSWORD_RESET_FRONTEND_URL
+        value: https://AmirMottaghiZadeh.github.io/Learning_Platform/
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        value: True
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+
+  # Beat owns the schedule and must stay a single instance: a second one would
+  # duplicate every periodic job.
+  - type: worker
+    name: pharmexa-beat
+    env: python
+    buildCommand: ./build.sh
+    startCommand: celery -A config beat --loglevel=info
+    numInstances: 1
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: pharmexa-backend
+          envVarKey: SECRET_KEY
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_FORMAT
+        value: json
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pharmexa-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pharmexa-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: pharmexa-redis
+          property: connectionString
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: False
+      - key: ALLOWED_HOSTS
+        sync: false
+
+  - type: redis
+    name: pharmexa-redis
+    ipAllowList: []
+    maxmemoryPolicy: volatile-lru
 
 databases:
   - name: pharmexa-db

@@ -31,14 +31,11 @@
     <table>
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Brand name</th>
+          <th>Drug key</th>
           <th>Generic name</th>
-          <th>Persian name</th>
-          <th>Dosage form</th>
-          <th>Classification</th>
-          <th>Indication</th>
-          <th>Side effects</th>
+          <th>Route</th>
+          <th>ATC codes</th>
+          <th>ATC match</th>
           <th>Updated</th>
           <th></th>
         </tr>
@@ -46,19 +43,16 @@
       <tbody>
         {% for drug in drugs %}
           <tr>
-            <td>{{ drug.id }}</td>
-            <td class="prewrap">{{ drug.brand_name|truncatechars:90|default:"-" }}</td>
+            <td class="prewrap">{{ drug.drug_key }}</td>
             <td class="prewrap">{{ drug.generic_name|truncatechars:90|default:"-" }}</td>
-            <td class="prewrap">{{ drug.persian_name|truncatechars:90|default:"-" }}</td>
-            <td class="prewrap">{{ drug.dosage_form|truncatechars:70|default:"-" }}</td>
-            <td class="prewrap">{{ drug.drug_classification|truncatechars:70|default:"-" }}</td>
-            <td class="prewrap">{{ drug.indication|truncatechars:120|default:"-" }}</td>
-            <td class="prewrap">{{ drug.side_effects|truncatechars:120|default:"-" }}</td>
+            <td class="prewrap">{{ drug.route|default:"-" }}</td>
+            <td class="prewrap">{{ drug.atc_codes|join:", "|default:"-" }}</td>
+            <td>{{ drug.atc_match_status|default:"-" }}</td>
             <td>{{ drug.updated_at }}</td>
-            <td><a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' drug.id %}">Open</a></td>
+            <td><a class="button-secondary" href="{% url 'data_quality_center:drug_database_edit' drug.drug_key %}">Open</a></td>
           </tr>
         {% empty %}
-          <tr><td colspan="10" class="muted">No drug records match the current filters.</td></tr>
+          <tr><td colspan="7" class="muted">No drug records match the current filters.</td></tr>
         {% endfor %}
       </tbody>
     </table>
