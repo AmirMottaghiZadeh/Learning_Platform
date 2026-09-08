@@ -14,8 +14,8 @@
 | ۱ | دیتابیس دارویی (PostgreSQL) | ✅ | `d2af89a` (main) |
 | ۲ | قرارداد API + API دانش دارویی + onboarding | ✅ | `feaf761` (main) |
 | ۳a | جدول مرجع ATC + `apps.lessons` | ✅ | `4963756` (main) |
-| ۳b | `apps.progress` → `/me/{dashboard,mistakes,statistics,plan}` | ✅ | برنچ `phase-3b-progress` |
-| ۳c | `apps.flashcards` + `apps.quiz` (قفل) | ⬜ | — |
+| ۳b | `apps.progress` → `/me/{dashboard,mistakes,statistics,plan}` | ✅ | `7e9d06c` (main) |
+| ۳c | `apps.flashcards` + `apps.quiz` (ساخته‌شده، قفل) | ✅ | برنچ `phase-3c-flashcards-quiz` |
 | ۳d | بازنویسی `data_quality_center` | ⬜ | — |
 | ۴ | اسکلت فرانت + دیزاین‌سیستم | ⬜ | — |
 | ۵ | پیاده‌سازی صفحه‌ها + اتصال | ⬜ | — |
@@ -86,10 +86,12 @@
 - [x] ۹ تست جدید → ۶۰/۶۰ · schema سبز · `docs/api-contract.md` به‌روز
 - [x] روتر maintenance کوییز از `me/*` پاک شد (progress صاحب `/me/*` است)
 
-### ۳c — `apps.flashcards` + `apps.quiz` (قفل، پشت فلگ) ⬜
-- [ ] `apps.flashcards` — کارت + جعبه‌های لایتنر + زمان‌بندی مرور
-- [ ] `apps.quiz` — تولید سؤال از هشدارها/منع‌ها + جلسه + نمره + اتصال به mistakes/XP
-- [ ] برند/ژنریک از `spl_records` (اگر لازم شد)
+### ۳c — `apps.flashcards` + `apps.quiz` (ساخته‌شده، پشت فلگ خاموش) ✅
+- [x] `apps.flashcards` — `LeitnerCard` (بدون جدول محتوا؛ front/back از پروفایل دارو)، جعبه‌های ۱..۵ (فاصله ۰/۳/۷/۱۶/۳۵ روز)، `seed`/`due`/`boxes`/`review` (review به `progress.record_study` وصل)
+- [x] `apps.quiz` — تولید سؤال دسته‌بندی ATC (دارو→دسته و دسته→دارو)، نمره‌دهی سمت سرور، `finish` → `record_study` + `bump_mistake`
+- [x] فلگ‌ها `QUIZ_API_ENABLED`/`FLASHCARDS_API_ENABLED` پیش‌فرض **خاموش**؛ روتر maintenance `503 FEATURE_NOT_AVAILABLE` (حالا `csrf_exempt`)
+- [x] ۱۳ تست جدید (با `ROOT_URLCONF` مخصوص برای هر دو حالت فلگ) → ۷۳/۷۳ · schema هر دو حالت سبز
+- [~] برند/ژنریک از `spl_records` — به فاز بعد موکول (فعلاً نام دارو = نام ماده)
 
 ### ۳d — بازنویسی `data_quality_center` ⬜
 - [ ] بازنویسی روی `apps.drugs` (ویرایش خلاصهٔ سکشن‌ها) و فعال‌سازی مجدد

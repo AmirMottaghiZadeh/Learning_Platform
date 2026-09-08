@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
@@ -14,8 +15,14 @@ urlpatterns = [
     path("api/", include("apps.drugs.urls")),
     path("api/", include("apps.lessons.urls")),
     path("api/", include("apps.progress.urls")),
-    # quiz + flashcards are locked until their apps are rebuilt; the maintenance
-    # routers answer their paths with a stable "temporarily unavailable" envelope.
-    path("api/", include("apps.core.quiz_maintenance_urls")),
-    path("api/", include("apps.core.flashcards_maintenance_urls")),
 ]
+
+if settings.QUIZ_API_ENABLED:
+    urlpatterns.append(path("api/", include("apps.quiz.urls")))
+else:
+    urlpatterns.append(path("api/", include("apps.core.quiz_maintenance_urls")))
+
+if settings.FLASHCARDS_API_ENABLED:
+    urlpatterns.append(path("api/", include("apps.flashcards.urls")))
+else:
+    urlpatterns.append(path("api/", include("apps.core.flashcards_maintenance_urls")))

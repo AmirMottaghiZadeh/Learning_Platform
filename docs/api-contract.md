@@ -223,21 +223,46 @@ display name / language. No separate `/me/profile/` route.
 
 ---
 
-## 🔜 Phase 3c — flashcards & quiz (locked behind feature flags)
+## Flashcards & Quiz — ✅ built, 🔒 locked (Phase 3c)
 
-### Flashcards — **locked** (feature flag off; routes 503 until Phase 3 opens them)
+Both apps are fully built and migrated. Their routes are wired only when
+`FLASHCARDS_API_ENABLED` / `QUIZ_API_ENABLED` are true (default **false**);
+otherwise the maintenance router answers every path with
+`503 {"code": "FEATURE_NOT_AVAILABLE"}`.
 
-- GET `/flashcards/` — due cards `[{ id, front_fa, front_en, back_fa, back_en, box }]`
-- GET `/flashcards/boxes/` — Leitner box summary
-- POST `/flashcards/{id}/review/` — `{rating: "easy"|"hard"}` → next due
-- POST `/flashcards/seed/` — build the deck from lesson drugs
+### Flashcards (`apps.flashcards`) — Leitner, no card-content table
 
-### Quiz — **locked**
+A card is `(learner, ingredient)`; front/back are derived from the ingredient's
+profile at serialization time. Boxes 1..5; intervals 0 / 3 / 7 / 16 / 35 days.
 
-- POST `/quiz/start/` — `{category, count}` → `{session_id, questions:[{id, prompt_fa, prompt_en, options_fa[], options_en[]}]}`
-- POST `/quiz/{session_id}/answer/` — `{question_id, selected_index, client_answered_at}` → `{correct, correct_index}` (server scores)
-- POST `/quiz/{session_id}/finish/` → `{score, total, mistakes_added}`
-- Categories: `general | antibiotics | cardio | interactions`; counts `5|10|15|20`.
+- **POST `/flashcards/seed/`** — create box-1 cards for the top ingredients that
+  have ≥2 summarised card-back fields; idempotent. → `{created, deck_size}`
+- **GET `/flashcards/`** — up to 20 cards with `due_at <= now`:
+  `[{ id, drug_slug, box, due_at, times_seen, front_fa, front_en, back_fa, back_en }]`
+  (`back_*` joins up to 3 sections: mechanism / dose / warning …)
+- **GET `/flashcards/boxes/`** — `[{ box, count, due, next_due_at }]` for boxes 1..5
+- **POST `/flashcards/{id}/review/`** — `{rating: "easy"|"hard"}`; `easy` → box+1,
+  `hard` → box−1, reschedules by the new box's interval, and calls
+  `progress.record_study(reviews=1, minutes=1, xp)`. → the updated card. 404 for
+  another learner's card.
+
+### Quiz (`apps.quiz`) — server-scored, feeds progress + mistakes
+
+First-pass generator: ATC drug-class identification (drug→class and class→drug),
+4 options each. Category narrows the drug pool (`antibiotics`→J, `cardio`→C,
+`interactions`→drugs with interaction text, `general`→any). A richer generator
+(contraindications / dosing / interactions) is a later pass.
+
+- **POST `/quiz/start/`** — `{category, count}` (count ∈ 5|10|15|20) →
+  `{ id, category, question_count, questions: [{ id, order, prompt_fa, prompt_en,
+  options_fa[4], options_en[4] }] }` — no answer key. 422
+  `INSUFFICIENT_QUESTIONS` if the pool is too small.
+- **POST `/quiz/{session_id}/answer/`** — `{question_id, selected_index,
+  client_answered_at?}` → `{correct, correct_index}` (server decides). 409 if the
+  session is finished or the question is already answered.
+- **POST `/quiz/{session_id}/finish/`** → `{score, total, mistakes_added}`;
+  once only — sets the score, calls `record_quiz_answers` + `record_study(
+  quizzes=1, xp=score·10)`, and `bump_mistake("drug_class", …)` per wrong answer.
 
 ### uptodate — **Phase 6** (separate data source, `/home/amir/Documents/UpToDate/`)
 

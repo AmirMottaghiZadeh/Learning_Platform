@@ -31,7 +31,10 @@ INSTALLED_APPS = [
     "apps.drugs",
     "apps.lessons",
     "apps.progress",
-    # Rebuilt fresh in later phases (frontend-aligned): flashcards, quiz
+    # Installed so their models/migrations exist; the API is gated by
+    # QUIZ_API_ENABLED / FLASHCARDS_API_ENABLED (default off -> maintenance router).
+    "apps.flashcards",
+    "apps.quiz",
     # "apps.data_quality_center" stays out until it is rewritten against
     # apps.drugs (it still hard-imports the removed ai_data_pipeline app).
 ]
@@ -246,8 +249,10 @@ DATA_QUALITY_AUDIT_VERIFY_LIMIT = config(
     cast=int,
 )
 
-QUIZ_API_ENABLED = config("QUIZ_API_ENABLED", default=True, cast=bool)
-FLASHCARDS_API_ENABLED = config("FLASHCARDS_API_ENABLED", default=True, cast=bool)
+# quiz + flashcards ship built but locked: the maintenance routers answer their
+# paths with a 503 envelope until these are switched on deliberately.
+QUIZ_API_ENABLED = config("QUIZ_API_ENABLED", default=False, cast=bool)
+FLASHCARDS_API_ENABLED = config("FLASHCARDS_API_ENABLED", default=False, cast=bool)
 DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=False, cast=bool)
 AUTH_PASSWORD_VALIDATORS = [
     {
