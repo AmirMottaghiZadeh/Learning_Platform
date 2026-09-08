@@ -1,4 +1,4 @@
-# PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa
+kil# PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa
 
 راهنمای وضعیت: ⬜ شروع‌نشده · 🔄 در حال انجام · ✅ تمام‌شده
 
@@ -11,8 +11,8 @@
 | فاز | عنوان | وضعیت | کامیت |
 |----|-------|-------|-------|
 | ۰ + ۰.۵ | تثبیت بک‌اند + حذف زیرساخت رهاشده | ✅ | `57ab3f7` (main) |
-| ۱ | دیتابیس دارویی (PostgreSQL) | ✅ | `d2af89a` (برنچ `phase-1-drug-db`) |
-| ۲ | قرارداد API | ⬜ | — |
+| ۱ | دیتابیس دارویی (PostgreSQL) | ✅ | `d2af89a` (main) |
+| ۲ | قرارداد API + API دانش دارویی + onboarding | ✅ | برنچ `phase-2-api-contract` |
 | ۳ | اپ‌های بک‌اند (lessons / flashcards / quiz / me) | ⬜ | — |
 | ۴ | اسکلت فرانت + دیزاین‌سیستم | ⬜ | — |
 | ۵ | پیاده‌سازی صفحه‌ها + اتصال | ⬜ | — |
@@ -55,27 +55,28 @@
 
 **یادداشت:** برند/ژنریک و دادهٔ سطح‌محصول (از `spl_records`، ~۲۶۱ هزار ردیف) در فاز ۳ اضافه می‌شود، وقتی اپ‌های flashcard/quiz لازمشان داشته باشند.
 
-## فاز ۲ — قرارداد API ⬜
+## فاز ۲ — قرارداد API + API دانش دارویی + onboarding ✅
 
-**هدف:** تعریف endpointها **دقیقاً** مطابق چیزی که صفحه‌های طراحی مصرف می‌کنند؛ اسکیمای versioned.
+**هدف:** سند قرارداد کامل همهٔ صفحه‌ها + پیاده‌سازی واقعی بخش‌های بدون state کاربر.
 
-- [ ] auth + onboarding (فیلدهای پروفایل onboarding: رشته / هدف / سطح)
-- [ ] `GET /api/v1/me/dashboard/` — streak، XP، ورودی‌های «جلسهٔ تمرکز»، «فصل بعدی»
-- [ ] lessons — گروه‌های ATC → زیرگروه → فصل ساخته‌شده از فیلدهای `apps.drugs`
-- [ ] lesson-detail — بلوک‌های بخش‌بندی‌شده (s2..s5 مثل طراحی) + search + «نکته‌های آزمونی این فصل»
-- [ ] `/me/mistakes`، `/me/statistics`، `/me/plan` (روزهای هفته)، `/me/profile` + تنظیمات/نوتیفیکیشن
-- [ ] flashcards / quiz — سریالایزر کامل ولی endpoint پشت فلگ خاموش
-- [ ] `uptodate` — placeholder (منبع دادهٔ جدا در `/home/amir/Documents/UpToDate/`، فاز ۶)
-- [ ] اسکیمای drf-spectacular سبز + به‌روزکردن `config/tests.py::CorsPreflightTests`
+- [x] **`docs/api-contract.md`** — قرارداد کامل v1 برای همهٔ صفحه‌ها (✅ ساخته‌شده / 🔜 فاز ۳)
+- [x] auth + onboarding — مدل `LearnerProfile` (`study_field`/`goal`/`level`/`display_name`/`onboarded_at`)؛ `POST /api/v1/auth/onboarding/`؛ `GET`+`PATCH /api/v1/auth/me/` با بلوک `profile`
+- [x] `GET /api/v1/drugs/` — لیست صفحه‌بندی‌شده + `?search=` + `?atc=` (پیشوند)
+- [x] `GET /api/v1/drugs/{slug}/` — جزئیات + `sections` (۱۲ فیلد) + `lesson_sections` (شکل کارت درس طراحی: `FIELD_MAP` + `LESSON_EXTRA` + `tone`)
+- [x] `GET /api/v1/atc/` — کدهای ATC موجود + `ingredient_count` + `level`
+- [x] اسکیمای drf-spectacular سبز (`spectacular --validate --fail-on-warn` → ۰) + به‌روزکردن `config/tests.py::CorsPreflightTests`
+- [x] ۹ تست جدید (drug API + onboarding) → ۴۵/۴۵
+- [~] **contract-only** (شکل در سند، پیاده‌سازی فاز ۳): `/lessons/*`، `/me/{dashboard,mistakes,statistics,plan,profile}`، flashcards، quiz، uptodate
 
 ## فاز ۳ — اپ‌های بک‌اند ⬜
 
-**هدف:** ساخت تازهٔ همهٔ زیرساخت‌های موردنیاز فرانت.
+**هدف:** پیاده‌سازی همهٔ endpointهای «🔜 فاز ۳» در `docs/api-contract.md` (شکل‌ها قفل شده‌اند).
 
-- [ ] `apps.lessons` — تاکسونومی ATC + تولید فصل از `apps.drugs` + ردیابی progress
+- [ ] جدول مرجع ATC (L1/L2 با نام fa/en) برای تاکسونومی درس‌ها — از `pipeline_v2.db` نمی‌آید، باید bundle شود
+- [ ] `apps.lessons` — `/lessons/groups/`، `/lessons/chapters/{code}/` + ردیابی progress
 - [ ] `apps.flashcards` — کارت + جعبه‌های لایتنر + زمان‌بندی مرور (قفل، پشت فلگ)
 - [ ] `apps.quiz` — تولید سؤال از هشدارها/منع‌ها + جلسه + نمره + mistakes (قفل، پشت فلگ)
-- [ ] endpointهای `me/*` — streak، XP، آمار، planning (منطق سمت سرور)
+- [ ] `apps.progress` / endpointهای `me/*` — `/me/{dashboard,mistakes,statistics,plan}`، streak، XP
 - [ ] برند/ژنریک از `spl_records` (اگر flashcard/quiz لازم داشت)
 - [ ] **بازنویسی** `data_quality_center` روی `apps.drugs` و فعال‌سازی مجدد
 - [ ] تست هر اپ

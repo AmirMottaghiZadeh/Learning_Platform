@@ -5,6 +5,7 @@ from .views import (
     LogoutView,
     LogoutAllView,
     MeView,
+    OnboardingView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RefreshSessionView,
@@ -50,4 +51,5 @@ urlpatterns = [
         name="auth-security-event-list",
     ),
     path("me/", MeView.as_view(), name="auth-me"),
+    path("onboarding/", OnboardingView.as_view(), name="auth-onboarding"),
 ]

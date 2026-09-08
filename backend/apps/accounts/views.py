@@ -27,6 +27,8 @@ from .serializers import (
     RoleAssignmentRevokeSerializer,
     RoleAssignmentSerializer,
     RoleSerializer,
+    LearnerProfileSerializer,
+    OnboardingSerializer,
     SecurityAuditEventSerializer,
     SessionRevokeSerializer,
     SessionSerializer,
@@ -399,3 +401,24 @@ class MeView(APIView):
     @extend_schema(responses=UserSerializer)
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+    @extend_schema(request=LearnerProfileSerializer, responses=UserSerializer)
+    def patch(self, request):
+        from .models import LearnerProfile
+
+        profile, _ = LearnerProfile.objects.get_or_create(user=request.user)
+        serializer = LearnerProfileSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(UserSerializer(request.user).data)
+
+
+class OnboardingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=OnboardingSerializer, responses=UserSerializer)
+    def post(self, request):
+        serializer = OnboardingSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)

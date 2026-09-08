@@ -2,9 +2,16 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from .models import Role, RoleAssignment, SecurityAuditEvent, UserSession
+from .models import (
+    LearnerProfile,
+    Role,
+    RoleAssignment,
+    SecurityAuditEvent,
+    UserSession,
+)
 from .services import active_role_keys, ensure_default_learner_role
 
 
@@ -67,8 +74,26 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class LearnerProfileSerializer(serializers.ModelSerializer):
+    is_onboarded = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = LearnerProfile
+        fields = [
+            "display_name",
+            "study_field",
+            "study_goal",
+            "study_level",
+            "language",
+            "onboarded_at",
+            "is_onboarded",
+        ]
+        read_only_fields = ["onboarded_at", "is_onboarded"]
+
+
 class UserSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
+    profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -79,10 +104,45 @@ class UserSerializer(serializers.ModelSerializer):
             "username",
             "email",
             "roles",
+            "profile",
         ]
 
     def get_roles(self, obj) -> list[str]:
         return sorted(set(active_role_keys(obj)))
+
+    @extend_schema_field(LearnerProfileSerializer)
+    def get_profile(self, obj):
+        profile, _ = LearnerProfile.objects.get_or_create(
+            user=obj,
+            defaults={"display_name": obj.get_full_name() or obj.username},
+        )
+        return LearnerProfileSerializer(profile).data
+
+
+class OnboardingSerializer(serializers.Serializer):
+    display_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    study_field = serializers.ChoiceField(choices=LearnerProfile.FIELD_CHOICES)
+    study_goal = serializers.ChoiceField(choices=LearnerProfile.GOAL_CHOICES)
+    study_level = serializers.ChoiceField(choices=LearnerProfile.LEVEL_CHOICES)
+    language = serializers.ChoiceField(choices=["fa", "en"], required=False)
+
+    def save(self, **kwargs):
+        user = self.context["request"].user
+        profile, _ = LearnerProfile.objects.get_or_create(user=user)
+        data = self.validated_data
+        profile.study_field = data["study_field"]
+        profile.study_goal = data["study_goal"]
+        profile.study_level = data["study_level"]
+        if data.get("display_name"):
+            profile.display_name = data["display_name"]
+        elif not profile.display_name:
+            profile.display_name = user.get_full_name() or user.username
+        if data.get("language"):
+            profile.language = data["language"]
+        if profile.onboarded_at is None:
+            profile.onboarded_at = timezone.now()
+        profile.save()
+        return profile
 
 
 class LoginSerializer(serializers.Serializer):

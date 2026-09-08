@@ -173,6 +173,51 @@ class SessionRefreshToken(models.Model):
         ]
 
 
+class LearnerProfile(models.Model):
+    """Per-user learning preferences captured at onboarding.
+
+    Separate from auth.User so onboarding answers and display name evolve
+    without touching the identity model.
+    """
+
+    FIELD_CHOICES = [
+        ("pharmacy", "Pharmacy"),
+        ("medicine", "Medicine"),
+        ("nursing", "Nursing"),
+    ]
+    GOAL_CHOICES = [
+        ("residency", "Residency exam"),
+        ("final", "Term finals"),
+        ("clinical", "Daily clinical review"),
+    ]
+    LEVEL_CHOICES = [
+        ("beginner", "Beginner"),
+        ("intermediate", "Intermediate"),
+        ("advanced", "Advanced"),
+    ]
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="learner_profile",
+    )
+    display_name = models.CharField(max_length=150, blank=True)
+    study_field = models.CharField(max_length=20, choices=FIELD_CHOICES, blank=True)
+    study_goal = models.CharField(max_length=20, choices=GOAL_CHOICES, blank=True)
+    study_level = models.CharField(max_length=20, choices=LEVEL_CHOICES, blank=True)
+    language = models.CharField(max_length=5, default="fa")
+    onboarded_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"LearnerProfile<{self.user_id}>"
+
+    @property
+    def is_onboarded(self):
+        return self.onboarded_at is not None
+
+
 class SecurityAuditEvent(models.Model):
     LOGIN_SUCCEEDED = "login_succeeded"
     LOGIN_FAILED = "login_failed"

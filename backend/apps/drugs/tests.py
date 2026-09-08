@@ -2,9 +2,11 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import TestCase
+from rest_framework.test import APIClient
 
 from apps.drugs.models import (
     CLINICAL_FIELD_KEYS,
@@ -174,3 +176,65 @@ class ImportOpenfdaTests(TestCase):
         self.assertEqual(Ingredient.objects.count(), 0)
         self.assertEqual(IngredientProfileSection.objects.count(), 0)
         self.assertEqual(AtcCode.objects.count(), 0)
+
+
+class DrugApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.client.force_authenticate(get_user_model().objects.create_user(
+            username="reader", email="reader@example.com", password="x"
+        ))
+        arb = AtcCode.objects.create(code="C09CA", name="ARBs, plain")
+        self.losartan = Ingredient.objects.create(
+            rxcui="52175", name="losartan", slug="losartan-52175",
+            n_products=7, pharm_classes=["Angiotensin 2 Receptor Blocker"],
+        )
+        self.losartan.atc_codes.add(arb)
+        IngredientProfileSection.objects.create(
+            ingredient=self.losartan, field="clinical_pharmacology",
+            raw_text="ARB.", summary_fa="آنتاگونیست AT1.", summary_en="AT1 antagonist.",
+        )
+        IngredientProfileSection.objects.create(
+            ingredient=self.losartan, field="dosage_and_administration",
+            raw_text="50 mg once daily.",  # raw only, no summary
+        )
+        Ingredient.objects.create(rxcui="5487", name="hydrochlorothiazide",
+                                  slug="hydrochlorothiazide-5487")
+
+    def test_requires_authentication(self):
+        self.assertEqual(APIClient().get("/api/v1/drugs/").status_code, 401)
+
+    def test_list_and_search(self):
+        res = self.client.get("/api/v1/drugs/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["count"], 2)
+
+        res = self.client.get("/api/v1/drugs/", {"search": "losar"})
+        self.assertEqual(res.data["count"], 1)
+        self.assertEqual(res.data["results"][0]["slug"], "losartan-52175")
+
+        res = self.client.get("/api/v1/drugs/", {"atc": "C09"})
+        self.assertEqual(res.data["count"], 1)
+
+    def test_detail_sections_and_lesson_sections(self):
+        res = self.client.get("/api/v1/drugs/losartan-52175/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["rxcui"], "52175")
+        self.assertEqual(res.data["atc_codes"][0]["code"], "C09CA")
+
+        # every clinical field present in the DB is in `sections`
+        fields = {s["field"] for s in res.data["sections"]}
+        self.assertEqual(fields, {"clinical_pharmacology", "dosage_and_administration"})
+
+        # `lesson_sections` only carries fields that have a summary
+        keys = [s["key"] for s in res.data["lesson_sections"]]
+        self.assertEqual(keys, ["mechanism"])
+        self.assertEqual(res.data["lesson_sections"][0]["title_fa"], "مکانیسم")
+        self.assertEqual(res.data["lesson_sections"][0]["text_en"], "AT1 antagonist.")
+
+    def test_atc_list_with_counts(self):
+        res = self.client.get("/api/v1/atc/", {"prefix": "C09"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["ingredient_count"], 1)
+        self.assertEqual(res.data[0]["level"], 4)

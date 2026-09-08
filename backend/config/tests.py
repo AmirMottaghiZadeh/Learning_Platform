@@ -27,8 +27,8 @@ class ProductionSecretKeyTests(SimpleTestCase):
 
 class CorsPreflightTests(SimpleTestCase):
     endpoints = (
-        "/api/v1/quiz/start/",
-        "/api/v1/flashcards/seed/",
+        "/api/v1/auth/login/",
+        "/api/v1/auth/onboarding/",
     )
     origins = (
         "http://localhost:8081",

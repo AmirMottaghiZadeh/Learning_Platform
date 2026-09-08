@@ -200,3 +200,72 @@ class AuthenticationSecurityTests(TestCase):
 
         self.assertEqual(response.status_code, 401)
         self.assertTrue(Token.objects.filter(pk=token.pk).exists())
+
+
+class OnboardingTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="learner", email="learner@example.com", password="x",
+            first_name="Sara", last_name="Karimi",
+        )
+        self.auth = {"HTTP_AUTHORIZATION": f"Bearer {issue_user_session(self.user).access_token}"}
+
+    def test_me_returns_a_profile_block_created_on_first_read(self):
+        response = self.client.get(reverse("auth-me"), **self.auth)
+
+        self.assertEqual(response.status_code, 200)
+        profile = response.json()["profile"]
+        self.assertEqual(profile["display_name"], "Sara Karimi")
+        self.assertFalse(profile["is_onboarded"])
+        self.assertIsNone(profile["onboarded_at"])
+
+    def test_onboarding_sets_fields_and_marks_onboarded(self):
+        response = self.client.post(
+            reverse("auth-onboarding"),
+            {"study_field": "pharmacy", "study_goal": "residency", "study_level": "advanced"},
+            content_type="application/json",
+            **self.auth,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        profile = response.json()["profile"]
+        self.assertEqual(profile["study_field"], "pharmacy")
+        self.assertEqual(profile["study_goal"], "residency")
+        self.assertEqual(profile["study_level"], "advanced")
+        self.assertTrue(profile["is_onboarded"])
+
+    def test_onboarding_rejects_unknown_choice(self):
+        response = self.client.post(
+            reverse("auth-onboarding"),
+            {"study_field": "astrology", "study_goal": "residency", "study_level": "advanced"},
+            content_type="application/json",
+            **self.auth,
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_patch_me_updates_display_name_without_re_onboarding(self):
+        self.client.post(
+            reverse("auth-onboarding"),
+            {"study_field": "medicine", "study_goal": "final", "study_level": "beginner"},
+            content_type="application/json",
+            **self.auth,
+        )
+        response = self.client.patch(
+            reverse("auth-me"),
+            {"display_name": "Dr. Karimi"},
+            content_type="application/json",
+            **self.auth,
+        )
+        self.assertEqual(response.status_code, 200)
+        profile = response.json()["profile"]
+        self.assertEqual(profile["display_name"], "Dr. Karimi")
+        self.assertEqual(profile["study_field"], "medicine")
+        self.assertTrue(profile["is_onboarded"])
+
+    def test_onboarding_requires_authentication(self):
+        response = self.client.post(
+            reverse("auth-onboarding"),
+            {"study_field": "nursing", "study_goal": "clinical", "study_level": "beginner"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 401)
