@@ -28,10 +28,10 @@ INSTALLED_APPS = [
     # Local apps
     "apps.core",
     "apps.accounts",
-    # Rebuilt fresh in later phases (frontend-aligned):
-    #   drugs, lessons, flashcards, quiz
-    # "apps.data_quality_center" stays out until the new drugs app exists
-    # (it hard-imports the removed drugs / ai_data_pipeline / learning apps).
+    "apps.drugs",
+    # Rebuilt fresh in later phases (frontend-aligned): lessons, flashcards, quiz
+    # "apps.data_quality_center" stays out until it is rewritten against
+    # apps.drugs (it still hard-imports the removed ai_data_pipeline app).
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
