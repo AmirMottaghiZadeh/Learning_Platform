@@ -12,6 +12,7 @@ urlpatterns = [
     # Backward-compatible unversioned aliases.
     path("api/auth/", include("apps.accounts.urls")),
     path("api/", include("apps.drugs.urls")),
+    path("api/", include("apps.lessons.urls")),
     # quiz + flashcards are locked until their apps are rebuilt; the maintenance
     # routers answer their paths with a stable "temporarily unavailable" envelope.
     path("api/", include("apps.core.quiz_maintenance_urls")),

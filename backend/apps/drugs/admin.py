@@ -1,12 +1,20 @@
 from django.contrib import admin
 
-from .models import AtcCode, Ingredient, IngredientProfileSection
+from .models import AtcCategory, AtcCode, Ingredient, IngredientProfileSection
 
 
 @admin.register(AtcCode)
 class AtcCodeAdmin(admin.ModelAdmin):
     list_display = ["code", "name", "level"]
     search_fields = ["code", "name"]
+    ordering = ["code"]
+
+
+@admin.register(AtcCategory)
+class AtcCategoryAdmin(admin.ModelAdmin):
+    list_display = ["code", "name_en", "name_fa", "level", "parent"]
+    list_filter = ["level"]
+    search_fields = ["code", "name_en", "name_fa"]
     ordering = ["code"]
 
 

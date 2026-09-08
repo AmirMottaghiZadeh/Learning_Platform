@@ -114,27 +114,56 @@ names for the lessons taxonomy are built in Phase 3.
 
 ---
 
-## 🔜 Phase 3 — stateful screens (shape frozen, models pending)
+## Lessons — ✅ built (Phase 3a)
 
-These need per-user progress / session models (`apps.lessons`, `apps.quiz`,
-`apps.flashcards`, a `me` progress store). The response shapes below are the
-contract Phase 3 implements behind the same routes.
+ATC L1/L2 category names come from a bundled bilingual reference
+(`drugs.AtcCategory`, loaded by `load_atc_reference`). An L2 subgroup is only
+listed once at least one imported ingredient falls under it; an L1 group is
+hidden when all its subgroups are empty.
 
-### Lessons
+### `GET /lessons/groups/` — the study tree with progress
 
-- **GET `/lessons/groups/`** — the ATC study tree with progress.
-  ```jsonc
-  [{ "code": "N", "name_fa": "سیستم عصبی", "name_en": "Nervous system",
-     "subgroups": [{ "code": "N02", "name_fa": "مسکن‌ها", "name_en": "Analgesics",
-                     "total": 6, "done": 5 }] }]
-  ```
-- **GET `/lessons/chapters/{atc_code}/`** — one chapter (ATC subgroup).
-  ```jsonc
-  { "code": "N02", "name_fa": "…", "name_en": "…",
-    "drugs": [{ …IngredientDetail with lesson_sections… }],
-    "progress": { "read_drug_slugs": ["…"], "scroll_pct": 0 } }
-  ```
-- **POST `/lessons/chapters/{atc_code}/progress/`** — `{drug_slug, scroll_pct}`.
+```jsonc
+[{ "code": "C", "name_fa": "دستگاه قلب و عروق", "name_en": "Cardiovascular system",
+   "subgroups": [{ "code": "C07", "name_fa": "مسدودکننده‌های بتا",
+                   "name_en": "Beta blocking agents",
+                   "total": 16,          // ingredients under C07*
+                   "done": 1 }] }]       // of those, ones the learner has opened
+```
+
+### `GET /lessons/chapters/{atc_code}/` — one chapter (ATC L2 subgroup)
+
+`atc_code` is case-insensitive. 404 (platform envelope) if the code is not a
+populated L2 subgroup.
+
+```jsonc
+{
+  "code": "C07", "name_fa": "…", "name_en": "…",
+  "group_code": "C", "group_name_fa": "دستگاه قلب و عروق", "group_name_en": "…",
+  "drugs": [ { …full IngredientDetail incl. sections + lesson_sections… } ],
+  "exam_points": [                       // built from the chapter's boxed_warning /
+    { "drug_name": "acebutolol", "drug_slug": "acebutolol-149",
+      "field": "contraindications",      //   contraindications / warnings summaries
+      "tone": "deny",                    // boxed | deny | caution
+      "point_fa": "…", "point_en": "…" }
+  ],
+  "progress": { "read_drug_slugs": ["acebutolol-149"], "scroll_pct": 42,
+                "last_opened_at": "…" }
+}
+```
+
+### `POST /lessons/chapters/{atc_code}/` — record progress
+
+Body `{ "drug_slug"?: "…", "scroll_pct"?: 0-100 }`. Adds `drug_slug` to
+`read_drug_slugs` (must belong to the chapter → else 400 `INVALID_DRUG`),
+sets `scroll_pct`. Returns the same shape as GET.
+
+---
+
+## 🔜 Phase 3b/3c — stateful screens (shape frozen, models pending)
+
+The response shapes below are the contract the remaining Phase 3 sub-steps
+implement behind these routes.
 
 ### Dashboard — GET `/me/dashboard/`
 

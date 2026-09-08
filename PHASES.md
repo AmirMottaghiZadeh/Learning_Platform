@@ -1,4 +1,4 @@
-kil# PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa
+# PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa
 
 راهنمای وضعیت: ⬜ شروع‌نشده · 🔄 در حال انجام · ✅ تمام‌شده
 
@@ -12,8 +12,11 @@ kil# PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa
 |----|-------|-------|-------|
 | ۰ + ۰.۵ | تثبیت بک‌اند + حذف زیرساخت رهاشده | ✅ | `57ab3f7` (main) |
 | ۱ | دیتابیس دارویی (PostgreSQL) | ✅ | `d2af89a` (main) |
-| ۲ | قرارداد API + API دانش دارویی + onboarding | ✅ | برنچ `phase-2-api-contract` |
-| ۳ | اپ‌های بک‌اند (lessons / flashcards / quiz / me) | ⬜ | — |
+| ۲ | قرارداد API + API دانش دارویی + onboarding | ✅ | `feaf761` (main) |
+| ۳a | جدول مرجع ATC + `apps.lessons` | ✅ | برنچ `phase-3a-lessons` |
+| ۳b | `apps.progress` → `/me/{dashboard,mistakes,statistics,plan}` | ⬜ | — |
+| ۳c | `apps.flashcards` + `apps.quiz` (قفل) | ⬜ | — |
+| ۳d | بازنویسی `data_quality_center` | ⬜ | — |
 | ۴ | اسکلت فرانت + دیزاین‌سیستم | ⬜ | — |
 | ۵ | پیاده‌سازی صفحه‌ها + اتصال | ⬜ | — |
 | ۶ | uptodate + جمع‌بندی + انتشار | ⬜ | — |
@@ -68,18 +71,26 @@ kil# PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa
 - [x] ۹ تست جدید (drug API + onboarding) → ۴۵/۴۵
 - [~] **contract-only** (شکل در سند، پیاده‌سازی فاز ۳): `/lessons/*`، `/me/{dashboard,mistakes,statistics,plan,profile}`، flashcards، quiz، uptodate
 
-## فاز ۳ — اپ‌های بک‌اند ⬜
+## فاز ۳ — اپ‌های بک‌اند (زیرفازی)
 
-**هدف:** پیاده‌سازی همهٔ endpointهای «🔜 فاز ۳» در `docs/api-contract.md` (شکل‌ها قفل شده‌اند).
+**هدف:** پیاده‌سازی همهٔ endpointهای «🔜» در `docs/api-contract.md` (شکل‌ها قفل شده‌اند).
 
-- [ ] جدول مرجع ATC (L1/L2 با نام fa/en) برای تاکسونومی درس‌ها — از `pipeline_v2.db` نمی‌آید، باید bundle شود
-- [ ] `apps.lessons` — `/lessons/groups/`، `/lessons/chapters/{code}/` + ردیابی progress
-- [ ] `apps.flashcards` — کارت + جعبه‌های لایتنر + زمان‌بندی مرور (قفل، پشت فلگ)
-- [ ] `apps.quiz` — تولید سؤال از هشدارها/منع‌ها + جلسه + نمره + mistakes (قفل، پشت فلگ)
-- [ ] `apps.progress` / endpointهای `me/*` — `/me/{dashboard,mistakes,statistics,plan}`، streak، XP
-- [ ] برند/ژنریک از `spl_records` (اگر flashcard/quiz لازم داشت)
-- [ ] **بازنویسی** `data_quality_center` روی `apps.drugs` و فعال‌سازی مجدد
-- [ ] تست هر اپ
+### ۳a — جدول مرجع ATC + `apps.lessons` ✅
+- [x] مدل `drugs.AtcCategory` + مرجع دوزبانهٔ bundle‌شده (`apps/drugs/data/atc_reference.py`, ۱۴ L1 + ۸۴ L2) + command `load_atc_reference`
+- [x] `apps.lessons` — `GET /lessons/groups/` (درخت با `total`/`done`)، `GET /lessons/chapters/{code}/` (داروها + `exam_points` از هشدار/منع + progress)، `POST /lessons/chapters/{code}/` (ثبت progress)
+- [x] ۶ تست جدید → ۵۱/۵۱ · schema سبز · `docs/api-contract.md` به‌روز
+
+### ۳b — `apps.progress` → `/me/*` ⬜
+- [ ] مدل‌های `LearnerProgress` (streak، XP) و `Mistake`
+- [ ] `/me/dashboard` (فصل بعدی از lessons + focus session)، `/me/mistakes` (+resolve/restore)، `/me/statistics`، `/me/plan`
+
+### ۳c — `apps.flashcards` + `apps.quiz` (قفل، پشت فلگ) ⬜
+- [ ] `apps.flashcards` — کارت + جعبه‌های لایتنر + زمان‌بندی مرور
+- [ ] `apps.quiz` — تولید سؤال از هشدارها/منع‌ها + جلسه + نمره + اتصال به mistakes/XP
+- [ ] برند/ژنریک از `spl_records` (اگر لازم شد)
+
+### ۳d — بازنویسی `data_quality_center` ⬜
+- [ ] بازنویسی روی `apps.drugs` (ویرایش خلاصهٔ سکشن‌ها) و فعال‌سازی مجدد
 
 ## فاز ۴ — اسکلت فرانت + دیزاین‌سیستم ⬜
 

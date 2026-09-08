@@ -55,6 +55,33 @@ class AtcCode(models.Model):
         return {1: 1, 3: 2, 4: 3, 5: 4, 7: 5}.get(len(self.code), 0)
 
 
+class AtcCategory(models.Model):
+    """A named ATC anatomical (L1) or therapeutic (L2) group.
+
+    The pipeline only carries L4 names, so the L1/L2 tree the lessons taxonomy
+    needs is seeded from a bundled bilingual reference (`load_atc_reference`).
+    """
+
+    code = models.CharField(max_length=3, unique=True)  # "N" or "N02"
+    name_en = models.CharField(max_length=200)
+    name_fa = models.CharField(max_length=200)
+    level = models.PositiveSmallIntegerField()  # 1 or 2
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="children",
+    )
+
+    class Meta:
+        ordering = ["code"]
+        verbose_name_plural = "ATC categories"
+
+    def __str__(self):
+        return f"{self.code} — {self.name_en}"
+
+
 class Ingredient(models.Model):
     """An active ingredient, keyed by its RxNorm ingredient RXCUI."""
 
