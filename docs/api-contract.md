@@ -160,58 +160,70 @@ sets `scroll_pct`. Returns the same shape as GET.
 
 ---
 
-## 🔜 Phase 3b/3c — stateful screens (shape frozen, models pending)
+## `/me/*` — ✅ built (Phase 3b, `apps.progress`)
 
-The response shapes below are the contract the remaining Phase 3 sub-steps
-implement behind these routes.
+All the counters below start at 0 for a new learner; the quiz and flashcard
+apps (Phase 3c) bump them via `apps.progress.services`.
 
-### Dashboard — GET `/me/dashboard/`
+### `GET /me/dashboard/`
 
 ```jsonc
 {
-  "greeting_name": "سارا",
+  "greeting_name": "سارا",              // LearnerProfile.display_name, else first name
   "streak_days": 4, "xp": 1280,
-  "next_chapter": { "code": "N05", "name_fa": "…", "name_en": "…", "group_name_fa": "…" },
+  "next_chapter": {                      // first ATC subgroup with done < total; null when all read
+    "code": "N05", "name_fa": "…", "name_en": "…",
+    "group_code": "N", "group_name_fa": "…", "group_name_en": "…"
+  },
   "focus_session": {
-    "rows": [
-      { "kind": "leitner", "title_fa": "…", "sub_fa": "…", "minutes": 4, "count": 10 },
-      { "kind": "mistake",  "title_fa": "…", "sub_fa": "…", "minutes": 3, "mistake_id": 2 },
-      { "kind": "lesson",   "title_fa": "…", "sub_fa": "…", "minutes": 2, "atc_code": "N05" }
+    "rows": [                            // rows appear only when they have content
+      { "kind": "leitner", "title_fa": "…", "title_en": "…", "sub_fa": "…", "sub_en": "…",
+        "minutes": 4, "count": 10 },     // only once apps.flashcards has due cards (3c)
+      { "kind": "mistake", "title_fa": "…", "title_en": "…", "sub_fa": "…", "sub_en": "…",
+        "minutes": 3, "mistake_id": 2 }, // top unresolved Mistake
+      { "kind": "lesson",  "title_fa": "…", "title_en": "…", "sub_fa": "…", "sub_en": "…",
+        "minutes": 2, "atc_code": "N05" }
     ],
     "total_minutes": 9
   }
 }
 ```
 
-### Mistakes — GET `/me/mistakes/` · POST `/me/mistakes/{id}/resolve/` · POST `/me/mistakes/restore/`
+### `GET /me/mistakes/` · `POST /me/mistakes/{id}/resolve/` · `POST /me/mistakes/restore/`
 
 ```jsonc
-[{ "id": 1, "topic_fa": "عوارض جانبی", "topic_en": "Side effects",
-   "count": 4, "detail_fa": "…", "detail_en": "…", "resolved": false }]
+[{ "id": 1, "topic_key": "side_effects", "topic_fa": "عوارض جانبی",
+   "topic_en": "Side effects", "count": 4, "detail_fa": "…", "detail_en": "…",
+   "resolved": false, "last_seen": "…" }]
 ```
+`resolve` marks one resolved (404 if not the caller's); `restore` un-resolves all
+of the caller's and returns the full list.
 
-### Statistics — GET `/me/statistics/`
+### `GET /me/statistics/`
 
 ```jsonc
-{ "week_bars": [40,65,50,80,45,90,70],       // minutes/day, Sat→Fri
-  "accuracy_pct": 78, "quizzes": 12, "reviews": 340, "minutes": 620,
-  "mastery_pct": 61 }
+{ "week_bars": [40,65,50,80,45,90,70],   // minutes/day this week, index 0..6 = Sat..Fri
+  "accuracy_pct": 78,                     // quiz_correct / quiz_answers
+  "quizzes": 12, "reviews": 340, "minutes": 620,
+  "mastery_pct": 61 }                     // chapter drug-slots read / total, across all groups
 ```
 
-### Planning — GET `/me/plan/` · PUT `/me/plan/`
+### `GET /me/plan/` · `PUT /me/plan/`
 
 ```jsonc
-{ "days": [true,false,true,true,false,true,false], "reminders_enabled": true }
-// day index 0..6 = Sat..Fri (DAY_LABELS_FULL)
+{ "days": [true,false,true,true,false,true,false],  // exactly 7; index 0..6 = Sat..Fri
+  "reminders_enabled": true, "updated_at": "…" }
 ```
+PUT replaces both fields; a `days` array that is not length 7 is 400.
 
-### Profile — GET `/me/profile/` (or reuse `/auth/me/`) · PATCH settings
+### Profile
 
-```jsonc
-{ "display_name": "…", "email": "…",
-  "stats": { "accuracy_pct": 78, "quizzes": 12 },
-  "settings": { "notifications": true, "language": "fa" } }
-```
+Reuse `GET /auth/me/` (carries `profile`) and `PATCH /auth/me/` for
+display name / language. No separate `/me/profile/` route.
+
+---
+
+## 🔜 Phase 3c — flashcards & quiz (locked behind feature flags)
 
 ### Flashcards — **locked** (feature flag off; routes 503 until Phase 3 opens them)
 

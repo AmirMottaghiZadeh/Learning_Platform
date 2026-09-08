@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.drugs",
     "apps.lessons",
+    "apps.progress",
     # Rebuilt fresh in later phases (frontend-aligned): flashcards, quiz
     # "apps.data_quality_center" stays out until it is rewritten against
     # apps.drugs (it still hard-imports the removed ai_data_pipeline app).

@@ -13,8 +13,8 @@
 | ۰ + ۰.۵ | تثبیت بک‌اند + حذف زیرساخت رهاشده | ✅ | `57ab3f7` (main) |
 | ۱ | دیتابیس دارویی (PostgreSQL) | ✅ | `d2af89a` (main) |
 | ۲ | قرارداد API + API دانش دارویی + onboarding | ✅ | `feaf761` (main) |
-| ۳a | جدول مرجع ATC + `apps.lessons` | ✅ | برنچ `phase-3a-lessons` |
-| ۳b | `apps.progress` → `/me/{dashboard,mistakes,statistics,plan}` | ⬜ | — |
+| ۳a | جدول مرجع ATC + `apps.lessons` | ✅ | `4963756` (main) |
+| ۳b | `apps.progress` → `/me/{dashboard,mistakes,statistics,plan}` | ✅ | برنچ `phase-3b-progress` |
 | ۳c | `apps.flashcards` + `apps.quiz` (قفل) | ⬜ | — |
 | ۳d | بازنویسی `data_quality_center` | ⬜ | — |
 | ۴ | اسکلت فرانت + دیزاین‌سیستم | ⬜ | — |
@@ -80,9 +80,11 @@
 - [x] `apps.lessons` — `GET /lessons/groups/` (درخت با `total`/`done`)، `GET /lessons/chapters/{code}/` (داروها + `exam_points` از هشدار/منع + progress)، `POST /lessons/chapters/{code}/` (ثبت progress)
 - [x] ۶ تست جدید → ۵۱/۵۱ · schema سبز · `docs/api-contract.md` به‌روز
 
-### ۳b — `apps.progress` → `/me/*` ⬜
-- [ ] مدل‌های `LearnerProgress` (streak، XP) و `Mistake`
-- [ ] `/me/dashboard` (فصل بعدی از lessons + focus session)، `/me/mistakes` (+resolve/restore)، `/me/statistics`، `/me/plan`
+### ۳b — `apps.progress` → `/me/*` ✅
+- [x] مدل‌ها: `LearnerProgress` (xp، streak، totals، accuracy)، `DailyStudy`، `Mistake`، `StudyPlan` + `services.py` (record_study، bump_mistake، …)
+- [x] `GET /me/dashboard` (فصل بعدی از lessons + focus session با ردیف mistake/lesson؛ ردیف leitner در ۳c)، `GET /me/statistics` (نمودار هفتگی از DailyStudy + mastery از پیشرفت درس‌ها)، `GET /me/mistakes` + `POST .../resolve` + `POST .../restore`، `GET|PUT /me/plan`
+- [x] ۹ تست جدید → ۶۰/۶۰ · schema سبز · `docs/api-contract.md` به‌روز
+- [x] روتر maintenance کوییز از `me/*` پاک شد (progress صاحب `/me/*` است)
 
 ### ۳c — `apps.flashcards` + `apps.quiz` (قفل، پشت فلگ) ⬜
 - [ ] `apps.flashcards` — کارت + جعبه‌های لایتنر + زمان‌بندی مرور
