@@ -7,11 +7,6 @@
     "scheme": "pharmexa",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icons/mortar.png",
-    "splash": {
-      "image": "./assets/icons/mortar.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F5C52"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.pharmexa.learning"
@@ -31,7 +26,18 @@
       "themeColor": "#0F5C52",
       "backgroundColor": "#E7E4DC"
     },
-    "plugins": ["expo-secure-store", "expo-font"],
+    "plugins": [
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icons/mortar.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0F5C52"
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": false
     }
