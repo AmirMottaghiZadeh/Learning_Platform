@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     "apps.quiz",
     # Internal ops tool; its URLs mount only when DATA_QUALITY_CENTER_ENABLED.
     "apps.data_quality_center",
+    # Read-only access to the bundled UpToDate SQLite snapshot (no models).
+    "apps.uptodate",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -254,6 +256,14 @@ DATA_QUALITY_AUDIT_VERIFY_LIMIT = config(
 QUIZ_API_ENABLED = config("QUIZ_API_ENABLED", default=False, cast=bool)
 FLASHCARDS_API_ENABLED = config("FLASHCARDS_API_ENABLED", default=False, cast=bool)
 DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=False, cast=bool)
+
+# Directory holding the UpToDate snapshot (fts.db, content.db, toc.db, info.json).
+# The /uptodate/ endpoints answer 503 when the files are not present.
+UPTODATE_DB_DIR = config(
+    "UPTODATE_DB_DIR",
+    default="/home/amir/Documents/UpToDate",
+)
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",

@@ -35,6 +35,7 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
   statistics: "profile",
   planning: "profile",
   uptodate: "dashboard",
+  uptodateArticle: "dashboard",
 };
 
 export function BottomNav() {

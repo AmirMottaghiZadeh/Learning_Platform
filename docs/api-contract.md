@@ -264,10 +264,18 @@ First-pass generator: ATC drug-class identification (drug→class and class→dr
   once only — sets the score, calls `record_quiz_answers` + `record_study(
   quizzes=1, xp=score·10)`, and `bump_mistake("drug_class", …)` per wrong answer.
 
-### uptodate — **Phase 6** (separate data source, `/home/amir/Documents/UpToDate/`)
+### uptodate — ✅ built (Phase 6a) · read-only, no models
 
-- GET `/uptodate/topics/?search=` — `[{ id, title_fa, title_en, section_fa, section_en, updated_at }]`
-- GET `/uptodate/topics/{id}/` — rendered article
+Served straight from the bundled UpToDate SQLite snapshot
+(`settings.UPTODATE_DB_DIR`): FTS5 search in `fts.db`, zlib-JSON article bodies
+in `content.db`, section names from the `toc.db` tree. English content only
+(the snapshot is English). 503 `FEATURE_NOT_AVAILABLE` when the files are absent.
+
+- **GET `/uptodate/topics/?search=&limit=`** — `[{ id, title, section, version }]`
+  (topic articles only; `section` is the top-level specialty, e.g.
+  "Cardiovascular Medicine"). Empty `search` → `[]`.
+- **GET `/uptodate/topics/{id}/`** — `{ id, title, section, version, contributors[],
+  outline_html, body_html }`. 404 if the id is unknown.
 
 ---
 

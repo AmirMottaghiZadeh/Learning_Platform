@@ -15,6 +15,8 @@ import {
   QuizSession,
   Statistics,
   StudyPlan,
+  UptodateArticle,
+  UptodateTopic,
   User,
 } from "./types";
 
@@ -92,6 +94,15 @@ export const flashcardsApi = {
   seed: () => apiClient.post("/flashcards/seed/").then((r) => r.data),
   review: (id: number, rating: "easy" | "hard") =>
     apiClient.post<LeitnerCard>(`/flashcards/${id}/review/`, { rating }).then((r) => r.data),
+};
+
+export const uptodateApi = {
+  search: (search: string, limit = 25) =>
+    apiClient
+      .get<UptodateTopic[]>("/uptodate/topics/", { params: { search, limit } })
+      .then((r) => r.data),
+  topic: (id: string) =>
+    apiClient.get<UptodateArticle>(`/uptodate/topics/${id}/`).then((r) => r.data),
 };
 
 export const quizApi = {

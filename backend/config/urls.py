@@ -15,6 +15,7 @@ urlpatterns = [
     path("api/", include("apps.drugs.urls")),
     path("api/", include("apps.lessons.urls")),
     path("api/", include("apps.progress.urls")),
+    path("api/", include("apps.uptodate.urls")),
 ]
 
 if settings.QUIZ_API_ENABLED:

@@ -225,3 +225,16 @@ export interface QuizResult {
   total: number;
   mistakes_added: number;
 }
+
+export interface UptodateTopic {
+  id: string;
+  title: string;
+  section: string;
+  version: string;
+}
+
+export interface UptodateArticle extends UptodateTopic {
+  contributors: string[];
+  outline_html: string;
+  body_html: string;
+}

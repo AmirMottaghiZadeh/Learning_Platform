@@ -21,8 +21,9 @@
 | ۵a | Auth + Onboarding + shell/nav | ✅ | `f89d37f` (main) |
 | ۵b | Dashboard + Lessons + LessonList + LessonDetail | ✅ | `3ce25d4` (main) |
 | ۵c | Mistakes + Statistics + Planning + Profile | ✅ | `e74a250` (main) |
-| ۵d | Flashcards + Quiz UI + help sheet | ✅ | برنچ `phase-5d-quiz-cards` |
-| ۶ | uptodate + جمع‌بندی + انتشار | ⬜ | — |
+| ۵d | Flashcards + Quiz UI + help sheet | ✅ | `ff1947b` (main) |
+| ۶a | `apps.uptodate` + صفحه‌ها | ✅ | برنچ `phase-6a-uptodate` |
+| ۶b | جمع‌بندی + انتشار | ⬜ | — |
 
 ---
 
@@ -156,11 +157,15 @@
 
 **فاز ۵ کامل شد** (به‌جز تور spotlight). بعدی: فاز ۶ (uptodate + انتشار).
 
-## فاز ۶ — uptodate + جمع‌بندی + انتشار ⬜
+## فاز ۶ — uptodate + جمع‌بندی + انتشار (زیرفازی)
 
-**هدف:** قابل‌عرضه.
+### ۶a — `apps.uptodate` + صفحه‌ها ✅
+- [x] `apps.uptodate` بدون مدل: `services.py` دیتابیس‌های SQLite را read-only می‌خواند (FTS5 در `fts.db`، بدنهٔ zlib-JSON در `content.db`، نام بخش از درخت `toc.db`)؛ `UPTODATE_DB_DIR` در settings؛ اگر فایل‌ها نباشند → ۵۰۳
+- [x] `GET /uptodate/topics/?search=&limit=` و `GET /uptodate/topics/{id}/`؛ ۶ تست جدید → **۸۶/۸۶** · schema سبز
+- [x] فرانت: `UptodateScreen` (جست‌وجوی debounce + لیست نتایج + حالت خالی/قفل) + `UptodateArticleScreen` (WebView/iframe برای `body_html`)؛ `react-native-webview` نصب شد
+- [x] `StubScreen`/`LockedScreen` حذف شدند · tsc سبز · `expo export` (۵۶۰ ماژول)
 
-- [ ] `apps.uptodate` روی دیتابیس‌های `/home/amir/Documents/UpToDate/` (content / toc / search / fts) + API خواندنی + صفحهٔ `uptodate`
-- [ ] نهایی‌سازی `docker-compose` / `Dockerfile` فرانت / CI
+### ۶b — جمع‌بندی و انتشار ⬜
+- [ ] `Dockerfile` فرانت + سرویس `frontend` در `docker-compose` + `frontend-pages.yml`
 - [ ] حذف `frontend_old/`
-- [ ] `render.yaml` / deploy، کانفیگ EAS build (iOS/Android)
+- [ ] `render.yaml` / deploy، کانفیگ EAS build (iOS/Android)، به‌روزرسانی READMEها

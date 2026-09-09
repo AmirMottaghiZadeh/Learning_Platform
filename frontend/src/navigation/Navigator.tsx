@@ -17,7 +17,8 @@ import { PlanningScreen } from "@/screens/PlanningScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
 import { QuizScreen } from "@/screens/QuizScreen";
 import { StatisticsScreen } from "@/screens/StatisticsScreen";
-import { StubScreen } from "@/screens/StubScreen";
+import { UptodateArticleScreen } from "@/screens/UptodateArticleScreen";
+import { UptodateScreen } from "@/screens/UptodateScreen";
 import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
 
@@ -63,7 +64,9 @@ function CurrentScreen() {
     case "planning":
       return <PlanningScreen />;
     case "uptodate":
-      return <StubScreen title={t("uptodateScreenTitle")} subtitle={t("uptodateSourceNote")} back />;
+      return <UptodateScreen />;
+    case "uptodateArticle":
+      return <UptodateArticleScreen />;
     case "dashboard":
     default:
       return <DashboardScreen />;
