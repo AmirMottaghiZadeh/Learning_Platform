@@ -23,4 +23,5 @@ RUN DJANGO_SETTINGS_MODULE=config.settings.local python manage.py collectstatic 
 
 EXPOSE 8000
 
-CMD ["gunicorn", "config.wsgi:application", "--config", "gunicorn.conf.py"]
+# Runs migrations + ATC reference (both idempotent) on boot, then gunicorn.
+CMD ["./docker-start.sh"]
