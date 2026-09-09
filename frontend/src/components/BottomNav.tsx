@@ -26,6 +26,7 @@ const TAB_META: Record<
 const SCREEN_TO_TAB: Record<string, TabKey> = {
   dashboard: "dashboard",
   lessons: "lessons",
+  lessonList: "lessons",
   lessonDetail: "lessons",
   flashcards: "flashcards",
   quiz: "quiz",

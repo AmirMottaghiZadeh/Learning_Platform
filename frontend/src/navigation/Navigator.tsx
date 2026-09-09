@@ -8,6 +8,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { AuthScreen } from "@/screens/AuthScreen";
 import { DashboardScreen } from "@/screens/DashboardScreen";
 import { LessonDetailScreen } from "@/screens/LessonDetailScreen";
+import { LessonListScreen } from "@/screens/LessonListScreen";
 import { LessonsScreen } from "@/screens/LessonsScreen";
 import { LockedScreen } from "@/screens/LockedScreen";
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
@@ -41,6 +42,8 @@ function CurrentScreen() {
   switch (screen) {
     case "lessons":
       return <LessonsScreen />;
+    case "lessonList":
+      return <LessonListScreen />;
     case "lessonDetail":
       return <LessonDetailScreen />;
     case "flashcards":

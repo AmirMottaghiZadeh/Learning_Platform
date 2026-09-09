@@ -18,8 +18,9 @@
 | ۳c | `apps.flashcards` + `apps.quiz` (ساخته‌شده، قفل) | ✅ | `b7270b3` (main) |
 | ۳d | بازنویسی `data_quality_center` | ✅ | `00aee53` (main) |
 | ۴ | اسکلت فرانت + دیزاین‌سیستم | ✅ | `ff2e870` (main) |
-| ۵a | Auth + Onboarding + shell/nav | ✅ | برنچ `phase-5a-auth` |
-| ۵b–۵d | صفحه‌های اصلی / me / flashcards+quiz+tour | ⬜ | — |
+| ۵a | Auth + Onboarding + shell/nav | ✅ | `f89d37f` (main) |
+| ۵b | Dashboard + Lessons + LessonList + LessonDetail | ✅ | برنچ `phase-5b-learning` |
+| ۵c–۵d | me / flashcards+quiz+tour | ⬜ | — |
 | ۶ | uptodate + جمع‌بندی + انتشار | ⬜ | — |
 
 ---
@@ -129,7 +130,14 @@
 - [x] `OnboardingScreen` ۴ مرحله: ۳ اسلاید (آیکون SVG + عنوان + توضیح) + فرم چیپ‌ها (۳ گروه) + نقطه‌های پیشرفت + Next/Start/Back، وصل به `POST /auth/onboarding/`
 - [x] `BottomNav`: قرص لغزندهٔ انیمیشنی پشت تب فعال + نگاشت صفحه→تب (mistakes/stats/planning زیر profile)
 
-### ۵b — Dashboard + focus session + Lessons + LessonDetail ⬜
+### ۵b — Dashboard + focus session + Lessons + LessonDetail ✅
+- [x] `DashboardScreen` مطابق طراحی: هدر accent (لوگو/تم/زبان + خوش‌آمد زمان‌محور)، کارت مرجع UpToDate، گرید ۶ مسیر، بخش «فصل بعدی» با کارت **جلسهٔ تمرکز** تاشو (ردیف‌های tinted + دکمهٔ شروع) — از `/me/dashboard/`
+- [x] `LessonsScreen`: آکاردئون گروه‌های ATC (badge کد، نوار پیشرفت جمع‌شونده)، بازشدن → زیرگروه‌ها با نوار fill — از `/lessons/groups/`
+- [x] `LessonListScreen` (جدید): overlay تمام‌صفحه، eyebrow گروه + نام فصل + `code · تعداد`، لیست داروها با شمارهٔ/تیک خوانده‌شده — از `/lessons/chapters/{code}/`
+- [x] `LessonDetailScreen`: نام دارو (۲۶/۹۰۰) + خط ATC + بج‌ها (جعبه‌سیاه/کنترل‌شده/زمان مطالعه)، بلوک‌های `lesson_sections` با رنگ tone (deny/boxed/caution/special)، toggle «نسخهٔ انگلیسی» هر بلوک، جست‌وجوی درون‌فصل، نوار پیشرفت اسکرول + ثبت خودکار خوانده‌شدن (`POST /lessons/chapters/{code}/`)، CTA خودآزمایی
+- [x] flow: tab → آکاردئون → زیرگروه → LessonList → دارو → LessonDetail
+- [x] tsc سبز · `expo export` موفق (۵۱۰ ماژول)
+
 ### ۵c — Mistakes + Statistics + Planning + Profile ⬜
 ### ۵d — Flashcards + Quiz (UI کامل، قفل) + تور راهنما/help ⬜
 

@@ -4,6 +4,7 @@ export type ScreenKey =
   | TabKey
   | "auth"
   | "onboarding"
+  | "lessonList"
   | "lessonDetail"
   | "mistakes"
   | "statistics"
