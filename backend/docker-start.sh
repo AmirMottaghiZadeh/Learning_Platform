@@ -9,6 +9,9 @@
 set -o errexit
 
 python manage.py migrate --no-input
+# Creates the Postgres cache table(s) when CACHE_BACKEND is the DatabaseCache
+# (the no-Redis deployment). No-op for a Redis cache. Safe to run every boot.
+python manage.py createcachetable
 python manage.py load_atc_reference
 
 exec gunicorn config.wsgi:application --config gunicorn.conf.py

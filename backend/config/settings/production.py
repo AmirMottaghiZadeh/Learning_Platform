@@ -10,12 +10,29 @@ DEBUG = False
 
 SECRET_KEY = validate_production_secret_key(SECRET_KEY)
 CACHES = validate_production_cache(CACHES)
-CELERY_BROKER_URL = validate_production_broker(
-    CELERY_BROKER_URL,
-    task_always_eager=CELERY_TASK_ALWAYS_EAGER,
-)
+
+# Deliberate opt-out for single-container deployments with no message broker
+# available (e.g. a PaaS that only allows one app + one database). The operator
+# accepts that background jobs run synchronously inside the web request. A
+# Postgres-backed shared cache (CACHE_BACKEND=django.core.cache.backends.db.
+# DatabaseCache) still satisfies validate_production_cache, so throttling and
+# caching keep working across Gunicorn workers.
+CELERY_RUN_TASKS_IN_REQUEST = config("CELERY_RUN_TASKS_IN_REQUEST", default=False, cast=bool)
+if CELERY_RUN_TASKS_IN_REQUEST:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+else:
+    CELERY_BROKER_URL = validate_production_broker(
+        CELERY_BROKER_URL,
+        task_always_eager=CELERY_TASK_ALWAYS_EAGER,
+    )
+
 READINESS_REQUIRE_CACHE = config("READINESS_REQUIRE_CACHE", default=True, cast=bool)
-READINESS_REQUIRE_BROKER = config("READINESS_REQUIRE_BROKER", default=True, cast=bool)
+READINESS_REQUIRE_BROKER = config(
+    "READINESS_REQUIRE_BROKER",
+    default=not CELERY_RUN_TASKS_IN_REQUEST,
+    cast=bool,
+)
 QUIZ_API_ENABLED = config("QUIZ_API_ENABLED", default=False, cast=bool)
 FLASHCARDS_API_ENABLED = config("FLASHCARDS_API_ENABLED", default=False, cast=bool)
 DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=False, cast=bool)
