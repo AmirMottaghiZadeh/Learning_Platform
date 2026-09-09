@@ -40,7 +40,7 @@ export function MistakesScreen() {
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
-      <ScreenChrome title={t("mistakesTitle")} onBack={goBack} />
+      <ScreenChrome title={t("mistakesTitle")} onBack={goBack} help="mistakes" />
 
       {unresolved.length === 0 ? (
         <View style={{ alignItems: "center", paddingVertical: 48, paddingHorizontal: 16 }}>

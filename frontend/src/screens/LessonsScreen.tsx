@@ -28,7 +28,7 @@ export function LessonsScreen() {
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
-      <ScreenChrome title={t("lessonsTitle")} />
+      <ScreenChrome title={t("lessonsTitle")} help="lessons" />
       {isError ? (
         <Card>
           <AppText weight="700" color={colors.denyLabel}>

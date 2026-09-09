@@ -44,7 +44,7 @@ export function PlanningScreen() {
 
   return (
     <Screen>
-      <ScreenChrome title={t("planningTitle")} onBack={goBack} />
+      <ScreenChrome title={t("planningTitle")} onBack={goBack} help="planning" />
       <AppText muted weight="600" size={13} style={{ marginBottom: spacing.md }}>
         {t("planningSub")}
       </AppText>

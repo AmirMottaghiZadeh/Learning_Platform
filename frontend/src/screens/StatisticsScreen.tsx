@@ -36,7 +36,7 @@ export function StatisticsScreen() {
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
-      <ScreenChrome title={t("statsTitle")} onBack={goBack} />
+      <ScreenChrome title={t("statsTitle")} onBack={goBack} help="statistics" />
 
       <Card raised style={{ flexDirection: "row", alignItems: "center", gap: 16, marginBottom: spacing.lg }}>
         <Svg width={96} height={96} viewBox="0 0 96 96">

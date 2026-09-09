@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Pressable, View } from "react-native";
 import Svg, { Circle, G, Line, Path } from "react-native-svg";
 
 import { AppText } from "@/components/primitives/AppText";
+import { HelpKey, HelpSheet } from "@/components/HelpSheet";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 
@@ -38,10 +39,19 @@ export function ChromeButton({
 }
 
 /** Title row + theme / language toggles, matching the design's screen headers. */
-export function ScreenChrome({ title, onBack }: { title: string; onBack?: () => void }) {
+export function ScreenChrome({
+  title,
+  onBack,
+  help,
+}: {
+  title: string;
+  onBack?: () => void;
+  help?: HelpKey;
+}) {
   const { colors } = useTheme();
   const { t, isFa, toggle: toggleLang } = useLang();
   const { toggle: toggleTheme, isDark } = useTheme();
+  const [helpOpen, setHelpOpen] = useState(false);
 
   return (
     <View
@@ -65,6 +75,13 @@ export function ScreenChrome({ title, onBack }: { title: string; onBack?: () => 
         </AppText>
       </View>
       <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+        {help ? (
+          <ChromeButton onPress={() => setHelpOpen(true)}>
+            <AppText weight="800" size={13} color={colors.accent}>
+              ?
+            </AppText>
+          </ChromeButton>
+        ) : null}
         <ChromeButton onPress={toggleTheme}>
           <Svg width={14} height={14} viewBox="0 0 24 24">
             {isDark ? (
@@ -96,6 +113,9 @@ export function ScreenChrome({ title, onBack }: { title: string; onBack?: () => 
           </AppText>
         </Pressable>
       </View>
+      {help ? (
+        <HelpSheet helpKey={helpOpen ? help : null} onClose={() => setHelpOpen(false)} />
+      ) : null}
     </View>
   );
 }

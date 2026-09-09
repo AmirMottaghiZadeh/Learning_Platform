@@ -20,8 +20,8 @@
 | ۴ | اسکلت فرانت + دیزاین‌سیستم | ✅ | `ff2e870` (main) |
 | ۵a | Auth + Onboarding + shell/nav | ✅ | `f89d37f` (main) |
 | ۵b | Dashboard + Lessons + LessonList + LessonDetail | ✅ | `3ce25d4` (main) |
-| ۵c | Mistakes + Statistics + Planning + Profile | ✅ | برنچ `phase-5c-me` |
-| ۵d | Flashcards + Quiz UI + tour/help | ⬜ | — |
+| ۵c | Mistakes + Statistics + Planning + Profile | ✅ | `e74a250` (main) |
+| ۵d | Flashcards + Quiz UI + help sheet | ✅ | برنچ `phase-5d-quiz-cards` |
 | ۶ | uptodate + جمع‌بندی + انتشار | ⬜ | — |
 
 ---
@@ -146,7 +146,15 @@
 - [x] `ProfileScreen`: هدر accent + آواتار حرف اول + نام/ایمیل، گرید ۴ کاشی آماری (XP/streak/دقت/آزمون)، ردیف‌های آمار/برنامه/اشتباهات/اعلان/خروج
 - [x] `ScreenChrome` با `onBack` یکپارچه شد · tsc سبز · `expo export` (۵۱۳ ماژول)
 
-### ۵d — Flashcards + Quiz (UI کامل، قفل) + تور راهنما/help ⬜
+### ۵d — Flashcards + Quiz (UI کامل) + help sheet ✅
+- [x] `QuizScreen` state-machine کامل: setup (گرید ۲×۲ دسته + چیپ‌های تعداد + Start)، running (نوار پیشرفت + سؤال + ۴ گزینه با رنگ درست/غلط + Next)، done (کارت نتیجه + Retry) — وصل به `quiz/start|answer|finish`؛ اگر ۵۰۳ → کارت «به‌زودی»
+- [x] `FlashcardsScreen` کامل: کارت flip (front accent → tap → back)، دکمه‌های «بلد بودم»/«سخت بود» → `review(id,rating)` → کارت بعدی، نمای «جعبهٔ لایتنر» (خلاصهٔ ۵ جعبه)، seed برای دک خالی؛ اگر ۵۰۳ → «به‌زودی»
+- [x] `HelpSheet` (bottom-sheet modal) + دکمهٔ `؟` در `ScreenChrome` با `help` prop؛ محتوای راهنمای هر صفحه از `HELP_CONTENT` طراحی
+- [x] `LockedScreen` حذف شد (حالت قفل درون‌خطیِ هر صفحه)
+- [~] تور spotlight چندمرحله‌ای → **موکول** (پیچیده، ارزش پایین؛ help sheet جایگزین کاربردی)
+- [x] tsc سبز · `expo export` (۵۲۰ ماژول)
+
+**فاز ۵ کامل شد** (به‌جز تور spotlight). بعدی: فاز ۶ (uptodate + انتشار).
 
 ## فاز ۶ — uptodate + جمع‌بندی + انتشار ⬜
 

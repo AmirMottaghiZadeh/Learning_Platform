@@ -10,11 +10,12 @@ import { DashboardScreen } from "@/screens/DashboardScreen";
 import { LessonDetailScreen } from "@/screens/LessonDetailScreen";
 import { LessonListScreen } from "@/screens/LessonListScreen";
 import { LessonsScreen } from "@/screens/LessonsScreen";
-import { LockedScreen } from "@/screens/LockedScreen";
+import { FlashcardsScreen } from "@/screens/FlashcardsScreen";
 import { MistakesScreen } from "@/screens/MistakesScreen";
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
 import { PlanningScreen } from "@/screens/PlanningScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
+import { QuizScreen } from "@/screens/QuizScreen";
 import { StatisticsScreen } from "@/screens/StatisticsScreen";
 import { StubScreen } from "@/screens/StubScreen";
 import { useAuth } from "@/store/auth";
@@ -50,9 +51,9 @@ function CurrentScreen() {
     case "lessonDetail":
       return <LessonDetailScreen />;
     case "flashcards":
-      return <LockedScreen title={t("cardsTitle")} icon="mobileBlister" />;
+      return <FlashcardsScreen />;
     case "quiz":
-      return <LockedScreen title={t("quizTitle")} icon="checklist" />;
+      return <QuizScreen />;
     case "profile":
       return <ProfileScreen />;
     case "mistakes":
