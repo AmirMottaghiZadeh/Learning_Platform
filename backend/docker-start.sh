@@ -8,10 +8,15 @@
 # it needs the multi-GB pipeline SQLite that is not shipped in the image.
 set -o errexit
 
+echo "[docker-start] settings=${DJANGO_SETTINGS_MODULE:-unset} port=${PORT:-8000}"
+
 python manage.py migrate --no-input
 # Creates the Postgres cache table(s) when CACHE_BACKEND is the DatabaseCache
 # (the no-Redis deployment). No-op for a Redis cache. Safe to run every boot.
 python manage.py createcachetable
 python manage.py load_atc_reference
 
-exec gunicorn config.wsgi:application --config gunicorn.conf.py
+# Honour $PORT when the platform injects one; otherwise fall back to 8000.
+exec gunicorn config.wsgi:application \
+  --config gunicorn.conf.py \
+  --bind "0.0.0.0:${PORT:-8000}"
