@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import Client, SimpleTestCase
 
@@ -30,16 +31,18 @@ class CorsPreflightTests(SimpleTestCase):
         "/api/v1/auth/login/",
         "/api/v1/auth/onboarding/",
     )
-    origins = (
-        "http://localhost:8081",
-        "http://127.0.0.1:8081",
-    )
 
     def test_idempotent_mutations_allow_browser_preflight(self):
+        # Test exactly the origins the deployment allows, so this can't drift
+        # from CORS_ALLOWED_ORIGINS again.
+        origins = list(settings.CORS_ALLOWED_ORIGINS)
+        if not origins:
+            self.skipTest("CORS_ALLOWED_ORIGINS is empty in this environment.")
+
         client = Client()
 
         for endpoint in self.endpoints:
-            for origin in self.origins:
+            for origin in origins:
                 with self.subTest(endpoint=endpoint, origin=origin):
                     response = client.options(
                         endpoint,
