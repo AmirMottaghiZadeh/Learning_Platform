@@ -31,6 +31,11 @@ run python manage.py migrate --no-input
 # (the no-Redis deployment). No-op for a Redis cache.
 run python manage.py createcachetable
 run python manage.py load_atc_reference
+# Must run here, not at build time: production settings use WhiteNoise's
+# ManifestStaticFilesStorage, so the staticfiles.json manifest has to be built
+# under the production settings module (the image builds it under local, which
+# has no manifest -> admin / browsable API / Swagger UI 500 without this).
+run python manage.py collectstatic --no-input
 
 echo "[docker-start] starting gunicorn on 0.0.0.0:${PORT:-8000}"
 exec gunicorn config.wsgi:application \
