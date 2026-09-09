@@ -21,18 +21,22 @@ instead, then run a `worker` process — that is the `render.yaml` shape.
 
 ## Environment variables
 
-Set these on the Runflare app. Replace `<VERCEL_URL>` with the real frontend
-origin (scheme + host only, **no path, no trailing slash**), e.g.
-`https://pharmexa.vercel.app`.
+Set these on the Runflare app. `<RUNFLARE_HOST>` is the app's own domain — it
+**changes every time the service is deleted and recreated** (e.g.
+`pharmexa-9d1-amirmtz.runflare.cloud`), so re-check it after any recreate.
+Replace `<VERCEL_URL>` with the real frontend origin (scheme + host only,
+**no path, no trailing slash**), e.g. `https://pharmexa.vercel.app`.
 
 ```bash
 DJANGO_SETTINGS_MODULE=config.settings.production
 SECRET_KEY=<a random string of 50+ chars, 12+ distinct, no spaces, not all digits>
 DEBUG=False
-ALLOWED_HOSTS=amirmtz.runflare.run,127.0.0.1,localhost
+ALLOWED_HOSTS=<RUNFLARE_HOST>,127.0.0.1,localhost
 
-# Postgres that Runflare provisioned — keep the internal service host as-is
-DATABASE_URL=postgresql://postgres:<pw>@database-egt-service:5432/databasepyz_db
+# Postgres that Runflare provisioned — copy the DB service's *internal*
+# connection string verbatim (host is <name>-service, port 5432). This does NOT
+# change when the app service is recreated, only when the DB service is.
+DATABASE_URL=postgresql://postgres:<pw>@<db-name>-service:5432/<db>
 
 # Cache without Redis: a Postgres table cache
 CACHE_BACKEND=django.core.cache.backends.db.DatabaseCache
@@ -45,7 +49,7 @@ ASYNC_EMAIL_ENABLED=False
 # Cross-origin: the Vercel frontend
 CORS_ALLOWED_ORIGINS=<VERCEL_URL>
 CORS_ALLOW_CREDENTIALS=True
-CSRF_TRUSTED_ORIGINS=https://amirmtz.runflare.run,<VERCEL_URL>
+CSRF_TRUSTED_ORIGINS=https://<RUNFLARE_HOST>,<VERCEL_URL>
 PASSWORD_RESET_FRONTEND_URL=<VERCEL_URL>/reset-password
 ```
 
@@ -84,9 +88,9 @@ the local `pharmexa_dev` DB and pipe into the external `psql` prefixed with
 ## Verify
 
 ```bash
-curl -i https://amirmtz.runflare.run/api/v1/health/
-curl -i https://amirmtz.runflare.run/api/v1/ready/        # 200 => DB + cache OK
-curl    "https://amirmtz.runflare.run/api/v1/drugs/?search=losartan"
+curl -i https://<RUNFLARE_HOST>/api/v1/health/
+curl -i https://<RUNFLARE_HOST>/api/v1/ready/        # 200 => DB + cache OK
+curl    "https://<RUNFLARE_HOST>/api/v1/drugs/?search=losartan"
 ```
 
 Create the admin user from the Runflare console:
