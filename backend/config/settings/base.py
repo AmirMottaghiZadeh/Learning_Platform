@@ -1,7 +1,10 @@
+import sys
 from pathlib import Path
 from corsheaders.defaults import default_headers
 from decouple import config
 import dj_database_url
+
+RUNNING_TESTS = "test" in sys.argv
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 SECRET_KEY = config("SECRET_KEY", default="dev-secret")
@@ -57,8 +60,19 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIR
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 DATABASE_URL = config("DATABASE_URL", default="postgresql://postgres:postgres@127.0.0.1:5432/pharmexa")
-DATABASES = {"default": dj_database_url.config(default=DATABASE_URL, conn_max_age=600)}
+# Persistent connections in production; always 0 under the test runner, where a
+# reused connection left mid-transaction by a TestCase can deadlock the TRUNCATE
+# a following TransactionTestCase issues (Postgres has no lock timeout by default).
+DATABASES = {
+    "default": dj_database_url.config(
+        default=DATABASE_URL, conn_max_age=0 if RUNNING_TESTS else 600
+    )
+}
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+if RUNNING_TESTS:
+    # Fail a stuck query fast with a clear error instead of hanging the run.
+    DATABASES["default"].setdefault("OPTIONS", {})
+    DATABASES["default"]["OPTIONS"]["options"] = "-c lock_timeout=15000 -c statement_timeout=120000"
 REDIS_URL = config("REDIS_URL", default="")
 CACHE_URL = config("CACHE_URL", default=REDIS_URL)
 BROKER_URL = config("CELERY_BROKER_URL", default=REDIS_URL)
