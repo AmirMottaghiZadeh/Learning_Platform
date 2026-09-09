@@ -1,46 +1,43 @@
-{% load static %}
 <!doctype html>
-<html lang="fa" dir="rtl" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Data Quality Center{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'data_quality_center/styles.css' %}">
-  <script defer src="{% static 'data_quality_center/app.js' %}"></script>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font: 14px/1.6 system-ui, sans-serif; margin: 0; background: #f6f6f4; color: #1a1a1a; }
+    header { background: #0F5C52; color: #fff; padding: 12px 20px; display: flex; gap: 20px; align-items: baseline; }
+    header a { color: #cdeee6; text-decoration: none; }
+    header h1 { font-size: 15px; margin: 0; }
+    main { max-width: 960px; margin: 0 auto; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; background: #fff; }
+    th, td { border: 1px solid #e2e2dd; padding: 8px 10px; text-align: start; vertical-align: top; }
+    th { background: #f0efe9; }
+    input[type=text], textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 6px; }
+    textarea[dir=rtl] { direction: rtl; }
+    button { font: inherit; padding: 6px 14px; background: #0F5C52; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+    .msg { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; }
+    .msg.success { background: #e2f3ec; } .msg.error { background: #fbe4de; } .msg.info { background: #eef1f4; }
+    .muted { color: #6b6b66; } .pill { background: #eee; border-radius: 999px; padding: 1px 8px; font-size: 12px; }
+    .section { background: #fff; border: 1px solid #e2e2dd; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+    .raw { white-space: pre-wrap; background: #faf9f5; border: 1px dashed #ddd; padding: 8px; max-height: 160px; overflow: auto; font-size: 13px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    nav.pager a { margin-inline-end: 8px; }
+  </style>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark">DQ</div>
-        <div>
-          <div class="brand-title">Data Quality Center</div>
-          <div class="brand-subtitle">Internal review workspace for AI and rule-based data improvements</div>
-        </div>
-      </div>
-      <nav class="nav">
-        <a href="{% url 'data_quality_center:dashboard' %}" class="{% if nav_section == 'dashboard' %}active{% endif %}">Dashboard</a>
-        <a href="{% url 'data_quality_center:batch_list' %}" class="{% if nav_section == 'batches' %}active{% endif %}">Batches</a>
-        <a href="{% url 'data_quality_center:job_list' %}" class="{% if nav_section == 'jobs' %}active{% endif %}">Jobs</a>
-        <a href="{% url 'data_quality_center:suggestion_list' %}" class="{% if nav_section == 'suggestions' %}active{% endif %}">Suggestions</a>
-        <a href="{% url 'data_quality_center:drug_database_list' %}" class="{% if nav_section == 'database' %}active{% endif %}">Database</a>
-        <a href="{% url 'data_quality_center:drug_database_create' %}" class="{% if nav_section == 'create_drug' %}active{% endif %}">Add Drug</a>
-        <a href="{% url 'data_quality_center:health' %}" class="{% if nav_section == 'health' %}active{% endif %}">Health</a>
-        <a href="{% url 'data_quality_center:report_list' %}" class="{% if nav_section == 'reports' %}active{% endif %}">Reports</a>
-        <a href="/admin/" class="ghost">Admin</a>
-      </nav>
-      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle theme">Theme</button>
-    </header>
-    <main class="container">
-      {% if messages %}
-        <section class="messages">
-          {% for message in messages %}
-            <div class="message {{ message.tags }}">{{ message }}</div>
-          {% endfor %}
-        </section>
-      {% endif %}
-      {% block content %}{% endblock %}
-    </main>
-  </div>
+  <header>
+    <h1>Data Quality Center</h1>
+    <a href="{% url 'data_quality_center:ingredient_list' %}">Ingredients</a>
+    <a href="{% url 'data_quality_center:edit_history' %}">Edit history</a>
+    <a href="/admin/" style="margin-inline-start:auto">Admin</a>
+  </header>
+  <main>
+    {% for message in messages %}
+      <div class="msg {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
 </body>
 </html>

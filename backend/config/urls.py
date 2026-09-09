@@ -26,3 +26,8 @@ if settings.FLASHCARDS_API_ENABLED:
     urlpatterns.append(path("api/", include("apps.flashcards.urls")))
 else:
     urlpatterns.append(path("api/", include("apps.core.flashcards_maintenance_urls")))
+
+if settings.DATA_QUALITY_CENTER_ENABLED:
+    urlpatterns.append(
+        path("ops/data-quality/", include("apps.data_quality_center.urls"))
+    )

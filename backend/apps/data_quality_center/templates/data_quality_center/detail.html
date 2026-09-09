@@ -1,0 +1,36 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}{{ ingredient.name }} · DQC{% endblock %}
+{% block content %}
+<p><a href="{% url 'data_quality_center:ingredient_list' %}">‹ all ingredients</a></p>
+<h2 style="margin:0 0 4px">{{ ingredient.name }} <span class="muted">· {{ ingredient.rxcui }}</span></h2>
+<p class="muted">
+  {% for c in ingredient.atc_codes.all %}{{ c.code }} {{ c.name }}{% if not forloop.last %} · {% endif %}{% endfor %}
+</p>
+
+{% for section in sections %}
+<div class="section">
+  <h3 style="margin:0 0 6px">{{ section.get_field_display }}
+    <span class="muted" style="font-weight:normal">· {{ section.n_contributing_products }} product(s)</span>
+  </h3>
+  <details>
+    <summary class="muted">raw label text</summary>
+    <div class="raw">{{ section.raw_text|default:"—" }}</div>
+  </details>
+  <form method="post" action="{% url 'data_quality_center:section_edit' ingredient.slug section.field %}" style="margin-top:10px">
+    {% csrf_token %}
+    <div class="grid2">
+      <label>Persian summary
+        <textarea name="summary_fa" dir="rtl" rows="8">{{ section.summary_fa }}</textarea>
+      </label>
+      <label>English summary
+        <textarea name="summary_en" rows="8">{{ section.summary_en }}</textarea>
+      </label>
+    </div>
+    <label style="display:block; margin-top:8px">Reason for the change
+      <textarea name="reason" rows="2" placeholder="at least a short sentence"></textarea>
+    </label>
+    <button type="submit" style="margin-top:8px">Save {{ section.get_field_display }}</button>
+  </form>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Ingredients · DQC{% endblock %}
+{% block content %}
+<form method="get" style="margin-bottom:14px; display:flex; gap:8px; flex-wrap:wrap">
+  <input type="text" name="q" value="{{ search }}" placeholder="name or RXCUI" style="max-width:280px">
+  <select name="missing">
+    <option value="">all sections</option>
+    <option value="fa" {% if missing == "fa" %}selected{% endif %}>missing Persian summary</option>
+    <option value="en" {% if missing == "en" %}selected{% endif %}>missing English summary</option>
+    <option value="any" {% if missing == "any" %}selected{% endif %}>missing either</option>
+  </select>
+  <button type="submit">Filter</button>
+</form>
+
+<p class="muted">{{ page.paginator.count }} ingredient(s)</p>
+<table>
+  <thead><tr><th>Name</th><th>RXCUI</th><th>ATC</th><th>Products</th></tr></thead>
+  <tbody>
+  {% for ingredient in page %}
+    <tr>
+      <td><a href="{% url 'data_quality_center:ingredient_detail' ingredient.slug %}">{{ ingredient.name }}</a></td>
+      <td class="muted">{{ ingredient.rxcui }}</td>
+      <td>{% for c in ingredient.atc_codes.all %}<span class="pill">{{ c.code }}</span> {% endfor %}</td>
+      <td>{{ ingredient.n_products }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4" class="muted">No ingredients match.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<nav class="pager" style="margin-top:12px">
+  {% if page.has_previous %}<a href="?q={{ search }}&missing={{ missing }}&page={{ page.previous_page_number }}">‹ prev</a>{% endif %}
+  <span class="muted">page {{ page.number }} / {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?q={{ search }}&missing={{ missing }}&page={{ page.next_page_number }}">next ›</a>{% endif %}
+</nav>
+{% endblock %}

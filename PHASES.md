@@ -15,8 +15,8 @@
 | ۲ | قرارداد API + API دانش دارویی + onboarding | ✅ | `feaf761` (main) |
 | ۳a | جدول مرجع ATC + `apps.lessons` | ✅ | `4963756` (main) |
 | ۳b | `apps.progress` → `/me/{dashboard,mistakes,statistics,plan}` | ✅ | `7e9d06c` (main) |
-| ۳c | `apps.flashcards` + `apps.quiz` (ساخته‌شده، قفل) | ✅ | برنچ `phase-3c-flashcards-quiz` |
-| ۳d | بازنویسی `data_quality_center` | ⬜ | — |
+| ۳c | `apps.flashcards` + `apps.quiz` (ساخته‌شده، قفل) | ✅ | `b7270b3` (main) |
+| ۳d | بازنویسی `data_quality_center` | ✅ | برنچ `phase-3d-dqc` |
 | ۴ | اسکلت فرانت + دیزاین‌سیستم | ⬜ | — |
 | ۵ | پیاده‌سازی صفحه‌ها + اتصال | ⬜ | — |
 | ۶ | uptodate + جمع‌بندی + انتشار | ⬜ | — |
@@ -93,8 +93,14 @@
 - [x] ۱۳ تست جدید (با `ROOT_URLCONF` مخصوص برای هر دو حالت فلگ) → ۷۳/۷۳ · schema هر دو حالت سبز
 - [~] برند/ژنریک از `spl_records` — به فاز بعد موکول (فعلاً نام دارو = نام ماده)
 
-### ۳d — بازنویسی `data_quality_center` ⬜
-- [ ] بازنویسی روی `apps.drugs` (ویرایش خلاصهٔ سکشن‌ها) و فعال‌سازی مجدد
+### ۳d — بازنویسی `data_quality_center` ✅
+- [x] حذف کامل نسخهٔ قدیمی (services/forms/step_up/views/templates وابسته به `ai_data_pipeline`)
+- [x] نسخهٔ تازهٔ لاغر: مدل `SectionEdit` (append-only)، ۴ ویو staff-only (list با فیلتر «خلاصهٔ ناقص»، detail با فرم ویرایش هر سکشن، history)، ۴ تمپلیت مینیمال
+- [x] فقط `summary_fa`/`summary_en` قابل‌ویرایش (متن خام read-only)؛ reason اجباری (حداقل `DATA_QUALITY_MIN_REASON_LENGTH`)
+- [x] `apps.data_quality_center` دوباره در INSTALLED_APPS؛ URLها فقط با `DATA_QUALITY_CENTER_ENABLED` زیر `/ops/data-quality/`
+- [x] ۷ تست جدید → **۸۰/۸۰** · schema با همهٔ فلگ‌ها روشن سبز
+
+**فاز ۳ کامل شد.** بعدی: فاز ۴ (اسکلت فرانت + دیزاین‌سیستم).
 
 ## فاز ۴ — اسکلت فرانت + دیزاین‌سیستم ⬜
 

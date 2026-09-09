@@ -35,8 +35,8 @@ INSTALLED_APPS = [
     # QUIZ_API_ENABLED / FLASHCARDS_API_ENABLED (default off -> maintenance router).
     "apps.flashcards",
     "apps.quiz",
-    # "apps.data_quality_center" stays out until it is rewritten against
-    # apps.drugs (it still hard-imports the removed ai_data_pipeline app).
+    # Internal ops tool; its URLs mount only when DATA_QUALITY_CENTER_ENABLED.
+    "apps.data_quality_center",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

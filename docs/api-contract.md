@@ -271,13 +271,25 @@ First-pass generator: ATC drug-class identification (drug→class and class→dr
 
 ---
 
-## Notes for Phase 3
+## Data Quality Center — ✅ rewritten (Phase 3d), not part of the app API
 
-- The design's `ATC_GROUPS` names ("سیستم عصبی", "مسکن‌ها") need an ATC L1/L2
-  reference with fa/en names — not in `pipeline_v2.db`. Bundle a small curated
-  table (~14 L1 + ~84 L2 codes that appear in our data).
-- Quiz questions are generated from `IngredientProfileSection` warnings/limits;
-  the server owns correctness, scoring, timer and mistake attribution (the
-  client only sends the selected index + client timestamp).
-- `xp` / `streak` live on a per-user progress record updated after each quiz and
+Internal, staff-only, server-rendered tool under `/ops/data-quality/`, wired only
+when `DATA_QUALITY_CENTER_ENABLED`. It edits `summary_fa` / `summary_en` on
+`drugs.IngredientProfileSection` (raw label text stays read-only); every save
+needs a reason (≥ `DATA_QUALITY_MIN_REASON_LENGTH` chars) and writes an
+append-only `data_quality_center.SectionEdit`. Pages: ingredient list (search +
+"missing summary" filter), ingredient detail with per-section edit forms, edit
+history. No JSON API, no frontend surface.
+
+---
+
+## Notes for later
+
+- Quiz generator is a first pass (ATC class questions only). A richer generator
+  from `IngredientProfileSection` contraindications / warnings / interactions is
+  a later pass. The server already owns correctness, scoring and mistake
+  attribution; the client only sends the selected index + client timestamp.
+- Flashcard front/back use the ingredient (generic) name — brand/generic pairs
+  from `spl_records` are a later addition.
+- `xp` / `streak` live on `progress.LearnerProgress`, updated after each quiz and
   review; `league` is intentionally dropped.
