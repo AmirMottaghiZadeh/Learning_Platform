@@ -11,8 +11,11 @@ import { LessonDetailScreen } from "@/screens/LessonDetailScreen";
 import { LessonListScreen } from "@/screens/LessonListScreen";
 import { LessonsScreen } from "@/screens/LessonsScreen";
 import { LockedScreen } from "@/screens/LockedScreen";
+import { MistakesScreen } from "@/screens/MistakesScreen";
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
+import { PlanningScreen } from "@/screens/PlanningScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
+import { StatisticsScreen } from "@/screens/StatisticsScreen";
 import { StubScreen } from "@/screens/StubScreen";
 import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
@@ -53,11 +56,11 @@ function CurrentScreen() {
     case "profile":
       return <ProfileScreen />;
     case "mistakes":
-      return <StubScreen title={t("mistakesTitle")} back />;
+      return <MistakesScreen />;
     case "statistics":
-      return <StubScreen title={t("statsTitle")} back />;
+      return <StatisticsScreen />;
     case "planning":
-      return <StubScreen title={t("planningTitle")} back />;
+      return <PlanningScreen />;
     case "uptodate":
       return <StubScreen title={t("uptodateScreenTitle")} subtitle={t("uptodateSourceNote")} back />;
     case "dashboard":

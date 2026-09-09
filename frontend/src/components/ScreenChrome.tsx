@@ -38,9 +38,9 @@ export function ChromeButton({
 }
 
 /** Title row + theme / language toggles, matching the design's screen headers. */
-export function ScreenChrome({ title }: { title: string }) {
+export function ScreenChrome({ title, onBack }: { title: string; onBack?: () => void }) {
   const { colors } = useTheme();
-  const { t, toggle: toggleLang } = useLang();
+  const { t, isFa, toggle: toggleLang } = useLang();
   const { toggle: toggleTheme, isDark } = useTheme();
 
   return (
@@ -52,9 +52,18 @@ export function ScreenChrome({ title }: { title: string }) {
         marginBottom: 14,
       }}
     >
-      <AppText weight="800" size={17}>
-        {title}
-      </AppText>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+        {onBack ? (
+          <ChromeButton onPress={onBack}>
+            <AppText weight="800" size={15} color={colors.ink}>
+              {isFa ? "›" : "‹"}
+            </AppText>
+          </ChromeButton>
+        ) : null}
+        <AppText weight="800" size={17}>
+          {title}
+        </AppText>
+      </View>
       <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
         <ChromeButton onPress={toggleTheme}>
           <Svg width={14} height={14} viewBox="0 0 24 24">

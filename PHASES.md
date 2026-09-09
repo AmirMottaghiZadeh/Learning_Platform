@@ -19,8 +19,9 @@
 | ۳d | بازنویسی `data_quality_center` | ✅ | `00aee53` (main) |
 | ۴ | اسکلت فرانت + دیزاین‌سیستم | ✅ | `ff2e870` (main) |
 | ۵a | Auth + Onboarding + shell/nav | ✅ | `f89d37f` (main) |
-| ۵b | Dashboard + Lessons + LessonList + LessonDetail | ✅ | برنچ `phase-5b-learning` |
-| ۵c–۵d | me / flashcards+quiz+tour | ⬜ | — |
+| ۵b | Dashboard + Lessons + LessonList + LessonDetail | ✅ | `3ce25d4` (main) |
+| ۵c | Mistakes + Statistics + Planning + Profile | ✅ | برنچ `phase-5c-me` |
+| ۵d | Flashcards + Quiz UI + tour/help | ⬜ | — |
 | ۶ | uptodate + جمع‌بندی + انتشار | ⬜ | — |
 
 ---
@@ -138,7 +139,13 @@
 - [x] flow: tab → آکاردئون → زیرگروه → LessonList → دارو → LessonDetail
 - [x] tsc سبز · `expo export` موفق (۵۱۰ ماژول)
 
-### ۵c — Mistakes + Statistics + Planning + Profile ⬜
+### ۵c — Mistakes + Statistics + Planning + Profile ✅
+- [x] `MistakesScreen`: کارت‌های تاشوی اشتباه (آیکون، موضوع، «N بار»، عدد قرمز) + جزئیات + دکمهٔ «رفع کردم»؛ حالت خالی + «بازگردانی» — `/me/mistakes/` + resolve/restore
+- [x] `StatisticsScreen`: حلقهٔ دقت SVG + نمودار میله‌ای هفتگی (۷ روز، برچسب) + ۳ کاشی (آزمون/مرور/دقیقه) — `/me/statistics/`
+- [x] `PlanningScreen`: ۷ ردیف تاگل روز + سوییچ یادآوری + دکمهٔ ذخیره — `/me/plan/` GET+PUT
+- [x] `ProfileScreen`: هدر accent + آواتار حرف اول + نام/ایمیل، گرید ۴ کاشی آماری (XP/streak/دقت/آزمون)، ردیف‌های آمار/برنامه/اشتباهات/اعلان/خروج
+- [x] `ScreenChrome` با `onBack` یکپارچه شد · tsc سبز · `expo export` (۵۱۳ ماژول)
+
 ### ۵d — Flashcards + Quiz (UI کامل، قفل) + تور راهنما/help ⬜
 
 ## فاز ۶ — uptodate + جمع‌بندی + انتشار ⬜
