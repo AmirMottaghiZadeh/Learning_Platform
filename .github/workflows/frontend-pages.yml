@@ -2,11 +2,6 @@ name: Deploy Frontend to GitHub Pages
 
 on:
   workflow_dispatch:
-    inputs:
-      release_approval:
-        description: "Type I_ACKNOWLEDGE_PHASE_0_FREEZE to authorize this manual deployment"
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -19,7 +14,6 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ inputs.release_approval == 'I_ACKNOWLEDGE_PHASE_0_FREEZE' }}
     runs-on: ubuntu-latest
     defaults:
       run:

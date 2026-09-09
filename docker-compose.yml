@@ -88,8 +88,17 @@ services:
       retries: 3
       start_period: 30s
 
-  # frontend: re-added in the frontend phase once the Expo app is scaffolded
-  # (frontend/ currently holds only the design source, no Dockerfile).
+  # Expo web export served by nginx. For native (iOS/Android) use `expo start`
+  # or an EAS build instead — this service is the web target only.
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        EXPO_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"
 
 volumes:
   postgres_data:

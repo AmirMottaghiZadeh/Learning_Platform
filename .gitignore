@@ -40,9 +40,6 @@ frontend/node_modules/
 frontend/.expo/
 frontend/.expo-shared/
 frontend/.thumbnail
-
-# Local-only reference copy of the pre-rewrite frontend (delete after the rewrite)
-frontend_old/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

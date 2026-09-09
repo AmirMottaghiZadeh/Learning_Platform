@@ -22,8 +22,8 @@
 | ۵b | Dashboard + Lessons + LessonList + LessonDetail | ✅ | `3ce25d4` (main) |
 | ۵c | Mistakes + Statistics + Planning + Profile | ✅ | `e74a250` (main) |
 | ۵d | Flashcards + Quiz UI + help sheet | ✅ | `ff1947b` (main) |
-| ۶a | `apps.uptodate` + صفحه‌ها | ✅ | برنچ `phase-6a-uptodate` |
-| ۶b | جمع‌بندی + انتشار | ⬜ | — |
+| ۶a | `apps.uptodate` + صفحه‌ها | ✅ | `3eeddb4` (main) |
+| ۶b | جمع‌بندی + انتشار | ✅ | برنچ `phase-6b-release` |
 
 ---
 
@@ -165,7 +165,17 @@
 - [x] فرانت: `UptodateScreen` (جست‌وجوی debounce + لیست نتایج + حالت خالی/قفل) + `UptodateArticleScreen` (WebView/iframe برای `body_html`)؛ `react-native-webview` نصب شد
 - [x] `StubScreen`/`LockedScreen` حذف شدند · tsc سبز · `expo export` (۵۶۰ ماژول)
 
-### ۶b — جمع‌بندی و انتشار ⬜
-- [ ] `Dockerfile` فرانت + سرویس `frontend` در `docker-compose` + `frontend-pages.yml`
-- [ ] حذف `frontend_old/`
-- [ ] `render.yaml` / deploy، کانفیگ EAS build (iOS/Android)، به‌روزرسانی READMEها
+### ۶b — جمع‌بندی و انتشار ✅
+- [x] `frontend/Dockerfile` (multi-stage: `expo export` → nginx) + `frontend/nginx.conf` (SPA fallback + کش)
+- [x] سرویس `frontend` در `docker-compose.yml` (پورت ۸۰۸۱)
+- [x] `frontend-pages.yml`: گیت رشتهٔ سحری «PHASE_0_FREEZE» حذف شد → `workflow_dispatch` ساده
+- [x] `frontend_old/` (۵۰۲MB) حذف + خط `.gitignore` مربوطه پاک شد
+- [x] بازنویسی کامل `README.md` (معماری فعلی، اپ‌ها، اجرا، تست، deploy) + به‌روزرسانی `AGENTS.md`
+- [x] `eas.json` (از فاز ۴) موجود · `render.yaml` بدون ارجاع مرده
+- [x] تأیید نهایی: frontend `tsc` + `expo export web` سبز؛ backend **۸۶/۸۶**؛ `docker compose config` معتبر
+
+---
+
+## 🎉 بازنویسی کامل شد
+
+همهٔ ۶ فاز روی `main`. بک‌اند: ۸ اپ فعال + DQC پارک‌شده، ۸۶ تست. فرانت: Expo + RN + react-native-web، همهٔ صفحه‌ها مطابق طراحی و متصل. (تنها موکول: تور spotlight چندمرحله‌ای.)
