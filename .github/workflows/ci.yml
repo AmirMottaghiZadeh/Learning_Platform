@@ -8,6 +8,7 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16-alpine
@@ -63,10 +64,14 @@ jobs:
           CELERY_TASK_ALWAYS_EAGER: "False"
       - run: python manage.py makemigrations --check --dry-run
       - run: python manage.py backup_database --dry-run
-      - run: python manage.py test
+      # --verbosity=2 prints each test name before it runs, so a hang's last log
+      # line names the culprit; --timing flags a slow test.
+      - run: python manage.py test --verbosity=2 --timing
+        timeout-minutes: 10
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
