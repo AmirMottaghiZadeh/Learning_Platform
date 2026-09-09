@@ -16,8 +16,8 @@
 | ۳a | جدول مرجع ATC + `apps.lessons` | ✅ | `4963756` (main) |
 | ۳b | `apps.progress` → `/me/{dashboard,mistakes,statistics,plan}` | ✅ | `7e9d06c` (main) |
 | ۳c | `apps.flashcards` + `apps.quiz` (ساخته‌شده، قفل) | ✅ | `b7270b3` (main) |
-| ۳d | بازنویسی `data_quality_center` | ✅ | برنچ `phase-3d-dqc` |
-| ۴ | اسکلت فرانت + دیزاین‌سیستم | ⬜ | — |
+| ۳d | بازنویسی `data_quality_center` | ✅ | `00aee53` (main) |
+| ۴ | اسکلت فرانت + دیزاین‌سیستم | ✅ | برنچ `phase-4-frontend-scaffold` |
 | ۵ | پیاده‌سازی صفحه‌ها + اتصال | ⬜ | — |
 | ۶ | uptodate + جمع‌بندی + انتشار | ⬜ | — |
 
@@ -102,17 +102,21 @@
 
 **فاز ۳ کامل شد.** بعدی: فاز ۴ (اسکلت فرانت + دیزاین‌سیستم).
 
-## فاز ۴ — اسکلت فرانت + دیزاین‌سیستم ⬜
+## فاز ۴ — اسکلت فرانت + دیزاین‌سیستم ✅
 
-**هدف:** پروژهٔ React قابل‌اجرا با تم روشن/تیره، RTL و ناوبری درست (صفحه‌ها خالی).
+**هدف:** پروژهٔ React قابل‌اجرا با تم روشن/تیره، RTL و ناوبری درست.
 
-- [ ] پروژهٔ Expo + Expo Router + `react-native-web` + TypeScript در `frontend/`
-- [ ] توکن‌های تم از `.dc.html` — پالت روشن/تیره، Vazirmatn، RTL با `I18nManager`، شل ۴۳۰px، شعاع/سایه/انیمیشن‌ها (`fadeUp/popIn/flip/...`)
-- [ ] لایهٔ primitive مشترک (Button، Card، Input، Sheet، Chip، …) مطابق طراحی
-- [ ] shell ناوبری + نوار پایین ۵-تبی (خانه/درس‌ها/فلش‌کارت/آزمون/پروفایل) + حالت تب «قفل»
-- [ ] کلاینت API (axios + interceptor برای refresh توکن `UserSession`) + react-query + zustand
-- [ ] i18n (fa پیش‌فرض / en)
-- [ ] فعال‌سازی مجدد job `frontend` در CI
+- [x] پروژهٔ Expo (SDK 57) + `react-native-web` + TypeScript در `frontend/` (طراحی `.dc.html` به‌عنوان مرجع نگه داشته شد)
+- [x] **انحراف از نقشه:** به‌جای Expo Router، ناوبری state-machine (مثل `frontend_old`) — برای طراحی سفارشی و pixel-work فاز ۵ ساده‌تر
+- [x] `src/theme/tokens.ts` — پالت کامل روشن/تیره از THEME طراحی + spacing/radius/typography/shadow/motion؛ `ThemeProvider` (persist + پیش‌فرض سیستم)
+- [x] `src/i18n/` — دیکشنری fa/en از `STR` طراحی، `LanguageProvider` (RTL، ارقام فارسی، persist)، Vazirmatn با `expo-font`
+- [x] primitiveها: `AppText`, `Button`, `Card`, `Input`, `Chip`, `Screen` (انیمیشن `fadeUp`), `LoadingState`, `IconImage`
+- [x] `AppShell` (شل ۴۳۰px + mesh) + `BottomNav` ۵-تبی + حالت تب «قفل» (نقطهٔ هشدار روی flashcards/quiz)
+- [x] `src/api/` — axios client با interceptor refresh توکن `UserSession` + retry ۵۰۳، `types.ts` مطابق قرارداد، `endpoints.ts` (همهٔ مسیرها)، react-query
+- [x] `src/store/` — zustand: `auth` (SecureStore/AsyncStorage، hydrate، refresh، logout)، `nav` (state-machine)
+- [x] صفحه‌ها: Auth (login/signup واقعی، وصل به بک‌اند)، Onboarding (واقعی)، Dashboard/Lessons/LessonDetail/Profile (واقعی، پایه)، Flashcards/Quiz (حالت قفل)، Mistakes/Statistics/Planning/Uptodate (stub)
+- [x] job `frontend` در CI فعال شد (`npm ci` → `typecheck` → `build:web`)
+- [x] تأیید: `tsc --noEmit` سبز · `expo export --platform web` موفق (۴۷۸ ماژول، dist ساخته شد)
 
 ## فاز ۵ — پیاده‌سازی صفحه‌ها + اتصال ⬜
 

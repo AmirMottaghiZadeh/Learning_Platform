@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Pharmexa",
+    "slug": "pharmexa-learning",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "pharmexa",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icons/mortar.png",
+    "splash": {
+      "image": "./assets/icons/mortar.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F5C52"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pharmexa.learning"
+    },
+    "android": {
+      "package": "com.pharmexa.learning",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/mortar.png",
+        "backgroundColor": "#0F5C52"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "Pharmexa",
+      "themeColor": "#0F5C52",
+      "backgroundColor": "#E7E4DC"
+    },
+    "plugins": ["expo-secure-store", "expo-font"],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

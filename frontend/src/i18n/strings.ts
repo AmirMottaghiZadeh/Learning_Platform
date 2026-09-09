@@ -1,0 +1,303 @@
+/**
+ * UI strings transcribed from `Pharmexa App v2.dc.html` (the `STR` object).
+ * `fa` is the canonical key set; `en` fills the same keys.
+ */
+
+export type Lang = "fa" | "en";
+
+export const strings = {
+  fa: {
+    appName: "فارمکسا",
+    tagline: "یادگیری هوشمند دارویی",
+    langSwitch: "EN",
+    navHome: "خانه",
+
+    loginTitle: "خوش آمدی",
+    loginSubtitle: "برای ادامه‌ی مسیر یادگیری وارد شو",
+    emailLabel: "ایمیل",
+    passwordLabel: "رمز عبور",
+    loginBtn: "ورود",
+    noAccount: "حساب نداری؟",
+    signupLink: "ثبت‌نام کن",
+    signupTitle: "ساخت حساب کاربری",
+    signupSubtitle: "به هزاران دانشجوی داروسازی بپیوند",
+    nameLabel: "نام و نام‌خانوادگی",
+    signupBtn: "ساخت حساب",
+    haveAccount: "قبلاً ثبت‌نام کردی؟",
+    loginLink: "وارد شو",
+    signupTerms: "با ساخت حساب، قوانین و حریم خصوصی فارمکسا را می‌پذیری.",
+
+    quizSetupTitle: "شروع آزمون دارویی",
+    quizCategoryLabel: "انتخاب دسته",
+    quizCountLabel: "تعداد سوال",
+    quizStartBtn: "شروع آزمون",
+
+    obSkip: "رد کردن",
+    obNext: "بعدی",
+    obBack: "قبلی",
+    obStart: "بزن بریم",
+    obFormTitle: "کمی درباره‌ت بگو",
+    obFormSub: "تا مسیر یادگیری رو دقیقاً برات بچینیم",
+    obFieldLabel: "رشته‌ی تحصیلی",
+    obGoalLabel: "هدف اصلی",
+    obLevelLabel: "سطح فعلی",
+
+    tourNext: "بعدی",
+    tourSkip: "رد کردن",
+    tourDone: "متوجه شدم",
+
+    greeting: "سلام،",
+    greetingSub: "امروز یک قدم کوچک، مسیر تسلطت را جلو می‌برد.",
+    greetingMorning: "صبح‌بخیر،",
+    greetingAfternoon: "عصر بخیر،",
+    greetingEvening: "شب‌بخیر،",
+    todayProgressLabel: "امروز",
+
+    uptodateBadge: "مرجع بالینی",
+    uptodateScreenTitle: "پایگاه UpToDate",
+    uptodateSearchPlaceholder: "جست‌وجوی موضوع بالینی…",
+    uptodateSourceNote: "متصل به پایگاه دادهٔ داخلی شما",
+    uptodateEmptyTitle: "موضوعی یافت نشد",
+    uptodateEmptySub: "عبارت دیگری را امتحان کن یا نام بخش را جست‌وجو کن.",
+    uptodateTitle: "UpToDate",
+    uptodateSub: "ورود مستقیم به پایگاه داده‌ی آپ‌تودیت برای جست‌وجوی مقالات بالینی.",
+
+    heroStep: "گام ۲ از ۳",
+    heroTitle: "شروع مرور فلش‌کارت",
+    heroSub: "۱۲ دقیقه تمرکز برای ادامه‌ی مسیر کافی است.",
+    xpLabel: "امتیاز",
+    streakLabel: "روز توالی",
+    pathsTitle: "درِ ورودی مسیرها",
+
+    quizLabel: "آزمون",
+    cardsLabel: "فلش‌کارت",
+    lessonsLabel: "درسنامه",
+    mistakesLabel: "اشتباهات",
+    profileLabel: "پروفایل",
+    statsLabel: "آمار",
+
+    nextChapterTitle: "فصل بعدی تو",
+    editPlan: "ویرایش برنامه",
+    nextChapterHead: "یک جلسه‌ی متمرکز بساز",
+    nextChapterBody: "با یک تمرین کوتاه، زنجیره‌ی یادگیریت را حفظ کن.",
+
+    quizTitle: "آزمون دارویی",
+    quizNext: "سؤال بعدی",
+    quizRetry: "تلاش دوباره",
+    quizResultTitle: "آزمون کامل شد!",
+
+    cardsTitle: "فلش‌کارت",
+    cardsTapHint: "برای دیدن جزئیات لمس کن",
+    cardEasy: "بلد بودم",
+    cardHard: "سخت بود",
+    cardsDoneTitle: "مرور کامل شد!",
+    cardsDoneSub: "همه‌ی کارت‌های امروز را مرور کردی.",
+    cardsSwipeHint: "بکش: راست آسان، چپ سخت",
+
+    leitnerShow: "جعبه‌ی لایتنر",
+    leitnerHide: "بازگشت به مرور",
+    leitnerSub: "هر کشو یک سطح تکرار فاصله‌دار است — دوز مرور با فاصله‌ی زمانی تنظیم می‌شود",
+    leitnerOverall: "پیشرفت کلی جعبه",
+    leitnerLevelPlus: "سطح ۴+",
+    leitnerL1: "روزانه",
+    leitnerL2: "هر ۲ روز",
+    leitnerL3: "هفتگی",
+    leitnerL4: "دوهفته‌ای",
+    leitnerL5: "مسلط‌شده",
+    leitnerDueToday: "آماده‌ی مرور — امروز",
+    leitnerDueTomorrow: "فردا سررسید می‌شود",
+    leitnerCards: "کارت",
+    leitnerStartBtn: "شروع مرور دوز روزانه",
+
+    lessonsTitle: "درسنامه",
+    lessonsUnit: "درس",
+    emptyDrugsTitle: "دارویی در این زیرگروه نیست",
+    emptyDrugsSub: "محتوای این زیرگروه در حال تدوین است. زیرگروه دیگری را انتخاب کن.",
+
+    mistakesTitle: "نقاط قابل تقویت",
+    mistakeResolve: "این مورد را رفع کردم",
+    mistakesEmptyTitle: "همه‌ی نقاط ضعف رفع شد",
+    mistakesEmptySub: "چیزی برای مرور نمانده. آزمون بعدی را بزن تا نقاط تازه پیدا شود.",
+    mistakesRestore: "بازگردانی موارد",
+
+    profileTitle: "پروفایل",
+    profileStatsAccuracy: "دقت",
+    profileStatsQuizzes: "آزمون",
+    profileFullStats: "تحلیل کامل آمار",
+    profilePlanning: "برنامه‌ریزی مطالعه",
+    profileNotifications: "اعلان‌ها",
+    profileLogout: "خروج از حساب",
+
+    statsTitle: "آمار و تحلیل",
+    statsAccuracy: "دقت کلی",
+    statsWeek: "فعالیت هفتگی",
+    statsQuizzes: "آزمون کامل",
+    statsReviews: "مرور کارت",
+    statsMinutes: "دقیقه مطالعه",
+
+    planningTitle: "برنامه‌ریزی مطالعه",
+    planningSub: "روزهایی که می‌خواهی یادآوری مطالعه دریافت کنی را انتخاب کن.",
+    planningSave: "ذخیره‌ی برنامه",
+
+    comingSoon: "به‌زودی",
+    lockedFeature: "این بخش به‌زودی فعال می‌شود",
+    stubNote: "این صفحه در فاز بعدی کامل می‌شود.",
+    retry: "تلاش دوباره",
+    loadFailed: "بارگذاری با خطا مواجه شد.",
+  },
+  en: {
+    appName: "Pharmexa",
+    tagline: "Smart Pharmaceutical Learning",
+    langSwitch: "FA",
+    navHome: "Home",
+
+    loginTitle: "Welcome back",
+    loginSubtitle: "Sign in to continue your learning path",
+    emailLabel: "Email",
+    passwordLabel: "Password",
+    loginBtn: "Sign in",
+    noAccount: "No account?",
+    signupLink: "Sign up",
+    signupTitle: "Create your account",
+    signupSubtitle: "Join thousands of pharmacy students",
+    nameLabel: "Full name",
+    signupBtn: "Create account",
+    haveAccount: "Already have an account?",
+    loginLink: "Sign in",
+    signupTerms: "By creating an account, you agree to Pharmexa's terms and privacy policy.",
+
+    quizSetupTitle: "Start a quiz",
+    quizCategoryLabel: "Choose a category",
+    quizCountLabel: "Number of questions",
+    quizStartBtn: "Start quiz",
+
+    obSkip: "Skip",
+    obNext: "Next",
+    obBack: "Back",
+    obStart: "Let's go",
+    obFormTitle: "Tell us about you",
+    obFormSub: "So we can tailor your learning path",
+    obFieldLabel: "Field of study",
+    obGoalLabel: "Main goal",
+    obLevelLabel: "Current level",
+
+    tourNext: "Next",
+    tourSkip: "Skip",
+    tourDone: "Got it",
+
+    greeting: "Hi,",
+    greetingSub: "One small step moves your mastery forward today.",
+    greetingMorning: "Good morning,",
+    greetingAfternoon: "Good afternoon,",
+    greetingEvening: "Good evening,",
+    todayProgressLabel: "Today",
+
+    uptodateBadge: "Clinical reference",
+    uptodateScreenTitle: "UpToDate database",
+    uptodateSearchPlaceholder: "Search a clinical topic…",
+    uptodateSourceNote: "Connected to your own database",
+    uptodateEmptyTitle: "No topic found",
+    uptodateEmptySub: "Try another phrase, or search by section name.",
+    uptodateTitle: "UpToDate",
+    uptodateSub: "Jump straight into the UpToDate database to search clinical topics.",
+
+    heroStep: "Step 2 of 3",
+    heroTitle: "Start flashcard review",
+    heroSub: "12 focused minutes is enough to keep going.",
+    xpLabel: "XP",
+    streakLabel: "day streak",
+    pathsTitle: "Your learning paths",
+
+    quizLabel: "Quiz",
+    cardsLabel: "Flashcards",
+    lessonsLabel: "Lessons",
+    mistakesLabel: "Mistakes",
+    profileLabel: "Profile",
+    statsLabel: "Stats",
+
+    nextChapterTitle: "Your next chapter",
+    editPlan: "Edit plan",
+    nextChapterHead: "Build a focused session",
+    nextChapterBody: "A short exercise keeps your learning streak alive.",
+
+    quizTitle: "Drug Quiz",
+    quizNext: "Next question",
+    quizRetry: "Try again",
+    quizResultTitle: "Quiz complete!",
+
+    cardsTitle: "Flashcards",
+    cardsTapHint: "Tap to see details",
+    cardEasy: "I knew it",
+    cardHard: "It was hard",
+    cardsDoneTitle: "Review complete!",
+    cardsDoneSub: "You've reviewed all of today's cards.",
+    cardsSwipeHint: "Swipe: right easy, left hard",
+
+    leitnerShow: "Leitner box",
+    leitnerHide: "Back to review",
+    leitnerSub: "Each drawer is a spaced-repetition level — review dose set by time interval",
+    leitnerOverall: "Overall box progress",
+    leitnerLevelPlus: "Level 4+",
+    leitnerL1: "Daily",
+    leitnerL2: "Every 2 days",
+    leitnerL3: "Weekly",
+    leitnerL4: "Biweekly",
+    leitnerL5: "Mastered",
+    leitnerDueToday: "Ready to review — today",
+    leitnerDueTomorrow: "Due tomorrow",
+    leitnerCards: "cards",
+    leitnerStartBtn: "Start daily dose",
+
+    lessonsTitle: "Lessons",
+    lessonsUnit: "lessons",
+    emptyDrugsTitle: "No drugs in this subgroup",
+    emptyDrugsSub: "Content for this subgroup is still being written. Pick another subgroup.",
+
+    mistakesTitle: "Areas to strengthen",
+    mistakeResolve: "I've reviewed this",
+    mistakesEmptyTitle: "All gaps closed",
+    mistakesEmptySub: "Nothing left to review. Take another quiz to surface new gaps.",
+    mistakesRestore: "Restore items",
+
+    profileTitle: "Profile",
+    profileStatsAccuracy: "Accuracy",
+    profileStatsQuizzes: "Quizzes",
+    profileFullStats: "Full statistics",
+    profilePlanning: "Study planning",
+    profileNotifications: "Notifications",
+    profileLogout: "Log out",
+
+    statsTitle: "Statistics",
+    statsAccuracy: "Overall accuracy",
+    statsWeek: "Weekly activity",
+    statsQuizzes: "Quizzes done",
+    statsReviews: "Card reviews",
+    statsMinutes: "Study minutes",
+
+    planningTitle: "Study planning",
+    planningSub: "Choose the days you want study reminders.",
+    planningSave: "Save plan",
+
+    comingSoon: "Coming soon",
+    lockedFeature: "This section is coming soon",
+    stubNote: "This screen is completed in the next phase.",
+    retry: "Try again",
+    loadFailed: "Something went wrong while loading.",
+  },
+} as const;
+
+export type StringKey = keyof (typeof strings)["fa"];
+
+export const DAY_LABELS_SHORT = {
+  fa: ["ش", "ی", "د", "س", "چ", "پ", "ج"],
+  en: ["Sa", "Su", "Mo", "Tu", "We", "Th", "Fr"],
+};
+export const DAY_LABELS_FULL = {
+  fa: ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه"],
+  en: ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+};
+
+const FA_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
+export function toFaDigits(value: string | number): string {
+  return String(value).replace(/[0-9]/g, (d) => FA_DIGITS[Number(d)]);
+}
