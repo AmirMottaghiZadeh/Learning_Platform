@@ -1,5 +1,5 @@
-import React from "react";
-import { Pressable, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, LayoutChangeEvent, Pressable, View } from "react-native";
 
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
@@ -9,7 +9,12 @@ import { LOCKED_TABS, TAB_ORDER, TabKey } from "@/navigation/types";
 import { AppText } from "./primitives/AppText";
 import { IconImage, IconName } from "./primitives/IconImage";
 
-const TAB_META: Record<TabKey, { icon: IconName; labelKey: "navHome" | "lessonsLabel" | "cardsLabel" | "quizLabel" | "profileLabel" }> = {
+const PILL_W = 56;
+
+const TAB_META: Record<
+  TabKey,
+  { icon: IconName; labelKey: "navHome" | "lessonsLabel" | "cardsLabel" | "quizLabel" | "profileLabel" }
+> = {
   dashboard: { icon: "phoneHealth", labelKey: "navHome" },
   lessons: { icon: "openBook", labelKey: "lessonsLabel" },
   flashcards: { icon: "mobileBlister", labelKey: "cardsLabel" },
@@ -17,14 +22,47 @@ const TAB_META: Record<TabKey, { icon: IconName; labelKey: "navHome" | "lessonsL
   profile: { icon: "team", labelKey: "profileLabel" },
 };
 
+// Which top-level screens count as "inside" which tab.
+const SCREEN_TO_TAB: Record<string, TabKey> = {
+  dashboard: "dashboard",
+  lessons: "lessons",
+  lessonDetail: "lessons",
+  flashcards: "flashcards",
+  quiz: "quiz",
+  profile: "profile",
+  mistakes: "profile",
+  statistics: "profile",
+  planning: "profile",
+  uptodate: "dashboard",
+};
+
 export function BottomNav() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t } = useLang();
-  const active = useNav((s) => s.screen);
+  const screen = useNav((s) => s.screen);
   const setTab = useNav((s) => s.setTab);
+  const activeTab = SCREEN_TO_TAB[screen] ?? "dashboard";
+  const activeIndex = TAB_ORDER.indexOf(activeTab);
+
+  const [width, setWidth] = useState(0);
+  const x = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!width) return;
+    const center = ((activeIndex + 0.5) / TAB_ORDER.length) * width;
+    Animated.spring(x, {
+      toValue: center - PILL_W / 2,
+      useNativeDriver: true,
+      speed: 16,
+      bounciness: 6,
+    }).start();
+  }, [activeIndex, width, x]);
+
+  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
     <View
+      onLayout={onLayout}
       style={{
         position: "absolute",
         left: 0,
@@ -36,32 +74,46 @@ export function BottomNav() {
         borderTopColor: colors.border,
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-around",
         paddingBottom: 6,
       }}
     >
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 8,
+          left: 0,
+          width: PILL_W,
+          height: 44,
+          borderRadius: 14,
+          backgroundColor: isDark ? "rgba(157,212,184,0.10)" : "rgba(15,92,82,0.08)",
+          transform: [{ translateX: x }],
+        }}
+      />
       {TAB_ORDER.map((tab) => {
         const meta = TAB_META[tab];
-        const isActive = active === tab;
+        const isActive = tab === activeTab;
         const locked = LOCKED_TABS.includes(tab);
         return (
           <Pressable
             key={tab}
             onPress={() => setTab(tab)}
-            style={{ alignItems: "center", gap: 3, width: 56 }}
+            style={{ flex: 1, alignItems: "center", gap: 3 }}
           >
-            <View style={{ opacity: isActive ? 1 : 0.5 }}>
+            <View style={{ opacity: isActive ? 1 : 0.45 }}>
               <IconImage name={meta.icon} size={24} />
               {locked ? (
                 <View
                   style={{
                     position: "absolute",
-                    top: -4,
-                    right: -6,
+                    top: -3,
+                    right: -5,
                     width: 8,
                     height: 8,
                     borderRadius: 4,
                     backgroundColor: colors.cautLabel,
+                    borderWidth: 1.5,
+                    borderColor: colors.navBg,
                   }}
                 />
               ) : null}

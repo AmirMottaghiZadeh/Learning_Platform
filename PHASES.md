@@ -17,8 +17,9 @@
 | ۳b | `apps.progress` → `/me/{dashboard,mistakes,statistics,plan}` | ✅ | `7e9d06c` (main) |
 | ۳c | `apps.flashcards` + `apps.quiz` (ساخته‌شده، قفل) | ✅ | `b7270b3` (main) |
 | ۳d | بازنویسی `data_quality_center` | ✅ | `00aee53` (main) |
-| ۴ | اسکلت فرانت + دیزاین‌سیستم | ✅ | برنچ `phase-4-frontend-scaffold` |
-| ۵ | پیاده‌سازی صفحه‌ها + اتصال | ⬜ | — |
+| ۴ | اسکلت فرانت + دیزاین‌سیستم | ✅ | `ff2e870` (main) |
+| ۵a | Auth + Onboarding + shell/nav | ✅ | برنچ `phase-5a-auth` |
+| ۵b–۵d | صفحه‌های اصلی / me / flashcards+quiz+tour | ⬜ | — |
 | ۶ | uptodate + جمع‌بندی + انتشار | ⬜ | — |
 
 ---
@@ -118,17 +119,19 @@
 - [x] job `frontend` در CI فعال شد (`npm ci` → `typecheck` → `build:web`)
 - [x] تأیید: `tsc --noEmit` سبز · `expo export --platform web` موفق (۴۷۸ ماژول، dist ساخته شد)
 
-## فاز ۵ — پیاده‌سازی صفحه‌ها + اتصال ⬜
+## فاز ۵ — پیاده‌سازی صفحه‌ها + اتصال (زیرفازی)
 
-**هدف:** اپ کامل، هر صفحه مو‌به‌مو مطابق `.dc.html`، وصل به API فاز ۲/۳.
+**هدف:** اپ کامل، هر صفحه مطابق `.dc.html` (پالت/فاصله/شعاع/تایپوگرافی دقیق)، وصل به API فاز ۲/۳.
 
-- [ ] login / signup + onboarding (۴ مرحله)
-- [ ] dashboard + «جلسهٔ تمرکز»
-- [ ] lessons list (گروه‌های ATC) + lesson detail (بخش‌بندی، search، نکته‌های آزمونی)
-- [ ] flashcards + Leitner (حالت «به‌زودی» تا باز شدن فلگ)
-- [ ] quiz setup / running / result (حالت «به‌زودی»)
-- [ ] mistakes، statistics، planning، profile
-- [ ] تور راهنما / help / tipها
+### ۵a — Auth + Onboarding + پرداخت shell/nav ✅
+- [x] `HeaderMesh` (گرادیان accent) + `GlassToggles` (زبان/تم شیشه‌ای) با `react-native-svg`
+- [x] `AuthScreen` بازطراحی: لوگو، sheet گرد سفید، login/signup واقعی، سوییچ حالت، شرایط
+- [x] `OnboardingScreen` ۴ مرحله: ۳ اسلاید (آیکون SVG + عنوان + توضیح) + فرم چیپ‌ها (۳ گروه) + نقطه‌های پیشرفت + Next/Start/Back، وصل به `POST /auth/onboarding/`
+- [x] `BottomNav`: قرص لغزندهٔ انیمیشنی پشت تب فعال + نگاشت صفحه→تب (mistakes/stats/planning زیر profile)
+
+### ۵b — Dashboard + focus session + Lessons + LessonDetail ⬜
+### ۵c — Mistakes + Statistics + Planning + Profile ⬜
+### ۵d — Flashcards + Quiz (UI کامل، قفل) + تور راهنما/help ⬜
 
 ## فاز ۶ — uptodate + جمع‌بندی + انتشار ⬜
 
