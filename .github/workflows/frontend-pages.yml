@@ -25,7 +25,7 @@ jobs:
         working-directory: frontend
     env:
       EXPO_BASE_URL: /Learning_Platform
-      EXPO_PUBLIC_API_BASE_URL: https://pharmexa-65b-amirmtz.runflare.cloud/api/v1
+      EXPO_PUBLIC_API_BASE_URL: https://pharmexa.amirmtz.runflare.run/api/v1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
