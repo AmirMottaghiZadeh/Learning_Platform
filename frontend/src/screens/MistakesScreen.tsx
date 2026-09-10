@@ -16,7 +16,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
 
 export function MistakesScreen() {
-  const { t, isFa, n } = useLang();
+  const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const qc = useQueryClient();
@@ -94,7 +94,7 @@ export function MistakesScreen() {
             <Card key={m.id}>
               <Pressable
                 onPress={() => setExpanded(expanded === m.id ? null : m.id)}
-                style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+                style={{ flexDirection: row, alignItems: "center", gap: 10 }}
               >
                 <View
                   style={{

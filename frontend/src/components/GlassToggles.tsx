@@ -8,7 +8,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 
 /** The frosted lang + theme toggles pinned to the top of the auth screens. */
 export function GlassToggles() {
-  const { t, toggle: toggleLang } = useLang();
+  const { t, row, toggle: toggleLang } = useLang();
   const { toggle: toggleTheme, isDark } = useTheme();
   const chip = {
     backgroundColor: "rgba(255,255,255,0.16)",
@@ -19,7 +19,7 @@ export function GlassToggles() {
   return (
     <View
       style={{
-        flexDirection: "row",
+        flexDirection: row,
         justifyContent: "space-between",
         paddingHorizontal: 18,
         paddingTop: 8,

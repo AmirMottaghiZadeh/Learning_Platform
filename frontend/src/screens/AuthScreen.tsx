@@ -76,7 +76,16 @@ export function AuthScreen() {
             <AppText weight="900" size={26} color="#fff" center>
               {t("appName")}
             </AppText>
-            <AppText weight="600" size={14} color={colors.onAccentSub} center style={{ marginTop: 8 }}>
+            {/* The header mesh is a dark teal gradient in BOTH themes, so this
+                text must stay light — `onAccentSub` flips to near-black in dark
+                mode (it is tuned for text on the light accent pill). */}
+            <AppText
+              weight="600"
+              size={14}
+              color="rgba(255,255,255,0.85)"
+              center
+              style={{ marginTop: 8 }}
+            >
               {t("tagline")}
             </AppText>
           </View>

@@ -27,7 +27,7 @@ function wrap(bodyHtml: string, ink: string, bg: string, accent: string) {
 
 export function UptodateArticleScreen() {
   const { colors } = useTheme();
-  const { isFa } = useLang();
+  const { isFa, row } = useLang();
   const goBack = useNav((s) => s.goBack);
   const id = String(useNav((s) => s.params.id ?? ""));
   const titleParam = String(useNav((s) => s.params.title ?? ""));
@@ -46,7 +46,7 @@ export function UptodateArticleScreen() {
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
       <View
         style={{
-          flexDirection: "row",
+          flexDirection: row,
           alignItems: "center",
           gap: 10,
           paddingHorizontal: 18,

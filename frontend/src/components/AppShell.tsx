@@ -2,7 +2,6 @@ import React from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { layout, radius } from "@/theme/tokens";
 import { MeshBackground } from "./MeshBackground";
@@ -13,7 +12,6 @@ import { MeshBackground } from "./MeshBackground";
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { colors, shadows } = useTheme();
-  const { dir } = useLang();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.meshBg }}>
@@ -32,7 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             shadows.shell,
           ]}
         >
-          <View style={{ flex: 1, direction: dir }}>{children}</View>
+          <View style={{ flex: 1 }}>{children}</View>
         </View>
       </SafeAreaView>
     </View>

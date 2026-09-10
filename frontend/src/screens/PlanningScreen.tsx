@@ -14,7 +14,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
 
 export function PlanningScreen() {
-  const { t, lang } = useLang();
+  const { t, lang, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const qc = useQueryClient();
@@ -57,7 +57,7 @@ export function PlanningScreen() {
               key={i}
               onPress={() => setDays((d) => d.map((v, j) => (j === i ? !v : v)))}
               style={{
-                flexDirection: "row",
+                flexDirection: row,
                 alignItems: "center",
                 gap: 12,
                 height: 50,
@@ -89,7 +89,7 @@ export function PlanningScreen() {
       <Pressable
         onPress={() => setReminders((v) => !v)}
         style={{
-          flexDirection: "row",
+          flexDirection: row,
           alignItems: "center",
           justifyContent: "space-between",
           height: 48,

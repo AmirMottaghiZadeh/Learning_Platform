@@ -40,25 +40,30 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
 
 export function BottomNav() {
   const { colors, isDark } = useTheme();
-  const { t } = useLang();
+  const { t, isFa } = useLang();
   const screen = useNav((s) => s.screen);
   const setTab = useNav((s) => s.setTab);
   const activeTab = SCREEN_TO_TAB[screen] ?? "dashboard";
   const activeIndex = TAB_ORDER.indexOf(activeTab);
+  // The pill is positioned from the physical left edge with translateX, so it
+  // must track the *visual* slot. In fa the row is `row-reverse`, so tab i of
+  // TAB_ORDER sits in slot (n-1-i) from the left. Relying on an inherited
+  // `direction` here is what put the pill on the wrong tab in the APK.
+  const visualIndex = isFa ? TAB_ORDER.length - 1 - activeIndex : activeIndex;
 
   const [width, setWidth] = useState(0);
   const x = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!width) return;
-    const center = ((activeIndex + 0.5) / TAB_ORDER.length) * width;
+    const center = ((visualIndex + 0.5) / TAB_ORDER.length) * width;
     Animated.spring(x, {
       toValue: center - PILL_W / 2,
       useNativeDriver: true,
       speed: 16,
       bounciness: 6,
     }).start();
-  }, [activeIndex, width, x]);
+  }, [visualIndex, width, x]);
 
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
@@ -74,7 +79,7 @@ export function BottomNav() {
         backgroundColor: colors.navBg,
         borderTopWidth: 1,
         borderTopColor: colors.border,
-        flexDirection: "row",
+        flexDirection: isFa ? "row-reverse" : "row",
         alignItems: "center",
         paddingBottom: 6,
       }}
@@ -109,7 +114,7 @@ export function BottomNav() {
                   style={{
                     position: "absolute",
                     top: -3,
-                    right: -5,
+                    ...(isFa ? { left: -5 } : { right: -5 }),
                     width: 8,
                     height: 8,
                     borderRadius: 4,

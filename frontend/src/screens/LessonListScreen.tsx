@@ -11,7 +11,7 @@ import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 
 export function LessonListScreen() {
-  const { t, isFa, n } = useLang();
+  const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
@@ -77,7 +77,7 @@ export function LessonListScreen() {
                 key={drug.slug}
                 onPress={() => navigate("lessonDetail", { code, slug: drug.slug })}
                 style={{
-                  flexDirection: "row",
+                  flexDirection: row,
                   alignItems: "center",
                   gap: 12,
                   backgroundColor: colors.softBg,

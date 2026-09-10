@@ -54,7 +54,7 @@ export function HelpSheet({
   onClose: () => void;
 }) {
   const { colors } = useTheme();
-  const { lang } = useLang();
+  const { lang, row } = useLang();
   if (!helpKey) return null;
   const [title, items] = HELP[helpKey][lang];
 
@@ -88,7 +88,7 @@ export function HelpSheet({
           </AppText>
           <View style={{ gap: 12 }}>
             {items.map((it, i) => (
-              <View key={i} style={{ flexDirection: "row", gap: 10 }}>
+              <View key={i} style={{ flexDirection: row, gap: 10 }}>
                 <View
                   style={{
                     width: 22,

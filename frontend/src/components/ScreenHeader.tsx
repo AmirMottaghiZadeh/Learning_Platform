@@ -16,11 +16,11 @@ export function ScreenHeader({
   back?: boolean;
 }) {
   const { colors } = useTheme();
-  const { isFa } = useLang();
+  const { isFa, row } = useLang();
   const goBack = useNav((s) => s.goBack);
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
+    <View style={{ flexDirection: row, alignItems: "center", gap: 10, marginBottom: 14 }}>
       {back ? (
         <Pressable
           onPress={goBack}

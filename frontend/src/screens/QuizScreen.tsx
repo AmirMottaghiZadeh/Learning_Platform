@@ -24,7 +24,7 @@ const CATEGORIES = [
 const COUNTS = [5, 10, 15, 20];
 
 export function QuizScreen() {
-  const { t, isFa, n } = useLang();
+  const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
 
   const [stage, setStage] = useState<"setup" | "running" | "done">("setup");
@@ -113,7 +113,7 @@ export function QuizScreen() {
         <AppText weight="800" size={12} muted style={{ marginBottom: 10 }}>
           {t("quizCategoryLabel")}
         </AppText>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: spacing.xl }}>
+        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 10, marginBottom: spacing.xl }}>
           {CATEGORIES.map((c) => {
             const sel = category === c.key;
             return (
@@ -140,7 +140,7 @@ export function QuizScreen() {
         <AppText weight="800" size={12} muted style={{ marginBottom: 10 }}>
           {t("quizCountLabel")}
         </AppText>
-        <View style={{ flexDirection: "row", gap: 8, marginBottom: spacing.xl }}>
+        <View style={{ flexDirection: row, gap: 8, marginBottom: spacing.xl }}>
           {COUNTS.map((c) => {
             const sel = count === c;
             return (
@@ -210,7 +210,7 @@ export function QuizScreen() {
   return (
     <Screen>
       <ScreenChrome title={t("quizTitle")} help="quiz" />
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: spacing.lg }}>
+      <View style={{ flexDirection: row, alignItems: "center", gap: 8, marginBottom: spacing.lg }}>
         <View style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: colors.trackBg, overflow: "hidden" }}>
           <View style={{ width: `${progress}%`, height: 6, backgroundColor: colors.accent }} />
         </View>

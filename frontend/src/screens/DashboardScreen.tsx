@@ -26,7 +26,7 @@ const PATHS: { tab: string; icon: IconName; labelKey: any }[] = [
 ];
 
 export function DashboardScreen() {
-  const { t, isFa, n } = useLang();
+  const { t, isFa, n, row } = useLang();
   const { colors, shadows, toggle: toggleTheme, isDark } = useTheme();
   const { toggle: toggleLang } = useLang();
   const navigate = useNav((s) => s.navigate);
@@ -48,8 +48,8 @@ export function DashboardScreen() {
     <Screen padded={false} refreshing={isRefetching} onRefresh={refetch}>
       <HeaderMesh>
         <View style={{ padding: 20, paddingBottom: 26 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center" }}>
+            <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>
               <View
                 style={{
                   width: 32,
@@ -66,7 +66,7 @@ export function DashboardScreen() {
                 {t("appName")}
               </AppText>
             </View>
-            <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+            <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
               <Pressable
                 onPress={toggleTheme}
                 style={{
@@ -115,7 +115,7 @@ export function DashboardScreen() {
         {/* uptodate reference card */}
         <Pressable onPress={() => navigate("uptodate")}>
           <Card style={{ marginBottom: spacing.lg }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <View style={{ flexDirection: row, alignItems: "center", gap: 12 }}>
               <View
                 style={{
                   width: 54,
@@ -176,7 +176,7 @@ export function DashboardScreen() {
         <AppText weight="800" size={13} style={{ marginBottom: 10 }}>
           {t("pathsTitle")}
         </AppText>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.xl }}>
+        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8, marginBottom: spacing.xl }}>
           {PATHS.map((p) => (
             <Pressable
               key={p.tab}
@@ -203,7 +203,7 @@ export function DashboardScreen() {
         {/* next chapter / focus session */}
         <View
           style={{
-            flexDirection: "row",
+            flexDirection: row,
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: 8,
@@ -234,9 +234,9 @@ export function DashboardScreen() {
             <>
               <Pressable
                 onPress={() => setFocusOpen((v) => !v)}
-                style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+                style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}
               >
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 9, flex: 1 }}>
+                <View style={{ flexDirection: row, alignItems: "center", gap: 9, flex: 1 }}>
                   <View
                     style={{
                       width: 34,
@@ -267,8 +267,8 @@ export function DashboardScreen() {
 
               {focusOpen ? (
                 <View style={{ marginTop: 13, gap: 8 }}>
-                  {rows.map((row, i) => (
-                    <FocusRowItem key={`${row.kind}-${i}`} row={row} />
+                  {rows.map((r, i) => (
+                    <FocusRowItem key={`${r.kind}-${i}`} item={r} />
                   ))}
                   <Pressable
                     onPress={() => {
@@ -301,17 +301,17 @@ export function DashboardScreen() {
   );
 }
 
-function FocusRowItem({ row }: { row: FocusRow }) {
+function FocusRowItem({ item }: { item: FocusRow }) {
   const { colors } = useTheme();
-  const { isFa, n } = useLang();
+  const { isFa, n, row } = useLang();
   const tint =
-    row.kind === "mistake" ? colors.denyBg : row.kind === "leitner" ? colors.leitnerActiveBg : colors.softBg;
+    item.kind === "mistake" ? colors.denyBg : item.kind === "leitner" ? colors.leitnerActiveBg : colors.softBg;
   const min =
-    row.kind === "mistake" ? colors.denyLabel : colors.accent;
+    item.kind === "mistake" ? colors.denyLabel : colors.accent;
   return (
     <View
       style={{
-        flexDirection: "row",
+        flexDirection: row,
         alignItems: "center",
         gap: 11,
         backgroundColor: tint,
@@ -321,14 +321,14 @@ function FocusRowItem({ row }: { row: FocusRow }) {
     >
       <View style={{ flex: 1 }}>
         <AppText weight="800" size={12.5}>
-          {isFa ? row.title_fa : row.title_en}
+          {isFa ? item.title_fa : item.title_en}
         </AppText>
         <AppText muted weight="600" size={11} style={{ marginTop: 1 }}>
-          {isFa ? row.sub_fa : row.sub_en}
+          {isFa ? item.sub_fa : item.sub_en}
         </AppText>
       </View>
       <AppText weight="900" size={11} color={min}>
-        {n(row.minutes)} {isFa ? "دقیقه" : "min"}
+        {n(item.minutes)} {isFa ? "دقیقه" : "min"}
       </AppText>
     </View>
   );

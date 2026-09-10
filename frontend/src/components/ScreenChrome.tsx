@@ -49,20 +49,20 @@ export function ScreenChrome({
   help?: HelpKey;
 }) {
   const { colors } = useTheme();
-  const { t, isFa, toggle: toggleLang } = useLang();
+  const { t, isFa, row, toggle: toggleLang } = useLang();
   const { toggle: toggleTheme, isDark } = useTheme();
   const [helpOpen, setHelpOpen] = useState(false);
 
   return (
     <View
       style={{
-        flexDirection: "row",
+        flexDirection: row,
         alignItems: "center",
         justifyContent: "space-between",
         marginBottom: 14,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+      <View style={{ flexDirection: row, alignItems: "center", gap: 10, flex: 1 }}>
         {onBack ? (
           <ChromeButton onPress={onBack}>
             <AppText weight="800" size={15} color={colors.ink}>
@@ -74,7 +74,7 @@ export function ScreenChrome({
           {title}
         </AppText>
       </View>
-      <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+      <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
         {help ? (
           <ChromeButton onPress={() => setHelpOpen(true)}>
             <AppText weight="800" size={13} color={colors.accent}>

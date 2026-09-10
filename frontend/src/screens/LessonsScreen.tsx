@@ -15,7 +15,7 @@ import { LessonGroup } from "@/api/types";
 import { spacing } from "@/theme/tokens";
 
 export function LessonsScreen() {
-  const { t, isFa, n } = useLang();
+  const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
   const [open, setOpen] = useState<string | null>(null);
 
@@ -59,7 +59,7 @@ function GroupCard({
   onToggle: () => void;
 }) {
   const { colors, shadows } = useTheme();
-  const { isFa, n } = useLang();
+  const { isFa, n, row } = useLang();
   const navigate = useNav((s) => s.navigate);
 
   const total = group.subgroups.reduce((a, s) => a + s.total, 0);
@@ -82,7 +82,7 @@ function GroupCard({
     >
       <Pressable
         onPress={onToggle}
-        style={{ padding: 14, flexDirection: "row", alignItems: "flex-start", gap: 10 }}
+        style={{ padding: 14, flexDirection: row, alignItems: "flex-start", gap: 10 }}
       >
         <View
           style={{
@@ -140,7 +140,7 @@ function GroupCard({
                 <View
                   style={{
                     position: "absolute",
-                    left: 0,
+                    ...(isFa ? { right: 0 } : { left: 0 }),
                     top: 0,
                     bottom: 0,
                     width: `${sp * 100}%`,
@@ -148,7 +148,7 @@ function GroupCard({
                   }}
                 />
                 <View
-                  style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+                  style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center" }}
                 >
                   <AppText weight="700" size={12}>
                     {sub.code} — {isFa ? sub.name_fa : sub.name_en}

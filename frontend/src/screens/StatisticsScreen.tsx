@@ -16,7 +16,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
 
 export function StatisticsScreen() {
-  const { t, lang, n } = useLang();
+  const { t, lang, n, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
 
@@ -38,7 +38,7 @@ export function StatisticsScreen() {
     <Screen refreshing={isRefetching} onRefresh={refetch}>
       <ScreenChrome title={t("statsTitle")} onBack={goBack} help="statistics" />
 
-      <Card raised style={{ flexDirection: "row", alignItems: "center", gap: 16, marginBottom: spacing.lg }}>
+      <Card raised style={{ flexDirection: row, alignItems: "center", gap: 16, marginBottom: spacing.lg }}>
         <Svg width={96} height={96} viewBox="0 0 96 96">
           <Circle cx={48} cy={48} r={R} fill="none" stroke={colors.trackBg} strokeWidth={10} />
           <Circle
@@ -68,7 +68,7 @@ export function StatisticsScreen() {
         <AppText weight="800" size={13} style={{ marginBottom: 12 }}>
           {t("statsWeek")}
         </AppText>
-        <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8, height: 96 }}>
+        <View style={{ flexDirection: row, alignItems: "flex-end", gap: 8, height: 96 }}>
           {bars.map((v, i) => (
             <View key={i} style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 6, height: "100%" }}>
               <View
@@ -87,7 +87,7 @@ export function StatisticsScreen() {
         </View>
       </Card>
 
-      <View style={{ flexDirection: "row", gap: 8 }}>
+      <View style={{ flexDirection: row, gap: 8 }}>
         <StatTile value={n(data?.quizzes ?? 0)} label={t("statsQuizzes")} />
         <StatTile value={n(data?.reviews ?? 0)} label={t("statsReviews")} />
         <StatTile value={n(data?.minutes ?? 0)} label={t("statsMinutes")} />

@@ -28,7 +28,7 @@ function toneColors(tone: SectionTone, c: ReturnType<typeof useTheme>["colors"])
 }
 
 export function LessonDetailScreen() {
-  const { t, isFa, n } = useLang();
+  const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
@@ -93,8 +93,8 @@ export function LessonDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
       <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
+          <View style={{ flexDirection: row, alignItems: "center", gap: 10 }}>
             <ChromeButton onPress={goBack} size={30}>
               <AppText weight="800" size={15} color={colors.ink}>
                 {isFa ? "›" : "‹"}
@@ -118,7 +118,7 @@ export function LessonDetailScreen() {
         {searchOpen ? (
           <View
             style={{
-              flexDirection: "row",
+              flexDirection: row,
               alignItems: "center",
               gap: 9,
               backgroundColor: colors.softBg,
@@ -164,7 +164,7 @@ export function LessonDetailScreen() {
           {[...(drug?.pharm_classes ?? []), ...(drug?.atc_codes ?? []).map((a) => a.code)].join(" · ")}
         </AppText>
 
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 13 }}>
+        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 6, marginTop: 13 }}>
           {hasBoxed ? (
             <Badge bg={colors.boxedBorder} fg={colors.cardBg} text={isFa ? "جعبه‌سیاه" : "Boxed"} />
           ) : null}
@@ -217,7 +217,7 @@ export function LessonDetailScreen() {
                   <>
                     <Pressable
                       onPress={() => setOpenEn((s) => ({ ...s, [b.key]: !s[b.key] }))}
-                      style={{ marginTop: 10, flexDirection: "row", alignItems: "center", gap: 6 }}
+                      style={{ marginTop: 10, flexDirection: row, alignItems: "center", gap: 6 }}
                     >
                       <AppText weight="800" size={12.5} color={colors.accent}>
                         {isFa ? "نسخهٔ انگلیسی" : "نسخهٔ فارسی"} {enOpen ? "▲" : "▼"}

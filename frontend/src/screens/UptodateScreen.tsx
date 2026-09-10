@@ -25,7 +25,7 @@ function useDebounced(value: string, ms = 350) {
 }
 
 export function UptodateScreen() {
-  const { t, isFa, n } = useLang();
+  const { t, isFa, n, row: rowDir } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
@@ -52,7 +52,7 @@ export function UptodateScreen() {
 
       <View
         style={{
-          flexDirection: "row",
+          flexDirection: rowDir,
           alignItems: "center",
           gap: 8,
           backgroundColor: colors.inputBg,
@@ -122,7 +122,7 @@ export function UptodateScreen() {
               key={row.id}
               onPress={() => navigate("uptodateArticle", { id: row.id, title: row.title })}
             >
-              <Card style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <Card style={{ flexDirection: rowDir, alignItems: "center", gap: 12 }}>
                 <View
                   style={{
                     width: 40,

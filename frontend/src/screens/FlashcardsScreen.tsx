@@ -18,7 +18,7 @@ import { spacing } from "@/theme/tokens";
 const BOX_LABEL_KEYS = ["leitnerL1", "leitnerL2", "leitnerL3", "leitnerL4", "leitnerL5"] as const;
 
 export function FlashcardsScreen() {
-  const { t, isFa, n } = useLang();
+  const { t, isFa, n, row } = useLang();
   const { colors, shadows } = useTheme();
   const qc = useQueryClient();
 
@@ -93,7 +93,7 @@ export function FlashcardsScreen() {
           {t("leitnerSub")}
         </AppText>
         {(boxes.data ?? []).map((b, i) => (
-          <Card key={b.box} style={{ marginBottom: spacing.sm, flexDirection: "row", alignItems: "center" }}>
+          <Card key={b.box} style={{ marginBottom: spacing.sm, flexDirection: row, alignItems: "center" }}>
             <View
               style={{
                 width: 34,
@@ -145,7 +145,7 @@ export function FlashcardsScreen() {
   return (
     <Screen>
       <ScreenChrome title={t("cardsTitle")} help="flashcards" />
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
+      <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
         <Pressable
           onPress={() => setShowBoxes(true)}
           style={{
@@ -218,7 +218,7 @@ export function FlashcardsScreen() {
           </Pressable>
 
           {flipped ? (
-            <View style={{ flexDirection: "row", gap: 10, marginTop: spacing.lg }}>
+            <View style={{ flexDirection: row, gap: 10, marginTop: spacing.lg }}>
               <Button
                 label={t("cardHard")}
                 variant="secondary"

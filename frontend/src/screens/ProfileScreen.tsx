@@ -13,7 +13,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
 
 export function ProfileScreen() {
-  const { t, isFa, n, toggle: toggleLang } = useLang();
+  const { t, isFa, n, toggle: toggleLang, row } = useLang();
   const { colors, shadows, toggle: toggleTheme, isDark } = useTheme();
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
@@ -49,7 +49,7 @@ export function ProfileScreen() {
         {
           height: 52,
           borderRadius: 14,
-          flexDirection: "row",
+          flexDirection: row,
           alignItems: "center",
           gap: 12,
           paddingHorizontal: 14,
@@ -76,11 +76,11 @@ export function ProfileScreen() {
       <View style={{ borderBottomLeftRadius: 28, borderBottomRightRadius: 28, overflow: "hidden" }}>
         <HeaderMesh>
           <View style={{ padding: 20, paddingBottom: 44 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center" }}>
               <AppText weight="800" size={17} color="#fff">
                 {t("profileTitle")}
               </AppText>
-              <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+              <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
                 <Pressable
                   onPress={toggleTheme}
                   style={{
@@ -145,7 +145,7 @@ export function ProfileScreen() {
       </View>
 
       <View style={{ marginHorizontal: 20, marginTop: -28 }}>
-        <Card style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }} raised>
+        <Card style={{ flexDirection: row, flexWrap: "wrap", gap: 10 }} raised>
           {tiles.map((tile) => (
             <View
               key={tile.label}

@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { I18nManager } from "react-native";
 
 import { Lang, StringKey, strings, toFaDigits } from "./strings";
 
@@ -10,6 +9,13 @@ type LanguageContextValue = {
   lang: Lang;
   dir: "rtl" | "ltr";
   isFa: boolean;
+  /**
+   * `flexDirection` for a row whose children read in logical (leading→trailing)
+   * order: `row-reverse` in fa so the first child sits on the right, `row` in
+   * en. Applied explicitly per node because the `direction` style prop is not
+   * reliable on the Android release build.
+   */
+  row: "row" | "row-reverse";
   ready: boolean;
   t: (key: StringKey) => string;
   /** Localised digits: Persian numerals in fa, ascii in en. */
@@ -34,14 +40,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<LanguageContextValue>(() => {
     const isFa = lang === "fa";
-    // Keep JS layout logical; RN honours `writingDirection`/`textAlign` per node.
-    if (I18nManager.isRTL !== isFa) {
-      try {
-        I18nManager.allowRTL(isFa);
-      } catch {
-        /* no-op on web */
-      }
-    }
+    // Direction is handled entirely in JS (per-node `textAlign` and explicit
+    // `flexDirection`), never through `I18nManager` or the `direction` style
+    // prop: the latter is honoured by RN web but silently ignored by the
+    // Android release build, which is what made RTL "work in dev, break in the
+    // APK". Keeping the native layout LTR-physical everywhere makes web and
+    // native identical.
     const setLang = (next: Lang) => {
       setLangState(next);
       AsyncStorage.setItem(STORAGE_KEY, next).catch(() => undefined);
@@ -50,6 +54,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       lang,
       dir: isFa ? "rtl" : "ltr",
       isFa,
+      row: isFa ? "row-reverse" : "row",
       ready,
       t: (key: StringKey) => strings[lang][key] ?? strings.fa[key] ?? String(key),
       n: (v: string | number) => (isFa ? toFaDigits(v) : String(v)),
