@@ -6,14 +6,21 @@
 # Cache and background jobs use the same no-Redis setup validated on Runflare:
 # a Postgres-backed DatabaseCache, and CELERY_RUN_TASKS_IN_REQUEST=True so
 # nothing needs a broker or a separate worker process.
+#
+# preDeployCommand needs a paid plan, so release.sh (migrate, createcachetable,
+# load_atc_reference, bootstrap_superuser) runs at the front of startCommand
+# instead — same idempotent-on-every-boot idea as backend/docker-start.sh for
+# Runflare. Render sets $PORT itself; gunicorn.conf.py doesn't know about it,
+# so --bind passes it explicitly and wins over the config file's default.
 services:
   - type: web
     name: pharmexa-backend
     env: python
     plan: free
     buildCommand: ./build.sh
-    preDeployCommand: ./release.sh
-    startCommand: gunicorn config.wsgi:application --config gunicorn.conf.py
+    startCommand: >-
+      ./release.sh &&
+      exec gunicorn config.wsgi:application --config gunicorn.conf.py --bind 0.0.0.0:$PORT
     healthCheckPath: /api/v1/health/
     envVars:
       - key: DJANGO_SETTINGS_MODULE
