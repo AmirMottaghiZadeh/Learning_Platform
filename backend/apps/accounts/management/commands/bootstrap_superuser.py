@@ -3,9 +3,13 @@
 Exists because several free/low-tier hosts (this project has hit it on both
 Runflare and Render's free plan) don't give an interactive shell or one-off
 job runner, so the usual `manage.py createsuperuser` has nowhere to run. Safe
-to call on every deploy: idempotent (get-or-create by username), and only
-acts when the three env vars are actually set — otherwise it's a silent
-no-op, so it's fine to leave permanently wired into release.sh.
+to call on every deploy: idempotent (matches an existing account by username
+*or* email — accounts.User enforces a case-insensitive unique email, so
+get_or_create-by-username-alone can crash with a duplicate-email
+IntegrityError the moment a different username is chosen for the same
+address on a later deploy), and only acts when the three env vars are
+actually set — otherwise it's a silent no-op, so it's fine to leave
+permanently wired into release.sh.
 """
 
 from django.contrib.auth import get_user_model
@@ -32,10 +36,14 @@ class Command(BaseCommand):
             return
 
         User = get_user_model()
-        user, created = User.objects.get_or_create(
-            username=username,
-            defaults={"email": email, "is_staff": True, "is_superuser": True},
+        user = (
+            User.objects.filter(username__iexact=username).first()
+            or User.objects.filter(email__iexact=email).first()
         )
+        created = user is None
+        if user is None:
+            user = User(username=username)
+        user.username = username
         user.email = email
         user.is_staff = True
         user.is_superuser = True
