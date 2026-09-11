@@ -13,8 +13,10 @@ from collections import defaultdict
 
 from apps.drugs.models import AtcCategory, Ingredient
 
-from .data.study_topics import STUDY_TOPICS
+from .data.study_topics import CATEGORIES, STUDY_TOPICS
 from .models import ChapterProgress, ReadDrug
+
+_CATEGORY_BY_KEY = {c["key"]: c for c in CATEGORIES}
 
 # Which profile fields become "exam points" for a chapter, and their tone.
 EXAM_POINT_FIELDS = [
@@ -79,10 +81,14 @@ def lesson_groups(user):
             seen_codes.add(code)
             subgroups.append(_subgroup(code, l2_categories.get(code), slugs, read_slugs))
         if subgroups:
+            category = _CATEGORY_BY_KEY[topic["category"]]
             groups.append({
                 "code": topic["key"],
                 "name_fa": topic["name_fa"],
                 "name_en": topic["name_en"],
+                "category_code": category["key"],
+                "category_name_fa": category["name_fa"],
+                "category_name_en": category["name_en"],
                 "subgroups": subgroups,
             })
 
@@ -90,11 +96,13 @@ def lesson_groups(user):
     # a newly-imported ATC class) still gets a home — grouped by its ATC
     # anatomical section — so a chapter never silently disappears while the
     # topic table waits to be updated. The coverage test keeps this branch
-    # unreachable for the current bundled data.
+    # unreachable for the current bundled data. Filed under the "misc"
+    # top-level category until someone gives it a proper topic.
     leftover_by_l1 = defaultdict(list)
     for code, slugs in slug_index.items():
         if code not in seen_codes and slugs:
             leftover_by_l1[code[0]].append(code)
+    misc = _CATEGORY_BY_KEY["misc"]
     for l1_code in sorted(leftover_by_l1):
         l1 = l1_categories.get(l1_code)
         subgroups = [
@@ -105,6 +113,9 @@ def lesson_groups(user):
             "code": f"other-{l1_code}",
             "name_fa": l1.name_fa if l1 else l1_code,
             "name_en": l1.name_en if l1 else l1_code,
+            "category_code": misc["key"],
+            "category_name_fa": misc["name_fa"],
+            "category_name_en": misc["name_en"],
             "subgroups": subgroups,
         })
     return groups

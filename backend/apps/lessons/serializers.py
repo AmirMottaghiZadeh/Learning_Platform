@@ -15,6 +15,12 @@ class LessonGroupSerializer(serializers.Serializer):
     code = serializers.CharField()
     name_fa = serializers.CharField()
     name_en = serializers.CharField()
+    # The broad body-system/domain this study topic sits under (see
+    # apps.lessons.data.study_topics.CATEGORIES) — purely for grouping the 50+
+    # topics into a shorter list the learner picks from first.
+    category_code = serializers.CharField()
+    category_name_fa = serializers.CharField()
+    category_name_en = serializers.CharField()
     subgroups = SubgroupSerializer(many=True)
 
 

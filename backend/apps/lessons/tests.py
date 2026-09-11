@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 from apps.drugs.data.atc_reference import ATC_L2
 from apps.drugs.models import AtcCategory, AtcCode, Ingredient, IngredientProfileSection
 
-from .data.study_topics import STUDY_TOPICS
+from .data.study_topics import CATEGORIES, STUDY_TOPICS
 from .models import ChapterProgress, ReadDrug
 
 
@@ -67,6 +67,9 @@ class LessonTaxonomyTests(TestCase):
             c07 = group["subgroups"][0]
             self.assertEqual(c07["total"], 2)
             self.assertEqual(c07["done"], 0)
+            # All four are cardiovascular topics -> same top-level category.
+            self.assertEqual(group["category_code"], "cardio-blood")
+            self.assertEqual(group["category_name_fa"], "قلب، عروق و خون")
 
     def test_chapter_returns_drugs_exam_points_and_topics(self):
         res = self.client.get("/api/v1/lessons/chapters/c07/")  # case-insensitive
@@ -172,6 +175,8 @@ class LessonTaxonomyFallbackTests(TestCase):
         fallback = next(g for g in res.data if g["code"] == "other-Z")
         self.assertEqual(fallback["name_fa"], "بخش ساختگی")
         self.assertEqual({s["code"] for s in fallback["subgroups"]}, {"Z99"})
+        # Filed under "misc" until a real topic claims it.
+        self.assertEqual(fallback["category_code"], "misc")
 
     def test_uncovered_chapter_topic_falls_back_to_atc_l1(self):
         res = self.client.get("/api/v1/lessons/chapters/Z99/")
@@ -211,3 +216,18 @@ class StudyTopicsCoverageTests(SimpleTestCase):
         for topic in STUDY_TOPICS:
             with self.subTest(topic=topic["key"]):
                 self.assertEqual(len(topic["l2"]), len(set(topic["l2"])))
+
+    def test_category_keys_are_unique(self):
+        keys = [c["key"] for c in CATEGORIES]
+        self.assertEqual(len(keys), len(set(keys)))
+
+    def test_every_topic_has_a_real_category(self):
+        category_keys = {c["key"] for c in CATEGORIES}
+        for topic in STUDY_TOPICS:
+            with self.subTest(topic=topic["key"]):
+                self.assertIn(topic.get("category"), category_keys)
+
+    def test_every_category_has_at_least_one_topic(self):
+        used = {topic["category"] for topic in STUDY_TOPICS}
+        orphans = {c["key"] for c in CATEGORIES} - used
+        self.assertEqual(orphans, set(), f"Unused categories: {sorted(orphans)}")

@@ -133,10 +133,19 @@ L1, so nothing silently disappears; `StudyTopicsCoverageTests` normally keeps
 that fallback unreachable for the bundled reference data. An L2 subgroup is
 only listed once at least one imported ingredient falls under it.
 
+Each topic also carries a `category_code`/`category_name_*` — one of 12 broad
+body-system/domain groups in `STUDY_TOPICS.CATEGORIES` (e.g. "Cardiovascular &
+blood", "Endocrine & metabolism"), purely so a client can cluster the 50+
+flat topics into a shorter list to pick from first (`LessonsScreen`:
+category accordion → topic accordion → chapter). A topic the coverage
+fallback above produced is filed under the `"misc"` category.
+
 ### `GET /lessons/groups/` — the study tree with progress
 
 ```jsonc
 [{ "code": "cv-htn", "name_fa": "فشار خون بالا", "name_en": "Hypertension",
+   "category_code": "cardio-blood", "category_name_fa": "قلب، عروق و خون",
+   "category_name_en": "Cardiovascular & blood",
    "subgroups": [{ "code": "C07", "name_fa": "مسدودکننده‌های بتا",
                    "name_en": "Beta blocking agents",
                    "total": 16,          // ingredients under C07*

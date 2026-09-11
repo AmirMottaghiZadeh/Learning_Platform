@@ -92,6 +92,11 @@ export interface LessonGroup {
   code: string;
   name_fa: string;
   name_en: string;
+  /** The broad body-system/domain this study topic sits under — purely for
+   * clustering the 50+ topics into a shorter list to pick from first. */
+  category_code: string;
+  category_name_fa: string;
+  category_name_en: string;
   subgroups: Subgroup[];
 }
 
