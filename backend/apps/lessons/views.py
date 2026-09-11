@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 from apps.core.exceptions import PlatformAPIError
 
-from .selectors import chapter_exam_points, get_chapter, lesson_groups
+from .selectors import chapter_exam_points, get_chapter, lesson_groups, topics_for_chapter
 from .serializers import (
     ChapterProgressUpdateSerializer,
     ChapterSerializer,
@@ -20,13 +20,25 @@ def _chapter_not_found():
 
 
 def _chapter_payload(category, ingredients, progress):
+    topics = topics_for_chapter(category.code, category.parent)
+    primary = topics[0] if topics else {"code": "", "name_fa": "", "name_en": ""}
     return {
         "code": category.code,
         "name_fa": category.name_fa,
         "name_en": category.name_en,
-        "group_code": category.parent.code if category.parent else category.code[0],
-        "group_name_fa": category.parent.name_fa if category.parent else "",
-        "group_name_en": category.parent.name_en if category.parent else "",
+        # Primary study topic (see apps.lessons.data.study_topics) — what the
+        # learner actually browsed by, e.g. "Hypertension" rather than the raw
+        # ATC anatomical parent.
+        "group_code": primary["code"],
+        "group_name_fa": primary["name_fa"],
+        "group_name_en": primary["name_en"],
+        # Every topic this chapter belongs to (a class like beta blockers is
+        # legitimately first-line in more than one), for a "also relevant to"
+        # display.
+        "topics": topics,
+        # The true, unmodified ATC anatomical (L1) group, kept for rigour.
+        "anatomical_name_fa": category.parent.name_fa if category.parent else "",
+        "anatomical_name_en": category.parent.name_en if category.parent else "",
         "drugs": list(ingredients),
         "exam_points": chapter_exam_points(ingredients),
         "progress": progress,

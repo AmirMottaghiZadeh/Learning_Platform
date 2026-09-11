@@ -1,0 +1,361 @@
+"""Curated clinical study topics for the lessons taxonomy.
+
+ATC is a *mechanism/chemical* classification (built for WHO drug-utilisation
+statistics), not a *clinical* one — so pharmacologically related drugs often
+land in different ATC L2 codes. The textbook example: beta blockers (C07),
+thiazide diuretics (C03), ACE inhibitors/ARBs (C09) and calcium-channel
+blockers (C08) are all first-line antihypertensives, but ATC's own
+"Antihypertensives" code (C02) is actually a residual bucket for centrally-
+acting agents and direct vasodilators — none of the mechanism-specific classes
+live there. A learner browsing "Cardiovascular" sees eight unrelated-looking
+L2 codes and has to already know which ones treat high blood pressure.
+
+This module is a presentation-only overlay: it groups existing, unmodified
+ATC L2 codes into topics that match how pharmacology is actually taught and
+examined (by indication / organ system). It does not touch `apps.drugs` or
+the ATC data at all — a "chapter" is still exactly one ATC L2 code with its
+real ATC name and its own progress record; only the *grouping above it*
+changes. An L2 code may legitimately appear under more than one topic (e.g.
+beta blockers are first-line for hypertension, angina, arrhythmia AND heart
+failure) — each appearance is the same chapter, just reachable from more than
+one topic section.
+
+Every populated L2 code in the bundled reference (`apps.drugs.data
+.atc_reference.ATC_L2`) must appear at least once below —
+`apps.lessons.tests.StudyTopicsCoverageTests` fails otherwise, so adding a new
+ATC class to the reference without deciding where it belongs here is caught
+immediately rather than silently dropping the class from the topic view.
+(`apps.lessons.selectors.lesson_groups` also has a runtime fallback — grouping
+by ATC L1 — for the same case, so production never hides a chapter either.)
+
+Ordering matters: `lesson_groups()` treats the first topic listing a code as
+that chapter's "primary" topic (used for `Chapter.group_code`/`group_name_*`).
+List each topic's most iconic/common use first.
+"""
+
+STUDY_TOPICS = [
+    # -- Cardiovascular & blood -----------------------------------------------
+    {
+        "key": "cv-htn",
+        "name_fa": "فشار خون بالا",
+        "name_en": "Hypertension",
+        "l2": ["C02", "C03", "C07", "C08", "C09"],
+    },
+    {
+        "key": "cv-hf",
+        "name_fa": "نارسایی قلبی",
+        "name_en": "Heart failure",
+        "l2": ["C01", "C03", "C07", "C09"],
+    },
+    {
+        "key": "cv-angina",
+        "name_fa": "آنژین و ایسکمی قلبی",
+        "name_en": "Angina & ischaemic heart disease",
+        "l2": ["C01", "C07", "C08"],
+    },
+    {
+        "key": "cv-arrhythmia",
+        "name_fa": "آریتمی قلبی",
+        "name_en": "Cardiac arrhythmia",
+        "l2": ["C01", "C07"],
+    },
+    {
+        "key": "cv-lipid",
+        "name_fa": "چربی خون",
+        "name_en": "Dyslipidaemia",
+        "l2": ["C10"],
+    },
+    {
+        "key": "cv-peripheral",
+        "name_fa": "گردش خون محیطی و وریدی",
+        "name_en": "Peripheral & venous circulation",
+        "l2": ["C04", "C05"],
+    },
+    {
+        "key": "heme-clot",
+        "name_fa": "انعقاد خون و ضدانعقادها",
+        "name_en": "Coagulation & antithrombotics",
+        "l2": ["B01", "B02"],
+    },
+    {
+        "key": "heme-other",
+        "name_fa": "کم‌خونی و فرآورده‌های خونی",
+        "name_en": "Anaemia & blood products",
+        "l2": ["B03", "B05", "B06"],
+    },
+    # -- Endocrine & metabolism ------------------------------------------------
+    {
+        "key": "endo-diabetes",
+        "name_fa": "دیابت",
+        "name_en": "Diabetes",
+        "l2": ["A10"],
+    },
+    {
+        "key": "endo-thyroid",
+        "name_fa": "تیروئید",
+        "name_en": "Thyroid",
+        "l2": ["H03"],
+    },
+    {
+        "key": "endo-cortico",
+        "name_fa": "کورتیکواستروئیدهای سیستمیک",
+        "name_en": "Systemic corticosteroids",
+        "l2": ["H02"],
+    },
+    {
+        "key": "endo-pituitary",
+        "name_fa": "هیپوفیز، هیپوتالاموس و پاراتیروئید",
+        "name_en": "Pituitary, hypothalamus & parathyroid",
+        "l2": ["H01", "H04", "H05"],
+    },
+    {
+        "key": "endo-sex",
+        "name_fa": "هورمون‌های جنسی و باروری",
+        "name_en": "Sex hormones & fertility",
+        "l2": ["G02", "G03"],
+    },
+    {
+        "key": "endo-obesity",
+        "name_fa": "چاقی و سایر متابولیک",
+        "name_en": "Obesity & other metabolic",
+        "l2": ["A08", "A09", "A16"],
+    },
+    {
+        "key": "vitamins",
+        "name_fa": "ویتامین‌ها و مکمل‌ها",
+        "name_en": "Vitamins & supplements",
+        "l2": ["A11", "A14"],
+    },
+    # -- Gastrointestinal --------------------------------------------------------
+    {
+        "key": "gi-upper",
+        "name_fa": "بیماری‌های اسید-پپتیک و گوارش فوقانی",
+        "name_en": "Acid-peptic & upper GI disease",
+        "l2": ["A02", "A03"],
+    },
+    {
+        "key": "gi-nausea",
+        "name_fa": "تهوع و استفراغ",
+        "name_en": "Nausea & vomiting",
+        "l2": ["A04"],
+    },
+    {
+        "key": "gi-liver",
+        "name_fa": "کبد و صفرا",
+        "name_en": "Liver & biliary",
+        "l2": ["A05"],
+    },
+    {
+        "key": "gi-bowel",
+        "name_fa": "یبوست و اسهال",
+        "name_en": "Constipation & diarrhoea",
+        "l2": ["A06", "A07"],
+    },
+    {
+        "key": "dental",
+        "name_fa": "دندان‌پزشکی",
+        "name_en": "Dental",
+        "l2": ["A01"],
+    },
+    # -- Renal / genito-urinary -----------------------------------------------
+    {
+        "key": "gu-tract",
+        "name_fa": "دستگاه ادراری (پروستات و بی‌اختیاری)",
+        "name_en": "Urinary tract (prostate & incontinence)",
+        "l2": ["G04"],
+    },
+    {
+        "key": "gu-infection",
+        "name_fa": "عفونت‌های زنانه",
+        "name_en": "Gynaecological infections",
+        "l2": ["G01"],
+    },
+    # -- Infection --------------------------------------------------------------
+    {
+        "key": "infect-bacteria",
+        "name_fa": "آنتی‌بیوتیک‌های باکتریایی",
+        "name_en": "Antibacterials",
+        "l2": ["J01"],
+    },
+    {
+        "key": "infect-fungus",
+        "name_fa": "ضدقارچ سیستمیک",
+        "name_en": "Systemic antifungals",
+        "l2": ["J02"],
+    },
+    {
+        "key": "infect-tb",
+        "name_fa": "ضدسل",
+        "name_en": "Antimycobacterials (TB)",
+        "l2": ["J04"],
+    },
+    {
+        "key": "infect-virus",
+        "name_fa": "ضدویروس",
+        "name_en": "Antivirals",
+        "l2": ["J05"],
+    },
+    {
+        "key": "infect-immuno",
+        "name_fa": "ایمونوگلوبولین‌ها و سرم‌ها",
+        "name_en": "Immunoglobulins & sera",
+        "l2": ["J06"],
+    },
+    {
+        "key": "parasite",
+        "name_fa": "ضدانگل، ضدکرم و ضدشپش",
+        "name_en": "Antiparasitics & pediculicides",
+        "l2": ["P01", "P02", "P03"],
+    },
+    # -- Oncology / immune --------------------------------------------------------
+    {
+        "key": "onco-chemo",
+        "name_fa": "شیمی‌درمانی سرطان",
+        "name_en": "Cancer chemotherapy",
+        "l2": ["L01", "L02"],
+    },
+    {
+        "key": "immune-mod",
+        "name_fa": "تعدیل سیستم ایمنی",
+        "name_en": "Immunomodulation",
+        "l2": ["L03", "L04"],
+    },
+    # -- Musculoskeletal & pain -----------------------------------------------
+    {
+        "key": "msk-nsaid",
+        "name_fa": "ضدالتهاب و مسکن اسکلتی-عضلانی",
+        "name_en": "Musculoskeletal anti-inflammatories & analgesics",
+        "l2": ["M01", "M02", "M09"],
+    },
+    {
+        "key": "msk-relaxant",
+        "name_fa": "شل‌کننده‌های عضلانی",
+        "name_en": "Muscle relaxants",
+        "l2": ["M03"],
+    },
+    {
+        "key": "msk-gout",
+        "name_fa": "نقرس",
+        "name_en": "Gout",
+        "l2": ["M04"],
+    },
+    {
+        "key": "msk-bone",
+        "name_fa": "پوکی استخوان و متابولیسم استخوان",
+        "name_en": "Osteoporosis & bone metabolism",
+        "l2": ["M05"],
+    },
+    # -- Nervous system / psychiatry --------------------------------------------
+    {
+        "key": "cns-anesthesia",
+        "name_fa": "بیهوشی",
+        "name_en": "Anaesthesia",
+        "l2": ["N01"],
+    },
+    {
+        "key": "cns-pain",
+        "name_fa": "مسکن‌ها (اوپیوئیدی و غیراوپیوئیدی)",
+        "name_en": "Analgesics (opioid & non-opioid)",
+        "l2": ["N02"],
+    },
+    {
+        "key": "cns-epilepsy",
+        "name_fa": "صرع",
+        "name_en": "Epilepsy",
+        "l2": ["N03"],
+    },
+    {
+        "key": "cns-parkinson",
+        "name_fa": "پارکینسون",
+        "name_en": "Parkinson's disease",
+        "l2": ["N04"],
+    },
+    {
+        "key": "cns-psychosis",
+        "name_fa": "روان‌پریشی، اضطراب و بی‌خوابی",
+        "name_en": "Psychosis, anxiety & insomnia",
+        "l2": ["N05"],
+    },
+    {
+        "key": "cns-depression",
+        "name_fa": "افسردگی و سایر روان‌پزشکی",
+        "name_en": "Depression & other psychiatric",
+        "l2": ["N06"],
+    },
+    {
+        "key": "cns-other",
+        "name_fa": "سایر اختلالات عصبی (وابستگی، سرگیجه، ...)",
+        "name_en": "Other neurological (dependence, vertigo, …)",
+        "l2": ["N07"],
+    },
+    # -- Respiratory -------------------------------------------------------------
+    {
+        "key": "resp-obstructive",
+        "name_fa": "آسم و COPD",
+        "name_en": "Asthma & COPD",
+        "l2": ["R03"],
+    },
+    {
+        "key": "resp-allergy",
+        "name_fa": "آنتی‌هیستامین‌ها و آلرژی",
+        "name_en": "Antihistamines & allergy",
+        "l2": ["R06"],
+    },
+    {
+        "key": "resp-coldcough",
+        "name_fa": "سرماخوردگی، سرفه و گلودرد",
+        "name_en": "Cold, cough & sore throat",
+        "l2": ["R01", "R02", "R05", "R07"],
+    },
+    # -- Dermatology -------------------------------------------------------------
+    {
+        "key": "derm-infection",
+        "name_fa": "ضدقارچ و ضدعفونی‌کننده‌های پوستی",
+        "name_en": "Dermatological antifungals & antiseptics",
+        "l2": ["D01", "D08", "D09"],
+    },
+    {
+        "key": "derm-wound",
+        "name_fa": "امولیان‌ها و ترمیم زخم",
+        "name_en": "Emollients & wound care",
+        "l2": ["D02", "D03"],
+    },
+    {
+        "key": "derm-cortico",
+        "name_fa": "کورتیکواستروئید موضعی و ضدخارش",
+        "name_en": "Topical corticosteroids & antipruritics",
+        "l2": ["D04", "D07"],
+    },
+    {
+        "key": "derm-acne",
+        "name_fa": "آکنه و پسوریازیس",
+        "name_en": "Acne & psoriasis",
+        "l2": ["D05", "D10"],
+    },
+    {
+        "key": "derm-other",
+        "name_fa": "سایر پوستی (مو و رنگدانه)",
+        "name_en": "Other dermatological (hair & pigmentation)",
+        "l2": ["D06", "D11"],
+    },
+    # -- Sensory organs ----------------------------------------------------------
+    {
+        "key": "sense-eye",
+        "name_fa": "چشم",
+        "name_en": "Eye",
+        "l2": ["S01", "S03"],
+    },
+    {
+        "key": "sense-ear",
+        "name_fa": "گوش",
+        "name_en": "Ear",
+        "l2": ["S02"],
+    },
+    # -- Miscellaneous -----------------------------------------------------------
+    {
+        "key": "misc-other",
+        "name_fa": "پادزهر، تشخیصی و سایر",
+        "name_en": "Antidotes, diagnostics & other",
+        "l2": ["V03", "V04", "V06"],
+    },
+]

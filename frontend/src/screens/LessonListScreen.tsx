@@ -55,8 +55,18 @@ export function LessonListScreen() {
               {isFa ? data.name_fa : data.name_en}
             </AppText>
             <AppText weight="700" size={12.5} muted style={{ marginTop: 5 }}>
-              {data.code} · {n(data.drugs.length)} {t("lessonsUnit")}
+              {data.code} · {isFa ? data.anatomical_name_fa : data.anatomical_name_en} ·{" "}
+              {n(data.drugs.length)} {t("lessonsUnit")}
             </AppText>
+            {data.topics.length > 1 ? (
+              <AppText weight="600" size={11.5} color={colors.accent} style={{ marginTop: 6 }}>
+                {t("alsoRelevantTo")}:{" "}
+                {data.topics
+                  .slice(1)
+                  .map((topic) => (isFa ? topic.name_fa : topic.name_en))
+                  .join(isFa ? "، " : ", ")}
+              </AppText>
+            ) : null}
           </>
         )}
         <View style={{ height: 1, backgroundColor: colors.sheetLine, marginTop: 16 }} />

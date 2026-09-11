@@ -116,19 +116,33 @@ names for the lessons taxonomy are built in Phase 3.
 
 ## Lessons — ✅ built (Phase 3a)
 
-ATC L1/L2 category names come from a bundled bilingual reference
-(`drugs.AtcCategory`, loaded by `load_atc_reference`). An L2 subgroup is only
-listed once at least one imported ingredient falls under it; an L1 group is
-hidden when all its subgroups are empty.
+A *chapter* is an ATC L2 subgroup and its ingredients — unchanged, still keyed
+and progress-tracked by the real ATC code. The *group* above it is a curated
+clinical **study topic** (`apps/lessons/data/study_topics.py`), not the raw
+ATC L1 anatomical parent: ATC is a mechanism/chemical classification (built
+for WHO drug-utilisation stats), so e.g. beta blockers, thiazides, ACE
+inhibitors/ARBs and calcium-channel blockers — all first-line
+antihypertensives — sit in five unrelated-looking ATC L2 codes. The topic
+table regroups existing, unmodified L2 codes by indication/organ system
+instead, and a code can legitimately appear under more than one topic (beta
+blockers are first-line for hypertension, heart failure, angina AND
+arrhythmia alike) — each appearance is the same chapter, same drug list, same
+progress record. A populated L2 code the table doesn't cover yet (e.g. a
+freshly-imported ATC class) falls back to a group named after its true ATC
+L1, so nothing silently disappears; `StudyTopicsCoverageTests` normally keeps
+that fallback unreachable for the bundled reference data. An L2 subgroup is
+only listed once at least one imported ingredient falls under it.
 
 ### `GET /lessons/groups/` — the study tree with progress
 
 ```jsonc
-[{ "code": "C", "name_fa": "دستگاه قلب و عروق", "name_en": "Cardiovascular system",
+[{ "code": "cv-htn", "name_fa": "فشار خون بالا", "name_en": "Hypertension",
    "subgroups": [{ "code": "C07", "name_fa": "مسدودکننده‌های بتا",
                    "name_en": "Beta blocking agents",
                    "total": 16,          // ingredients under C07*
-                   "done": 1 }] }]       // of those, ones the learner has opened
+                   "done": 1 }] },       // of those, ones the learner has opened
+ { "code": "cv-arrhythmia", "name_fa": "آریتمی قلبی", "name_en": "Cardiac arrhythmia",
+   "subgroups": [{ "code": "C07", "…": "…" }] }]   // same C07 chapter, second topic
 ```
 
 ### `GET /lessons/chapters/{atc_code}/` — one chapter (ATC L2 subgroup)
@@ -139,7 +153,14 @@ populated L2 subgroup.
 ```jsonc
 {
   "code": "C07", "name_fa": "…", "name_en": "…",
-  "group_code": "C", "group_name_fa": "دستگاه قلب و عروق", "group_name_en": "…",
+  "group_code": "cv-htn", "group_name_fa": "فشار خون بالا", "group_name_en": "…", // primary topic
+  "topics": [                            // every topic this chapter belongs to
+    { "code": "cv-htn", "name_fa": "فشار خون بالا", "name_en": "…" },
+    { "code": "cv-hf", "name_fa": "نارسایی قلبی", "name_en": "…" },
+    { "code": "cv-angina", "name_fa": "…", "name_en": "…" },
+    { "code": "cv-arrhythmia", "name_fa": "…", "name_en": "…" }
+  ],
+  "anatomical_name_fa": "دستگاه قلب و عروق", "anatomical_name_en": "…",  // true ATC L1, for rigour
   "drugs": [ { …full IngredientDetail incl. sections + lesson_sections… } ],
   "exam_points": [                       // built from the chapter's boxed_warning /
     { "drug_name": "acebutolol", "drug_slug": "acebutolol-149",
@@ -173,7 +194,7 @@ apps (Phase 3c) bump them via `apps.progress.services`.
   "streak_days": 4, "xp": 1280,
   "next_chapter": {                      // first ATC subgroup with done < total; null when all read
     "code": "N05", "name_fa": "…", "name_en": "…",
-    "group_code": "N", "group_name_fa": "…", "group_name_en": "…"
+    "group_code": "cns-psychosis", "group_name_fa": "…", "group_name_en": "…"  // primary study topic
   },
   "focus_session": {
     "rows": [                            // rows appear only when they have content

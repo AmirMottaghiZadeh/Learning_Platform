@@ -113,6 +113,7 @@ export const strings = {
     lessonsUnit: "درس",
     emptyDrugsTitle: "دارویی در این زیرگروه نیست",
     emptyDrugsSub: "محتوای این زیرگروه در حال تدوین است. زیرگروه دیگری را انتخاب کن.",
+    alsoRelevantTo: "همچنین مرتبط با",
 
     mistakesTitle: "نقاط قابل تقویت",
     mistakeResolve: "این مورد را رفع کردم",
@@ -252,6 +253,7 @@ export const strings = {
     lessonsUnit: "lessons",
     emptyDrugsTitle: "No drugs in this subgroup",
     emptyDrugsSub: "Content for this subgroup is still being written. Pick another subgroup.",
+    alsoRelevantTo: "Also relevant to",
 
     mistakesTitle: "Areas to strengthen",
     mistakeResolve: "I've reviewed this",

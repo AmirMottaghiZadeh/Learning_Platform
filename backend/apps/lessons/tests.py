@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APIClient
 
+from apps.drugs.data.atc_reference import ATC_L2
 from apps.drugs.models import AtcCategory, AtcCode, Ingredient, IngredientProfileSection
 
+from .data.study_topics import STUDY_TOPICS
 from .models import ChapterProgress
 
 
@@ -50,22 +52,36 @@ class LessonTaxonomyTests(TestCase):
         res = self.client.get("/api/v1/lessons/groups/")
         self.assertEqual(res.status_code, 200)
 
+        # C07 (beta blockers) is curated under four clinical topics (it is
+        # first-line for hypertension, heart failure, angina AND arrhythmia);
+        # every one of them must appear, each holding just the C07 chapter.
+        # C03 (no drugs in this fixture) and N02 (no drugs) must not appear
+        # anywhere, including inside those same topics (cv-htn/cv-hf also
+        # list C03).
         codes = {g["code"] for g in res.data}
-        self.assertEqual(codes, {"C"})  # N has no drugs -> hidden
+        self.assertEqual(codes, {"cv-htn", "cv-hf", "cv-angina", "cv-arrhythmia"})
 
-        cardio = next(g for g in res.data if g["code"] == "C")
-        sub_codes = {s["code"] for s in cardio["subgroups"]}
-        self.assertEqual(sub_codes, {"C07"})  # C03 empty -> hidden
-        c07 = cardio["subgroups"][0]
-        self.assertEqual(c07["total"], 2)
-        self.assertEqual(c07["done"], 0)
+        for group in res.data:
+            sub_codes = {s["code"] for s in group["subgroups"]}
+            self.assertEqual(sub_codes, {"C07"})
+            c07 = group["subgroups"][0]
+            self.assertEqual(c07["total"], 2)
+            self.assertEqual(c07["done"], 0)
 
-    def test_chapter_returns_drugs_exam_points_and_group_name(self):
+    def test_chapter_returns_drugs_exam_points_and_topics(self):
         res = self.client.get("/api/v1/lessons/chapters/c07/")  # case-insensitive
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["name_fa"], "مسدودکننده‌های بتا")
-        self.assertEqual(res.data["group_name_fa"], "قلب و عروق")
         self.assertEqual({d["name"] for d in res.data["drugs"]}, {"metoprolol", "atenolol"})
+
+        # Primary topic = the first one listing C07 in STUDY_TOPICS order.
+        self.assertEqual(res.data["group_code"], "cv-htn")
+        self.assertEqual(res.data["group_name_fa"], "فشار خون بالا")
+        topic_codes = {t["code"] for t in res.data["topics"]}
+        self.assertEqual(topic_codes, {"cv-htn", "cv-hf", "cv-angina", "cv-arrhythmia"})
+
+        # The real ATC anatomical group survives, unmodified, for rigour.
+        self.assertEqual(res.data["anatomical_name_fa"], "قلب و عروق")
 
         points = res.data["exam_points"]
         self.assertEqual(len(points), 1)
@@ -105,3 +121,68 @@ class LessonTaxonomyTests(TestCase):
 
     def test_requires_authentication(self):
         self.assertEqual(APIClient().get("/api/v1/lessons/groups/").status_code, 401)
+
+
+class LessonTaxonomyFallbackTests(TestCase):
+    """A populated L2 code the curated topics don't cover (e.g. a brand-new
+    ATC class, added to the reference before someone decides where it belongs
+    in study_topics.py) must still show up — grouped by its ATC anatomical
+    section — instead of silently vanishing from the lessons list."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            username="learner2", email="l2@example.com", password="x"
+        )
+        self.client.force_authenticate(self.user)
+        z = AtcCategory.objects.create(code="Z", name_en="Made-up section",
+                                        name_fa="بخش ساختگی", level=1)
+        AtcCategory.objects.create(code="Z99", name_en="Made-up class",
+                                    name_fa="دستهٔ ساختگی", level=2, parent=z)
+        _ingredient("newdrug", "999999", "Z99AA01")
+
+    def test_uncovered_code_falls_back_to_atc_l1(self):
+        res = self.client.get("/api/v1/lessons/groups/")
+        self.assertEqual(res.status_code, 200)
+        fallback = next(g for g in res.data if g["code"] == "other-Z")
+        self.assertEqual(fallback["name_fa"], "بخش ساختگی")
+        self.assertEqual({s["code"] for s in fallback["subgroups"]}, {"Z99"})
+
+    def test_uncovered_chapter_topic_falls_back_to_atc_l1(self):
+        res = self.client.get("/api/v1/lessons/chapters/Z99/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["group_code"], "other-Z")
+        self.assertEqual(res.data["group_name_fa"], "بخش ساختگی")
+        self.assertEqual([t["code"] for t in res.data["topics"]], ["other-Z"])
+
+
+class StudyTopicsCoverageTests(SimpleTestCase):
+    """Static checks on the curated table itself — no DB needed. Keeps
+    `study_topics.py` internally consistent and catches a newly-imported ATC
+    class that nobody has assigned a study topic to yet."""
+
+    def test_every_bundled_l2_code_is_covered(self):
+        covered = {code for topic in STUDY_TOPICS for code in topic["l2"]}
+        missing = set(ATC_L2) - covered
+        self.assertEqual(
+            missing, set(),
+            f"These ATC L2 codes have no study topic yet: {sorted(missing)}. "
+            "Add them to apps/lessons/data/study_topics.py.",
+        )
+
+    def test_no_unknown_l2_codes(self):
+        covered = {code for topic in STUDY_TOPICS for code in topic["l2"]}
+        unknown = covered - set(ATC_L2)
+        self.assertEqual(
+            unknown, set(),
+            f"study_topics.py references L2 codes not in ATC_L2 (typo?): {sorted(unknown)}",
+        )
+
+    def test_topic_keys_are_unique(self):
+        keys = [topic["key"] for topic in STUDY_TOPICS]
+        self.assertEqual(len(keys), len(set(keys)))
+
+    def test_no_duplicate_l2_within_a_topic(self):
+        for topic in STUDY_TOPICS:
+            with self.subTest(topic=topic["key"]):
+                self.assertEqual(len(topic["l2"]), len(set(topic["l2"])))

@@ -20,6 +20,12 @@ class LessonGroupSerializer(serializers.Serializer):
     subgroups = SubgroupSerializer(many=True)
 
 
+class TopicSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name_fa = serializers.CharField()
+    name_en = serializers.CharField()
+
+
 class ChapterProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChapterProgress
@@ -39,9 +45,17 @@ class ChapterSerializer(serializers.Serializer):
     code = serializers.CharField()
     name_fa = serializers.CharField()
     name_en = serializers.CharField()
+    # Primary study topic (see apps.lessons.data.study_topics) — kept under
+    # the old field names so existing clients keep working unchanged.
     group_code = serializers.CharField()
     group_name_fa = serializers.CharField()
     group_name_en = serializers.CharField()
+    # Every study topic this chapter belongs to; length 1 for most chapters,
+    # more for a class that's first-line across several indications.
+    topics = TopicSerializer(many=True)
+    # The true, unmodified ATC anatomical (L1) group name, for rigour.
+    anatomical_name_fa = serializers.CharField()
+    anatomical_name_en = serializers.CharField()
     drugs = IngredientDetailSerializer(many=True)
     exam_points = ExamPointSerializer(many=True)
     progress = ChapterProgressSerializer()

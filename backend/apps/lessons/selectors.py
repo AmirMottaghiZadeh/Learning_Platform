@@ -1,14 +1,19 @@
 """Read-side logic for the lessons taxonomy.
 
-A *group* is an ATC L1 anatomical group; a *chapter* is an ATC L2 subgroup and
-its ingredients. Everything is derived from `apps.drugs` plus the learner's
-`ChapterProgress` rows.
+A *chapter* is an ATC L2 subgroup and its ingredients — unchanged, still keyed
+and progress-tracked by the real ATC code. A *group* used to be the chapter's
+raw ATC L1 anatomical parent; it is now a curated clinical **study topic**
+(see `data/study_topics.py`) that groups chapters by indication/organ system
+instead of by chemistry, so e.g. every antihypertensive class shows up under
+one "Hypertension" topic instead of being scattered across unrelated-looking
+ATC codes. A chapter can appear under more than one topic.
 """
 
 from collections import defaultdict
 
 from apps.drugs.models import AtcCategory, Ingredient
 
+from .data.study_topics import STUDY_TOPICS
 from .models import ChapterProgress
 
 # Which profile fields become "exam points" for a chapter, and their tone.
@@ -35,42 +40,91 @@ def _l2_slug_index():
     return index
 
 
+def _subgroup(code, category, slugs, read_by_chapter):
+    return {
+        "code": code,
+        "name_fa": category.name_fa if category else code,
+        "name_en": category.name_en if category else code,
+        "total": len(slugs),
+        "done": len(read_by_chapter.get(code, set()) & set(slugs)),
+    }
+
+
 def lesson_groups(user):
     slug_index = _l2_slug_index()
     read_by_chapter = {
         p.atc_code: set(p.read_drug_slugs)
         for p in ChapterProgress.objects.filter(user=user)
     }
-    categories = {c.code: c for c in AtcCategory.objects.all()}
+    l2_categories = {c.code: c for c in AtcCategory.objects.filter(level=2)}
+    l1_categories = {c.code: c for c in AtcCategory.objects.filter(level=1)}
 
     groups = []
-    for l1 in sorted(
-        (c for c in categories.values() if c.level == 1), key=lambda c: c.code
-    ):
+    seen_codes = set()
+    for topic in STUDY_TOPICS:
         subgroups = []
-        for l2 in sorted(
-            (c for c in categories.values() if c.level == 2 and c.code[0] == l1.code),
-            key=lambda c: c.code,
-        ):
-            slugs = slug_index.get(l2.code, [])
+        for code in topic["l2"]:
+            slugs = slug_index.get(code, [])
             if not slugs:
                 continue
-            done = len(read_by_chapter.get(l2.code, set()) & set(slugs))
-            subgroups.append({
-                "code": l2.code,
-                "name_fa": l2.name_fa,
-                "name_en": l2.name_en,
-                "total": len(slugs),
-                "done": done,
-            })
+            seen_codes.add(code)
+            subgroups.append(_subgroup(code, l2_categories.get(code), slugs, read_by_chapter))
         if subgroups:
             groups.append({
-                "code": l1.code,
-                "name_fa": l1.name_fa,
-                "name_en": l1.name_en,
+                "code": topic["key"],
+                "name_fa": topic["name_fa"],
+                "name_en": topic["name_en"],
                 "subgroups": subgroups,
             })
+
+    # Safety net: a populated L2 code the curated topics don't cover yet (e.g.
+    # a newly-imported ATC class) still gets a home — grouped by its ATC
+    # anatomical section — so a chapter never silently disappears while the
+    # topic table waits to be updated. The coverage test keeps this branch
+    # unreachable for the current bundled data.
+    leftover_by_l1 = defaultdict(list)
+    for code, slugs in slug_index.items():
+        if code not in seen_codes and slugs:
+            leftover_by_l1[code[0]].append(code)
+    for l1_code in sorted(leftover_by_l1):
+        l1 = l1_categories.get(l1_code)
+        subgroups = [
+            _subgroup(code, l2_categories.get(code), slug_index[code], read_by_chapter)
+            for code in sorted(leftover_by_l1[l1_code])
+        ]
+        groups.append({
+            "code": f"other-{l1_code}",
+            "name_fa": l1.name_fa if l1 else l1_code,
+            "name_en": l1.name_en if l1 else l1_code,
+            "subgroups": subgroups,
+        })
     return groups
+
+
+def _topic_lookup():
+    """{ L2 code -> [topic dict, ...] } in `STUDY_TOPICS` order; first entry
+    is the chapter's primary topic."""
+    lookup = defaultdict(list)
+    for topic in STUDY_TOPICS:
+        for code in topic["l2"]:
+            lookup[code].append(topic)
+    return lookup
+
+
+def topics_for_chapter(atc_code, l1_category=None):
+    """All study topics a chapter belongs to, or a one-item fallback built
+    from its ATC L1 anatomical parent if the topic table doesn't cover it yet
+    (see the `lesson_groups` safety net above for why that can happen)."""
+    matches = _topic_lookup().get(atc_code)
+    if matches:
+        return [{"code": t["key"], "name_fa": t["name_fa"], "name_en": t["name_en"]} for t in matches]
+    if l1_category:
+        return [{
+            "code": f"other-{l1_category.code}",
+            "name_fa": l1_category.name_fa,
+            "name_en": l1_category.name_en,
+        }]
+    return []
 
 
 def get_chapter(user, atc_code):

@@ -110,13 +110,27 @@ export interface ChapterProgress {
   last_opened_at: string;
 }
 
+export interface LessonTopic {
+  code: string;
+  name_fa: string;
+  name_en: string;
+}
+
 export interface Chapter {
   code: string;
   name_fa: string;
   name_en: string;
+  /** The chapter's primary study topic (see LessonTopic) — kept under these
+   * field names for backward compatibility. */
   group_code: string;
   group_name_fa: string;
   group_name_en: string;
+  /** Every study topic this chapter belongs to (usually 1; a drug class
+   * that's first-line across several indications lists more than one). */
+  topics: LessonTopic[];
+  /** The true, unmodified ATC anatomical (L1) group name, for rigour. */
+  anatomical_name_fa: string;
+  anatomical_name_en: string;
   drugs: IngredientDetail[];
   exam_points: ExamPoint[];
   progress: ChapterProgress;
