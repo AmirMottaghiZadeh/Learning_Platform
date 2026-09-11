@@ -1,11 +1,20 @@
+# Render Blueprint for the free tier: one web service, no Redis, no worker.
+# Pair with an external Postgres (e.g. neon.tech's free tier never expires,
+# unlike Render's own free Postgres) — paste its connection string into
+# DATABASE_URL below once the service exists.
+#
+# Cache and background jobs use the same no-Redis setup validated on Runflare:
+# a Postgres-backed DatabaseCache, and CELERY_RUN_TASKS_IN_REQUEST=True so
+# nothing needs a broker or a separate worker process.
 services:
   - type: web
     name: pharmexa-backend
     env: python
+    plan: free
     buildCommand: ./build.sh
     preDeployCommand: ./release.sh
     startCommand: gunicorn config.wsgi:application --config gunicorn.conf.py
-    healthCheckPath: /api/v1/ready/
+    healthCheckPath: /api/v1/health/
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.production
@@ -21,26 +30,27 @@ services:
         value: False
       - key: DATA_QUALITY_CENTER_ENABLED
         value: False
+
+      # Paste the external Postgres connection string here (e.g. from Neon).
       - key: DATABASE_URL
-        fromDatabase:
-          name: pharmexa-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: pharmexa-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: pharmexa-redis
-          property: connectionString
-      - key: CELERY_TASK_ALWAYS_EAGER
-        value: False
-      - key: READINESS_REQUIRE_CACHE
-        value: True
-      - key: READINESS_REQUIRE_BROKER
-        value: True
+        sync: false
+
+      # No Redis on the free plan: cache lives in Postgres, and background
+      # jobs (just the password-reset email today) run inline.
+      - key: CACHE_BACKEND
+        value: django.core.cache.backends.db.DatabaseCache
+      - key: CACHE_LOCATION
+        value: pharmexa_cache
+      - key: CELERY_RUN_TASKS_IN_REQUEST
+        value: "True"
+      - key: ASYNC_EMAIL_ENABLED
+        value: "False"
+
+      # Render's free instance is small; cap gunicorn workers explicitly
+      # rather than let it size off the (shared, possibly many-core) host.
+      - key: WEB_CONCURRENCY
+        value: 2
+
       - key: ALLOWED_HOSTS
         sync: false
       - key: CSRF_TRUSTED_ORIGINS
@@ -49,6 +59,16 @@ services:
         sync: false
       - key: PASSWORD_RESET_FRONTEND_URL
         sync: false   # set to the deployed frontend URL
+
+      # Optional: set all three to get an admin account with no shell access
+      # (the free plan doesn't have one) — see bootstrap_superuser.
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+
       - key: EMAIL_BACKEND
         value: django.core.mail.backends.smtp.EmailBackend
       - key: EMAIL_HOST
@@ -63,72 +83,3 @@ services:
         value: True
       - key: DEFAULT_FROM_EMAIL
         sync: false
-      - key: CACHE_BACKEND
-        sync: false
-      - key: CACHE_LOCATION
-        sync: false
-
-  - type: worker
-    name: pharmexa-worker
-    env: python
-    buildCommand: ./build.sh
-    startCommand: >-
-      celery -A config worker --loglevel=info
-      --queues=default,events,maintenance --concurrency=2
-    envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: config.settings.production
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: pharmexa-backend
-          envVarKey: SECRET_KEY
-      - key: ENVIRONMENT
-        value: production
-      - key: LOG_FORMAT
-        value: json
-      - key: DATABASE_URL
-        fromDatabase:
-          name: pharmexa-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: pharmexa-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: pharmexa-redis
-          property: connectionString
-      - key: CELERY_TASK_ALWAYS_EAGER
-        value: False
-      - key: ALLOWED_HOSTS
-        sync: false
-      - key: PASSWORD_RESET_FRONTEND_URL
-        sync: false   # set to the deployed frontend URL
-      - key: EMAIL_BACKEND
-        value: django.core.mail.backends.smtp.EmailBackend
-      - key: EMAIL_HOST
-        sync: false
-      - key: EMAIL_PORT
-        value: 587
-      - key: EMAIL_HOST_USER
-        sync: false
-      - key: EMAIL_HOST_PASSWORD
-        sync: false
-      - key: EMAIL_USE_TLS
-        value: True
-      - key: DEFAULT_FROM_EMAIL
-        sync: false
-
-
-  - type: redis
-    name: pharmexa-redis
-    ipAllowList: []
-    maxmemoryPolicy: volatile-lru
-
-databases:
-  - name: pharmexa-db
-    databaseName: pharmexa
-    user: pharmexa
