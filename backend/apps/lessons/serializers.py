@@ -2,8 +2,6 @@ from rest_framework import serializers
 
 from apps.drugs.serializers import IngredientDetailSerializer
 
-from .models import ChapterProgress
-
 
 class SubgroupSerializer(serializers.Serializer):
     code = serializers.CharField()
@@ -26,10 +24,13 @@ class TopicSerializer(serializers.Serializer):
     name_en = serializers.CharField()
 
 
-class ChapterProgressSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ChapterProgress
-        fields = ["read_drug_slugs", "scroll_pct", "last_opened_at"]
+class ChapterProgressSerializer(serializers.Serializer):
+    # Globally-read drugs (apps.lessons.models.ReadDrug) filtered to this
+    # chapter's ingredients — not a per-chapter stored list, so a drug read
+    # via a different chapter it also belongs to shows as read here too.
+    read_drug_slugs = serializers.ListField(child=serializers.CharField())
+    scroll_pct = serializers.IntegerField()
+    last_opened_at = serializers.DateTimeField()
 
 
 class ExamPointSerializer(serializers.Serializer):

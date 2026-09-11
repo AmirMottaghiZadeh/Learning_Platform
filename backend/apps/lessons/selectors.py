@@ -14,7 +14,7 @@ from collections import defaultdict
 from apps.drugs.models import AtcCategory, Ingredient
 
 from .data.study_topics import STUDY_TOPICS
-from .models import ChapterProgress
+from .models import ChapterProgress, ReadDrug
 
 # Which profile fields become "exam points" for a chapter, and their tone.
 EXAM_POINT_FIELDS = [
@@ -40,22 +40,31 @@ def _l2_slug_index():
     return index
 
 
-def _subgroup(code, category, slugs, read_by_chapter):
+def read_slugs_for_user(user):
+    """The set of every ingredient slug this learner has read to completion,
+    across all chapters — see `models.ReadDrug` for why this is global rather
+    than per chapter."""
+    return set(ReadDrug.objects.filter(user=user).values_list("ingredient_slug", flat=True))
+
+
+def mark_drug_read(user, slug):
+    if slug:
+        ReadDrug.objects.get_or_create(user=user, ingredient_slug=slug)
+
+
+def _subgroup(code, category, slugs, read_slugs):
     return {
         "code": code,
         "name_fa": category.name_fa if category else code,
         "name_en": category.name_en if category else code,
         "total": len(slugs),
-        "done": len(read_by_chapter.get(code, set()) & set(slugs)),
+        "done": len(read_slugs & set(slugs)),
     }
 
 
 def lesson_groups(user):
     slug_index = _l2_slug_index()
-    read_by_chapter = {
-        p.atc_code: set(p.read_drug_slugs)
-        for p in ChapterProgress.objects.filter(user=user)
-    }
+    read_slugs = read_slugs_for_user(user)
     l2_categories = {c.code: c for c in AtcCategory.objects.filter(level=2)}
     l1_categories = {c.code: c for c in AtcCategory.objects.filter(level=1)}
 
@@ -68,7 +77,7 @@ def lesson_groups(user):
             if not slugs:
                 continue
             seen_codes.add(code)
-            subgroups.append(_subgroup(code, l2_categories.get(code), slugs, read_by_chapter))
+            subgroups.append(_subgroup(code, l2_categories.get(code), slugs, read_slugs))
         if subgroups:
             groups.append({
                 "code": topic["key"],
@@ -89,7 +98,7 @@ def lesson_groups(user):
     for l1_code in sorted(leftover_by_l1):
         l1 = l1_categories.get(l1_code)
         subgroups = [
-            _subgroup(code, l2_categories.get(code), slug_index[code], read_by_chapter)
+            _subgroup(code, l2_categories.get(code), slug_index[code], read_slugs)
             for code in sorted(leftover_by_l1[l1_code])
         ]
         groups.append({
@@ -128,7 +137,10 @@ def topics_for_chapter(atc_code, l1_category=None):
 
 
 def get_chapter(user, atc_code):
-    """(category, ingredients_qs, progress) or None if the code is not a chapter."""
+    """(category, ingredients_qs, progress, read_slugs_in_chapter) or None if
+    the code is not a chapter. `read_slugs_in_chapter` is this learner's
+    globally-read drugs (see `read_slugs_for_user`), filtered to this
+    chapter's ingredients."""
     atc_code = (atc_code or "").upper()
     try:
         category = AtcCategory.objects.select_related("parent").get(code=atc_code, level=2)
@@ -145,7 +157,8 @@ def get_chapter(user, atc_code):
         return None
 
     progress, _ = ChapterProgress.objects.get_or_create(user=user, atc_code=atc_code)
-    return category, ingredients, progress
+    read_slugs = read_slugs_for_user(user) & {i.slug for i in ingredients}
+    return category, ingredients, progress, read_slugs
 
 
 def chapter_exam_points(ingredients):

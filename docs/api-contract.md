@@ -173,11 +173,20 @@ populated L2 subgroup.
 }
 ```
 
+`read_drug_slugs` is computed from a **global per-user read set**
+(`lessons.ReadDrug`), filtered to this chapter's ingredients — not a
+per-chapter stored list. Reading a drug that carries more than one ATC code
+(aspirin, for real: A01 dental, B01 antithrombotic, N02 analgesic) marks it
+read everywhere it appears, so re-opening the same drug through a different,
+unrelated chapter shows it already read instead of asking the learner to read
+it again. `scroll_pct`/`last_opened_at` stay per-chapter on `ChapterProgress`.
+
 ### `POST /lessons/chapters/{atc_code}/` — record progress
 
-Body `{ "drug_slug"?: "…", "scroll_pct"?: 0-100 }`. Adds `drug_slug` to
-`read_drug_slugs` (must belong to the chapter → else 400 `INVALID_DRUG`),
-sets `scroll_pct`. Returns the same shape as GET.
+Body `{ "drug_slug"?: "…", "scroll_pct"?: 0-100 }`. Adds `drug_slug` to the
+learner's global read set (must belong to the current chapter → else 400
+`INVALID_DRUG`), sets `scroll_pct` on this chapter's `ChapterProgress`.
+Returns the same shape as GET.
 
 ---
 

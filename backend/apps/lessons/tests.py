@@ -6,7 +6,7 @@ from apps.drugs.data.atc_reference import ATC_L2
 from apps.drugs.models import AtcCategory, AtcCode, Ingredient, IngredientProfileSection
 
 from .data.study_topics import STUDY_TOPICS
-from .models import ChapterProgress
+from .models import ChapterProgress, ReadDrug
 
 
 def _ingredient(name, rxcui, atc_code):
@@ -107,8 +107,12 @@ class LessonTaxonomyTests(TestCase):
         c07 = groups[0]["subgroups"][0]
         self.assertEqual(c07["done"], 1)
 
+        self.assertTrue(
+            ReadDrug.objects.filter(user=self.user, ingredient_slug=self.metoprolol.slug).exists()
+        )
+        # scroll_pct still lives on the per-chapter ChapterProgress row.
         progress = ChapterProgress.objects.get(user=self.user, atc_code="C07")
-        self.assertEqual(progress.read_drug_slugs, [self.metoprolol.slug])
+        self.assertEqual(progress.scroll_pct, 55)
 
     def test_progress_post_rejects_drug_from_another_chapter(self):
         other = _ingredient("ibuprofen", "5640", "M01AE01")
@@ -118,6 +122,27 @@ class LessonTaxonomyTests(TestCase):
             format="json",
         )
         self.assertEqual(res.status_code, 400)
+
+    def test_reading_a_drug_marks_it_read_in_every_chapter_it_belongs_to(self):
+        # A drug can legitimately carry more than one ATC code (aspirin, for
+        # real: A01 dental, B01 antithrombotic, N02 analgesic) and so belongs
+        # to more than one chapter. Reading it via one chapter must show it
+        # already read when reached through another, unrelated chapter.
+        combo = Ingredient.objects.create(name="combodrug", rxcui="424242", slug="combodrug-424242")
+        c07_code, _ = AtcCode.objects.get_or_create(code="C07AA99", defaults={"name": "C07AA99"})
+        n02_code, _ = AtcCode.objects.get_or_create(code="N02AA99", defaults={"name": "N02AA99"})
+        combo.atc_codes.add(c07_code, n02_code)
+
+        res = self.client.post(
+            "/api/v1/lessons/chapters/C07/", {"drug_slug": combo.slug}, format="json"
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertIn(combo.slug, res.data["progress"]["read_drug_slugs"])
+
+        # Same drug, reached through the unrelated N02 chapter: already read.
+        res2 = self.client.get("/api/v1/lessons/chapters/N02/")
+        self.assertEqual(res2.status_code, 200)
+        self.assertIn(combo.slug, res2.data["progress"]["read_drug_slugs"])
 
     def test_requires_authentication(self):
         self.assertEqual(APIClient().get("/api/v1/lessons/groups/").status_code, 401)
