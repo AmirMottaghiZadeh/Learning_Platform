@@ -17,6 +17,12 @@ services:
     name: pharmexa-backend
     env: python
     plan: free
+    # render.yaml lives in backend/, but Render always clones the repo root
+    # and runs commands from there unless told otherwise — without this,
+    # `./build.sh` doesn't exist from where Render's shell actually sits, and
+    # it also can't find backend/.python-version, so it silently falls back
+    # to its own default Python instead of the one this project needs.
+    rootDir: backend
     buildCommand: ./build.sh
     startCommand: >-
       ./release.sh &&
