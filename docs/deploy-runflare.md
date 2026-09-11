@@ -1,5 +1,12 @@
 # Deploying the backend on Runflare (single container, no Redis)
 
+> **Historical.** The backend now runs on Render (see `backend/render.yaml`)
+> because Runflare's custom vanity subdomains (`*.amirmtz.runflare.run`)
+> repeatedly leaked an internal, unroutable IP over DNS to some resolvers —
+> unfixable from this side. Kept here for the no-Redis pattern
+> (`CELERY_RUN_TASKS_IN_REQUEST`, Postgres `DatabaseCache`), which Render's
+> free tier reuses as-is.
+
 Runflare runs the Docker image directly (no separate release/pre-deploy hook)
 and the free plan allows only **one app + one database** — no room for a
 managed Redis. This is the supported "small deployment" shape:
