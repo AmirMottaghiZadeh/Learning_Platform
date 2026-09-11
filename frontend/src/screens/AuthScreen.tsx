@@ -30,20 +30,41 @@ export function AuthScreen() {
   const isSignup = mode === "signup";
 
   const submit = async () => {
+    // Browser/OS autofill can fill the visible field without ever firing
+    // onChangeText (a well-known RN-web + password-manager quirk), leaving
+    // this state stuck at "" while the screen shows it as filled — the
+    // server then rejects the blank field and the raw English "Validation
+    // error." shows up out of nowhere. Catch it here with a translated
+    // message instead of round-tripping to the API to find out.
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    if ((isSignup && !trimmedName) || !trimmedEmail || !password) {
+      setError(t("fillRequiredFields"));
+      return;
+    }
+
     setBusy(true);
     setError(null);
     try {
       const payload = isSignup
         ? await authApi.register({
-            name: name.trim(),
-            email: email.trim(),
+            name: trimmedName,
+            email: trimmedEmail,
             password,
             password_confirm: password,
           })
-        : await authApi.login({ username: email.trim(), password });
+        : await authApi.login({ username: trimmedEmail, password });
       await applyAuth(payload);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : t("loadFailed"));
+      if (e instanceof ApiError) {
+        setError(
+          e.code === "INVALID_CREDENTIALS" ? t("invalidCredentials")
+          : e.code === "INVALID" ? t("fillRequiredFields")
+          : e.message,
+        );
+      } else {
+        setError(t("loadFailed"));
+      }
       setBusy(false);
     }
   };
@@ -110,18 +131,28 @@ export function AuthScreen() {
 
               <View style={{ gap: 12 }}>
                 {isSignup ? (
-                  <Input placeholder={t("nameLabel")} value={name} onChangeText={setName} />
+                  <Input
+                    placeholder={t("nameLabel")}
+                    autoComplete="name"
+                    textContentType="name"
+                    value={name}
+                    onChangeText={setName}
+                  />
                 ) : null}
                 <Input
                   placeholder={t("emailLabel")}
                   autoCapitalize="none"
                   keyboardType="email-address"
+                  autoComplete="email"
+                  textContentType="emailAddress"
                   value={email}
                   onChangeText={setEmail}
                 />
                 <Input
                   placeholder={t("passwordLabel")}
                   secureTextEntry
+                  autoComplete={isSignup ? "new-password" : "current-password"}
+                  textContentType={isSignup ? "newPassword" : "password"}
                   value={password}
                   onChangeText={setPassword}
                 />

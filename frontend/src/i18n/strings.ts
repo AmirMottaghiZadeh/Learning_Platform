@@ -26,6 +26,8 @@ export const strings = {
     haveAccount: "قبلاً ثبت‌نام کردی؟",
     loginLink: "وارد شو",
     signupTerms: "با ساخت حساب، قوانین و حریم خصوصی فارمکسا را می‌پذیری.",
+    fillRequiredFields: "لطفاً همه‌ی فیلدها را پر کن.",
+    invalidCredentials: "ایمیل یا رمز عبور اشتباه است.",
 
     quizSetupTitle: "شروع آزمون دارویی",
     quizCategoryLabel: "انتخاب دسته",
@@ -166,6 +168,8 @@ export const strings = {
     haveAccount: "Already have an account?",
     loginLink: "Sign in",
     signupTerms: "By creating an account, you agree to Pharmexa's terms and privacy policy.",
+    fillRequiredFields: "Please fill in all fields.",
+    invalidCredentials: "Invalid email or password.",
 
     quizSetupTitle: "Start a quiz",
     quizCategoryLabel: "Choose a category",
