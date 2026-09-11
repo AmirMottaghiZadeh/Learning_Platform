@@ -170,6 +170,35 @@ class AuthenticationSecurityTests(TestCase):
             get_user_model().objects.filter(email__iexact="secure-learner@example.com").exists()
         )
 
+    def test_login_accepts_email_as_username(self):
+        # Registration derives `username` from the email's local part
+        # (RegisterSerializer.validate) and the product only ever shows/asks
+        # for "email" — so logging in with the email a learner registered
+        # with must work, not just the internal derived username.
+        response = self.client.post(
+            reverse("auth-login"),
+            {"username": self.user.email, "password": "Old-Secure-Password-2026!"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["user"]["email"], self.user.email)
+
+    def test_login_by_email_is_case_insensitive(self):
+        response = self.client.post(
+            reverse("auth-login"),
+            {"username": self.user.email.upper(), "password": "Old-Secure-Password-2026!"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_still_accepts_the_real_username(self):
+        response = self.client.post(
+            reverse("auth-login"),
+            {"username": self.user.username, "password": "Old-Secure-Password-2026!"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_login_is_rate_limited_by_auth_scope(self):
         payload = {"username": self.user.username, "password": "wrong-password"}
         for _ in range(5):

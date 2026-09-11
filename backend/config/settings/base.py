@@ -278,6 +278,15 @@ UPTODATE_DB_DIR = config(
     default="/home/amir/Documents/UpToDate",
 )
 
+# EmailOrUsernameBackend first: the product only shows/asks for "email" (see
+# apps.accounts.backends for why the derived `username` field alone isn't
+# enough), but ModelBackend stays listed so anything that genuinely
+# authenticates by the real username (e.g. the Django admin) keeps working.
+AUTHENTICATION_BACKENDS = [
+    "apps.accounts.backends.EmailOrUsernameBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
