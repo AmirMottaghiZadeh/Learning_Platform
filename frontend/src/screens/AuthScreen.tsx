@@ -57,11 +57,11 @@ export function AuthScreen() {
       await applyAuth(payload);
     } catch (e) {
       if (e instanceof ApiError) {
-        setError(
-          e.code === "INVALID_CREDENTIALS" ? t("invalidCredentials")
-          : e.code === "INVALID" ? t("fillRequiredFields")
-          : e.message,
-        );
+        // INVALID covers a grab-bag of distinct server-side reasons (taken
+        // email/username, password too similar to it, mismatched
+        // confirmation, too short, too common...) -- show the real message
+        // instead of guessing at one, so the actual cause is visible.
+        setError(e.code === "INVALID_CREDENTIALS" ? t("invalidCredentials") : e.message);
       } else {
         setError(t("loadFailed"));
       }

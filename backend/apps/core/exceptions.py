@@ -33,11 +33,33 @@ def _normalize_code(value):
     return str(value or "ERROR").upper().replace(" ", "_").replace("-", "_")
 
 
+def _first_message(value):
+    """Dig out one human-readable string from a DRF error value, which can be
+    a plain string, a list of strings (one field), or a nested dict (one
+    field holding another serializer's own field errors)."""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (list, tuple)) and value:
+        return _first_message(value[0])
+    if isinstance(value, dict) and value:
+        return _first_message(next(iter(value.values())))
+    return None
+
+
 def _message_from_data(data):
     if isinstance(data, dict) and "detail" in data:
         return str(data["detail"])
     if isinstance(data, list) and data:
         return str(data[0])
+    if isinstance(data, dict) and data:
+        # A serializer.ValidationError: {"field": ["the actual message"]}.
+        # Surface that real message instead of a generic placeholder, so the
+        # client (and whoever is debugging) sees exactly why the request was
+        # rejected rather than just "Validation error."
+        message = _first_message(data)
+        if message:
+            return str(message)
+        return "Validation error."
     if data:
         return "Validation error."
     return "An unexpected error occurred."
