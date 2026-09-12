@@ -24,9 +24,13 @@ export class ApiError extends Error {
   }
 }
 
+// Render's free tier spins the backend down after ~15 minutes idle; the next
+// request pays a cold-start cost (plus Neon's own compute waking up) that can
+// run well past what a "normal" API call should ever take. 15s wasn't enough
+// headroom for that first request.
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 45000,
   headers: { "Content-Type": "application/json" },
 });
 
