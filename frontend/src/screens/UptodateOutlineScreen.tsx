@@ -14,9 +14,14 @@ import { parseOutline } from "@/utils/uptodateOutline";
 /** Shown after picking a search result and before the full article loads: a
  * plain list of the article's headings/subheadings (parsed from
  * `outline_html`, matching the real UpToDate app's topic outline). Tapping
- * one opens the article scrolled straight to that heading. */
+ * one opens the article scrolled straight to that heading.
+ *
+ * UpToDate's own content is English-only regardless of the app's display
+ * language, so the layout here is hardcoded left-to-right (article title,
+ * headings, indentation) rather than following `useLang().row`/`dir` — only
+ * our own UI labels (hint, button, error text) still translate via `t()`. */
 export function UptodateOutlineScreen() {
-  const { t, isFa, row } = useLang();
+  const { t, isFa } = useLang();
   const { colors, shadows } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
@@ -39,7 +44,7 @@ export function UptodateOutlineScreen() {
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
       <View
         style={{
-          flexDirection: row,
+          flexDirection: "row",
           alignItems: "center",
           gap: 10,
           paddingHorizontal: 18,
@@ -51,10 +56,15 @@ export function UptodateOutlineScreen() {
       >
         <ChromeButton onPress={goBack} size={30}>
           <AppText weight="800" size={15} color={colors.ink}>
-            {isFa ? "›" : "‹"}
+            ‹
           </AppText>
         </ChromeButton>
-        <AppText weight="800" size={14} numberOfLines={2} style={{ flex: 1 }}>
+        <AppText
+          weight="800"
+          size={14}
+          numberOfLines={2}
+          style={{ flex: 1, textAlign: "left", writingDirection: "ltr" }}
+        >
           {title}
         </AppText>
       </View>
@@ -103,17 +113,16 @@ export function UptodateOutlineScreen() {
                     onPress={() => openArticle(node.id)}
                     style={{
                       paddingVertical: 11,
+                      paddingLeft: 14 + node.depth * 18,
                       borderBottomWidth: 1,
                       borderBottomColor: colors.sheetLine,
-                      ...(isFa
-                        ? { paddingRight: 14 + node.depth * 18 }
-                        : { paddingLeft: 14 + node.depth * 18 }),
                     }}
                   >
                     <AppText
                       weight={node.depth === 0 ? "800" : "600"}
                       size={node.depth === 0 ? 14 : 13}
                       color={node.depth === 0 ? colors.ink : colors.muted}
+                      style={{ textAlign: "left", writingDirection: "ltr" }}
                     >
                       {node.title}
                     </AppText>
