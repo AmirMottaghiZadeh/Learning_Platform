@@ -18,6 +18,7 @@ import { ProfileScreen } from "@/screens/ProfileScreen";
 import { QuizScreen } from "@/screens/QuizScreen";
 import { StatisticsScreen } from "@/screens/StatisticsScreen";
 import { UptodateArticleScreen } from "@/screens/UptodateArticleScreen";
+import { UptodateOutlineScreen } from "@/screens/UptodateOutlineScreen";
 import { UptodateScreen } from "@/screens/UptodateScreen";
 import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
@@ -65,6 +66,8 @@ function CurrentScreen() {
       return <PlanningScreen />;
     case "uptodate":
       return <UptodateScreen />;
+    case "uptodateOutline":
+      return <UptodateOutlineScreen />;
     case "uptodateArticle":
       return <UptodateArticleScreen />;
     case "dashboard":

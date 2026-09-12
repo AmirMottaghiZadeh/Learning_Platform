@@ -9,20 +9,12 @@ import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { IconImage } from "@/components/primitives/IconImage";
 import { Screen } from "@/components/primitives/Screen";
+import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
-
-function useDebounced(value: string, ms = 350) {
-  const [v, setV] = useState(value);
-  React.useEffect(() => {
-    const id = setTimeout(() => setV(value), ms);
-    return () => clearTimeout(id);
-  }, [value, ms]);
-  return v;
-}
 
 export function UptodateScreen() {
   const { t, isFa, n, row: rowDir } = useLang();
@@ -120,7 +112,7 @@ export function UptodateScreen() {
           {rows.map((row) => (
             <Pressable
               key={row.id}
-              onPress={() => navigate("uptodateArticle", { id: row.id, title: row.title })}
+              onPress={() => navigate("uptodateOutline", { id: row.id, title: row.title })}
             >
               <Card style={{ flexDirection: rowDir, alignItems: "center", gap: 12 }}>
                 <View

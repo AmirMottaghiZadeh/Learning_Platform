@@ -10,6 +10,7 @@ export type ScreenKey =
   | "statistics"
   | "planning"
   | "uptodate"
+  | "uptodateOutline"
   | "uptodateArticle";
 
 export const TAB_ORDER: TabKey[] = ["dashboard", "lessons", "flashcards", "quiz", "profile"];
