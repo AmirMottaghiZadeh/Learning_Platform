@@ -10,9 +10,13 @@ Layout (`settings.UPTODATE_DB_DIR`):
   content.db  -- `content(id, gzip, version)` -- gzip is zlib-compressed JSON
                  {title, bodyHtml, outlineHtml, contributors, ...}
   toc.db      -- `toc(id, title, parentId, section, contentId)` tree
+  images.db   -- `images(id, binary, type)` -- raw PNG/JPEG bytes for the
+                 <img src="<id>"> graphics referenced from bodyHtml; optional,
+                 figure/algorithm graphics answer 404 without it.
   info.json   -- {version: 202607, ...}
 """
 
+import base64
 import json
 import re
 import sqlite3
@@ -144,4 +148,26 @@ def get_topic(content_id: str) -> dict | None:
         "outline_html": doc.get("outlineHtml", ""),
         "body_html": doc.get("bodyHtml", ""),
         "version": str(row["version"] or snapshot_version()),
+    }
+
+
+_IMAGE_TYPES = {"png", "jpeg", "gif", "webp"}
+
+
+def get_image(image_id: str) -> dict | None:
+    try:
+        conn = _conn("images")
+        row = conn.execute(
+            "SELECT binary, type FROM images WHERE id = ?", (str(image_id),)
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    if not row or not row["binary"]:
+        return None
+    img_type = (row["type"] or "").lower()
+    content_type = f"image/{img_type}" if img_type in _IMAGE_TYPES else "image/jpeg"
+    return {
+        "id": str(image_id),
+        "content_type": content_type,
+        "data_base64": base64.b64encode(row["binary"]).decode("ascii"),
     }

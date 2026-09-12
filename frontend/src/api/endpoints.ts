@@ -16,6 +16,7 @@ import {
   Statistics,
   StudyPlan,
   UptodateArticle,
+  UptodateImage,
   UptodateTopic,
   User,
 } from "./types";
@@ -103,6 +104,8 @@ export const uptodateApi = {
       .then((r) => r.data),
   topic: (id: string) =>
     apiClient.get<UptodateArticle>(`/uptodate/topics/${id}/`).then((r) => r.data),
+  image: (id: string) =>
+    apiClient.get<UptodateImage>(`/uptodate/images/${id}/`).then((r) => r.data),
 };
 
 export const quizApi = {

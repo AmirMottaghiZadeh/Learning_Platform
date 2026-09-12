@@ -69,6 +69,7 @@ export const strings = {
     uptodateSearchInArticleHint: "جست‌وجو در متن این مقاله…",
     uptodateNoMatches: "یافت نشد",
     uptodateMatchCount: "از",
+    uptodateGraphicLoadError: "بارگذاری این مورد ممکن نشد.",
 
     heroStep: "گام ۲ از ۳",
     heroTitle: "شروع مرور فلش‌کارت",
@@ -217,6 +218,7 @@ export const strings = {
     uptodateSearchInArticleHint: "Search in this article…",
     uptodateNoMatches: "No matches",
     uptodateMatchCount: "of",
+    uptodateGraphicLoadError: "Could not load this item.",
 
     heroStep: "Step 2 of 3",
     heroTitle: "Start flashcard review",

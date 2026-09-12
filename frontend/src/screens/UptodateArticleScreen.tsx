@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useMemo, useRef, useState } from "react";
-import { Platform, Pressable, TextInput, View } from "react-native";
+import React, { useRef, useState } from "react";
+import { Modal, Platform, Pressable, TextInput, View } from "react-native";
 import { WebView } from "react-native-webview";
 
 import { uptodateApi } from "@/api/endpoints";
@@ -93,6 +93,35 @@ function __utdGoto(sectionId) {
   var el = document.getElementById(sectionId);
   if (el) el.scrollIntoView({ block: "start" });
 }
+function __utdEmitOp(payload) {
+  var msg = JSON.stringify(Object.assign({ __utdOp: true }, payload));
+  if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(msg);
+  else if (window.parent && window.parent !== window) window.parent.postMessage(msg, "*");
+}
+function __utdGotoReference(num) {
+  var ol = document.getElementById("reference");
+  if (!ol || !num) return;
+  var li = ol.children[parseInt(num, 10) - 1];
+  if (!li) return;
+  li.scrollIntoView({ block: "center" });
+  li.classList.add("utd-ref-flash");
+  setTimeout(function () { li.classList.remove("utd-ref-flash"); }, 1600);
+}
+// UpToDate's own markup links everything (cross-references, graphics,
+// citations) through onclick="doOperation({...})" with no such function ever
+// defined -- so none of those links did anything. This is that function.
+window.doOperation = function (op) {
+  if (!op) return;
+  if (op.contentIds && op.contentIds.length) {
+    __utdEmitOp({ type: "graphic", contentId: String(op.contentIds[0]) });
+  } else if (op.contentId) {
+    __utdEmitOp({ type: "nav", contentId: String(op.contentId), sectionName: op.sectionName || null });
+  } else if (op.abstractNumbers && op.abstractNumbers.length) {
+    __utdGotoReference(op.abstractNumbers[0]);
+  } else if (op.sectionName) {
+    __utdGoto(op.sectionName);
+  }
+};
 true;
 `;
 
@@ -109,6 +138,8 @@ function wrap(bodyHtml: string, ink: string, bg: string, accent: string, accentS
   .utdGraphicWrapper, figure { overflow-x:auto; }
   mark.utd-hit { background:${accentSoft}; color:inherit; border-radius:2px; }
   mark.utd-hit-current { background:${accent}; color:#fff; }
+  a.local, a.medical_review, a.graphic, a.abstract_t { cursor:pointer; }
+  .utd-ref-flash { background:${accentSoft}; border-radius:2px; }
 </style></head><body>${bodyHtml}<script>${FIND_SCRIPT}</script></body></html>`;
 }
 
@@ -116,6 +147,7 @@ export function UptodateArticleScreen() {
   const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
+  const navigate = useNav((s) => s.navigate);
   const id = String(useNav((s) => s.params.id ?? ""));
   const titleParam = String(useNav((s) => s.params.title ?? ""));
   const sectionId = useNav((s) => s.params.sectionId) as string | undefined;
@@ -123,6 +155,7 @@ export function UptodateArticleScreen() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [find, setFind] = useState<FindResult>({ count: 0, current: 0 });
+  const [graphicId, setGraphicId] = useState<string | null>(null);
   const debouncedQuery = useDebounced(query.trim(), 300);
   const webviewRef = useRef<WebView>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -138,6 +171,49 @@ export function UptodateArticleScreen() {
   const html = data
     ? wrap(data.body_html, colors.ink, colors.cardBg, colors.accent, accentSoft)
     : "";
+
+  // -- a table/figure/algorithm graphic opened from a reference link -------
+  const {
+    data: graphicTopic,
+    isLoading: graphicLoading,
+    isError: graphicTopicError,
+  } = useQuery({
+    queryKey: ["uptodate-topic", graphicId],
+    queryFn: () => uptodateApi.topic(graphicId as string),
+    enabled: !!graphicId,
+  });
+
+  const { data: graphicHtml, isError: graphicHtmlError } = useQuery({
+    queryKey: ["uptodate-graphic-html", graphicId, graphicTopic?.body_html],
+    queryFn: async () => {
+      const raw = graphicTopic?.body_html ?? "";
+      const imageIds = Array.from(
+        new Set(Array.from(raw.matchAll(/<img[^>]*\ssrc="(\d+)"/g)).map((m) => m[1])),
+      );
+      if (!imageIds.length) return raw;
+      const images = await Promise.all(
+        imageIds.map((imageId) => uptodateApi.image(imageId).catch(() => null)),
+      );
+      let substituted = raw;
+      imageIds.forEach((imageId, i) => {
+        const image = images[i];
+        if (image) {
+          const dataUri = `data:${image.content_type};base64,${image.data_base64}`;
+          substituted = substituted.split(`src="${imageId}"`).join(`src="${dataUri}"`);
+        }
+      });
+      return substituted;
+    },
+    enabled: !!graphicTopic,
+  });
+
+  const graphicWrappedHtml = wrap(
+    graphicHtml ?? "",
+    colors.ink,
+    colors.cardBg,
+    colors.accent,
+    accentSoft,
+  );
 
   // -- cross-platform bridge to the injected find/goto script --------------
   // Web: a srcDoc iframe is same-origin, so the parent can call functions
@@ -195,14 +271,50 @@ export function UptodateArticleScreen() {
     }
   };
 
+  // doOperation() in the injected script can't return a value across the
+  // WebView bridge (and even on web, the click happens inside the iframe's
+  // own event loop), so every reference link reaches us as a posted message
+  // tagged __utdOp rather than a function return value.
+  const handleOp = (op: { type?: string; contentId?: string; sectionName?: string | null }) => {
+    if (op.type === "nav" && op.contentId) {
+      if (op.sectionName) {
+        navigate("uptodateArticle", { id: op.contentId, sectionId: op.sectionName });
+      } else {
+        navigate("uptodateOutline", { id: op.contentId, title: "" });
+      }
+    } else if (op.type === "graphic" && op.contentId) {
+      setGraphicId(op.contentId);
+    }
+  };
+
   const handleNativeMessage = (event: { nativeEvent: { data: string } }) => {
     try {
-      const result = JSON.parse(event.nativeEvent.data) as FindResult;
-      setFind(result);
+      const msg = JSON.parse(event.nativeEvent.data);
+      if (msg && msg.__utdOp) {
+        handleOp(msg);
+        return;
+      }
+      setFind(msg as FindResult);
     } catch {
       /* ignore */
     }
   };
+
+  React.useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      try {
+        const msg = JSON.parse(event.data as string);
+        if (msg && msg.__utdOp) handleOp(msg);
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
@@ -309,6 +421,60 @@ export function UptodateArticleScreen() {
           style={{ flex: 1, backgroundColor: colors.cardBg }}
         />
       )}
+
+      <Modal
+        visible={!!graphicId}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setGraphicId(null)}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(4,10,9,0.55)", padding: 16 }}>
+          <View style={{ flex: 1, backgroundColor: colors.cardBg, borderRadius: 18, overflow: "hidden" }}>
+            <View
+              style={{
+                flexDirection: row,
+                alignItems: "center",
+                gap: 10,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.sheetLine,
+              }}
+            >
+              <AppText weight="800" size={13} numberOfLines={2} style={{ flex: 1 }}>
+                {graphicTopic?.title ?? ""}
+              </AppText>
+              <ChromeButton onPress={() => setGraphicId(null)} size={28}>
+                <AppText weight="800" size={14} color={colors.ink}>
+                  ×
+                </AppText>
+              </ChromeButton>
+            </View>
+
+            {graphicLoading || (!!graphicTopic && graphicHtml === undefined) ? (
+              <LoadingState />
+            ) : graphicTopicError || graphicHtmlError || !graphicTopic ? (
+              <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
+                <AppText muted weight="600">
+                  {t("uptodateGraphicLoadError")}
+                </AppText>
+              </View>
+            ) : Platform.OS === "web" ? (
+              <iframe
+                srcDoc={graphicWrappedHtml}
+                style={{ flexGrow: 1, border: "none", width: "100%", height: "100%" }}
+                title={graphicTopic.title}
+              />
+            ) : (
+              <WebView
+                originWhitelist={["*"]}
+                source={{ html: graphicWrappedHtml }}
+                style={{ flex: 1, backgroundColor: colors.cardBg }}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

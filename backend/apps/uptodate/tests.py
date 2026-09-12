@@ -1,3 +1,4 @@
+import base64
 import json
 import sqlite3
 import tempfile
@@ -63,6 +64,14 @@ def _make_snapshot(directory: str):
     toc.commit()
     toc.close()
 
+    images = sqlite3.connect(d / "images.db")
+    images.execute("CREATE TABLE images (id TEXT PRIMARY KEY, binary BLOB, type TEXT)")
+    images.execute(
+        "INSERT INTO images VALUES (?,?,?)", ("73781", b"\x89PNG\r\n\x1a\nfake", "png")
+    )
+    images.commit()
+    images.close()
+
 
 class UptodateTests(TestCase):
     def setUp(self):
@@ -116,3 +125,15 @@ class UptodateTests(TestCase):
         with self._with_snapshot():
             res = APIClient().get("/api/v1/uptodate/topics/", {"search": "x"})
         self.assertEqual(res.status_code, 401)
+
+    def test_image_returns_base64_with_content_type(self):
+        with self._with_snapshot():
+            res = self.client.get("/api/v1/uptodate/images/73781/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["content_type"], "image/png")
+        self.assertEqual(base64.b64decode(res.data["data_base64"]), b"\x89PNG\r\n\x1a\nfake")
+
+    def test_missing_image_is_404(self):
+        with self._with_snapshot():
+            res = self.client.get("/api/v1/uptodate/images/000000/")
+        self.assertEqual(res.status_code, 404)

@@ -6,7 +6,11 @@ from rest_framework.views import APIView
 from apps.core.exceptions import PlatformAPIError
 
 from . import services
-from .serializers import UptodateArticleSerializer, UptodateTopicSerializer
+from .serializers import (
+    UptodateArticleSerializer,
+    UptodateImageSerializer,
+    UptodateTopicSerializer,
+)
 
 
 def _require_available():
@@ -49,3 +53,15 @@ class TopicDetailView(APIView):
         if article is None:
             raise PlatformAPIError("No such topic.", code="NOT_FOUND", status_code=404)
         return Response(UptodateArticleSerializer(article).data)
+
+
+class ImageDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=UptodateImageSerializer)
+    def get(self, request, image_id):
+        _require_available()
+        image = services.get_image(image_id)
+        if image is None:
+            raise PlatformAPIError("No such image.", code="NOT_FOUND", status_code=404)
+        return Response(UptodateImageSerializer(image).data)

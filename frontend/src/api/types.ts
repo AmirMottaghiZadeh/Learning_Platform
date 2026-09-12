@@ -257,3 +257,9 @@ export interface UptodateArticle extends UptodateTopic {
   outline_html: string;
   body_html: string;
 }
+
+export interface UptodateImage {
+  id: string;
+  content_type: string;
+  data_base64: string;
+}
