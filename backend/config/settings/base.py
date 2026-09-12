@@ -289,7 +289,14 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_PASSWORD_VALIDATORS = [
     {
+        # Django's default threshold (max_similarity=0.7) rejects passwords
+        # that merely share a lot of characters with the username/email/name
+        # -- in practice that caught plenty of genuinely fine passwords.
+        # Raised so only a password that's essentially the same string as one
+        # of those attributes (a near-exact match, not just "similar") is
+        # rejected.
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "OPTIONS": {"max_similarity": 0.95},
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
