@@ -134,14 +134,17 @@ def _topic_backlog(topic_key, group):
     return items
 
 
+def _weekday_index(d):
+    """`date.weekday()` is Mon=0..Sun=6; `StudyPlan.days` is Sat=0..Fri=6."""
+    return (d.weekday() + 2) % 7
+
+
 def _study_days(days, start, end):
-    """Calendar dates in [start, end] whose weekday is enabled in `days`
-    (index 0..6 = Sat..Fri, matching `models.default_week`)."""
+    """Calendar dates in [start, end] whose weekday is enabled in `days`."""
     out = []
     d = start
     while d <= end:
-        idx = (d.weekday() + 2) % 7  # Mon=0..Sun=6 -> Sat=0..Fri=6
-        if days[idx]:
+        if days[_weekday_index(d)]:
             out.append(d)
         d += timedelta(days=1)
     return out
@@ -225,6 +228,8 @@ def _maintenance_items(user, plan):
     """Always recomputed for just today -- driven by what's currently due or
     weak, which changes day to day, not a fixed curriculum to pre-schedule."""
     today = timezone.localdate()
+    if not plan.days[_weekday_index(today)]:
+        return [], True
     backlog = []
 
     due = due_card_count(user)
@@ -285,10 +290,13 @@ def regenerate_items(user, plan):
 
 def ensure_today_items(user, plan):
     """Maintenance plans have no pre-built schedule -- make sure today's
-    pick exists before it's read."""
+    pick exists before it's read. Respects the plan's own chosen study days,
+    same as goal mode, rather than nagging on an off day."""
     if plan.mode != StudyPlan.MODE_MAINTENANCE:
         return
     today = timezone.localdate()
+    if not plan.days[_weekday_index(today)]:
+        return
     if not StudyPlanItem.objects.filter(plan=plan, day=today).exists():
         regenerate_items(user, plan)
 

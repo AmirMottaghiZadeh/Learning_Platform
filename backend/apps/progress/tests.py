@@ -339,6 +339,17 @@ class MaintenancePlanAndApiTests(TestCase):
         self.assertIn("flashcards", kinds)
         self.assertIn("mistake_review", kinds)
 
+    def test_maintenance_mode_stays_quiet_on_a_day_not_chosen_for_study(self):
+        self.client.put(
+            "/api/v1/me/plan/",
+            {
+                "mode": "maintenance", "topic_keys": [], "daily_minutes": 30,
+                "days": [False] * 7, "reminders_enabled": False,
+            },
+            format="json",
+        )
+        self.assertEqual(self.client.get("/api/v1/me/plan/today/").data["items"], [])
+
     def test_complete_and_skip_item(self):
         self.client.put("/api/v1/me/plan/", self._goal_plan_payload(), format="json")
         item_id = self.client.get("/api/v1/me/plan/today/").data["items"][0]["id"]
