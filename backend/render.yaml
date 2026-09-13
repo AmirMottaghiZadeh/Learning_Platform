@@ -48,6 +48,14 @@ services:
       - key: DATABASE_URL
         sync: false
 
+      # Render's disk can't hold the ~2.8GB UpToDate snapshot, so the /uptodate/
+      # endpoints read it from this MySQL mirror instead of local SQLite files
+      # (see apps.uptodate.services). Populate it once with
+      # `python manage.py migrate_uptodate_to_mysql` from a machine that has
+      # the local snapshot (UPTODATE_DB_DIR) and can reach the mirror.
+      - key: UPTODATE_MYSQL_URL
+        sync: false
+
       # No Redis on the free plan: cache lives in Postgres, and background
       # jobs (just the password-reset email today) run inline.
       - key: CACHE_BACKEND

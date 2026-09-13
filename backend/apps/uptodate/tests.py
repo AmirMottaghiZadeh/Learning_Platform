@@ -85,7 +85,10 @@ class UptodateTests(TestCase):
         )
 
     def _with_snapshot(self):
-        return override_settings(UPTODATE_DB_DIR=self._tmp.name)
+        # UPTODATE_MYSQL_URL may be set in the developer's own .env (for
+        # exercising the MySQL mirror locally); tests must not depend on
+        # that ambient, network-reaching setting.
+        return override_settings(UPTODATE_DB_DIR=self._tmp.name, UPTODATE_MYSQL_URL="")
 
     def test_search_returns_topic_articles_with_section(self):
         with self._with_snapshot():
@@ -116,7 +119,7 @@ class UptodateTests(TestCase):
 
     def test_unavailable_snapshot_answers_503(self):
         services.close_all()
-        with override_settings(UPTODATE_DB_DIR="/nonexistent/path"):
+        with override_settings(UPTODATE_DB_DIR="/nonexistent/path", UPTODATE_MYSQL_URL=""):
             res = self.client.get("/api/v1/uptodate/topics/", {"search": "x"})
         self.assertEqual(res.status_code, 503)
         self.assertEqual(res.data["code"], "FEATURE_NOT_AVAILABLE")
