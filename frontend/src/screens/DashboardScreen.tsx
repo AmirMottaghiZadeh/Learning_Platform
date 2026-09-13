@@ -191,7 +191,7 @@ export function DashboardScreen() {
                   justifyContent: "center",
                 }}
               >
-                <IconImage name="pillWarning" size={26} />
+                <IconImage name="lexicompLogo" size={30} />
               </View>
               <View style={{ flex: 1 }}>
                 <AppText weight="800" size={14}>
