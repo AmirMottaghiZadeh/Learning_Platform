@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     "apps.data_quality_center",
     # Read-only access to the bundled UpToDate SQLite snapshot (no models).
     "apps.uptodate",
+    # Same, for the Lexicomp drug-interactions snapshot.
+    "apps.lexicomp",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -276,6 +278,19 @@ DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=Fals
 UPTODATE_DB_DIR = config(
     "UPTODATE_DB_DIR",
     default="/home/amir/Documents/UpToDate",
+)
+
+# Remote mirror of the same snapshot, for hosts (Render) with no local disk
+# for a multi-GB dataset. When set, apps.uptodate.services reads from this
+# MySQL database instead of the local SQLite files above -- see
+# apps.uptodate.migrate_to_mysql for how it's populated.
+UPTODATE_MYSQL_URL = config("UPTODATE_MYSQL_URL", default="")
+
+# Directory holding the Lexicomp drug-interactions snapshot (interact.db,
+# info.json). The /lexicomp/ endpoints answer 503 when it is not present.
+LEXICOMP_DB_DIR = config(
+    "LEXICOMP_DB_DIR",
+    default="/home/amir/Documents/Lexicomp_Drug_Interactions",
 )
 
 # EmailOrUsernameBackend first: the product only shows/asks for "email" (see

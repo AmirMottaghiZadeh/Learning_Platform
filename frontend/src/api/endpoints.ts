@@ -9,6 +9,8 @@ import {
   IngredientListItem,
   LeitnerCard,
   LessonGroup,
+  LexicompDrug,
+  LexicompInteraction,
   Mistake,
   PlanToday,
   QuizAnswerResult,
@@ -113,6 +115,17 @@ export const uptodateApi = {
     apiClient.get<UptodateArticle>(`/uptodate/topics/${id}/`).then((r) => r.data),
   image: (id: string) =>
     apiClient.get<UptodateImage>(`/uptodate/images/${id}/`).then((r) => r.data),
+};
+
+export const lexicompApi = {
+  search: (search: string, limit = 20) =>
+    apiClient
+      .get<LexicompDrug[]>("/lexicomp/drugs/", { params: { search, limit } })
+      .then((r) => r.data),
+  checkInteractions: (genericIds: number[]) =>
+    apiClient
+      .post<LexicompInteraction[]>("/lexicomp/interactions/", { generic_ids: genericIds })
+      .then((r) => r.data),
 };
 
 export const quizApi = {

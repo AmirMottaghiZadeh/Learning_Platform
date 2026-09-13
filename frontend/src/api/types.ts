@@ -305,3 +305,27 @@ export interface UptodateImage {
   content_type: string;
   data_base64: string;
 }
+
+export type LexicompDrugKind = "generic" | "brand";
+
+export interface LexicompDrug {
+  id: number;
+  name: string;
+  generic_id: number;
+  kind: LexicompDrugKind;
+}
+
+export interface LexicompInteraction {
+  monograph_id: number;
+  drug_ids: number[];
+  object_generic_id: number;
+  object_name: string;
+  precipitant_generic_id: number;
+  precipitant_name: string;
+  severity: string;
+  reliability: string;
+  summary: string;
+  management: string;
+  discussion: string;
+  footnotes: string;
+}

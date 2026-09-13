@@ -10,6 +10,7 @@ import { DashboardScreen } from "@/screens/DashboardScreen";
 import { LessonDetailScreen } from "@/screens/LessonDetailScreen";
 import { LessonListScreen } from "@/screens/LessonListScreen";
 import { LessonsScreen } from "@/screens/LessonsScreen";
+import { LexicompScreen } from "@/screens/LexicompScreen";
 import { FlashcardsScreen } from "@/screens/FlashcardsScreen";
 import { MistakesScreen } from "@/screens/MistakesScreen";
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
@@ -73,6 +74,8 @@ function CurrentScreen() {
       return <UptodateOutlineScreen />;
     case "uptodateArticle":
       return <UptodateArticleScreen />;
+    case "lexicomp":
+      return <LexicompScreen />;
     case "dashboard":
     default:
       return <DashboardScreen />;

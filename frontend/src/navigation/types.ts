@@ -12,7 +12,8 @@ export type ScreenKey =
   | "planningSetup"
   | "uptodate"
   | "uptodateOutline"
-  | "uptodateArticle";
+  | "uptodateArticle"
+  | "lexicomp";
 
 export const TAB_ORDER: TabKey[] = ["dashboard", "lessons", "flashcards", "quiz", "profile"];
 

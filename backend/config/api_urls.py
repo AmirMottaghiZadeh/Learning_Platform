@@ -9,6 +9,7 @@ urlpatterns = [
     path("", include("apps.lessons.urls")),
     path("", include("apps.progress.urls")),
     path("", include("apps.uptodate.urls")),
+    path("", include("apps.lexicomp.urls")),
 ]
 
 if settings.QUIZ_API_ENABLED:

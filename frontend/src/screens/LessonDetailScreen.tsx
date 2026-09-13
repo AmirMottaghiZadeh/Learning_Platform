@@ -3,7 +3,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, TextInput, View } from "react-native";
 
 import { lessonsApi } from "@/api/endpoints";
-import { LessonSection, SectionTone } from "@/api/types";
+import { LessonSection } from "@/api/types";
 import { ChromeButton } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
@@ -11,21 +11,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
-
-function toneColors(tone: SectionTone, c: ReturnType<typeof useTheme>["colors"]) {
-  switch (tone) {
-    case "deny":
-      return { bg: c.denyBg, border: c.denyBorder, label: c.denyLabel };
-    case "boxed":
-      return { bg: c.denyBg, border: c.boxedBorder, label: c.boxedInk };
-    case "caution":
-      return { bg: c.cautBg, border: c.cautBorder, label: c.cautLabel };
-    case "special":
-      return { bg: c.specBg, border: c.specBorder, label: c.specLabel };
-    default:
-      return { bg: "transparent", border: "transparent", label: c.accent };
-  }
-}
+import { toneColors } from "@/theme/tone";
 
 export function LessonDetailScreen() {
   const { t, isFa, n, row } = useLang();

@@ -172,6 +172,39 @@ export function DashboardScreen() {
           </Card>
         </Pressable>
 
+        {/* lexicomp drug-interaction check card -- narrower, same style */}
+        <Pressable
+          onPress={() => navigate("lexicomp")}
+          style={{ alignSelf: isFa ? "flex-end" : "flex-start", width: "70%" }}
+        >
+          <Card style={{ marginBottom: spacing.lg }}>
+            <View style={{ flexDirection: row, alignItems: "center", gap: 10 }}>
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  backgroundColor: colors.softBg,
+                  borderWidth: 1,
+                  borderColor: colors.trackBg,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <IconImage name="pillWarning" size={26} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <AppText weight="800" size={14}>
+                  {t("lexicompTitle")}
+                </AppText>
+                <AppText muted weight="600" size={11} style={{ marginTop: 2 }} numberOfLines={2}>
+                  {t("lexicompSub")}
+                </AppText>
+              </View>
+            </View>
+          </Card>
+        </Pressable>
+
         {/* learning paths grid */}
         <AppText weight="800" size={13} style={{ marginBottom: 10 }}>
           {t("pathsTitle")}

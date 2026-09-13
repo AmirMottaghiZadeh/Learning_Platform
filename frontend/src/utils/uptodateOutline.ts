@@ -10,6 +10,8 @@
  * single regex sweep tracking <ul>/</ul> nesting depth as it goes.
  */
 
+import { stripHtml } from "./html";
+
 export type OutlineNode = {
   id: string;
   title: string;
@@ -17,23 +19,6 @@ export type OutlineNode = {
 };
 
 const TOKEN_RE = /<ul[^>]*>|<\/ul\s*>|<a[^>]*onclick="doOperation\(\{sectionName:&quot;([^"&]+)&quot;\}\)"[^>]*>([\s\S]*?)<\/a>/gi;
-
-const ENTITIES: Record<string, string> = {
-  "&nbsp;": " ",
-  "&amp;": "&",
-  "&lt;": "<",
-  "&gt;": ">",
-  "&quot;": '"',
-  "&#39;": "'",
-};
-
-function stripHtml(fragment: string): string {
-  const withoutTags = fragment.replace(/<[^>]+>/g, "");
-  return withoutTags
-    .replace(/&nbsp;|&amp;|&lt;|&gt;|&quot;|&#39;/g, (m) => ENTITIES[m] ?? m)
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 export function parseOutline(outlineHtml: string): OutlineNode[] {
   if (!outlineHtml) return [];
