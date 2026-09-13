@@ -4,13 +4,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.exceptions import PlatformAPIError
+from apps.lessons.data.study_topics import STUDY_TOPICS
+from apps.lessons.selectors import topic_progress
 
-from .models import Mistake
+from . import planning
+from .models import Mistake, StudyPlanItem
 from .selectors import dashboard, statistics
 from .serializers import (
     DashboardSerializer,
     MistakeSerializer,
+    PlanTodaySerializer,
     StatisticsSerializer,
+    StudyPlanItemSerializer,
+    StudyPlanSaveResponseSerializer,
     StudyPlanSerializer,
 )
 from .services import get_plan
@@ -73,10 +79,63 @@ class StudyPlanView(APIView):
     def get(self, request):
         return Response(StudyPlanSerializer(get_plan(request.user)).data)
 
-    @extend_schema(request=StudyPlanSerializer, responses=StudyPlanSerializer)
+    @extend_schema(request=StudyPlanSerializer, responses=StudyPlanSaveResponseSerializer)
     def put(self, request):
         plan = get_plan(request.user)
         serializer = StudyPlanSerializer(plan, data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+        plan = serializer.save()
+        fits = planning.regenerate_items(request.user, plan)
+        return Response({**serializer.data, "fits_deadline": fits})
+
+
+class PlanTodayView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=PlanTodaySerializer)
+    def get(self, request):
+        plan = get_plan(request.user)
+        items = planning.today_items(request.user, plan)
+        topics = [
+            {
+                "key": topic["key"],
+                "name_fa": topic["name_fa"],
+                "name_en": topic["name_en"],
+                "progress_pct": topic_progress(request.user, topic["key"])["pct"],
+                "mastery_pct": planning.topic_mastery(request.user, topic["key"]),
+            }
+            for topic in STUDY_TOPICS
+            if topic["key"] in plan.topic_keys
+        ]
+        return Response(
+            PlanTodaySerializer({
+                "mode": plan.mode,
+                "items": items,
+                "total_minutes": sum(item.estimated_minutes for item in items),
+                "topics": topics,
+            }).data
+        )
+
+
+class PlanItemCompleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=None, responses=StudyPlanItemSerializer)
+    def post(self, request, item_id):
+        try:
+            item = planning.complete_item(request.user, item_id)
+        except StudyPlanItem.DoesNotExist:
+            raise PlatformAPIError("No such plan item.", code="NOT_FOUND", status_code=404)
+        return Response(StudyPlanItemSerializer(item).data)
+
+
+class PlanItemSkipView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=None, responses=StudyPlanItemSerializer)
+    def post(self, request, item_id):
+        try:
+            item = planning.skip_item(request.user, item_id)
+        except StudyPlanItem.DoesNotExist:
+            raise PlatformAPIError("No such plan item.", code="NOT_FOUND", status_code=404)
+        return Response(StudyPlanItemSerializer(item).data)

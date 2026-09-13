@@ -121,6 +121,36 @@ def lesson_groups(user):
     return groups
 
 
+def slugs_for_topic(topic_key):
+    """Every ingredient slug reachable from any chapter under this study
+    topic -- used by the study-plan generator and `progress.topic_mastery`."""
+    topic = next((t for t in STUDY_TOPICS if t["key"] == topic_key), None)
+    if not topic:
+        return set()
+    index = _l2_slug_index()
+    slugs = set()
+    for code in topic["l2"]:
+        slugs.update(index.get(code, []))
+    return slugs
+
+
+def topic_chapters(user, topic_key):
+    """This topic's chapters (subgroups) with this learner's read progress,
+    unread/partial ones first -- the order the study-plan generator works
+    through a topic in."""
+    for group in lesson_groups(user):
+        if group["code"] == topic_key:
+            return sorted(group["subgroups"], key=lambda s: s["done"] >= s["total"])
+    return []
+
+
+def topic_progress(user, topic_key):
+    chapters = topic_chapters(user, topic_key)
+    total = sum(c["total"] for c in chapters)
+    done = sum(c["done"] for c in chapters)
+    return {"done": done, "total": total, "pct": round(100 * done / total) if total else 0}
+
+
 def _topic_lookup():
     """{ L2 code -> [topic dict, ...] } in `STUDY_TOPICS` order; first entry
     is the chapter's primary topic."""

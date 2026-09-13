@@ -91,7 +91,28 @@ class Mistake(models.Model):
 
 
 class StudyPlan(models.Model):
-    """Which weekday(s) the learner plans to study. Index 0..6 = Sat..Fri."""
+    """Which weekday(s) the learner plans to study (index 0..6 = Sat..Fri),
+    plus which of three distinct planning models is active:
+
+    - "none": free study. No items are generated; `topic_keys`/`daily_minutes`
+      /`deadline` are unused.
+    - "goal": a finite curriculum over `topic_keys` to be finished by
+      `deadline`, studying `daily_minutes`/day on the enabled weekdays.
+      Items for the whole remaining date range are generated up front by
+      `services.regenerate_items` and only touched again on replanning.
+    - "maintenance": no deadline -- a day's items are recomputed fresh each
+      time (due flashcards, open mistakes, the stalest fully-read chapter)
+      rather than pre-scheduled, since "what's due" changes daily.
+    """
+
+    MODE_NONE = "none"
+    MODE_GOAL = "goal"
+    MODE_MAINTENANCE = "maintenance"
+    MODE_CHOICES = [
+        (MODE_NONE, "Free study"),
+        (MODE_GOAL, "Goal-based path"),
+        (MODE_MAINTENANCE, "Ongoing review"),
+    ]
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -100,7 +121,56 @@ class StudyPlan(models.Model):
     )
     days = models.JSONField(default=default_week)
     reminders_enabled = models.BooleanField(default=False)
+    mode = models.CharField(max_length=20, choices=MODE_CHOICES, default=MODE_NONE)
+    topic_keys = models.JSONField(default=list, blank=True)
+    daily_minutes = models.PositiveSmallIntegerField(default=30)
+    deadline = models.DateField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"plan<{self.user_id}> {self.days}"
+        return f"plan<{self.user_id}> {self.mode} {self.days}"
+
+
+class StudyPlanItem(models.Model):
+    """One scheduled task on one day of a `StudyPlan` -- the unit the Today
+    screen renders. `topic_key`/`atc_code` are blank when the activity isn't
+    scoped to one (e.g. a maintenance-mode mistake review)."""
+
+    LESSON = "lesson"
+    QUIZ = "quiz"
+    FLASHCARDS = "flashcards"
+    MISTAKE_REVIEW = "mistake_review"
+    ACTIVITY_CHOICES = [
+        (LESSON, "Lesson"),
+        (QUIZ, "Quiz"),
+        (FLASHCARDS, "Flashcards"),
+        (MISTAKE_REVIEW, "Mistake review"),
+    ]
+
+    PENDING = "pending"
+    DONE = "done"
+    SKIPPED = "skipped"
+    STATUS_CHOICES = [
+        (PENDING, "Pending"),
+        (DONE, "Done"),
+        (SKIPPED, "Skipped"),
+    ]
+
+    plan = models.ForeignKey(StudyPlan, on_delete=models.CASCADE, related_name="items")
+    day = models.DateField()
+    order = models.PositiveSmallIntegerField(default=0)
+    activity_type = models.CharField(max_length=20, choices=ACTIVITY_CHOICES)
+    topic_key = models.CharField(max_length=60, blank=True)
+    atc_code = models.CharField(max_length=3, blank=True)
+    estimated_minutes = models.PositiveSmallIntegerField(default=10)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
+    reason_fa = models.CharField(max_length=200, blank=True)
+    reason_en = models.CharField(max_length=200, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["day", "order"]
+
+    def __str__(self):
+        return f"{self.plan_id}:{self.day} {self.activity_type}#{self.order} ({self.status})"
