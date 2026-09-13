@@ -193,10 +193,52 @@ export interface Mistake {
   last_seen: string;
 }
 
+export type PlanMode = "none" | "goal" | "maintenance";
+
 export interface StudyPlan {
+  mode: PlanMode;
+  topic_keys: string[];
+  daily_minutes: number;
+  deadline: string | null;
   days: boolean[];
   reminders_enabled: boolean;
   updated_at?: string;
+  /** Present only on the PUT response: whether the newly generated goal-mode
+   * schedule fits before the deadline at this daily_minutes (always true for
+   * the other two modes). */
+  fits_deadline?: boolean;
+}
+
+export type PlanItemActivity = "lesson" | "quiz" | "flashcards" | "mistake_review";
+export type PlanItemStatus = "pending" | "done" | "skipped";
+
+export interface StudyPlanItem {
+  id: number;
+  day: string;
+  order: number;
+  activity_type: PlanItemActivity;
+  topic_key: string;
+  atc_code: string;
+  estimated_minutes: number;
+  status: PlanItemStatus;
+  reason_fa: string;
+  reason_en: string;
+  completed_at: string | null;
+}
+
+export interface PlanTopicStatus {
+  key: string;
+  name_fa: string;
+  name_en: string;
+  progress_pct: number;
+  mastery_pct: number;
+}
+
+export interface PlanToday {
+  mode: PlanMode;
+  items: StudyPlanItem[];
+  total_minutes: number;
+  topics: PlanTopicStatus[];
 }
 
 export interface LeitnerCard {

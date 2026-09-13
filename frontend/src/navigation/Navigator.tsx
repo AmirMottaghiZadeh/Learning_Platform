@@ -14,6 +14,7 @@ import { FlashcardsScreen } from "@/screens/FlashcardsScreen";
 import { MistakesScreen } from "@/screens/MistakesScreen";
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
 import { PlanningScreen } from "@/screens/PlanningScreen";
+import { PlanningSetupScreen } from "@/screens/PlanningSetupScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
 import { QuizScreen } from "@/screens/QuizScreen";
 import { StatisticsScreen } from "@/screens/StatisticsScreen";
@@ -64,6 +65,8 @@ function CurrentScreen() {
       return <StatisticsScreen />;
     case "planning":
       return <PlanningScreen />;
+    case "planningSetup":
+      return <PlanningSetupScreen />;
     case "uptodate":
       return <UptodateScreen />;
     case "uptodateOutline":

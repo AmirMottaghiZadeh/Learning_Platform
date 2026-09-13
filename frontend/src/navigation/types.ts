@@ -9,6 +9,7 @@ export type ScreenKey =
   | "mistakes"
   | "statistics"
   | "planning"
+  | "planningSetup"
   | "uptodate"
   | "uptodateOutline"
   | "uptodateArticle";

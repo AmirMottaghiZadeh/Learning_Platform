@@ -34,6 +34,7 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
   mistakes: "profile",
   statistics: "profile",
   planning: "profile",
+  planningSetup: "profile",
   uptodate: "dashboard",
   uptodateOutline: "dashboard",
   uptodateArticle: "dashboard",

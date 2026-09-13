@@ -10,11 +10,13 @@ import {
   LeitnerCard,
   LessonGroup,
   Mistake,
+  PlanToday,
   QuizAnswerResult,
   QuizResult,
   QuizSession,
   Statistics,
   StudyPlan,
+  StudyPlanItem,
   UptodateArticle,
   UptodateImage,
   UptodateTopic,
@@ -83,8 +85,13 @@ export const meApi = {
   restoreMistakes: () =>
     apiClient.post<Mistake[]>("/me/mistakes/restore/").then((r) => r.data),
   plan: () => apiClient.get<StudyPlan>("/me/plan/").then((r) => r.data),
-  savePlan: (body: StudyPlan) =>
+  savePlan: (body: Omit<StudyPlan, "fits_deadline" | "updated_at">) =>
     apiClient.put<StudyPlan>("/me/plan/", body).then((r) => r.data),
+  planToday: () => apiClient.get<PlanToday>("/me/plan/today/").then((r) => r.data),
+  completePlanItem: (id: number) =>
+    apiClient.post<StudyPlanItem>(`/me/plan/items/${id}/complete/`).then((r) => r.data),
+  skipPlanItem: (id: number) =>
+    apiClient.post<StudyPlanItem>(`/me/plan/items/${id}/skip/`).then((r) => r.data),
 };
 
 // --- flashcards & quiz (locked -> 503 until enabled server-side) ------

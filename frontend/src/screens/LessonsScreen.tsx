@@ -13,34 +13,7 @@ import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { LessonGroup } from "@/api/types";
 import { spacing } from "@/theme/tokens";
-
-type Category = {
-  code: string;
-  name_fa: string;
-  name_en: string;
-  topics: LessonGroup[];
-};
-
-/** The API already lists topics in category-clustered order (see
- * apps.lessons.data.study_topics), so a stable first-seen grouping here needs
- * no separate categories request. */
-function groupByCategory(groups: LessonGroup[]): Category[] {
-  const byCode = new Map<string, Category>();
-  for (const group of groups) {
-    let category = byCode.get(group.category_code);
-    if (!category) {
-      category = {
-        code: group.category_code,
-        name_fa: group.category_name_fa,
-        name_en: group.category_name_en,
-        topics: [],
-      };
-      byCode.set(group.category_code, category);
-    }
-    category.topics.push(group);
-  }
-  return [...byCode.values()];
-}
+import { LessonCategory, groupByCategory } from "@/utils/lessonCategories";
 
 export function LessonsScreen() {
   const { t } = useLang();
@@ -92,7 +65,7 @@ function CategoryCard({
   openTopic,
   onToggleTopic,
 }: {
-  category: Category;
+  category: LessonCategory;
   isOpen: boolean;
   onToggle: () => void;
   openTopic: string | null;
