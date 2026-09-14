@@ -172,18 +172,15 @@ export function DashboardScreen() {
           </Card>
         </Pressable>
 
-        {/* lexicomp drug-interaction check card -- narrower, same style */}
-        <Pressable
-          onPress={() => navigate("lexicomp")}
-          style={{ alignSelf: isFa ? "flex-end" : "flex-start", width: "70%" }}
-        >
+        {/* lexicomp drug-interaction check card -- same width as UpToDate */}
+        <Pressable onPress={() => navigate("lexicomp")}>
           <Card style={{ marginBottom: spacing.lg }}>
-            <View style={{ flexDirection: row, alignItems: "center", gap: 10 }}>
+            <View style={{ flexDirection: row, alignItems: "center", gap: 12 }}>
               <View
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 14,
+                  width: 54,
+                  height: 54,
+                  borderRadius: 16,
                   backgroundColor: colors.softBg,
                   borderWidth: 1,
                   borderColor: colors.trackBg,
@@ -191,14 +188,29 @@ export function DashboardScreen() {
                   justifyContent: "center",
                 }}
               >
-                <IconImage name="lexicompLogo" size={30} />
+                <IconImage name="lexicompLogo" size={36} />
               </View>
               <View style={{ flex: 1 }}>
-                <AppText weight="800" size={14}>
-                  {t("lexicompTitle")}
+                {/* Brand name -- never translated. */}
+                <AppText weight="800" size={16} style={{ textAlign: "left", writingDirection: "ltr" }}>
+                  LexiComp
                 </AppText>
-                <AppText muted weight="600" size={11} style={{ marginTop: 2 }} numberOfLines={2}>
+                <AppText muted weight="600" size={12} style={{ marginTop: 3 }}>
                   {t("lexicompSub")}
+                </AppText>
+              </View>
+              <View
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 11,
+                  backgroundColor: colors.accent,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <AppText weight="900" size={15} color={colors.onAccent}>
+                  {isFa ? "‹" : "›"}
                 </AppText>
               </View>
             </View>

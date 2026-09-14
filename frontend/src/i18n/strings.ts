@@ -189,8 +189,6 @@ export const strings = {
     planningActivityFlashcards: "مرور فلش‌کارتی",
     planningActivityMistakeReview: "مرور اشتباهات",
 
-    lexicompBadge: "بررسی تداخل دارویی",
-    lexicompTitle: "لکسی‌کامپ",
     lexicompSub: "بین چند دارو تداخل دارویی بررسی کن.",
     lexicompScreenTitle: "بررسی تداخل دارویی",
     lexicompSourceNote: "متصل به پایگاه داده‌ی تداخلات دارویی لکسی‌کامپ",
@@ -399,8 +397,6 @@ export const strings = {
     planningActivityFlashcards: "Flashcard review",
     planningActivityMistakeReview: "Mistake review",
 
-    lexicompBadge: "Drug interaction check",
-    lexicompTitle: "Lexicomp",
     lexicompSub: "Check interactions between drugs.",
     lexicompScreenTitle: "Drug interaction check",
     lexicompSourceNote: "Connected to the Lexicomp drug-interactions database",
