@@ -191,8 +191,9 @@ export function DashboardScreen() {
                 <IconImage name="lexicompLogo" size={36} />
               </View>
               <View style={{ flex: 1 }}>
-                {/* Brand name -- never translated. */}
-                <AppText weight="800" size={16} style={{ textAlign: "left", writingDirection: "ltr" }}>
+                {/* Brand name -- never translated, but its alignment still
+                    follows the current language like the rest of the row. */}
+                <AppText weight="800" size={16}>
                   LexiComp
                 </AppText>
                 <AppText muted weight="600" size={12} style={{ marginTop: 3 }}>
