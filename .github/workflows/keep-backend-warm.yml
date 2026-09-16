@@ -1,0 +1,38 @@
+name: Keep Render backend warm
+
+# Render's free tier spins the backend down after ~15 minutes idle, and
+# Neon's serverless Postgres compute suspends on its own idle timer too --
+# the next real request then pays both cold-start costs at once, which is
+# what caused the login/register timeouts. Pinging the health endpoint
+# (public, no auth needed) every 10 minutes keeps both awake; it checks the
+# database too, so it warms Neon as a side effect.
+#
+# GitHub disables a repo's scheduled workflows after 60 days with no commits
+# to the repo -- if that ever happens, re-enable this workflow from the
+# Actions tab.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          # A fully-slept container's first response can take well over 60s
+          # (measured ~90s cold vs ~4s once warm) -- generous on purpose so a
+          # real cold boot doesn't get counted as a failure.
+          status=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 120 \
+            https://pharmexa-backend.onrender.com/api/v1/health/)
+          echo "Health check responded with HTTP $status"
+          # 200 = healthy, 503 = server responded but the DB check was
+          # briefly degraded (e.g. Neon still waking up) -- either way the
+          # ping did its job of reaching the server. Only a real connection
+          # failure (curl itself erroring out, under `set -e`) or some other
+          # unexpected status should fail this job.
+          if [ "$status" != "200" ] && [ "$status" != "503" ]; then
+            exit 1
+          fi
