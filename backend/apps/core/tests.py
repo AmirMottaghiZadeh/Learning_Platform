@@ -1,5 +1,7 @@
 from io import StringIO
+from pathlib import Path
 
+from django.conf import settings
 from django.core.management import call_command
 from django.test import override_settings
 from django.test import Client, SimpleTestCase, TestCase
@@ -47,6 +49,29 @@ class HealthCheckTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["checks"]["database"], "not_checked")
         self.assertEqual(response["X-Request-ID"], "test-request-id")
+
+    def test_production_settings_restrict_rendering_to_json(self):
+        """A browser's Accept header must never be able to reach
+        BrowsableAPIRenderer in production: that HTML page needs DRF's own
+        static assets, which CompressedManifestStaticFilesStorage doesn't
+        reliably have in its hashed manifest, and rendering it 500s with
+        "Missing staticfiles manifest entry" -- a real production incident
+        this guards against.
+
+        This can't be exercised end-to-end from a test running under local
+        settings: DRF resolves a view's `renderer_classes` from
+        DEFAULT_RENDERER_CLASSES once, as a class attribute, when the view
+        module is first imported -- so overriding the REST_FRAMEWORK setting
+        afterwards (override_settings) has no effect on an already-loaded
+        view. Asserting against production.py's own source is what's left
+        that actually verifies the fix without loading two conflicting
+        settings modules (with their own validators) into one process.
+        """
+        source = Path(settings.BASE_DIR, "config", "settings", "production.py").read_text()
+        self.assertIn(
+            'REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = ["rest_framework.renderers.JSONRenderer"]',
+            source,
+        )
 
     def test_backup_command_supports_dry_run(self):
         output = StringIO()

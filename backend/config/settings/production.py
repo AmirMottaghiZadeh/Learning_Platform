@@ -53,3 +53,16 @@ X_FRAME_OPTIONS = "DENY"
 LOGGING["handlers"]["console"]["formatter"] = "json"
 
 STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# DRF's default renderers include BrowsableAPIRenderer, which content
+# negotiation picks whenever a client's Accept header prefers HTML over JSON
+# -- i.e. every time a browser is pointed at an endpoint directly, as opposed
+# to a real client (the app, curl, an uptime-checker) that asks for JSON.
+# That HTML page pulls in DRF's own static assets (bootstrap.min.css, ...),
+# which CompressedManifestStaticFilesStorage above requires to already be in
+# its hashed manifest -- collectstatic doesn't reliably put them there, so
+# rendering the page 500s with "Missing staticfiles manifest entry". This is
+# a pure JSON API with no use for the browsable HTML view in production
+# anyway, so the simplest fix is to never offer it there; local dev (using
+# base.py's defaults) keeps it for convenience.
+REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = ["rest_framework.renderers.JSONRenderer"]
