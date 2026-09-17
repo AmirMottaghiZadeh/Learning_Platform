@@ -8,8 +8,10 @@ from django.db import IntegrityError
 from django.test import TestCase
 from rest_framework.test import APIClient
 
+from apps.drugs.data.atc_reference import ATC_L1, ATC_L2
 from apps.drugs.models import (
     CLINICAL_FIELD_KEYS,
+    AtcCategory,
     AtcCode,
     Ingredient,
     IngredientProfileSection,
@@ -82,6 +84,42 @@ class ModelTests(TestCase):
         IngredientProfileSection.objects.create(ingredient=ingredient, field="pregnancy")
         with self.assertRaises(IntegrityError):
             IngredientProfileSection.objects.create(ingredient=ingredient, field="pregnancy")
+
+
+class LoadAtcReferenceTests(TestCase):
+    def test_first_run_creates_every_category(self):
+        call_command("load_atc_reference")
+        self.assertEqual(AtcCategory.objects.filter(level=1).count(), len(ATC_L1))
+        self.assertEqual(AtcCategory.objects.filter(level=2).count(), len(ATC_L2))
+
+    def test_second_run_skips_the_per_row_sync(self):
+        call_command("load_atc_reference")
+        # A stale name that a real re-sync would overwrite -- if the fast
+        # path is doing its job, a plain re-run must leave this untouched.
+        code, _ = next(iter(ATC_L2.items()))
+        AtcCategory.objects.filter(code=code).update(name_en="Stale name")
+
+        call_command("load_atc_reference")
+
+        self.assertEqual(AtcCategory.objects.get(code=code).name_en, "Stale name")
+
+    def test_force_bypasses_the_fast_path_and_resyncs(self):
+        call_command("load_atc_reference")
+        code, (name_en, _) = next(iter(ATC_L2.items()))
+        AtcCategory.objects.filter(code=code).update(name_en="Stale name")
+
+        call_command("load_atc_reference", "--force")
+
+        self.assertEqual(AtcCategory.objects.get(code=code).name_en, name_en)
+
+    def test_missing_reference_row_triggers_a_full_resync(self):
+        call_command("load_atc_reference")
+        code, _ = next(iter(ATC_L2.items()))
+        AtcCategory.objects.filter(code=code).delete()
+
+        call_command("load_atc_reference")
+
+        self.assertTrue(AtcCategory.objects.filter(code=code).exists())
 
 
 class ImportOpenfdaTests(TestCase):
