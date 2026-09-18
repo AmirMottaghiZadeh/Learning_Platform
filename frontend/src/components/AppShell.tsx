@@ -8,7 +8,12 @@ import { MeshBackground } from "./MeshBackground";
 
 /**
  * The 430px framed shell from the design: a centred rounded card on a mesh
- * ground. On a phone it fills the screen; on wide web it shows the frame.
+ * ground -- on wide web, where it reads as a phone mockup. On native (a
+ * *real* phone, which already has its own physical rounded corners) that
+ * same rounding + shadow + max-width instead clipped the app's own content
+ * away from the four corners of the screen, showing the plain mesh
+ * background through the gap. So the framed look is web-only; native
+ * renders truly edge-to-edge.
  *
  * Every screen renders inside this one component (Navigator wraps the whole
  * authenticated app in it, and AuthScreen/OnboardingScreen each use it
@@ -21,6 +26,7 @@ import { MeshBackground } from "./MeshBackground";
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { colors, shadows } = useTheme();
+  const isWeb = Platform.OS === "web";
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.meshBg }}>
@@ -31,12 +37,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {
               flex: 1,
               width: "100%",
-              maxWidth: layout.appMaxWidth,
               backgroundColor: colors.appBg,
-              borderRadius: radius.shell,
               overflow: "hidden",
             },
-            shadows.shell,
+            isWeb && { maxWidth: layout.appMaxWidth, borderRadius: radius.shell },
+            isWeb && shadows.shell,
           ]}
         >
           <KeyboardAvoidingView
