@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 import { ApiError } from "@/api/client";
 import { authApi } from "@/api/endpoints";
@@ -72,10 +72,8 @@ export function AuthScreen() {
   return (
     <AppShell>
       <HeaderMesh>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1 }}
-        >
+        {/* Keyboard avoidance is handled once, centrally, by AppShell. */}
+        <View style={{ flex: 1 }}>
           <GlassToggles />
 
           <View
@@ -193,7 +191,7 @@ export function AuthScreen() {
               </Pressable>
             </ScrollView>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </HeaderMesh>
     </AppShell>
   );

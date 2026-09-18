@@ -1,5 +1,5 @@
 import React from "react";
-import { View } from "react-native";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme/ThemeProvider";
@@ -9,6 +9,15 @@ import { MeshBackground } from "./MeshBackground";
 /**
  * The 430px framed shell from the design: a centred rounded card on a mesh
  * ground. On a phone it fills the screen; on wide web it shows the frame.
+ *
+ * Every screen renders inside this one component (Navigator wraps the whole
+ * authenticated app in it, and AuthScreen/OnboardingScreen each use it
+ * directly), so the keyboard-avoidance wrapper belongs here once rather than
+ * repeated per screen: without it, a focused input below the keyboard's
+ * top edge is simply hidden behind it while typing, since neither platform
+ * shrinks the app's own layout for a software keyboard on its own -- iOS
+ * needs "padding", Android needs "height" (web's KeyboardAvoidingView is a
+ * no-op, so `undefined` there changes nothing).
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { colors, shadows } = useTheme();
@@ -30,7 +39,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             shadows.shell,
           ]}
         >
-          <View style={{ flex: 1 }}>{children}</View>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={
+              Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined
+            }
+          >
+            {children}
+          </KeyboardAvoidingView>
         </View>
       </SafeAreaView>
     </View>
