@@ -232,7 +232,7 @@ export function LexicompScreen() {
           </Card>
         ) : (
           <View style={{ gap: 10 }}>
-            {check.data.map((interaction) => (
+            {check.data.filter(Boolean).map((interaction) => (
               <InteractionCard key={interaction.monograph_id} interaction={interaction} />
             ))}
           </View>
@@ -245,9 +245,9 @@ export function LexicompScreen() {
 function InteractionCard({ interaction }: { interaction: LexicompInteraction }) {
   const { t } = useLang();
   const { colors } = useTheme();
-  const key = interaction.severity.toLowerCase();
+  const key = (interaction.severity || "").toLowerCase();
   const tone = toneColors(SEVERITY_TONE[key] ?? "info", colors);
-  const severityLabel = SEVERITY_LABEL[key] ? t(SEVERITY_LABEL[key]) : interaction.severity;
+  const severityLabel = SEVERITY_LABEL[key] ? t(SEVERITY_LABEL[key]) : interaction.severity || "N/A";
 
   return (
     <Card style={{ gap: 10 }}>
