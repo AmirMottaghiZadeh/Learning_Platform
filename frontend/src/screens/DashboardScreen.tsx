@@ -219,11 +219,11 @@ export function DashboardScreen() {
         </Pressable>
 
         {/* quick-access grid: Education + the Medscape reference sections,
-            as four equal square tiles (2x2) */}
+            as four compact tiles (2x2) */}
         <AppText weight="800" size={13} style={{ marginBottom: 10 }}>
           {t("pathsTitle")}
         </AppText>
-        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 12, marginBottom: spacing.xl }}>
+        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 10, marginBottom: spacing.xl }}>
           {QUICK_ACCESS.map((p) => (
             <Pressable
               key={p.screen}
@@ -231,18 +231,28 @@ export function DashboardScreen() {
               style={[
                 {
                   width: "47.4%",
-                  aspectRatio: 1,
                   backgroundColor: colors.softBg,
-                  borderRadius: 18,
+                  borderRadius: 16,
                   alignItems: "center",
-                  justifyContent: "center",
+                  paddingVertical: 14,
                   gap: 8,
                 },
                 shadows.raisedSm,
               ]}
             >
-              <IconImage name={p.icon} size={44} />
-              <AppText weight="800" size={13}>
+              <View
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 13,
+                  backgroundColor: colors.accent + "1a",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <IconImage name={p.icon} size={24} />
+              </View>
+              <AppText weight="800" size={12.5} center>
                 {t(p.labelKey)}
               </AppText>
             </Pressable>
