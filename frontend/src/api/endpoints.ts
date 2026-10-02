@@ -3,6 +3,8 @@ import {
   AtcCode,
   AuthTokenResponse,
   BoxSummary,
+  CalculatorDetail,
+  CalculatorListItem,
   Chapter,
   Dashboard,
   IngredientDetail,
@@ -126,6 +128,15 @@ export const lexicompApi = {
     apiClient
       .post<LexicompInteraction[]>("/lexicomp/interactions/", { generic_ids: genericIds })
       .then((r) => r.data),
+};
+
+export const calculatorsApi = {
+  list: (search: string) =>
+    apiClient
+      .get("/calculators/", { params: { search } })
+      .then((r) => unwrapList<CalculatorListItem>(r.data)),
+  detail: (slug: string) =>
+    apiClient.get<CalculatorDetail>(`/calculators/${slug}/`).then((r) => r.data),
 };
 
 export const quizApi = {

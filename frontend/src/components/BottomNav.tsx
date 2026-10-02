@@ -43,6 +43,7 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
   guidelines: "dashboard",
   diseasesConditions: "dashboard",
   calculator: "dashboard",
+  calculatorDetail: "dashboard",
 };
 
 export function BottomNav() {

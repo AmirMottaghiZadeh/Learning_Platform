@@ -329,3 +329,67 @@ export interface LexicompInteraction {
   discussion: string;
   footnotes: string;
 }
+
+export type CalculatorQuestionType = "multiple_choice" | "numeric_input" | "date_input" | "days_input";
+
+export interface CalculatorChoice {
+  title_primary: string;
+  title_secondary: string | null;
+  answer_factor: string | null;
+}
+
+export interface CalculatorUnit {
+  title: string;
+  min_value: string | null;
+  max_value: string | null;
+  min_value_msg: string | null;
+  max_value_msg: string | null;
+  unit_factor: string | null;
+  initial_value: string | null;
+}
+
+export interface CalculatorQuestion {
+  position: number;
+  title: string;
+  type: CalculatorQuestionType;
+  more_information: string | null;
+  initial_value: string | null;
+  choices: CalculatorChoice[];
+  units: CalculatorUnit[];
+}
+
+export interface CalculatorResultDef {
+  position: number;
+  title: string;
+  title_formula: string | null;
+  sub_title: string | null;
+  sub_title_formula: string | null;
+  formula: string | null;
+  condition_formula: string | null;
+  answer: string | null;
+  answer_primary: string | null;
+  answer_secondary: string | null;
+  type: string | null;
+}
+
+export interface CalculatorReference {
+  names: string | null;
+  sources: string | null;
+  papers: string | null;
+}
+
+export interface CalculatorListItem {
+  slug: string;
+  name: string;
+  description: string;
+  categories: string[];
+  tags: string[];
+}
+
+export interface CalculatorDetail extends CalculatorListItem {
+  about: string;
+  author: string;
+  questions: CalculatorQuestion[];
+  results: CalculatorResultDef[];
+  references: CalculatorReference[];
+}

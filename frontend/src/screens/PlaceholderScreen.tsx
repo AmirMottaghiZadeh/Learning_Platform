@@ -15,7 +15,6 @@ import { useTheme } from "@/theme/ThemeProvider";
 const META: Partial<Record<ScreenKey, { titleKey: StringKey; icon: IconName }>> = {
   guidelines: { titleKey: "guidelinesLabel", icon: "checklist" },
   diseasesConditions: { titleKey: "diseasesConditionsLabel", icon: "bulbBrain" },
-  calculator: { titleKey: "calculatorLabel", icon: "chartGrowth" },
 };
 
 /** A section whose UI exists but whose data hasn't been imported yet

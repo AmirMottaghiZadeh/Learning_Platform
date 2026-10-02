@@ -6,6 +6,8 @@ import { BottomNav } from "@/components/BottomNav";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
 import { AuthScreen } from "@/screens/AuthScreen";
+import { CalculatorDetailScreen } from "@/screens/CalculatorDetailScreen";
+import { CalculatorsScreen } from "@/screens/CalculatorsScreen";
 import { DashboardScreen } from "@/screens/DashboardScreen";
 import { EducationScreen } from "@/screens/EducationScreen";
 import { LessonDetailScreen } from "@/screens/LessonDetailScreen";
@@ -82,8 +84,11 @@ function CurrentScreen() {
       return <EducationScreen />;
     case "guidelines":
     case "diseasesConditions":
-    case "calculator":
       return <PlaceholderScreen />;
+    case "calculator":
+      return <CalculatorsScreen />;
+    case "calculatorDetail":
+      return <CalculatorDetailScreen />;
     case "dashboard":
     default:
       return <DashboardScreen />;
