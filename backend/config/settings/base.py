@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     "apps.lexicomp",
     # Interactive clinical calculators (Medscape/QxMD snapshot).
     "apps.calculators",
+    # Medscape Diseases & Conditions / Guidelines reference articles.
+    "apps.medscape",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
