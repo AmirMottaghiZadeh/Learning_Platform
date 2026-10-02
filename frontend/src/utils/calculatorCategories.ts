@@ -184,21 +184,30 @@ export interface CalculatorSubgroup {
 export interface CalculatorMainGroup {
   name: string;
   subgroups: CalculatorSubgroup[];
-  /** Calculators tagged with this domain's bare name, not any finer subtopic. */
-  directCalculators: CalculatorListItem[];
 }
+
+/** Catches calculators tagged with a domain's bare name and no finer
+ * subtopic -- folded into a subgroup like any other rather than shown
+ * loose above the real subtopics, so every calculator sits at the same
+ * depth (domain -> subgroup -> calculator) with nothing out of place. */
+const GENERAL = "General";
 
 export function groupByMainCategory(items: CalculatorListItem[]): CalculatorMainGroup[] {
   const mainSet = new Set(MAIN_CATEGORIES);
-  const mains = new Map<string, { subgroups: Map<string, CalculatorListItem[]>; direct: CalculatorListItem[] }>();
+  const mains = new Map<string, Map<string, CalculatorListItem[]>>();
 
   const ensureMain = (name: string) => {
     let m = mains.get(name);
     if (!m) {
-      m = { subgroups: new Map(), direct: [] };
+      m = new Map();
       mains.set(name, m);
     }
     return m;
+  };
+  const push = (subgroups: Map<string, CalculatorListItem[]>, subName: string, item: CalculatorListItem) => {
+    const list = subgroups.get(subName);
+    if (list) list.push(item);
+    else subgroups.set(subName, [item]);
   };
 
   for (const item of items) {
@@ -206,28 +215,24 @@ export function groupByMainCategory(items: CalculatorListItem[]): CalculatorMain
     for (const name of categories) {
       const parents = PARENTS_BY_SUBCATEGORY[name] ?? [];
       for (const parent of parents) {
-        const m = ensureMain(parent);
-        const list = m.subgroups.get(name);
-        if (list) list.push(item);
-        else m.subgroups.set(name, [item]);
+        push(ensureMain(parent), name, item);
       }
       if (mainSet.has(name) || name === OTHER) {
-        ensureMain(name).direct.push(item);
+        push(ensureMain(name), GENERAL, item);
       } else if (!parents.length) {
         // Unexpected tag not seen in the source taxonomy walk -- surface it
         // rather than silently dropping the calculator from every list.
-        ensureMain(OTHER).direct.push(item);
+        push(ensureMain(OTHER), GENERAL, item);
       }
     }
   }
 
   return [...mains.entries()]
-    .map(([name, m]) => ({
+    .map(([name, subgroups]) => ({
       name,
-      subgroups: [...m.subgroups.entries()]
+      subgroups: [...subgroups.entries()]
         .map(([subName, calculators]) => ({ name: subName, calculators }))
-        .sort((a, b) => a.name.localeCompare(b.name)),
-      directCalculators: m.direct,
+        .sort((a, b) => (a.name === GENERAL ? 1 : b.name === GENERAL ? -1 : a.name.localeCompare(b.name))),
     }))
     .sort((a, b) => (a.name === OTHER ? 1 : b.name === OTHER ? -1 : a.name.localeCompare(b.name)));
 }

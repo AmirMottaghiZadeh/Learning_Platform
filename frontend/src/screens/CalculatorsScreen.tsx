@@ -143,7 +143,7 @@ function MainGroupCard({
 }) {
   const { colors } = useTheme();
   const { row } = useLang();
-  const total = group.directCalculators.length + group.subgroups.reduce((a, s) => a + s.calculators.length, 0);
+  const total = group.subgroups.reduce((a, s) => a + s.calculators.length, 0);
 
   return (
     <View
@@ -169,9 +169,6 @@ function MainGroupCard({
 
       {isOpen ? (
         <View style={{ paddingHorizontal: 10, paddingBottom: 10, gap: 6 }}>
-          {group.directCalculators.map((calc) => (
-            <CalculatorRow key={calc.slug} calc={calc} soft onPress={() => onPickCalculator(calc.slug)} />
-          ))}
           {group.subgroups.map((sub) => (
             <View
               key={sub.name}
