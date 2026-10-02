@@ -131,10 +131,9 @@ export const lexicompApi = {
 };
 
 export const calculatorsApi = {
-  list: (search: string) =>
-    apiClient
-      .get("/calculators/", { params: { search } })
-      .then((r) => unwrapList<CalculatorListItem>(r.data)),
+  // Unpaginated by design -- the client groups the full set by clinical
+  // category and filters it client-side (see calculatorCategories.ts).
+  list: () => apiClient.get("/calculators/").then((r) => unwrapList<CalculatorListItem>(r.data)),
   detail: (slug: string) =>
     apiClient.get<CalculatorDetail>(`/calculators/${slug}/`).then((r) => r.data),
 };

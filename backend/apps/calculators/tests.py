@@ -137,17 +137,11 @@ class CalculatorApiTests(TestCase):
     def test_requires_authentication(self):
         self.assertEqual(APIClient().get("/api/v1/calculators/").status_code, 401)
 
-    def test_list_and_search(self):
+    def test_list_returns_the_full_unpaginated_set(self):
         res = self.client.get("/api/v1/calculators/")
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.data["count"], 2)
-
-        res = self.client.get("/api/v1/calculators/", {"search": "test score"})
-        self.assertEqual(res.data["count"], 1)
-        self.assertEqual(res.data["results"][0]["slug"], "test-score-1")
-
-        res = self.client.get("/api/v1/calculators/", {"search": "Cardiology"})
-        self.assertEqual(res.data["count"], 1)
+        self.assertEqual(len(res.data), 2)
+        self.assertEqual({c["slug"] for c in res.data}, {"test-score-1", "other-tool-2"})
 
     def test_detail_includes_questions_and_results(self):
         res = self.client.get("/api/v1/calculators/test-score-1/")
@@ -158,4 +152,4 @@ class CalculatorApiTests(TestCase):
 
     def test_list_excludes_questions_and_results(self):
         res = self.client.get("/api/v1/calculators/")
-        self.assertNotIn("questions", res.data["results"][0])
+        self.assertNotIn("questions", res.data[0])

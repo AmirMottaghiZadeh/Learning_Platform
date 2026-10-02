@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 
 import { calculatorsApi } from "@/api/endpoints";
@@ -78,11 +78,11 @@ export function CalculatorDetailScreen() {
 
   return (
     <Screen>
-      <ScreenChrome title={data.name} onBack={goBack} />
+      <ScreenChrome title={stripHtml(data.name)} onBack={goBack} />
 
       {data.description ? (
         <AppText muted weight="600" size={13} style={{ marginBottom: 16, lineHeight: 20 }}>
-          {data.description}
+          {stripHtml(data.description)}
         </AppText>
       ) : null}
 
@@ -132,7 +132,7 @@ export function CalculatorDetailScreen() {
             .map((r) => (
               <Card key={r.position} style={{ gap: 4 }}>
                 <AppText weight="800" size={13} style={{ textAlign: "left", writingDirection: "ltr" }}>
-                  {r.title}
+                  {stripHtml(r.title)}
                 </AppText>
                 <AppText
                   weight="900"
@@ -140,7 +140,7 @@ export function CalculatorDetailScreen() {
                   color={colors.accent}
                   style={{ textAlign: "left", writingDirection: "ltr" }}
                 >
-                  {r.answerText}
+                  {stripHtml(r.answerText ?? "")}
                 </AppText>
               </Card>
             ))}
@@ -207,11 +207,11 @@ function QuestionInput({
   return (
     <View>
       <AppText weight="700" size={13.5} style={{ lineHeight: 20, textAlign: "left", writingDirection: "ltr" }}>
-        {question.title}
+        {stripHtml(question.title)}
       </AppText>
       {question.more_information ? (
         <AppText muted weight="600" size={12} style={{ marginTop: 3, lineHeight: 18, textAlign: "left", writingDirection: "ltr" }}>
-          {question.more_information}
+          {stripHtml(question.more_information)}
         </AppText>
       ) : null}
 
@@ -236,7 +236,7 @@ function QuestionInput({
                 ]}
               >
                 <AppText weight="700" size={12.5} color={selected ? colors.accent : colors.ink}>
-                  {choice.title_primary}
+                  {stripHtml(choice.title_primary)}
                 </AppText>
               </Pressable>
             );
@@ -289,7 +289,7 @@ function QuestionInput({
           />
           {unit ? (
             <AppText muted weight="700" size={12}>
-              {unit.title}
+              {stripHtml(unit.title)}
             </AppText>
           ) : null}
         </View>

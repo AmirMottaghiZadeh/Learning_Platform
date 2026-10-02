@@ -3,20 +3,23 @@ import React, { useMemo, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 
 import { calculatorsApi } from "@/api/endpoints";
+import { CalculatorListItem } from "@/api/types";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
+import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
-import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
+import { groupByCategory } from "@/utils/calculatorCategories";
+import { stripHtml } from "@/utils/html";
 
-/** Search-and-pick entry point into the interactive calculator library --
- * same search UX as UpToDate/Lexicomp, picking a result opens the
- * question form in CalculatorDetailScreen. */
+/** Browse-by-clinical-category is the primary way in (matching how the
+ * source organizes its ~500 calculators) -- the search box is a secondary
+ * filter over the same already-fetched set, not a separate server query. */
 export function CalculatorsScreen() {
   const { t, row } = useLang();
   const { colors } = useTheme();
@@ -24,15 +27,29 @@ export function CalculatorsScreen() {
   const navigate = useNav((s) => s.navigate);
 
   const [q, setQ] = useState("");
-  const query = useDebounced(q.trim());
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
 
-  const { data, isFetching } = useQuery({
-    queryKey: ["calculators-search", query],
-    queryFn: () => calculatorsApi.list(query),
-    enabled: query.length >= 2,
+  const { data, isLoading } = useQuery({
+    queryKey: ["calculators"],
+    queryFn: calculatorsApi.list,
   });
 
-  const rows = useMemo(() => data ?? [], [data]);
+  const items = data ?? [];
+  const query = q.trim().toLowerCase();
+
+  const searchResults = useMemo(() => {
+    if (query.length < 2) return null;
+    return items.filter(
+      (c) =>
+        c.name.toLowerCase().includes(query) ||
+        c.description.toLowerCase().includes(query) ||
+        c.categories.some((cat) => cat.toLowerCase().includes(query)),
+    );
+  }, [items, query]);
+
+  const categories = useMemo(() => groupByCategory(items), [items]);
+
+  if (isLoading) return <LoadingState />;
 
   return (
     <Screen>
@@ -71,47 +88,97 @@ export function CalculatorsScreen() {
             padding: 0,
           }}
         />
-        {isFetching ? <AppText muted size={12}>…</AppText> : null}
       </View>
 
-      {query.length >= 2 && rows.length === 0 && !isFetching ? (
-        <AppText muted weight="600" size={12} style={{ paddingVertical: 8 }}>
-          {t("calculatorEmptyTitle")} — {t("calculatorEmptySub")}
-        </AppText>
+      {searchResults ? (
+        searchResults.length === 0 ? (
+          <AppText muted weight="600" size={12} style={{ paddingVertical: 8 }}>
+            {t("calculatorEmptyTitle")} — {t("calculatorEmptySub")}
+          </AppText>
+        ) : (
+          <View style={{ gap: 8 }}>
+            {searchResults.map((calc) => (
+              <CalculatorRow key={calc.slug} calc={calc} onPress={() => navigate("calculatorDetail", { slug: calc.slug })} />
+            ))}
+          </View>
+        )
       ) : (
         <View style={{ gap: 8 }}>
-          {rows.map((calc) => (
-            <Pressable key={calc.slug} onPress={() => navigate("calculatorDetail", { slug: calc.slug })}>
-              <Card soft style={{ gap: 4 }}>
-                <AppText weight="700" size={14} style={{ textAlign: "left", writingDirection: "ltr" }}>
-                  {calc.name}
+          {categories.map((category) => (
+            <View
+              key={category.name}
+              style={{
+                backgroundColor: colors.cardBg,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: colors.border,
+                overflow: "hidden",
+              }}
+            >
+              <Pressable
+                onPress={() => setOpenCategory(openCategory === category.name ? null : category.name)}
+                style={{
+                  padding: 13,
+                  flexDirection: row,
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <AppText weight="800" size={13}>
+                  {category.name}
                 </AppText>
-                {calc.description ? (
-                  <AppText
-                    muted
-                    weight="600"
-                    size={12}
-                    numberOfLines={2}
-                    style={{ textAlign: "left", writingDirection: "ltr" }}
-                  >
-                    {calc.description}
-                  </AppText>
-                ) : null}
-                {calc.categories.length ? (
-                  <AppText
-                    size={11}
-                    weight="700"
-                    color={colors.accent}
-                    style={{ textAlign: "left", writingDirection: "ltr" }}
-                  >
-                    {calc.categories.join(" · ")}
-                  </AppText>
-                ) : null}
-              </Card>
-            </Pressable>
+                <AppText muted weight="700" size={12}>
+                  {category.calculators.length} {openCategory === category.name ? "▲" : "▼"}
+                </AppText>
+              </Pressable>
+
+              {openCategory === category.name ? (
+                <View style={{ paddingHorizontal: 10, paddingBottom: 10, gap: 6 }}>
+                  {category.calculators.map((calc) => (
+                    <CalculatorRow
+                      key={calc.slug}
+                      calc={calc}
+                      soft
+                      onPress={() => navigate("calculatorDetail", { slug: calc.slug })}
+                    />
+                  ))}
+                </View>
+              ) : null}
+            </View>
           ))}
         </View>
       )}
     </Screen>
+  );
+}
+
+function CalculatorRow({
+  calc,
+  onPress,
+  soft,
+}: {
+  calc: CalculatorListItem;
+  onPress: () => void;
+  soft?: boolean;
+}) {
+  return (
+    <Pressable onPress={onPress}>
+      <Card soft={soft} style={{ gap: 4 }}>
+        <AppText weight="700" size={14} style={{ textAlign: "left", writingDirection: "ltr" }}>
+          {stripHtml(calc.name)}
+        </AppText>
+        {calc.description ? (
+          <AppText
+            muted
+            weight="600"
+            size={12}
+            numberOfLines={2}
+            style={{ textAlign: "left", writingDirection: "ltr" }}
+          >
+            {stripHtml(calc.description)}
+          </AppText>
+        ) : null}
+      </Card>
+    </Pressable>
   );
 }
