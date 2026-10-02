@@ -2,10 +2,12 @@ import { create } from "zustand";
 
 import { ScreenKey, TabKey } from "@/navigation/types";
 
+type HistoryEntry = { screen: ScreenKey; params: Record<string, unknown> };
+
 type NavState = {
   screen: ScreenKey;
   params: Record<string, unknown>;
-  history: ScreenKey[];
+  history: HistoryEntry[];
   navigate: (screen: ScreenKey, params?: Record<string, unknown>) => void;
   /** Switch bottom-nav tab (resets the in-tab stack). */
   setTab: (tab: TabKey) => void;
@@ -19,7 +21,11 @@ export const useNav = create<NavState>((set, get) => ({
   history: [],
 
   navigate: (screen, params = {}) =>
-    set((s) => ({ screen, params, history: [...s.history, s.screen] })),
+    set((s) => ({
+      screen,
+      params,
+      history: [...s.history, { screen: s.screen, params: s.params }],
+    })),
 
   setTab: (tab) => set({ screen: tab, params: {}, history: [] }),
 
@@ -27,7 +33,8 @@ export const useNav = create<NavState>((set, get) => ({
     set((s) => {
       if (s.history.length === 0) return { screen: "dashboard", params: {}, history: [] };
       const history = s.history.slice(0, -1);
-      return { screen: s.history[s.history.length - 1], params: {}, history };
+      const previous = s.history[s.history.length - 1];
+      return { screen: previous.screen, params: previous.params, history };
     }),
 
   reset: (screen) => set({ screen, params: {}, history: [] }),
