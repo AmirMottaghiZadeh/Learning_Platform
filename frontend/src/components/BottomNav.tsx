@@ -39,6 +39,10 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
   uptodateOutline: "dashboard",
   uptodateArticle: "dashboard",
   lexicomp: "dashboard",
+  education: "lessons",
+  guidelines: "dashboard",
+  diseasesConditions: "dashboard",
+  calculator: "dashboard",
 };
 
 export function BottomNav() {

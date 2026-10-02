@@ -13,7 +13,11 @@ export type ScreenKey =
   | "uptodate"
   | "uptodateOutline"
   | "uptodateArticle"
-  | "lexicomp";
+  | "lexicomp"
+  | "education"
+  | "guidelines"
+  | "diseasesConditions"
+  | "calculator";
 
 export const TAB_ORDER: TabKey[] = ["dashboard", "lessons", "flashcards", "quiz", "profile"];
 

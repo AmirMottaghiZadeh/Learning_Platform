@@ -7,6 +7,7 @@ import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
 import { AuthScreen } from "@/screens/AuthScreen";
 import { DashboardScreen } from "@/screens/DashboardScreen";
+import { EducationScreen } from "@/screens/EducationScreen";
 import { LessonDetailScreen } from "@/screens/LessonDetailScreen";
 import { LessonListScreen } from "@/screens/LessonListScreen";
 import { LessonsScreen } from "@/screens/LessonsScreen";
@@ -14,6 +15,7 @@ import { LexicompScreen } from "@/screens/LexicompScreen";
 import { FlashcardsScreen } from "@/screens/FlashcardsScreen";
 import { MistakesScreen } from "@/screens/MistakesScreen";
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
+import { PlaceholderScreen } from "@/screens/PlaceholderScreen";
 import { PlanningScreen } from "@/screens/PlanningScreen";
 import { PlanningSetupScreen } from "@/screens/PlanningSetupScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
@@ -76,6 +78,12 @@ function CurrentScreen() {
       return <UptodateArticleScreen />;
     case "lexicomp":
       return <LexicompScreen />;
+    case "education":
+      return <EducationScreen />;
+    case "guidelines":
+    case "diseasesConditions":
+    case "calculator":
+      return <PlaceholderScreen />;
     case "dashboard":
     default:
       return <DashboardScreen />;

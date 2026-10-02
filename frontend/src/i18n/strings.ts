@@ -85,6 +85,11 @@ export const strings = {
     profileLabel: "پروفایل",
     statsLabel: "آمار",
 
+    educationLabel: "آموزش",
+    guidelinesLabel: "راهنماهای بالینی",
+    diseasesConditionsLabel: "بیماری‌ها و شرایط",
+    calculatorLabel: "ماشین‌حساب بالینی",
+
     nextChapterTitle: "فصل بعدی تو",
     editPlan: "ویرایش برنامه",
     nextChapterHead: "یک جلسه‌ی متمرکز بساز",
@@ -292,6 +297,11 @@ export const strings = {
     mistakesLabel: "Mistakes",
     profileLabel: "Profile",
     statsLabel: "Stats",
+
+    educationLabel: "Education",
+    guidelinesLabel: "Guidelines",
+    diseasesConditionsLabel: "Diseases & Conditions",
+    calculatorLabel: "Calculator",
 
     nextChapterTitle: "Your next chapter",
     editPlan: "Edit plan",

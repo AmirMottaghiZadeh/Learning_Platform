@@ -11,18 +11,18 @@ import { IconImage, IconName } from "@/components/primitives/IconImage";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
+import { StringKey } from "@/i18n/strings";
+import { ScreenKey } from "@/navigation/types";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { FocusRow } from "@/api/types";
 import { radius, spacing } from "@/theme/tokens";
 
-const PATHS: { tab: string; icon: IconName; labelKey: any }[] = [
-  { tab: "quiz", icon: "checklist", labelKey: "quizLabel" },
-  { tab: "flashcards", icon: "mobileBlister", labelKey: "cardsLabel" },
-  { tab: "lessons", icon: "openBook", labelKey: "lessonsLabel" },
-  { tab: "mistakes", icon: "pillWarning", labelKey: "mistakesLabel" },
-  { tab: "profile", icon: "team", labelKey: "profileLabel" },
-  { tab: "statistics", icon: "chartGrowth", labelKey: "statsLabel" },
+const QUICK_ACCESS: { screen: ScreenKey; icon: IconName; labelKey: StringKey }[] = [
+  { screen: "education", icon: "graduation", labelKey: "educationLabel" },
+  { screen: "guidelines", icon: "checklist", labelKey: "guidelinesLabel" },
+  { screen: "diseasesConditions", icon: "bulbBrain", labelKey: "diseasesConditionsLabel" },
+  { screen: "calculator", icon: "chartGrowth", labelKey: "calculatorLabel" },
 ];
 
 export function DashboardScreen() {
@@ -218,28 +218,31 @@ export function DashboardScreen() {
           </Card>
         </Pressable>
 
-        {/* learning paths grid */}
+        {/* quick-access grid: Education + the Medscape reference sections,
+            as four equal square tiles (2x2) */}
         <AppText weight="800" size={13} style={{ marginBottom: 10 }}>
           {t("pathsTitle")}
         </AppText>
-        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8, marginBottom: spacing.xl }}>
-          {PATHS.map((p) => (
+        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 12, marginBottom: spacing.xl }}>
+          {QUICK_ACCESS.map((p) => (
             <Pressable
-              key={p.tab}
-              onPress={() => setTab(p.tab as any)}
+              key={p.screen}
+              onPress={() => navigate(p.screen)}
               style={[
                 {
-                  width: "31.6%",
+                  width: "47.4%",
+                  aspectRatio: 1,
                   backgroundColor: colors.softBg,
-                  borderRadius: 16,
+                  borderRadius: 18,
                   alignItems: "center",
-                  paddingVertical: 12,
+                  justifyContent: "center",
+                  gap: 8,
                 },
                 shadows.raisedSm,
               ]}
             >
-              <IconImage name={p.icon} size={40} />
-              <AppText weight="800" size={12} style={{ marginTop: 2 }}>
+              <IconImage name={p.icon} size={44} />
+              <AppText weight="800" size={13}>
                 {t(p.labelKey)}
               </AppText>
             </Pressable>
