@@ -14,11 +14,12 @@ import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
-import { groupByCategory } from "@/utils/calculatorCategories";
+import { CalculatorMainGroup, groupByMainCategory } from "@/utils/calculatorCategories";
 import { stripHtml } from "@/utils/html";
 
-/** Browse-by-clinical-category is the primary way in (matching how the
- * source organizes its ~500 calculators) -- the search box is a secondary
+/** Browse-by-clinical-domain is the primary way in, two levels deep (domain
+ * -> subtopic -> calculator) -- matching the source snapshot's own taxonomy
+ * rather than one flat list of ~170 tags. The search box is a secondary
  * filter over the same already-fetched set, not a separate server query. */
 export function CalculatorsScreen() {
   const { t, row } = useLang();
@@ -27,7 +28,8 @@ export function CalculatorsScreen() {
   const navigate = useNav((s) => s.navigate);
 
   const [q, setQ] = useState("");
-  const [openCategory, setOpenCategory] = useState<string | null>(null);
+  const [openMain, setOpenMain] = useState<string | null>(null);
+  const [openSub, setOpenSub] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["calculators"],
@@ -47,7 +49,7 @@ export function CalculatorsScreen() {
     );
   }, [items, query]);
 
-  const categories = useMemo(() => groupByCategory(items), [items]);
+  const mainGroups = useMemo(() => groupByMainCategory(items), [items]);
 
   if (isLoading) return <LoadingState />;
 
@@ -104,51 +106,106 @@ export function CalculatorsScreen() {
         )
       ) : (
         <View style={{ gap: 8 }}>
-          {categories.map((category) => (
+          {mainGroups.map((group) => (
+            <MainGroupCard
+              key={group.name}
+              group={group}
+              isOpen={openMain === group.name}
+              onToggle={() => {
+                setOpenMain(openMain === group.name ? null : group.name);
+                setOpenSub(null);
+              }}
+              openSub={openSub}
+              onToggleSub={(name) => setOpenSub((cur) => (cur === name ? null : name))}
+              onPickCalculator={(slug) => navigate("calculatorDetail", { slug })}
+            />
+          ))}
+        </View>
+      )}
+    </Screen>
+  );
+}
+
+function MainGroupCard({
+  group,
+  isOpen,
+  onToggle,
+  openSub,
+  onToggleSub,
+  onPickCalculator,
+}: {
+  group: CalculatorMainGroup;
+  isOpen: boolean;
+  onToggle: () => void;
+  openSub: string | null;
+  onToggleSub: (name: string) => void;
+  onPickCalculator: (slug: string) => void;
+}) {
+  const { colors } = useTheme();
+  const { row } = useLang();
+  const total = group.directCalculators.length + group.subgroups.reduce((a, s) => a + s.calculators.length, 0);
+
+  return (
+    <View
+      style={{
+        backgroundColor: colors.cardBg,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: colors.border,
+        overflow: "hidden",
+      }}
+    >
+      <Pressable
+        onPress={onToggle}
+        style={{ padding: 13, flexDirection: row, alignItems: "center", justifyContent: "space-between" }}
+      >
+        <AppText weight="800" size={13}>
+          {group.name}
+        </AppText>
+        <AppText muted weight="700" size={12}>
+          {total} {isOpen ? "▲" : "▼"}
+        </AppText>
+      </Pressable>
+
+      {isOpen ? (
+        <View style={{ paddingHorizontal: 10, paddingBottom: 10, gap: 6 }}>
+          {group.directCalculators.map((calc) => (
+            <CalculatorRow key={calc.slug} calc={calc} soft onPress={() => onPickCalculator(calc.slug)} />
+          ))}
+          {group.subgroups.map((sub) => (
             <View
-              key={category.name}
+              key={sub.name}
               style={{
-                backgroundColor: colors.cardBg,
-                borderRadius: 14,
+                backgroundColor: colors.softBg,
+                borderRadius: 12,
                 borderWidth: 1,
-                borderColor: colors.border,
+                borderColor: colors.trackBg,
                 overflow: "hidden",
               }}
             >
               <Pressable
-                onPress={() => setOpenCategory(openCategory === category.name ? null : category.name)}
-                style={{
-                  padding: 13,
-                  flexDirection: row,
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
+                onPress={() => onToggleSub(sub.name)}
+                style={{ padding: 11, flexDirection: row, alignItems: "center", justifyContent: "space-between" }}
               >
-                <AppText weight="800" size={13}>
-                  {category.name}
+                <AppText weight="700" size={12.5}>
+                  {sub.name}
                 </AppText>
-                <AppText muted weight="700" size={12}>
-                  {category.calculators.length} {openCategory === category.name ? "▲" : "▼"}
+                <AppText muted weight="700" size={11.5}>
+                  {sub.calculators.length} {openSub === sub.name ? "▲" : "▼"}
                 </AppText>
               </Pressable>
-
-              {openCategory === category.name ? (
-                <View style={{ paddingHorizontal: 10, paddingBottom: 10, gap: 6 }}>
-                  {category.calculators.map((calc) => (
-                    <CalculatorRow
-                      key={calc.slug}
-                      calc={calc}
-                      soft
-                      onPress={() => navigate("calculatorDetail", { slug: calc.slug })}
-                    />
+              {openSub === sub.name ? (
+                <View style={{ paddingHorizontal: 8, paddingBottom: 8, gap: 6 }}>
+                  {sub.calculators.map((calc) => (
+                    <CalculatorRow key={calc.slug} calc={calc} onPress={() => onPickCalculator(calc.slug)} />
                   ))}
                 </View>
               ) : null}
             </View>
           ))}
         </View>
-      )}
-    </Screen>
+      ) : null}
+    </View>
   );
 }
 
