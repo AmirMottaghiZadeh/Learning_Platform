@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     "apps.uptodate",
     # Same, for the Lexicomp drug-interactions snapshot.
     "apps.lexicomp",
+    # Interactive clinical calculators (Medscape/QxMD snapshot).
+    "apps.calculators",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
