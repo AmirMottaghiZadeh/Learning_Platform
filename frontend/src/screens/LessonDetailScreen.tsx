@@ -11,6 +11,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
+import { layout } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
 
 export function LessonDetailScreen() {
@@ -140,7 +141,11 @@ export function LessonDetailScreen() {
         style={{ flex: 1 }}
         onScroll={onScroll}
         scrollEventThrottle={64}
-        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 40 }}
+        contentContainerStyle={{
+          paddingHorizontal: 22,
+          paddingTop: 20,
+          paddingBottom: layout.bottomNavHeight + 24,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <AppText weight="900" size={26} style={{ lineHeight: 38 }}>
