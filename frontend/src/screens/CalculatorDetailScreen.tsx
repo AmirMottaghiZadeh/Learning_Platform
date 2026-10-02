@@ -78,7 +78,11 @@ export function CalculatorDetailScreen() {
 
   return (
     <Screen>
-      <ScreenChrome title={stripHtml(data.name)} onBack={goBack} />
+      <ScreenChrome title={t("calculatorScreenTitle")} onBack={goBack} />
+
+      <AppText weight="900" size={22} style={{ lineHeight: 30, marginBottom: 8, textAlign: "left", writingDirection: "ltr" }}>
+        {stripHtml(data.name)}
+      </AppText>
 
       {data.description ? (
         <AppText muted weight="600" size={13} style={{ marginBottom: 16, lineHeight: 20 }}>
