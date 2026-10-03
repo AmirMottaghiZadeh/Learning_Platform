@@ -393,3 +393,29 @@ export interface CalculatorDetail extends CalculatorListItem {
   results: CalculatorResultDef[];
   references: CalculatorReference[];
 }
+
+export type MedscapeKind = "disease" | "guideline";
+
+export interface MedscapeCategoryNode {
+  category: string;
+  specialties: { name: string; count: number }[];
+}
+
+export interface MedscapeArticleListItem {
+  slug: string;
+  title: string;
+  kind: MedscapeKind;
+}
+
+export interface MedscapeSection {
+  heading: string;
+  content: string;
+  children: MedscapeSection[];
+}
+
+export interface MedscapeArticleDetail extends MedscapeArticleListItem {
+  meta: string;
+  url: string;
+  categories: { category: string; specialty: string }[];
+  sections: MedscapeSection[];
+}

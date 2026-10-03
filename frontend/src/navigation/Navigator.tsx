@@ -15,9 +15,10 @@ import { LessonListScreen } from "@/screens/LessonListScreen";
 import { LessonsScreen } from "@/screens/LessonsScreen";
 import { LexicompScreen } from "@/screens/LexicompScreen";
 import { FlashcardsScreen } from "@/screens/FlashcardsScreen";
+import { MedscapeArticleScreen } from "@/screens/MedscapeArticleScreen";
+import { MedscapeBrowseScreen } from "@/screens/MedscapeBrowseScreen";
 import { MistakesScreen } from "@/screens/MistakesScreen";
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
-import { PlaceholderScreen } from "@/screens/PlaceholderScreen";
 import { PlanningScreen } from "@/screens/PlanningScreen";
 import { PlanningSetupScreen } from "@/screens/PlanningSetupScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
@@ -84,7 +85,9 @@ function CurrentScreen() {
       return <EducationScreen />;
     case "guidelines":
     case "diseasesConditions":
-      return <PlaceholderScreen />;
+      return <MedscapeBrowseScreen />;
+    case "medscapeArticle":
+      return <MedscapeArticleScreen />;
     case "calculator":
       return <CalculatorsScreen />;
     case "calculatorDetail":

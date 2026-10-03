@@ -13,6 +13,10 @@ import {
   LessonGroup,
   LexicompDrug,
   LexicompInteraction,
+  MedscapeArticleDetail,
+  MedscapeArticleListItem,
+  MedscapeCategoryNode,
+  MedscapeKind,
   Mistake,
   PlanToday,
   QuizAnswerResult,
@@ -136,6 +140,25 @@ export const calculatorsApi = {
   list: () => apiClient.get("/calculators/").then((r) => unwrapList<CalculatorListItem>(r.data)),
   detail: (slug: string) =>
     apiClient.get<CalculatorDetail>(`/calculators/${slug}/`).then((r) => r.data),
+};
+
+export const medscapeApi = {
+  // Too many disease articles (~3200) to fetch as one list and group
+  // client-side the way calculators does -- tree() returns just the small
+  // category/specialty taxonomy with counts; articles are fetched by
+  // specialty or by search, both on demand.
+  tree: (kind: MedscapeKind) =>
+    apiClient.get<MedscapeCategoryNode[]>("/medscape/tree/", { params: { kind } }).then((r) => r.data),
+  bySpecialty: (kind: MedscapeKind, category: string, specialty: string) =>
+    apiClient
+      .get("/medscape/articles/", { params: { kind, category, specialty } })
+      .then((r) => unwrapList<MedscapeArticleListItem>(r.data)),
+  search: (kind: MedscapeKind, search: string) =>
+    apiClient
+      .get("/medscape/articles/", { params: { kind, search } })
+      .then((r) => unwrapList<MedscapeArticleListItem>(r.data)),
+  detail: (slug: string) =>
+    apiClient.get<MedscapeArticleDetail>(`/medscape/articles/${slug}/`).then((r) => r.data),
 };
 
 export const quizApi = {

@@ -42,6 +42,7 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
   education: "lessons",
   guidelines: "dashboard",
   diseasesConditions: "dashboard",
+  medscapeArticle: "dashboard",
   calculator: "dashboard",
   calculatorDetail: "dashboard",
 };

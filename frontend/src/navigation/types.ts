@@ -18,7 +18,8 @@ export type ScreenKey =
   | "guidelines"
   | "diseasesConditions"
   | "calculator"
-  | "calculatorDetail";
+  | "calculatorDetail"
+  | "medscapeArticle";
 
 export const TAB_ORDER: TabKey[] = ["dashboard", "lessons", "flashcards", "quiz", "profile"];
 

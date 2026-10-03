@@ -90,6 +90,10 @@ export const strings = {
     diseasesConditionsLabel: "بیماری‌ها و شرایط",
     calculatorLabel: "ماشین‌حساب بالینی",
 
+    medscapeSearchPlaceholder: "جست‌وجوی مقاله…",
+    medscapeEmptyTitle: "مقاله‌ای یافت نشد",
+    medscapeEmptySub: "نام دیگری را امتحان کن یا از دسته‌ها مرور کن.",
+
     nextChapterTitle: "فصل بعدی تو",
     editPlan: "ویرایش برنامه",
     nextChapterHead: "یک جلسه‌ی متمرکز بساز",
@@ -314,6 +318,10 @@ export const strings = {
     guidelinesLabel: "Guidelines",
     diseasesConditionsLabel: "Diseases & Conditions",
     calculatorLabel: "Calculator",
+
+    medscapeSearchPlaceholder: "Search articles…",
+    medscapeEmptyTitle: "No article found",
+    medscapeEmptySub: "Try a different name, or browse by category.",
 
     nextChapterTitle: "Your next chapter",
     editPlan: "Edit plan",
