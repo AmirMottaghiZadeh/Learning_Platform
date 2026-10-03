@@ -15,6 +15,15 @@ cross-listed under more than one specialty in the source (e.g. "Cardiac
 Tamponade" under both Cardiology and Clinical Procedures), so every
 (category, specialty) pair an article was ever filed under is kept rather
 than letting the last-processed source file silently win.
+
+`sections` is a tree of {heading, blocks, children}: each heading's own body
+is a list of typed blocks --
+  {"type": "paragraph", "text": str}
+  {"type": "list", "ordered": bool, "items": [str, ...]}
+  {"type": "table", "headers": [str, ...] | None, "rows": [[str, ...], ...]}
+  {"type": "image", "id": <ArticleImage.pk>, "alt": str, "caption": str}
+-- rather than one flattened string, so a table stays a table and a figure
+stays an image instead of collapsing into prose.
 """
 
 from django.db import models
@@ -33,7 +42,7 @@ class Article(models.Model):
     url = models.URLField(blank=True, max_length=600)
     # [{"category": "medicine", "specialty": "Cardiology"}, ...]
     categories = models.JSONField(default=list)
-    # [{heading, content, children: [...]}, ...], arbitrary depth.
+    # [{heading, blocks: [...], children: [...]}, ...], arbitrary depth.
     sections = models.JSONField(default=list)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -45,3 +54,19 @@ class Article(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.kind})"
+
+
+class ArticleImage(models.Model):
+    """A figure/diagram downloaded from the source site, content-addressed by
+    the sha256 the scraper already hashed it by -- the same image reused
+    across many articles (logos, shared diagrams) is stored exactly once.
+    """
+
+    content_hash = models.CharField(max_length=64, unique=True)
+    content_type = models.CharField(max_length=40)
+    data = models.BinaryField()
+    source_url = models.URLField(blank=True, max_length=600)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.content_hash

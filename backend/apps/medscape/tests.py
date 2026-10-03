@@ -1,3 +1,4 @@
+import hashlib
 import json
 import tempfile
 from pathlib import Path
@@ -7,7 +8,18 @@ from django.core.management import call_command
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from apps.medscape.models import Article
+from apps.medscape.models import Article, ArticleImage
+
+# A well-known minimal valid 1x1 transparent PNG.
+_PNG_BYTES = bytes([
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+    0x08, 0x04, 0x00, 0x00, 0x00, 0xB5, 0x1C, 0x0C, 0x02, 0x00, 0x00, 0x00,
+    0x0B, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x64, 0x60, 0x00, 0x00,
+    0x00, 0x06, 0x00, 0x02, 0x30, 0x81, 0xD0, 0x2F, 0x00, 0x00, 0x00, 0x00,
+    0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+])
+_PNG_HASH = hashlib.sha256(_PNG_BYTES).hexdigest()
 
 
 def _disease_record(**overrides):
@@ -21,8 +33,21 @@ def _disease_record(**overrides):
         "sections": [
             {
                 "heading": "Overview",
-                "content": "Some text.\n\nwebmd.ads2.defineAd({id:'ads-pos-1',pos: 1});\n\nMore text.",
-                "children": [{"heading": "Background", "content": "Nested text.", "children": []}],
+                "blocks": [
+                    {"type": "paragraph", "text": "Some text."},
+                    {"type": "paragraph", "text": "webmd.ads2.defineAd({id:'ads-pos-1',pos: 1}); More text."},
+                ],
+                "children": [{
+                    "heading": "Background",
+                    "blocks": [
+                        {"type": "paragraph", "text": "Nested text."},
+                        {"type": "list", "ordered": False, "items": ["First", "Second"]},
+                        {"type": "table", "headers": ["A", "B"], "rows": [["1", "2"]]},
+                        {"type": "image", "file": f"{_PNG_HASH}.png", "url": "https://example.com/x.png",
+                         "alt": "Diagram", "caption": "Figure 1."},
+                    ],
+                    "children": [],
+                }],
             },
         ],
     }
@@ -40,8 +65,8 @@ def _guideline_record(**overrides):
             {
                 "order": 1,
                 "heading": "Overview",
-                "content": "Guideline text.",
-                "subsections": [{"heading": "Detail", "content": "More detail."}],
+                "blocks": [{"type": "paragraph", "text": "Guideline text."}],
+                "subsections": [{"heading": "Detail", "blocks": [{"type": "paragraph", "text": "More detail."}]}],
             },
         ],
     }
@@ -66,18 +91,25 @@ class ImportMedscapeArticlesTests(TestCase):
     def setUp(self):
         self._diseases = tempfile.TemporaryDirectory()
         self._guidelines = tempfile.TemporaryDirectory()
+        self._disease_images = tempfile.TemporaryDirectory()
+        self._guideline_images = tempfile.TemporaryDirectory()
         self.addCleanup(self._diseases.cleanup)
         self.addCleanup(self._guidelines.cleanup)
+        self.addCleanup(self._disease_images.cleanup)
+        self.addCleanup(self._guideline_images.cleanup)
+        Path(self._disease_images.name, f"{_PNG_HASH}.png").write_bytes(_PNG_BYTES)
 
     def _import(self, **kwargs):
         call_command(
             "import_medscape_articles",
             diseases_dir=self._diseases.name,
             guidelines_dir=self._guidelines.name,
+            disease_images_dir=self._disease_images.name,
+            guideline_images_dir=self._guideline_images.name,
             **kwargs,
         )
 
-    def test_import_creates_a_disease_article_with_cleaned_content(self):
+    def test_import_creates_a_disease_article_with_cleaned_blocks(self):
         _write_diseases_tree(self._diseases.name, {"medicine": {"cardiology.json": [_disease_record()]}})
         self._import()
 
@@ -85,9 +117,50 @@ class ImportMedscapeArticlesTests(TestCase):
         article = Article.objects.get(kind="disease", source_id="1")
         self.assertEqual(article.slug, "test-condition-1")
         self.assertEqual(article.categories, [{"category": "medicine", "specialty": "Cardiology"}])
-        self.assertNotIn("webmd.ads2", article.sections[0]["content"])
-        self.assertIn("Some text.", article.sections[0]["content"])
-        self.assertEqual(article.sections[0]["children"][0]["heading"], "Background")
+
+        overview = article.sections[0]
+        self.assertEqual(overview["blocks"][0]["text"], "Some text.")
+        self.assertEqual(overview["blocks"][1]["text"], "More text.", "ad-loader call should be stripped")
+        self.assertEqual(overview["children"][0]["heading"], "Background")
+
+    def test_list_and_table_blocks_survive_import(self):
+        _write_diseases_tree(self._diseases.name, {"medicine": {"cardiology.json": [_disease_record()]}})
+        self._import()
+
+        bg = Article.objects.get(source_id="1").sections[0]["children"][0]
+        types = [b["type"] for b in bg["blocks"]]
+        self.assertEqual(types, ["paragraph", "list", "table", "image"])
+        self.assertEqual(bg["blocks"][1]["items"], ["First", "Second"])
+        self.assertEqual(bg["blocks"][2]["rows"], [["1", "2"]])
+
+    def test_image_block_resolves_to_a_stored_article_image(self):
+        _write_diseases_tree(self._diseases.name, {"medicine": {"cardiology.json": [_disease_record()]}})
+        self._import()
+
+        self.assertEqual(ArticleImage.objects.count(), 1)
+        image = ArticleImage.objects.get()
+        self.assertEqual(image.content_hash, _PNG_HASH)
+        self.assertEqual(image.data, _PNG_BYTES)
+
+        bg = Article.objects.get(source_id="1").sections[0]["children"][0]
+        image_block = bg["blocks"][3]
+        self.assertEqual(image_block, {"type": "image", "id": image.pk, "alt": "Diagram", "caption": "Figure 1."})
+
+    def test_same_image_reused_across_articles_is_stored_once(self):
+        rec2 = _disease_record(article_id="2", title="Second Condition")
+        _write_diseases_tree(self._diseases.name, {"medicine": {"cardiology.json": [_disease_record(), rec2]}})
+        self._import()
+        self.assertEqual(ArticleImage.objects.count(), 1)
+
+    def test_missing_image_file_drops_the_block_without_failing(self):
+        rec = _disease_record()
+        rec["sections"][0]["children"][0]["blocks"][3]["file"] = "does-not-exist.png"
+        _write_diseases_tree(self._diseases.name, {"medicine": {"cardiology.json": [rec]}})
+        self._import()
+
+        bg = Article.objects.get(source_id="1").sections[0]["children"][0]
+        types = [b["type"] for b in bg["blocks"]]
+        self.assertNotIn("image", types)
 
     def test_article_cross_listed_across_specialty_files_keeps_every_pair(self):
         rec = _disease_record()
@@ -115,6 +188,7 @@ class ImportMedscapeArticlesTests(TestCase):
         self._import()
 
         self.assertEqual(Article.objects.filter(kind="disease").count(), 1)
+        self.assertEqual(ArticleImage.objects.count(), 1)
 
     def test_import_creates_a_guideline_with_filename_derived_specialty(self):
         _write_guidelines(self._guidelines.name, "guidelines_content.json", [_guideline_record()])
@@ -126,6 +200,7 @@ class ImportMedscapeArticlesTests(TestCase):
         self.assertEqual(article.slug, "g-a-test-guideline-2024a1000abc")
         self.assertEqual(article.categories, [{"category": "guideline", "specialty": "Guidelines"}])
         self.assertEqual(article.sections[0]["children"][0]["heading"], "Detail")
+        self.assertEqual(article.sections[0]["children"][0]["blocks"][0]["text"], "More detail.")
 
     def test_unrecognized_guideline_filename_is_skipped_not_fatal(self):
         _write_guidelines(self._guidelines.name, "unknown_file.json", [_guideline_record()])
@@ -143,6 +218,7 @@ class ImportMedscapeArticlesTests(TestCase):
         _write_diseases_tree(self._diseases.name, {"medicine": {"cardiology.json": [_disease_record()]}})
         self._import(dry_run=True)
         self.assertEqual(Article.objects.count(), 0)
+        self.assertEqual(ArticleImage.objects.count(), 0)
 
 
 class MedscapeApiTests(TestCase):
@@ -157,7 +233,7 @@ class MedscapeApiTests(TestCase):
                 {"category": "medicine", "specialty": "Cardiology"},
                 {"category": "medicine", "specialty": "Critical Care"},
             ],
-            sections=[{"heading": "Overview", "content": "Text.", "children": []}],
+            sections=[{"heading": "Overview", "blocks": [{"type": "paragraph", "text": "Text."}], "children": []}],
         )
         Article.objects.create(
             kind="disease", source_id="2", slug="other-condition-2", title="Other Condition",
@@ -168,6 +244,10 @@ class MedscapeApiTests(TestCase):
             kind="guideline", source_id="g1", slug="g-a-guideline", title="A Guideline",
             categories=[{"category": "guideline", "specialty": "Guidelines"}],
             sections=[],
+        )
+        self.image = ArticleImage.objects.create(
+            content_hash=_PNG_HASH, content_type="image/png", data=_PNG_BYTES,
+            source_url="https://example.com/x.png",
         )
 
     def test_requires_authentication(self):
@@ -212,3 +292,14 @@ class MedscapeApiTests(TestCase):
             "/api/v1/medscape/articles/", {"kind": "disease", "category": "medicine", "specialty": "Cardiology"}
         )
         self.assertNotIn("sections", res.data[0])
+
+    def test_image_detail_returns_base64_data(self):
+        res = self.client.get(f"/api/v1/medscape/images/{self.image.pk}/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["content_type"], "image/png")
+        import base64
+        self.assertEqual(base64.b64decode(res.data["data_base64"]), _PNG_BYTES)
+
+    def test_image_detail_404_for_unknown_id(self):
+        res = self.client.get("/api/v1/medscape/images/999999/")
+        self.assertEqual(res.status_code, 404)

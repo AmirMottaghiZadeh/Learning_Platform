@@ -14,8 +14,8 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Article
-from .serializers import ArticleDetailSerializer, ArticleListSerializer
+from .models import Article, ArticleImage
+from .serializers import ArticleDetailSerializer, ArticleImageSerializer, ArticleListSerializer
 
 
 class ArticleTreeView(APIView):
@@ -76,3 +76,9 @@ class ArticleDetailView(generics.RetrieveAPIView):
     serializer_class = ArticleDetailSerializer
     lookup_field = "slug"
     queryset = Article.objects.all()
+
+
+class ArticleImageDetailView(generics.RetrieveAPIView):
+    serializer_class = ArticleImageSerializer
+    lookup_url_kwarg = "image_id"
+    queryset = ArticleImage.objects.all()
