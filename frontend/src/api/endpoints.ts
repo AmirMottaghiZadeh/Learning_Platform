@@ -16,6 +16,7 @@ import {
   MedscapeArticleDetail,
   MedscapeArticleListItem,
   MedscapeCategoryNode,
+  MedscapeImage,
   MedscapeKind,
   Mistake,
   PlanToday,
@@ -159,6 +160,11 @@ export const medscapeApi = {
       .then((r) => unwrapList<MedscapeArticleListItem>(r.data)),
   detail: (slug: string) =>
     apiClient.get<MedscapeArticleDetail>(`/medscape/articles/${slug}/`).then((r) => r.data),
+  // Images are fetched as base64 (same shape as uptodateApi.image) rather
+  // than pointing <Image> straight at the API URL, since that would need
+  // the auth header React Native's Image doesn't attach for us.
+  image: (id: number) =>
+    apiClient.get<MedscapeImage>(`/medscape/images/${id}/`).then((r) => r.data),
 };
 
 export const quizApi = {

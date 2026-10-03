@@ -407,10 +407,22 @@ export interface MedscapeArticleListItem {
   kind: MedscapeKind;
 }
 
+export type MedscapeBlock =
+  | { type: "paragraph"; text: string }
+  | { type: "list"; ordered: boolean; items: string[] }
+  | { type: "table"; headers: string[] | null; rows: string[][] }
+  | { type: "image"; id: number; alt: string; caption: string };
+
 export interface MedscapeSection {
   heading: string;
-  content: string;
+  blocks: MedscapeBlock[];
   children: MedscapeSection[];
+}
+
+export interface MedscapeImage {
+  id: number;
+  content_type: string;
+  data_base64: string;
 }
 
 export interface MedscapeArticleDetail extends MedscapeArticleListItem {

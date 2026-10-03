@@ -1,15 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import { View } from "react-native";
+import { Image, View } from "react-native";
 
 import { medscapeApi } from "@/api/endpoints";
-import { MedscapeSection } from "@/api/types";
+import { MedscapeBlock, MedscapeSection } from "@/api/types";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
+import { useTheme } from "@/theme/ThemeProvider";
 
 export function MedscapeArticleScreen() {
   const { t } = useLang();
@@ -59,7 +60,7 @@ export function MedscapeArticleScreen() {
 }
 
 function SectionBlock({ section, depth }: { section: MedscapeSection; depth: number }) {
-  if (!section.heading && !section.content && section.children.length === 0) return null;
+  if (!section.heading && section.blocks.length === 0 && section.children.length === 0) return null;
 
   return (
     <View style={depth > 0 ? { marginTop: 10 } : undefined}>
@@ -72,14 +73,12 @@ function SectionBlock({ section, depth }: { section: MedscapeSection; depth: num
           {section.heading}
         </AppText>
       ) : null}
-      {section.content ? (
-        <AppText
-          weight="500"
-          size={14}
-          style={{ lineHeight: 24, marginTop: 6, textAlign: "left", writingDirection: "ltr" }}
-        >
-          {section.content}
-        </AppText>
+      {section.blocks.length > 0 ? (
+        <View style={{ gap: 10, marginTop: 6 }}>
+          {section.blocks.map((block, i) => (
+            <BlockView key={i} block={block} />
+          ))}
+        </View>
       ) : null}
       {section.children.length > 0 ? (
         <View style={{ gap: 4, marginTop: 8 }}>
@@ -87,6 +86,135 @@ function SectionBlock({ section, depth }: { section: MedscapeSection; depth: num
             <SectionBlock key={i} section={child} depth={depth + 1} />
           ))}
         </View>
+      ) : null}
+    </View>
+  );
+}
+
+function BlockView({ block }: { block: MedscapeBlock }) {
+  const { colors } = useTheme();
+
+  if (block.type === "paragraph") {
+    return (
+      <AppText weight="500" size={14} style={{ lineHeight: 24, textAlign: "left", writingDirection: "ltr" }}>
+        {block.text}
+      </AppText>
+    );
+  }
+
+  if (block.type === "list") {
+    return (
+      <View style={{ gap: 6 }}>
+        {block.items.map((item, i) => (
+          <View key={i} style={{ flexDirection: "row", gap: 8 }}>
+            <AppText weight="700" size={14} color={colors.accent}>
+              {block.ordered ? `${i + 1}.` : "•"}
+            </AppText>
+            <AppText
+              weight="500"
+              size={14}
+              style={{ flex: 1, lineHeight: 22, textAlign: "left", writingDirection: "ltr" }}
+            >
+              {item}
+            </AppText>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  if (block.type === "table") {
+    return (
+      <View
+        style={{
+          borderWidth: 1,
+          borderColor: colors.trackBg,
+          borderRadius: 10,
+          overflow: "hidden",
+        }}
+      >
+        {block.headers ? <TableRow cells={block.headers} header /> : null}
+        {block.rows.map((row, i) => (
+          <TableRow key={i} cells={row} striped={i % 2 === 1} />
+        ))}
+      </View>
+    );
+  }
+
+  if (block.type === "image") {
+    return <ImageBlockView id={block.id} alt={block.alt} caption={block.caption} />;
+  }
+
+  return null;
+}
+
+function TableRow({ cells, header, striped }: { cells: string[]; header?: boolean; striped?: boolean }) {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        backgroundColor: header ? colors.softBg : striped ? colors.appBg : colors.cardBg,
+        borderTopWidth: header ? 0 : 1,
+        borderTopColor: colors.trackBg,
+      }}
+    >
+      {cells.map((cell, i) => (
+        <View
+          key={i}
+          style={{
+            flex: 1,
+            paddingVertical: 8,
+            paddingHorizontal: 10,
+            borderLeftWidth: i > 0 ? 1 : 0,
+            borderLeftColor: colors.trackBg,
+          }}
+        >
+          <AppText
+            weight={header ? "800" : "500"}
+            size={12.5}
+            style={{ lineHeight: 18, textAlign: "left", writingDirection: "ltr" }}
+          >
+            {cell}
+          </AppText>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ImageBlockView({ id, alt, caption }: { id: number; alt: string; caption: string }) {
+  const { colors } = useTheme();
+  const { data } = useQuery({
+    queryKey: ["medscape-image", id],
+    queryFn: () => medscapeApi.image(id),
+  });
+
+  return (
+    <View style={{ gap: 6 }}>
+      <View
+        style={{
+          height: 220,
+          borderRadius: 12,
+          backgroundColor: colors.softBg,
+          borderWidth: 1,
+          borderColor: colors.trackBg,
+          overflow: "hidden",
+        }}
+      >
+        {data ? (
+          <Image
+            source={{ uri: `data:${data.content_type};base64,${data.data_base64}` }}
+            accessibilityLabel={alt}
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="contain"
+          />
+        ) : null}
+      </View>
+      {caption ? (
+        <AppText muted weight="600" size={11.5} style={{ textAlign: "left", writingDirection: "ltr" }}>
+          {caption}
+        </AppText>
       ) : null}
     </View>
   );
