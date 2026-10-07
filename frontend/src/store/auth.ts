@@ -88,6 +88,15 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    // Re-entrancy guard: if the access token is already invalid, the
+    // logout() call below gets its own 401, which the response
+    // interceptor turns into another onAuthFailed() -> signOut() call
+    // while this one is still running. Without this early check, that
+    // recurses forever (each pass makes a real network call, so it never
+    // shows up as a hot loop, just a hydrate() that never resolves).
+    // Flipping status first makes every re-entrant call a no-op.
+    if (get().status === "signedOut") return;
+    set({ status: "signedOut" });
     try {
       if (get().accessToken) await authApi.logout();
     } catch {
@@ -96,7 +105,6 @@ export const useAuth = create<AuthState>((set, get) => ({
     await sessionStore.clear();
     queryClient.clear();
     set({
-      status: "signedOut",
       user: null,
       accessToken: null,
       refreshToken: null,

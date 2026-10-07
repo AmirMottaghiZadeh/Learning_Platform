@@ -89,13 +89,17 @@ apiClient.interceptors.response.use(
       try {
         refreshPromise ??= auth.refreshAccessToken();
         const token = await refreshPromise;
+        refreshPromise = null;
         request.headers = { ...request.headers, Authorization: `Bearer ${token}` };
         return await apiClient.request(request);
       } catch (refreshError) {
+        // Clear before onAuthFailed(), not in a finally after it: onAuthFailed
+        // (signOut) can itself trigger another request that 401s and re-enters
+        // this interceptor while refreshPromise is still the rejected promise
+        // from this attempt -- it must not reuse it.
+        refreshPromise = null;
         await auth.onAuthFailed();
         throw refreshError;
-      } finally {
-        refreshPromise = null;
       }
     }
 
