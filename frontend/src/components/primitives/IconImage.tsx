@@ -16,6 +16,7 @@ export const ICONS = {
   bulbBrain: require("../../../assets/icons/bulb-brain.png"),
   graduation: require("../../../assets/icons/graduation.png"),
   lexicompLogo: require("../../../assets/icons/lexicomp-logo.png"),
+  uptodateLogo: require("../../../assets/icons/uptodate-logo.png"),
 } as const;
 
 export type IconName = keyof typeof ICONS;

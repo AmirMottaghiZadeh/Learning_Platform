@@ -128,7 +128,7 @@ export function DashboardScreen() {
                   justifyContent: "center",
                 }}
               >
-                <IconImage name="docSearch" size={34} />
+                <IconImage name="uptodateLogo" size={36} />
               </View>
               <View style={{ flex: 1 }}>
                 <View
