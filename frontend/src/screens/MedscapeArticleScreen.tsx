@@ -60,28 +60,77 @@ export function MedscapeArticleScreen() {
 }
 
 function SectionBlock({ section, depth }: { section: MedscapeSection; depth: number }) {
+  const { colors } = useTheme();
   if (!section.heading && section.blocks.length === 0 && section.children.length === 0) return null;
 
+  const isTitle = depth === 0;
+  const isSubtitle = depth === 1;
+
+  let headingStyle;
+  if (isTitle) {
+    headingStyle = {
+      textAlign: "left" as const,
+      writingDirection: "ltr" as const,
+      paddingBottom: 8,
+      marginBottom: 16,
+      borderBottomWidth: 2,
+      borderBottomColor: colors.accent,
+    };
+  } else if (isSubtitle) {
+    headingStyle = {
+      textAlign: "left" as const,
+      writingDirection: "ltr" as const,
+      lineHeight: 19,
+      paddingLeft: 10,
+      marginBottom: 8,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.accent,
+    };
+  } else {
+    // Sub-subtitle (depth >= 2): its own separator, distinct from the
+    // title's full-width bottom border and the subtitle's accent-colored
+    // left bar -- a soft, pill-shaped background chip that hugs just the
+    // heading text.
+    headingStyle = {
+      textAlign: "left" as const,
+      writingDirection: "ltr" as const,
+      lineHeight: 18,
+      marginBottom: 7,
+      alignSelf: "flex-start" as const,
+      backgroundColor: colors.accent + "1A",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    };
+  }
+
   return (
-    <View style={depth > 0 ? { marginTop: 10 } : undefined}>
+    <View>
       {section.heading ? (
         <AppText
-          weight={depth === 0 ? "900" : "800"}
-          size={depth === 0 ? 16 : 14}
-          style={{ textAlign: "left", writingDirection: "ltr" }}
+          weight={isTitle ? "900" : isSubtitle ? "800" : "700"}
+          size={isTitle ? 16 : isSubtitle ? 14.5 : 13.5}
+          color={isSubtitle ? colors.accent : undefined}
+          style={headingStyle}
         >
           {section.heading}
         </AppText>
       ) : null}
       {section.blocks.length > 0 ? (
-        <View style={{ gap: 10, marginTop: 6 }}>
+        <View style={{ gap: 10, paddingLeft: isTitle ? 0 : isSubtitle ? 13 : 12 }}>
           {section.blocks.map((block, i) => (
             <BlockView key={i} block={block} />
           ))}
         </View>
       ) : null}
       {section.children.length > 0 ? (
-        <View style={{ gap: 4, marginTop: 8 }}>
+        <View
+          style={{
+            gap: isTitle ? 20 : 14,
+            marginTop: section.blocks.length > 0 ? (isTitle ? 20 : 14) : 0,
+            paddingLeft: isTitle ? 0 : isSubtitle ? 13 : 12,
+          }}
+        >
           {section.children.map((child, i) => (
             <SectionBlock key={i} section={child} depth={depth + 1} />
           ))}
