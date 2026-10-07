@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 
 import { medscapeApi } from "@/api/endpoints";
@@ -17,12 +17,26 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
 
+function monogram(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function titleCase(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 /** Shared by the "guidelines" and "diseasesConditions" screens -- same
  * backend (apps.medscape), same browse-by-category UX, kind is just which
  * one the current screen is. There are ~3200 disease articles, too many to
  * fetch as one list and group client-side (the calculators approach), so
- * the tree (category -> specialty -> count) loads up front and a
- * specialty's articles load lazily only once that row is opened. */
+ * the tree (category -> specialty -> count) loads up front; a specialty's
+ * own article list loads lazily on its own screen (MedscapeSpecialtyScreen),
+ * once that specialty tile is opened, as an A-Z index -- replacing what used
+ * to be an inline accordion-of-an-accordion, which turned into an
+ * unbounded, un-scannable flat list once a specialty had more than a
+ * handful of articles (Dermatology alone has 400+). */
 export function MedscapeBrowseScreen() {
   const { t, row } = useLang();
   const { colors } = useTheme();
@@ -34,8 +48,7 @@ export function MedscapeBrowseScreen() {
 
   const [q, setQ] = useState("");
   const query = useDebounced(q.trim());
-  const [openCategory, setOpenCategory] = useState<string | null>(null);
-  const [openSpecialty, setOpenSpecialty] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const { data: tree, isLoading } = useQuery({
     queryKey: ["medscape-tree", kind],
@@ -48,9 +61,20 @@ export function MedscapeBrowseScreen() {
     enabled: query.length >= 2,
   });
 
+  useEffect(() => {
+    if (tree && tree.length > 0 && !tree.some((n) => n.category === activeCategory)) {
+      setActiveCategory(tree[0].category);
+    }
+  }, [tree, activeCategory]);
+
   const openArticle = (slug: string) => navigate("medscapeArticle", { slug });
+  const openSpecialty = (category: string, specialty: string) =>
+    navigate("medscapeSpecialty", { kind, category, specialty });
 
   if (isLoading) return <LoadingState />;
+
+  const node = (tree ?? []).find((n) => n.category === activeCategory) ?? (tree ?? [])[0];
+  const specialties = node ? [...node.specialties].sort((a, b) => b.count - a.count) : [];
 
   return (
     <Screen>
@@ -102,103 +126,80 @@ export function MedscapeBrowseScreen() {
           </View>
         )
       ) : (
-        <View style={{ gap: 8 }}>
-          {(tree ?? []).map((node) => (
-            <View
-              key={node.category}
-              style={{
-                backgroundColor: colors.cardBg,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: colors.border,
-                overflow: "hidden",
-              }}
-            >
-              <Pressable
-                onPress={() => {
-                  setOpenCategory(openCategory === node.category ? null : node.category);
-                  setOpenSpecialty(null);
-                }}
-                style={{ padding: 13, flexDirection: row, alignItems: "center", justifyContent: "space-between" }}
-              >
-                <AppText weight="800" size={13}>
-                  {node.category.charAt(0).toUpperCase() + node.category.slice(1)}
-                </AppText>
-                <AppText muted weight="700" size={12}>
-                  {node.specialties.reduce((a, s) => a + s.count, 0)} {openCategory === node.category ? "▲" : "▼"}
-                </AppText>
-              </Pressable>
-
-              {openCategory === node.category ? (
-                <View style={{ paddingHorizontal: 10, paddingBottom: 10, gap: 6 }}>
-                  {node.specialties.map((sp) => (
+        <View style={{ gap: 14 }}>
+          {(tree ?? []).length > 1 ? (
+            <View style={{ flexDirection: row, backgroundColor: colors.pageBg, borderRadius: 12, padding: 3 }}>
+              {(tree ?? []).map((n) => {
+                const active = n.category === activeCategory;
+                return (
+                  <Pressable key={n.category} onPress={() => setActiveCategory(n.category)} style={{ flex: 1 }}>
                     <View
-                      key={sp.name}
                       style={{
-                        backgroundColor: colors.softBg,
-                        borderRadius: 12,
-                        borderWidth: 1,
-                        borderColor: colors.trackBg,
-                        overflow: "hidden",
+                        alignItems: "center",
+                        paddingVertical: 8,
+                        borderRadius: 9,
+                        backgroundColor: active ? colors.accent : "transparent",
                       }}
                     >
-                      <Pressable
-                        onPress={() => setOpenSpecialty(openSpecialty === sp.name ? null : sp.name)}
-                        style={{ padding: 11, flexDirection: row, alignItems: "center", justifyContent: "space-between" }}
-                      >
-                        <AppText weight="700" size={12.5}>
-                          {sp.name}
-                        </AppText>
-                        <AppText muted weight="700" size={11.5}>
-                          {sp.count} {openSpecialty === sp.name ? "▲" : "▼"}
-                        </AppText>
-                      </Pressable>
-                      {openSpecialty === sp.name ? (
-                        <SpecialtyArticles
-                          kind={kind}
-                          category={node.category}
-                          specialty={sp.name}
-                          onPick={openArticle}
-                        />
-                      ) : null}
+                      <AppText weight={active ? "800" : "700"} size={12} color={active ? colors.onAccent : colors.muted}>
+                        {titleCase(n.category)}
+                      </AppText>
                     </View>
-                  ))}
-                </View>
-              ) : null}
+                  </Pressable>
+                );
+              })}
             </View>
-          ))}
+          ) : null}
+
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+            {specialties.map((sp) => (
+              <Pressable
+                key={sp.name}
+                onPress={() => openSpecialty(node!.category, sp.name)}
+                style={{ width: "48%" }}
+              >
+                <View
+                  style={{
+                    backgroundColor: colors.cardBg,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    padding: 13,
+                    gap: 8,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 10,
+                      backgroundColor: colors.accent + "1A",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AppText weight="800" size={11} color={colors.accent}>
+                      {monogram(sp.name)}
+                    </AppText>
+                  </View>
+                  <AppText
+                    weight="800"
+                    size={12.5}
+                    numberOfLines={2}
+                    style={{ lineHeight: 16, textAlign: "left", writingDirection: "ltr" }}
+                  >
+                    {sp.name}
+                  </AppText>
+                  <AppText muted weight="700" size={11} style={{ textAlign: "left", writingDirection: "ltr" }}>
+                    {sp.count} {t("medscapeArticleCount")}
+                  </AppText>
+                </View>
+              </Pressable>
+            ))}
+          </View>
         </View>
       )}
     </Screen>
-  );
-}
-
-function SpecialtyArticles({
-  kind,
-  category,
-  specialty,
-  onPick,
-}: {
-  kind: MedscapeKind;
-  category: string;
-  specialty: string;
-  onPick: (slug: string) => void;
-}) {
-  const { data, isLoading } = useQuery({
-    queryKey: ["medscape-articles", kind, category, specialty],
-    queryFn: () => medscapeApi.bySpecialty(kind, category, specialty),
-  });
-
-  return (
-    <View style={{ paddingHorizontal: 8, paddingBottom: 8, gap: 6 }}>
-      {isLoading ? (
-        <AppText muted size={12} style={{ paddingVertical: 6 }}>
-          …
-        </AppText>
-      ) : (
-        (data ?? []).map((a) => <ArticleRow key={a.slug} article={a} onPress={() => onPick(a.slug)} />)
-      )}
-    </View>
   );
 }
 

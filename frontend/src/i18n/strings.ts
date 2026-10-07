@@ -93,6 +93,9 @@ export const strings = {
     medscapeSearchPlaceholder: "جست‌وجوی مقاله…",
     medscapeEmptyTitle: "مقاله‌ای یافت نشد",
     medscapeEmptySub: "نام دیگری را امتحان کن یا از دسته‌ها مرور کن.",
+    medscapeArticleCount: "مقاله",
+    medscapeSearchInSpecialty: "جست‌وجو در این تخصص…",
+    medscapeNoLocalResults: "نتیجه‌ای یافت نشد",
 
     nextChapterTitle: "فصل بعدی تو",
     editPlan: "ویرایش برنامه",
@@ -322,6 +325,9 @@ export const strings = {
     medscapeSearchPlaceholder: "Search articles…",
     medscapeEmptyTitle: "No article found",
     medscapeEmptySub: "Try a different name, or browse by category.",
+    medscapeArticleCount: "articles",
+    medscapeSearchInSpecialty: "Search in this specialty…",
+    medscapeNoLocalResults: "No matches found",
 
     nextChapterTitle: "Your next chapter",
     editPlan: "Edit plan",
