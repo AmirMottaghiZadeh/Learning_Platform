@@ -18,6 +18,10 @@ almost as-is, except:
 - paragraph/list/table text is run through the same ad-loader-call stripper
   as before (`webmd.ads2.defineAd({...});`), since a handful of pages embed
   it mid-paragraph rather than as its own block.
+- numbered citation markers (e.g. "[8, 6]", "[17]") are stripped from that
+  same text. On the source site they're links into a References/Bibliography
+  section; that section was never part of the scrape, so here they're just
+  dead, unclickable clutter rather than a real citation trail.
 - an image block's local `file` (content-addressed by the scraper, under
   --disease-images-dir / --guideline-images-dir) is read once and stored as
   an ArticleImage row (get_or_create on the content hash, so the same figure
@@ -44,6 +48,7 @@ DEFAULT_DISEASE_IMAGES_DIR = "/home/amir/Documents/Medscape/emedicine_images"
 DEFAULT_GUIDELINE_IMAGES_DIR = "/home/amir/Documents/Medscape/guideline_images"
 
 _AD_CALL = re.compile(r"webmd\.[\w.]+\([^)]*\)\s*;?")
+_CITATION_MARKER = re.compile(r"\s*\[\d+(?:,\s*\d+)*\]")
 _BLANK_LINES = re.compile(r"\n{3,}")
 
 GUIDELINE_SPECIALTY_BY_FILENAME = {
@@ -57,6 +62,7 @@ def _clean_text(text):
     if not text:
         return ""
     cleaned = _AD_CALL.sub("", text)
+    cleaned = _CITATION_MARKER.sub("", cleaned)
     return _BLANK_LINES.sub("\n\n", cleaned).strip()
 
 
@@ -84,8 +90,8 @@ class ImageResolver:
         return {
             "type": "image",
             "id": image_id,
-            "alt": block.get("alt") or "",
-            "caption": block.get("caption") or "",
+            "alt": _clean_text(block.get("alt")),
+            "caption": _clean_text(block.get("caption")),
         }
 
     def _load(self, filename: str, content_hash: str, source_url: str) -> int | None:
@@ -136,7 +142,7 @@ def _clean_sections(sections, child_key, resolver: ImageResolver):
     cleaned = []
     for s in sections or []:
         cleaned.append({
-            "heading": (s.get("heading") or "").strip(),
+            "heading": _clean_text(s.get("heading") or ""),
             "blocks": _clean_blocks(s.get("blocks"), resolver),
             "children": _clean_sections(s.get(child_key) or [], child_key, resolver),
         })
