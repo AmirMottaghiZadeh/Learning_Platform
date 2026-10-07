@@ -154,6 +154,13 @@ export const medscapeApi = {
     apiClient
       .get("/medscape/articles/", { params: { kind, category, specialty } })
       .then((r) => unwrapList<MedscapeArticleListItem>(r.data)),
+  // Only meaningful where latest_update is populated (guidelines with a
+  // "Latest Guidance Updates"-style section -- about a quarter of them);
+  // rows without one are excluded server-side rather than sorted last.
+  recentlyUpdated: (kind: MedscapeKind, category: string, specialty: string, limit = 8) =>
+    apiClient
+      .get("/medscape/articles/", { params: { kind, category, specialty, recent: 1, limit } })
+      .then((r) => unwrapList<MedscapeArticleListItem>(r.data)),
   search: (kind: MedscapeKind, search: string) =>
     apiClient
       .get("/medscape/articles/", { params: { kind, search } })

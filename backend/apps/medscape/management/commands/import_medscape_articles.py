@@ -28,14 +28,24 @@ almost as-is, except:
   reused across articles is only ever stored once), and the block becomes
   {"type": "image", "id": <ArticleImage.pk>, "alt", "caption"} -- self-
   hosted from here on, no dependency on the source site staying up.
+
+For guidelines specifically, a "Latest Guidance Updates" (or similarly
+worded) top-level section -- present on about a quarter of them -- is also
+mined for the most recent date it mentions (its entries read newest-first,
+e.g. "July 2026: updated first-line recommendations...", so the first date
+found is the most recent), stored as Article.latest_update. It's the only
+real signal this source gives for "what changed recently", which is more
+useful for guidelines than alphabetical browsing alone.
 """
 
 import hashlib
 import json
 import mimetypes
 import re
+from datetime import datetime
 from pathlib import Path
 
+from dateutil import parser as date_parser
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import slugify
@@ -50,6 +60,16 @@ DEFAULT_GUIDELINE_IMAGES_DIR = "/home/amir/Documents/Medscape/guideline_images"
 _AD_CALL = re.compile(r"webmd\.[\w.]+\([^)]*\)\s*;?")
 _CITATION_MARKER = re.compile(r"\s*\[\d+(?:,\s*\d+)*\]")
 _BLANK_LINES = re.compile(r"\n{3,}")
+
+_UPDATE_HEADING = re.compile(r"update|latest guidance", re.I)
+_MONTHS = (
+    "January|February|March|April|May|June|July|August|September|October|November|December"
+)
+# No leading \b: the scraped heading and its first sentence are often
+# concatenated with no space ("UpdatesMarch 2024: ..."), which a leading
+# \b would reject since both sides are word characters.
+_UPDATE_DATE = re.compile(rf"(?:\d{{1,2}}\s+)?(?:{_MONTHS})\s+20\d{{2}}\b")
+_DATE_DEFAULT = datetime(2000, 1, 1)
 
 GUIDELINE_SPECIALTY_BY_FILENAME = {
     "guidelines_content.json": "Guidelines",
@@ -151,6 +171,35 @@ def _clean_sections(sections, child_key, resolver: ImageResolver):
 
 def _specialty_label(raw):
     return raw.replace("_", " ").replace("guide ", "").strip().title()
+
+
+def _extract_latest_update(sections):
+    """Scans a guideline's already-cleaned top-level sections for one whose
+    heading reads like a change log (e.g. "Latest Guidance Updates") and
+    pulls the first date out of its text -- these entries read newest-first,
+    so the first match is the most recent. Returns None when no such
+    section exists, or it has no date left in it to parse to.
+    """
+    for s in sections:
+        if not _UPDATE_HEADING.search(s.get("heading") or ""):
+            continue
+        text = " ".join(
+            b.get("text", "") if b.get("type") == "paragraph" else " ".join(b.get("items") or [])
+            for b in s.get("blocks") or []
+            if b.get("type") in ("paragraph", "list")
+        )
+        match = _UPDATE_DATE.search(text)
+        if not match:
+            continue
+        try:
+            # Most matches are "Month YYYY" with no day; dateutil fills a
+            # missing field from `default`, which it otherwise defaults to
+            # today -- without this, every undated entry would silently end
+            # up on today's day-of-month.
+            return date_parser.parse(match.group(0), default=_DATE_DEFAULT).date()
+        except (ValueError, OverflowError):
+            continue
+    return None
 
 
 class Command(BaseCommand):
@@ -280,6 +329,7 @@ class Command(BaseCommand):
             stats["skipped"] += 1
             return
 
+        sections = _clean_sections(rec.get("sections"), "subsections", images)
         _, created = Article.objects.update_or_create(
             kind=Article.GUIDELINE,
             source_id=source_id,
@@ -289,7 +339,8 @@ class Command(BaseCommand):
                 "title": title,
                 "meta": "",
                 "url": url,
-                "sections": _clean_sections(rec.get("sections"), "subsections", images),
+                "sections": sections,
+                "latest_update": _extract_latest_update(sections),
             },
         )
         stats["created" if created else "updated"] += 1

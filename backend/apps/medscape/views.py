@@ -49,6 +49,11 @@ class ArticleListView(generics.ListAPIView):
             OpenApiParameter("search", str, description="Match title (case-insensitive)."),
             OpenApiParameter("category", str, description="Browse mode: with `specialty`."),
             OpenApiParameter("specialty", str, description="Browse mode: with `category`."),
+            OpenApiParameter(
+                "recent", bool,
+                description="With `category`+`specialty`: only articles with a latest_update, newest first.",
+            ),
+            OpenApiParameter("limit", int, description="Max rows when `recent` is set (default 10)."),
         ]
     )
     def get(self, request, *args, **kwargs):
@@ -64,12 +69,18 @@ class ArticleListView(generics.ListAPIView):
 
         category = self.request.query_params.get("category", "").strip()
         specialty = self.request.query_params.get("specialty", "").strip()
-        if category and specialty:
-            return qs.filter(categories__contains=[{"category": category, "specialty": specialty}])
+        if not (category and specialty):
+            # Neither a search term nor a full category+specialty pair --
+            # there is no reasonable "everything" default at this size, so
+            # ask for one.
+            return Article.objects.none()
+        qs = qs.filter(categories__contains=[{"category": category, "specialty": specialty}])
 
-        # Neither a search term nor a full category+specialty pair -- there
-        # is no reasonable "everything" default at this size, so ask for one.
-        return Article.objects.none()
+        if self.request.query_params.get("recent"):
+            limit = int(self.request.query_params.get("limit") or 10)
+            return qs.filter(latest_update__isnull=False).order_by("-latest_update")[:limit]
+
+        return qs
 
 
 class ArticleDetailView(generics.RetrieveAPIView):

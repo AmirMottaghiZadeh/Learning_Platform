@@ -96,6 +96,8 @@ export const strings = {
     medscapeArticleCount: "مقاله",
     medscapeSearchInSpecialty: "جست‌وجو در این تخصص…",
     medscapeNoLocalResults: "نتیجه‌ای یافت نشد",
+    medscapeRecentlyUpdated: "به‌روزرسانی‌های اخیر",
+    medscapeAllArticlesAZ: "همهٔ مقالات · A–Z",
 
     nextChapterTitle: "فصل بعدی تو",
     editPlan: "ویرایش برنامه",
@@ -328,6 +330,8 @@ export const strings = {
     medscapeArticleCount: "articles",
     medscapeSearchInSpecialty: "Search in this specialty…",
     medscapeNoLocalResults: "No matches found",
+    medscapeRecentlyUpdated: "Recently Updated",
+    medscapeAllArticlesAZ: "All Articles · A–Z",
 
     nextChapterTitle: "Your next chapter",
     editPlan: "Edit plan",

@@ -405,6 +405,7 @@ export interface MedscapeArticleListItem {
   slug: string;
   title: string;
   kind: MedscapeKind;
+  latest_update: string | null;
 }
 
 export type MedscapeBlock =

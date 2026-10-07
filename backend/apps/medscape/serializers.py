@@ -8,7 +8,7 @@ from .models import Article, ArticleImage
 class ArticleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
-        fields = ["slug", "title", "kind"]
+        fields = ["slug", "title", "kind", "latest_update"]
 
 
 class ArticleDetailSerializer(ArticleListSerializer):

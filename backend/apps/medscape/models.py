@@ -44,6 +44,12 @@ class Article(models.Model):
     categories = models.JSONField(default=list)
     # [{heading, blocks: [...], children: [...]}, ...], arbitrary depth.
     sections = models.JSONField(default=list)
+    # Most recent date mentioned in a "Latest Guidance Updates" (or similar)
+    # section, for guidelines that have one -- about a quarter of them do.
+    # None for everything else (diseases, and guidelines without a change
+    # log). Lets the UI surface what's actually changed recently instead of
+    # only offering alphabetical browsing.
+    latest_update = models.DateField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

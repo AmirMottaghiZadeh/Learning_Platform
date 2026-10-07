@@ -27,24 +27,26 @@ function titleCase(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** Shared by the "guidelines" and "diseasesConditions" screens -- same
- * backend (apps.medscape), same browse-by-category UX, kind is just which
- * one the current screen is. There are ~3200 disease articles, too many to
- * fetch as one list and group client-side (the calculators approach), so
- * the tree (category -> specialty -> count) loads up front; a specialty's
- * own article list loads lazily on its own screen (MedscapeSpecialtyScreen),
+/** The "diseasesConditions" screen's browse UX: category tabs over a
+ * specialty grid. There are ~3200 disease articles, too many to fetch as
+ * one list and group client-side (the calculators approach), so the tree
+ * (category -> specialty -> count) loads up front; a specialty's own
+ * article list loads lazily on its own screen (MedscapeSpecialtyScreen),
  * once that specialty tile is opened, as an A-Z index -- replacing what used
  * to be an inline accordion-of-an-accordion, which turned into an
  * unbounded, un-scannable flat list once a specialty had more than a
- * handful of articles (Dermatology alone has 400+). */
+ * handful of articles (Dermatology alone has 400+).
+ *
+ * Guidelines use a different screen (MedscapeGuidelinesScreen): they have no
+ * specialty taxonomy, just three flat content-type buckets, so this
+ * category-tabs-over-a-grid shape doesn't apply to them. */
 export function MedscapeBrowseScreen() {
   const { t, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
-  const screen = useNav((s) => s.screen);
-  const kind: MedscapeKind = screen === "guidelines" ? "guideline" : "disease";
-  const titleKey: StringKey = screen === "guidelines" ? "guidelinesLabel" : "diseasesConditionsLabel";
+  const kind: MedscapeKind = "disease";
+  const titleKey: StringKey = "diseasesConditionsLabel";
 
   const [q, setQ] = useState("");
   const query = useDebounced(q.trim());
