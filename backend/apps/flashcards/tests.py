@@ -4,14 +4,15 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.drugs.models import Ingredient, IngredientProfileSection
+from apps.lessons.selectors import mark_drug_read
 from apps.progress.models import LearnerProgress
 
 from .models import LeitnerCard
-from .services import due_card_count
+from .services import due_card_count, seed_deck
 
 
-def _rich_ingredient(name, rxcui):
-    ing = Ingredient.objects.create(name=name, rxcui=rxcui, slug=f"{name}-{rxcui}")
+def _rich_ingredient(name, rxcui, n_products=0):
+    ing = Ingredient.objects.create(name=name, rxcui=rxcui, slug=f"{name}-{rxcui}", n_products=n_products)
     for field in ("clinical_pharmacology", "dosage_and_administration", "warnings"):
         IngredientProfileSection.objects.create(
             ingredient=ing, field=field, raw_text="x",
@@ -40,7 +41,7 @@ class FlashcardApiTests(TestCase):
         self.assertEqual(due.status_code, 200)
         self.assertEqual(len(due.data), 2)
         card = due.data[0]
-        self.assertIn("\n", card["back_fa"])  # multiple sections joined
+        self.assertGreaterEqual(len(card["back_fields_fa"]), 2)  # multiple field blocks
         self.assertEqual(card["box"], 1)
 
         boxes = self.client.get("/flashcards/boxes/").data
@@ -54,6 +55,22 @@ class FlashcardApiTests(TestCase):
         self.assertEqual(again.status_code, 200)
         self.assertEqual(again.data["created"], 0)
         self.assertEqual(LeitnerCard.objects.filter(user=self.user).count(), 2)
+
+    def test_seed_prioritizes_drugs_the_learner_has_actually_read(self):
+        # losartan/metoprolol (setUp) both outrank atenolol by product count,
+        # so a limit-of-one seed would normally pick one of them -- marking
+        # atenolol as read in Lessons should make it jump the queue instead.
+        self.a.n_products = 100
+        self.a.save(update_fields=["n_products"])
+        self.b.n_products = 100
+        self.b.save(update_fields=["n_products"])
+        atenolol = _rich_ingredient("atenolol", "2599", n_products=0)
+        mark_drug_read(self.user, atenolol.slug)
+
+        result = seed_deck(self.user, limit=1)
+        self.assertEqual(result["created"], 1)
+        card = LeitnerCard.objects.get(user=self.user)
+        self.assertEqual(card.ingredient_id, atenolol.id)
 
     def test_easy_review_promotes_box_reschedules_and_awards_xp(self):
         self.client.post("/flashcards/seed/")

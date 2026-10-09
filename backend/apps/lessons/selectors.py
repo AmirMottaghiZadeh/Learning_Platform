@@ -191,11 +191,23 @@ def get_chapter(user, atc_code):
     ingredients = (
         Ingredient.objects.filter(atc_codes__code__startswith=atc_code)
         .prefetch_related("atc_codes", "sections")
-        .order_by("name")
         .distinct()
     )
     if not ingredients:
         return None
+
+    # Sorted by this chapter's own ATC code (not drug name) -- within a class,
+    # the ATC code already clusters drugs by sub-mechanism (e.g. every "-olol"
+    # beta-blocker sits together under C07AB), which an alphabetical name list
+    # scatters. `atc_codes` is a many-to-many, so an ingredient can carry
+    # several codes; the one that matters here is whichever of its codes
+    # actually falls under this chapter (already prefetched, so no extra
+    # query), and the lowest one if more than one does.
+    def chapter_code(ingredient):
+        codes = [c.code for c in ingredient.atc_codes.all() if c.code.startswith(atc_code)]
+        return min(codes) if codes else ingredient.name
+
+    ingredients = sorted(ingredients, key=chapter_code)
 
     progress, _ = ChapterProgress.objects.get_or_create(user=user, atc_code=atc_code)
     read_slugs = read_slugs_for_user(user) & {i.slug for i in ingredients}
