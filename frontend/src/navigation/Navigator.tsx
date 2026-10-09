@@ -7,6 +7,7 @@ import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
 import { AuthScreen } from "@/screens/AuthScreen";
 import { CalculatorDetailScreen } from "@/screens/CalculatorDetailScreen";
+import { CalculatorDomainScreen } from "@/screens/CalculatorDomainScreen";
 import { CalculatorsScreen } from "@/screens/CalculatorsScreen";
 import { DashboardScreen } from "@/screens/DashboardScreen";
 import { EducationScreen } from "@/screens/EducationScreen";
@@ -95,6 +96,8 @@ function CurrentScreen() {
       return <MedscapeSpecialtyScreen />;
     case "calculator":
       return <CalculatorsScreen />;
+    case "calculatorDomain":
+      return <CalculatorDomainScreen />;
     case "calculatorDetail":
       return <CalculatorDetailScreen />;
     case "dashboard":

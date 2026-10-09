@@ -1,5 +1,5 @@
 import React from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
+import { KeyboardAvoidingView, Platform, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme/ThemeProvider";
@@ -8,12 +8,18 @@ import { MeshBackground } from "./MeshBackground";
 
 /**
  * The 430px framed shell from the design: a centred rounded card on a mesh
- * ground -- on wide web, where it reads as a phone mockup. On native (a
- * *real* phone, which already has its own physical rounded corners) that
- * same rounding + shadow + max-width instead clipped the app's own content
- * away from the four corners of the screen, showing the plain mesh
- * background through the gap. So the framed look is web-only; native
- * renders truly edge-to-edge.
+ * ground -- a phone mockup, for a DESKTOP browser window wider than the app
+ * itself, where that extra space would otherwise just be empty mesh on
+ * either side. On a real phone (native, which already has its own physical
+ * rounded corners) that same rounding + shadow + max-width instead clipped
+ * the app's own content away from the four corners of the screen. The same
+ * is true of a phone's own *browser* or a PWA shell: `Platform.OS` reports
+ * "web" there too, but the viewport is already phone-width, so framing it
+ * again produced the reported "phone inside a phone" look, rounded corners
+ * and all, instead of filling the real screen. Gating on actual viewport
+ * width (not just the web/native platform split) makes both cases render
+ * truly edge-to-edge, and only a genuinely wider desktop window gets the
+ * mockup frame.
  *
  * Every screen renders inside this one component (Navigator wraps the whole
  * authenticated app in it, and AuthScreen/OnboardingScreen each use it
@@ -26,7 +32,8 @@ import { MeshBackground } from "./MeshBackground";
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { colors, shadows } = useTheme();
-  const isWeb = Platform.OS === "web";
+  const { width } = useWindowDimensions();
+  const showMockupFrame = Platform.OS === "web" && width > layout.appMaxWidth;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.meshBg }}>
@@ -40,8 +47,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               backgroundColor: colors.appBg,
               overflow: "hidden",
             },
-            isWeb && { maxWidth: layout.appMaxWidth, borderRadius: radius.shell },
-            isWeb && shadows.shell,
+            showMockupFrame && { maxWidth: layout.appMaxWidth, borderRadius: radius.shell },
+            showMockupFrame && shadows.shell,
           ]}
         >
           <KeyboardAvoidingView

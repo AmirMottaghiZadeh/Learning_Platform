@@ -4,8 +4,10 @@ import { Pressable, ScrollView, View } from "react-native";
 
 import { meApi } from "@/api/endpoints";
 import { HeaderMesh } from "@/components/HeaderMesh";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
+import { IconImage, IconName } from "@/components/primitives/IconImage";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
@@ -14,7 +16,7 @@ import { spacing } from "@/theme/tokens";
 
 export function ProfileScreen() {
   const { t, isFa, n, toggle: toggleLang, row } = useLang();
-  const { colors, shadows, toggle: toggleTheme, isDark } = useTheme();
+  const { colors, shadows } = useTheme();
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
   const navigate = useNav((s) => s.navigate);
@@ -26,10 +28,10 @@ export function ProfileScreen() {
   const initial = name.trim().charAt(0) || "؟";
 
   const tiles = [
-    { value: n(dash?.xp ?? 0), label: t("xpLabel"), color: colors.accent, bg: colors.softBg },
-    { value: n(dash?.streak_days ?? 0), label: t("streakLabel"), color: "#E08A3C", bg: "rgba(224,138,60,0.12)" },
-    { value: `${n(stats?.accuracy_pct ?? 0)}%`, label: t("profileStatsAccuracy"), color: "#5AAE8C", bg: "rgba(90,174,140,0.14)" },
-    { value: n(stats?.quizzes ?? 0), label: t("profileStatsQuizzes"), color: "#7E57C2", bg: "rgba(126,87,194,0.14)" },
+    { value: n(dash?.xp ?? 0), label: t("xpLabel"), icon: "stat-xp" as IconName, color: colors.accent, bg: colors.softBg },
+    { value: n(dash?.streak_days ?? 0), label: t("streakLabel"), icon: "stat-streak" as IconName, color: "#E08A3C", bg: "rgba(224,138,60,0.12)" },
+    { value: `${n(stats?.accuracy_pct ?? 0)}%`, label: t("profileStatsAccuracy"), icon: "stat-accuracy" as IconName, color: "#5AAE8C", bg: "rgba(90,174,140,0.14)" },
+    { value: n(stats?.quizzes ?? 0), label: t("profileStatsQuizzes"), icon: "stat-quizzes" as IconName, color: "#7E57C2", bg: "rgba(126,87,194,0.14)" },
   ];
 
   const Row = ({
@@ -41,7 +43,7 @@ export function ProfileScreen() {
     label: string;
     onPress?: () => void;
     danger?: boolean;
-    icon: string;
+    icon: IconName;
   }) => (
     <Pressable
       onPress={onPress}
@@ -60,7 +62,7 @@ export function ProfileScreen() {
         !danger && shadows.raisedSm,
       ]}
     >
-      <AppText size={16}>{icon}</AppText>
+      <IconImage name={icon} size={26} />
       <AppText weight="700" size={14} color={danger ? "#D65858" : colors.ink}>
         {label}
       </AppText>
@@ -81,23 +83,7 @@ export function ProfileScreen() {
                 {t("profileTitle")}
               </AppText>
               <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
-                <Pressable
-                  onPress={toggleTheme}
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 15,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: "rgba(255,255,255,0.16)",
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.3)",
-                  }}
-                >
-                  <AppText size={13} color="#fff">
-                    {isDark ? "☀" : "☾"}
-                  </AppText>
-                </Pressable>
+                <ThemeToggleButton />
                 <Pressable
                   onPress={toggleLang}
                   style={{
@@ -157,6 +143,7 @@ export function ProfileScreen() {
                 alignItems: "center",
               }}
             >
+              <IconImage name={tile.icon} size={30} style={{ marginBottom: 4 }} />
               <AppText weight="900" size={20} color={tile.color}>
                 {tile.value}
               </AppText>
@@ -169,11 +156,11 @@ export function ProfileScreen() {
       </View>
 
       <View style={{ paddingHorizontal: 20, paddingTop: 18, gap: 8 }}>
-        <Row label={t("profileFullStats")} icon="📊" onPress={() => navigate("statistics")} />
-        <Row label={t("profilePlanning")} icon="🗓" onPress={() => navigate("planning")} />
-        <Row label={t("mistakesTitle")} icon="⚠️" onPress={() => navigate("mistakes")} />
-        <Row label={t("profileNotifications")} icon="🔔" />
-        <Row label={t("profileLogout")} icon="⎋" danger onPress={signOut} />
+        <Row label={t("profileFullStats")} icon="profile-full-stats" onPress={() => navigate("statistics")} />
+        <Row label={t("profilePlanning")} icon="profile-planning" onPress={() => navigate("planning")} />
+        <Row label={t("mistakesTitle")} icon="edu-mistakes" onPress={() => navigate("mistakes")} />
+        <Row label={t("profileNotifications")} icon="profile-notifications" />
+        <Row label={t("profileLogout")} icon="profile-logout" danger onPress={signOut} />
       </View>
     </ScrollView>
   );

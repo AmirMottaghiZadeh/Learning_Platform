@@ -79,19 +79,7 @@ export function AuthScreen() {
           <View
             style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}
           >
-            <View
-              style={{
-                width: 88,
-                height: 88,
-                borderRadius: 26,
-                backgroundColor: "#fff",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 20,
-              }}
-            >
-              <IconImage name="mortar" size={56} />
-            </View>
+            <IconImage name="app-logo" size={96} style={{ marginBottom: 16 }} />
             <AppText weight="900" size={26} color="#fff" center>
               {t("appName")}
             </AppText>

@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React from "react";
 import { Pressable, View } from "react-native";
-import Svg, { Path, Rect } from "react-native-svg";
 
 import { meApi } from "@/api/endpoints";
 import { HeaderMesh } from "@/components/HeaderMesh";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { IconImage, IconName } from "@/components/primitives/IconImage";
@@ -15,23 +15,21 @@ import { StringKey } from "@/i18n/strings";
 import { ScreenKey } from "@/navigation/types";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
-import { FocusRow } from "@/api/types";
 import { radius, spacing } from "@/theme/tokens";
 
 const QUICK_ACCESS: { screen: ScreenKey; icon: IconName; labelKey: StringKey }[] = [
-  { screen: "education", icon: "graduation", labelKey: "educationLabel" },
-  { screen: "guidelines", icon: "checklist", labelKey: "guidelinesLabel" },
-  { screen: "diseasesConditions", icon: "bulbBrain", labelKey: "diseasesConditionsLabel" },
-  { screen: "calculator", icon: "chartGrowth", labelKey: "calculatorLabel" },
+  { screen: "education", icon: "entry-education", labelKey: "educationLabel" },
+  { screen: "guidelines", icon: "entry-guidelines", labelKey: "guidelinesLabel" },
+  { screen: "diseasesConditions", icon: "entry-diseases", labelKey: "diseasesConditionsLabel" },
+  { screen: "calculator", icon: "entry-calculator", labelKey: "calculatorLabel" },
 ];
 
 export function DashboardScreen() {
   const { t, isFa, n, row } = useLang();
-  const { colors, shadows, toggle: toggleTheme, isDark } = useTheme();
+  const { colors, shadows } = useTheme();
   const { toggle: toggleLang } = useLang();
   const navigate = useNav((s) => s.navigate);
   const setTab = useNav((s) => s.setTab);
-  const [focusOpen, setFocusOpen] = useState(true);
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["dashboard"],
@@ -50,40 +48,13 @@ export function DashboardScreen() {
         <View style={{ padding: 20, paddingBottom: 26 }}>
           <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center" }}>
             <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
-                  backgroundColor: "#fff",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <IconImage name="mortar" size={22} />
-              </View>
+              <IconImage name="app-logo" size={34} />
               <AppText weight="800" size={15} color="#fff">
                 {t("appName")}
               </AppText>
             </View>
             <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
-              <Pressable
-                onPress={toggleTheme}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "rgba(255,255,255,0.16)",
-                  borderWidth: 1,
-                  borderColor: "rgba(255,255,255,0.3)",
-                }}
-              >
-                <AppText size={13} color="#fff">
-                  {isDark ? "☀" : "☾"}
-                </AppText>
-              </Pressable>
+              <ThemeToggleButton />
               <Pressable
                 onPress={toggleLang}
                 style={{
@@ -128,7 +99,7 @@ export function DashboardScreen() {
                   justifyContent: "center",
                 }}
               >
-                <IconImage name="uptodateLogo" size={36} />
+                <IconImage name="uptodate-logo" size={36} />
               </View>
               <View style={{ flex: 1 }}>
                 <View
@@ -188,7 +159,7 @@ export function DashboardScreen() {
                   justifyContent: "center",
                 }}
               >
-                <IconImage name="lexicompLogo" size={36} />
+                <IconImage name="lexicomp-logo" size={36} />
               </View>
               <View style={{ flex: 1 }}>
                 {/* Brand name -- never translated, but its alignment still
@@ -278,117 +249,44 @@ export function DashboardScreen() {
           </Pressable>
         </View>
 
-        <Card>
-          {isError ? (
-            <AppText weight="700" color={colors.denyLabel}>
-              {t("loadFailed")}
-            </AppText>
-          ) : rows.length === 0 ? (
-            <AppText muted weight="600" size={13}>
-              {data?.next_chapter
-                ? (isFa ? data.next_chapter.name_fa : data.next_chapter.name_en)
-                : t("mistakesEmptySub")}
-            </AppText>
-          ) : (
-            <>
-              <Pressable
-                onPress={() => setFocusOpen((v) => !v)}
-                style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}
-              >
-                <View style={{ flexDirection: row, alignItems: "center", gap: 9, flex: 1 }}>
-                  <View
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 11,
-                      backgroundColor: colors.softBg,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Svg width={15} height={15} viewBox="0 0 24 24">
-                      <Rect x={4} y={4} width={16} height={16} rx={3} stroke={colors.accent} strokeWidth={2} fill="none" />
-                    </Svg>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <AppText weight="800" size={13}>
-                      {t("nextChapterHead")}
-                    </AppText>
-                    <AppText muted weight="600" size={11} style={{ marginTop: 1 }}>
-                      {n(data?.focus_session.total_minutes ?? 0)} {isFa ? "دقیقه" : "min"}
-                    </AppText>
-                  </View>
-                </View>
-                <AppText muted size={12} weight="800">
-                  {focusOpen ? "▲" : "▼"}
+        <Pressable
+          onPress={() => {
+            const first = rows[0];
+            if (first?.kind === "lesson" && first.atc_code) navigate("lessonList", { code: first.atc_code });
+            else if (first?.kind === "mistake") setTab("profile" as any), navigate("mistakes");
+            else if (rows.length > 0) setTab("flashcards" as any);
+            else navigate("planning");
+          }}
+        >
+          <Card
+            style={[
+              { flexDirection: row, alignItems: "center", gap: 12 },
+              !isError ? { backgroundColor: colors.accent + "12", borderColor: colors.accent + "30" } : null,
+            ]}
+          >
+            {!isError ? <IconImage name="entry-next-chapter" size={40} /> : null}
+            <View style={{ flex: 1 }}>
+              {isError ? (
+                <AppText weight="700" color={colors.denyLabel}>
+                  {t("loadFailed")}
                 </AppText>
-              </Pressable>
-
-              {focusOpen ? (
-                <View style={{ marginTop: 13, gap: 8 }}>
-                  {rows.map((r, i) => (
-                    <FocusRowItem key={`${r.kind}-${i}`} item={r} />
-                  ))}
-                  <Pressable
-                    onPress={() => {
-                      const first = rows[0];
-                      if (first?.kind === "lesson" && first.atc_code) navigate("lessonList", { code: first.atc_code });
-                      else if (first?.kind === "mistake") setTab("profile" as any), navigate("mistakes");
-                      else setTab("flashcards" as any);
-                    }}
-                    style={{
-                      backgroundColor: colors.accent,
-                      borderRadius: 13,
-                      paddingVertical: 13,
-                      alignItems: "center",
-                      marginTop: 4,
-                    }}
-                  >
-                    <AppText weight="900" size={13} color={colors.onAccent}>
-                      {isFa
-                        ? `شروع جلسه — ${n(data?.focus_session.total_minutes ?? 0)} دقیقه`
-                        : `Start session — ${data?.focus_session.total_minutes ?? 0} min`}
-                    </AppText>
-                  </Pressable>
-                </View>
-              ) : null}
-            </>
-          )}
-        </Card>
+              ) : rows.length === 0 ? (
+                <AppText muted weight="600" size={13}>
+                  {data?.next_chapter
+                    ? (isFa ? data.next_chapter.name_fa : data.next_chapter.name_en)
+                    : t("mistakesEmptySub")}
+                </AppText>
+              ) : (
+                <AppText weight="700" size={13} color={colors.accent}>
+                  {isFa
+                    ? `شروع فصل: ${data?.next_chapter?.name_fa ?? ""} — ${n(data?.focus_session.total_minutes ?? 0)} دقیقه`
+                    : `Start chapter: ${data?.next_chapter?.name_en ?? ""} — ${data?.focus_session.total_minutes ?? 0} min`}
+                </AppText>
+              )}
+            </View>
+          </Card>
+        </Pressable>
       </View>
     </Screen>
-  );
-}
-
-function FocusRowItem({ item }: { item: FocusRow }) {
-  const { colors } = useTheme();
-  const { isFa, n, row } = useLang();
-  const tint =
-    item.kind === "mistake" ? colors.denyBg : item.kind === "leitner" ? colors.leitnerActiveBg : colors.softBg;
-  const min =
-    item.kind === "mistake" ? colors.denyLabel : colors.accent;
-  return (
-    <View
-      style={{
-        flexDirection: row,
-        alignItems: "center",
-        gap: 11,
-        backgroundColor: tint,
-        borderRadius: 13,
-        padding: 11,
-      }}
-    >
-      <View style={{ flex: 1 }}>
-        <AppText weight="800" size={12.5}>
-          {isFa ? item.title_fa : item.title_en}
-        </AppText>
-        <AppText muted weight="600" size={11} style={{ marginTop: 1 }}>
-          {isFa ? item.sub_fa : item.sub_en}
-        </AppText>
-      </View>
-      <AppText weight="900" size={11} color={min}>
-        {n(item.minutes)} {isFa ? "دقیقه" : "min"}
-      </AppText>
-    </View>
   );
 }

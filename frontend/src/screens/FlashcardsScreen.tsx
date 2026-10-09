@@ -4,6 +4,7 @@ import { Pressable, View } from "react-native";
 
 import { ApiError } from "@/api/client";
 import { flashcardsApi } from "@/api/endpoints";
+import { LeitnerCardField, SectionTone } from "@/api/types";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Button } from "@/components/primitives/Button";
@@ -14,8 +15,49 @@ import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
+import { toneColors } from "@/theme/tone";
 
 const BOX_LABEL_KEYS = ["leitnerL1", "leitnerL2", "leitnerL3", "leitnerL4", "leitnerL5"] as const;
+
+/** Matches QuizScreen's chipColors: toneColors() leaves "info" transparent,
+ * meant for a full section block rather than a small tag, so it needs its
+ * own visible fill/border here too. */
+function chipColors(tone: SectionTone, colors: ReturnType<typeof useTheme>["colors"]) {
+  if (tone === "info") return { bg: colors.accent + "14", border: colors.accent, label: colors.accent };
+  return toneColors(tone, colors);
+}
+
+/** One clinical field's fact on the card back -- a small colored label tag
+ * (the same field/tone vocabulary the quiz question cards use) above its
+ * text, instead of every field's fact run together in one undifferentiated
+ * paragraph. */
+function CardBackField({ block, row }: { block: LeitnerCardField; row: "row" | "row-reverse" }) {
+  const { colors } = useTheme();
+  const tag = chipColors(block.tone, colors);
+  return (
+    <View style={{ gap: 5 }}>
+      <View
+        style={{
+          flexDirection: row,
+          alignSelf: row === "row" ? "flex-start" : "flex-end",
+          backgroundColor: tag.bg,
+          borderWidth: 1,
+          borderColor: tag.border,
+          borderRadius: 999,
+          paddingHorizontal: 9,
+          paddingVertical: 2,
+        }}
+      >
+        <AppText weight="800" size={10.5} color={tag.label}>
+          {block.label}
+        </AppText>
+      </View>
+      <AppText weight="500" size={14} style={{ lineHeight: 22 }}>
+        {block.text}
+      </AppText>
+    </View>
+  );
+}
 
 export function FlashcardsScreen() {
   const { t, isFa, n, row } = useLang();
@@ -68,7 +110,7 @@ export function FlashcardsScreen() {
                 justifyContent: "center",
               }}
             >
-              <IconImage name="mobileBlister" size={34} />
+              <IconImage name="edu-flashcards" size={34} />
             </View>
             <AppText weight="800" size={15}>
               {t("comingSoon")}
@@ -201,9 +243,11 @@ export function FlashcardsScreen() {
               ]}
             >
               {flipped ? (
-                <AppText weight="500" size={14} style={{ lineHeight: 26 }}>
-                  {isFa ? card.back_fa : card.back_en}
-                </AppText>
+                <View style={{ gap: 14 }}>
+                  {(isFa ? card.back_fields_fa : card.back_fields_en).map((block) => (
+                    <CardBackField key={block.field} block={block} row={row} />
+                  ))}
+                </View>
               ) : (
                 <>
                   <AppText weight="900" size={24} color="#fff" center>

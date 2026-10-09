@@ -241,6 +241,13 @@ export interface PlanToday {
   topics: PlanTopicStatus[];
 }
 
+export interface LeitnerCardField {
+  field: string;
+  label: string;
+  tone: SectionTone;
+  text: string;
+}
+
 export interface LeitnerCard {
   id: number;
   drug_slug: string;
@@ -249,8 +256,8 @@ export interface LeitnerCard {
   times_seen: number;
   front_fa: string;
   front_en: string;
-  back_fa: string;
-  back_en: string;
+  back_fields_fa: LeitnerCardField[];
+  back_fields_en: LeitnerCardField[];
 }
 
 export interface BoxSummary {
@@ -267,11 +274,16 @@ export interface QuizQuestion {
   prompt_en: string;
   options_fa: string[];
   options_en: string[];
+  field: string;
+  field_label_fa: string;
+  field_tone: SectionTone;
+  subject_slug: string;
 }
 
 export interface QuizSession {
   id: number;
   category: string;
+  atc_code: string;
   question_count: number;
   questions: QuizQuestion[];
 }
@@ -279,12 +291,51 @@ export interface QuizSession {
 export interface QuizAnswerResult {
   correct: boolean;
   correct_index: number;
+  extra_context: string[];
+}
+
+export interface QuizFieldBreakdown {
+  field: string;
+  label_fa: string;
+  tone: SectionTone;
+  correct: number;
+  total: number;
+}
+
+export interface QuizMissedQuestion {
+  prompt_fa: string;
+  options_fa: string[];
+  correct_index: number;
+  selected_index: number;
 }
 
 export interface QuizResult {
   score: number;
   total: number;
   mistakes_added: number;
+  by_field: QuizFieldBreakdown[];
+  missed: QuizMissedQuestion[];
+  previous_best_pct: number | null;
+}
+
+export interface QuizOverview {
+  avg_score_pct: number;
+  total_quizzes: number;
+  weak_topics_count: number;
+  mastery: Record<string, number>;
+}
+
+export interface QuizFieldPreview {
+  field: string;
+  label_fa: string;
+  tone: SectionTone;
+  count: number;
+}
+
+export interface QuizPreview {
+  available: number;
+  estimated_minutes: number;
+  by_field: QuizFieldPreview[];
 }
 
 export interface UptodateTopic {
@@ -334,16 +385,21 @@ export type CalculatorQuestionType = "multiple_choice" | "numeric_input" | "date
 
 export interface CalculatorChoice {
   title_primary: string;
+  title_primary_fa: string;
   title_secondary: string | null;
+  title_secondary_fa: string | null;
   answer_factor: string | null;
 }
 
 export interface CalculatorUnit {
   title: string;
+  title_fa: string;
   min_value: string | null;
   max_value: string | null;
   min_value_msg: string | null;
+  min_value_msg_fa: string | null;
   max_value_msg: string | null;
+  max_value_msg_fa: string | null;
   unit_factor: string | null;
   initial_value: string | null;
 }
@@ -351,8 +407,12 @@ export interface CalculatorUnit {
 export interface CalculatorQuestion {
   position: number;
   title: string;
+  title_fa: string;
   type: CalculatorQuestionType;
   more_information: string | null;
+  more_information_fa: string | null;
+  section_name: string | null;
+  section_name_fa: string | null;
   initial_value: string | null;
   choices: CalculatorChoice[];
   units: CalculatorUnit[];
@@ -361,15 +421,26 @@ export interface CalculatorQuestion {
 export interface CalculatorResultDef {
   position: number;
   title: string;
+  title_fa: string;
   title_formula: string | null;
   sub_title: string | null;
+  sub_title_fa: string | null;
   sub_title_formula: string | null;
   formula: string | null;
   condition_formula: string | null;
   answer: string | null;
-  answer_primary: string | null;
-  answer_secondary: string | null;
+  answer_fa: string | null;
   type: string | null;
+}
+
+export interface CalculatorErrorCheck {
+  position: number;
+  type: string | null;
+  title: string;
+  title_fa: string;
+  answer: string | null;
+  answer_fa: string | null;
+  formula: string | null;
 }
 
 export interface CalculatorReference {
@@ -378,19 +449,41 @@ export interface CalculatorReference {
   papers: string | null;
 }
 
+export interface CalculatorCategoryRef {
+  id: number;
+  name: string;
+  name_fa: string;
+  parent_id: number | null;
+  is_main_category: boolean;
+}
+
+export interface CalculatorTagRef {
+  id: number;
+  name: string;
+  name_fa: string;
+}
+
 export interface CalculatorListItem {
   slug: string;
   name: string;
+  name_fa: string;
   description: string;
-  categories: string[];
-  tags: string[];
+  description_fa: string;
+  categories: CalculatorCategoryRef[];
+  tags: CalculatorTagRef[];
 }
 
 export interface CalculatorDetail extends CalculatorListItem {
+  url: string;
   about: string;
-  author: string;
+  about_fa: string;
+  disclaimer_footer: string;
+  disclaimer_footer_fa: string;
   questions: CalculatorQuestion[];
   results: CalculatorResultDef[];
+  error_checks: CalculatorErrorCheck[];
+  /** English text a result formula returns literally -> Persian. */
+  formula_strings_fa: Record<string, string>;
   references: CalculatorReference[];
 }
 

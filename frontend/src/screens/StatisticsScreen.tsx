@@ -7,6 +7,7 @@ import { meApi } from "@/api/endpoints";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
+import { IconImage, IconName } from "@/components/primitives/IconImage";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -88,17 +89,18 @@ export function StatisticsScreen() {
       </Card>
 
       <View style={{ flexDirection: row, gap: 8 }}>
-        <StatTile value={n(data?.quizzes ?? 0)} label={t("statsQuizzes")} />
-        <StatTile value={n(data?.reviews ?? 0)} label={t("statsReviews")} />
-        <StatTile value={n(data?.minutes ?? 0)} label={t("statsMinutes")} />
+        <StatTile icon="stat-quizzes" value={n(data?.quizzes ?? 0)} label={t("statsQuizzes")} />
+        <StatTile icon="edu-flashcards" value={n(data?.reviews ?? 0)} label={t("statsReviews")} />
+        <StatTile icon="entry-today-plan" value={n(data?.minutes ?? 0)} label={t("statsMinutes")} />
       </View>
     </Screen>
   );
 }
 
-function StatTile({ value, label }: { value: string; label: string }) {
+function StatTile({ icon, value, label }: { icon: IconName; value: string; label: string }) {
   return (
     <Card style={{ flex: 1, alignItems: "center" }}>
+      <IconImage name={icon} size={30} style={{ marginBottom: 6 }} />
       <AppText weight="900" size={17}>
         {value}
       </AppText>

@@ -3,6 +3,7 @@ import {
   AtcCode,
   AuthTokenResponse,
   BoxSummary,
+  CalculatorCategoryRef,
   CalculatorDetail,
   CalculatorListItem,
   Chapter,
@@ -21,6 +22,8 @@ import {
   Mistake,
   PlanToday,
   QuizAnswerResult,
+  QuizOverview,
+  QuizPreview,
   QuizResult,
   QuizSession,
   Statistics,
@@ -139,6 +142,11 @@ export const calculatorsApi = {
   // Unpaginated by design -- the client groups the full set by clinical
   // category and filters it client-side (see calculatorCategories.ts).
   list: () => apiClient.get("/calculators/").then((r) => unwrapList<CalculatorListItem>(r.data)),
+  // The full category tree, independent of the calculator list -- see
+  // calculatorCategories.ts for why grouping needs this rather than just
+  // each calculator's own (few) category tags.
+  categories: () =>
+    apiClient.get("/calculators/categories/").then((r) => unwrapList<CalculatorCategoryRef>(r.data)),
   detail: (slug: string) =>
     apiClient.get<CalculatorDetail>(`/calculators/${slug}/`).then((r) => r.data),
 };
@@ -175,8 +183,14 @@ export const medscapeApi = {
 };
 
 export const quizApi = {
-  start: (body: { category: string; count: number }) =>
-    apiClient.post<QuizSession>("/quiz/start/", body).then((r) => r.data),
+  overview: () => apiClient.get<QuizOverview>("/quiz/overview/").then((r) => r.data),
+  preview: (category: string, atcCode: string, count: number) =>
+    apiClient
+      .get<QuizPreview>("/quiz/preview/", { params: { category, atc_code: atcCode, count } })
+      .then((r) => r.data),
+  start: (
+    body: { category: string; atc_code?: string; count: number } | { ingredient_slug: string },
+  ) => apiClient.post<QuizSession>("/quiz/start/", body).then((r) => r.data),
   answer: (
     sessionId: number,
     body: { question_id: number; selected_index: number; client_answered_at?: string },
@@ -186,4 +200,6 @@ export const quizApi = {
       .then((r) => r.data),
   finish: (sessionId: number) =>
     apiClient.post<QuizResult>(`/quiz/${sessionId}/finish/`).then((r) => r.data),
+  reviewMistakes: (sessionId: number) =>
+    apiClient.post<QuizSession>(`/quiz/${sessionId}/review-mistakes/`).then((r) => r.data),
 };

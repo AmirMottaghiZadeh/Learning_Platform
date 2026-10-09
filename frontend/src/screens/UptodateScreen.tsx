@@ -98,7 +98,7 @@ export function UptodateScreen() {
               marginBottom: 14,
             }}
           >
-            <IconImage name="docSearch" size={34} />
+            <IconImage name="entry-diseases" size={34} />
           </View>
           <AppText weight="800" size={15}>
             {t("uptodateEmptyTitle")}
@@ -127,7 +127,7 @@ export function UptodateScreen() {
                     justifyContent: "center",
                   }}
                 >
-                  <IconImage name="docSearch" size={24} />
+                  <IconImage name="entry-diseases" size={24} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <AppText weight="800" size={14} style={{ lineHeight: 21 }}>

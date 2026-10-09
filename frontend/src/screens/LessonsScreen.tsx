@@ -6,6 +6,7 @@ import { lessonsApi } from "@/api/endpoints";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
+import { IconImage, iconFor } from "@/components/primitives/IconImage";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -83,6 +84,7 @@ function CategoryCard({
     0,
   );
   const pct = total ? Math.round((done / total) * 100) : 0;
+  const categoryIcon = iconFor(`cat-${category.code}`);
 
   return (
     <View
@@ -112,9 +114,13 @@ function CategoryCard({
             justifyContent: "center",
           }}
         >
-          <AppText weight="900" size={16} color={colors.accent}>
-            {n(category.topics.length)}
-          </AppText>
+          {categoryIcon ? (
+            <IconImage name={categoryIcon} size={30} />
+          ) : (
+            <AppText weight="900" size={16} color={colors.accent}>
+              {n(category.topics.length)}
+            </AppText>
+          )}
         </View>
         <View style={{ flex: 1 }}>
           <AppText weight="900" size={15}>
@@ -172,6 +178,7 @@ function GroupCard({
   const total = group.subgroups.reduce((a, s) => a + s.total, 0);
   const done = group.subgroups.reduce((a, s) => a + s.done, 0);
   const pct = total ? Math.round((done / total) * 100) : 0;
+  const topicIcon = iconFor(`topic-${group.code}`);
 
   return (
     <View
@@ -185,8 +192,9 @@ function GroupCard({
     >
       <Pressable
         onPress={onToggle}
-        style={{ padding: 12, flexDirection: row, alignItems: "flex-start", gap: 10 }}
+        style={{ padding: 12, flexDirection: row, alignItems: "center", gap: 10 }}
       >
+        {topicIcon ? <IconImage name={topicIcon} size={34} /> : null}
         <View style={{ flex: 1 }}>
           <AppText weight="800" size={13}>
             {isFa ? group.name_fa : group.name_en}

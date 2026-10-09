@@ -7,6 +7,7 @@ import { MedscapeArticleListItem, MedscapeKind } from "@/api/types";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
+import { IconImage } from "@/components/primitives/IconImage";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useDebounced } from "@/hooks/useDebounced";
@@ -16,6 +17,7 @@ import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
+import { specialtyIcon } from "@/utils/specialtyIcons";
 
 function monogram(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -170,20 +172,24 @@ export function MedscapeBrowseScreen() {
                     gap: 8,
                   }}
                 >
-                  <View
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 10,
-                      backgroundColor: colors.accent + "1A",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <AppText weight="800" size={11} color={colors.accent}>
-                      {monogram(sp.name)}
-                    </AppText>
-                  </View>
+                  {specialtyIcon(sp.name) ? (
+                    <IconImage name={specialtyIcon(sp.name)!} size={34} />
+                  ) : (
+                    <View
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 10,
+                        backgroundColor: colors.accent + "1A",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <AppText weight="800" size={11} color={colors.accent}>
+                        {monogram(sp.name)}
+                      </AppText>
+                    </View>
+                  )}
                   <AppText
                     weight="800"
                     size={12.5}

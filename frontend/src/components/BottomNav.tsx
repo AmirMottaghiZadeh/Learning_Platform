@@ -15,11 +15,11 @@ const TAB_META: Record<
   TabKey,
   { icon: IconName; labelKey: "navHome" | "lessonsLabel" | "cardsLabel" | "quizLabel" | "profileLabel" }
 > = {
-  dashboard: { icon: "phoneHealth", labelKey: "navHome" },
-  lessons: { icon: "openBook", labelKey: "lessonsLabel" },
-  flashcards: { icon: "mobileBlister", labelKey: "cardsLabel" },
-  quiz: { icon: "checklist", labelKey: "quizLabel" },
-  profile: { icon: "team", labelKey: "profileLabel" },
+  dashboard: { icon: "nav-home", labelKey: "navHome" },
+  lessons: { icon: "nav-lessons", labelKey: "lessonsLabel" },
+  flashcards: { icon: "nav-flashcards", labelKey: "cardsLabel" },
+  quiz: { icon: "nav-quiz", labelKey: "quizLabel" },
+  profile: { icon: "nav-profile", labelKey: "profileLabel" },
 };
 
 // Which top-level screens count as "inside" which tab.
@@ -44,6 +44,7 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
   diseasesConditions: "dashboard",
   medscapeArticle: "dashboard",
   calculator: "dashboard",
+  calculatorDomain: "dashboard",
   calculatorDetail: "dashboard",
 };
 

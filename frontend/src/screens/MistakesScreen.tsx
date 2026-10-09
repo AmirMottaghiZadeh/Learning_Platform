@@ -108,7 +108,7 @@ export function MistakesScreen() {
                     justifyContent: "center",
                   }}
                 >
-                  <IconImage name="pillWarning" size={24} />
+                  <IconImage name="edu-mistakes" size={24} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <AppText weight="800" size={14}>

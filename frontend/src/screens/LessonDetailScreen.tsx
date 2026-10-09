@@ -375,7 +375,7 @@ export function LessonDetailScreen() {
         )}
 
         <Pressable
-          onPress={() => navigate("quiz")}
+          onPress={() => drug && navigate("quiz", { ingredientSlug: drug.slug })}
           style={{
             marginTop: 28,
             backgroundColor: colors.accent + "12",
@@ -386,13 +386,15 @@ export function LessonDetailScreen() {
           }}
         >
           <AppText weight="800" size={14}>
-            {isFa ? "نکته‌های آزمونی این فصل" : "Exam points from this chapter"}
+            {isFa ? `خودآزمایی ${drug?.name ?? ""}` : `Self-test: ${drug?.name ?? ""}`}
           </AppText>
           <AppText muted weight="600" size={12} style={{ marginTop: 4 }}>
-            {isFa ? "از هشدارها و منع‌های همین فصل ساخته شده" : "Built from this chapter's warnings and limits"}
+            {isFa
+              ? "بر اساس اندیکاسیون، عوارض جانبی، هشدار، منع مطلق و دوز همین دارو"
+              : "Covers this drug's indications, adverse reactions, warnings, contraindications and dosing"}
           </AppText>
           <AppText weight="900" size={13} color={colors.accent} style={{ marginTop: 10 }}>
-            {isFa ? "شروع خودآزمایی ‹" : "Start self-test ›"}
+            {isFa ? "شروع آزمون ‹" : "Start quiz ›"}
           </AppText>
         </Pressable>
       </ScrollView>

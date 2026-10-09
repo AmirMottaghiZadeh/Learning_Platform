@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Pressable, View } from "react-native";
-import Svg, { Circle, G, Line, Path } from "react-native-svg";
 
 import { AppText } from "@/components/primitives/AppText";
 import { HelpKey, HelpSheet } from "@/components/HelpSheet";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 
@@ -50,7 +50,6 @@ export function ScreenChrome({
 }) {
   const { colors } = useTheme();
   const { t, isFa, row, toggle: toggleLang } = useLang();
-  const { toggle: toggleTheme, isDark } = useTheme();
   const [helpOpen, setHelpOpen] = useState(false);
 
   return (
@@ -82,23 +81,7 @@ export function ScreenChrome({
             </AppText>
           </ChromeButton>
         ) : null}
-        <ChromeButton onPress={toggleTheme}>
-          <Svg width={14} height={14} viewBox="0 0 24 24">
-            {isDark ? (
-              <>
-                <Circle cx={12} cy={12} r={5} fill={colors.accent} />
-                <G stroke={colors.accent} strokeWidth={2} strokeLinecap="round">
-                  <Line x1={12} y1={1} x2={12} y2={3} />
-                  <Line x1={12} y1={21} x2={12} y2={23} />
-                  <Line x1={1} y1={12} x2={3} y2={12} />
-                  <Line x1={21} y1={12} x2={23} y2={12} />
-                </G>
-              </>
-            ) : (
-              <Path d="M21 12.5A8.5 8.5 0 1111.5 3 7 7 0 0021 12.5z" fill={colors.accent} />
-            )}
-          </Svg>
-        </ChromeButton>
+        <ThemeToggleButton variant="soft" size={30} />
         <Pressable
           onPress={toggleLang}
           style={{
