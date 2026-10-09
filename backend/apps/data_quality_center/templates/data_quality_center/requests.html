@@ -1,0 +1,59 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}Pending approvals · DQC{% endblock %}
+{% block content %}
+<h1 class="page-title">Pending approvals</h1>
+<p class="page-sub">
+  {% if request.user.is_superuser %}
+    Review each proposed change against the current text, then approve or reject it.
+  {% else %}
+    Requests awaiting a superuser's final approval. Only a superuser can act on them.
+  {% endif %}
+</p>
+
+{% for r in page %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px">
+    <h3>{{ r.ingredient_name }} <span class="pill">{{ r.get_field_display }}</span></h3>
+    <span class="muted" style="font-size:12px">{{ r.created_at|date:"Y-m-d H:i" }} · {{ r.requested_by_username|default:"—" }}</span>
+  </div>
+
+  <div class="diff">
+    <div>
+      <label>Before</label>
+      <div class="before">{{ r.before_fa|default:"—" }}</div>
+    </div>
+    <div>
+      <label>After</label>
+      <div class="after">{{ r.after_fa|default:"—" }}</div>
+    </div>
+  </div>
+  <div class="diff">
+    <div>
+      <div class="before">{{ r.before_en|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="after">{{ r.after_en|default:"—" }}</div>
+    </div>
+  </div>
+
+  <p class="muted" style="margin:10px 0 0"><strong style="color:var(--ink)">Reason:</strong> {{ r.reason }}</p>
+
+  {% if request.user.is_superuser %}
+  <form method="post" action="{% url 'data_quality_center:review_request' r.id %}" style="margin-top:14px; display:flex; gap:10px; align-items:flex-start">
+    {% csrf_token %}
+    <textarea name="note" rows="1" placeholder="optional note to the operator" style="flex:1"></textarea>
+    <button type="submit" name="action" value="approve">Approve</button>
+    <button type="submit" name="action" value="reject" class="danger">Reject</button>
+  </form>
+  {% endif %}
+</div>
+{% empty %}
+<p class="muted">No pending requests. Everything submitted so far has been reviewed.</p>
+{% endfor %}
+
+<nav class="pager">
+  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">‹ prev</a>{% endif %}
+  <span class="muted">page {{ page.number }} / {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?page={{ page.next_page_number }}">next ›</a>{% endif %}
+</nav>
+{% endblock %}

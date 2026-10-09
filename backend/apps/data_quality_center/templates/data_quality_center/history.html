@@ -1,23 +1,35 @@
 {% extends "data_quality_center/base.html" %}
-{% block title %}Edit history · DQC{% endblock %}
+{% block title %}History · DQC{% endblock %}
 {% block content %}
-<h2 style="margin-top:0">Edit history</h2>
+<h1 class="page-title">History</h1>
+<p class="page-sub">Every edit request ever submitted, whatever happened to it.</p>
 <table>
-  <thead><tr><th>When</th><th>Ingredient · field</th><th>Editor</th><th>Reason</th></tr></thead>
-  <tbody>
-  {% for edit in page %}
+  <thead>
     <tr>
-      <td class="muted">{{ edit.created_at|date:"Y-m-d H:i" }}</td>
-      <td>{{ edit.ingredient_name }} · <span class="pill">{{ edit.field }}</span></td>
-      <td>{{ edit.editor_username|default:"—" }}</td>
-      <td>{{ edit.reason }}</td>
+      <th>Submitted</th><th>Ingredient · field</th><th>Status</th>
+      <th>Requested by</th><th>Reviewed by</th><th>Reason</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in page %}
+    <tr>
+      <td class="muted">{{ r.created_at|date:"Y-m-d H:i" }}</td>
+      <td>{{ r.ingredient_name }} · <span class="pill">{{ r.get_field_display }}</span></td>
+      <td><span class="status {{ r.status }}">{{ r.get_status_display|upper }}</span></td>
+      <td>{{ r.requested_by_username|default:"—" }}</td>
+      <td class="muted">
+        {% if r.reviewed_by_username %}
+          {{ r.reviewed_by_username }} · {{ r.reviewed_at|date:"Y-m-d H:i" }}
+        {% else %}—{% endif %}
+      </td>
+      <td>{{ r.reason }}</td>
     </tr>
   {% empty %}
-    <tr><td colspan="4" class="muted">No edits yet.</td></tr>
+    <tr><td colspan="6" class="muted">No edits yet.</td></tr>
   {% endfor %}
   </tbody>
 </table>
-<nav class="pager" style="margin-top:12px">
+<nav class="pager">
   {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">‹ prev</a>{% endif %}
   <span class="muted">page {{ page.number }} / {{ page.paginator.num_pages }}</span>
   {% if page.has_next %}<a href="?page={{ page.next_page_number }}">next ›</a>{% endif %}

@@ -1,9 +1,12 @@
 {% extends "data_quality_center/base.html" %}
 {% block title %}Ingredients · DQC{% endblock %}
 {% block content %}
-<form method="get" style="margin-bottom:14px; display:flex; gap:8px; flex-wrap:wrap">
+<h1 class="page-title">Ingredients</h1>
+<p class="page-sub">Search and open an ingredient to propose an edit to its clinical summaries.</p>
+
+<form method="get" style="margin-bottom:16px; display:flex; gap:8px; flex-wrap:wrap">
   <input type="text" name="q" value="{{ search }}" placeholder="name or RXCUI" style="max-width:280px">
-  <select name="missing">
+  <select name="missing" style="max-width:220px">
     <option value="">all sections</option>
     <option value="fa" {% if missing == "fa" %}selected{% endif %}>missing Persian summary</option>
     <option value="en" {% if missing == "en" %}selected{% endif %}>missing English summary</option>

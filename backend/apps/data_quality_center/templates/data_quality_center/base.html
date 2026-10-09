@@ -5,33 +5,115 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Data Quality Center{% endblock %}</title>
   <style>
-    :root { color-scheme: light dark; }
-    body { font: 14px/1.6 system-ui, sans-serif; margin: 0; background: #f6f6f4; color: #1a1a1a; }
-    header { background: #0F5C52; color: #fff; padding: 12px 20px; display: flex; gap: 20px; align-items: baseline; }
-    header a { color: #cdeee6; text-decoration: none; }
-    header h1 { font-size: 15px; margin: 0; }
-    main { max-width: 960px; margin: 0 auto; padding: 20px; }
-    table { border-collapse: collapse; width: 100%; background: #fff; }
-    th, td { border: 1px solid #e2e2dd; padding: 8px 10px; text-align: start; vertical-align: top; }
-    th { background: #f0efe9; }
-    input[type=text], textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 6px; }
+    :root {
+      color-scheme: light;
+      --page-bg: #E7E4DC;
+      --card-bg: #FFFFFF;
+      --ink: #14201D;
+      --muted: #5F6B68;
+      --border: rgba(20,32,29,0.09);
+      --soft-bg: #F7F5EF;
+      --track-bg: #E0DBD1;
+      --accent: #0F5C52;
+      --accent-2: #14746A;
+      --on-accent: #FFFFFF;
+      --deny-bg: #FFF1EE; --deny-border: #E8BFB4; --deny-ink: #93331F;
+      --caut-bg: #FFF9EF; --caut-border: #EEDCBB; --caut-ink: #8A6316;
+      --radius-card: 18px; --radius-btn: 12px; --radius-chip: 999px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font: 14px/1.6 -apple-system, "Segoe UI", system-ui, sans-serif;
+      margin: 0; background: var(--page-bg); color: var(--ink);
+    }
+    header {
+      background: var(--accent); color: #fff; padding: 14px 24px;
+      display: flex; gap: 22px; align-items: center;
+      box-shadow: 0 2px 10px rgba(15,92,82,0.25);
+    }
+    header .brand { font-weight: 800; font-size: 15px; letter-spacing: 0.2px; }
+    header nav { display: flex; gap: 18px; flex: 1; }
+    header a { color: rgba(255,255,255,0.82); text-decoration: none; font-weight: 600; font-size: 13px; }
+    header a.active, header a:hover { color: #fff; }
+    header .badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 18px; height: 18px; padding: 0 5px; margin-inline-start: 5px;
+      background: #fff; color: var(--accent); border-radius: var(--radius-chip);
+      font-size: 11px; font-weight: 800;
+    }
+    header a.admin-link { margin-inline-start: auto; color: rgba(255,255,255,0.6); font-size: 12px; }
+    main { max-width: 1020px; margin: 0 auto; padding: 28px 24px 60px; }
+    h1.page-title { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
+    p.page-sub { color: var(--muted); margin: 0 0 20px; font-size: 13px; }
+
+    table { border-collapse: collapse; width: 100%; background: var(--card-bg); border-radius: var(--radius-card); overflow: hidden; box-shadow: 0 1px 3px rgba(20,32,29,0.06); }
+    th, td { border-bottom: 1px solid var(--border); padding: 11px 14px; text-align: start; vertical-align: top; font-size: 13px; }
+    tr:last-child td { border-bottom: none; }
+    th { background: var(--soft-bg); color: var(--muted); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+    tbody tr:hover { background: var(--soft-bg); }
+
+    input[type=text], textarea, select {
+      width: 100%; box-sizing: border-box; font: inherit; padding: 9px 11px;
+      border: 1px solid var(--track-bg); border-radius: 10px; background: #fff; color: var(--ink);
+    }
     textarea[dir=rtl] { direction: rtl; }
-    button { font: inherit; padding: 6px 14px; background: #0F5C52; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
-    .msg { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; }
-    .msg.success { background: #e2f3ec; } .msg.error { background: #fbe4de; } .msg.info { background: #eef1f4; }
-    .muted { color: #6b6b66; } .pill { background: #eee; border-radius: 999px; padding: 1px 8px; font-size: 12px; }
-    .section { background: #fff; border: 1px solid #e2e2dd; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
-    .raw { white-space: pre-wrap; background: #faf9f5; border: 1px dashed #ddd; padding: 8px; max-height: 160px; overflow: auto; font-size: 13px; }
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    nav.pager a { margin-inline-end: 8px; }
+    label { display: block; font-weight: 700; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+
+    button, .btn {
+      font: inherit; font-weight: 800; font-size: 13px; padding: 9px 18px;
+      background: var(--accent); color: #fff; border: 0; border-radius: var(--radius-btn);
+      cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    }
+    button:hover, .btn:hover { background: var(--accent-2); }
+    button.danger { background: #fff; color: var(--deny-ink); border: 1px solid var(--deny-border); }
+    button.danger:hover { background: var(--deny-bg); }
+    button.ghost { background: transparent; color: var(--accent); padding: 9px 4px; }
+    button.ghost:hover { background: transparent; text-decoration: underline; }
+
+    .msg { padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; font-weight: 600; font-size: 13px; }
+    .msg.success { background: #E2F3EC; color: #0F5C3D; }
+    .msg.error { background: var(--deny-bg); color: var(--deny-ink); }
+    .msg.info { background: #EEF1F4; color: #35414C; }
+
+    .muted { color: var(--muted); }
+    .pill {
+      display: inline-flex; align-items: center; background: var(--soft-bg); color: var(--ink);
+      border: 1px solid var(--border); border-radius: var(--radius-chip); padding: 2px 10px; font-size: 11.5px; font-weight: 700;
+    }
+    .status { border-radius: var(--radius-chip); padding: 3px 11px; font-size: 11.5px; font-weight: 800; }
+    .status.pending { background: var(--caut-bg); color: var(--caut-ink); border: 1px solid var(--caut-border); }
+    .status.approved { background: #E2F3EC; color: #0F5C3D; border: 1px solid #BFE3CF; }
+    .status.rejected { background: var(--deny-bg); color: var(--deny-ink); border: 1px solid var(--deny-border); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-card);
+      padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(20,32,29,0.06);
+    }
+    .card h3 { margin: 0 0 8px; font-size: 15px; font-weight: 800; }
+    .raw {
+      white-space: pre-wrap; background: var(--soft-bg); border: 1px dashed var(--track-bg);
+      border-radius: 10px; padding: 10px 12px; max-height: 160px; overflow: auto; font-size: 12.5px; color: var(--muted);
+    }
+    .diff { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+    .diff .before, .diff .after { border-radius: 10px; padding: 10px 12px; font-size: 13px; white-space: pre-wrap; }
+    .diff .before { background: var(--deny-bg); border: 1px solid var(--deny-border); text-decoration: line-through; opacity: 0.85; }
+    .diff .after { background: #E2F3EC; border: 1px solid #BFE3CF; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    nav.pager { margin-top: 14px; display: flex; gap: 10px; align-items: center; }
+    nav.pager a { color: var(--accent); font-weight: 700; text-decoration: none; font-size: 13px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Data Quality Center</h1>
-    <a href="{% url 'data_quality_center:ingredient_list' %}">Ingredients</a>
-    <a href="{% url 'data_quality_center:edit_history' %}">Edit history</a>
-    <a href="/admin/" style="margin-inline-start:auto">Admin</a>
+    <span class="brand">Data Quality Center</span>
+    <nav>
+      <a href="{% url 'data_quality_center:ingredient_list' %}" class="{% if request.resolver_match.url_name == 'ingredient_list' or request.resolver_match.url_name == 'ingredient_detail' %}active{% endif %}">Ingredients</a>
+      <a href="{% url 'data_quality_center:pending_requests' %}" class="{% if request.resolver_match.url_name == 'pending_requests' %}active{% endif %}">
+        Pending approvals{% if pending_count %}<span class="badge">{{ pending_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'data_quality_center:edit_history' %}" class="{% if request.resolver_match.url_name == 'edit_history' %}active{% endif %}">History</a>
+    </nav>
+    <a href="/admin/" class="admin-link">Django admin ›</a>
   </header>
   <main>
     {% for message in messages %}

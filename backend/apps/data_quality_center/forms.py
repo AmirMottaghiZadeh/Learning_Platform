@@ -15,3 +15,8 @@ class SectionEditForm(forms.Form):
                 f"Give a reason of at least {minimum} characters."
             )
         return reason
+
+
+class ReviewForm(forms.Form):
+    action = forms.ChoiceField(choices=[("approve", "Approve"), ("reject", "Reject")])
+    note = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}))
