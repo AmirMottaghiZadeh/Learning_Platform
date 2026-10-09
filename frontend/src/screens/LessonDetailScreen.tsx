@@ -14,6 +14,146 @@ import { fontFamily } from "@/theme/fonts";
 import { layout } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
 
+// The upstream summaries are already structured plain text -- lines starting
+// "- " are a bullet list (true for 10 of the 12 clinical fields, e.g. dose,
+// contraindications, adverse reactions), and a line often opens with a short
+// "label: " before its content (e.g. "مکانیسم اثر: ...", "شایع: ...",
+// "نادر: ..."). None of that survived being rendered as one flat AppText
+// block -- wrapped bullet lines ran back into the left margin with no
+// marker, and the label read as part of the sentence. This recovers both
+// instead of inventing structure the source doesn't have.
+//
+// The two fields that are *not* bulleted (mechanism, and most of pregnancy)
+// are each one dense, unbroken paragraph -- often several distinct sentences
+// run together with no visual separation, which read as a wall of text. For
+// those, each sentence becomes its own line (still one block, just broken
+// at real sentence boundaries), the one piece of structure prose like this
+// actually carries.
+type LessonBlock =
+  | { kind: "bullet"; label: string | null; text: string }
+  | { kind: "paragraph"; label: string | null; sentences: string[] };
+
+// A label is short, word-based (no digit or colon of its own -- a Persian
+// drug/measurement lines often put a real colon later, e.g. ratios), and
+// immediately followed by its content.
+const LABEL_RE = /^([^\d:：]{1,40}):\s+(.+)$/s;
+
+function splitLabel(line: string): { label: string | null; text: string } {
+  const m = line.match(LABEL_RE);
+  return m ? { label: m[1].trim(), text: m[2].trim() } : { label: null, text: line };
+}
+
+// Splits after a sentence-ending mark only when it's followed by whitespace
+// (and then more text) -- a decimal like "0.4" never has a space right
+// after its period, so it's never mistaken for a sentence break.
+function splitSentences(text: string): string[] {
+  return text
+    .split(/(?<=[.!?])\s+(?=\S)/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function parseLessonText(text: string): LessonBlock[] {
+  const blocks: LessonBlock[] = [];
+  let paraLines: string[] = [];
+  const flushParagraph = () => {
+    if (paraLines.length === 0) return;
+    const { label, text: body } = splitLabel(paraLines.join(" "));
+    const sentences = splitSentences(body);
+    blocks.push({ kind: "paragraph", label, sentences: sentences.length > 0 ? sentences : [body] });
+    paraLines = [];
+  };
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line) continue;
+    const bullet = line.match(/^-\s+(.*)$/);
+    if (bullet) {
+      flushParagraph();
+      blocks.push({ kind: "bullet", ...splitLabel(bullet[1]) });
+    } else {
+      paraLines.push(line);
+    }
+  }
+  flushParagraph();
+  return blocks;
+}
+
+function LessonBody({
+  text,
+  color,
+  compact,
+  align,
+  writingDirection,
+}: {
+  text: string;
+  color: string;
+  /** The collapsed cross-language box reads smaller than the main body. */
+  compact?: boolean;
+  align?: "left" | "right";
+  writingDirection?: "ltr" | "rtl";
+}) {
+  const { colors } = useTheme();
+  const { row } = useLang();
+  const blocks = useMemo(() => parseLessonText(text), [text]);
+  const dirStyle = align ? { textAlign: align, writingDirection } : null;
+  // The bullet marker sits on the leading edge of its own text, which is the
+  // content's direction, not necessarily the app's current UI language --
+  // the collapsed cross-language box below shows text in the *other*
+  // language, with its own explicit writingDirection.
+  const bulletRow = writingDirection ? (writingDirection === "rtl" ? "row-reverse" : "row") : row;
+  const size = compact ? 12.5 : 15;
+  const bulletSize = compact ? 12 : 14.5;
+  const lineHeight = compact ? 20 : 28;
+  const bulletLineHeight = compact ? 20 : 24;
+
+  return (
+    <View style={{ gap: compact ? 7 : 10 }}>
+      {blocks.map((b, i) => {
+        const itemSize = b.kind === "bullet" ? bulletSize : size;
+        const label = b.label ? (
+          <AppText weight="800" size={itemSize} color={compact ? color : colors.ink}>
+            {b.label}:{" "}
+          </AppText>
+        ) : null;
+        if (b.kind === "bullet") {
+          return (
+            <View key={i} style={{ flexDirection: bulletRow, gap: 8 }}>
+              <AppText weight="700" size={bulletSize} color={colors.accent}>
+                •
+              </AppText>
+              <AppText
+                size={itemSize}
+                weight={compact ? "600" : "500"}
+                color={color}
+                style={[{ flex: 1, lineHeight: bulletLineHeight }, dirStyle]}
+              >
+                {label}
+                {b.text}
+              </AppText>
+            </View>
+          );
+        }
+        return (
+          <View key={i} style={{ gap: compact ? 4 : 6 }}>
+            {b.sentences.map((sentence, j) => (
+              <AppText
+                key={j}
+                size={itemSize}
+                weight={compact ? "600" : "500"}
+                color={color}
+                style={[{ lineHeight }, dirStyle]}
+              >
+                {j === 0 ? label : null}
+                {sentence}
+              </AppText>
+            ))}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 export function LessonDetailScreen() {
   const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
@@ -196,14 +336,9 @@ export function LessonDetailScreen() {
                 <AppText weight="900" size={isBox ? 14 : 18} color={isBox ? tc.label : colors.ink}>
                   {isFa ? b.title_fa : b.title_en}
                 </AppText>
-                <AppText
-                  size={15}
-                  weight="500"
-                  color={colors.proseInk}
-                  style={{ lineHeight: 30, marginTop: 8 }}
-                >
-                  {isFa ? b.text_fa : b.text_en}
-                </AppText>
+                <View style={{ marginTop: 10 }}>
+                  <LessonBody text={isFa ? b.text_fa : b.text_en} color={colors.proseInk} />
+                </View>
                 {(isFa ? b.text_en : b.text_fa).trim() ? (
                   <>
                     <Pressable
@@ -223,14 +358,13 @@ export function LessonDetailScreen() {
                           marginTop: 9,
                         }}
                       >
-                        <AppText
-                          size={12.5}
-                          weight="600"
+                        <LessonBody
+                          text={isFa ? b.text_en : b.text_fa}
                           color={colors.muted}
-                          style={{ lineHeight: 24, textAlign: isFa ? "left" : "right", writingDirection: isFa ? "ltr" : "rtl" }}
-                        >
-                          {isFa ? b.text_en : b.text_fa}
-                        </AppText>
+                          compact
+                          align={isFa ? "left" : "right"}
+                          writingDirection={isFa ? "ltr" : "rtl"}
+                        />
                       </View>
                     ) : null}
                   </>

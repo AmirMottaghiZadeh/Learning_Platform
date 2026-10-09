@@ -28,6 +28,12 @@ staticfiles/
 # Backend generated artifacts
 backend/db.sqlite3
 backend/db.sqlite3-*
+# Large source-data snapshots imported by management commands -- not source
+# code, too big for git; see each importer's --source default for where the
+# real copy lives.
+backend/data/*.sqlite
+backend/data/*.sqlite3
+backend/data/*.json
 backend/exports/
 backend/backups/
 backend/staticfiles/
