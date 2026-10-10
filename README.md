@@ -7,9 +7,9 @@ progress dashboard, and a read-only UpToDate clinical reference.
 - **Backend** — Django REST, PostgreSQL, opaque-session auth.
 - **Frontend** — Expo (React Native) + `react-native-web`; one codebase for
   iOS, Android and web.
-- **Design source of truth** — `frontend/Pharmexa App v2.dc.html` (a Claude
-  Design export). The app is built to it: exact palette, spacing, radii,
-  typography, RTL, light/dark.
+- **Design system** — `frontend/src/theme/tokens.ts` (palette, spacing, radii,
+  shadows) and `frontend/src/i18n/strings.ts` (UI copy, fa/en); RTL and
+  light/dark throughout.
 
 > Educational software, not clinical decision support. Generated learning
 > content and drug summaries need review by qualified people before production

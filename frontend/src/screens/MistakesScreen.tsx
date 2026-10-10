@@ -13,7 +13,6 @@ import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
-import { spacing } from "@/theme/tokens";
 
 export function MistakesScreen() {
   const { t, isFa, n, row } = useLang();

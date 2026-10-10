@@ -133,7 +133,6 @@ function ScreenTransition({ children }: { children: React.ReactNode }) {
 
 function CurrentScreen() {
   const screen = useNav((s) => s.screen);
-  const { t } = useLang();
 
   switch (screen) {
     case "lessons":

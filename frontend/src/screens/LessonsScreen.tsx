@@ -171,7 +171,7 @@ function GroupCard({
   isOpen: boolean;
   onToggle: () => void;
 }) {
-  const { colors, shadows } = useTheme();
+  const { colors } = useTheme();
   const { isFa, n, row } = useLang();
   const navigate = useNav((s) => s.navigate);
 

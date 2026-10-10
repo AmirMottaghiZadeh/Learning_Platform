@@ -1,7 +1,6 @@
 /**
- * Design tokens transcribed from `Pharmexa App v2.dc.html` (the Claude Design
- * source). Colour values are exact; CSS box-shadow strings are re-expressed as
- * React Native shadow objects.
+ * Design tokens: the app's palette, spacing, radii and shadows (light and
+ * dark). Shadows are React Native shadow objects.
  */
 
 export type ThemeMode = "light" | "dark";
@@ -160,16 +159,6 @@ export const layout = {
   appMaxWidth: 430,
   bottomNavHeight: 72,
   screenPadding: 20,
-} as const;
-
-export const typography = {
-  title: 26,
-  h1: 22,
-  h2: 20,
-  h3: 17,
-  body: 15,
-  small: 13,
-  tiny: 12,
 } as const;
 
 /** RN shadow objects approximating the design's CSS box-shadows. */

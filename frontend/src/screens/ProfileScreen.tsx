@@ -12,10 +12,9 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
-import { spacing } from "@/theme/tokens";
 
 export function ProfileScreen() {
-  const { t, isFa, n, toggle: toggleLang, row } = useLang();
+  const { t, n, toggle: toggleLang, row } = useLang();
   const { colors, shadows } = useTheme();
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);

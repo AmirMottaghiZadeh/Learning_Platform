@@ -155,7 +155,7 @@ function LessonBody({
 }
 
 export function LessonDetailScreen() {
-  const { t, isFa, n, row } = useLang();
+  const { isFa, n, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);

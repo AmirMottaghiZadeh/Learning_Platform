@@ -1,6 +1,5 @@
 /**
- * UI strings transcribed from `Pharmexa App v2.dc.html` (the `STR` object).
- * `fa` is the canonical key set; `en` fills the same keys.
+ * UI strings. `fa` is the canonical key set; `en` fills the same keys.
  */
 
 export type Lang = "fa" | "en";
@@ -32,7 +31,6 @@ export const strings = {
 
     quizSetupTitle: "شروع آزمون دارویی",
     quizCategoryLabel: "گروه‌های بالینی",
-    quizChapterLabel: "دسته‌بندی ATC (اختیاری)",
     quizAllChapters: "همه",
     quizNoTopicSelected: "اول یک گروه بالینی را انتخاب کن.",
     quizInsufficientData: "داده‌ی کافی برای این انتخاب موجود نیست — گروه یا دسته‌بندی دیگری را امتحان کن.",
@@ -64,7 +62,6 @@ export const strings = {
 
     obSkip: "رد کردن",
     obNext: "بعدی",
-    obBack: "قبلی",
     obStart: "بزن بریم",
     obFormTitle: "کمی درباره‌ت بگو",
     obFormSub: "تا مسیر یادگیری رو دقیقاً برات بچینیم",
@@ -72,16 +69,12 @@ export const strings = {
     obGoalLabel: "هدف اصلی",
     obLevelLabel: "سطح فعلی",
 
-    tourNext: "بعدی",
-    tourSkip: "رد کردن",
-    tourDone: "متوجه شدم",
 
     greeting: "سلام،",
     greetingSub: "امروز یک قدم کوچک، مسیر تسلطت را جلو می‌برد.",
     greetingMorning: "صبح‌بخیر،",
     greetingAfternoon: "عصر بخیر،",
     greetingEvening: "شب‌بخیر،",
-    todayProgressLabel: "امروز",
 
     uptodateBadge: "مرجع بالینی",
     uptodateScreenTitle: "پایگاه UpToDate",
@@ -99,9 +92,6 @@ export const strings = {
     uptodateMatchCount: "از",
     uptodateGraphicLoadError: "بارگذاری این مورد ممکن نشد.",
 
-    heroStep: "گام ۲ از ۳",
-    heroTitle: "شروع مرور فلش‌کارت",
-    heroSub: "۱۲ دقیقه تمرکز برای ادامه‌ی مسیر کافی است.",
     xpLabel: "امتیاز",
     streakLabel: "روز توالی",
     pathsTitle: "درِ ورودی مسیرها",
@@ -129,11 +119,9 @@ export const strings = {
 
     nextChapterTitle: "فصل بعدی تو",
     editPlan: "ویرایش برنامه",
-    nextChapterBody: "با یک تمرین کوتاه، زنجیره‌ی یادگیریت را حفظ کن.",
 
     quizTitle: "آزمون دارویی",
     quizNext: "سؤال بعدی",
-    quizRetry: "تلاش دوباره",
     quizResultTitle: "آزمون کامل شد!",
 
     cardsTitle: "فلش‌کارت",
@@ -142,20 +130,16 @@ export const strings = {
     cardHard: "سخت بود",
     cardsDoneTitle: "مرور کامل شد!",
     cardsDoneSub: "همه‌ی کارت‌های امروز را مرور کردی.",
-    cardsSwipeHint: "بکش: راست آسان، چپ سخت",
 
     leitnerShow: "جعبه‌ی لایتنر",
     leitnerHide: "بازگشت به مرور",
     leitnerSub: "هر کشو یک سطح تکرار فاصله‌دار است — دوز مرور با فاصله‌ی زمانی تنظیم می‌شود",
-    leitnerOverall: "پیشرفت کلی جعبه",
-    leitnerLevelPlus: "سطح ۴+",
     leitnerL1: "روزانه",
     leitnerL2: "هر ۲ روز",
     leitnerL3: "هفتگی",
     leitnerL4: "دوهفته‌ای",
     leitnerL5: "مسلط‌شده",
     leitnerDueToday: "آماده‌ی مرور — امروز",
-    leitnerDueTomorrow: "فردا سررسید می‌شود",
     leitnerCards: "کارت",
     leitnerStartBtn: "شروع مرور دوز روزانه",
 
@@ -187,7 +171,6 @@ export const strings = {
     statsMinutes: "دقیقه مطالعه",
 
     planningTitle: "برنامه‌ریزی مطالعه",
-    planningSub: "روزهایی که می‌خواهی یادآوری مطالعه دریافت کنی را انتخاب کن.",
     planningSave: "ذخیره‌ی برنامه",
 
     planningEmptyTitle: "هنوز برنامه‌ای نداری",
@@ -244,20 +227,17 @@ export const strings = {
     lexicompNoInteractionsSub: "بین داروهای انتخاب‌شده تداخل شناخته‌شده‌ای ثبت نشده است.",
     lexicompManagementLabel: "مدیریت بالینی",
     lexicompDiscussionLabel: "توضیحات",
-    lexicompReliabilityLabel: "قابلیت اطمینان",
     lexicompSeverityMajor: "شدید",
     lexicompSeverityModerate: "متوسط",
     lexicompSeverityMinor: "خفیف",
 
     calculatorScreenTitle: "ماشین‌حساب بالینی",
-    calculatorSourceNote: "متصل به پایگاه ابزارهای محاسبه‌ی بالینی",
     calculatorSearchPlaceholder: "جست‌وجوی ماشین‌حساب…",
     calculatorEmptyTitle: "ابزاری یافت نشد",
     calculatorEmptySub: "نام دیگری را امتحان کن.",
     calculatorComputeBtn: "محاسبه",
     calculatorFillRequired: "لطفاً به همه‌ی سؤال‌ها پاسخ بده.",
     calculatorUnsupported: "این ابزار هنوز به‌طور کامل پشتیبانی نمی‌شود.",
-    calculatorAboutLabel: "درباره‌ی این ابزار",
     calculatorReferencesLabel: "منابع",
     calculatorOutOfRange: "مقدار واردشده خارج از محدوده‌ی مجاز است.",
     calculatorStepOf: "از",
@@ -273,7 +253,6 @@ export const strings = {
 
     comingSoon: "به‌زودی",
     lockedFeature: "این بخش به‌زودی فعال می‌شود",
-    stubNote: "این صفحه در فاز بعدی کامل می‌شود.",
     retry: "تلاش دوباره",
     loadFailed: "بارگذاری با خطا مواجه شد.",
   },
@@ -303,7 +282,6 @@ export const strings = {
 
     quizSetupTitle: "Start a quiz",
     quizCategoryLabel: "Clinical topics",
-    quizChapterLabel: "ATC category (optional)",
     quizAllChapters: "All",
     quizNoTopicSelected: "Pick a clinical topic first.",
     quizInsufficientData: "Not enough question material for that selection — try a different topic or category.",
@@ -335,7 +313,6 @@ export const strings = {
 
     obSkip: "Skip",
     obNext: "Next",
-    obBack: "Back",
     obStart: "Let's go",
     obFormTitle: "Tell us about you",
     obFormSub: "So we can tailor your learning path",
@@ -343,16 +320,12 @@ export const strings = {
     obGoalLabel: "Main goal",
     obLevelLabel: "Current level",
 
-    tourNext: "Next",
-    tourSkip: "Skip",
-    tourDone: "Got it",
 
     greeting: "Hi,",
     greetingSub: "One small step moves your mastery forward today.",
     greetingMorning: "Good morning,",
     greetingAfternoon: "Good afternoon,",
     greetingEvening: "Good evening,",
-    todayProgressLabel: "Today",
 
     uptodateBadge: "Clinical reference",
     uptodateScreenTitle: "UpToDate database",
@@ -370,9 +343,6 @@ export const strings = {
     uptodateMatchCount: "of",
     uptodateGraphicLoadError: "Could not load this item.",
 
-    heroStep: "Step 2 of 3",
-    heroTitle: "Start flashcard review",
-    heroSub: "12 focused minutes is enough to keep going.",
     xpLabel: "XP",
     streakLabel: "day streak",
     pathsTitle: "Your learning paths",
@@ -400,11 +370,9 @@ export const strings = {
 
     nextChapterTitle: "Your next chapter",
     editPlan: "Edit plan",
-    nextChapterBody: "A short exercise keeps your learning streak alive.",
 
     quizTitle: "Drug Quiz",
     quizNext: "Next question",
-    quizRetry: "Try again",
     quizResultTitle: "Quiz complete!",
 
     cardsTitle: "Flashcards",
@@ -413,20 +381,16 @@ export const strings = {
     cardHard: "It was hard",
     cardsDoneTitle: "Review complete!",
     cardsDoneSub: "You've reviewed all of today's cards.",
-    cardsSwipeHint: "Swipe: right easy, left hard",
 
     leitnerShow: "Leitner box",
     leitnerHide: "Back to review",
     leitnerSub: "Each drawer is a spaced-repetition level — review dose set by time interval",
-    leitnerOverall: "Overall box progress",
-    leitnerLevelPlus: "Level 4+",
     leitnerL1: "Daily",
     leitnerL2: "Every 2 days",
     leitnerL3: "Weekly",
     leitnerL4: "Biweekly",
     leitnerL5: "Mastered",
     leitnerDueToday: "Ready to review — today",
-    leitnerDueTomorrow: "Due tomorrow",
     leitnerCards: "cards",
     leitnerStartBtn: "Start daily dose",
 
@@ -458,7 +422,6 @@ export const strings = {
     statsMinutes: "Study minutes",
 
     planningTitle: "Study planning",
-    planningSub: "Choose the days you want study reminders.",
     planningSave: "Save plan",
 
     planningEmptyTitle: "No plan yet",
@@ -515,20 +478,17 @@ export const strings = {
     lexicompNoInteractionsSub: "No known interaction is recorded between the selected drugs.",
     lexicompManagementLabel: "Management",
     lexicompDiscussionLabel: "Discussion",
-    lexicompReliabilityLabel: "Reliability",
     lexicompSeverityMajor: "Major",
     lexicompSeverityModerate: "Moderate",
     lexicompSeverityMinor: "Minor",
 
     calculatorScreenTitle: "Clinical calculator",
-    calculatorSourceNote: "Connected to the clinical calculator database",
     calculatorSearchPlaceholder: "Search a calculator…",
     calculatorEmptyTitle: "No calculator found",
     calculatorEmptySub: "Try a different name.",
     calculatorComputeBtn: "Calculate",
     calculatorFillRequired: "Please answer every question.",
     calculatorUnsupported: "This tool isn't fully supported yet.",
-    calculatorAboutLabel: "About this tool",
     calculatorReferencesLabel: "References",
     calculatorOutOfRange: "The entered value is outside the allowed range.",
     calculatorStepOf: "of",
@@ -544,7 +504,6 @@ export const strings = {
 
     comingSoon: "Coming soon",
     lockedFeature: "This section is coming soon",
-    stubNote: "This screen is completed in the next phase.",
     retry: "Try again",
     loadFailed: "Something went wrong while loading.",
   },

@@ -17,7 +17,7 @@ import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
 
 export function UptodateScreen() {
-  const { t, isFa, n, row: rowDir } = useLang();
+  const { t, isFa, row: rowDir } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);

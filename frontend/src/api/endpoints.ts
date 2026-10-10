@@ -1,6 +1,5 @@
 import { apiClient, unwrapList } from "./client";
 import {
-  AtcCode,
   AuthTokenResponse,
   BoxSummary,
   CalculatorCategoryRef,
@@ -8,8 +7,6 @@ import {
   CalculatorListItem,
   Chapter,
   Dashboard,
-  IngredientDetail,
-  IngredientListItem,
   LeitnerCard,
   LessonGroup,
   LexicompDrug,
@@ -60,21 +57,6 @@ export const authApi = {
 };
 
 // --- drug knowledge ---------------------------------------------------
-
-export const drugsApi = {
-  list: (params?: { search?: string; atc?: string; page?: number }) =>
-    apiClient
-      .get("/drugs/", { params })
-      .then((r) => ({
-        results: unwrapList<IngredientListItem>(r.data),
-        count: (r.data as { count?: number }).count ?? 0,
-        next: (r.data as { next?: string | null }).next ?? null,
-      })),
-  detail: (slug: string) =>
-    apiClient.get<IngredientDetail>(`/drugs/${slug}/`).then((r) => r.data),
-  atc: (prefix?: string) =>
-    apiClient.get<AtcCode[]>("/atc/", { params: { prefix } }).then((r) => r.data),
-};
 
 // --- lessons -------------------------------------------------------------
 

@@ -15,7 +15,7 @@ import { StringKey } from "@/i18n/strings";
 import { ScreenKey } from "@/navigation/types";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
-import { radius, spacing } from "@/theme/tokens";
+import { spacing } from "@/theme/tokens";
 
 const QUICK_ACCESS: { screen: ScreenKey; icon: IconName; labelKey: StringKey }[] = [
   { screen: "education", icon: "entry-education", labelKey: "educationLabel" },

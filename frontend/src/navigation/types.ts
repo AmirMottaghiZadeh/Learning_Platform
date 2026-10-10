@@ -30,8 +30,3 @@ export const TAB_ORDER: TabKey[] = ["dashboard", "lessons", "flashcards", "quiz"
  * kept as an empty list, not removed, so the next tab that ships behind a
  * flag has somewhere to go. */
 export const LOCKED_TABS: TabKey[] = [];
-
-export type ScreenParams = {
-  lessonDetail: { code: string };
-  [key: string]: Record<string, unknown> | undefined;
-};
