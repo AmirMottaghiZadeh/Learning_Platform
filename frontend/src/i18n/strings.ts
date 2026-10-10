@@ -11,6 +11,7 @@ export const strings = {
     tagline: "یادگیری هوشمند دارویی",
     langSwitch: "EN",
     navHome: "خانه",
+    pressBackAgainToExit: "برای خروج، دوباره دکمهٔ بازگشت را بزنید",
 
     loginTitle: "خوش آمدی",
     loginSubtitle: "برای ادامه‌ی مسیر یادگیری وارد شو",
@@ -281,6 +282,7 @@ export const strings = {
     tagline: "Smart Pharmaceutical Learning",
     langSwitch: "FA",
     navHome: "Home",
+    pressBackAgainToExit: "Press back again to exit",
 
     loginTitle: "Welcome back",
     loginSubtitle: "Sign in to continue your learning path",
