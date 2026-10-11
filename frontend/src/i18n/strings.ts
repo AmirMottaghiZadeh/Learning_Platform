@@ -6,7 +6,7 @@ export type Lang = "fa" | "en";
 
 export const strings = {
   fa: {
-    appName: "فارمکسا",
+    appName: "فارمنتا",
     tagline: "یادگیری هوشمند دارویی",
     langSwitch: "EN",
     navHome: "خانه",
@@ -25,7 +25,7 @@ export const strings = {
     signupBtn: "ساخت حساب",
     haveAccount: "قبلاً ثبت‌نام کردی؟",
     loginLink: "وارد شو",
-    signupTerms: "با ساخت حساب، قوانین و حریم خصوصی فارمکسا را می‌پذیری.",
+    signupTerms: "با ساخت حساب، قوانین و حریم خصوصی فارمنتا را می‌پذیری.",
     fillRequiredFields: "لطفاً همه‌ی فیلدها را پر کن.",
     invalidCredentials: "ایمیل یا رمز عبور اشتباه است.",
 
@@ -257,7 +257,7 @@ export const strings = {
     loadFailed: "بارگذاری با خطا مواجه شد.",
   },
   en: {
-    appName: "Pharmexa",
+    appName: "Pharmenta",
     tagline: "Smart Pharmaceutical Learning",
     langSwitch: "FA",
     navHome: "Home",
@@ -276,7 +276,7 @@ export const strings = {
     signupBtn: "Create account",
     haveAccount: "Already have an account?",
     loginLink: "Sign in",
-    signupTerms: "By creating an account, you agree to Pharmexa's terms and privacy policy.",
+    signupTerms: "By creating an account, you agree to Pharmenta's terms and privacy policy.",
     fillRequiredFields: "Please fill in all fields.",
     invalidCredentials: "Invalid email or password.",
 

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Pharmexa",
+    "name": "Pharmenta",
     "slug": "pharmexa-learning",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -22,7 +22,7 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "name": "Pharmexa",
+      "name": "Pharmenta",
       "themeColor": "#0F5C52",
       "backgroundColor": "#E7E4DC"
     },

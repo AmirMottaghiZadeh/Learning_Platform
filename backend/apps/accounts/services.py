@@ -510,14 +510,14 @@ def send_password_reset_email(user):
     """Send a reset email without exposing account existence to API clients."""
     reset_url = password_reset_url_for_user(user)
     message = (
-        "برای تعیین کلمه عبور جدید Pharmexa، از پیوند زیر استفاده کنید:\n\n"
+        "برای تعیین کلمه عبور جدید فارمنتا، از پیوند زیر استفاده کنید:\n\n"
         f"{reset_url}\n\n"
         f"این پیوند تا {settings.PASSWORD_RESET_TIMEOUT // 3600} ساعت معتبر است و "
         "بعد از استفاده یا تغییر کلمه عبور نامعتبر می‌شود. اگر این درخواست را شما ثبت نکرده‌اید، "
         "می‌توانید این ایمیل را نادیده بگیرید."
     )
     send_mail(
-        subject="Pharmexa password reset",
+        subject="Pharmenta password reset",
         message=message,
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],

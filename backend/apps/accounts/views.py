@@ -164,7 +164,7 @@ class PasswordResetRequestView(APIView):
         send_password_reset_emails_for_email(email)
         return Response(
             {
-                "message": "اگر این ایمیل در Pharmexa ثبت شده باشد، پیوند بازیابی کلمه عبور برای آن ارسال می‌شود.",
+                "message": "اگر این ایمیل در فارمنتا ثبت شده باشد، پیوند بازیابی کلمه عبور برای آن ارسال می‌شود.",
             }
         )
 
