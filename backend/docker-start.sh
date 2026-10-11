@@ -19,8 +19,11 @@ python -c "import django, sys; print('[docker-start] django', django.get_version
 
 run() {
     echo "[docker-start] >>> $*"
-    if ! "$@"; then
-        rc=$?
+    # Capture the status directly: inside `if ! cmd; then`, $? is the negated
+    # result (0), which made a failed step exit the container with success.
+    "$@"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
         echo "[docker-start] !!! FAILED (exit $rc): $*"
         exit "$rc"
     fi
