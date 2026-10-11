@@ -92,7 +92,8 @@ services:
   # or an EAS build instead — this service is the web target only.
   frontend:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: Dockerfile.frontend
       args:
         EXPO_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
     depends_on:
