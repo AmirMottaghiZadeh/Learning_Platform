@@ -1,4 +1,5 @@
 import sqlite3
+from io import StringIO
 import tempfile
 from pathlib import Path
 
@@ -276,3 +277,66 @@ class DrugApiTests(TestCase):
         self.assertEqual(len(res.data), 1)
         self.assertEqual(res.data[0]["ingredient_count"], 1)
         self.assertEqual(res.data[0]["level"], 4)
+
+
+class AtcSupplementTests(TestCase):
+    """The curated RxClass table (apps.drugs.data.atc_supplement) for
+    ingredients the openFDA source leaves unclassified."""
+
+    LEVOTHYROXINE = "10582"  # in the supplement as H03AA
+
+    def _ingredient(self, rxcui, name):
+        return Ingredient.objects.create(rxcui=rxcui, name=name, slug=Ingredient.build_slug(name, rxcui))
+
+    def test_supplement_entries_are_well_formed(self):
+        from apps.drugs.data.atc_supplement import ATC_SUPPLEMENT
+
+        for rxcui, (name, source, codes) in ATC_SUPPLEMENT.items():
+            self.assertTrue(rxcui.isdigit(), rxcui)
+            self.assertIn(source, {"ATC", "ATCPROD"}, name)
+            self.assertTrue(codes, name)
+            for code, class_name in codes:
+                # Level-4 ATC codes, like every other code in the database.
+                self.assertRegex(code, r"^[A-Z]\d\d[A-Z][A-Z]$", name)
+                self.assertTrue(class_name, name)
+
+    def test_command_classifies_unclassified_ingredients(self):
+        levo = self._ingredient(self.LEVOTHYROXINE, "levothyroxine")
+
+        call_command("apply_atc_supplement", stdout=StringIO())
+
+        self.assertEqual(list(levo.atc_codes.values_list("code", flat=True)), ["H03AA"])
+        self.assertEqual(AtcCode.objects.get(code="H03AA").name, "Thyroid hormones")
+
+    def test_command_never_replaces_a_source_provided_code(self):
+        levo = self._ingredient(self.LEVOTHYROXINE, "levothyroxine")
+        own = AtcCode.objects.create(code="H03AB", name="Source-provided")
+        levo.atc_codes.set([own])
+
+        call_command("apply_atc_supplement", stdout=StringIO())
+
+        self.assertEqual(list(levo.atc_codes.values_list("code", flat=True)), ["H03AB"])
+
+    def test_dry_run_writes_nothing_and_rerun_is_a_no_op(self):
+        levo = self._ingredient(self.LEVOTHYROXINE, "levothyroxine")
+
+        call_command("apply_atc_supplement", dry_run=True, stdout=StringIO())
+        self.assertFalse(levo.atc_codes.exists())
+        self.assertFalse(AtcCode.objects.exists())
+
+        call_command("apply_atc_supplement", stdout=StringIO())
+        call_command("apply_atc_supplement", stdout=StringIO())
+        self.assertEqual(levo.atc_codes.count(), 1)
+
+    def test_import_falls_back_to_the_supplement(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = _make_source_db(tmp, [{
+                "ingredient_rxcui": self.LEVOTHYROXINE,
+                "ingredient_name": "levothyroxine",
+                "n_products": 20,
+                "n_source_records": 389,
+            }])
+            call_command("import_openfda", source=source)
+
+        levo = Ingredient.objects.get(rxcui=self.LEVOTHYROXINE)
+        self.assertEqual(list(levo.atc_codes.values_list("code", flat=True)), ["H03AA"])

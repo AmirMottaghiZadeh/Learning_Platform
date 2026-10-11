@@ -19,6 +19,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from apps.drugs.data.atc_supplement import ATC_SUPPLEMENT
 from apps.drugs.models import (
     CLINICAL_FIELD_KEYS,
     AtcCode,
@@ -202,6 +203,10 @@ class Command(BaseCommand):
         }
         if not pairs:
             pairs = atc_fallback.get(rxcui, ({}, []))[0]
+        if not pairs and rxcui in ATC_SUPPLEMENT:
+            # Last resort: the curated RxClass table for ingredients the
+            # source leaves unclassified (see apps.drugs.data.atc_supplement).
+            pairs = dict(ATC_SUPPLEMENT[rxcui][2])
         if not pairs:
             ingredient.atc_codes.clear()
             return
