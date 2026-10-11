@@ -9,8 +9,8 @@ either searches by title or lists one specialty's articles on demand.
 
 import collections
 
-from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import generics
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from rest_framework import generics, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -21,7 +21,21 @@ from .serializers import ArticleDetailSerializer, ArticleImageSerializer, Articl
 class ArticleTreeView(APIView):
     """The category -> specialty -> count taxonomy for one article kind."""
 
-    @extend_schema(parameters=[OpenApiParameter("kind", str, description="'disease' or 'guideline'.")])
+    @extend_schema(
+        parameters=[OpenApiParameter("kind", str, description="'disease' or 'guideline'.")],
+        responses=inline_serializer(
+            "MedscapeCategoryNode",
+            fields={
+                "category": serializers.CharField(),
+                "specialties": inline_serializer(
+                    "MedscapeSpecialtyCount",
+                    fields={"name": serializers.CharField(), "count": serializers.IntegerField()},
+                    many=True,
+                ),
+            },
+            many=True,
+        ),
+    )
     def get(self, request):
         kind = request.query_params.get("kind", Article.DISEASE)
         tree = collections.defaultdict(collections.Counter)

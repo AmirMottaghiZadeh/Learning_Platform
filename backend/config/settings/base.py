@@ -369,6 +369,11 @@ SPECTACULAR_SETTINGS = {
     "PREPROCESSING_HOOKS": [
         "apps.core.schema.filter_versioned_api_paths",
     ],
+    # Two different "kind" choice sets (Medscape article kind, Lexicomp drug
+    # kind) would otherwise get a hashed enum name like "KindA76Enum".
+    "ENUM_NAME_OVERRIDES": {
+        "MedscapeArticleKindEnum": "apps.medscape.models.Article.KIND_CHOICES",
+    },
 }
 
 LOG_LEVEL = config("LOG_LEVEL", default="INFO")

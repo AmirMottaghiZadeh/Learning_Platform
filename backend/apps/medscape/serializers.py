@@ -23,5 +23,5 @@ class ArticleImageSerializer(serializers.ModelSerializer):
         model = ArticleImage
         fields = ["id", "content_type", "data_base64"]
 
-    def get_data_base64(self, obj):
+    def get_data_base64(self, obj) -> str:
         return base64.b64encode(obj.data).decode("ascii")
