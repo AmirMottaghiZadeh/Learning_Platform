@@ -170,7 +170,12 @@ populated L2 subgroup.
     { "code": "cv-arrhythmia", "name_fa": "…", "name_en": "…" }
   ],
   "anatomical_name_fa": "دستگاه قلب و عروق", "anatomical_name_en": "…",  // true ATC L1, for rigour
-  "drugs": [ { …full IngredientDetail incl. sections + lesson_sections… } ],
+  "drugs": [ {                          // list fields + lesson_sections, as in
+                                         //   /drugs/{slug}/, but `sections` slimmed
+                                         //   to the per-field flags (no summaries,
+                                         //   no raw_text -- lesson_sections has the text)
+      "sections": [ { "field": "boxed_warning", "label": "Boxed warning", "has_summary": true } ],
+      "lesson_sections": [ … ] } ],
   "exam_points": [                       // built from the chapter's boxed_warning /
     { "drug_name": "acebutolol", "drug_slug": "acebutolol-149",
       "field": "contraindications",      //   contraindications / warnings summaries

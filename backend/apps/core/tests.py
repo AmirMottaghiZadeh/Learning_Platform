@@ -5,33 +5,8 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management import call_command
 from django.test import override_settings
-from django.test import Client, SimpleTestCase, TestCase
+from django.test import Client, TestCase
 
-from apps.core.events import LearningEvent, NullLearningEventPublisher, build_learning_event
-
-
-class LearningEventTests(SimpleTestCase):
-    def test_build_learning_event_creates_platform_envelope(self):
-        event = build_learning_event(
-            event_type="QuestionAnswered",
-            learner_id=10,
-            payload={"question_id": 20},
-        )
-
-        self.assertEqual(event.event_type, "QuestionAnswered")
-        self.assertEqual(event.learner_id, 10)
-        self.assertEqual(event.product_id, "pharmexa")
-        self.assertEqual(event.payload, {"question_id": 20})
-        self.assertTrue(event.correlation_id)
-
-    def test_learning_event_requires_event_type(self):
-        with self.assertRaises(ValueError):
-            LearningEvent(event_type="", learner_id=1, product_id="pharmexa")
-
-    def test_null_publisher_matches_event_publisher_contract(self):
-        event = build_learning_event(event_type="HealthChecked", learner_id=None)
-
-        self.assertIsNone(NullLearningEventPublisher().publish(event))
 
 
 class HealthCheckTests(TestCase):

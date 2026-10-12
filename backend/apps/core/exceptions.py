@@ -19,16 +19,6 @@ class PlatformAPIError(APIException):
             self.status_code = status_code
 
 
-class GameAlreadyFinished(PlatformAPIError):
-    default_code = "GAME_ALREADY_FINISHED"
-    default_detail = "This game session is already finished."
-
-
-class InvalidGameAnswer(PlatformAPIError):
-    default_code = "INVALID_GAME_ANSWER"
-    default_detail = "This answer cannot be accepted for the current game state."
-
-
 def _normalize_code(value):
     return str(value or "ERROR").upper().replace(" ", "_").replace("-", "_")
 

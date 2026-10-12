@@ -13,7 +13,6 @@ already exist, which is the common case once the raw text is stable.
 
 import json
 import sqlite3
-from datetime import datetime, timezone as dt_timezone
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
@@ -46,17 +45,6 @@ def _json_list(value):
     except (TypeError, ValueError):
         return []
     return parsed if isinstance(parsed, list) else []
-
-
-def _parse_fetched_at(value):
-    if not value:
-        return None
-    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
-        try:
-            return datetime.strptime(value, fmt).replace(tzinfo=dt_timezone.utc)
-        except (TypeError, ValueError):
-            continue
-    return None
 
 
 class Command(BaseCommand):

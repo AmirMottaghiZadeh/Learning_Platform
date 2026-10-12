@@ -8,7 +8,7 @@ from django.utils import timezone
 from apps.lessons.selectors import lesson_groups
 
 from .models import DailyStudy, Mistake
-from .services import get_plan, get_progress
+from .services import get_progress
 
 
 def _display_name(user):
