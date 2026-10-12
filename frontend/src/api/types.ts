@@ -53,15 +53,12 @@ export interface IngredientListItem {
 
 export type SectionTone = "info" | "deny" | "boxed" | "caution" | "special";
 
-export interface ProfileSection {
+/** Per-field flags for a drug in a lesson chapter; the text itself is in
+ * `lesson_sections`. */
+export interface ChapterSection {
   field: string;
   label: string;
-  has_content: boolean;
   has_summary: boolean;
-  n_contributing_products: number;
-  summary_fa: string;
-  summary_en: string;
-  raw_text: string;
 }
 
 export interface LessonSection {
@@ -75,8 +72,8 @@ export interface LessonSection {
   has_summary: boolean;
 }
 
-export interface IngredientDetail extends IngredientListItem {
-  sections: ProfileSection[];
+export interface ChapterDrug extends IngredientListItem {
+  sections: ChapterSection[];
   lesson_sections: LessonSection[];
 }
 
@@ -136,7 +133,7 @@ export interface Chapter {
   /** The true, unmodified ATC anatomical (L1) group name, for rigour. */
   anatomical_name_fa: string;
   anatomical_name_en: string;
-  drugs: IngredientDetail[];
+  drugs: ChapterDrug[];
   exam_points: ExamPoint[];
   progress: ChapterProgress;
 }

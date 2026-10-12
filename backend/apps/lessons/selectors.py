@@ -11,7 +11,9 @@ ATC codes. A chapter can appear under more than one topic.
 
 from collections import defaultdict
 
-from apps.drugs.models import AtcCategory, Ingredient
+from django.db.models import Prefetch
+
+from apps.drugs.models import AtcCategory, Ingredient, IngredientProfileSection
 
 from .data.study_topics import CATEGORIES, STUDY_TOPICS
 from .models import ChapterProgress, ReadDrug
@@ -190,7 +192,12 @@ def get_chapter(user, atc_code):
 
     ingredients = (
         Ingredient.objects.filter(atc_codes__code__startswith=atc_code)
-        .prefetch_related("atc_codes", "sections")
+        # raw_text (the full label text) is most of each section row and the
+        # chapter payload never includes it -- don't pull it from the DB.
+        .prefetch_related(
+            "atc_codes",
+            Prefetch("sections", queryset=IngredientProfileSection.objects.defer("raw_text")),
+        )
         .distinct()
     )
     if not ingredients:

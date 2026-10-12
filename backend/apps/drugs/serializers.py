@@ -7,6 +7,12 @@ Two views of the same `IngredientProfileSection` rows:
 * `lesson_sections` — the design's lesson-card shape: a curated, ordered subset
   with bilingual titles, `tone` for colour, and `text_{fa,en}` taken from the
   section summaries. Mirrors `FIELD_MAP` + `LESSON_EXTRA` in the design file.
+
+A lesson chapter sends every drug in its class at once, so it uses
+`ChapterDrugSerializer`: `lesson_sections` unchanged, but `sections` cut down
+to the per-field flags the lesson screen reads. The full shape repeats every
+summary already in `lesson_sections` and adds the raw label text, which made a
+large chapter (L01, 235 drugs) a 16 MB response.
 """
 
 from drf_spectacular.utils import extend_schema_field
@@ -81,6 +87,18 @@ class ProfileSectionSerializer(serializers.ModelSerializer):
         ]
 
 
+class ChapterSectionSerializer(serializers.ModelSerializer):
+    """Per-field flags only -- the lesson screen reads `field` + `has_summary`
+    (boxed-warning / abuse badges); the text itself is in `lesson_sections`."""
+
+    label = serializers.CharField(source="get_field_display", read_only=True)
+    has_summary = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = IngredientProfileSection
+        fields = ["field", "label", "has_summary"]
+
+
 class LessonSectionSerializer(serializers.Serializer):
     key = serializers.CharField()
     field = serializers.CharField()
@@ -96,6 +114,10 @@ class IngredientDetailSerializer(IngredientListSerializer):
     sections = serializers.SerializerMethodField()
     lesson_sections = serializers.SerializerMethodField()
 
+    # The shape of each `sections` entry; ChapterDrugSerializer swaps in the
+    # slim one.
+    section_serializer_class = ProfileSectionSerializer
+
     class Meta(IngredientListSerializer.Meta):
         fields = IngredientListSerializer.Meta.fields + ["sections", "lesson_sections"]
 
@@ -106,7 +128,7 @@ class IngredientDetailSerializer(IngredientListSerializer):
     def get_sections(self, obj):
         by_field = self._sections_by_field(obj)
         ordered = [by_field[f] for f in CLINICAL_FIELD_KEYS if f in by_field]
-        return ProfileSectionSerializer(ordered, many=True).data
+        return self.section_serializer_class(ordered, many=True).data
 
     @extend_schema_field(LessonSectionSerializer(many=True))
     def get_lesson_sections(self, obj):
@@ -131,3 +153,13 @@ class IngredientDetailSerializer(IngredientListSerializer):
                 "has_summary": True,
             })
         return rows
+
+
+class ChapterDrugSerializer(IngredientDetailSerializer):
+    """A drug inside a lesson chapter: see the module docstring."""
+
+    section_serializer_class = ChapterSectionSerializer
+
+    @extend_schema_field(ChapterSectionSerializer(many=True))
+    def get_sections(self, obj):
+        return super().get_sections(obj)

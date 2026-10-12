@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.drugs.serializers import IngredientDetailSerializer
+from apps.drugs.serializers import ChapterDrugSerializer
 
 
 class SubgroupSerializer(serializers.Serializer):
@@ -63,7 +63,7 @@ class ChapterSerializer(serializers.Serializer):
     # The true, unmodified ATC anatomical (L1) group name, for rigour.
     anatomical_name_fa = serializers.CharField()
     anatomical_name_en = serializers.CharField()
-    drugs = IngredientDetailSerializer(many=True)
+    drugs = ChapterDrugSerializer(many=True)
     exam_points = ExamPointSerializer(many=True)
     progress = ChapterProgressSerializer()
 

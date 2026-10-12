@@ -92,6 +92,34 @@ class LessonTaxonomyTests(TestCase):
         self.assertEqual(points[0]["tone"], "deny")
         self.assertEqual(points[0]["drug_name"], "metoprolol")
 
+    def test_chapter_drugs_carry_lesson_text_but_not_the_raw_label(self):
+        res = self.client.get("/api/v1/lessons/chapters/C07/")
+        drug = next(d for d in res.data["drugs"] if d["name"] == "metoprolol")
+
+        # The lesson text the screen shows is complete...
+        lesson = {s["field"]: s for s in drug["lesson_sections"]}
+        self.assertEqual(lesson["contraindications"]["text_fa"], "برادی‌کاردی شدید.")
+        self.assertEqual(lesson["contraindications"]["text_en"], "Severe bradycardia.")
+
+        # ...while `sections` is just the per-field flags: no raw label text
+        # and no second copy of the summaries.
+        for section in drug["sections"]:
+            self.assertEqual(set(section), {"field", "label", "has_summary"})
+        flags = {s["field"]: s["has_summary"] for s in drug["sections"]}
+        self.assertTrue(flags["contraindications"])
+
+    def test_chapter_query_count_does_not_grow_with_drug_count(self):
+        # raw_text is deferred for the chapter; reading it per section would
+        # turn the prefetch into one extra query per row.
+        for i in range(10):
+            ing = _ingredient(f"betablocker{i}", f"9{i:03d}", f"C07AA{i:02d}")
+            IngredientProfileSection.objects.create(
+                ingredient=ing, field="contraindications", raw_text="x", summary_fa="ف", summary_en="e",
+            )
+        self.client.get("/api/v1/lessons/chapters/C07/")  # warm up per-request caches
+        with self.assertNumQueries(6):
+            self.client.get("/api/v1/lessons/chapters/C07/")
+
     def test_unknown_chapter_is_404(self):
         self.assertEqual(self.client.get("/api/v1/lessons/chapters/C03/").status_code, 404)
         self.assertEqual(self.client.get("/api/v1/lessons/chapters/ZZ9/").status_code, 404)
