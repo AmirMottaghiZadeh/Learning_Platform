@@ -54,6 +54,11 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "apps.core.logging.RequestIdMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    # Compress API responses (JSON compresses 4-5x; nothing in front of the
+    # app does it -- Runflare's proxy passes responses through as-is). Below
+    # WhiteNoise so static files, which it serves pre-compressed, never reach
+    # it. Django 5.x's GZipMiddleware pads responses against BREACH.
+    "django.middleware.gzip.GZipMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

@@ -1,3 +1,4 @@
+import gzip
 from io import StringIO
 from pathlib import Path
 
@@ -112,3 +113,25 @@ class OpenAPISchemaTests(TestCase):
 
         self.assertTrue(expected_paths.issubset(paths.keys()))
         self.assertGreater(len(paths), len(expected_paths))
+
+
+class ResponseCompressionTests(TestCase):
+    """API responses are gzip-compressed for clients that accept it."""
+
+    URL = "/api/v1/schema/"  # public and large enough to be worth compressing
+
+    def test_compressed_when_the_client_accepts_gzip(self):
+        plain = Client().get(self.URL)
+        compressed = Client().get(self.URL, HTTP_ACCEPT_ENCODING="gzip, deflate, br")
+
+        self.assertEqual(compressed.status_code, 200)
+        self.assertEqual(compressed["Content-Encoding"], "gzip")
+        self.assertIn("Accept-Encoding", compressed["Vary"])
+        body = gzip.decompress(compressed.content)
+        self.assertEqual(body, plain.content)
+        self.assertLess(len(compressed.content), len(plain.content) / 3)
+
+    def test_left_alone_when_the_client_does_not_accept_gzip(self):
+        response = Client().get(self.URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.has_header("Content-Encoding"))
