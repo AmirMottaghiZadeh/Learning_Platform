@@ -75,7 +75,9 @@ class ArticleListView(generics.ListAPIView):
 
     def get_queryset(self):
         kind = self.request.query_params.get("kind", Article.DISEASE)
-        qs = Article.objects.filter(kind=kind)
+        # Only what ArticleListSerializer returns -- `sections` (the whole
+        # article body) is nearly all of each row.
+        qs = Article.objects.filter(kind=kind).only("id", "slug", "title", "kind", "latest_update")
 
         search = self.request.query_params.get("search", "").strip()
         if search:

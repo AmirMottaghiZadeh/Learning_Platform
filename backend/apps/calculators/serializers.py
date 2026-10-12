@@ -16,17 +16,23 @@ class CalculatorTagSerializer(serializers.ModelSerializer):
 
 
 class CalculatorListSerializer(serializers.ModelSerializer):
+    """The browse/search list: everything the client groups and searches by.
+    Tags are left to the detail view -- the list never shows them, and with
+    483 calculators they were a third of this payload."""
+
     categories = CalculatorCategorySerializer(many=True, read_only=True)
-    tags = CalculatorTagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Calculator
-        fields = ["slug", "name", "name_fa", "description", "description_fa", "categories", "tags"]
+        fields = ["slug", "name", "name_fa", "description", "description_fa", "categories"]
 
 
 class CalculatorDetailSerializer(CalculatorListSerializer):
+    tags = CalculatorTagSerializer(many=True, read_only=True)
+
     class Meta(CalculatorListSerializer.Meta):
         fields = CalculatorListSerializer.Meta.fields + [
+            "tags",
             "url",
             "about",
             "about_fa",

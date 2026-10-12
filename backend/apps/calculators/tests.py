@@ -4,7 +4,9 @@ from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from apps.calculators.models import Calculator, CalculatorCategory, CalculatorTag
@@ -293,6 +295,32 @@ class CalculatorApiTests(TestCase):
     def test_list_excludes_questions_and_results(self):
         res = self.client.get("/api/v1/calculators/")
         self.assertNotIn("questions", res.data[0])
+
+    def test_tags_are_in_the_detail_but_not_the_list(self):
+        calc = Calculator.objects.get(slug="test-score-1")
+        calc.tags.add(CalculatorTag.objects.create(external_id=7, name="risk", name_fa="خطر"))
+
+        self.assertNotIn("tags", self.client.get("/api/v1/calculators/").data[0])
+        detail = self.client.get("/api/v1/calculators/test-score-1/").data
+        self.assertEqual([(t["name"], t["name_fa"]) for t in detail["tags"]], [("risk", "خطر")])
+
+    def test_list_reads_only_its_own_columns_with_a_fixed_number_of_queries(self):
+        # The list defers the big JSON/text columns; touching one per row
+        # would silently add a query per calculator.
+        cardiology = CalculatorCategory.objects.get(name="Cardiology")
+        for i in range(10):
+            extra = Calculator.objects.create(
+                uid=f"CALC-X{i}", calculator_id=f"x{i}", slug=f"extra-{i}", name=f"Extra {i}",
+                questions=[{"position": 0}], results=[{"position": 0}],
+            )
+            extra.categories.add(cardiology)
+        with CaptureQueriesContext(connection) as ctx:
+            res = self.client.get("/api/v1/calculators/")
+        self.assertEqual(len(res.data), 12)
+        self.assertEqual(len(ctx.captured_queries), 2)  # calculators + their categories
+        calculator_select = ctx.captured_queries[0]["sql"]
+        for heavy in ("questions", "results", "about", "formula_strings_fa"):
+            self.assertNotIn(f'"calculators_calculator"."{heavy}"', calculator_select)
 
     def test_category_list_returns_the_full_tree_independent_of_calculators(self):
         CalculatorCategory.objects.create(

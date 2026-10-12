@@ -27,12 +27,16 @@ class CalculatorCategoryListView(generics.ListAPIView):
 class CalculatorListView(generics.ListAPIView):
     serializer_class = CalculatorListSerializer
     pagination_class = None
-    queryset = Calculator.objects.order_by("name").prefetch_related(
-        "categories", "categories__parent", "tags"
+    # Only the columns the list serializes: the formula/question JSON and the
+    # long texts are most of each row and only the detail view needs them.
+    queryset = (
+        Calculator.objects.order_by("name")
+        .only("id", "slug", "name", "name_fa", "description", "description_fa")
+        .prefetch_related("categories")
     )
 
 
 class CalculatorDetailView(generics.RetrieveAPIView):
     serializer_class = CalculatorDetailSerializer
     lookup_field = "slug"
-    queryset = Calculator.objects.prefetch_related("categories", "categories__parent", "tags")
+    queryset = Calculator.objects.prefetch_related("categories", "tags")

@@ -5,7 +5,9 @@ from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from apps.medscape.models import Article, ArticleImage
@@ -276,6 +278,17 @@ class MedscapeApiTests(TestCase):
     def test_list_by_search(self):
         res = self.client.get("/api/v1/medscape/articles/", {"kind": "disease", "search": "other"})
         self.assertEqual([a["slug"] for a in res.data], ["other-condition-2"])
+
+    def test_list_does_not_read_article_bodies(self):
+        # The list returns titles only; `sections` (the whole article body)
+        # must not be pulled from the database for every match.
+        with CaptureQueriesContext(connection) as ctx:
+            res = self.client.get(
+                "/api/v1/medscape/articles/", {"kind": "disease", "category": "medicine", "specialty": "Cardiology"}
+            )
+        self.assertEqual([a["slug"] for a in res.data], ["test-condition-1"])
+        self.assertEqual(len(ctx.captured_queries), 1)
+        self.assertNotIn('"medscape_article"."sections"', ctx.captured_queries[0]["sql"])
 
     def test_list_without_search_or_category_pair_returns_empty(self):
         res = self.client.get("/api/v1/medscape/articles/", {"kind": "disease"})

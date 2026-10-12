@@ -467,10 +467,10 @@ export interface CalculatorListItem {
   description: string;
   description_fa: string;
   categories: CalculatorCategoryRef[];
-  tags: CalculatorTagRef[];
 }
 
 export interface CalculatorDetail extends CalculatorListItem {
+  tags: CalculatorTagRef[];
   url: string;
   about: string;
   about_fa: string;
