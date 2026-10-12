@@ -236,10 +236,15 @@ export interface PlanToday {
   topics: PlanTopicStatus[];
 }
 
+/** One card section (indication, common / serious side effects, dosage
+ * forms, contraindications & boxed warning) on a flashcard's back. */
 export interface LeitnerCardField {
   field: string;
   label: string;
   tone: SectionTone;
+  /** Up to three facts. Absent on cards cached before sections had lists. */
+  items?: string[];
+  /** The same facts joined by newlines. */
   text: string;
 }
 

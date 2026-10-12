@@ -27,34 +27,41 @@ function chipColors(tone: SectionTone, colors: ReturnType<typeof useTheme>["colo
   return toneColors(tone, colors);
 }
 
-/** One clinical field's fact on the card back -- a small colored label tag
- * (the same field/tone vocabulary the quiz question cards use) above its
- * text, instead of every field's fact run together in one undifferentiated
- * paragraph. */
+/** One card section on the back: a heading in the section's own color
+ * (the same tone vocabulary as the lesson screen and quiz tags) over its
+ * facts, each its own bulleted line. */
 function CardBackField({ block, row }: { block: LeitnerCardField; row: "row" | "row-reverse" }) {
   const { colors } = useTheme();
   const tag = chipColors(block.tone, colors);
+  const items = block.items ?? block.text.split("\n").filter(Boolean);
   return (
-    <View style={{ gap: 5 }}>
-      <View
-        style={{
-          flexDirection: row,
-          alignSelf: row === "row" ? "flex-start" : "flex-end",
-          backgroundColor: tag.bg,
-          borderWidth: 1,
-          borderColor: tag.border,
-          borderRadius: 999,
-          paddingHorizontal: 9,
-          paddingVertical: 2,
-        }}
-      >
-        <AppText weight="800" size={10.5} color={tag.label}>
+    <View
+      style={{
+        backgroundColor: tag.bg,
+        borderWidth: 1,
+        borderColor: tag.border,
+        borderRadius: 14,
+        paddingHorizontal: 12,
+        paddingVertical: 9,
+        gap: 4,
+      }}
+    >
+      <View style={{ flexDirection: row, alignItems: "center", gap: 6 }}>
+        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: tag.label }} />
+        <AppText weight="800" size={12.5} color={tag.label}>
           {block.label}
         </AppText>
       </View>
-      <AppText weight="500" size={14} style={{ lineHeight: 22 }}>
-        {block.text}
-      </AppText>
+      {items.map((item, i) => (
+        <View key={i} style={{ flexDirection: row, gap: 6 }}>
+          <AppText weight="700" size={14} color={tag.label}>
+            •
+          </AppText>
+          <AppText weight="500" size={14} style={{ flex: 1, lineHeight: 22 }}>
+            {item}
+          </AppText>
+        </View>
+      ))}
     </View>
   );
 }
