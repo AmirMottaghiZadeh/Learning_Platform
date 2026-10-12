@@ -126,13 +126,25 @@ true;
 `;
 
 function wrap(bodyHtml: string, ink: string, bg: string, accent: string, accentSoft: string) {
-  return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+  // The article is UpToDate's own markup, which carries fixed widths, nested
+  // tables and long unbroken strings. The page itself must never be wider
+  // than the screen: everything is capped at the viewport, long words wrap,
+  // and only a genuinely wide table/graphic scrolls sideways inside its own
+  // box. minimum-scale=1 stops the WebView zooming out to fit overflow.
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <style>
+  *, *::before, *::after { box-sizing:border-box; }
+  html, body { max-width:100%; overflow-x:hidden; }
   body { font: 15px/1.7 -apple-system, "Segoe UI", Roboto, sans-serif; color:${ink};
-         background:${bg}; margin:0; padding:16px; }
+         background:${bg}; margin:0; padding:16px; overflow-wrap:anywhere; word-break:break-word;
+         -webkit-text-size-adjust:100%; }
+  body *:not(td):not(th):not(tr):not(thead):not(tbody):not(tfoot):not(col):not(colgroup) {
+    max-width:100%; }
   h1,h2,h3 { line-height:1.35; }
   a { color:${accent}; }
+  pre, code { white-space:pre-wrap; }
   table { border-collapse:collapse; width:100%; display:block; overflow-x:auto; }
+  table table { display:table; overflow-x:visible; }
   td,th { border:1px solid rgba(127,127,127,.3); padding:6px 8px; }
   img { max-width:100%; height:auto; }
   .utdGraphicWrapper, figure { overflow-x:auto; }
