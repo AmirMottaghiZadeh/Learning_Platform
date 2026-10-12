@@ -40,40 +40,49 @@ def ingredient_ids_for_selection(topic_key: str, atc_code: str = "") -> list[int
     return list(Ingredient.objects.filter(slug__in=slugs).values_list("id", flat=True))
 
 
-def sample_bank_questions(
-    topic_key: str, atc_code: str, count: int, seed: int | None = None
-) -> list[BankQuestion]:
+def _sample_rows(topic_key: str, atc_code: str, count: int, seed: int | None):
+    """The sampling itself, over (id, ingredient_id, field) tuples only -- a
+    broad topic has thousands of bank questions, and the full rows (prompt,
+    options, ingredient) are only needed for the few actually picked."""
     ingredient_ids = ingredient_ids_for_selection(topic_key, atc_code)
     if not ingredient_ids:
         return []
 
     rows = list(
         BankQuestion.objects.filter(ingredient_id__in=ingredient_ids)
-        .select_related("ingredient")
+        .order_by("id")
+        .values_list("id", "ingredient_id", "field")
     )
     rng = random.Random(seed)
     rng.shuffle(rows)
 
-    picked: list[BankQuestion] = []
+    picked = []
     per_ingredient: dict[int, int] = {}
-    leftover: list[BankQuestion] = []
+    leftover = []
     for row in rows:
         if len(picked) >= count:
             leftover.append(row)
             continue
-        used = per_ingredient.get(row.ingredient_id, 0)
+        used = per_ingredient.get(row[1], 0)
         if used >= MAX_PER_INGREDIENT:
             leftover.append(row)
             continue
         picked.append(row)
-        per_ingredient[row.ingredient_id] = used + 1
+        per_ingredient[row[1]] = used + 1
 
     # The per-ingredient cap can't fill `count` in a narrow topic (e.g. a
     # one-drug ATC chapter) -- top up from whatever's left over.
     if len(picked) < count:
         picked.extend(leftover[: count - len(picked)])
-
     return picked
+
+
+def sample_bank_questions(
+    topic_key: str, atc_code: str, count: int, seed: int | None = None
+) -> list[BankQuestion]:
+    picked = _sample_rows(topic_key, atc_code, count, seed)
+    by_id = BankQuestion.objects.select_related("ingredient").in_bulk([row[0] for row in picked])
+    return [by_id[row[0]] for row in picked]
 
 
 def preview_selection(topic_key: str, atc_code: str, count: int) -> dict:
@@ -83,8 +92,8 @@ def preview_selection(topic_key: str, atc_code: str, count: int) -> dict:
     promise of the exact set start will produce) and tabulates by field,
     rather than reporting the whole available pool, so a topic with 200
     mechanism facts but a 10-question quiz doesn't claim it'll ask all 200."""
-    picked = sample_bank_questions(topic_key, atc_code, count)
-    counts = Counter(bq.field for bq in picked)
+    picked = _sample_rows(topic_key, atc_code, count, seed=None)
+    counts = Counter(field for _, _, field in picked)
     by_field = [
         {"field": key, "label_fa": FIELD_META[key][0], "tone": FIELD_META[key][1], "count": counts[key]}
         for key in _FIELD_ORDER
