@@ -263,6 +263,17 @@ class OnboardingTests(TestCase):
         self.assertEqual(profile["study_level"], "advanced")
         self.assertTrue(profile["is_onboarded"])
 
+    def test_onboarding_accepts_end_of_course_exam_goal(self):
+        response = self.client.post(
+            reverse("auth-onboarding"),
+            {"study_field": "medicine", "study_goal": "comprehensive", "study_level": "intermediate"},
+            content_type="application/json",
+            **self.auth,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["profile"]["study_goal"], "comprehensive")
+
     def test_onboarding_rejects_unknown_choice(self):
         response = self.client.post(
             reverse("auth-onboarding"),

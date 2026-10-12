@@ -36,8 +36,8 @@ active language. Persian is the default.
   "roles": ["learner"],
   "profile": {                     // LearnerProfile
     "display_name": "Sara Karimi",
-    "study_field": "pharmacy",     // "" | pharmacy | medicine | nursing
-    "study_goal": "residency",     // "" | residency | final | clinical
+    "study_field": "pharmacy",     // "" | pharmacy | medicine (nursing: legacy)
+    "study_goal": "comprehensive", // "" | comprehensive | final | clinical (residency: legacy)
     "study_level": "advanced",     // "" | beginner | intermediate | advanced
     "language": "fa",
     "onboarded_at": "2026-09-09T…" | null,

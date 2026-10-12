@@ -185,7 +185,10 @@ class LearnerProfile(models.Model):
         ("medicine", "Medicine"),
         ("nursing", "Nursing"),
     ]
+    # Onboarding offers pharmacy/medicine and comprehensive/final/clinical;
+    # "nursing" and "residency" stay valid for profiles saved before that.
     GOAL_CHOICES = [
+        ("comprehensive", "End-of-course exam"),
         ("residency", "Residency exam"),
         ("final", "Term finals"),
         ("clinical", "Daily clinical review"),
