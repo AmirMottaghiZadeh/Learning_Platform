@@ -27,7 +27,7 @@ class DueCardsView(APIView):
         cards = (
             LeitnerCard.objects.filter(user=request.user, due_at__lte=timezone.now())
             .select_related("ingredient")
-            .prefetch_related("ingredient__sections")[:DUE_PAGE_SIZE]
+            .prefetch_related("ingredient__flashcard_facts")[:DUE_PAGE_SIZE]
         )
         return Response(LeitnerCardSerializer(cards, many=True).data)
 

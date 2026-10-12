@@ -3,6 +3,8 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from apps.drugs.models import AtcCategory, AtcCode, Ingredient, IngredientProfileSection
+from apps.flashcards.card_facts import build_fact_rows
+from apps.flashcards.models import FlashcardFact
 from apps.progress.models import LearnerProgress, Mistake
 
 from .bank_generator import generate_bank
@@ -31,6 +33,7 @@ def _seed_atc_world():
         IngredientProfileSection.objects.create(
             ingredient=ing, field="indications_and_usage", summary_fa=summary
         )
+    FlashcardFact.objects.bulk_create(build_fact_rows()[0])
     BankQuestion.objects.bulk_create(generate_bank())
 
 
@@ -141,7 +144,7 @@ class QuizApiTests(TestCase):
     def test_questions_carry_their_source_field(self):
         data = self._start()
         for q in data["questions"]:
-            self.assertEqual(q["field"], "indications_and_usage")
+            self.assertEqual(q["field"], "indication")
             self.assertEqual(q["field_label_fa"], "اندیکاسیون")
             self.assertEqual(q["field_tone"], "info")
             self.assertTrue(q["subject_slug"])
@@ -155,8 +158,8 @@ class QuizApiTests(TestCase):
             {"question_id": q0.id, "selected_index": q0.correct_index},
             format="json",
         )
-        # the seed gives each ingredient 5 indications facts (cap 4 used per
-        # question set), so there's always at least one sibling left over
+        # each drug gets 2 indication questions, so the other one is the
+        # sibling fact
         self.assertGreater(len(res.data["extra_context"]), 0)
         for text in res.data["extra_context"]:
             self.assertNotEqual(text, q0.options_fa[q0.correct_index])
@@ -174,7 +177,7 @@ class QuizApiTests(TestCase):
         result = self.client.post(f"/quiz/{session.id}/finish/")
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.data["by_field"], [{
-            "field": "indications_and_usage",
+            "field": "indication",
             "label_fa": "اندیکاسیون",
             "tone": "info",
             "correct": 5,
@@ -284,11 +287,37 @@ class QuizApiTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["available"], 5)
         self.assertEqual(res.data["by_field"], [{
-            "field": "indications_and_usage",
+            "field": "indication",
             "label_fa": "اندیکاسیون",
             "tone": "info",
             "count": 5,
         }])
+
+
+class QuestionBankGenerationTests(TestCase):
+    def test_two_questions_per_card_section_from_the_card_facts(self):
+        _seed_atc_world()
+        per_drug = {}
+        for q in BankQuestion.objects.all():
+            per_drug.setdefault(q.ingredient_id, []).append(q)
+            self.assertEqual(q.field, "indication")
+            self.assertTrue(q.prompt_fa.startswith("کدام مورد زیر از موارد مصرف"))
+            self.assertEqual(len(set(q.options_fa)), 4)
+            card_facts = set(
+                FlashcardFact.objects.filter(ingredient_id=q.ingredient_id, lang="fa")
+                .values_list("text", flat=True)
+            )
+            self.assertIn(q.options_fa[q.correct_index], card_facts)
+            others = [o for i, o in enumerate(q.options_fa) if i != q.correct_index]
+            self.assertFalse(card_facts & set(others))
+        self.assertEqual(len(per_drug), 15)
+        self.assertTrue(all(len(qs) == 2 for qs in per_drug.values()))
+
+    def test_command_needs_the_flashcard_facts_first(self):
+        from django.core.management import CommandError, call_command
+
+        with self.assertRaises(CommandError):
+            call_command("build_question_bank")
 
 
 @override_settings(ROOT_URLCONF="apps.core.quiz_maintenance_urls")

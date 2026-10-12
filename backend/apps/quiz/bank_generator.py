@@ -1,119 +1,74 @@
-"""Rule-based (no LLM) MCQ generation from drug clinical-profile summaries.
+"""Rule-based (no LLM) MCQ generation from the drug flashcard facts.
 
-Question fields are the five a learner is actually drilled on in practice --
-indication, adverse reactions, warnings, absolute contraindications, and
-dosing -- deliberately excluding mechanism (too abstract to quiz as a
-discrete fact) and the two fields the previous version of this bank used
-(dosage forms/strengths, pregnancy) that are out of scope for this one.
+The bank asks only about what the flashcards teach: the five card sections
+(apps.flashcards.sections) -- indication, common side effects, serious side
+effects, dosage forms, and contraindications / boxed warning -- using the
+exact Persian facts build_flashcards stored (FlashcardFact), so a learner is
+never quizzed on something their cards don't show. Run build_flashcards
+first.
 
-For each (ingredient, field), the ingredient's own facts
-(apps.quiz.bank_facts.extract_facts) become candidate correct answers.
-Distractors are drawn from other ingredients' facts in the same field,
-biased *toward* the subject's own ATC class rather than away from it: a
-distractor from an unrelated drug class can be eliminated by category alone
-without knowing the actual fact, which is what makes a question easy. A
-question is kept only if at least one of its three distractors shares the
-subject's own ATC anatomical section (L1 code) -- otherwise it's dropped
-rather than kept as an easy question. `difficulty` records how far that
-went: "hard" when all three distractors share the subject's own ATC
-subclass (L2 code, i.e. genuine same-class confusers), "medium" otherwise.
+Each drug gets QUESTIONS_PER_SECTION questions per section (2 x 5 = 10): its
+own facts are the candidate correct answers; three distractors come from
+other drugs' facts in the same section, biased *toward* the subject's own
+ATC class rather than away from it -- a distractor from an unrelated class
+can be eliminated by category alone, which is what makes a question easy. A
+question is kept only if at least one distractor shares the subject's ATC
+anatomical section (L1), and never uses a distractor that is also one of the
+subject's own facts. `difficulty` is "hard" when all three share its ATC
+subclass (L2), "medium" otherwise.
 
-Target is >= 15 questions per well-documented ingredient; ingredients with
-thinner source material, or too few same-class peers to clear the
-medium-difficulty floor, simply get fewer -- there is no padding to a fixed
-count and no distractor invented to make one up.
+A drug with fewer than two usable facts in a section, or too few same-class
+peers there, simply gets fewer questions for it -- there is no padding and
+no invented distractor.
 """
 
 import random
 from collections import Counter, defaultdict
 
-from apps.drugs.management.commands.clean_profile_boilerplate import is_null_placeholder
-from apps.drugs.models import Ingredient, IngredientProfileSection
+from apps.drugs.models import Ingredient
+from apps.flashcards.models import FlashcardFact
+from apps.flashcards.sections import SECTION_KEYS
 
-from .bank_facts import extract_facts
-
-QUESTION_FIELDS = [
-    "indications_and_usage",
-    "adverse_reactions",
-    "warnings",
-    "contraindications",
-    "dosage_and_administration",
-]
-
-# Max correct-answer facts drawn per (ingredient, field) -- caps any one
-# field from dominating a drug's question set. Adverse reactions tends to be
-# the richest field (long enumerated lists); dosing sections tend to be the
-# thinnest (a handful of dense, formulation-specific bullets).
-FIELD_CAP = {
-    "indications_and_usage": 5,
-    "adverse_reactions": 8,
-    "warnings": 6,
-    "contraindications": 5,
-    "dosage_and_administration": 4,
-}
+QUESTIONS_PER_SECTION = 2
 
 PROMPT_TEMPLATE = {
-    "indications_and_usage": "کدام مورد زیر از موارد مصرف تأییدشدهٔ «{drug}» است؟",
-    "adverse_reactions": "کدام مورد زیر از عوارض جانبی گزارش‌شدهٔ «{drug}» است؟",
-    "warnings": "کدام مورد زیر از هشدارهای «{drug}» است؟",
-    "contraindications": "کدام مورد زیر از موارد منع مطلق مصرف «{drug}» است؟",
-    "dosage_and_administration": "کدام مورد زیر دربارهٔ نحوهٔ دوز و تجویز «{drug}» صحیح است؟",
+    "indication": "کدام مورد زیر از موارد مصرف «{drug}» است؟",
+    "adr_common": "کدام مورد زیر از عوارض شایع «{drug}» است؟",
+    "adr_serious": "کدام مورد زیر از عوارض مهم و جدی «{drug}» است؟",
+    "dosage_forms": "کدام مورد زیر از اشکال دارویی «{drug}» است؟",
+    "contra_boxed": "کدام مورد زیر از منع مطلق مصرف یا هشدار جعبه‌سیاه «{drug}» است؟",
 }
 
-MIN_FACT_LEN = 10
-# A fact text this common across different ingredients in the same field is
+# A fact this common across different drugs in the same section is
 # boilerplate, not a distinguishing fact about any one of them.
 MAX_GLOBAL_REPEAT = 3
 DISTRACTORS_NEEDED = 3
 
 
-def _fact_text(fact: dict) -> str:
-    # Every field in this bank is genuinely bulleted (unlike the old bank's
-    # mechanism/pregnancy fields, which were one paragraph split into
-    # sentences), so a bullet's label -- when present -- is kept: it's often
-    # the only part naming the specific thing the rest of the bullet just
-    # quantifies or qualifies (e.g. "Aseptic meningitis: cases have been
-    # reported", "Delayed-release capsule: take on an empty stomach").
-    if fact["label"]:
-        return f'{fact["label"]}: {fact["text"]}'
-    return fact["text"]
-
-
-def _is_low_quality(text: str) -> bool:
-    return len(text) < MIN_FACT_LEN or is_null_placeholder(text)
-
-
 def _collect_pools() -> dict[str, dict[int, list[str]]]:
-    """field -> ingredient_id -> [fact text, ...], already quality-filtered
-    and with corpus-wide boilerplate (near-duplicate text) dropped."""
-    per_field: dict[str, dict[int, list[str]]] = {f: defaultdict(list) for f in QUESTION_FIELDS}
-    text_counts: dict[str, Counter] = {f: Counter() for f in QUESTION_FIELDS}
-
-    sections = (
-        IngredientProfileSection.objects
-        .filter(field__in=QUESTION_FIELDS)
-        .exclude(summary_fa="")
+    """section -> ingredient_id -> [Persian fact, ...] (card order), with
+    corpus-wide boilerplate dropped."""
+    pools: dict[str, dict[int, list[str]]] = {key: defaultdict(list) for key in SECTION_KEYS}
+    counts: dict[str, Counter] = {key: Counter() for key in SECTION_KEYS}
+    facts = (
+        FlashcardFact.objects.filter(lang="fa")
+        .order_by("ingredient_id", "section", "order")
+        .values_list("ingredient_id", "section", "text")
     )
-    for s in sections.iterator():
-        texts = [
-            t for f in extract_facts(s.summary_fa)
-            if not _is_low_quality(t := _fact_text(f))
-        ]
-        if not texts:
+    for ing_id, section, text in facts.iterator():
+        if text in pools[section][ing_id]:
             continue
-        for t in texts:
-            text_counts[s.field][t] += 1
-        per_field[s.field][s.ingredient_id] = texts
+        pools[section][ing_id].append(text)
+        counts[section][text] += 1
 
-    for field in QUESTION_FIELDS:
-        counts = text_counts[field]
-        for ing_id, texts in list(per_field[field].items()):
-            kept = [t for t in texts if counts[t] < MAX_GLOBAL_REPEAT]
+    for key in SECTION_KEYS:
+        for ing_id, texts in list(pools[key].items()):
+            kept = [t for t in texts if counts[key][t] < MAX_GLOBAL_REPEAT]
             if kept:
-                per_field[field][ing_id] = kept
+                pools[key][ing_id] = kept
             else:
-                del per_field[field][ing_id]
-    return per_field
+                del pools[key][ing_id]
+    return pools
 
 
 def _atc_maps() -> tuple[dict[int, set[str]], dict[int, set[str]]]:
@@ -136,7 +91,7 @@ def _pick_distractors(
     own_l2: set[str],
     l1_map: dict[int, set[str]],
     l2_map: dict[int, set[str]],
-    correct_text: str,
+    own_facts: set[str],
 ) -> tuple[list[str], int, int] | None:
     """Returns (distractor_texts, same_l1_count, same_l2_count), or None if
     fewer than DISTRACTORS_NEEDED distinct usable candidates exist at all.
@@ -169,7 +124,7 @@ def _pick_distractors(
         if len(distractors) >= DISTRACTORS_NEEDED:
             break
         cand_text = rng.choice(pool[cand_id])
-        if cand_text == correct_text or cand_text in distractors:
+        if cand_text in own_facts or cand_text in distractors:
             continue
         distractors.append(cand_text)
         rank = class_rank(cand_id)
@@ -203,17 +158,20 @@ def generate_bank(limit: int | None = None, seed: int = 42) -> list:
         own_l1 = l1_map.get(ing_id, set())
         own_l2 = l2_map.get(ing_id, set())
 
-        for field in QUESTION_FIELDS:
-            pool = pools[field]
+        for section in SECTION_KEYS:
+            pool = pools[section]
             own_facts = pool.get(ing_id)
-            if not own_facts:
+            if not own_facts or len(own_facts) < QUESTIONS_PER_SECTION:
                 continue
+            own_set = set(own_facts)
+            candidates = list(own_facts)
+            rng.shuffle(candidates)
 
-            cap = FIELD_CAP[field]
-            chosen = own_facts if len(own_facts) <= cap else rng.sample(own_facts, cap)
-
-            for correct_text in chosen:
-                result = _pick_distractors(rng, pool, ing_id, own_l1, own_l2, l1_map, l2_map, correct_text)
+            made = 0
+            for correct_text in candidates:
+                if made >= QUESTIONS_PER_SECTION:
+                    break
+                result = _pick_distractors(rng, pool, ing_id, own_l1, own_l2, l1_map, l2_map, own_set)
                 if result is None:
                     continue
                 distractors, same_l1, same_l2 = result
@@ -224,15 +182,13 @@ def generate_bank(limit: int | None = None, seed: int = 42) -> list:
                 options = [correct_text, *distractors]
                 order = list(range(4))
                 rng.shuffle(order)
-                shuffled_options = [options[i] for i in order]
-                correct_index = order.index(0)
-
                 questions.append(BankQuestion(
                     ingredient_id=ing_id,
-                    field=field,
-                    prompt_fa=PROMPT_TEMPLATE[field].format(drug=drug_name),
-                    options_fa=shuffled_options,
-                    correct_index=correct_index,
+                    field=section,
+                    prompt_fa=PROMPT_TEMPLATE[section].format(drug=drug_name),
+                    options_fa=[options[i] for i in order],
+                    correct_index=order.index(0),
                     difficulty=difficulty,
                 ))
+                made += 1
     return questions

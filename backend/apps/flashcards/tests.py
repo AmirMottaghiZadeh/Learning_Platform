@@ -7,17 +7,28 @@ from apps.drugs.models import Ingredient, IngredientProfileSection
 from apps.lessons.selectors import mark_drug_read
 from apps.progress.models import LearnerProgress
 
-from .models import LeitnerCard
+from .card_facts import adr_facts, build_fact_rows, facts_for_ingredient
+from .models import FlashcardFact, LeitnerCard
 from .services import due_card_count, seed_deck
+
+
+def _refresh_facts():
+    """What build_flashcards does: rebuild every drug's card facts."""
+    FlashcardFact.objects.all().delete()
+    FlashcardFact.objects.bulk_create(build_fact_rows()[0])
 
 
 def _rich_ingredient(name, rxcui, n_products=0):
     ing = Ingredient.objects.create(name=name, rxcui=rxcui, slug=f"{name}-{rxcui}", n_products=n_products)
-    for field in ("clinical_pharmacology", "dosage_and_administration", "warnings"):
+    for field, fa, en in (
+        ("indications_and_usage", f"- درمان فشار خون بالا با {name}", f"- Hypertension, treated with {name}"),
+        ("dosage_forms_and_strengths", f"- قرص خوراکی ۵۰ میلی‌گرم {name}", f"- Oral tablet 50 mg of {name}"),
+        ("clinical_pharmacology", "مکانیسم اثر دارو", "Mechanism of action"),
+    ):
         IngredientProfileSection.objects.create(
-            ingredient=ing, field=field, raw_text="x",
-            summary_fa=f"{field} fa", summary_en=f"{field} en",
+            ingredient=ing, field=field, raw_text="x", summary_fa=fa, summary_en=en,
         )
+    _refresh_facts()
     return ing
 
 
@@ -41,7 +52,11 @@ class FlashcardApiTests(TestCase):
         self.assertEqual(due.status_code, 200)
         self.assertEqual(len(due.data), 2)
         card = due.data[0]
-        self.assertGreaterEqual(len(card["back_fields_fa"]), 2)  # multiple field blocks
+        self.assertEqual([b["field"] for b in card["back_fields_fa"]], ["indication", "dosage_forms"])
+        first = card["back_fields_fa"][0]
+        self.assertEqual((first["label"], first["tone"]), ("اندیکاسیون", "info"))
+        self.assertEqual(len(first["items"]), 1)
+        self.assertEqual(card["back_fields_en"][1]["label"], "Dosage forms")
         self.assertEqual(card["box"], 1)
 
         boxes = self.client.get("/flashcards/boxes/").data
@@ -56,13 +71,17 @@ class FlashcardApiTests(TestCase):
         self.assertEqual(again.data["created"], 0)
         self.assertEqual(LeitnerCard.objects.filter(user=self.user).count(), 2)
 
-    def test_seed_needs_two_summarised_back_of_card_fields(self):
-        # One summarised back field, plus a summary in a field that never
-        # goes on a card (mechanism), plus an empty one: not enough.
+    def test_seed_needs_two_card_sections(self):
+        # One card section (indication), plus summaries in fields that never
+        # go on a card (warnings, mechanism), plus a raw-only one: not enough.
         one = Ingredient.objects.create(name="sparse", rxcui="77", slug="sparse-77", n_products=99)
-        IngredientProfileSection.objects.create(ingredient=one, field="warnings", summary_fa="w", summary_en="w")
-        IngredientProfileSection.objects.create(ingredient=one, field="clinical_pharmacology", summary_fa="m")
+        IngredientProfileSection.objects.create(
+            ingredient=one, field="indications_and_usage", summary_fa="- درمان عفونت‌های ادراری ساده"
+        )
+        IngredientProfileSection.objects.create(ingredient=one, field="warnings", summary_fa="- هشدار مهم کبدی")
+        IngredientProfileSection.objects.create(ingredient=one, field="clinical_pharmacology", summary_fa="مکانیسم")
         IngredientProfileSection.objects.create(ingredient=one, field="adverse_reactions", raw_text="only raw")
+        _refresh_facts()
 
         seed_deck(self.user)
         self.assertFalse(LeitnerCard.objects.filter(user=self.user, ingredient=one).exists())
@@ -127,3 +146,56 @@ class FlashcardLockedTests(TestCase):
         client = APIClient()
         self.assertEqual(client.get("/flashcards/").status_code, 503)
         self.assertEqual(client.post("/flashcards/seed/").status_code, 503)
+
+
+class CardFactExtractionTests(TestCase):
+    def test_adr_groups_by_heading_and_by_label(self):
+        summary = "\n".join([
+            "عوارض شایع:",
+            "- سردرد خفیف و گذرا در شروع درمان",
+            "- تهوع و ناراحتی گوارشی",
+            "عوارض مهم و جدی:",
+            "- واکنش‌های پوستی شدید: موارد نادر سندرم استیونس-جانسون",
+            "نادر:",
+            "- ریزش موی برگشت‌پذیر در مصرف طولانی",
+            "- شایع: خواب‌آلودگی در روزهای اول مصرف",
+            "- جدی: آنژیوادم که نیاز به قطع فوری دارد",
+        ])
+        facts = adr_facts(summary)
+        self.assertEqual(facts["adr_common"], [
+            "سردرد خفیف و گذرا در شروع درمان",
+            "تهوع و ناراحتی گوارشی",
+            "خواب‌آلودگی در روزهای اول مصرف",
+        ])
+        # a label that names a thing ("severe skin reactions") stays on the
+        # fact; the rare group is left out; a "serious" bullet label is a group
+        self.assertEqual(facts["adr_serious"], [
+            "واکنش‌های پوستی شدید: موارد نادر سندرم استیونس-جانسون",
+            "آنژیوادم که نیاز به قطع فوری دارد",
+        ])
+
+    def test_an_organ_system_heading_keeps_the_current_group(self):
+        summary = "عوارض شایع:\nقلبی:\n- تپش قلب در دوزهای بالا"
+        self.assertEqual(adr_facts(summary)["adr_common"], ["تپش قلب در دوزهای بالا"])
+
+    def test_ungrouped_adverse_reactions_are_not_guessed(self):
+        self.assertEqual(adr_facts("- سرگیجه هنگام برخاستن"), {"adr_common": [], "adr_serious": []})
+
+    def test_contra_boxed_puts_the_boxed_warning_first(self):
+        facts = facts_for_ingredient({
+            "contraindications": "- حساسیت شناخته‌شده به دارو",
+            "boxed_warning": "- خطر مرگ جنین در بارداری",
+        })
+        self.assertEqual(facts["contra_boxed"], ["خطر مرگ جنین در بارداری", "حساسیت شناخته‌شده به دارو"])
+
+    def test_build_flashcards_command_replaces_all_facts(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        _rich_ingredient("losartan", "52175")
+        out = StringIO()
+        call_command("build_flashcards", stdout=out)
+        self.assertIn("saved 4 flashcard facts", out.getvalue())  # 2 sections x fa/en
+        call_command("build_flashcards", stdout=StringIO())
+        self.assertEqual(FlashcardFact.objects.count(), 4)

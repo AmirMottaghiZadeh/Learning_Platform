@@ -282,16 +282,20 @@ Both apps are fully built and migrated. Their routes are wired only when
 otherwise the maintenance router answers every path with
 `503 {"code": "FEATURE_NOT_AVAILABLE"}`.
 
-### Flashcards (`apps.flashcards`) — Leitner, no card-content table
+### Flashcards (`apps.flashcards`) — Leitner, card facts from `build_flashcards`
 
-A card is `(learner, ingredient)`; front/back are derived from the ingredient's
-profile at serialization time. Boxes 1..5; intervals 0 / 3 / 7 / 16 / 35 days.
+A card is `(learner, ingredient)`. What it says comes from `FlashcardFact`,
+rebuilt by `python manage.py build_flashcards` from the profile summaries, in
+five sections: `indication`, `adr_common`, `adr_serious`, `dosage_forms`,
+`contra_boxed` (boxed warning, then contraindications). Boxes 1..5; intervals
+0 / 3 / 7 / 16 / 35 days.
 
 - **POST `/flashcards/seed/`** — create box-1 cards for the top ingredients that
-  have ≥2 summarised card-back fields; idempotent. → `{created, deck_size}`
+  have ≥2 card sections; idempotent. → `{created, deck_size}`
 - **GET `/flashcards/`** — up to 20 cards with `due_at <= now`:
-  `[{ id, drug_slug, box, due_at, times_seen, front_fa, front_en, back_fa, back_en }]`
-  (`back_*` joins up to 3 sections: mechanism / dose / warning …)
+  `[{ id, drug_slug, box, due_at, times_seen, front_fa, front_en, back_fields_fa, back_fields_en }]`
+  where each `back_fields_*` entry is one section in the order above:
+  `{ field, label, tone, items: [≤3 facts], text: items joined by "\n" }`
 - **GET `/flashcards/boxes/`** — `[{ box, count, due, next_due_at }]` for boxes 1..5
 - **POST `/flashcards/{id}/review/`** — `{rating: "easy"|"hard"}`; `easy` → box+1,
   `hard` → box−1, reschedules by the new box's interval, and calls
@@ -300,10 +304,11 @@ profile at serialization time. Boxes 1..5; intervals 0 / 3 / 7 / 16 / 35 days.
 
 ### Quiz (`apps.quiz`) — server-scored, feeds progress + mistakes
 
-First-pass generator: ATC drug-class identification (drug→class and class→drug),
-4 options each. Category narrows the drug pool (`antibiotics`→J, `cardio`→C,
-`interactions`→drugs with interaction text, `general`→any). A richer generator
-(contraindications / dosing / interactions) is a later pass.
+Questions come from a pre-built bank (`BankQuestion`), rebuilt by
+`python manage.py build_question_bank` from the flashcard facts (run
+`build_flashcards` first): up to 10 four-option questions per drug, 2 from each
+of the five card sections, distractors from same-ATC-class drugs. A question's
+`field` is its card section.
 
 - **POST `/quiz/start/`** — `{category, count}` (count ∈ 5|10|15|20) →
   `{ id, category, question_count, questions: [{ id, order, prompt_fa, prompt_en,

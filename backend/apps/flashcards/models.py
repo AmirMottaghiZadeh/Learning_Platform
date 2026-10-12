@@ -1,8 +1,10 @@
 """Leitner flashcards.
 
-There is no card-content table: a card is a learner + an ingredient, and the
-front/back are derived from the ingredient's profile at serialization time.
-`box` is the Leitner level (1..5); `due_at` is when it next comes up.
+A card is a learner + an ingredient: `box` is the Leitner level (1..5),
+`due_at` when it next comes up. What the card says lives in FlashcardFact --
+each drug's facts in the five card sections (apps.flashcards.sections),
+extracted once by the build_flashcards command rather than re-derived from
+the profile summaries on every request.
 """
 
 from datetime import timedelta
@@ -10,6 +12,8 @@ from datetime import timedelta
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
+from .sections import SECTION_CHOICES
 
 # Days a card waits after landing in each box (index 0 unused).
 BOX_INTERVAL_DAYS = {1: 0, 2: 3, 3: 7, 4: 16, 5: 35}
@@ -54,3 +58,37 @@ class LeitnerCard(models.Model):
         self.due_at = timezone.now() + timedelta(days=BOX_INTERVAL_DAYS[self.box])
         self.times_seen += 1
         self.last_reviewed_at = timezone.now()
+
+
+class FlashcardFact(models.Model):
+    """One fact on a drug's card back, in one of the five card sections --
+    rebuilt wholesale by build_flashcards, and the same facts the quiz
+    question bank asks about (apps.quiz.bank_generator)."""
+
+    LANG_CHOICES = [("fa", "Persian"), ("en", "English")]
+
+    ingredient = models.ForeignKey(
+        "drugs.Ingredient",
+        on_delete=models.CASCADE,
+        related_name="flashcard_facts",
+    )
+    section = models.CharField(max_length=20, choices=SECTION_CHOICES)
+    lang = models.CharField(max_length=2, choices=LANG_CHOICES)
+    # Source order within (ingredient, section, lang).
+    order = models.PositiveSmallIntegerField()
+    text = models.TextField()
+
+    class Meta:
+        ordering = ["ingredient_id", "section", "lang", "order"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["ingredient", "section", "lang", "order"],
+                name="flashcards_unique_fact_slot",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["section", "lang"], name="flashcards_fact_section_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.ingredient_id}:{self.section}:{self.lang}#{self.order}"

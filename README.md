@@ -34,8 +34,8 @@ correctness, scoring, streak/XP, review scheduling, mistake attribution.
 | `drugs` | `Ingredient` / `IngredientProfileSection` / `AtcCode` / `AtcCategory`; `import_openfda` loads the OpenFDA pipeline SQLite; `load_atc_reference` seeds the bilingual ATC tree |
 | `lessons` | ATC taxonomy → chapters (drug + section content), per-chapter progress |
 | `progress` | `LearnerProgress` (xp, streak, totals), `DailyStudy`, `Mistake`, `StudyPlan`; the `/me/*` endpoints |
-| `flashcards` | Leitner cards derived from ingredient profiles — **locked** behind `FLASHCARDS_API_ENABLED` |
-| `quiz` | server-scored ATC quiz, feeds progress + mistakes — **locked** behind `QUIZ_API_ENABLED` |
+| `flashcards` | Leitner cards; `build_flashcards` extracts each drug's card facts (5 sections) — **locked** behind `FLASHCARDS_API_ENABLED` |
+| `quiz` | server-scored quiz from a question bank built off the card facts (`build_question_bank`), feeds progress + mistakes — **locked** behind `QUIZ_API_ENABLED` |
 | `uptodate` | read-only search + article API over the bundled UpToDate SQLite snapshot (no models); 503 when the snapshot is absent |
 | `data_quality_center` | internal staff tool to fill in section summaries — mounts only when `DATA_QUALITY_CENTER_ENABLED` |
 
@@ -70,6 +70,8 @@ cp .env.example .env          # point DATABASE_URL at your Postgres
 python manage.py migrate
 python manage.py load_atc_reference
 python manage.py import_openfda            # needs the OpenFDA pipeline SQLite
+python manage.py build_flashcards          # card facts, from the profile summaries
+python manage.py build_question_bank       # quiz bank, from the card facts
 python manage.py runserver
 ```
 

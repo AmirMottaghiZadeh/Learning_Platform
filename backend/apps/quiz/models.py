@@ -1,9 +1,17 @@
 from django.conf import settings
 from django.db import models
 
+from apps.flashcards.sections import CARD_SECTIONS, SECTION_CHOICES
+
 COUNT_CHOICES = [5, 10, 15, 20]
 
-BANK_FIELD_CHOICES = [
+# Bank questions come only from the five flashcard sections, built from the
+# exact facts build_flashcards extracted (apps.quiz.bank_generator).
+BANK_FIELD_CHOICES = SECTION_CHOICES
+
+# The clinical fields the bank was built from before the flashcard sections
+# -- still valid on QuizQuestion so past sessions keep their field tag.
+LEGACY_FIELD_CHOICES = [
     ("indications_and_usage", "Indication"),
     ("adverse_reactions", "Adverse reactions"),
     ("warnings", "Warnings"),
@@ -12,13 +20,9 @@ BANK_FIELD_CHOICES = [
 ]
 
 # field -> (fa label, tone) -- tone matches the frontend's SectionTone /
-# toneColors() used for drug-profile sections on the lesson screen, so a
-# question's field tag (and the results breakdown) reads with the same
-# color language a learner already knows from Lessons. Mechanism is
-# deliberately not a question field (too abstract to quiz as a discrete
-# fact); contraindications uses the same "deny" tone the lesson screen gives
-# its contraindications section (apps.drugs.serializers.LESSON_SECTION_MAP).
+# toneColors(), the same colors the flashcard back gives each section.
 FIELD_META = {
+    **{key: (fa, tone) for key, fa, _en, tone in CARD_SECTIONS},
     "indications_and_usage": ("اندیکاسیون", "info"),
     "adverse_reactions": ("عوارض جانبی", "caution"),
     "warnings": ("هشدار", "caution"),
@@ -114,7 +118,9 @@ class QuizQuestion(models.Model):
     # Which clinical field this question was drawn from -- drives the
     # field tag on the question card and the results' per-field breakdown.
     # Blank for anything not sourced from the bank.
-    field = models.CharField(max_length=40, choices=BANK_FIELD_CHOICES, blank=True)
+    field = models.CharField(
+        max_length=40, choices=BANK_FIELD_CHOICES + LEGACY_FIELD_CHOICES, blank=True
+    )
     # The bank row this question was copied from, so the "explain more"
     # panel can pull sibling facts about the same (ingredient, field) --
     # null if that row is later deleted (a bank rebuild), or for questions

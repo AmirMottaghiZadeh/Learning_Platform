@@ -8,11 +8,6 @@ from apps.lessons.selectors import read_slugs_for_user
 
 from .models import LeitnerCard
 
-# Fields whose summaries make a good card back, in the order they're joined
-# -- the same five the question bank draws on (apps.quiz.bank_generator),
-# minus mechanism: too abstract for a one-line recall card.
-BACK_FIELDS = ["indications_and_usage", "adverse_reactions", "warnings",
-               "contraindications", "dosage_and_administration"]
 DEFAULT_SEED_LIMIT = 40
 
 
@@ -22,20 +17,17 @@ def due_card_count(user, at=None):
 
 
 def _with_enough_content():
-    """Ingredients with at least two summarised back-of-card sections -- enough
-    content for a two-sided card -- decided in the database, so seeding never
-    loads profile sections (the whole table, raw label text included) just to
-    count them."""
-    summarised = Count(
-        "sections",
-        filter=Q(sections__field__in=BACK_FIELDS)
-        & (Q(sections__summary_fa__gt="") | Q(sections__summary_en__gt="")),
+    """Ingredients whose card has at least two sections (build_flashcards'
+    Persian facts) -- enough content for a two-sided card -- decided in the
+    database."""
+    sections = Count(
+        "flashcard_facts__section", filter=Q(flashcard_facts__lang="fa"), distinct=True
     )
-    return Ingredient.objects.annotate(n_summarised=summarised).filter(n_summarised__gte=2)
+    return Ingredient.objects.annotate(n_sections=sections).filter(n_sections__gte=2)
 
 
 def _seed_candidates(user, limit):
-    """Ingredient ids with enough summarised content to make a two-sided card
+    """Ingredient ids with enough card content to make a two-sided card
     -- the drugs the learner has actually finished reading in Lessons first
     (reviewing what you just studied is the point of spaced repetition, not
     an arbitrary global "most prescribed" list), falling back to the
