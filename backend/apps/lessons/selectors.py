@@ -20,14 +20,6 @@ from .models import ChapterProgress, ReadDrug
 
 _CATEGORY_BY_KEY = {c["key"]: c for c in CATEGORIES}
 
-# Which profile fields become "exam points" for a chapter, and their tone.
-EXAM_POINT_FIELDS = [
-    ("boxed_warning", "boxed"),
-    ("contraindications", "deny"),
-    ("warnings", "caution"),
-]
-
-
 def _l2_slug_index():
     """{ 'N02': [ingredient slugs...], ... } for every L2 that has ingredients."""
     index = defaultdict(list)
@@ -190,14 +182,11 @@ def get_chapter(user, atc_code):
     except AtcCategory.DoesNotExist:
         return None
 
+    # Just the drug list -- each drug's lesson text is fetched on its own
+    # (get_lesson_drug) when the learner opens it.
     ingredients = (
         Ingredient.objects.filter(atc_codes__code__startswith=atc_code)
-        # raw_text (the full label text) is most of each section row and the
-        # chapter payload never includes it -- don't pull it from the DB.
-        .prefetch_related(
-            "atc_codes",
-            Prefetch("sections", queryset=IngredientProfileSection.objects.defer("raw_text")),
-        )
+        .prefetch_related("atc_codes")
         .distinct()
     )
     if not ingredients:
@@ -221,24 +210,14 @@ def get_chapter(user, atc_code):
     return category, ingredients, progress, read_slugs
 
 
-def chapter_exam_points(ingredients):
-    points = []
-    for ingredient in ingredients:
-        by_field = {s.field: s for s in ingredient.sections.all()}
-        for field, tone in EXAM_POINT_FIELDS:
-            section = by_field.get(field)
-            if not section:
-                continue
-            fa = (section.summary_fa or "").strip()
-            en = (section.summary_en or "").strip()
-            if not fa and not en:
-                continue
-            points.append({
-                "drug_name": ingredient.name,
-                "drug_slug": ingredient.slug,
-                "field": field,
-                "tone": tone,
-                "point_fa": fa,
-                "point_en": en,
-            })
-    return points
+def get_lesson_drug(slug):
+    """One drug with what its lesson needs, or None. raw_text (the full label
+    text, most of each section row) is never part of a lesson -- not read."""
+    return (
+        Ingredient.objects.filter(slug=slug)
+        .prefetch_related(
+            "atc_codes",
+            Prefetch("sections", queryset=IngredientProfileSection.objects.defer("raw_text")),
+        )
+        .first()
+    )

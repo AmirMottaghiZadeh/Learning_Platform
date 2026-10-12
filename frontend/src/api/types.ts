@@ -53,9 +53,9 @@ export interface IngredientListItem {
 
 export type SectionTone = "info" | "deny" | "boxed" | "caution" | "special";
 
-/** Per-field flags for a drug in a lesson chapter; the text itself is in
+/** Per-field flags for a drug's lesson; the text itself is in
  * `lesson_sections`. */
-export interface ChapterSection {
+export interface LessonDrugSection {
   field: string;
   label: string;
   has_summary: boolean;
@@ -72,9 +72,17 @@ export interface LessonSection {
   has_summary: boolean;
 }
 
-export interface ChapterDrug extends IngredientListItem {
-  sections: ChapterSection[];
+/** One drug's lesson -- GET /lessons/drugs/<slug>/, fetched when it's opened. */
+export interface LessonDrug extends IngredientListItem {
+  sections: LessonDrugSection[];
   lesson_sections: LessonSection[];
+}
+
+/** A chapter's drug list entry: names only, the lesson comes per drug. */
+export interface ChapterDrug {
+  slug: string;
+  name: string;
+  pharm_classes: string[];
 }
 
 export interface Subgroup {
@@ -95,15 +103,6 @@ export interface LessonGroup {
   category_name_fa: string;
   category_name_en: string;
   subgroups: Subgroup[];
-}
-
-export interface ExamPoint {
-  drug_name: string;
-  drug_slug: string;
-  field: string;
-  tone: SectionTone;
-  point_fa: string;
-  point_en: string;
 }
 
 export interface ChapterProgress {
@@ -134,7 +133,6 @@ export interface Chapter {
   anatomical_name_fa: string;
   anatomical_name_en: string;
   drugs: ChapterDrug[];
-  exam_points: ExamPoint[];
   progress: ChapterProgress;
 }
 

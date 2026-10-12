@@ -8,11 +8,10 @@ Two views of the same `IngredientProfileSection` rows:
   with bilingual titles, `tone` for colour, and `text_{fa,en}` taken from the
   section summaries. Mirrors `FIELD_MAP` + `LESSON_EXTRA` in the design file.
 
-A lesson chapter sends every drug in its class at once, so it uses
-`ChapterDrugSerializer`: `lesson_sections` unchanged, but `sections` cut down
-to the per-field flags the lesson screen reads. The full shape repeats every
-summary already in `lesson_sections` and adds the raw label text, which made a
-large chapter (L01, 235 drugs) a 16 MB response.
+The lesson screen fetches one drug at a time with `LessonDrugSerializer`:
+`lesson_sections` unchanged, but `sections` cut down to the per-field flags
+the screen reads. The full shape repeats every summary already in
+`lesson_sections` and adds the raw label text.
 """
 
 from drf_spectacular.utils import extend_schema_field
@@ -87,7 +86,7 @@ class ProfileSectionSerializer(serializers.ModelSerializer):
         ]
 
 
-class ChapterSectionSerializer(serializers.ModelSerializer):
+class LessonDrugSectionSerializer(serializers.ModelSerializer):
     """Per-field flags only -- the lesson screen reads `field` + `has_summary`
     (boxed-warning / abuse badges); the text itself is in `lesson_sections`."""
 
@@ -114,7 +113,7 @@ class IngredientDetailSerializer(IngredientListSerializer):
     sections = serializers.SerializerMethodField()
     lesson_sections = serializers.SerializerMethodField()
 
-    # The shape of each `sections` entry; ChapterDrugSerializer swaps in the
+    # The shape of each `sections` entry; LessonDrugSerializer swaps in the
     # slim one.
     section_serializer_class = ProfileSectionSerializer
 
@@ -155,11 +154,11 @@ class IngredientDetailSerializer(IngredientListSerializer):
         return rows
 
 
-class ChapterDrugSerializer(IngredientDetailSerializer):
-    """A drug inside a lesson chapter: see the module docstring."""
+class LessonDrugSerializer(IngredientDetailSerializer):
+    """One drug's lesson (GET /lessons/drugs/<slug>/): see the module docstring."""
 
-    section_serializer_class = ChapterSectionSerializer
+    section_serializer_class = LessonDrugSectionSerializer
 
-    @extend_schema_field(ChapterSectionSerializer(many=True))
+    @extend_schema_field(LessonDrugSectionSerializer(many=True))
     def get_sections(self, obj):
         return super().get_sections(obj)

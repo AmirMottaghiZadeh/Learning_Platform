@@ -16,8 +16,8 @@ BANK_FIELD_CHOICES = [
 # question's field tag (and the results breakdown) reads with the same
 # color language a learner already knows from Lessons. Mechanism is
 # deliberately not a question field (too abstract to quiz as a discrete
-# fact); contraindications uses the same "deny" tone the lesson screen's own
-# exam-point builder gives it (apps.lessons.selectors.EXAM_POINT_FIELDS).
+# fact); contraindications uses the same "deny" tone the lesson screen gives
+# its contraindications section (apps.drugs.serializers.LESSON_SECTION_MAP).
 FIELD_META = {
     "indications_and_usage": ("اندیکاسیون", "info"),
     "adverse_reactions": ("عوارض جانبی", "caution"),

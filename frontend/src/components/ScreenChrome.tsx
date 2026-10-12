@@ -38,6 +38,28 @@ export function ChromeButton({
   );
 }
 
+/** The EN/FA switch -- the only place the app's language changes, so every
+ * screen that shows language-dependent content carries it in its header. */
+export function LangToggleButton() {
+  const { colors } = useTheme();
+  const { t, toggle } = useLang();
+  return (
+    <Pressable
+      onPress={toggle}
+      style={{
+        backgroundColor: colors.softBg,
+        borderRadius: 999,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+      }}
+    >
+      <AppText weight="800" size={12} color={colors.accent}>
+        {t("langSwitch")}
+      </AppText>
+    </Pressable>
+  );
+}
+
 /** Title row + theme / language toggles, matching the design's screen headers. */
 export function ScreenChrome({
   title,
@@ -49,7 +71,7 @@ export function ScreenChrome({
   help?: HelpKey;
 }) {
   const { colors } = useTheme();
-  const { t, isFa, row, toggle: toggleLang } = useLang();
+  const { isFa, row } = useLang();
   const [helpOpen, setHelpOpen] = useState(false);
 
   return (
@@ -82,19 +104,7 @@ export function ScreenChrome({
           </ChromeButton>
         ) : null}
         <ThemeToggleButton variant="soft" size={30} />
-        <Pressable
-          onPress={toggleLang}
-          style={{
-            backgroundColor: colors.softBg,
-            borderRadius: 999,
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-          }}
-        >
-          <AppText weight="800" size={12} color={colors.accent}>
-            {t("langSwitch")}
-          </AppText>
-        </Pressable>
+        <LangToggleButton />
       </View>
       {help ? (
         <HelpSheet helpKey={helpOpen ? help : null} onClose={() => setHelpOpen(false)} />

@@ -4,10 +4,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.exceptions import PlatformAPIError
+from apps.drugs.serializers import LessonDrugSerializer
 
 from .selectors import (
-    chapter_exam_points,
     get_chapter,
+    get_lesson_drug,
     lesson_groups,
     mark_drug_read,
     topics_for_chapter,
@@ -46,7 +47,6 @@ def _chapter_payload(category, ingredients, progress, read_slugs):
         "anatomical_name_fa": category.parent.name_fa if category.parent else "",
         "anatomical_name_en": category.parent.name_en if category.parent else "",
         "drugs": list(ingredients),
-        "exam_points": chapter_exam_points(ingredients),
         "progress": {
             # Globally-read drugs (see apps.lessons.models.ReadDrug), so a
             # drug read via a different chapter it also belongs to (e.g.
@@ -109,3 +109,17 @@ class ChapterView(APIView):
         return Response(
             ChapterSerializer(_chapter_payload(category, ingredients, progress, read_slugs)).data
         )
+
+
+class LessonDrugView(APIView):
+    """One drug's lesson, fetched when the learner opens it from a chapter's
+    list (which carries names only)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=LessonDrugSerializer)
+    def get(self, request, slug):
+        drug = get_lesson_drug(slug)
+        if drug is None:
+            raise PlatformAPIError("No drug with that slug.", code="NOT_FOUND", status_code=404)
+        return Response(LessonDrugSerializer(drug).data)

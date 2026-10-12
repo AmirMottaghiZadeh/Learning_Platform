@@ -71,7 +71,7 @@ class LessonTaxonomyTests(TestCase):
             self.assertEqual(group["category_code"], "cardio-blood")
             self.assertEqual(group["category_name_fa"], "قلب، عروق و خون")
 
-    def test_chapter_returns_drugs_exam_points_and_topics(self):
+    def test_chapter_returns_drug_names_and_topics(self):
         res = self.client.get("/api/v1/lessons/chapters/c07/")  # case-insensitive
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["name_fa"], "مسدودکننده‌های بتا")
@@ -86,39 +86,47 @@ class LessonTaxonomyTests(TestCase):
         # The real ATC anatomical group survives, unmodified, for rigour.
         self.assertEqual(res.data["anatomical_name_fa"], "قلب و عروق")
 
-        points = res.data["exam_points"]
-        self.assertEqual(len(points), 1)
-        self.assertEqual(points[0]["field"], "contraindications")
-        self.assertEqual(points[0]["tone"], "deny")
-        self.assertEqual(points[0]["drug_name"], "metoprolol")
-
-    def test_chapter_drugs_carry_lesson_text_but_not_the_raw_label(self):
+    def test_chapter_lists_names_only_not_lesson_text(self):
+        # The list screen shows names; each drug's lesson is fetched on its
+        # own when opened, so the chapter carries no lesson content at all.
         res = self.client.get("/api/v1/lessons/chapters/C07/")
-        drug = next(d for d in res.data["drugs"] if d["name"] == "metoprolol")
+        for drug in res.data["drugs"]:
+            self.assertEqual(set(drug), {"slug", "name", "pharm_classes"})
+        self.assertNotIn("exam_points", res.data)
 
-        # The lesson text the screen shows is complete...
-        lesson = {s["field"]: s for s in drug["lesson_sections"]}
+    def test_lesson_drug_returns_the_lesson_text_but_not_the_raw_label(self):
+        res = self.client.get(f"/api/v1/lessons/drugs/{self.metoprolol.slug}/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["name"], "metoprolol")
+        self.assertEqual([a["code"] for a in res.data["atc_codes"]], ["C07AB02"])
+
+        lesson = {s["field"]: s for s in res.data["lesson_sections"]}
         self.assertEqual(lesson["contraindications"]["text_fa"], "برادی‌کاردی شدید.")
         self.assertEqual(lesson["contraindications"]["text_en"], "Severe bradycardia.")
 
-        # ...while `sections` is just the per-field flags: no raw label text
-        # and no second copy of the summaries.
-        for section in drug["sections"]:
+        # `sections` is just the per-field flags: no raw label text and no
+        # second copy of the summaries.
+        for section in res.data["sections"]:
             self.assertEqual(set(section), {"field", "label", "has_summary"})
-        flags = {s["field"]: s["has_summary"] for s in drug["sections"]}
-        self.assertTrue(flags["contraindications"])
+        self.assertTrue({s["field"]: s["has_summary"] for s in res.data["sections"]}["contraindications"])
 
-    def test_chapter_query_count_does_not_grow_with_drug_count(self):
-        # raw_text is deferred for the chapter; reading it per section would
-        # turn the prefetch into one extra query per row.
+    def test_unknown_lesson_drug_is_404(self):
+        self.assertEqual(self.client.get("/api/v1/lessons/drugs/no-such-drug/").status_code, 404)
+
+    def test_query_counts_do_not_grow_with_the_data(self):
+        # The chapter list must not touch per-drug rows, and the drug lesson
+        # defers raw_text -- reading it per section would add a query per row.
         for i in range(10):
             ing = _ingredient(f"betablocker{i}", f"9{i:03d}", f"C07AA{i:02d}")
-            IngredientProfileSection.objects.create(
-                ingredient=ing, field="contraindications", raw_text="x", summary_fa="ف", summary_en="e",
-            )
+            for field in ("contraindications", "warnings", "adverse_reactions"):
+                IngredientProfileSection.objects.create(
+                    ingredient=ing, field=field, raw_text="x", summary_fa="ف", summary_en="e",
+                )
         self.client.get("/api/v1/lessons/chapters/C07/")  # warm up per-request caches
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(5):
             self.client.get("/api/v1/lessons/chapters/C07/")
+        with self.assertNumQueries(3):
+            self.client.get("/api/v1/lessons/drugs/betablocker0-9000/")
 
     def test_unknown_chapter_is_404(self):
         self.assertEqual(self.client.get("/api/v1/lessons/chapters/C03/").status_code, 404)

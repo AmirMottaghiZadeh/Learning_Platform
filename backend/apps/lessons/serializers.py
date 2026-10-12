@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from apps.drugs.serializers import ChapterDrugSerializer
 
 
 class SubgroupSerializer(serializers.Serializer):
@@ -39,13 +38,15 @@ class ChapterProgressSerializer(serializers.Serializer):
     last_opened_at = serializers.DateTimeField()
 
 
-class ExamPointSerializer(serializers.Serializer):
-    drug_name = serializers.CharField()
-    drug_slug = serializers.CharField()
-    field = serializers.CharField()
-    tone = serializers.CharField()
-    point_fa = serializers.CharField()
-    point_en = serializers.CharField()
+class ChapterDrugSerializer(serializers.Serializer):
+    """A chapter's drug list entry: just what the list shows. The lesson text
+    is fetched per drug (GET /lessons/drugs/<slug>/) when one is opened --
+    sending every drug's full lesson with the list made a large chapter
+    several MB."""
+
+    slug = serializers.CharField()
+    name = serializers.CharField()
+    pharm_classes = serializers.ListField(child=serializers.CharField())
 
 
 class ChapterSerializer(serializers.Serializer):
@@ -64,7 +65,6 @@ class ChapterSerializer(serializers.Serializer):
     anatomical_name_fa = serializers.CharField()
     anatomical_name_en = serializers.CharField()
     drugs = ChapterDrugSerializer(many=True)
-    exam_points = ExamPointSerializer(many=True)
     progress = ChapterProgressSerializer()
 
 

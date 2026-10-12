@@ -170,17 +170,9 @@ populated L2 subgroup.
     { "code": "cv-arrhythmia", "name_fa": "…", "name_en": "…" }
   ],
   "anatomical_name_fa": "دستگاه قلب و عروق", "anatomical_name_en": "…",  // true ATC L1, for rigour
-  "drugs": [ {                          // list fields + lesson_sections, as in
-                                         //   /drugs/{slug}/, but `sections` slimmed
-                                         //   to the per-field flags (no summaries,
-                                         //   no raw_text -- lesson_sections has the text)
-      "sections": [ { "field": "boxed_warning", "label": "Boxed warning", "has_summary": true } ],
-      "lesson_sections": [ … ] } ],
-  "exam_points": [                       // built from the chapter's boxed_warning /
-    { "drug_name": "acebutolol", "drug_slug": "acebutolol-149",
-      "field": "contraindications",      //   contraindications / warnings summaries
-      "tone": "deny",                    // boxed | deny | caution
-      "point_fa": "…", "point_en": "…" }
+  "drugs": [                             // the list only -- names, no lesson
+    { "slug": "acebutolol-149", "name": "acebutolol",    //   content (see below)
+      "pharm_classes": ["beta-Adrenergic Blocker"] }
   ],
   "progress": { "read_drug_slugs": ["acebutolol-149"], "scroll_pct": 42,
                 "last_opened_at": "…" }
@@ -194,6 +186,22 @@ per-chapter stored list. Reading a drug that carries more than one ATC code
 read everywhere it appears, so re-opening the same drug through a different,
 unrelated chapter shows it already read instead of asking the learner to read
 it again. `scroll_pct`/`last_opened_at` stay per-chapter on `ChapterProgress`.
+
+### `GET /lessons/drugs/{slug}/` — one drug's lesson
+
+Fetched when the learner opens a drug from a chapter's list. 404 (platform
+envelope) for an unknown slug.
+
+```jsonc
+{
+  "rxcui": "149", "name": "acebutolol", "slug": "acebutolol-149", "n_products": 7,
+  "n_source_records": 30, "pharm_classes": ["…"], "atc_codes": [{ "code": "C07AB04", "name": "…", "level": 5 }],
+  "sections": [                          // per-field flags only (badges); no
+    { "field": "boxed_warning", "label": "Boxed warning", "has_summary": true }
+  ],                                     //   summaries or raw_text
+  "lesson_sections": [ … ]               // as in /drugs/{slug}/ -- the lesson text
+}
+```
 
 ### `POST /lessons/chapters/{atc_code}/` — record progress
 

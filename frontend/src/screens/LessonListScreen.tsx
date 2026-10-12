@@ -3,7 +3,7 @@ import React from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
 import { lessonsApi } from "@/api/endpoints";
-import { ChromeButton } from "@/components/ScreenChrome";
+import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -26,11 +26,14 @@ export function LessonListScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
       <View style={{ paddingHorizontal: 22, paddingTop: 18 }}>
-        <ChromeButton onPress={goBack} size={30}>
-          <AppText weight="800" size={15} color={colors.ink}>
-            {isFa ? "›" : "‹"}
-          </AppText>
-        </ChromeButton>
+        <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
+          <ChromeButton onPress={goBack} size={30}>
+            <AppText weight="800" size={15} color={colors.ink}>
+              {isFa ? "›" : "‹"}
+            </AppText>
+          </ChromeButton>
+          <LangToggleButton />
+        </View>
 
         {isLoading ? null : isError || !data ? (
           <>

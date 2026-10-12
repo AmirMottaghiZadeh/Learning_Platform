@@ -8,6 +8,7 @@ import {
   Chapter,
   Dashboard,
   LeitnerCard,
+  LessonDrug,
   LessonGroup,
   LexicompDrug,
   LexicompInteraction,
@@ -66,6 +67,7 @@ export const lessonsApi = {
     apiClient.get<Chapter>(`/lessons/chapters/${code}/`).then((r) => r.data),
   saveProgress: (code: string, body: { drug_slug?: string; scroll_pct?: number }) =>
     apiClient.post<Chapter>(`/lessons/chapters/${code}/`, body).then((r) => r.data),
+  drug: (slug: string) => apiClient.get<LessonDrug>(`/lessons/drugs/${slug}/`).then((r) => r.data),
 };
 
 // --- me ---------------------------------------------------------------

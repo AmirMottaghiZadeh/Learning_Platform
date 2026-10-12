@@ -4,7 +4,7 @@ import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, TextInp
 
 import { lessonsApi } from "@/api/endpoints";
 import { LessonSection } from "@/api/types";
-import { ChromeButton } from "@/components/ScreenChrome";
+import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -18,27 +18,32 @@ import { toneColors } from "@/theme/tone";
 // "- " are a bullet list (true for 10 of the 12 clinical fields, e.g. dose,
 // contraindications, adverse reactions), and a line often opens with a short
 // "label: " before its content (e.g. "مکانیسم اثر: ...", "شایع: ...",
-// "نادر: ..."). None of that survived being rendered as one flat AppText
-// block -- wrapped bullet lines ran back into the left margin with no
-// marker, and the label read as part of the sentence. This recovers both
-// instead of inventing structure the source doesn't have.
+// "نادر: ..."). This recovers both instead of inventing structure the source
+// doesn't have.
+//
+// One bullet often carries several such "issue: ..." items run together
+// ("... ۲۰۰ میلی‌گرم دو بار در روز. نارسایی متوسط تا شدید کبدی: منع مصرف
+// دارد."). Each issue after the first starts its own line -- inside the same
+// bullet, so it reads as one item rather than a new paragraph.
 //
 // The two fields that are *not* bulleted (mechanism, and most of pregnancy)
-// are each one dense, unbroken paragraph -- often several distinct sentences
-// run together with no visual separation, which read as a wall of text. For
-// those, each sentence becomes its own line (still one block, just broken
-// at real sentence boundaries), the one piece of structure prose like this
-// actually carries.
-type LessonBlock =
-  | { kind: "bullet"; label: string | null; text: string }
-  | { kind: "paragraph"; label: string | null; sentences: string[] };
+// are each one dense, unbroken paragraph; each sentence becomes its own line
+// there, again within the one block.
+type LessonLine = { label: string | null; text: string };
+type LessonBlock = { kind: "bullet" | "paragraph"; lines: LessonLine[] };
 
 // A label is short, word-based (no digit or colon of its own -- a Persian
 // drug/measurement lines often put a real colon later, e.g. ratios), and
-// immediately followed by its content.
-const LABEL_RE = /^([^\d:：]{1,40}):\s+(.+)$/s;
+// immediately followed by its content. Up to 80 characters: real issue names
+// run that long ("نارسایی متوسط کلیوی (کلیرانس کراتینین ۳۰ تا ۵۰ میلی‌لیتر در
+// دقیقه)"); past that, what precedes a colon is a whole sentence.
+const LABEL_RE = /^([^\d:：]{1,80}):\s+(.+)$/s;
 
-function splitLabel(line: string): { label: string | null; text: string } {
+// The whitespace after a sentence end that's followed by a new "issue:"
+// label -- the point where a run-together bullet gets a line break.
+const ISSUE_BREAK = /(?<=[.!?؟])\s+(?=[^.!?؟:：\n\d]{2,80}[:：]\s)/;
+
+function splitLabel(line: string): LessonLine {
   const m = line.match(LABEL_RE);
   return m ? { label: m[1].trim(), text: m[2].trim() } : { label: null, text: line };
 }
@@ -48,7 +53,14 @@ function splitLabel(line: string): { label: string | null; text: string } {
 // after its period, so it's never mistaken for a sentence break.
 function splitSentences(text: string): string[] {
   return text
-    .split(/(?<=[.!?])\s+(?=\S)/)
+    .split(/(?<=[.!?؟])\s+(?=\S)/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function splitIssues(text: string): string[] {
+  return text
+    .split(ISSUE_BREAK)
     .map((s) => s.trim())
     .filter(Boolean);
 }
@@ -58,9 +70,9 @@ function parseLessonText(text: string): LessonBlock[] {
   let paraLines: string[] = [];
   const flushParagraph = () => {
     if (paraLines.length === 0) return;
-    const { label, text: body } = splitLabel(paraLines.join(" "));
+    const body = paraLines.join(" ");
     const sentences = splitSentences(body);
-    blocks.push({ kind: "paragraph", label, sentences: sentences.length > 0 ? sentences : [body] });
+    blocks.push({ kind: "paragraph", lines: (sentences.length > 0 ? sentences : [body]).map(splitLabel) });
     paraLines = [];
   };
   for (const raw of text.split("\n")) {
@@ -69,7 +81,7 @@ function parseLessonText(text: string): LessonBlock[] {
     const bullet = line.match(/^-\s+(.*)$/);
     if (bullet) {
       flushParagraph();
-      blocks.push({ kind: "bullet", ...splitLabel(bullet[1]) });
+      blocks.push({ kind: "bullet", lines: splitIssues(bullet[1]).map(splitLabel) });
     } else {
       paraLines.push(line);
     }
@@ -78,80 +90,56 @@ function parseLessonText(text: string): LessonBlock[] {
   return blocks;
 }
 
-function LessonBody({
-  text,
-  color,
-  compact,
-  align,
-  writingDirection,
-}: {
-  text: string;
-  color: string;
-  /** The collapsed cross-language box reads smaller than the main body. */
-  compact?: boolean;
-  align?: "left" | "right";
-  writingDirection?: "ltr" | "rtl";
-}) {
+function LessonBody({ text, color }: { text: string; color: string }) {
   const { colors } = useTheme();
   const { row } = useLang();
   const blocks = useMemo(() => parseLessonText(text), [text]);
-  const dirStyle = align ? { textAlign: align, writingDirection } : null;
-  // The bullet marker sits on the leading edge of its own text, which is the
-  // content's direction, not necessarily the app's current UI language --
-  // the collapsed cross-language box below shows text in the *other*
-  // language, with its own explicit writingDirection.
-  const bulletRow = writingDirection ? (writingDirection === "rtl" ? "row-reverse" : "row") : row;
-  const size = compact ? 12.5 : 15;
-  const bulletSize = compact ? 12 : 14.5;
-  const lineHeight = compact ? 20 : 28;
-  const bulletLineHeight = compact ? 20 : 24;
 
   return (
-    <View style={{ gap: compact ? 7 : 10 }}>
+    <View style={{ gap: 10 }}>
       {blocks.map((b, i) => {
-        const itemSize = b.kind === "bullet" ? bulletSize : size;
-        const label = b.label ? (
-          <AppText weight="800" size={itemSize} color={compact ? color : colors.ink}>
-            {b.label}:{" "}
-          </AppText>
-        ) : null;
-        if (b.kind === "bullet") {
-          return (
-            <View key={i} style={{ flexDirection: bulletRow, gap: 8 }}>
-              <AppText weight="700" size={bulletSize} color={colors.accent}>
-                •
-              </AppText>
-              <AppText
-                size={itemSize}
-                weight={compact ? "600" : "500"}
-                color={color}
-                style={[{ flex: 1, lineHeight: bulletLineHeight }, dirStyle]}
-              >
-                {label}
-                {b.text}
-              </AppText>
-            </View>
-          );
-        }
-        return (
-          <View key={i} style={{ gap: compact ? 4 : 6 }}>
-            {b.sentences.map((sentence, j) => (
-              <AppText
-                key={j}
-                size={itemSize}
-                weight={compact ? "600" : "500"}
-                color={color}
-                style={[{ lineHeight }, dirStyle]}
-              >
-                {j === 0 ? label : null}
-                {sentence}
-              </AppText>
+        const isBullet = b.kind === "bullet";
+        const size = isBullet ? 14.5 : 15;
+        // Every line of a block lives in one text node, separated by "\n":
+        // a new line, never the gap between blocks.
+        const body = (
+          <AppText
+            size={size}
+            weight="500"
+            color={color}
+            style={{ flex: isBullet ? 1 : undefined, lineHeight: isBullet ? 24 : 28 }}
+          >
+            {b.lines.map((line, j) => (
+              <React.Fragment key={j}>
+                {j > 0 ? "\n" : null}
+                {line.label ? (
+                  <AppText weight="800" size={size} color={colors.ink}>
+                    {line.label}:{" "}
+                  </AppText>
+                ) : null}
+                {line.text}
+              </React.Fragment>
             ))}
+          </AppText>
+        );
+        if (!isBullet) return <React.Fragment key={i}>{body}</React.Fragment>;
+        return (
+          <View key={i} style={{ flexDirection: row, gap: 8 }}>
+            <AppText weight="700" size={size} color={colors.accent}>
+              •
+            </AppText>
+            {body}
           </View>
         );
       })}
     </View>
   );
+}
+
+/** A section's text in the current language -- or, if this section was only
+ * summarised in the other one, that text rather than an empty card. */
+function sectionText(b: LessonSection, isFa: boolean): string {
+  return (isFa ? b.text_fa : b.text_en) || (isFa ? b.text_en : b.text_fa);
 }
 
 export function LessonDetailScreen() {
@@ -166,19 +154,24 @@ export function LessonDetailScreen() {
   const [progressPct, setProgressPct] = useState(4);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [openEn, setOpenEn] = useState<Record<string, boolean>>({});
   const marked = useRef(false);
 
-  const { data, isLoading } = useQuery({
+  // The chapter (names only, usually already cached by the list screen) is
+  // just for the header; the lesson itself is this one drug's own fetch.
+  const { data } = useQuery({
     queryKey: ["chapter", code],
     queryFn: () => lessonsApi.chapter(code),
     enabled: !!code,
   });
-
-  const drug = data?.drugs.find((d) => d.slug === slug) ?? data?.drugs[0];
+  const drugSlug = slug || data?.drugs[0]?.slug || "";
+  const { data: drug, isLoading } = useQuery({
+    queryKey: ["lesson-drug", drugSlug],
+    queryFn: () => lessonsApi.drug(drugSlug),
+    enabled: !!drugSlug,
+  });
 
   const markRead = useMutation({
-    mutationFn: () => lessonsApi.saveProgress(code, { drug_slug: slug, scroll_pct: 100 }),
+    mutationFn: () => lessonsApi.saveProgress(code, { drug_slug: drugSlug, scroll_pct: 100 }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["chapter", code] });
       queryClient.invalidateQueries({ queryKey: ["lesson-groups"] });
@@ -193,7 +186,7 @@ export function LessonDetailScreen() {
     return list.filter(
       (b) =>
         (isFa ? b.title_fa : b.title_en).toLowerCase().includes(q) ||
-        (isFa ? b.text_fa : b.text_en).toLowerCase().includes(q),
+        sectionText(b, isFa).toLowerCase().includes(q),
     );
   }, [drug, query, isFa]);
 
@@ -202,19 +195,19 @@ export function LessonDetailScreen() {
     const max = contentSize.height - layoutMeasurement.height;
     const pct = max > 0 ? Math.min(100, Math.round((contentOffset.y / max) * 100)) : 100;
     setProgressPct(Math.max(4, pct));
-    if (pct > 92 && !marked.current && slug) {
+    if (pct > 92 && !marked.current && drugSlug) {
       marked.current = true;
       markRead.mutate();
     }
   };
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading || !drugSlug) return <LoadingState />;
 
   const hasBoxed = (drug?.sections ?? []).some((s) => s.field === "boxed_warning" && s.has_summary);
   const hasAbuse = (drug?.sections ?? []).some((s) => s.field === "abuse" && s.has_summary);
   const mins = Math.max(
     3,
-    Math.round((drug?.lesson_sections.reduce((a, b) => a + (isFa ? b.text_fa : b.text_en).length, 0) ?? 0) / 620),
+    Math.round((drug?.lesson_sections.reduce((a, b) => a + sectionText(b, isFa).length, 0) ?? 0) / 620),
   );
 
   return (
@@ -231,11 +224,14 @@ export function LessonDetailScreen() {
               {data ? (isFa ? data.name_fa : data.name_en) : code}
             </AppText>
           </View>
-          <ChromeButton onPress={() => setSearchOpen((v) => !v)} size={30}>
-            <AppText size={14} color={colors.muted}>
-              ⌕
-            </AppText>
-          </ChromeButton>
+          <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>
+            <ChromeButton onPress={() => setSearchOpen((v) => !v)} size={30}>
+              <AppText size={14} color={colors.muted}>
+                ⌕
+              </AppText>
+            </ChromeButton>
+            <LangToggleButton />
+          </View>
         </View>
 
         <View style={{ height: 3, backgroundColor: colors.trackBg, borderRadius: 2, marginTop: 13 }}>
@@ -318,7 +314,6 @@ export function LessonDetailScreen() {
           blocks.map((b) => {
             const tc = toneColors(b.tone, colors);
             const isBox = b.tone !== "info";
-            const enOpen = !!openEn[b.key];
             return (
               <View
                 key={b.key}
@@ -337,38 +332,8 @@ export function LessonDetailScreen() {
                   {isFa ? b.title_fa : b.title_en}
                 </AppText>
                 <View style={{ marginTop: 10 }}>
-                  <LessonBody text={isFa ? b.text_fa : b.text_en} color={colors.proseInk} />
+                  <LessonBody text={sectionText(b, isFa)} color={colors.proseInk} />
                 </View>
-                {(isFa ? b.text_en : b.text_fa).trim() ? (
-                  <>
-                    <Pressable
-                      onPress={() => setOpenEn((s) => ({ ...s, [b.key]: !s[b.key] }))}
-                      style={{ marginTop: 10, flexDirection: row, alignItems: "center", gap: 6 }}
-                    >
-                      <AppText weight="800" size={12.5} color={colors.accent}>
-                        {isFa ? "نسخهٔ انگلیسی" : "نسخهٔ فارسی"} {enOpen ? "▲" : "▼"}
-                      </AppText>
-                    </Pressable>
-                    {enOpen ? (
-                      <View
-                        style={{
-                          backgroundColor: colors.softBg,
-                          borderRadius: 12,
-                          padding: 12,
-                          marginTop: 9,
-                        }}
-                      >
-                        <LessonBody
-                          text={isFa ? b.text_en : b.text_fa}
-                          color={colors.muted}
-                          compact
-                          align={isFa ? "left" : "right"}
-                          writingDirection={isFa ? "ltr" : "rtl"}
-                        />
-                      </View>
-                    ) : null}
-                  </>
-                ) : null}
               </View>
             );
           })
