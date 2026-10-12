@@ -374,10 +374,14 @@ SPECTACULAR_SETTINGS = {
     "PREPROCESSING_HOOKS": [
         "apps.core.schema.filter_versioned_api_paths",
     ],
-    # Two different "kind" choice sets (Medscape article kind, Lexicomp drug
-    # kind) would otherwise get a hashed enum name like "KindA76Enum".
+    # Choice sets that share a field name across apps would otherwise get
+    # hashed enum names like "KindA76Enum": "kind" (Medscape article vs
+    # Lexicomp drug) and "field" (drug-profile clinical fields vs the quiz
+    # bank's subset).
     "ENUM_NAME_OVERRIDES": {
         "MedscapeArticleKindEnum": "apps.medscape.models.Article.KIND_CHOICES",
+        "ClinicalFieldEnum": "apps.drugs.models.CLINICAL_FIELDS",
+        "QuizBankFieldEnum": "apps.quiz.models.BANK_FIELD_CHOICES",
     },
 }
 
