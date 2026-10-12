@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { authApi } from "@/api/endpoints";
 import { configureAuth } from "@/api/client";
 import { AuthTokenResponse, User } from "@/api/types";
-import { queryClient } from "@/api/queryClient";
+import { queryClient, queryPersister } from "@/api/queryClient";
 import { sessionStore } from "./session";
 
 type Status = "loading" | "signedOut" | "signedIn";
@@ -103,7 +103,10 @@ export const useAuth = create<AuthState>((set, get) => ({
       /* best effort */
     }
     await sessionStore.clear();
+    // The query cache is also persisted to device storage -- drop both, so
+    // nothing of this account shows for whoever signs in next.
     queryClient.clear();
+    await queryPersister.removeClient();
     set({
       user: null,
       accessToken: null,

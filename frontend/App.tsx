@@ -1,9 +1,9 @@
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { queryClient } from "@/api/queryClient";
+import { CACHE_BUSTER, CACHE_MAX_AGE, queryClient, queryPersister } from "@/api/queryClient";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { LanguageProvider, useLang } from "@/i18n/LanguageProvider";
 import { Navigator } from "@/navigation/Navigator";
@@ -30,10 +30,16 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <LanguageProvider>
-          <QueryClientProvider client={queryClient}>
+          {/* Answers already fetched survive closing the app: restored from
+              device storage on start, shown at once, refreshed in the
+              background only when stale (see api/queryClient). */}
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{ persister: queryPersister, maxAge: CACHE_MAX_AGE, buster: CACHE_BUSTER }}
+          >
             <StatusBar style="auto" />
             <Gate />
-          </QueryClientProvider>
+          </PersistQueryClientProvider>
         </LanguageProvider>
       </ThemeProvider>
     </SafeAreaProvider>
