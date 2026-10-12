@@ -12,6 +12,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
+import { parseOutline } from "@/utils/uptodateOutline";
 
 type FindResult = { count: number; current: number };
 
@@ -110,6 +111,39 @@ function __utdGotoReference(num) {
 // UpToDate's own markup links everything (cross-references, graphics,
 // citations) through onclick="doOperation({...})" with no such function ever
 // defined -- so none of those links did anything. This is that function.
+// Section ids in body_html (H1, H23, ...) are sequential and say nothing
+// about depth, so the level of each heading comes from the outline instead
+// (same ids, parsed by parseOutline). The id may sit on the heading itself, on
+// an empty anchor inside or just before it, or on a container wrapping the
+// section, so the element whose text matches the outline title is the one
+// that gets the level class.
+function __utdNorm(s) { return (s || "").replace(/\\s+/g, " ").trim().toLowerCase(); }
+function __utdHeadingFor(el, title) {
+  var t = __utdNorm(title);
+  if (!t) return null;
+  function hit(node) { return !!node && node.nodeType === 1 && __utdNorm(node.textContent) === t; }
+  function within(node) {
+    if (!node || !node.querySelectorAll) return null;
+    var all = node.querySelectorAll("*");
+    for (var i = 0; i < all.length; i++) if (hit(all[i])) return all[i];
+    return null;
+  }
+  if (hit(el)) return el;
+  if (hit(el.parentElement)) return el.parentElement;
+  var inner = within(el);
+  if (inner) return inner;
+  var sib = el.nextElementSibling;
+  if (hit(sib)) return sib;
+  return within(sib);
+}
+function __utdMarkHeadings(levels) {
+  Object.keys(levels || {}).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var target = __utdHeadingFor(el, levels[id].title);
+    if (target) target.classList.add("utd-l" + Math.min(3, levels[id].depth + 1));
+  });
+}
 window.doOperation = function (op) {
   if (!op) return;
   if (op.contentIds && op.contentIds.length) {
@@ -125,7 +159,28 @@ window.doOperation = function (op) {
 true;
 `;
 
-function wrap(bodyHtml: string, ink: string, bg: string, accent: string, accentSoft: string) {
+type HeadingLevels = Record<string, { depth: number; title: string }>;
+
+type WrapColors = {
+  ink: string;
+  bg: string;
+  accent: string;
+  accentSoft: string;
+  accent2: string;
+  level3: string;
+  rule: string;
+};
+
+function headingLevels(outlineHtml: string): HeadingLevels {
+  const levels: HeadingLevels = {};
+  for (const node of parseOutline(outlineHtml)) levels[node.id] = { depth: node.depth, title: node.title };
+  return levels;
+}
+
+function wrap(bodyHtml: string, c: WrapColors, levels: HeadingLevels = {}) {
+  const { ink, bg, accent, accentSoft, accent2, level3, rule } = c;
+  // "<" escaped so a title can never close the script tag early.
+  const levelsJson = JSON.stringify(levels).replace(/</g, "\\u003c");
   // The article is UpToDate's own markup, which carries fixed widths, nested
   // tables and long unbroken strings. The page itself must never be wider
   // than the screen: everything is capped at the viewport, long words wrap,
@@ -152,7 +207,18 @@ function wrap(bodyHtml: string, ink: string, bg: string, accent: string, accentS
   mark.utd-hit-current { background:${accent}; color:#fff; }
   a.local, a.medical_review, a.graphic, a.abstract_t { cursor:pointer; }
   .utd-ref-flash { background:${accentSoft}; border-radius:2px; }
-</style></head><body>${bodyHtml}<script>${FIND_SCRIPT}</script></body></html>`;
+  /* Three outline levels, in the app's own palette: section = accent with a
+     rule, subsection = accent2 with a side bar, sub-subsection = the
+     "special" tone. */
+  .utd-l1, .utd-l2, .utd-l3 { display:block; line-height:1.35; }
+  .utd-l1 *, .utd-l2 *, .utd-l3 * { color:inherit; font-size:inherit; font-weight:inherit; }
+  .utd-l1 { font-size:19px; font-weight:800; color:${accent}; margin:30px 0 12px;
+            padding-bottom:7px; border-bottom:2px solid ${rule}; }
+  .utd-l2 { font-size:16.5px; font-weight:800; color:${accent2}; margin:22px 0 8px;
+            padding:2px 0 2px 10px; border-left:3px solid ${accent2}; }
+  .utd-l3 { font-size:15.5px; font-weight:700; color:${level3}; margin:16px 0 6px; }
+</style></head><body>${bodyHtml}<script>${FIND_SCRIPT}
+__utdMarkHeadings(${levelsJson});</script></body></html>`;
 }
 
 export function UptodateArticleScreen() {
@@ -180,9 +246,16 @@ export function UptodateArticleScreen() {
   });
 
   const accentSoft = `${colors.accent}33`;
-  const html = data
-    ? wrap(data.body_html, colors.ink, colors.cardBg, colors.accent, accentSoft)
-    : "";
+  const wrapColors: WrapColors = {
+    ink: colors.ink,
+    bg: colors.cardBg,
+    accent: colors.accent,
+    accentSoft,
+    accent2: colors.accent2,
+    level3: colors.specLabel,
+    rule: `${colors.accent}40`,
+  };
+  const html = data ? wrap(data.body_html, wrapColors, headingLevels(data.outline_html)) : "";
 
   // -- a table/figure/algorithm graphic opened from a reference link -------
   const {
@@ -219,13 +292,7 @@ export function UptodateArticleScreen() {
     enabled: !!graphicTopic,
   });
 
-  const graphicWrappedHtml = wrap(
-    graphicHtml ?? "",
-    colors.ink,
-    colors.cardBg,
-    colors.accent,
-    accentSoft,
-  );
+  const graphicWrappedHtml = wrap(graphicHtml ?? "", wrapColors);
 
   // -- cross-platform bridge to the injected find/goto script --------------
   // Web: a srcDoc iframe is same-origin, so the parent can call functions
