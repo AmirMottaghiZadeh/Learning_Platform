@@ -56,6 +56,24 @@ class FlashcardApiTests(TestCase):
         self.assertEqual(again.data["created"], 0)
         self.assertEqual(LeitnerCard.objects.filter(user=self.user).count(), 2)
 
+    def test_seed_needs_two_summarised_back_of_card_fields(self):
+        # One summarised back field, plus a summary in a field that never
+        # goes on a card (mechanism), plus an empty one: not enough.
+        one = Ingredient.objects.create(name="sparse", rxcui="77", slug="sparse-77", n_products=99)
+        IngredientProfileSection.objects.create(ingredient=one, field="warnings", summary_fa="w", summary_en="w")
+        IngredientProfileSection.objects.create(ingredient=one, field="clinical_pharmacology", summary_fa="m")
+        IngredientProfileSection.objects.create(ingredient=one, field="adverse_reactions", raw_text="only raw")
+
+        seed_deck(self.user)
+        self.assertFalse(LeitnerCard.objects.filter(user=self.user, ingredient=one).exists())
+
+    def test_seed_query_count_does_not_grow_with_the_catalogue(self):
+        for i in range(15):
+            _rich_ingredient(f"extra{i}", f"8{i:03d}")
+        with self.assertNumQueries(5):
+            seed_deck(self.user)
+        self.assertEqual(LeitnerCard.objects.filter(user=self.user).count(), 17)
+
     def test_seed_prioritizes_drugs_the_learner_has_actually_read(self):
         # losartan/metoprolol (setUp) both outrank atenolol by product count,
         # so a limit-of-one seed would normally pick one of them -- marking

@@ -1,5 +1,6 @@
 """Deck seeding and due-count helpers (the latter is read by the dashboard)."""
 
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from apps.drugs.models import Ingredient
@@ -20,17 +21,22 @@ def due_card_count(user, at=None):
     return LeitnerCard.objects.filter(user=user, due_at__lte=at).count()
 
 
-def _has_enough_content(ingredient):
-    summarised = [
-        s for s in ingredient.sections.all()
-        if s.field in BACK_FIELDS and (s.summary_fa or s.summary_en)
-    ]
-    return len(summarised) >= 2
+def _with_enough_content():
+    """Ingredients with at least two summarised back-of-card sections -- enough
+    content for a two-sided card -- decided in the database, so seeding never
+    loads profile sections (the whole table, raw label text included) just to
+    count them."""
+    summarised = Count(
+        "sections",
+        filter=Q(sections__field__in=BACK_FIELDS)
+        & (Q(sections__summary_fa__gt="") | Q(sections__summary_en__gt="")),
+    )
+    return Ingredient.objects.annotate(n_summarised=summarised).filter(n_summarised__gte=2)
 
 
 def _seed_candidates(user, limit):
-    """Ingredients with enough summarised content to make a two-sided card --
-    the drugs the learner has actually finished reading in Lessons first
+    """Ingredient ids with enough summarised content to make a two-sided card
+    -- the drugs the learner has actually finished reading in Lessons first
     (reviewing what you just studied is the point of spaced repetition, not
     an arbitrary global "most prescribed" list), falling back to the
     product-count ranking once their reading history runs out, so a learner
@@ -38,31 +44,20 @@ def _seed_candidates(user, limit):
     still gets a full starter deck."""
     read_slugs = read_slugs_for_user(user)
     ranked = []
-    seen_ids = set()
-
     if read_slugs:
-        read_ingredients = (
-            Ingredient.objects.filter(slug__in=read_slugs)
-            .prefetch_related("sections")
+        ranked = list(
+            _with_enough_content()
+            .filter(slug__in=read_slugs)
             .order_by("name")
+            .values_list("id", flat=True)[:limit]
         )
-        for ingredient in read_ingredients:
-            if _has_enough_content(ingredient):
-                ranked.append(ingredient)
-                seen_ids.add(ingredient.id)
-            if len(ranked) >= limit:
-                return ranked
-
-    qs = (
-        Ingredient.objects.exclude(id__in=seen_ids)
-        .prefetch_related("sections")
-        .order_by("-n_products", "name")
-    )
-    for ingredient in qs:
-        if _has_enough_content(ingredient):
-            ranked.append(ingredient)
-        if len(ranked) >= limit:
-            break
+    if len(ranked) < limit:
+        ranked += list(
+            _with_enough_content()
+            .exclude(id__in=ranked)
+            .order_by("-n_products", "name")
+            .values_list("id", flat=True)[: limit - len(ranked)]
+        )
     return ranked
 
 
@@ -70,10 +65,7 @@ def seed_deck(user, limit=DEFAULT_SEED_LIMIT):
     have = set(
         LeitnerCard.objects.filter(user=user).values_list("ingredient_id", flat=True)
     )
-    created = 0
-    for ingredient in _seed_candidates(user, limit):
-        if ingredient.id in have:
-            continue
-        LeitnerCard.objects.create(user=user, ingredient=ingredient)
-        created += 1
+    new_ids = [i for i in _seed_candidates(user, limit) if i not in have]
+    LeitnerCard.objects.bulk_create([LeitnerCard(user=user, ingredient_id=i) for i in new_ids])
+    created = len(new_ids)
     return {"created": created, "deck_size": LeitnerCard.objects.filter(user=user).count()}
