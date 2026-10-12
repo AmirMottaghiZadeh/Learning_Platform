@@ -60,14 +60,6 @@ export const strings = {
     quizSelectAnOption: "یک گزینه را انتخاب کن",
     quizStartFailed: "شروع آزمون ممکن نشد. دوباره امتحان کن.",
 
-    obSkip: "رد کردن",
-    obNext: "بعدی",
-    obStart: "بزن بریم",
-    obFormTitle: "کمی درباره‌ت بگو",
-    obFormSub: "تا مسیر یادگیری رو دقیقاً برات بچینیم",
-    obFieldLabel: "رشته‌ی تحصیلی",
-    obGoalLabel: "هدف اصلی",
-    obLevelLabel: "سطح فعلی",
 
 
     greeting: "سلام،",
@@ -311,14 +303,6 @@ export const strings = {
     quizSelectAnOption: "Pick an option",
     quizStartFailed: "Couldn't start the quiz. Try again.",
 
-    obSkip: "Skip",
-    obNext: "Next",
-    obStart: "Let's go",
-    obFormTitle: "Tell us about you",
-    obFormSub: "So we can tailor your learning path",
-    obFieldLabel: "Field of study",
-    obGoalLabel: "Main goal",
-    obLevelLabel: "Current level",
 
 
     greeting: "Hi,",

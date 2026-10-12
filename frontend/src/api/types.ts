@@ -1,7 +1,7 @@
 /** Response shapes — mirror `docs/api-contract.md`. */
 
 export type StudyField = "" | "pharmacy" | "medicine" | "nursing";
-export type StudyGoal = "" | "residency" | "final" | "clinical";
+export type StudyGoal = "" | "comprehensive" | "residency" | "final" | "clinical";
 export type StudyLevel = "" | "beginner" | "intermediate" | "advanced";
 
 export interface LearnerProfile {
