@@ -248,6 +248,66 @@ export interface LeitnerCardField {
   text: string;
 }
 
+/** A topic deck's position for one learner -- GET/POST /flashcards/decks/<key>/... */
+export interface DeckNextTopic {
+  key: string;
+  name_fa: string;
+  name_en: string;
+  category_key: string;
+  category_name_fa: string;
+  category_name_en: string;
+}
+
+export interface DeckProgress {
+  total: number;
+  position: number;
+  known: number;
+  hard: number;
+  finished: boolean;
+  next_topic: DeckNextTopic | null;
+}
+
+export interface DeckTopicSummary {
+  key: string;
+  name_fa: string;
+  name_en: string;
+  total: number;
+  position: number;
+  finished: boolean;
+}
+
+export interface DeckCategory {
+  key: string;
+  name_fa: string;
+  name_en: string;
+  topics_finished: number;
+  topics: DeckTopicSummary[];
+}
+
+export interface DeckOverview {
+  topics_finished: number;
+  cards_reviewed: number;
+  categories: DeckCategory[];
+}
+
+export interface DeckCard {
+  drug_slug: string;
+  front_fa: string;
+  front_en: string;
+  back_fields_fa: LeitnerCardField[];
+  back_fields_en: LeitnerCardField[];
+}
+
+export interface TopicDeck extends DeckProgress {
+  key: string;
+  name_fa: string;
+  name_en: string;
+  category_key: string;
+  category_name_fa: string;
+  category_name_en: string;
+  cards: DeckCard[];
+}
+
 export interface LeitnerCard {
   id: number;
   drug_slug: string;

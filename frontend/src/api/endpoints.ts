@@ -7,6 +7,8 @@ import {
   CalculatorListItem,
   Chapter,
   Dashboard,
+  DeckOverview,
+  DeckProgress,
   LeitnerCard,
   LessonDrug,
   LessonGroup,
@@ -27,6 +29,7 @@ import {
   Statistics,
   StudyPlan,
   StudyPlanItem,
+  TopicDeck,
   UptodateArticle,
   UptodateImage,
   UptodateTopic,
@@ -98,6 +101,14 @@ export const flashcardsApi = {
   seed: () => apiClient.post("/flashcards/seed/").then((r) => r.data),
   review: (id: number, rating: "easy" | "hard") =>
     apiClient.post<LeitnerCard>(`/flashcards/${id}/review/`, { rating }).then((r) => r.data),
+  decks: () => apiClient.get<DeckOverview>("/flashcards/decks/").then((r) => r.data),
+  deck: (topic: string) => apiClient.get<TopicDeck>(`/flashcards/decks/${topic}/`).then((r) => r.data),
+  answer: (topic: string, drugSlug: string, rating: "easy" | "hard") =>
+    apiClient
+      .post<DeckProgress>(`/flashcards/decks/${topic}/answer/`, { drug_slug: drugSlug, rating })
+      .then((r) => r.data),
+  restart: (topic: string) =>
+    apiClient.post<DeckProgress>(`/flashcards/decks/${topic}/restart/`).then((r) => r.data),
 };
 
 export const uptodateApi = {
