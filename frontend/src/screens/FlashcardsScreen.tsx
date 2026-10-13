@@ -13,6 +13,7 @@ import { ICONS, IconImage, IconName } from "@/components/primitives/IconImage";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
+import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
@@ -782,6 +783,10 @@ function TopicDeckView({
 
 export function FlashcardsScreen() {
   const [mode, setMode] = useState<Mode>({ kind: "categories" });
+  // Back steps out through the screen's own levels before leaving the tab.
+  useBackInterceptor(mode.kind !== "categories", () =>
+    setMode(mode.kind === "deck" ? { kind: "topics", category: mode.category } : { kind: "categories" }),
+  );
   const decks = useQuery({ queryKey: ["flashcard-decks"], queryFn: flashcardsApi.decks, retry: false });
   const locked = decks.error instanceof ApiError && decks.error.status === 503;
   const { t } = useLang();

@@ -4,6 +4,7 @@ import { authApi } from "@/api/endpoints";
 import { configureAuth } from "@/api/client";
 import { AuthTokenResponse, User } from "@/api/types";
 import { queryClient, queryPersister } from "@/api/queryClient";
+import { useNav } from "@/store/nav";
 import { sessionStore } from "./session";
 
 type Status = "loading" | "signedOut" | "signedIn";
@@ -107,6 +108,8 @@ export const useAuth = create<AuthState>((set, get) => ({
     // nothing of this account shows for whoever signs in next.
     queryClient.clear();
     await queryPersister.removeClient();
+    // Start the next session at Home with no history to go back through.
+    useNav.getState().reset("dashboard");
     set({
       user: null,
       accessToken: null,

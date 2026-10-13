@@ -15,6 +15,7 @@ import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
+import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { layout, spacing } from "@/theme/tokens";
@@ -178,6 +179,7 @@ export function QuizScreen() {
   // A drug self-test has no setup to return to -- its "back" is the real
   // nav history, back to the lesson page it was opened from.
   const backFromRun = ingredientSlug ? goBack : exitToSetup;
+  useBackInterceptor(stage !== "setup" && !ingredientSlug, exitToSetup);
   const goHome = () => setTab("dashboard");
 
   if (locked) {

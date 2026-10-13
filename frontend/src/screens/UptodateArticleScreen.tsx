@@ -10,6 +10,7 @@ import { LoadingState } from "@/components/primitives/LoadingState";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
+import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { parseOutline } from "@/utils/uptodateOutline";
@@ -234,6 +235,7 @@ export function UptodateArticleScreen() {
   const [query, setQuery] = useState("");
   const [find, setFind] = useState<FindResult>({ count: 0, current: 0 });
   const [graphicId, setGraphicId] = useState<string | null>(null);
+  useBackInterceptor(graphicId !== null, () => setGraphicId(null));
   const debouncedQuery = useDebounced(query.trim(), 300);
   const webviewRef = useRef<WebView>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);

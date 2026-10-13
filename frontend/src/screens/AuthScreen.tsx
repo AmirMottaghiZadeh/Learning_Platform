@@ -11,6 +11,7 @@ import { Button } from "@/components/primitives/Button";
 import { IconImage } from "@/components/primitives/IconImage";
 import { Input } from "@/components/primitives/Input";
 import { useLang } from "@/i18n/LanguageProvider";
+import { useBackInterceptor } from "@/navigation/back";
 import { useAuth } from "@/store/auth";
 import { useTheme } from "@/theme/ThemeProvider";
 
@@ -22,6 +23,7 @@ export function AuthScreen() {
   const applyAuth = useAuth((s) => s.applyAuth);
 
   const [mode, setMode] = useState<Mode>("login");
+  useBackInterceptor(mode === "signup", () => setMode("login"));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

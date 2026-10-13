@@ -31,37 +31,45 @@ import { UptodateArticleScreen } from "@/screens/UptodateArticleScreen";
 import { UptodateOutlineScreen } from "@/screens/UptodateOutlineScreen";
 import { UptodateScreen } from "@/screens/UptodateScreen";
 import { useAuth } from "@/store/auth";
+import { goBackInApp, installWebBackGuard } from "@/navigation/back";
 import { useNav } from "@/store/nav";
 
 export function Navigator() {
   const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
 
-  if (status === "loading") return <LoadingState />;
-  if (status === "signedOut") return <AuthScreen />;
-  if (user && !user.profile.is_onboarded) return <OnboardingScreen />;
+  let content: React.ReactNode;
+  if (status === "loading") content = <LoadingState />;
+  else if (status === "signedOut") content = <AuthScreen />;
+  else if (user && !user.profile.is_onboarded) content = <OnboardingScreen />;
+  else {
+    content = (
+      <AppShell>
+        <View style={{ flex: 1 }}>
+          <ScreenTransition>
+            <CurrentScreen />
+          </ScreenTransition>
+          <BottomNav />
+        </View>
+      </AppShell>
+    );
+  }
 
   return (
-    <AppShell>
+    <>
       <AndroidBackButton />
-      <View style={{ flex: 1 }}>
-        <ScreenTransition>
-          <CurrentScreen />
-        </ScreenTransition>
-        <BottomNav />
-      </View>
-    </AppShell>
+      <WebBackGuard />
+      {content}
+    </>
   );
 }
 
 const EXIT_CONFIRM_MS = 2000;
 
-/** Android's hardware/gesture Back: steps back through the in-app history
- * like a native stack would, instead of the OS default of closing the app
- * from any screen. From another tab's root it returns Home first; on Home it
- * takes a second press within EXIT_CONFIRM_MS to leave the app, so a stray
- * swipe doesn't. Open Modals (help sheet, image viewer) get Back before this
- * via their own onRequestClose. */
+/** Android's hardware/gesture Back: one step back inside the app (see
+ * navigation/back) instead of the OS default of closing the app from any
+ * screen. At the app's root it takes a second press within EXIT_CONFIRM_MS to
+ * leave, so a stray swipe doesn't. */
 function AndroidBackButton() {
   const { t } = useLang();
   const lastPress = useRef(0);
@@ -69,15 +77,7 @@ function AndroidBackButton() {
   useEffect(() => {
     if (Platform.OS !== "android") return;
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      const { screen, history, goBack, setTab } = useNav.getState();
-      if (history.length > 0) {
-        goBack();
-        return true;
-      }
-      if (screen !== "dashboard") {
-        setTab("dashboard");
-        return true;
-      }
+      if (goBackInApp()) return true;
       const now = Date.now();
       if (now - lastPress.current < EXIT_CONFIRM_MS) return false; // let the OS close the app
       lastPress.current = now;
@@ -87,6 +87,15 @@ function AndroidBackButton() {
     return () => sub.remove();
   }, [t]);
 
+  return null;
+}
+
+/** The browser's back as an in-app step back -- see installWebBackGuard. */
+function WebBackGuard() {
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
+    return installWebBackGuard(window);
+  }, []);
   return null;
 }
 

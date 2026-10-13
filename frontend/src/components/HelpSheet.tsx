@@ -3,6 +3,7 @@ import { Modal, Pressable, View } from "react-native";
 
 import { AppText } from "@/components/primitives/AppText";
 import { useLang } from "@/i18n/LanguageProvider";
+import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
 
 export type HelpKey =
@@ -55,6 +56,7 @@ export function HelpSheet({
 }) {
   const { colors } = useTheme();
   const { lang, row } = useLang();
+  useBackInterceptor(!!helpKey, onClose);
   if (!helpKey) return null;
   const [title, items] = HELP[helpKey][lang];
 

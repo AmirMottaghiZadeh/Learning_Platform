@@ -13,6 +13,7 @@ import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
+import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
@@ -62,6 +63,17 @@ export function CalculatorDetailScreen() {
   // the learner asks for a result, not on every screen open.
   const [ranges, setRanges] = useState<Map<number, ResultRange>>(new Map());
   const [meaningOpen, setMeaningOpen] = useState(false);
+  // Back from the result returns to editing the answers, and from a later
+  // question to the previous one, before leaving the calculator.
+  useBackInterceptor(results !== null || step > 0, () => {
+    setError(null);
+    if (results !== null) {
+      setResults(null);
+      setStep(0);
+    } else {
+      setStep((s) => Math.max(0, s - 1));
+    }
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["calculator", slug],
