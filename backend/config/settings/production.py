@@ -35,7 +35,7 @@ READINESS_REQUIRE_BROKER = config(
 )
 QUIZ_API_ENABLED = config("QUIZ_API_ENABLED", default=False, cast=bool)
 FLASHCARDS_API_ENABLED = config("FLASHCARDS_API_ENABLED", default=False, cast=bool)
-DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=False, cast=bool)
+DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=True, cast=bool)
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)

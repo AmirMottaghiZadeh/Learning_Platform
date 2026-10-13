@@ -1,37 +1,87 @@
 {% extends "data_quality_center/base.html" %}
-{% block title %}History · DQC{% endblock %}
+{% load dqc_extras %}
+{% block title %}تاریخچه و ممیزی{% endblock %}
 {% block content %}
-<h1 class="page-title">History</h1>
-<p class="page-sub">Every edit request ever submitted, whatever happened to it.</p>
-<table>
-  <thead>
-    <tr>
-      <th>Submitted</th><th>Ingredient · field</th><th>Status</th>
-      <th>Requested by</th><th>Reviewed by</th><th>Reason</th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for r in page %}
-    <tr>
-      <td class="muted">{{ r.created_at|date:"Y-m-d H:i" }}</td>
-      <td>{{ r.ingredient_name }} · <span class="pill">{{ r.get_field_display }}</span></td>
-      <td><span class="status {{ r.status }}">{{ r.get_status_display|upper }}</span></td>
-      <td>{{ r.requested_by_username|default:"—" }}</td>
-      <td class="muted">
-        {% if r.reviewed_by_username %}
-          {{ r.reviewed_by_username }} · {{ r.reviewed_at|date:"Y-m-d H:i" }}
-        {% else %}—{% endif %}
-      </td>
-      <td>{{ r.reason }}</td>
-    </tr>
-  {% empty %}
-    <tr><td colspan="6" class="muted">No edits yet.</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
-<nav class="pager">
-  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">‹ prev</a>{% endif %}
-  <span class="muted">page {{ page.number }} / {{ page.paginator.num_pages }}</span>
-  {% if page.has_next %}<a href="?page={{ page.next_page_number }}">next ›</a>{% endif %}
-</nav>
+<div class="page-head">
+  <div class="grow">
+    <h1 class="page-title">تاریخچه و ممیزی</h1>
+    <p class="page-sub">هر اقدام روی درخواست‌ها با نام، زمان و یادداشت ثبت می‌شود؛ ویرایش‌های اعمال‌شده را سوپریوزر می‌تواند بازگرداند.</p>
+  </div>
+</div>
+<form method="get" style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap">
+  <div class="pills">
+    <a class="pill {% if tab == 'events' %}on{% endif %}" href="?tab=events">رویدادها</a>
+    <a class="pill {% if tab == 'edits' %}on{% endif %}" href="?tab=edits">ویرایش‌های اعمال‌شده</a>
+  </div>
+  <input type="hidden" name="tab" value="{{ tab }}">
+  {% if section_id %}<input type="hidden" name="section" value="{{ section_id }}"><span class="chip tone-teal">فقط یک بخش · <a href="?tab={{ tab }}">همه</a></span>{% endif %}
+  <span style="flex: 1"></span>
+  {% if tab == 'events' %}
+  <select class="input" name="action" style="width: 180px; padding: 6px 10px">
+    <option value="">همهٔ اقدام‌ها</option>
+    {% for key, _ in actions %}<option value="{{ key }}" {% if action == key %}selected{% endif %}>{{ key|action_label }}</option>{% endfor %}
+  </select>
+  {% endif %}
+  <input class="input" name="q" value="{{ search }}" placeholder="ماده یا کاربر…" style="width: 200px; padding: 6px 10px">
+  <button class="btn outline" type="submit" style="padding: 6px 14px">فیلتر</button>
+</form>
+
+<div class="card" style="overflow: hidden">
+  {% if not page.object_list %}
+    <div class="empty"><b>چیزی ثبت نشده</b>هنوز اقدامی با این فیلتر نیست.</div>
+  {% elif tab == 'events' %}
+  <table class="table">
+    <thead><tr><th>زمان</th><th>کاربر</th><th>اقدام</th><th>ماده و بخش</th><th>یادداشت</th><th>IP</th></tr></thead>
+    <tbody>
+    {% for e in page %}
+      <tr>
+        <td class="muted" style="white-space: nowrap">{{ e.created_at|tehran }}</td>
+        <td class="ltr" style="font-weight: 700">{{ e.actor_username|default:"—" }}</td>
+        <td><span class="chip tone-{{ e.action|action_tone }}">{{ e.action|action_label }}</span></td>
+        <td><a href="{% url 'data_quality_center:workspace' e.request.section.ingredient.slug %}?field={{ e.request.field }}"><span class="ltr">{{ e.request.ingredient_name }}</span> · {{ e.field_label }}</a> <span class="faint">#{{ e.request_id|fa_digits }}</span></td>
+        <td class="muted" style="max-width: 300px">{{ e.note|truncatechars:120|default:"—" }}</td>
+        <td class="faint ltr" style="font-size: 12px">{{ e.ip_address|default:"" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <table class="table">
+    <thead><tr><th>زمان</th><th>ماده و بخش</th><th>اپراتور / تأییدکننده</th><th>تغییر</th><th></th></tr></thead>
+    <tbody>
+    {% for edit in page %}
+      <tr>
+        <td class="muted" style="white-space: nowrap">{{ edit.created_at|tehran }}</td>
+        <td><span class="ltr" style="font-weight: 800">{{ edit.ingredient_name }}</span> · {{ edit.field_label }} <span class="faint">#{{ edit.pk|fa_digits }}</span><div class="muted" style="font-size: 12px">{{ edit.reason|truncatechars:90 }}</div></td>
+        <td><span class="ltr">{{ edit.editor_username }}</span> / <span class="ltr">{{ edit.approved_by_username|default:"—" }}</span></td>
+        <td style="max-width: 360px">
+          <details><summary class="muted" style="cursor: pointer; font-size: 12.5px">+{{ edit.diff.added|fa_digits }} −{{ edit.diff.removed|fa_digits }} واژه</summary>
+            <div class="diff" dir="rtl" style="margin-top: 6px">{{ edit.diff.fa|safe|default:"—" }}</div>
+            <div class="diff ltr" style="margin-top: 6px">{{ edit.diff.en|safe|default:"—" }}</div>
+          </details>
+        </td>
+        <td style="text-align: left; min-width: 200px">
+          {% if edit.reverted %}<span class="chip tone-muted">بازگردانده شد</span>
+          {% elif edit.revert_open %}<span class="chip tone-warn">بازگردانی در جریان</span>
+          {% elif user.is_superuser %}
+            <form method="post" action="{% url 'data_quality_center:revert' edit.pk %}" style="display: flex; gap: 6px">
+              {% csrf_token %}
+              <input class="input" name="reason" placeholder="دلیل بازگردانی" minlength="{{ min_reason }}" required style="padding: 5px 8px; font-size: 12px">
+              <button class="btn outline" type="submit" style="padding: 5px 10px; font-size: 12px">بازگردانی</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a class="btn ghost" href="?tab={{ tab }}&q={{ search|urlencode }}&action={{ action }}&section={{ section_id }}&page={{ page.previous_page_number }}">→ قبلی</a>{% endif %}
+  <span>صفحهٔ {{ page.number|fa_digits }} از {{ page.paginator.num_pages|fa_digits }}</span>
+  {% if page.has_next %}<a class="btn ghost" href="?tab={{ tab }}&q={{ search|urlencode }}&action={{ action }}&section={{ section_id }}&page={{ page.next_page_number }}">بعدی ←</a>{% endif %}
+</div>
+{% endif %}
 {% endblock %}

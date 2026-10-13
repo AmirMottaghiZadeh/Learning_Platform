@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 
 from apps.drugs.models import CLINICAL_FIELDS
 
@@ -17,6 +18,15 @@ class SectionEdit(models.Model):
         "drugs.IngredientProfileSection",
         on_delete=models.CASCADE,
         related_name="edits",
+    )
+    # The request this edit applied -- null only for rows written before
+    # requests were linked.
+    request = models.ForeignKey(
+        "SectionEditRequest",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="applied_edits",
     )
     editor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -59,23 +69,44 @@ class SectionEdit(models.Model):
 
 
 class SectionEditRequest(models.Model):
-    """One operator's proposed edit, awaiting (or resolved by) superuser
-    review -- the two-step gate in front of `SectionEdit`. Nothing here
-    touches the live `IngredientProfileSection` until `approve()` runs;
-    `reject()` just closes the request out. Unlike `SectionEdit` this row
-    *is* mutable -- `status`/`reviewed_*` are the whole point of it -- but
-    the proposed content (`before_*`/`after_*`/`reason`) is only ever set
-    once, at creation.
+    """One operator's proposed change to a section's summaries, carried
+    through review -- the gate in front of `SectionEdit`:
+
+        draft --submit--> pending --approve--> approved (applied)
+          ^                  |  \\--reject---> rejected
+          |                  |   \\--request changes--> changes_requested
+          +----withdraw------+                          (edited, resubmitted)
+        draft / changes_requested --discard--> discarded
+
+    The proposed content (`after_*`, `reason`) is editable only while the
+    request is a draft or has been sent back for changes; once pending it is
+    frozen until a reviewer acts. `before_*` is the live text the proposal
+    was made against -- taken when the draft starts and refreshed at each
+    submission, so approval can refuse to overwrite a section that changed
+    in the meantime. Nothing touches the live section until approval.
+
+    Every transition after the first submission is written to
+    `ReviewEvent`; a draft that was never submitted has no history and can
+    simply be deleted.
     """
 
+    STATUS_DRAFT = "draft"
     STATUS_PENDING = "pending"
+    STATUS_CHANGES_REQUESTED = "changes_requested"
     STATUS_APPROVED = "approved"
     STATUS_REJECTED = "rejected"
+    STATUS_DISCARDED = "discarded"
     STATUS_CHOICES = [
+        (STATUS_DRAFT, "Draft"),
         (STATUS_PENDING, "Pending"),
+        (STATUS_CHANGES_REQUESTED, "Changes requested"),
         (STATUS_APPROVED, "Approved"),
         (STATUS_REJECTED, "Rejected"),
+        (STATUS_DISCARDED, "Discarded"),
     ]
+    EDITABLE_STATUSES = (STATUS_DRAFT, STATUS_CHANGES_REQUESTED)
+    # At most one of these per section: the section is locked to its author.
+    OPEN_STATUSES = (STATUS_PENDING, STATUS_CHANGES_REQUESTED)
 
     section = models.ForeignKey(
         "drugs.IngredientProfileSection",
@@ -96,9 +127,19 @@ class SectionEditRequest(models.Model):
     after_fa = models.TextField(blank=True)
     before_en = models.TextField(blank=True)
     after_en = models.TextField(blank=True)
-    reason = models.TextField()
+    reason = models.TextField(blank=True)
+    # Results of the automatic checks at the last submission (see checks.py).
+    checks = models.JSONField(default=list, blank=True)
+    # Set when this request puts back the text an applied edit replaced.
+    reverts = models.ForeignKey(
+        SectionEdit,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="revert_requests",
+    )
 
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
     reviewed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -110,6 +151,8 @@ class SectionEditRequest(models.Model):
     review_note = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -117,6 +160,18 @@ class SectionEditRequest(models.Model):
         indexes = [
             models.Index(fields=["status", "-created_at"], name="dqc_request_status_idx"),
             models.Index(fields=["section", "status"], name="dqc_request_section_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["section"],
+                condition=Q(status__in=["pending", "changes_requested"]),
+                name="dqc_one_open_request_per_section",
+            ),
+            models.UniqueConstraint(
+                fields=["section", "requested_by"],
+                condition=Q(status="draft"),
+                name="dqc_one_draft_per_editor",
+            ),
         ]
 
     def __str__(self):
@@ -126,62 +181,64 @@ class SectionEditRequest(models.Model):
     def is_pending(self):
         return self.status == self.STATUS_PENDING
 
-    def approve(self, reviewer, note=""):
-        """Applies the proposed summaries to the live section and writes the
-        permanent `SectionEdit` ledger row. Refuses if the section has
-        drifted from the snapshot this request was built from (someone else
-        applied a different change in the meantime) -- the reviewer re-opens
-        the ingredient and re-reviews against current content instead of
-        silently clobbering it."""
-        if not self.is_pending:
-            raise ValueError("Only a pending request can be approved.")
-        section = self.section
-        if section.summary_fa != self.before_fa or section.summary_en != self.before_en:
-            raise ValueError(
-                "This section changed since the request was submitted -- re-check it before approving."
-            )
+    @property
+    def is_editable(self):
+        return self.status in self.EDITABLE_STATUSES
 
-        from django.utils import timezone
 
-        section.summary_fa = self.after_fa
-        section.summary_en = self.after_en
-        section.save(update_fields=["summary_fa", "summary_en", "updated_at"])
+class ReviewEvent(models.Model):
+    """Append-only audit trail: one row per action taken on a request --
+    who did what, when, from where, with what note. The request history in
+    the console and the history page read from here."""
 
-        SectionEdit.objects.create(
-            section=section,
-            editor=self.requested_by,
-            editor_username=self.requested_by_username,
-            approved_by=reviewer,
-            approved_by_username=reviewer.get_username(),
-            ingredient_name=self.ingredient_name,
-            field=self.field,
-            before_fa=self.before_fa,
-            after_fa=self.after_fa,
-            before_en=self.before_en,
-            after_en=self.after_en,
-            reason=self.reason,
-        )
+    SUBMITTED = "submitted"
+    RESUBMITTED = "resubmitted"
+    WITHDRAWN = "withdrawn"
+    CHANGES_REQUESTED = "changes_requested"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    DISCARDED = "discarded"
+    REVERT_REQUESTED = "revert_requested"
+    ACTION_CHOICES = [
+        (SUBMITTED, "Submitted"),
+        (RESUBMITTED, "Resubmitted"),
+        (WITHDRAWN, "Withdrawn"),
+        (CHANGES_REQUESTED, "Changes requested"),
+        (APPROVED, "Approved and applied"),
+        (REJECTED, "Rejected"),
+        (DISCARDED, "Discarded"),
+        (REVERT_REQUESTED, "Revert requested"),
+    ]
 
-        self.status = self.STATUS_APPROVED
-        self.reviewed_by = reviewer
-        self.reviewed_by_username = reviewer.get_username()
-        self.review_note = note
-        self.reviewed_at = timezone.now()
-        self.save(update_fields=[
-            "status", "reviewed_by", "reviewed_by_username", "review_note", "reviewed_at",
-        ])
+    request = models.ForeignKey(
+        SectionEditRequest,
+        on_delete=models.PROTECT,
+        related_name="events",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="dqc_review_events",
+    )
+    actor_username = models.CharField(max_length=150, blank=True)
+    action = models.CharField(max_length=24, choices=ACTION_CHOICES)
+    note = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    def reject(self, reviewer, note=""):
-        if not self.is_pending:
-            raise ValueError("Only a pending request can be rejected.")
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["-created_at"], name="dqc_event_recent_idx"),
+            models.Index(fields=["actor", "-created_at"], name="dqc_event_actor_idx"),
+        ]
 
-        from django.utils import timezone
+    def __str__(self):
+        return f"{self.action} on #{self.request_id} by {self.actor_username}"
 
-        self.status = self.STATUS_REJECTED
-        self.reviewed_by = reviewer
-        self.reviewed_by_username = reviewer.get_username()
-        self.review_note = note
-        self.reviewed_at = timezone.now()
-        self.save(update_fields=[
-            "status", "reviewed_by", "reviewed_by_username", "review_note", "reviewed_at",
-        ])
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValueError("ReviewEvent rows are append-only.")
+        return super().save(*args, **kwargs)

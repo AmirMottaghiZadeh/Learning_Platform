@@ -255,32 +255,14 @@ DATA_QUALITY_MIN_REASON_LENGTH = config(
     default=12,
     cast=int,
 )
-# A change that cannot be undone from a backup must not be applied at all.
-DATA_QUALITY_REQUIRE_BACKUP = config(
-    "DATA_QUALITY_REQUIRE_BACKUP",
-    default=True,
-    cast=bool,
-)
-DATA_QUALITY_BACKUP_DIR = config("DATA_QUALITY_BACKUP_DIR", default="")
-DATA_QUALITY_STEP_UP_TTL_MINUTES = config(
-    "DATA_QUALITY_STEP_UP_TTL_MINUTES",
-    default=10,
-    cast=int,
-)
-DATA_QUALITY_STEP_UP_SESSION_KEY = "data_quality_step_up_at"
-# Verifying the whole chain on every page load would not scale; the console
-# checks the most recent window and the scheduled job checks everything.
-DATA_QUALITY_AUDIT_VERIFY_LIMIT = config(
-    "DATA_QUALITY_AUDIT_VERIFY_LIMIT",
-    default=500,
-    cast=int,
-)
 
 # quiz + flashcards ship built but locked: the maintenance routers answer their
 # paths with a 503 envelope until these are switched on deliberately.
 QUIZ_API_ENABLED = config("QUIZ_API_ENABLED", default=False, cast=bool)
 FLASHCARDS_API_ENABLED = config("FLASHCARDS_API_ENABLED", default=False, cast=bool)
-DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=False, cast=bool)
+# The staff console at /ops/data-quality/ -- on unless switched off; every
+# page needs a staff login, and applying a change needs a superuser.
+DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=True, cast=bool)
 
 # Directory holding the UpToDate snapshot (fts.db, content.db, toc.db, info.json).
 # The /uptodate/ endpoints answer 503 when the files are not present.

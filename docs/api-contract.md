@@ -362,15 +362,35 @@ in `content.db`, section names from the `toc.db` tree. English content only
 
 ---
 
-## Data Quality Center — ✅ rewritten (Phase 3d), not part of the app API
+## Data Quality Center — ✅ review workflow, not part of the app API
 
-Internal, staff-only, server-rendered tool under `/ops/data-quality/`, wired only
-when `DATA_QUALITY_CENTER_ENABLED`. It edits `summary_fa` / `summary_en` on
-`drugs.IngredientProfileSection` (raw label text stays read-only); every save
-needs a reason (≥ `DATA_QUALITY_MIN_REASON_LENGTH` chars) and writes an
-append-only `data_quality_center.SectionEdit`. Pages: ingredient list (search +
-"missing summary" filter), ingredient detail with per-section edit forms, edit
-history. No JSON API, no frontend surface.
+Internal, staff-only, server-rendered Persian console under `/ops/data-quality/`
+(on unless `DATA_QUALITY_CENTER_ENABLED=False`; in production
+`https://api.pharmenta.ir/ops/data-quality/`). Its own sign-in page
+(`login/`) admits active staff only, throttles repeated failures per IP and
+records `accounts.SecurityAuditEvent` login events.
+
+It edits `summary_fa` / `summary_en` on `drugs.IngredientProfileSection`; the
+raw label text stays read-only. Workflow (`data_quality_center.services`):
+
+- an operator's edits autosave as a **draft** (`drugs/<slug>/<field>/draft/`,
+  answers with the automatic checks and word diff as JSON), then
+  **submit** with a reason (≥ `DATA_QUALITY_MIN_REASON_LENGTH` chars) →
+  **pending**; a pending request can be **withdrawn** to draft, and a draft
+  **discarded**;
+- only a superuser decides, on the review desk (`review/`): **approve**
+  (applies the summaries and writes the append-only `SectionEdit`; refused if
+  the section changed since submission), **request changes** (back to the
+  operator with a note, edited and resubmitted) or **reject**;
+- a superuser can **revert** an applied edit from the history page, which
+  opens a pending request restoring the earlier text.
+
+One open (pending / changes-requested) request per section, one draft per
+operator per section. Every action after the first submission writes an
+append-only `ReviewEvent` (actor, time, note, IP), shown as each request's
+timeline and on `history/`. Automatic checks (warnings only): numbers in the
+summary missing from the label, empty Persian/English summary, only one
+language changed, summary longer than its source.
 
 ---
 

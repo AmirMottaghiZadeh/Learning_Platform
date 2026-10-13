@@ -5,10 +5,17 @@ from . import views
 app_name = "data_quality_center"
 
 urlpatterns = [
-    path("", views.ingredient_list, name="ingredient_list"),
-    path("requests/", views.pending_requests, name="pending_requests"),
-    path("requests/<int:request_id>/review/", views.review_request, name="review_request"),
-    path("history/", views.edit_history, name="edit_history"),
-    path("<slug:slug>/", views.ingredient_detail, name="ingredient_detail"),
-    path("<slug:slug>/sections/<str:field>/edit/", views.section_edit, name="section_edit"),
+    path("", views.queue, name="queue"),
+    path("login/", views.login_view, name="login"),
+    path("logout/", views.logout_view, name="logout"),
+    path("mine/", views.my_requests, name="mine"),
+    path("review/", views.review_desk, name="review"),
+    path("review/<int:pk>/", views.review_action, name="review_action"),
+    path("history/", views.history, name="history"),
+    path("edits/<int:pk>/revert/", views.revert, name="revert"),
+    path("drugs/<slug:slug>/", views.workspace, name="workspace"),
+    path("drugs/<slug:slug>/<str:field>/draft/", views.save_draft, name="save_draft"),
+    path("drugs/<slug:slug>/<str:field>/submit/", views.submit, name="submit"),
+    path("drugs/<slug:slug>/<str:field>/withdraw/", views.withdraw, name="withdraw"),
+    path("drugs/<slug:slug>/<str:field>/discard/", views.discard, name="discard"),
 ]
