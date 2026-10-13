@@ -32,37 +32,79 @@ import { toneColors } from "@/theme/tone";
 type LessonLine = { label: string | null; text: string };
 type LessonBlock = { kind: "bullet" | "paragraph"; lines: LessonLine[] };
 
-// A label is short, word-based (no digit or colon of its own -- a Persian
-// drug/measurement lines often put a real colon later, e.g. ratios), and
-// immediately followed by its content. Up to 80 characters: real issue names
-// run that long ("نارسایی متوسط کلیوی (کلیرانس کراتینین ۳۰ تا ۵۰ میلی‌لیتر در
-// دقیقه)"); past that, what precedes a colon is a whole sentence.
-const LABEL_RE = /^([^\d:：]{1,80}):\s+(.+)$/s;
+// A label is a short, word-based "issue" name immediately followed by a
+// colon and its content ("نارسایی خفیف کبدی (کلاس A چایلد-پیو): ..."). Its
+// own words run up to 80 characters -- real issue names do ("نارسایی متوسط
+// کلیوی ...") and past that what precedes a colon is a whole sentence -- not
+// counting a trailing parenthetical qualifier, which can be long ("Chronic
+// P-glycoprotein inducers (rifampicin, carbamazepine, ..., St. John's
+// wort)"). A standalone number outside parentheses means it's a dose line,
+// not a label ("Take 2 tablets: ..."); a digit inside a word ("CYP3A") or a
+// parenthesis is fine.
+const LABEL_SPLIT = /^([^:：]+)[:：]\s+(.+)$/s;
+const MAX_LABEL_WORDS = 80;
+const MAX_LABEL_TOTAL = 200;
+
+function parenDepth(text: string): number {
+  let depth = 0;
+  for (const ch of text) {
+    if (ch === "(") depth++;
+    else if (ch === ")" && depth > 0) depth--;
+  }
+  return depth;
+}
+
+function splitLabel(line: string): LessonLine {
+  const m = line.match(LABEL_SPLIT);
+  if (!m) return { label: null, text: line };
+  const label = m[1].trim();
+  const words = label.replace(/\([^()]*\)/g, " ").trim();
+  const isLabel =
+    words.length > 0 &&
+    words.length <= MAX_LABEL_WORDS &&
+    label.length <= MAX_LABEL_TOTAL &&
+    parenDepth(label) === 0 &&
+    !/(^|\s)\d/.test(words);
+  return isLabel ? { label, text: m[2].trim() } : { label: null, text: line };
+}
 
 // The whitespace after a sentence end that's followed by a new "issue:"
 // label -- the point where a run-together bullet gets a line break.
 const ISSUE_BREAK = /(?<=[.!?؟])\s+(?=[^.!?؟:：\n\d]{2,80}[:：]\s)/;
 
-function splitLabel(line: string): LessonLine {
-  const m = line.match(LABEL_RE);
-  return m ? { label: m[1].trim(), text: m[2].trim() } : { label: null, text: line };
+// A period inside parentheses is an abbreviation ("(e.g. ...)", "(... St.
+// John's wort)"), not the end of a sentence: a piece that leaves a "(" open
+// is joined with the next one, so the line break -- and a label's bold --
+// never cuts through a parenthesis.
+function joinOpenParens(pieces: string[]): string[] {
+  const out: string[] = [];
+  for (const piece of pieces) {
+    const prev = out[out.length - 1];
+    if (prev !== undefined && parenDepth(prev) > 0) out[out.length - 1] = `${prev} ${piece}`;
+    else out.push(piece);
+  }
+  return out;
 }
 
 // Splits after a sentence-ending mark only when it's followed by whitespace
 // (and then more text) -- a decimal like "0.4" never has a space right
 // after its period, so it's never mistaken for a sentence break.
 function splitSentences(text: string): string[] {
-  return text
-    .split(/(?<=[.!?؟])\s+(?=\S)/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  return joinOpenParens(
+    text
+      .split(/(?<=[.!?؟])\s+(?=\S)/)
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
 }
 
 function splitIssues(text: string): string[] {
-  return text
-    .split(ISSUE_BREAK)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  return joinOpenParens(
+    text
+      .split(ISSUE_BREAK)
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
 }
 
 function parseLessonText(text: string): LessonBlock[] {
@@ -75,14 +117,26 @@ function parseLessonText(text: string): LessonBlock[] {
     blocks.push({ kind: "paragraph", lines: (sentences.length > 0 ? sentences : [body]).map(splitLabel) });
     paraLines = [];
   };
+  // The source occasionally splits one bullet across two at a period inside
+  // parentheses ("- ... St" / "- John's Wort): ..."): a bullet left with an
+  // open "(" takes the next one in.
+  let openBullet: { block: LessonBlock; raw: string } | null = null;
   for (const raw of text.split("\n")) {
     const line = raw.trim();
     if (!line) continue;
     const bullet = line.match(/^-\s+(.*)$/);
     if (bullet) {
       flushParagraph();
-      blocks.push({ kind: "bullet", lines: splitIssues(bullet[1]).map(splitLabel) });
+      if (openBullet && parenDepth(openBullet.raw) > 0) {
+        openBullet.raw = `${openBullet.raw} ${bullet[1]}`;
+        openBullet.block.lines = splitIssues(openBullet.raw).map(splitLabel);
+        continue;
+      }
+      const block: LessonBlock = { kind: "bullet", lines: splitIssues(bullet[1]).map(splitLabel) };
+      blocks.push(block);
+      openBullet = { block, raw: bullet[1] };
     } else {
+      openBullet = null;
       paraLines.push(line);
     }
   }
