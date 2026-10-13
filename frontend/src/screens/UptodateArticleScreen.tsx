@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useRef, useState } from "react";
-import { Modal, Platform, Pressable, TextInput, View } from "react-native";
+import React, { useMemo, useRef, useState } from "react";
+import { Modal, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
 import { WebView } from "react-native-webview";
 
 import { uptodateApi } from "@/api/endpoints";
@@ -10,10 +10,11 @@ import { LoadingState } from "@/components/primitives/LoadingState";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
+import { useReader } from "@/store/reader";
 import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
-import { parseOutline } from "@/utils/uptodateOutline";
+import { NumberedOutlineNode, numberedOutline, outlineTops } from "@/utils/uptodateOutline";
 
 type FindResult = { count: number; current: number };
 
@@ -137,14 +138,64 @@ function __utdHeadingFor(el, title) {
   if (hit(sib)) return sib;
   return within(sib);
 }
-function __utdMarkHeadings(levels) {
+// Each heading also gets its outline number ("3", "3.1", "3.1.2") as a
+// leading span, styled per level in wrap()'s CSS.
+function __utdMarkHeadings(levels, tops) {
   Object.keys(levels || {}).forEach(function (id) {
     var el = document.getElementById(id);
     if (!el) return;
-    var target = __utdHeadingFor(el, levels[id].title);
-    if (target) target.classList.add("utd-l" + Math.min(3, levels[id].depth + 1));
+    var level = levels[id];
+    var target = __utdHeadingFor(el, level.title);
+    if (!target) return;
+    target.classList.add("utd-l" + Math.min(3, level.depth + 1));
+    if (level.num) {
+      var num = document.createElement("span");
+      num.className = "utd-num";
+      num.textContent = level.num;
+      target.insertBefore(num, target.firstChild);
+    }
   });
+  window.__utdTops = (tops || []).map(function (id) { return document.getElementById(id); });
 }
+// UpToDate's bullets are a <span class="glyph">●</span> leading a
+// <p class="bulletIndentN">; those become the app's vertical-bar marker
+// (numbered glyphs are left alone).
+function __utdMarkBullets() {
+  var glyphs = document.querySelectorAll(".glyph");
+  for (var i = 0; i < glyphs.length; i++) {
+    var g = glyphs[i];
+    if (!/^[●•▪◦■–—-]$/.test((g.textContent || "").trim())) continue;
+    g.classList.add("utd-bullet");
+    if (g.parentElement) g.parentElement.classList.add("utd-li");
+  }
+}
+// Reading position, for the progress bar and the home page's "continue
+// from section N": how far down the article is scrolled, and which
+// top-level section's heading was last passed.
+window.__utdTops = [];
+window.__utdLastReport = "";
+function __utdReport() {
+  var doc = document.scrollingElement || document.documentElement;
+  var y = window.pageYOffset || doc.scrollTop || 0;
+  var progress = Math.min(1, Math.max(0, y / Math.max(1, doc.scrollHeight - window.innerHeight)));
+  var section = -1;
+  for (var i = 0; i < window.__utdTops.length; i++) {
+    var el = window.__utdTops[i];
+    if (!el) continue;
+    if (el.getBoundingClientRect().top <= 90) section = i;
+    else break;
+  }
+  var key = Math.round(progress * 200) + ":" + section;
+  if (key === window.__utdLastReport) return;
+  window.__utdLastReport = key;
+  __utdEmitOp({ type: "scroll", progress: progress, section: section });
+}
+var __utdPending = false;
+window.addEventListener("scroll", function () {
+  if (__utdPending) return;
+  __utdPending = true;
+  requestAnimationFrame(function () { __utdPending = false; __utdReport(); });
+}, { passive: true });
 window.doOperation = function (op) {
   if (!op) return;
   if (op.contentIds && op.contentIds.length) {
@@ -160,28 +211,30 @@ window.doOperation = function (op) {
 true;
 `;
 
-type HeadingLevels = Record<string, { depth: number; title: string }>;
+type HeadingLevels = Record<string, { depth: number; title: string; num: string | null }>;
 
 type WrapColors = {
   ink: string;
+  prose: string;
+  muted: string;
   bg: string;
   accent: string;
   accentSoft: string;
-  accent2: string;
-  level3: string;
+  onAccent: string;
   rule: string;
 };
 
-function headingLevels(outlineHtml: string): HeadingLevels {
+function headingLevels(nodes: NumberedOutlineNode[]): HeadingLevels {
   const levels: HeadingLevels = {};
-  for (const node of parseOutline(outlineHtml)) levels[node.id] = { depth: node.depth, title: node.title };
+  for (const node of nodes) levels[node.id] = { depth: node.depth, title: node.title, num: node.num };
   return levels;
 }
 
-function wrap(bodyHtml: string, c: WrapColors, levels: HeadingLevels = {}) {
-  const { ink, bg, accent, accentSoft, accent2, level3, rule } = c;
+function wrap(bodyHtml: string, c: WrapColors, levels: HeadingLevels = {}, tops: string[] = []) {
+  const { ink, prose, muted, bg, accent, accentSoft, onAccent, rule } = c;
   // "<" escaped so a title can never close the script tag early.
   const levelsJson = JSON.stringify(levels).replace(/</g, "\\u003c");
+  const topsJson = JSON.stringify(tops).replace(/</g, "\\u003c");
   // The article is UpToDate's own markup, which carries fixed widths, nested
   // tables and long unbroken strings. The page itself must never be wider
   // than the screen: everything is capped at the viewport, long words wrap,
@@ -191,8 +244,8 @@ function wrap(bodyHtml: string, c: WrapColors, levels: HeadingLevels = {}) {
 <style>
   *, *::before, *::after { box-sizing:border-box; }
   html, body { max-width:100%; overflow-x:hidden; }
-  body { font: 15px/1.7 -apple-system, "Segoe UI", Roboto, sans-serif; color:${ink};
-         background:${bg}; margin:0; padding:16px; overflow-wrap:anywhere; word-break:break-word;
+  body { font: 15px/1.7 -apple-system, "Segoe UI", Roboto, sans-serif; color:${prose};
+         background:${bg}; margin:0; padding:18px 20px 110px; overflow-wrap:anywhere; word-break:break-word;
          -webkit-text-size-adjust:100%; }
   body *:not(td):not(th):not(tr):not(thead):not(tbody):not(tfoot):not(col):not(colgroup) {
     max-width:100%; }
@@ -208,21 +261,49 @@ function wrap(bodyHtml: string, c: WrapColors, levels: HeadingLevels = {}) {
   mark.utd-hit-current { background:${accent}; color:#fff; }
   a.local, a.medical_review, a.graphic, a.abstract_t { cursor:pointer; }
   .utd-ref-flash { background:${accentSoft}; border-radius:2px; }
-  /* Three outline levels, in the app's own palette: section = accent with a
-     rule, subsection = accent2 with a side bar, sub-subsection = the
-     "special" tone. */
-  .utd-l1, .utd-l2, .utd-l3 { display:block; line-height:1.35; }
-  .utd-l1 *, .utd-l2 *, .utd-l3 * { color:inherit; font-size:inherit; font-weight:inherit; }
-  .utd-l1 { font-size:19px; font-weight:800; color:${accent}; margin:30px 0 12px;
-            padding-bottom:7px; border-bottom:2px solid ${rule}; }
-  .utd-l2 { font-size:16.5px; font-weight:800; color:${accent2}; margin:22px 0 8px;
-            padding:2px 0 2px 10px; border-left:3px solid ${accent2}; }
-  .utd-l3 { font-size:15.5px; font-weight:700; color:${level3}; margin:16px 0 6px; }
+  #topicTitle { font-size:21px; font-weight:800; line-height:1.35; color:${ink}; margin:2px 0 10px; }
+  #topicContributors, #topicContributors * { font-size:12px; line-height:1.5; color:${muted}; }
+  #topicContributors dt { font-weight:700; margin-top:6px; }
+  #topicContributors dd { margin:0; }
+  /* Three numbered outline levels (design option B): a section's number in
+     a filled badge, a subsection's in teal, anything deeper in grey over a
+     dashed rule. A run-in heading's " — " is dropped once the heading sits
+     on its own line. */
+  .utd-l1, .utd-l2, .utd-l3 { display:block; line-height:1.35; color:${ink}; }
+  .utd-l1 *, .utd-l2 *, .utd-l3 * { font-size:inherit; font-weight:inherit; }
+  .utd-l1 + .headingEndMark, .utd-l2 + .headingEndMark, .utd-l3 + .headingEndMark { display:none; }
+  .utd-l1 { display:flex; align-items:center; gap:12px; font-size:19px; font-weight:800; margin:32px 0 12px; }
+  .utd-l1 .utd-num { flex:none; width:34px; height:34px; border-radius:10px; background:${accent};
+                     color:${onAccent}; font-size:16px; display:flex; align-items:center; justify-content:center; }
+  .utd-l2 { font-size:16.5px; font-weight:800; margin:24px 0 8px; }
+  .utd-l2 .utd-num { color:${accent}; margin-right:8px; }
+  .utd-l3 { font-size:15px; font-weight:700; color:${prose}; margin:18px 0 8px; padding-bottom:4px;
+            border-bottom:1px dashed ${rule}; }
+  .utd-l3 .utd-num { color:${muted}; margin-right:8px; }
+  /* List marker (design option 6): a short vertical accent bar per bullet. */
+  p.utd-li { position:relative; padding-left:18px; margin:6px 0; }
+  p.bulletIndent2.utd-li { padding-left:36px; }
+  p.bulletIndent3.utd-li { padding-left:54px; }
+  .utd-bullet { position:absolute; left:2px; top:6px; width:3px; height:14px; border-radius:2px;
+                background:${accent}; font-size:0; line-height:0; overflow:hidden; }
+  .bulletIndent2 > .utd-bullet { left:20px; opacity:.55; }
+  .bulletIndent3 > .utd-bullet { left:38px; opacity:.4; }
 </style></head><body>${bodyHtml}<script>${FIND_SCRIPT}
-__utdMarkHeadings(${levelsJson});</script></body></html>`;
+__utdMarkHeadings(${levelsJson}, ${topsJson});
+__utdMarkBullets();</script></body></html>`;
 }
 
+/** An UpToDate topic in the reader (design option 1). Keyed by article and
+ * section, so a cross-reference into another topic -- the same screen with
+ * new params -- starts fresh instead of keeping the last article's search,
+ * position and loaded state. */
 export function UptodateArticleScreen() {
+  const id = String(useNav((s) => s.params.id ?? ""));
+  const sectionId = useNav((s) => s.params.sectionId) as string | undefined;
+  return <UptodateArticle key={`${id}|${sectionId ?? ""}`} />;
+}
+
+function UptodateArticle() {
   const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
@@ -230,12 +311,18 @@ export function UptodateArticleScreen() {
   const id = String(useNav((s) => s.params.id ?? ""));
   const titleParam = String(useNav((s) => s.params.title ?? ""));
   const sectionId = useNav((s) => s.params.sectionId) as string | undefined;
+  const openSearch = !!useNav((s) => s.params.openSearch);
+  const rememberSection = useReader((s) => s.rememberSection);
 
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(openSearch);
   const [query, setQuery] = useState("");
   const [find, setFind] = useState<FindResult>({ count: 0, current: 0 });
   const [graphicId, setGraphicId] = useState<string | null>(null);
+  const [tocOpen, setTocOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTop, setCurrentTop] = useState(-1);
   useBackInterceptor(graphicId !== null, () => setGraphicId(null));
+  useBackInterceptor(tocOpen, () => setTocOpen(false));
   const debouncedQuery = useDebounced(query.trim(), 300);
   const webviewRef = useRef<WebView>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -247,17 +334,24 @@ export function UptodateArticleScreen() {
     enabled: !!id,
   });
 
-  const accentSoft = `${colors.accent}33`;
+  const outline = useMemo(() => numberedOutline(data?.outline_html ?? ""), [data]);
+  const tops = useMemo(() => outlineTops(outline), [outline]);
+
   const wrapColors: WrapColors = {
     ink: colors.ink,
+    prose: colors.proseInk,
+    muted: colors.muted,
     bg: colors.cardBg,
     accent: colors.accent,
-    accentSoft,
-    accent2: colors.accent2,
-    level3: colors.specLabel,
-    rule: `${colors.accent}40`,
+    accentSoft: `${colors.accent}33`,
+    onAccent: colors.onAccent,
+    rule: colors.trackBg,
   };
-  const html = data ? wrap(data.body_html, wrapColors, headingLevels(data.outline_html)) : "";
+  const html = useMemo(
+    () => (data ? wrap(data.body_html, wrapColors, headingLevels(outline), tops.map((top) => top.id)) : ""),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, outline, tops, colors],
+  );
 
   // -- a table/figure/algorithm graphic opened from a reference link -------
   const {
@@ -331,12 +425,12 @@ export function UptodateArticleScreen() {
     }
   };
 
-  const gotoSection = () => {
-    if (!sectionId) return;
+  const gotoSection = (target: string | undefined = sectionId) => {
+    if (!target) return;
     if (Platform.OS === "web") {
-      callWeb((win) => (win.__utdGoto as (s: string) => void)(sectionId));
+      callWeb((win) => (win.__utdGoto as (s: string) => void)(target));
     } else {
-      webviewRef.current?.injectJavaScript(`window.__utdGoto(${JSON.stringify(sectionId)}); true;`);
+      webviewRef.current?.injectJavaScript(`window.__utdGoto(${JSON.stringify(target)}); true;`);
     }
   };
 
@@ -356,8 +450,19 @@ export function UptodateArticleScreen() {
   // WebView bridge (and even on web, the click happens inside the iframe's
   // own event loop), so every reference link reaches us as a posted message
   // tagged __utdOp rather than a function return value.
-  const handleOp = (op: { type?: string; contentId?: string; sectionName?: string | null }) => {
-    if (op.type === "nav" && op.contentId) {
+  const handleOp = (op: {
+    type?: string;
+    contentId?: string;
+    sectionName?: string | null;
+    progress?: number;
+    section?: number;
+  }) => {
+    if (op.type === "scroll") {
+      setProgress(op.progress ?? 0);
+      const section = op.section ?? -1;
+      setCurrentTop(section);
+      if (section >= 0) rememberSection(`utd:${id}`, section);
+    } else if (op.type === "nav" && op.contentId) {
       if (op.sectionName) {
         navigate("uptodateArticle", { id: op.contentId, sectionId: op.sectionName });
       } else {
@@ -381,13 +486,16 @@ export function UptodateArticleScreen() {
     }
   };
 
+  const handleOpRef = useRef(handleOp);
+  handleOpRef.current = handleOp;
+
   React.useEffect(() => {
     if (Platform.OS !== "web") return;
     const onMessage = (event: MessageEvent) => {
       if (event.source !== iframeRef.current?.contentWindow) return;
       try {
         const msg = JSON.parse(event.data as string);
-        if (msg && msg.__utdOp) handleOp(msg);
+        if (msg && msg.__utdOp) handleOpRef.current(msg);
       } catch {
         /* ignore */
       }
@@ -399,31 +507,30 @@ export function UptodateArticleScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
-      <View
-        style={{
-          flexDirection: row,
-          alignItems: "center",
-          gap: 10,
-          paddingHorizontal: 18,
-          paddingTop: 16,
-          paddingBottom: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.sheetLine,
-        }}
-      >
-        <ChromeButton onPress={goBack} size={30}>
-          <AppText weight="800" size={15} color={colors.ink}>
-            {isFa ? "›" : "‹"}
+      <View style={{ paddingHorizontal: 20, paddingTop: 16, gap: 12 }}>
+        <View style={{ flexDirection: row, alignItems: "center", gap: 10 }}>
+          <ChromeButton onPress={goBack} size={34}>
+            <AppText weight="800" size={16} color={colors.ink}>
+              {isFa ? "›" : "‹"}
+            </AppText>
+          </ChromeButton>
+          <AppText weight="700" size={12} muted numberOfLines={1} style={{ flex: 1, textAlign: "left", writingDirection: "ltr" }}>
+            {data?.title || titleParam}
           </AppText>
-        </ChromeButton>
-        <AppText weight="800" size={14} numberOfLines={2} style={{ flex: 1 }}>
-          {data?.title || titleParam}
-        </AppText>
-        <ChromeButton onPress={() => setSearchOpen((v) => !v)} size={30}>
-          <AppText weight="800" size={14} color={searchOpen ? colors.accent : colors.ink}>
-            ⌕
-          </AppText>
-        </ChromeButton>
+          <ChromeButton onPress={() => setTocOpen(true)} size={34}>
+            <AppText weight="800" size={15} color={colors.ink}>
+              ≡
+            </AppText>
+          </ChromeButton>
+          <ChromeButton onPress={() => setSearchOpen((v) => !v)} size={34}>
+            <AppText weight="800" size={15} color={searchOpen ? colors.accent : colors.ink}>
+              ⌕
+            </AppText>
+          </ChromeButton>
+        </View>
+        <View style={{ height: 3, borderRadius: 2, backgroundColor: colors.trackBg, marginBottom: 2, overflow: "hidden" }}>
+          <View style={{ width: `${Math.round(progress * 100)}%`, height: 3, borderRadius: 2, backgroundColor: colors.accent }} />
+        </View>
       </View>
 
       {searchOpen ? (
@@ -452,6 +559,7 @@ export function UptodateArticleScreen() {
               color: colors.ink,
               textAlign: isFa ? "right" : "left",
               padding: 0,
+              ...(Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : null),
             }}
           />
           {query.trim() ? (
@@ -479,7 +587,7 @@ export function UptodateArticleScreen() {
       ) : isError || !data ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
           <AppText muted weight="600">
-            {isFa ? "بارگذاری مقاله ممکن نشد." : "Could not load the article."}
+            {t("articleLoadError")}
           </AppText>
         </View>
       ) : Platform.OS === "web" ? (
@@ -502,6 +610,55 @@ export function UptodateArticleScreen() {
           style={{ flex: 1, backgroundColor: colors.cardBg }}
         />
       )}
+
+      <Modal visible={tocOpen} transparent animationType="fade" onRequestClose={() => setTocOpen(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(4,10,9,0.5)", justifyContent: "flex-end" }}
+          onPress={() => setTocOpen(false)}
+        >
+          <Pressable
+            onPress={() => undefined}
+            style={{ maxHeight: "78%", backgroundColor: colors.cardBg, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingTop: 10 }}
+          >
+            <View style={{ alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: colors.trackBg, marginBottom: 10 }} />
+            <AppText weight="900" size={15} style={{ paddingHorizontal: 20, marginBottom: 6 }}>
+              {t("articleContents")}
+            </AppText>
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 28 }}>
+              {outline.map((node) => {
+                const top = node.depth === 0;
+                const on = top && tops[currentTop]?.id === node.id;
+                return (
+                  <Pressable
+                    key={node.id}
+                    onPress={() => {
+                      setTocOpen(false);
+                      gotoSection(node.id);
+                    }}
+                    style={{
+                      paddingVertical: top ? 9 : 6,
+                      paddingLeft: 8 + node.depth * 16,
+                      paddingRight: 8,
+                      borderRadius: 10,
+                      backgroundColor: on ? `${colors.accent}14` : undefined,
+                    }}
+                  >
+                    <AppText
+                      weight={top ? "800" : "600"}
+                      size={top ? 14 : 13}
+                      color={top ? (on ? colors.accent : colors.ink) : node.depth > 1 ? colors.muted : colors.proseInk}
+                      style={{ textAlign: "left", writingDirection: "ltr", lineHeight: top ? 21 : 19 }}
+                    >
+                      {node.num ? `${node.num}  ` : ""}
+                      {node.title}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal
         visible={!!graphicId}

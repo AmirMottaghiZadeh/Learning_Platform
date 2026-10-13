@@ -6,6 +6,14 @@ class UptodateTopicSerializer(serializers.Serializer):
     title = serializers.CharField()
     section = serializers.CharField(allow_blank=True)
     version = serializers.CharField(allow_blank=True)
+    # "Feb 11, 2026" -- the topic's own last-updated date, or "" when the
+    # header doesn't carry one.
+    updated = serializers.CharField(allow_blank=True, required=False, default="")
+
+
+class UptodateSearchResultSerializer(UptodateTopicSerializer):
+    # Plain text around the first query hit in the article body.
+    snippet = serializers.CharField(allow_blank=True)
 
 
 class UptodateArticleSerializer(UptodateTopicSerializer):

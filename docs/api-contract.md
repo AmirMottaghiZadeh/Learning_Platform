@@ -351,11 +351,14 @@ Served straight from the bundled UpToDate SQLite snapshot
 in `content.db`, section names from the `toc.db` tree. English content only
 (the snapshot is English). 503 `FEATURE_NOT_AVAILABLE` when the files are absent.
 
-- **GET `/uptodate/topics/?search=&limit=`** — `[{ id, title, section, version }]`
-  (topic articles only; `section` is the top-level specialty, e.g.
-  "Cardiovascular Medicine"). Empty `search` → `[]`.
-- **GET `/uptodate/topics/{id}/`** — `{ id, title, section, version, contributors[],
-  outline_html, body_html }`. 404 if the id is unknown.
+- **GET `/uptodate/topics/?search=&limit=`** — `[{ id, title, section, version,
+  updated, snippet }]` (topic articles only; `section` is the top-level
+  specialty, e.g. "Cardiovascular Medicine"; `updated` is the topic's own
+  "last updated" date such as "Feb 11, 2026", or ""; `snippet` is plain text
+  around the first query hit in the article body, skipping the title/author
+  header). Empty `search` → `[]`.
+- **GET `/uptodate/topics/{id}/`** — `{ id, title, section, version, updated,
+  contributors[], outline_html, body_html }`. 404 if the id is unknown.
 
 ---
 

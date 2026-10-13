@@ -20,6 +20,7 @@ export type ScreenKey =
   | "calculator"
   | "calculatorDomain"
   | "calculatorDetail"
+  | "medscapeOutline"
   | "medscapeArticle"
   | "medscapeSpecialty";
 

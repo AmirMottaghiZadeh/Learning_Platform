@@ -9,7 +9,7 @@ from . import services
 from .serializers import (
     UptodateArticleSerializer,
     UptodateImageSerializer,
-    UptodateTopicSerializer,
+    UptodateSearchResultSerializer,
 )
 
 
@@ -30,7 +30,7 @@ class TopicSearchView(APIView):
             OpenApiParameter("search", str, description="Clinical topic query."),
             OpenApiParameter("limit", int, description="Max results (default 25)."),
         ],
-        responses=UptodateTopicSerializer(many=True),
+        responses=UptodateSearchResultSerializer(many=True),
     )
     def get(self, request):
         _require_available()
@@ -40,7 +40,7 @@ class TopicSearchView(APIView):
         except ValueError:
             limit = 25
         results = services.search_topics(query, limit=limit) if query else []
-        return Response(UptodateTopicSerializer(results, many=True).data)
+        return Response(UptodateSearchResultSerializer(results, many=True).data)
 
 
 class TopicDetailView(APIView):

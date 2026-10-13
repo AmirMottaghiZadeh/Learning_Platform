@@ -97,6 +97,7 @@ class UptodateTests(TestCase):
         self.assertEqual(len(res.data), 1)  # the type-2 fragment is excluded
         self.assertEqual(res.data[0]["id"], "3851")
         self.assertEqual(res.data[0]["section"], "Cardiovascular Medicine")
+        self.assertIn("hypertension", res.data[0]["snippet"])
 
     def test_search_without_query_is_empty(self):
         with self._with_snapshot():
@@ -140,3 +141,29 @@ class UptodateTests(TestCase):
         with self._with_snapshot():
             res = self.client.get("/api/v1/uptodate/images/000000/")
         self.assertEqual(res.status_code, 404)
+
+
+class SnippetTests(TestCase):
+    HEAD = (
+        "Hypertension in adults  Authors:Jane Doe, MD Section Editor:John Roe, MD"
+        "Literature review current through:\xa0Jun 2026.\xa0|\xa0This topic last updated:"
+        "\xa0Feb 11, 2026.INTRODUCTION\xa0—\xa0Hypertension is common.●Most adults need "
+        "two drugs to reach their blood pressure target. (See 'Treatment' below.)The rest follows."
+    )
+
+    def test_skips_header_and_run_in_heading(self):
+        snippet = services._snippet(self.HEAD, ["hypertension"], "Hypertension in adults")
+        self.assertTrue(snippet.startswith("Hypertension is common."))
+        self.assertNotIn("Authors", snippet)
+        self.assertNotIn("INTRODUCTION", snippet)
+        self.assertNotIn("●", snippet)
+
+    def test_centres_on_the_query_hit(self):
+        snippet = services._snippet(self.HEAD, ["blood", "pressure"], "Hypertension in adults")
+        self.assertIn("blood pressure target", snippet)
+        self.assertIn("below.) The rest", snippet)
+
+    def test_reads_the_last_updated_date(self):
+        self.assertEqual(services._updated_from_text(self.HEAD.replace("\xa0", " ")), "Feb 11, 2026")
+        html = '<span class="emphasis">This topic last updated:</span>&nbsp;Feb 11, 2026.</div>'
+        self.assertEqual(services._updated_from_html(html), "Feb 11, 2026")

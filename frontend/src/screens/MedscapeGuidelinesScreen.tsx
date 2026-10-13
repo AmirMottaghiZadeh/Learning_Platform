@@ -74,7 +74,7 @@ export function MedscapeGuidelinesScreen() {
   const query = q.trim().toLowerCase();
   const filtered = query.length > 0 ? all.filter((a) => a.title.toLowerCase().includes(query)) : all;
 
-  const openArticle = (slug: string) => navigate("medscapeArticle", { slug });
+  const openArticle = (slug: string) => navigate("medscapeOutline", { slug });
 
   if (treeLoading || !specialty) return <LoadingState />;
 

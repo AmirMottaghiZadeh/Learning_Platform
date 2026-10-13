@@ -403,6 +403,13 @@ export interface UptodateTopic {
   title: string;
   section: string;
   version: string;
+  /** the topic's own "last updated" date ("Feb 11, 2026"), or "" */
+  updated: string;
+}
+
+export interface UptodateSearchResult extends UptodateTopic {
+  /** plain text around the first query hit in the article body */
+  snippet: string;
 }
 
 export interface UptodateArticle extends UptodateTopic {

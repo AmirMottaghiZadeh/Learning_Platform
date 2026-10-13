@@ -39,7 +39,7 @@ export function MedscapeSpecialtyScreen() {
   const query = q.trim().toLowerCase();
   const filtered = query.length > 0 ? items.filter((a) => a.title.toLowerCase().includes(query)) : items;
 
-  const openArticle = (slug: string) => navigate("medscapeArticle", { slug });
+  const openArticle = (slug: string) => navigate("medscapeOutline", { slug });
 
   if (isLoading) return <LoadingState />;
 

@@ -139,6 +139,67 @@ def _search_words(raw: str) -> list[str]:
     return re.findall(r"[A-Za-z0-9؀-ۿ]+", raw or "")[:8]
 
 
+# How much of each hit's plain-text `content` the search reads to build its
+# snippet. The text opens with the title, contributors and dates; the body
+# starts right after "This topic last updated: <date>.", so a few KB covers
+# the header plus the opening paragraphs.
+SNIPPET_SOURCE_CHARS = 6000
+SNIPPET_RADIUS = 110
+_UPDATED_RE = re.compile(r"This topic last updated:\s*([A-Z][a-z]{2,8}\.? \d{1,2}, \d{4})\.?")
+# An all-caps run-in heading ("INTRODUCTION — ") wherever it sits.
+_RUN_IN_HEADING_RE = re.compile(r"\s*\b[A-Z][A-Z0-9 ,'()/&-]{2,80}\s+—\s+")
+# Sentence glued to the next one where block tags were dropped: "below.)The".
+_GLUED_RE = re.compile(r"(?<=[a-z0-9.)\]][.)\]])(?=[A-Z][a-z])")
+_BOILERPLATE_RE = re.compile(
+    r"\d{4}©.*?All Rights Reserved\.|Please read the Disclaimer at the end of this page\."
+)
+_GLYPHS_RE = re.compile(r"[●•▪◦■]")
+
+
+def _updated_from_text(text: str) -> str:
+    match = _UPDATED_RE.search(text or "")
+    return match.group(1) if match else ""
+
+
+def _snippet(content: str, words: list[str], title: str = "") -> str:
+    """A short plain-text excerpt around the first query hit in the article
+    body (not the title/author header), or the body's opening when the hit
+    sits further in than the text read."""
+    text = (content or "").replace("\xa0", " ")
+    header = _UPDATED_RE.search(text)
+    if header:
+        text = text[header.end():]
+    elif title and text.startswith(title):
+        text = text[len(title):]
+    text = _BOILERPLATE_RE.sub(" ", text)
+    text = _GLYPHS_RE.sub(" ", text)
+    text = _GLUED_RE.sub(" ", text)
+    text = _RUN_IN_HEADING_RE.sub(" ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return ""
+
+    lowered = text.lower()
+    phrase = " ".join(words).lower()
+    hit = lowered.find(phrase) if phrase else -1
+    if hit < 0:
+        hits = [i for i in (lowered.find(w.lower()) for w in words) if i >= 0]
+        hit = min(hits) if hits else -1
+
+    if hit < 0:
+        start, end = 0, SNIPPET_RADIUS * 2
+    else:
+        start, end = max(0, hit - SNIPPET_RADIUS), hit + SNIPPET_RADIUS
+    if start > 0:
+        space = text.find(" ", start)
+        start = space + 1 if 0 <= space < hit else start
+    if end < len(text):
+        space = text.rfind(" ", start, end)
+        end = space if space > start else end
+    excerpt = text[start:end].strip()
+    return ("…" if start > 0 else "") + excerpt + ("…" if end < len(text) else "")
+
+
 def _section_for(content_id: str) -> str:
     """Top-level TOC ancestor title for an article, e.g. 'Cardiovascular Medicine'."""
     content_id = str(content_id)
@@ -194,19 +255,19 @@ def search_topics(query: str, limit: int = 25) -> list[dict]:
         match = " ".join(f"+{w}*" for w in words)
         with _mysql_conn().cursor() as cur:
             cur.execute(
-                "SELECT title, contentId, "
+                "SELECT title, contentId, LEFT(content, %s) AS head, "
                 "MATCH(title, content) AGAINST (%s IN BOOLEAN MODE) AS relevance "
                 "FROM fts WHERE MATCH(title, content) AGAINST (%s IN BOOLEAN MODE) "
                 "AND type = %s ORDER BY relevance DESC LIMIT %s",
-                (match, match, TOPIC_TYPE, limit),
+                (SNIPPET_SOURCE_CHARS, match, match, TOPIC_TYPE, limit),
             )
             rows = cur.fetchall()
     else:
         match = " ".join(f'"{w}"*' for w in words)
         rows = _sqlite_conn("fts").execute(
-            "SELECT title, contentId FROM fts "
+            "SELECT title, contentId, substr(content, 1, ?) AS head FROM fts "
             "WHERE fts MATCH ? AND type = ? ORDER BY rank LIMIT ?",
-            (match, TOPIC_TYPE, limit),
+            (SNIPPET_SOURCE_CHARS, match, TOPIC_TYPE, limit),
         ).fetchall()
 
     version = snapshot_version()
@@ -216,6 +277,8 @@ def search_topics(query: str, limit: int = 25) -> list[dict]:
             "title": row["title"],
             "section": _section_for(row["contentId"]),
             "version": version,
+            "snippet": _snippet(row["head"], words, row["title"]),
+            "updated": _updated_from_text((row["head"] or "").replace("\xa0", " ")),
         }
         for row in rows
     ]
@@ -250,7 +313,15 @@ def get_topic(content_id: str) -> dict | None:
         "outline_html": doc.get("outlineHtml", ""),
         "body_html": doc.get("bodyHtml", ""),
         "version": str(row["version"] or snapshot_version()),
+        "updated": _updated_from_html(doc.get("bodyHtml", "")),
     }
+
+
+def _updated_from_html(body_html: str) -> str:
+    # The date sits in the header, well inside the first few KB.
+    head = re.sub(r"<[^>]+>", " ", (body_html or "")[:8000])
+    head = re.sub(r"(&nbsp;|\xa0|\s)+", " ", head)
+    return _updated_from_text(head)
 
 
 _IMAGE_TYPES = {"png", "jpeg", "gif", "webp"}

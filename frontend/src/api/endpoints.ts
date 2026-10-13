@@ -32,7 +32,7 @@ import {
   TopicDeck,
   UptodateArticle,
   UptodateImage,
-  UptodateTopic,
+  UptodateSearchResult,
   User,
 } from "./types";
 
@@ -114,7 +114,7 @@ export const flashcardsApi = {
 export const uptodateApi = {
   search: (search: string, limit = 25) =>
     apiClient
-      .get<UptodateTopic[]>("/uptodate/topics/", { params: { search, limit } })
+      .get<UptodateSearchResult[]>("/uptodate/topics/", { params: { search, limit } })
       .then((r) => r.data),
   topic: (id: string) =>
     apiClient.get<UptodateArticle>(`/uptodate/topics/${id}/`).then((r) => r.data),

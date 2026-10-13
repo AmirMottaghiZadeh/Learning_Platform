@@ -71,7 +71,7 @@ export function MedscapeBrowseScreen() {
     }
   }, [tree, activeCategory]);
 
-  const openArticle = (slug: string) => navigate("medscapeArticle", { slug });
+  const openArticle = (slug: string) => navigate("medscapeOutline", { slug });
   const openSpecialty = (category: string, specialty: string) =>
     navigate("medscapeSpecialty", { kind, category, specialty });
 

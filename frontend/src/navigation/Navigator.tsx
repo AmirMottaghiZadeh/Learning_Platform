@@ -19,6 +19,7 @@ import { FlashcardsScreen } from "@/screens/FlashcardsScreen";
 import { MedscapeArticleScreen } from "@/screens/MedscapeArticleScreen";
 import { MedscapeBrowseScreen } from "@/screens/MedscapeBrowseScreen";
 import { MedscapeGuidelinesScreen } from "@/screens/MedscapeGuidelinesScreen";
+import { MedscapeOutlineScreen } from "@/screens/MedscapeOutlineScreen";
 import { MedscapeSpecialtyScreen } from "@/screens/MedscapeSpecialtyScreen";
 import { MistakesScreen } from "@/screens/MistakesScreen";
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
@@ -178,6 +179,8 @@ function CurrentScreen() {
       return <MedscapeGuidelinesScreen />;
     case "diseasesConditions":
       return <MedscapeBrowseScreen />;
+    case "medscapeOutline":
+      return <MedscapeOutlineScreen />;
     case "medscapeArticle":
       return <MedscapeArticleScreen />;
     case "medscapeSpecialty":
