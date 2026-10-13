@@ -4,6 +4,7 @@ import { Pressable, TextInput, View } from "react-native";
 
 import { medscapeApi } from "@/api/endpoints";
 import { MedscapeArticleListItem, MedscapeKind } from "@/api/types";
+import { LoadFailed } from "@/components/LoadFailed";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
@@ -54,7 +55,7 @@ export function MedscapeBrowseScreen() {
   const query = useDebounced(q.trim());
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const { data: tree, isLoading } = useQuery({
+  const { data: tree, isLoading, isError, isFetching: treeFetching, refetch: refetchTree } = useQuery({
     queryKey: ["medscape-tree", kind],
     queryFn: () => medscapeApi.tree(kind),
   });
@@ -129,6 +130,8 @@ export function MedscapeBrowseScreen() {
             ))}
           </View>
         )
+      ) : isError || (tree ?? []).length === 0 ? (
+        <LoadFailed message={t("medscapeTreeUnavailable")} onRetry={() => refetchTree()} busy={treeFetching} />
       ) : (
         <View style={{ gap: 14 }}>
           {(tree ?? []).length > 1 ? (

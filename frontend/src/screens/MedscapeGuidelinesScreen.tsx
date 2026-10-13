@@ -5,6 +5,7 @@ import { Pressable, ScrollView, TextInput, View } from "react-native";
 import { medscapeApi } from "@/api/endpoints";
 import { MedscapeArticleListItem } from "@/api/types";
 import { AlphabeticalArticleList } from "@/components/AlphabeticalArticleList";
+import { LoadFailed } from "@/components/LoadFailed";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
@@ -40,7 +41,13 @@ export function MedscapeGuidelinesScreen() {
   const [activeSpecialty, setActiveSpecialty] = useState<string | null>(null);
   const [q, setQ] = useState("");
 
-  const { data: tree, isLoading: treeLoading } = useQuery({
+  const {
+    data: tree,
+    isLoading: treeLoading,
+    isError: treeError,
+    isFetching: treeFetching,
+    refetch: refetchTree,
+  } = useQuery({
     queryKey: ["medscape-tree", "guideline"],
     queryFn: () => medscapeApi.tree("guideline"),
   });
@@ -76,7 +83,18 @@ export function MedscapeGuidelinesScreen() {
 
   const openArticle = (slug: string) => navigate("medscapeOutline", { slug });
 
-  if (treeLoading || !specialty) return <LoadingState />;
+  if (treeLoading) return <LoadingState />;
+  // Loaded but nothing to browse: say so, instead of spinning forever
+  // waiting for a specialty that will never be picked.
+  if (treeError || specialties.length === 0) {
+    return (
+      <Screen>
+        <ScreenChrome title={t("guidelinesLabel")} onBack={goBack} />
+        <LoadFailed message={t("medscapeTreeUnavailable")} onRetry={() => refetchTree()} busy={treeFetching} />
+      </Screen>
+    );
+  }
+  if (!specialty) return <LoadingState />;
 
   return (
     <Screen scroll={false} padded={false}>

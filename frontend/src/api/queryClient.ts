@@ -14,7 +14,7 @@ const DAY = 24 * 60 * MINUTE;
 export const CACHE_MAX_AGE = 7 * DAY;
 /** Bump whenever an API response shape changes: a cache written by an older
  * build is then discarded on start instead of being fed to newer code. */
-export const CACHE_BUSTER = "2026-10-12";
+export const CACHE_BUSTER = "2026-10-13";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,9 +35,14 @@ export const queryClient = new QueryClient({
 });
 
 // Reference content that only changes when the dataset is re-imported --
-// no reason to refetch it within a day.
-for (const key of ["calculators", "calculator-categories", "calculator", "medscape-tree", "lesson-drug"]) {
-  queryClient.setQueryDefaults([key], { staleTime: DAY });
+// no reason to refetch it within a day. An EMPTY answer is the exception:
+// it means the data wasn't there yet (e.g. asked before the import), so it
+// is never trusted as fresh -- otherwise a list fetched before the import
+// would keep showing as empty for a day after it.
+const isEmptyList = (data: unknown) => Array.isArray(data) && data.length === 0;
+const REFERENCE_KEYS = ["calculators", "calculator-categories", "calculator", "medscape-tree", "lesson-drug"];
+for (const key of REFERENCE_KEYS) {
+  queryClient.setQueryDefaults([key], { staleTime: (query) => (isEmptyList(query.state.data) ? 0 : DAY) });
 }
 
 // --- persistence across app restarts ---------------------------------------
@@ -75,7 +80,11 @@ type DehydratedQuery = PersistedClient["clientState"]["queries"][number];
 
 function trimForStorage(client: PersistedClient): PersistedClient {
   let queries = client.clientState.queries.filter(
-    (q) => q.state.status === "success" && PERSISTED_KEYS.has(String(q.queryKey[0])),
+    (q) =>
+      q.state.status === "success" &&
+      PERSISTED_KEYS.has(String(q.queryKey[0])) &&
+      // never carry an empty reference list over a restart (see REFERENCE_KEYS)
+      !(REFERENCE_KEYS.includes(String(q.queryKey[0])) && isEmptyList(q.state.data)),
   );
 
   const newestFirst = (a: DehydratedQuery, b: DehydratedQuery) => b.state.dataUpdatedAt - a.state.dataUpdatedAt;

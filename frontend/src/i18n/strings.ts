@@ -105,6 +105,7 @@ export const strings = {
     medscapeNoLocalResults: "نتیجه‌ای یافت نشد",
     medscapeRecentlyUpdated: "به‌روزرسانی‌های اخیر",
     medscapeAllArticlesAZ: "همهٔ مقالات · A–Z",
+    medscapeTreeUnavailable: "فهرست دسته‌ها بارگذاری نشد.",
 
     articleStartReading: "شروع مطالعه",
     articleContinueFrom: "ادامهٔ مطالعه از بخش",
@@ -359,6 +360,7 @@ export const strings = {
     medscapeNoLocalResults: "No matches found",
     medscapeRecentlyUpdated: "Recently Updated",
     medscapeAllArticlesAZ: "All Articles · A–Z",
+    medscapeTreeUnavailable: "The category list couldn't be loaded.",
 
     articleStartReading: "Start reading",
     articleContinueFrom: "Continue from section",
