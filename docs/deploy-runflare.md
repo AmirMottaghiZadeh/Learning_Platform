@@ -92,6 +92,38 @@ Alternative (no laptop Django run): `pg_dump --data-only` those five tables from
 the local `pharmexa_dev` DB and pipe into the external `psql` prefixed with
 `SET session_replication_role = replica;` to defer FK checks.
 
+## Loading calculators, guidelines and diseases
+
+These three datasets travel as self-contained SQLite files (images inside),
+exported from a database that already has them -- normally the local
+`pharmexa_dev`:
+
+```bash
+cd backend
+python manage.py export_reference_db --out ~/Documents/pharmenta-reference-data
+# -> calculators.db (~7 MB), guidelines.db (~160 MB), diseases.db (~290 MB)
+# one dataset only: --only calculators / --only guidelines / --only diseases
+```
+
+Upload the files to the server's disk (any path the app container can read,
+e.g. its mounted volume), then in the container's console:
+
+```bash
+python manage.py import_calculators_db --source /data/calculators.db
+python manage.py import_guidelines_db  --source /data/guidelines.db
+python manage.py import_diseases_db    --source /data/diseases.db
+```
+
+Each import runs in one transaction (all or nothing) and is safe to re-run:
+rows are matched on their stable source ids and updated in place, images on
+their content hash. `--dry-run` does the whole import and rolls it back;
+`--prune` also deletes rows of that dataset that are not in the file. A file
+for the wrong dataset, or from an incompatible export, is refused before
+anything is written.
+
+The same commands also work from the laptop against Runflare's external
+Postgres connection string, like `import_openfda` above.
+
 ## Verify
 
 ```bash

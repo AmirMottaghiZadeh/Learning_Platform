@@ -70,6 +70,9 @@ cp .env.example .env          # point DATABASE_URL at your Postgres
 python manage.py migrate
 python manage.py load_atc_reference
 python manage.py import_openfda            # needs the OpenFDA pipeline SQLite
+python manage.py import_calculators_db --source calculators.db   # from export_reference_db
+python manage.py import_guidelines_db  --source guidelines.db
+python manage.py import_diseases_db    --source diseases.db
 python manage.py build_flashcards          # card facts, from the profile summaries
 python manage.py build_question_bank       # quiz bank, from the card facts
 python manage.py runserver

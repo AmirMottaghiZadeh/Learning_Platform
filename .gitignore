@@ -33,6 +33,9 @@ backend/db.sqlite3-*
 # real copy lives.
 backend/data/*.sqlite
 backend/data/*.sqlite3
+# export_reference_db output (calculators.db, guidelines.db, diseases.db)
+reference-data/
+*.db.partial
 backend/data/*.json
 backend/exports/
 backend/backups/
