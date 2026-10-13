@@ -1,188 +1,262 @@
-import React, { useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Platform, Pressable, View } from "react-native";
 
 import { ApiError } from "@/api/client";
 import { authApi } from "@/api/endpoints";
-import { AppShell } from "@/components/AppShell";
-import { GlassToggles } from "@/components/GlassToggles";
-import { HeaderMesh } from "@/components/HeaderMesh";
+import { OtpPurpose } from "@/api/types";
+import { AuthLayout } from "@/components/AuthLayout";
 import { AppText } from "@/components/primitives/AppText";
 import { Button } from "@/components/primitives/Button";
-import { IconImage } from "@/components/primitives/IconImage";
 import { Input } from "@/components/primitives/Input";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useBackInterceptor } from "@/navigation/back";
 import { useAuth } from "@/store/auth";
 import { useTheme } from "@/theme/ThemeProvider";
 
-type Mode = "login" | "signup";
+type Mode = "login" | "signup" | "reset";
+type Step = "phone" | "code";
 
+/** Signed-out entry. Three paths:
+ * - login: mobile number (or an old account's email) + password, no SMS;
+ * - signup: mobile number -> SMS code -> signed in; the app then asks for a
+ *   password (SetPasswordScreen) before anything else;
+ * - reset (forgotten password): mobile number -> SMS code -> signed in,
+ *   then a new password. */
 export function AuthScreen() {
-  const { t } = useLang();
+  const { t, n, row } = useLang();
   const { colors } = useTheme();
   const applyAuth = useAuth((s) => s.applyAuth);
 
   const [mode, setMode] = useState<Mode>("login");
-  useBackInterceptor(mode === "signup", () => setMode("login"));
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [step, setStep] = useState<Step>("phone");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [codeLength, setCodeLength] = useState(5);
+  const [sentTo, setSentTo] = useState("");
+  const [countdown, setCountdown] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isSignup = mode === "signup";
 
-  const submit = async () => {
-    // Browser/OS autofill can fill the visible field without ever firing
-    // onChangeText (a well-known RN-web + password-manager quirk), leaving
-    // this state stuck at "" while the screen shows it as filled — the
-    // server then rejects the blank field and the raw English "Validation
-    // error." shows up out of nowhere. Catch it here with a translated
-    // message instead of round-tripping to the API to find out.
-    const trimmedName = name.trim();
-    const trimmedEmail = email.trim();
-    if ((isSignup && !trimmedName) || !trimmedEmail || !password) {
-      setError(t("fillRequiredFields"));
-      return;
+  const purpose: OtpPurpose = mode === "reset" ? "reset" : "signup";
+
+  const switchTo = (next: Mode) => {
+    setMode(next);
+    setStep("phone");
+    setCode("");
+    setError(null);
+  };
+  useBackInterceptor(mode !== "login", () => (step === "code" ? setStep("phone") : switchTo("login")));
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [countdown]);
+
+  const messageFor = (e: unknown) => {
+    if (e instanceof ApiError) {
+      if (e.code === "INVALID_CREDENTIALS") return t("invalidCredentials");
+      // The server's own messages for these flows are already user-facing Persian.
+      return e.message;
     }
+    return t("loadFailed");
+  };
 
+  const run = async (work: () => Promise<void>) => {
     setBusy(true);
     setError(null);
     try {
-      const payload = isSignup
-        ? await authApi.register({
-            name: trimmedName,
-            email: trimmedEmail,
-            password,
-            password_confirm: password,
-          })
-        : await authApi.login({ username: trimmedEmail, password });
-      await applyAuth(payload);
+      await work();
     } catch (e) {
-      if (e instanceof ApiError) {
-        // INVALID covers a grab-bag of distinct server-side reasons (taken
-        // email/username, password too similar to it, mismatched
-        // confirmation, too short, too common...) -- show the real message
-        // instead of guessing at one, so the actual cause is visible.
-        setError(e.code === "INVALID_CREDENTIALS" ? t("invalidCredentials") : e.message);
-      } else {
-        setError(t("loadFailed"));
-      }
+      setError(messageFor(e));
+    } finally {
       setBusy(false);
     }
   };
 
+  const login = () => {
+    // Autofill can fill a field without firing onChangeText (RN-web +
+    // password managers), leaving state blank while the field shows text.
+    if (!identifier.trim() || !password) {
+      setError(t("fillRequiredFields"));
+      return;
+    }
+    run(async () => {
+      await applyAuth(await authApi.login({ username: identifier.trim(), password }));
+    });
+  };
+
+  const sendCode = () => {
+    if (!phone.trim()) {
+      setError(t("fillRequiredFields"));
+      return;
+    }
+    run(async () => {
+      try {
+        const sent = await authApi.requestOtp({ phone: phone.trim(), purpose });
+        setSentTo(sent.phone);
+        setCodeLength(sent.code_length);
+        setCountdown(sent.resend_in);
+        setCode("");
+        setStep("code");
+      } catch (e) {
+        if (e instanceof ApiError && e.code === "OTP_TOO_SOON") {
+          // A code was sent moments ago (e.g. the number was edited back to
+          // the same one) -- it still works, so go enter it.
+          const wait = (e.details as { retry_after?: number })?.retry_after ?? 0;
+          setCountdown(wait);
+          setSentTo(phone.trim());
+          setStep("code");
+          return;
+        }
+        if (e instanceof ApiError && e.code === "PHONE_REGISTERED") {
+          // Already has an account: send them to sign in with this number.
+          setMode("login");
+          setIdentifier(phone.trim());
+        }
+        throw e;
+      }
+    });
+  };
+
+  const verify = (value = code) => {
+    if (value.length < codeLength) return;
+    run(async () => {
+      const payload = await authApi.verifyOtp({ phone: sentTo || phone.trim(), purpose, code: value });
+      await applyAuth(payload, { mustSetPassword: purpose === "reset" });
+    });
+  };
+
+  const onCode = (value: string) => {
+    const digits = value.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/\D/g, "");
+    setCode(digits.slice(0, codeLength));
+    if (digits.length === codeLength && !busy) verify(digits.slice(0, codeLength));
+  };
+
+  const title = mode === "login" ? t("loginTitle") : mode === "signup" ? t("signupTitle") : t("resetTitle");
+  const subtitle =
+    step === "code" && mode !== "login"
+      ? t("otpSubtitle").replace("{n}", n(codeLength)).replace("{phone}", n(sentTo))
+      : mode === "login"
+        ? t("loginSubtitle")
+        : mode === "signup"
+          ? t("phoneSignupSubtitle")
+          : t("resetSubtitle");
+
   return (
-    <AppShell>
-      <HeaderMesh>
-        {/* Keyboard avoidance is handled once, centrally, by AppShell. */}
-        <View style={{ flex: 1 }}>
-          <GlassToggles />
+    <AuthLayout title={step === "code" && mode !== "login" ? t("otpTitle") : title} subtitle={subtitle}>
+      {mode === "login" ? (
+        <View style={{ gap: 12 }}>
+          <Input
+            placeholder={t("phoneOrEmailLabel")}
+            autoCapitalize="none"
+            autoComplete="username"
+            textContentType="username"
+            value={identifier}
+            onChangeText={setIdentifier}
+          />
+          <Input
+            placeholder={t("passwordLabel")}
+            secureTextEntry
+            autoComplete="current-password"
+            textContentType="password"
+            value={password}
+            onChangeText={setPassword}
+            onSubmitEditing={login}
+          />
+        </View>
+      ) : step === "phone" ? (
+        <Input
+          placeholder={t("phoneLabel")}
+          keyboardType="phone-pad"
+          autoComplete="tel"
+          textContentType="telephoneNumber"
+          value={phone}
+          onChangeText={setPhone}
+          onSubmitEditing={sendCode}
+          autoFocus
+        />
+      ) : (
+        <Input
+          placeholder={t("otpPlaceholder")}
+          keyboardType="number-pad"
+          // Lets the phone or browser offer the code straight from the SMS.
+          autoComplete={Platform.OS === "web" ? ("one-time-code" as never) : "sms-otp"}
+          textContentType="oneTimeCode"
+          maxLength={codeLength}
+          value={code}
+          onChangeText={onCode}
+          autoFocus
+          style={{ textAlign: "center", letterSpacing: 8, fontSize: 20, writingDirection: "ltr" }}
+        />
+      )}
 
-          <View
-            style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}
-          >
-            <IconImage name="app-logo" size={96} style={{ marginBottom: 16 }} />
-            <AppText weight="900" size={26} color="#fff" center>
-              {t("appName")}
+      {error ? (
+        <AppText size={12} weight="700" color={colors.denyLabel} style={{ marginTop: 12 }}>
+          {error}
+        </AppText>
+      ) : null}
+
+      {mode === "login" ? (
+        <>
+          <Button label={t("loginBtn")} onPress={login} loading={busy} style={{ marginTop: 20 }} />
+          <Pressable onPress={() => switchTo("reset")} style={{ marginTop: 14, alignSelf: "center" }}>
+            <AppText weight="700" size={13} color={colors.accent}>
+              {t("forgotPassword")}
             </AppText>
-            {/* The header mesh is a dark teal gradient in BOTH themes, so this
-                text must stay light — `onAccentSub` flips to near-black in dark
-                mode (it is tuned for text on the light accent pill). */}
-            <AppText
-              weight="600"
-              size={14}
-              color="rgba(255,255,255,0.85)"
-              center
-              style={{ marginTop: 8 }}
-            >
-              {t("tagline")}
-            </AppText>
-          </View>
-
-          <View
-            style={{
-              backgroundColor: colors.appBg,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              paddingHorizontal: 26,
-              paddingTop: 28,
-              paddingBottom: 34,
-            }}
-          >
-            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-              <AppText weight="800" size={20}>
-                {isSignup ? t("signupTitle") : t("loginTitle")}
+          </Pressable>
+        </>
+      ) : step === "phone" ? (
+        <Button label={t("sendCodeBtn")} onPress={sendCode} loading={busy} style={{ marginTop: 20 }} />
+      ) : (
+        <>
+          <Button
+            label={t("verifyBtn")}
+            onPress={() => verify()}
+            loading={busy}
+            disabled={code.length < codeLength}
+            style={{ marginTop: 20 }}
+          />
+          <View style={{ flexDirection: row, justifyContent: "space-between", marginTop: 14 }}>
+            <Pressable onPress={() => setStep("phone")} hitSlop={8}>
+              <AppText weight="700" size={13} color={colors.accent}>
+                {t("editPhone")}
               </AppText>
-              <AppText muted weight="600" size={13} style={{ marginTop: 4, marginBottom: 20 }}>
-                {isSignup ? t("signupSubtitle") : t("loginSubtitle")}
+            </Pressable>
+            {countdown > 0 ? (
+              <AppText muted weight="600" size={13}>
+                {t("resendIn").replace("{s}", n(countdown))}
               </AppText>
-
-              <View style={{ gap: 12 }}>
-                {isSignup ? (
-                  <Input
-                    placeholder={t("nameLabel")}
-                    autoComplete="name"
-                    textContentType="name"
-                    value={name}
-                    onChangeText={setName}
-                  />
-                ) : null}
-                <Input
-                  placeholder={t("emailLabel")}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoComplete="email"
-                  textContentType="emailAddress"
-                  value={email}
-                  onChangeText={setEmail}
-                />
-                <Input
-                  placeholder={t("passwordLabel")}
-                  secureTextEntry
-                  autoComplete={isSignup ? "new-password" : "current-password"}
-                  textContentType={isSignup ? "newPassword" : "password"}
-                  value={password}
-                  onChangeText={setPassword}
-                />
-              </View>
-
-              {error ? (
-                <AppText size={12} weight="700" color={colors.denyLabel} style={{ marginTop: 12 }}>
-                  {error}
-                </AppText>
-              ) : null}
-
-              <Button
-                label={isSignup ? t("signupBtn") : t("loginBtn")}
-                onPress={submit}
-                loading={busy}
-                style={{ marginTop: 20 }}
-              />
-
-              {isSignup ? (
-                <AppText muted weight="600" size={12} center style={{ marginTop: 12, lineHeight: 20 }}>
-                  {t("signupTerms")}
-                </AppText>
-              ) : null}
-
-              <Pressable
-                onPress={() => {
-                  setMode(isSignup ? "login" : "signup");
-                  setError(null);
-                }}
-                style={{ marginTop: 14, alignSelf: "center" }}
-              >
-                <AppText muted weight="600" size={13}>
-                  {isSignup ? t("haveAccount") : t("noAccount")}{" "}
-                  <AppText weight="800" size={13} color={colors.accent}>
-                    {isSignup ? t("loginLink") : t("signupLink")}
-                  </AppText>
+            ) : (
+              <Pressable onPress={sendCode} disabled={busy} hitSlop={8}>
+                <AppText weight="700" size={13} color={colors.accent}>
+                  {t("resendCode")}
                 </AppText>
               </Pressable>
-            </ScrollView>
+            )}
           </View>
-        </View>
-      </HeaderMesh>
-    </AppShell>
+        </>
+      )}
+
+      {mode === "signup" && step === "phone" ? (
+        <AppText muted weight="600" size={12} center style={{ marginTop: 12, lineHeight: 20 }}>
+          {t("signupTerms")}
+        </AppText>
+      ) : null}
+
+      <Pressable
+        onPress={() => switchTo(mode === "login" ? "signup" : "login")}
+        style={{ marginTop: 14, alignSelf: "center" }}
+      >
+        <AppText muted weight="600" size={13}>
+          {mode === "login" ? t("noAccount") : t("haveAccount")}{" "}
+          <AppText weight="800" size={13} color={colors.accent}>
+            {mode === "login" ? t("signupLink") : t("loginLink")}
+          </AppText>
+        </AppText>
+      </Pressable>
+    </AuthLayout>
   );
 }

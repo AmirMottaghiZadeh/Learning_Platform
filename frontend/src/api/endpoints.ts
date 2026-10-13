@@ -33,14 +33,14 @@ import {
   UptodateArticle,
   UptodateImage,
   UptodateSearchResult,
+  OtpPurpose,
+  OtpRequestResponse,
   User,
 } from "./types";
 
 // --- auth ---------------------------------------------------------------
 
 export const authApi = {
-  register: (body: { name: string; email: string; password: string; password_confirm: string }) =>
-    apiClient.post<AuthTokenResponse>("/auth/register/", body).then((r) => r.data),
   login: (body: { username: string; password: string; device_name?: string }) =>
     apiClient.post<AuthTokenResponse>("/auth/login/", body).then((r) => r.data),
   refresh: (refresh_token: string) =>
@@ -51,6 +51,13 @@ export const authApi = {
       .then((r) => r.data),
   logout: () => apiClient.post("/auth/logout/").then((r) => r.data),
   me: () => apiClient.get<User>("/auth/me/").then((r) => r.data),
+  // SMS code for signing up ("signup") or for a forgotten password ("reset").
+  requestOtp: (body: { phone: string; purpose: OtpPurpose }) =>
+    apiClient.post<OtpRequestResponse>("/auth/otp/request/", body).then((r) => r.data),
+  verifyOtp: (body: { phone: string; purpose: OtpPurpose; code: string; device_name?: string }) =>
+    apiClient.post<AuthTokenResponse>("/auth/otp/verify/", body).then((r) => r.data),
+  setPassword: (body: { new_password: string; new_password_confirm: string; name?: string; current_password?: string }) =>
+    apiClient.post<User>("/auth/password/set/", body).then((r) => r.data),
   onboarding: (body: {
     study_field: string;
     study_goal: string;

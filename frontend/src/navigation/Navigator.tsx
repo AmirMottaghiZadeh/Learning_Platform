@@ -27,6 +27,7 @@ import { PlanningScreen } from "@/screens/PlanningScreen";
 import { PlanningSetupScreen } from "@/screens/PlanningSetupScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
 import { QuizScreen } from "@/screens/QuizScreen";
+import { SetPasswordScreen } from "@/screens/SetPasswordScreen";
 import { StatisticsScreen } from "@/screens/StatisticsScreen";
 import { UptodateArticleScreen } from "@/screens/UptodateArticleScreen";
 import { UptodateOutlineScreen } from "@/screens/UptodateOutlineScreen";
@@ -38,10 +39,13 @@ import { useNav } from "@/store/nav";
 export function Navigator() {
   const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
+  const mustSetPassword = useAuth((s) => s.mustSetPassword);
 
   let content: React.ReactNode;
   if (status === "loading") content = <LoadingState />;
   else if (status === "signedOut") content = <AuthScreen />;
+  // Signed in with an SMS code: a password comes before anything else.
+  else if (user && (user.has_password === false || mustSetPassword)) content = <SetPasswordScreen />;
   else if (user && !user.profile.is_onboarded) content = <OnboardingScreen />;
   else {
     content = (

@@ -8,10 +8,15 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.db.models import Q
 
+from .models import LearnerProfile
+from .phone import looks_like_phone, normalize_phone
+
 
 class EmailOrUsernameBackend(ModelBackend):
-    """Accept either the real `username` or the account's `email` in the
-    `username` credential.
+    """Accept the account's mobile number, its `email`, or the real
+    `username` in the `username` credential. A mobile number (any usual
+    spelling) is matched to the verified number on the learner profile --
+    the normal sign-in for accounts made by phone sign-up.
 
     Registration (`RegisterSerializer.validate`) derives `username` from the
     email's local part (`name@example.com` -> `name`) purely as an internal
@@ -28,6 +33,20 @@ class EmailOrUsernameBackend(ModelBackend):
         if username is None:
             username = kwargs.get(UserModel.USERNAME_FIELD)
         if username is None or password is None:
+            return None
+        if looks_like_phone(username):
+            # A mobile number: the account that verified it at sign-up.
+            profile = (
+                LearnerProfile.objects.select_related("user")
+                .filter(phone=normalize_phone(username))
+                .first()
+            )
+            if profile is None:
+                UserModel().set_password(password)  # same timing as a miss below
+                return None
+            user = profile.user
+            if user.check_password(password) and self.user_can_authenticate(user):
+                return user
             return None
         try:
             user = UserModel._default_manager.get(

@@ -14,10 +14,21 @@ active language. Persian is the default.
 
 ## Auth & onboarding
 
+New accounts sign up with a mobile number: an SMS code (sms.ir verify
+template) signs them in the first time, they then choose a password
+(`User.has_password` is false until they do), and every later sign-in is
+number + password. A forgotten password is reset with another SMS code.
+Codes are stored hashed, expire after `OTP_TTL_SECONDS`, allow
+`OTP_MAX_ATTEMPTS` wrong tries, and a number gets one at most every
+`OTP_RESEND_SECONDS` and `OTP_MAX_PER_PHONE_PER_DAY` times a day.
+
 | Method | Path | Status | Notes |
 |---|---|---|---|
-| POST | `/auth/register/` | ✅ | body `{name, email, password, password_confirm}` → `AuthTokenResponse` |
-| POST | `/auth/login/` | ✅ | `{username, password, device_name?}` → `AuthTokenResponse` |
+| POST | `/auth/otp/request/` | ✅ | `{phone, purpose: "signup"\|"reset"}` → `{phone, code_length, expires_in, resend_in}`; texts an SMS code. 409 `PHONE_REGISTERED` (signup, number already has a password), 404 `PHONE_NOT_REGISTERED` (reset), 429 `OTP_TOO_SOON` (`details.retry_after`) / `OTP_DAILY_LIMIT`, 503 `SMS_SEND_FAILED` |
+| POST | `/auth/otp/verify/` | ✅ | `{phone, purpose, code, device_name?}` → `AuthTokenResponse` (201 when the account was just created). 400 `OTP_INVALID` (`details.attempts_left`) / `OTP_EXPIRED` / `OTP_LOCKED`. The session may set a password without the current one for `AUTH_STEP_UP_TTL_MINUTES` |
+| POST | `/auth/password/set/` | ✅ | `{new_password, new_password_confirm, name?, current_password?}` → `User`. `current_password` needed only if the account already has a password and the session didn't just verify an SMS code; signs every other session out |
+| POST | `/auth/register/` | ⛔ | email sign-up, 403 `EMAIL_REGISTRATION_CLOSED` unless `AUTH_EMAIL_REGISTRATION_ENABLED` |
+| POST | `/auth/login/` | ✅ | `{username, password, device_name?}` → `AuthTokenResponse`; `username` = mobile number (any spelling), email, or username |
 | POST | `/auth/refresh/` | ✅ | `{refresh_token}` → `AuthTokenResponse` (refresh rotates) |
 | POST | `/auth/logout/` · `/auth/logout-all/` | ✅ | revoke current / all sessions |
 | GET | `/auth/me/` | ✅ | → `User` (incl. `profile`) |
@@ -25,7 +36,7 @@ active language. Persian is the default.
 | POST | `/auth/onboarding/` | ✅ | `{study_field, study_goal, study_level, display_name?, language?}` → `User`; sets `profile.onboarded_at` |
 | GET | `/auth/sessions/` · POST `/auth/sessions/{id}/revoke/` | ✅ | device list / revoke |
 | POST | `/auth/step-up/` | ✅ | re-verify password for sensitive actions |
-| GET/POST | `/auth/password-reset/` · `/auth/password-reset/confirm/` | ✅ | |
+| GET/POST | `/auth/password-reset/` · `/auth/password-reset/confirm/` | ✅ | email reset, for accounts made with an email |
 | GET | `/auth/roles/` · `/auth/role-assignments/` · `/auth/security-events/` | ✅ | RBAC / audit (staff) |
 
 ```jsonc

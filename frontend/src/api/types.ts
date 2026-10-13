@@ -18,10 +18,23 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  /** verified mobile number ("09xxxxxxxxx"), null for email-only accounts */
+  phone: string | null;
+  /** false right after an SMS sign-up, until a password is chosen */
+  has_password: boolean;
   first_name: string;
   last_name: string;
   roles: string[];
   profile: LearnerProfile;
+}
+
+export type OtpPurpose = "signup" | "reset";
+
+export interface OtpRequestResponse {
+  phone: string;
+  code_length: number;
+  expires_in: number;
+  resend_in: number;
 }
 
 export interface AuthTokenResponse {

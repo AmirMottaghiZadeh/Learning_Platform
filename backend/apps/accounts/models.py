@@ -209,6 +209,11 @@ class LearnerProfile(models.Model):
     study_goal = models.CharField(max_length=20, choices=GOAL_CHOICES, blank=True)
     study_level = models.CharField(max_length=20, choices=LEVEL_CHOICES, blank=True)
     language = models.CharField(max_length=5, default="fa")
+    # The account's mobile number, "09xxxxxxxxx" -- set only once proven
+    # with an SMS code (sign-up), so it is always a verified number. Null for
+    # accounts made with an email before phone sign-up existed.
+    phone = models.CharField(max_length=11, null=True, blank=True, unique=True)
+    phone_verified_at = models.DateTimeField(null=True, blank=True)
     onboarded_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -232,6 +237,10 @@ class SecurityAuditEvent(models.Model):
     AUTHORIZATION_DENIED = "authorization_denied"
     ROLE_ASSIGNED = "role_assigned"
     ROLE_REVOKED = "role_revoked"
+    OTP_SENT = "otp_sent"
+    OTP_VERIFIED = "otp_verified"
+    OTP_FAILED = "otp_failed"
+    PASSWORD_SET = "password_set"
 
     event_type = models.CharField(max_length=80)
     user = models.ForeignKey(
@@ -293,3 +302,35 @@ class SecurityAuditEvent(models.Model):
 
     def __str__(self):
         return self.event_type
+
+
+class OneTimeCode(models.Model):
+    """One SMS code sent to a mobile number: for signing up (and signing in
+    for the first time), or for resetting a forgotten password. Only an HMAC
+    of the code is stored; it expires, allows a few wrong tries, and is
+    spent by its first correct use (see apps.accounts.otp)."""
+
+    SIGNUP = "signup"
+    RESET = "reset"
+    PURPOSE_CHOICES = [(SIGNUP, "Sign up"), (RESET, "Password reset")]
+
+    phone = models.CharField(max_length=11)
+    purpose = models.CharField(max_length=16, choices=PURPOSE_CHOICES)
+    code_hash = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    # The SMS provider's id for the message, for tracing a delivery problem.
+    provider_message_id = models.CharField(max_length=64, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["phone", "purpose", "-created_at"], name="accounts_otp_phone_idx"),
+            models.Index(fields=["-created_at"], name="accounts_otp_recent_idx"),
+        ]
+
+    def __str__(self):
+        return f"OneTimeCode<{self.purpose} {self.phone[:4]}…>"

@@ -196,7 +196,10 @@ THROTTLE_FAIL_CLOSED_SCOPES = [
             "auth_login,"
             "auth_register,"
             "auth_password_reset_request,"
-            "auth_password_reset_confirm"
+            "auth_password_reset_confirm,"
+            "auth_otp_request,"
+            "auth_otp_verify,"
+            "auth_password_set"
         ),
     ).split(",")
     if scope.strip()
@@ -241,6 +244,26 @@ AUTH_STEP_UP_TTL_MINUTES = config(
     cast=int,
 )
 PASSWORD_RESET_TIMEOUT = config("PASSWORD_RESET_TIMEOUT", default=86400, cast=int)
+
+# Sign-up and password reset by SMS code (apps.accounts.otp / .sms). The
+# key and template come from the sms.ir panel and only ever from the
+# environment. Without a key the codes are written to the log instead of
+# sent -- right for development and tests, and refused by `check --deploy`.
+SMSIR_API_KEY = config("SMSIR_API_KEY", default="")
+SMSIR_VERIFY_URL = config("SMSIR_VERIFY_URL", default="https://api.sms.ir/v1/send/verify")
+# The approved verify template, e.g. "کد ورود شما به فارمنتا: #CODE#".
+SMSIR_OTP_TEMPLATE_ID = config("SMSIR_OTP_TEMPLATE_ID", default=0, cast=int)
+SMSIR_OTP_PARAMETER = config("SMSIR_OTP_PARAMETER", default="CODE")
+SMSIR_TIMEOUT_SECONDS = config("SMSIR_TIMEOUT_SECONDS", default=10, cast=int)
+SMS_BACKEND = config("SMS_BACKEND", default="smsir" if SMSIR_API_KEY else "console")
+OTP_CODE_LENGTH = config("OTP_CODE_LENGTH", default=5, cast=int)
+OTP_TTL_SECONDS = config("OTP_TTL_SECONDS", default=120, cast=int)
+OTP_MAX_ATTEMPTS = config("OTP_MAX_ATTEMPTS", default=5, cast=int)
+OTP_RESEND_SECONDS = config("OTP_RESEND_SECONDS", default=60, cast=int)
+OTP_MAX_PER_PHONE_PER_DAY = config("OTP_MAX_PER_PHONE_PER_DAY", default=8, cast=int)
+# New accounts sign up with a mobile number; the old email sign-up endpoint
+# stays off unless switched back on.
+AUTH_EMAIL_REGISTRATION_ENABLED = config("AUTH_EMAIL_REGISTRATION_ENABLED", default=False, cast=bool)
 PASSWORD_RESET_FRONTEND_URL = config("PASSWORD_RESET_FRONTEND_URL", default="http://localhost:8081")
 EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 EMAIL_HOST = config("EMAIL_HOST", default="")
@@ -293,6 +316,9 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
+# Shortest password accepted anywhere (sign-up, reset, choosing one after an
+# SMS sign-up). The common-password and all-digits checks still apply.
+AUTH_PASSWORD_MIN_LENGTH = config("AUTH_PASSWORD_MIN_LENGTH", default=6, cast=int)
 AUTH_PASSWORD_VALIDATORS = [
     {
         # Django's default threshold (max_similarity=0.7) rejects passwords
@@ -306,7 +332,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-        "OPTIONS": {"min_length": 12},
+        "OPTIONS": {"min_length": AUTH_PASSWORD_MIN_LENGTH},
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -344,6 +370,12 @@ REST_FRAMEWORK = {
             "DRF_AUTH_PASSWORD_RESET_CONFIRM_THROTTLE_RATE",
             default="5/hour",
         ),
+        # Per client address. Each number also has its own resend gap and
+        # daily cap (OTP_*), which is what really protects the SMS credit --
+        # these stay loose enough for many phones behind one carrier NAT.
+        "auth_otp_request": config("DRF_AUTH_OTP_REQUEST_THROTTLE_RATE", default="20/hour"),
+        "auth_otp_verify": config("DRF_AUTH_OTP_VERIFY_THROTTLE_RATE", default="30/hour"),
+        "auth_password_set": config("DRF_AUTH_PASSWORD_SET_THROTTLE_RATE", default="10/hour"),
     },
 }
 

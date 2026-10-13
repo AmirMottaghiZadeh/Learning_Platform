@@ -58,7 +58,19 @@ CORS_ALLOWED_ORIGINS=<VERCEL_URL>
 CORS_ALLOW_CREDENTIALS=True
 CSRF_TRUSTED_ORIGINS=https://<RUNFLARE_HOST>,<VERCEL_URL>
 PASSWORD_RESET_FRONTEND_URL=<VERCEL_URL>/reset-password
+
+# SMS codes for sign-up and password reset (sms.ir panel). The key is a
+# secret: set it here only. The template is the approved verify template
+# whose text holds the code, e.g. "کد ورود شما به فارمنتا: #CODE#".
+SMSIR_API_KEY=<sms.ir API key>
+SMSIR_OTP_TEMPLATE_ID=<template id>
+SMSIR_OTP_PARAMETER=CODE
 ```
+
+Without `SMSIR_API_KEY` the codes are only written to the log and nobody can
+sign up -- `manage.py check --deploy` warns about it (accounts.W001). If the
+sms.ir key is restricted to IP addresses, add the server's outgoing IP in
+the sms.ir panel.
 
 Do **not** set: `CELERY_TASK_ALWAYS_EAGER` (the flag above handles it),
 `REDIS_URL`, `CELERY_BROKER_URL`, `LEARNING_PRODUCT_ADAPTER`,

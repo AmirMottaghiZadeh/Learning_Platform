@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
@@ -7,11 +8,13 @@ from rest_framework import serializers
 
 from .models import (
     LearnerProfile,
+    OneTimeCode,
     Role,
     RoleAssignment,
     SecurityAuditEvent,
     UserSession,
 )
+from .phone import InvalidPhone, normalize_phone
 from .services import active_role_keys, ensure_default_learner_role
 
 
@@ -19,8 +22,8 @@ User = get_user_model()
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=12)
-    password_confirm = serializers.CharField(write_only=True, min_length=12)
+    password = serializers.CharField(write_only=True, min_length=settings.AUTH_PASSWORD_MIN_LENGTH)
+    password_confirm = serializers.CharField(write_only=True, min_length=settings.AUTH_PASSWORD_MIN_LENGTH)
     name = serializers.CharField(write_only=True)
 
     class Meta:
@@ -94,6 +97,10 @@ class LearnerProfileSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
     profile = serializers.SerializerMethodField()
+    phone = serializers.SerializerMethodField()
+    # False right after signing up with an SMS code, until a password is
+    # chosen -- the app keeps the user on "choose a password" until then.
+    has_password = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -103,12 +110,21 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "username",
             "email",
+            "phone",
+            "has_password",
             "roles",
             "profile",
         ]
 
     def get_roles(self, obj) -> list[str]:
         return sorted(set(active_role_keys(obj)))
+
+    def get_phone(self, obj) -> str | None:
+        profile = getattr(obj, "learner_profile", None)
+        return profile.phone if profile else None
+
+    def get_has_password(self, obj) -> bool:
+        return obj.has_usable_password()
 
     @extend_schema_field(LearnerProfileSerializer)
     def get_profile(self, obj):
@@ -287,6 +303,52 @@ class SecurityAuditEventSerializer(serializers.ModelSerializer):
         ]
 
 
+class PhoneField(serializers.CharField):
+    """A mobile number in any usual spelling, cleaned to "09xxxxxxxxx"."""
+
+    def to_internal_value(self, data):
+        try:
+            return normalize_phone(super().to_internal_value(data))
+        except InvalidPhone as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+
+
+class OtpRequestSerializer(serializers.Serializer):
+    phone = PhoneField()
+    purpose = serializers.ChoiceField(choices=OneTimeCode.PURPOSE_CHOICES)
+
+
+class OtpRequestResponseSerializer(serializers.Serializer):
+    phone = serializers.CharField()
+    code_length = serializers.IntegerField()
+    expires_in = serializers.IntegerField()
+    resend_in = serializers.IntegerField()
+
+
+class OtpVerifySerializer(serializers.Serializer):
+    phone = PhoneField()
+    purpose = serializers.ChoiceField(choices=OneTimeCode.PURPOSE_CHOICES)
+    code = serializers.CharField(max_length=10)
+    device_name = serializers.CharField(required=False, allow_blank=True, max_length=120)
+
+
+class PasswordSetSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True)
+    new_password_confirm = serializers.CharField(write_only=True)
+    # Needed only when the session didn't just prove itself with an SMS code
+    # (see PasswordSetView).
+    current_password = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    # Asked together with the first password after a phone sign-up, which
+    # has no other step that collects it.
+    name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["new_password_confirm"]:
+            raise serializers.ValidationError({"new_password_confirm": "تکرار رمز عبور یکسان نیست."})
+        validate_password(attrs["new_password"], user=self.context.get("user"))
+        return attrs
+
+
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -294,8 +356,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 class PasswordResetConfirmSerializer(serializers.Serializer):
     uid = serializers.CharField()
     token = serializers.CharField()
-    new_password = serializers.CharField(write_only=True, min_length=12)
-    new_password_confirm = serializers.CharField(write_only=True, min_length=12)
+    new_password = serializers.CharField(write_only=True, min_length=settings.AUTH_PASSWORD_MIN_LENGTH)
+    new_password_confirm = serializers.CharField(write_only=True, min_length=settings.AUTH_PASSWORD_MIN_LENGTH)
 
     def validate(self, attrs):
         if attrs["new_password"] != attrs["new_password_confirm"]:

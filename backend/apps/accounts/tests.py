@@ -136,6 +136,7 @@ class AuthenticationSecurityTests(TestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("Old-Secure-Password-2026!"))
 
+    @override_settings(AUTH_EMAIL_REGISTRATION_ENABLED=True)
     def test_registration_rejects_common_numeric_password(self):
         response = self.client.post(
             reverse("auth-register"),
@@ -153,6 +154,7 @@ class AuthenticationSecurityTests(TestCase):
             get_user_model().objects.filter(email__iexact="new-learner@example.com").exists()
         )
 
+    @override_settings(AUTH_EMAIL_REGISTRATION_ENABLED=True)
     def test_registration_accepts_password_that_passes_django_validators(self):
         response = self.client.post(
             reverse("auth-register"),

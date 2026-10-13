@@ -15,8 +15,13 @@ type AuthState = {
   accessToken: string | null;
   refreshToken: string | null;
   sessionId: string | null;
+  /** Signed in with an SMS code for a forgotten password: the app asks for
+   * a new password before anything else. (A brand-new account needs one
+   * anyway -- `user.has_password` is false until it's chosen.) */
+  mustSetPassword: boolean;
   hydrate: () => Promise<void>;
-  applyAuth: (payload: AuthTokenResponse) => Promise<void>;
+  applyAuth: (payload: AuthTokenResponse, options?: { mustSetPassword?: boolean }) => Promise<void>;
+  passwordChosen: (user: User) => void;
   setUser: (user: User) => void;
   refresh: () => Promise<string>;
   signOut: () => Promise<void>;
@@ -28,6 +33,7 @@ export const useAuth = create<AuthState>((set, get) => ({
   accessToken: null,
   refreshToken: null,
   sessionId: null,
+  mustSetPassword: false,
 
   hydrate: async () => {
     const stored = await sessionStore.load();
@@ -53,7 +59,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     }
   },
 
-  applyAuth: async (payload) => {
+  applyAuth: async (payload, options) => {
     await sessionStore.save({
       accessToken: payload.access_token,
       refreshToken: payload.refresh_token,
@@ -64,9 +70,12 @@ export const useAuth = create<AuthState>((set, get) => ({
       accessToken: payload.access_token,
       refreshToken: payload.refresh_token,
       sessionId: payload.session_id,
+      mustSetPassword: !!options?.mustSetPassword,
       status: "signedIn",
     });
   },
+
+  passwordChosen: (user) => set({ user, mustSetPassword: false }),
 
   setUser: (user) => set({ user }),
 
@@ -115,6 +124,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       accessToken: null,
       refreshToken: null,
       sessionId: null,
+      mustSetPassword: false,
     });
   },
 }));
