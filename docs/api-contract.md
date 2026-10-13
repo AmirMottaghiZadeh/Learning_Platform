@@ -302,6 +302,29 @@ five sections: `indication`, `adr_common`, `adr_serious`, `dosage_forms`,
   `progress.record_study(reviews=1, minutes=1, xp)`. → the updated card. 404 for
   another learner's card.
 
+**Topic decks** — the learner picks a category, then a topic (the lessons
+taxonomy's `CATEGORIES` / `STUDY_TOPICS`), and works through that topic's carded
+drugs one by one in a fixed order (L2 order, then name) until the deck ends.
+Progress is a `TopicProgress` row per (learner, topic).
+
+- **GET `/flashcards/decks/`** — `{ topics_finished, cards_reviewed, categories:
+  [{ key, name_fa, name_en, topics_finished, topics: [{ key, name_fa, name_en,
+  total, position, finished }] }] }`; topics with no carded drug, and categories
+  with no such topic, are left out.
+- **GET `/flashcards/decks/{topic}/`** — `{ key, name_fa, name_en, category_key,
+  category_name_fa, category_name_en, total, position, known, hard, finished,
+  next_topic, cards: [same card shape as above, without id/box] }`. 404 for an
+  unknown topic.
+- **POST `/flashcards/decks/{topic}/answer/`** — `{drug_slug, rating}`; reviews the
+  drug's Leitner card (created if missing) and records study; moves `position`
+  on only when `drug_slug` is the card at `position`. → `{ total, position, known,
+  hard, finished, next_topic }`, where `next_topic` (`{ key, name_fa, name_en,
+  category_key, category_name_fa, category_name_en }`, or null after the last
+  topic) is set once the deck is finished. 422 `NOT_IN_DECK` for a drug outside
+  the topic.
+- **POST `/flashcards/decks/{topic}/restart/`** — resets the topic's pass. → the
+  same progress shape.
+
 ### Quiz (`apps.quiz`) — server-scored, feeds progress + mistakes
 
 Questions come from a pre-built bank (`BankQuestion`), rebuilt by

@@ -92,3 +92,33 @@ class FlashcardFact(models.Model):
 
     def __str__(self):
         return f"{self.ingredient_id}:{self.section}:{self.lang}#{self.order}"
+
+
+class TopicProgress(models.Model):
+    """How far a learner is through one study topic's deck (apps.lessons'
+    clinical topics are the flashcard sub-categories): the topic's drugs are
+    shown in a fixed order (apps.flashcards.decks), and `position` is how
+    many of them this pass has answered. `known` / `hard` count this pass's
+    answers for the end-of-deck summary; a restart clears all three."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="flashcard_topic_progress",
+    )
+    topic_key = models.CharField(max_length=60)
+    position = models.PositiveSmallIntegerField(default=0)
+    known = models.PositiveSmallIntegerField(default=0)
+    hard = models.PositiveSmallIntegerField(default=0)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "topic_key"], name="flashcards_unique_user_topic"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user_id}:{self.topic_key} {self.position}"

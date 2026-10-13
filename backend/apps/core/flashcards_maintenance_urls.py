@@ -7,6 +7,9 @@ urlpatterns = [
     path("flashcards/", maintenance_response),
     path("flashcards/boxes/", maintenance_response),
     path("flashcards/decks/", maintenance_response),
+    path("flashcards/decks/<slug:topic_key>/", maintenance_response),
+    path("flashcards/decks/<slug:topic_key>/answer/", maintenance_response),
+    path("flashcards/decks/<slug:topic_key>/restart/", maintenance_response),
     path("flashcards/seed/", maintenance_response),
     path("flashcards/<int:pk>/review/", maintenance_response),
 ]

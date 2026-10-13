@@ -199,3 +199,76 @@ class CardFactExtractionTests(TestCase):
         self.assertIn("saved 4 flashcard facts", out.getvalue())  # 2 sections x fa/en
         call_command("build_flashcards", stdout=StringIO())
         self.assertEqual(FlashcardFact.objects.count(), 4)
+
+
+@override_settings(ROOT_URLCONF="apps.flashcards.urls")
+class TopicDeckTests(TestCase):
+    def setUp(self):
+        from apps.drugs.models import AtcCode
+
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(username="d", email="d@e.com", password="x")
+        self.client.force_authenticate(self.user)
+        for name, rxcui, code in (
+            ("lisinopril", "29046", "C09AA03"),   # hypertension + heart failure
+            ("amlodipine", "17767", "C08CA01"),   # hypertension + angina
+            ("atorvastatin", "83367", "C10AA05"),  # lipids, last cardio topic with cards
+            ("metformin", "6809", "A10BA02"),      # diabetes, next category
+        ):
+            ing = _rich_ingredient(name, rxcui)
+            ing.atc_codes.add(AtcCode.objects.create(code=code, name=name))
+        bare = Ingredient.objects.create(name="nofacts", rxcui="9", slug="nofacts-9")
+        bare.atc_codes.add(AtcCode.objects.create(code="C08CA02", name="x"))
+
+    def _answer(self, topic, slug, rating="easy"):
+        return self.client.post(
+            f"/flashcards/decks/{topic}/answer/", {"drug_slug": slug, "rating": rating}, format="json"
+        )
+
+    def test_overview_lists_only_topics_with_cards_in_taxonomy_order(self):
+        data = self.client.get("/flashcards/decks/").data
+        self.assertEqual([c["key"] for c in data["categories"]], ["cardio-blood", "endocrine-metabolic"])
+        cardio = data["categories"][0]["topics"]
+        self.assertEqual([t["key"] for t in cardio], ["cv-htn", "cv-hf", "cv-angina", "cv-lipid"])
+        self.assertEqual(cardio[0]["total"], 2)  # the drug without facts is no card
+        self.assertEqual((cardio[0]["position"], cardio[0]["finished"]), (0, False))
+
+    def test_deck_is_in_chapter_order_and_advances_one_card_at_a_time(self):
+        deck = self.client.get("/flashcards/decks/cv-htn/").data
+        # chapters in the topic's own order: C08 (amlodipine) before C09
+        self.assertEqual([c["drug_slug"] for c in deck["cards"]], ["amlodipine-17767", "lisinopril-29046"])
+        self.assertEqual(deck["category_key"], "cardio-blood")
+        self.assertTrue(deck["cards"][0]["back_fields_fa"])
+
+        first = self._answer("cv-htn", "amlodipine-17767", "easy").data
+        self.assertEqual((first["position"], first["finished"], first["next_topic"]), (1, False, None))
+        done = self._answer("cv-htn", "lisinopril-29046", "hard").data
+        self.assertEqual((done["position"], done["known"], done["hard"], done["finished"]), (2, 1, 1, True))
+        self.assertEqual(done["next_topic"]["key"], "cv-hf")
+        # every answer also feeds spaced repetition
+        self.assertEqual(LeitnerCard.objects.filter(user=self.user).count(), 2)
+
+        overview = self.client.get("/flashcards/decks/").data
+        self.assertEqual(overview["topics_finished"], 1)
+        self.assertEqual(overview["cards_reviewed"], 2)
+
+    def test_reviewing_out_of_order_does_not_move_the_deck(self):
+        res = self._answer("cv-htn", "lisinopril-29046")
+        self.assertEqual(res.data["position"], 0)
+        self.assertEqual(LeitnerCard.objects.filter(user=self.user).count(), 1)
+
+    def test_next_topic_crosses_into_the_next_category(self):
+        done = self._answer("cv-lipid", "atorvastatin-83367").data
+        self.assertTrue(done["finished"])
+        self.assertEqual(done["next_topic"]["key"], "endo-diabetes")
+        self.assertEqual(done["next_topic"]["category_key"], "endocrine-metabolic")
+
+    def test_restart_clears_the_pass(self):
+        self._answer("cv-htn", "amlodipine-17767")
+        res = self.client.post("/flashcards/decks/cv-htn/restart/")
+        self.assertEqual((res.data["position"], res.data["known"]), (0, 0))
+        self.assertEqual(self.client.get("/flashcards/decks/cv-htn/").data["position"], 0)
+
+    def test_unknown_topic_and_foreign_drug_are_rejected(self):
+        self.assertEqual(self.client.get("/flashcards/decks/not-a-topic/").status_code, 404)
+        self.assertEqual(self._answer("cv-htn", "metformin-6809").status_code, 422)

@@ -71,3 +71,76 @@ class BoxSummarySerializer(serializers.Serializer):
 
 class ReviewSerializer(serializers.Serializer):
     rating = serializers.ChoiceField(choices=["easy", "hard"])
+
+
+class DeckCardSerializer(serializers.Serializer):
+    """One drug's card in a topic deck -- the same front/back a Leitner card
+    has, keyed by the drug rather than by a learner's card row."""
+
+    drug_slug = serializers.CharField(source="slug")
+    front_fa = serializers.CharField(source="name")
+    front_en = serializers.CharField(source="name")
+    back_fields_fa = serializers.SerializerMethodField()
+    back_fields_en = serializers.SerializerMethodField()
+
+    def get_back_fields_fa(self, obj) -> list:
+        return _card_back_fields(obj, "fa")
+
+    def get_back_fields_en(self, obj) -> list:
+        return _card_back_fields(obj, "en")
+
+
+class NextTopicSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    name_fa = serializers.CharField()
+    name_en = serializers.CharField()
+    category_key = serializers.CharField()
+    category_name_fa = serializers.CharField()
+    category_name_en = serializers.CharField()
+
+
+class TopicSummarySerializer(serializers.Serializer):
+    key = serializers.CharField()
+    name_fa = serializers.CharField()
+    name_en = serializers.CharField()
+    total = serializers.IntegerField()
+    position = serializers.IntegerField()
+    finished = serializers.BooleanField()
+
+
+class CategoryDecksSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    name_fa = serializers.CharField()
+    name_en = serializers.CharField()
+    topics_finished = serializers.IntegerField()
+    topics = TopicSummarySerializer(many=True)
+
+
+class DeckOverviewSerializer(serializers.Serializer):
+    topics_finished = serializers.IntegerField()
+    cards_reviewed = serializers.IntegerField()
+    categories = CategoryDecksSerializer(many=True)
+
+
+class DeckProgressSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    position = serializers.IntegerField()
+    known = serializers.IntegerField()
+    hard = serializers.IntegerField()
+    finished = serializers.BooleanField()
+    next_topic = NextTopicSerializer(allow_null=True)
+
+
+class TopicDeckSerializer(DeckProgressSerializer):
+    key = serializers.CharField()
+    name_fa = serializers.CharField()
+    name_en = serializers.CharField()
+    category_key = serializers.CharField()
+    category_name_fa = serializers.CharField()
+    category_name_en = serializers.CharField()
+    cards = DeckCardSerializer(many=True)
+
+
+class DeckAnswerSerializer(serializers.Serializer):
+    drug_slug = serializers.CharField(max_length=280)
+    rating = serializers.ChoiceField(choices=["easy", "hard"])

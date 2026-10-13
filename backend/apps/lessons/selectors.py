@@ -128,6 +128,26 @@ def slugs_for_topic(topic_key):
     return slugs
 
 
+def l2_slug_index():
+    """{ L2 code: [ingredient slugs, by name] } -- built once and passed to
+    `ordered_topic_slugs` when walking many topics."""
+    return _l2_slug_index()
+
+
+def ordered_topic_slugs(topic_key, index=None):
+    """This topic's ingredient slugs in study order -- chapter by chapter in
+    the topic's own L2 order, each chapter's drugs by name, each drug once
+    (a drug in two of the topic's chapters shows up under the first)."""
+    topic = next((t for t in STUDY_TOPICS if t["key"] == topic_key), None)
+    if not topic:
+        return []
+    index = index if index is not None else _l2_slug_index()
+    ordered = []
+    for code in topic["l2"]:
+        ordered.extend(index.get(code, []))
+    return list(dict.fromkeys(ordered))
+
+
 def topic_chapters(user, topic_key):
     """This topic's chapters (subgroups) with this learner's read progress,
     unread/partial ones first -- the order the study-plan generator works
