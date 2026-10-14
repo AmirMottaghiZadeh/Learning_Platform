@@ -405,6 +405,66 @@ language changed, summary longer than its source.
 
 ---
 
+## Billing — ✅ built (`apps.billing`), enforcement off by default
+
+A **plan** (`kind: "plan"`, a subscription tier) or **product** (`kind:
+"product"`, sold on its own) is a set of **features**, each optionally capped
+per day or month (Tehran calendar; months are Jalali months), with one price
+per duration (`duration_days`, `null` = permanent). Buying one grants an
+**entitlement** holding a snapshot of the plan's features at that moment, so
+editing a plan only reaches later buyers. The plan with `is_free` is what
+everyone has, read live. When two sources give the same feature the more
+generous wins (unlimited beats any cap; between caps the larger monthly
+equivalent). Built-in feature keys: `lessons`, `uptodate`, `lexicomp`,
+`medscape`, `calculators`, `flashcards`, `quiz`, `stats`; operators add
+`content` features (fence off a study category or an ATC prefix, enforced at
+once) and `custom` ones (enforced only once code checks the key).
+
+- **GET `/billing/catalog/`** — `{ free, plans[], products[] }`, each
+  `{ id, kind, slug, name_fa, name_en, tagline_fa, audience, is_free,
+  prices: [{ id, duration_days, duration_label, price_toman }],
+  features: [{ key, name_fa, limit, period, unit_fa }] }`. Only plans with
+  status `active` are listed (hidden ones are granted by an operator only).
+- **GET `/billing/me/`** — `{ enforced, features: [{ key, name_fa, limit,
+  period, used }], entitlements: [{ id, plan_name_fa, plan_kind, source,
+  starts_at, ends_at, days_left }] }`.
+- **POST `/billing/quote/`** — `{ price_id, discount_code? }` →
+  `{ amount_toman, discount_toman, payable_toman }`; 400 with
+  `PRICE_NOT_AVAILABLE` or a `DISCOUNT_*` code.
+- **POST `/billing/checkout/`** — same body → 201 `{ order_id, status,
+  payment_url }`. Open `payment_url` in the browser; a free order (100% off)
+  comes back `status: "paid"` with no URL. 502 `GATEWAY_ERROR` when the
+  gateway is unreachable.
+- **GET `/billing/callback/`** — where the gateway returns the learner
+  (`?Authority=…&Status=OK|NOK`). Verifies with the gateway, grants access
+  once (a retried callback changes nothing) and shows a Persian result page
+  linking to `BILLING_RETURN_URL`. HTML, not JSON.
+- **GET `/billing/orders/`** — the learner's last 50 orders.
+
+With `BILLING_ENFORCEMENT_ENABLED=True`, content endpoints answer **402**:
+`PREMIUM_REQUIRED` (`details.feature`) when no plan of the learner includes
+the feature or a content feature fences the content, `QUOTA_EXCEEDED`
+(`details: { feature, limit, period, used }`) when a cap is used up. A cap
+counts each item (article, calculator, card, question) once per period;
+searching and browsing lists stay open, opening an item counts. Staff are
+never locked. Gateway: `BILLING_GATEWAY=zarinpal` with `ZARINPAL_MERCHANT_ID`
+(`ZARINPAL_SANDBOX=True` for test payments); `fake` is for development only
+and refused in production.
+
+### Billing console — superuser only, `/ops/`
+
+Server-rendered Persian console (on unless `BILLING_CONSOLE_ENABLED=False`;
+in production `https://api.pharmenta.ir/ops/`), its own sign-in page
+(`/ops/login/`, superusers only, throttled per IP). Users (search, segments,
+a drawer per user, full record with access, usage, payments, devices and
+roles; grant, extend, revoke, block, sign out everywhere; CSV export), the
+plan builder (basics → features and caps → prices → publish), features
+(edit, switch off, define new content or custom ones), discount codes
+(Jalali dates), sales and the audit log of every console action
+(`billing.AdminAction`).
+
+---
+
 ## Notes for later
 
 - Quiz generator is a first pass (ATC class questions only). A richer generator

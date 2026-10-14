@@ -38,6 +38,7 @@ correctness, scoring, streak/XP, review scheduling, mistake attribution.
 | `quiz` | server-scored quiz from a question bank built off the card facts (`build_question_bank`), feeds progress + mistakes — **locked** behind `QUIZ_API_ENABLED` |
 | `uptodate` | read-only search + article API over the bundled UpToDate SQLite snapshot (no models); 503 when the snapshot is absent |
 | `data_quality_center` | staff console at `/ops/data-quality/` to edit section summaries, with superuser approval and an audit trail (off with `DATA_QUALITY_CENTER_ENABLED=False`) |
+| `billing` | plans, one-off products, discount codes, Zarinpal payments and per-feature access (`BILLING_ENFORCEMENT_ENABLED`, off by default); superuser console at `/ops/` (off with `BILLING_CONSOLE_ENABLED=False`) |
 
 ### Frontend (`frontend/src/`)
 
