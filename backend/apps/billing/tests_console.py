@@ -1,0 +1,215 @@
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
+
+from apps.accounts.models import LearnerProfile
+
+from . import services
+from .models import AdminAction, DiscountCode, Entitlement, Feature, Order, Plan, PlanFeature, PlanPrice
+
+User = get_user_model()
+
+
+class ConsoleTestCase(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(username="root", email="root@example.com", password="pw-123456")
+        self.client.force_login(self.admin)
+        self.learner = User.objects.create_user(username="learner", email="l@example.com", password="x")
+        LearnerProfile.objects.create(user=self.learner, display_name="سارا محمدی", study_field="pharmacy", phone="09120000000")
+        self.plan = Plan.objects.create(slug="clinical", name_fa="بالینی", status=Plan.STATUS_ACTIVE)
+        PlanFeature.objects.create(plan=self.plan, feature=Feature.objects.get(key="lexicomp"))
+        PlanPrice.objects.create(plan=self.plan, duration_days=30, price_toman=150_000)
+
+
+class AccessTests(ConsoleTestCase):
+    def test_only_superusers_get_in(self):
+        self.client.logout()
+        res = self.client.get(reverse("console:users"))
+        self.assertRedirects(res, f"{reverse('console:login')}?next=/ops/users/", fetch_redirect_response=False)
+        staff = User.objects.create_user(username="staff", password="pw-123456", is_staff=True)
+        self.client.force_login(staff)
+        self.assertEqual(self.client.get(reverse("console:users")).status_code, 302)
+        res = self.client.post(reverse("console:login"), {"username": "staff", "password": "pw-123456"})
+        self.assertContains(res, "سوپریوزر نیست")
+
+    def test_login(self):
+        self.client.logout()
+        res = self.client.post(reverse("console:login"), {"username": "root", "password": "pw-123456"})
+        self.assertRedirects(res, reverse("console:users"), fetch_redirect_response=False)
+
+
+class UsersPageTests(ConsoleTestCase):
+    def test_list_search_segments_and_drawer(self):
+        services.grant(self.learner, self.plan, days=30, source=Entitlement.SOURCE_ADMIN)
+        res = self.client.get(reverse("console:users"), {"q": "۰۹۱۲", "u": self.learner.pk})
+        self.assertContains(res, "سارا محمدی")
+        self.assertContains(res, "بالینی")
+        self.assertContains(res, "پرونده‌ی کاربر")
+        res = self.client.get(reverse("console:users"), {"seg": "blocked"})
+        self.assertNotContains(res, "سارا محمدی")
+        res = self.client.get(reverse("console:users"), {"seg": "subscribed"})
+        self.assertContains(res, "سارا محمدی")
+
+    def test_detail_page(self):
+        res = self.client.get(reverse("console:user", args=[self.learner.pk]))
+        self.assertContains(res, "سارا محمدی")
+        self.assertContains(res, "دادن پلن یا محصول")
+
+    def test_grant_extend_revoke_are_audited(self):
+        res = self.client.post(reverse("console:user_grant", args=[self.learner.pk]), {"plan": self.plan.pk, "days": "30", "note": "هدیه"})
+        self.assertEqual(res.status_code, 302)
+        ent = Entitlement.objects.get(user=self.learner)
+        self.assertEqual(ent.source, Entitlement.SOURCE_ADMIN)
+        self.assertEqual(ent.granted_by, self.admin)
+        first_end = ent.ends_at
+
+        self.client.post(reverse("console:entitlement_extend", args=[self.learner.pk, ent.pk]), {"days": "۱۰"})
+        ent.refresh_from_db()
+        self.assertEqual((ent.ends_at - first_end).days, 10)
+
+        self.client.post(reverse("console:entitlement_revoke", args=[self.learner.pk, ent.pk]))
+        ent.refresh_from_db()
+        self.assertIsNotNone(ent.revoked_at)
+        self.assertEqual(
+            list(AdminAction.objects.filter(target_user=self.learner).values_list("action", flat=True)),
+            ["revoke", "extend", "grant"],
+        )
+
+    def test_custom_days_and_permanent_grants(self):
+        self.client.post(reverse("console:user_grant", args=[self.learner.pk]), {"plan": self.plan.pk, "days": "30", "custom_days": "45"})
+        self.client.post(reverse("console:user_grant", args=[self.learner.pk]), {"plan": self.plan.pk, "days": ""})
+        ents = list(Entitlement.objects.filter(user=self.learner).order_by("id"))
+        self.assertEqual((ents[0].ends_at - ents[0].starts_at).days, 45)
+        self.assertIsNone(ents[1].ends_at)
+
+    def test_block_signs_out_and_unblock(self):
+        self.client.post(reverse("console:user_block", args=[self.learner.pk]), {"block": "1"})
+        self.learner.refresh_from_db()
+        self.assertFalse(self.learner.is_active)
+        self.client.post(reverse("console:user_block", args=[self.learner.pk]), {"block": "0"})
+        self.learner.refresh_from_db()
+        self.assertTrue(self.learner.is_active)
+        res = self.client.post(reverse("console:user_block", args=[self.admin.pk]), {"block": "1"}, follow=True)
+        self.assertContains(res, "نمی‌توانید حساب خودتان")
+
+    def test_logout_all(self):
+        res = self.client.post(reverse("console:user_logout_all", args=[self.learner.pk]))
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(AdminAction.objects.filter(action="logout_all").exists())
+
+    def test_export_csv(self):
+        res = self.client.get(reverse("console:users_export"))
+        body = res.content.decode("utf-8")
+        self.assertTrue(body.startswith("﻿"))
+        self.assertIn("سارا محمدی", body)
+        self.assertIn("09120000000", body)
+
+
+class PlanBuilderTests(ConsoleTestCase):
+    def test_wizard_end_to_end(self):
+        res = self.client.post(reverse("console:plan_new") + "?kind=plan", {
+            "kind": "plan", "name_fa": "دانشجویی", "name_en": "Student", "slug": "", "tagline_fa": "", "audience": "pharmacy", "order": "5",
+        })
+        plan = Plan.objects.get(slug="student")
+        self.assertRedirects(res, reverse("console:plan_features", args=[plan.pk]), fetch_redirect_response=False)
+        self.assertEqual(plan.status, Plan.STATUS_HIDDEN)
+
+        flash = Feature.objects.get(key="flashcards")
+        lessons = Feature.objects.get(key="lessons")
+        self.assertContains(self.client.get(reverse("console:plan_features", args=[plan.pk])), "امکان کاملاً جدید")
+        self.client.post(reverse("console:plan_features", args=[plan.pk]), {
+            f"f_{flash.pk}": "on", f"limit_{flash.pk}": "۵۰", f"period_{flash.pk}": "day",
+            f"f_{lessons.pk}": "on",
+        })
+        rows = {pf.feature.key: (pf.limit, pf.period) for pf in plan.plan_features.select_related("feature")}
+        self.assertEqual(rows, {"flashcards": (50, "day"), "lessons": (None, "day")})
+
+        res = self.client.post(reverse("console:plan_prices", args=[plan.pk]), {"new_days": "90", "new_price": "۳۰۰٬۰۰۰"})
+        self.assertRedirects(res, reverse("console:plan_review", args=[plan.pk]), fetch_redirect_response=False)
+        price = plan.prices.get()
+        self.assertEqual((price.duration_days, price.price_toman), (90, 300_000))
+
+        self.assertContains(self.client.get(reverse("console:plan_review", args=[plan.pk])), "۳ ماهه")
+        self.client.post(reverse("console:plan_review", args=[plan.pk]), {"status": "active"})
+        plan.refresh_from_db()
+        self.assertEqual(plan.status, Plan.STATUS_ACTIVE)
+        self.assertContains(self.client.get(reverse("console:plans")), "دانشجویی")
+
+    def test_cannot_publish_without_a_price(self):
+        plan = Plan.objects.create(slug="empty", name_fa="خالی", status=Plan.STATUS_HIDDEN)
+        self.client.post(reverse("console:plan_review", args=[plan.pk]), {"status": "active"})
+        plan.refresh_from_db()
+        self.assertEqual(plan.status, Plan.STATUS_HIDDEN)
+
+    def test_free_plan_skips_prices(self):
+        free = Plan.objects.get(is_free=True)
+        res = self.client.get(reverse("console:plan_prices", args=[free.pk]))
+        self.assertRedirects(res, reverse("console:plan_review", args=[free.pk]), fetch_redirect_response=False)
+
+    def test_copy(self):
+        self.client.post(reverse("console:plan_copy", args=[self.plan.pk]))
+        copy = Plan.objects.exclude(pk=self.plan.pk).get(name_fa="بالینی (کپی)")
+        self.assertEqual(copy.status, Plan.STATUS_HIDDEN)
+        self.assertEqual(copy.plan_features.count(), 1)
+        self.assertEqual(copy.prices.count(), 1)
+
+    def test_price_with_orders_is_retired_not_deleted(self):
+        price = self.plan.prices.get()
+        Order.objects.create(user=self.learner, plan=self.plan, price=price, amount_toman=1, payable_toman=1)
+        self.client.post(reverse("console:plan_prices", args=[self.plan.pk]), {f"delete_{price.pk}": "on"})
+        price.refresh_from_db()
+        self.assertFalse(price.is_active)
+
+
+class FeatureTests(ConsoleTestCase):
+    def test_new_content_and_custom_features(self):
+        self.client.post(reverse("console:feature_new"), {
+            "name_fa": "بسته قلب", "key": "Cardio Pack", "kind": "content", "scope_type": "topic_category", "scope_category": "cardio-blood",
+        })
+        cardio = Feature.objects.get(key="cardio_pack")
+        self.assertEqual((cardio.kind, cardio.scope_value), ("content", "cardio-blood"))
+        self.assertTrue(cardio.is_wired)
+
+        self.client.post(reverse("console:feature_new"), {
+            "name_fa": "جزوه PDF", "key": "pdf_notes", "kind": "custom", "countable": "on", "unit_fa": "جزوه",
+        })
+        pdf = Feature.objects.get(key="pdf_notes")
+        self.assertFalse(pdf.is_wired)
+        self.assertTrue(pdf.countable)
+        self.assertContains(self.client.get(reverse("console:features")), "در انتظار اتصال در کد")
+
+        res = self.client.post(reverse("console:feature_new"), {"name_fa": "بی‌محتوا", "key": "x1", "kind": "content", "scope_type": "atc_prefix"}, follow=True)
+        self.assertContains(res, "محتوای آن را مشخص کنید")
+
+    def test_builtin_cannot_be_deleted_but_can_be_switched_off(self):
+        quiz = Feature.objects.get(key="quiz")
+        self.client.post(reverse("console:feature_edit", args=[quiz.pk]), {"op": "delete"})
+        self.assertTrue(Feature.objects.filter(key="quiz").exists())
+        self.client.post(reverse("console:feature_edit", args=[quiz.pk]), {"op": "toggle"})
+        quiz.refresh_from_db()
+        self.assertFalse(quiz.is_active)
+
+
+class DiscountAndReportTests(ConsoleTestCase):
+    def test_create_discount_with_jalali_dates(self):
+        res = self.client.post(reverse("console:discounts"), {
+            "code": "nowruz", "kind": "percent", "value": "۲۰", "max_uses": "100",
+            "starts": "۱۴۰۵/۰۱/۰۱", "ends": "1405/01/13", "plans": [self.plan.pk], "note": "",
+        })
+        self.assertEqual(res.status_code, 302)
+        code = DiscountCode.objects.get(code="NOWRUZ")
+        self.assertEqual(code.percent, 20)
+        self.assertEqual(timezone.localtime(code.starts_at, services.TEHRAN).date().isoformat(), "2026-03-21")
+        self.assertEqual(list(code.plans.all()), [self.plan])
+        res = self.client.post(reverse("console:discounts"), {"code": "BAD", "kind": "percent", "value": "150"})
+        self.assertContains(res, "حداکثر ۱۰۰")
+
+    def test_sales_and_audit_pages(self):
+        order = services.create_order(self.learner, self.plan.prices.get())
+        services.mark_paid(order.pk, gateway="fake", ref_id="R1")
+        res = self.client.get(reverse("console:sales"))
+        self.assertContains(res, "۱۵۰٬۰۰۰ تومان")
+        self.assertContains(res, "سارا محمدی")
+        self.client.post(reverse("console:user_logout_all", args=[self.learner.pk]))
+        self.assertContains(self.client.get(reverse("console:audit")), "خروج از همه‌ی دستگاه‌ها")

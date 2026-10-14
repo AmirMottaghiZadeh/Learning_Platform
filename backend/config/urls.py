@@ -32,3 +32,6 @@ if settings.DATA_QUALITY_CENTER_ENABLED:
     urlpatterns.append(
         path("ops/data-quality/", include("apps.data_quality_center.urls"))
     )
+
+if settings.BILLING_CONSOLE_ENABLED:
+    urlpatterns.append(path("ops/", include("apps.billing.console.urls")))

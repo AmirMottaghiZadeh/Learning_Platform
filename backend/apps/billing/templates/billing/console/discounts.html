@@ -1,0 +1,50 @@
+{% extends "billing/console/base.html" %}
+{% load billing_extras %}
+{% block title %}کدهای تخفیف{% endblock %}
+{% block content %}
+  <div class="stack" style="gap:4px">
+    <span class="eyebrow">فروش</span>
+    <h1>کدهای تخفیف</h1>
+  </div>
+  <div class="grid g2" style="align-items:start">
+    <section class="card">
+      <h2 style="margin-bottom:10px">کدها</h2>
+      <div class="scroll-x">
+        <table class="list">
+          <thead><tr><th>کد</th><th>تخفیف</th><th>استفاده</th><th>مهلت</th><th>فروش با کد</th><th></th></tr></thead>
+          <tbody>
+          {% for d in rows %}
+            <tr>
+              <td><b class="ltr mono">{{ d.code }}</b>{% if d.note %}<br><span class="sub" style="font-size:12px">{{ d.note }}</span>{% endif %}{% if d.plans.all %}<br><span class="sub" style="font-size:12px">فقط: {{ d.plans.all|join:"، " }}</span>{% endif %}</td>
+              <td>{% if d.percent %}{{ d.percent|fa }}٪{% else %}{{ d.amount_toman|toman }}{% endif %}</td>
+              <td>{{ d.used_count|num }}{% if d.max_uses %} از {{ d.max_uses|num }}{% endif %}</td>
+              <td class="sub" style="font-size:12.5px">{% if d.starts_at %}از {{ d.starts_at|jdate }}{% endif %}{% if d.ends_at %} تا {{ d.ends_at|jdate }}{% endif %}{% if not d.starts_at and not d.ends_at %}بدون مهلت{% endif %}</td>
+              <td>{{ d.revenue|default:0|toman }}</td>
+              <td><form method="post" action="{% url 'console:discount_toggle' d.pk %}">{% csrf_token %}<button class="btn small {% if d.is_active %}{% else %}outline{% endif %}" type="submit">{% if d.is_active %}غیرفعال کردن{% else %}فعال کردن{% endif %}</button></form></td>
+            </tr>
+          {% empty %}<tr><td colspan="6" class="empty">هنوز کدی نساخته‌اید.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <form method="post" class="card stack" style="gap:12px">
+      {% csrf_token %}
+      <h2>کد جدید</h2>
+      {% for field in form %}
+        <div>
+          <label class="lbl" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {% if field.name == 'kind' %}
+            <select class="fld" id="{{ field.id_for_label }}" name="kind">{% for value, label in field.field.choices %}<option value="{{ value }}" {% if field.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+          {% elif field.name == 'plans' %}
+            <div class="stack" style="gap:6px">{% for choice in field %}<label style="display:flex;gap:8px;align-items:center;font-weight:700">{{ choice.tag }} {{ choice.choice_label }}</label>{% empty %}<span class="sub">پلنی نیست.</span>{% endfor %}</div>
+          {% else %}
+            <input class="fld{% if field.name == 'code' %} ltr mono{% endif %}" id="{{ field.id_for_label }}" name="{{ field.html_name }}" value="{{ field.value|default_if_none:'' }}"{% if field.field.required %} required{% endif %}>
+          {% endif %}
+          {% for e in field.errors %}<span class="sub" style="color:var(--deny)">{{ e }}</span>{% endfor %}
+        </div>
+      {% endfor %}
+      {% for e in form.non_field_errors %}<span class="sub" style="color:var(--deny)">{{ e }}</span>{% endfor %}
+      <button class="btn primary" type="submit">ساخت کد</button>
+    </form>
+  </div>
+{% endblock %}
