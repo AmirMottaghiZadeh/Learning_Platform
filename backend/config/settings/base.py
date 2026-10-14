@@ -377,6 +377,7 @@ REST_FRAMEWORK = {
         "burst": config("DRF_BURST_THROTTLE_RATE", default="120/min"),
         "sustained": config("DRF_SUSTAINED_THROTTLE_RATE", default="5000/day"),
         "auth_login": config("DRF_AUTH_LOGIN_THROTTLE_RATE", default="5/min"),
+        "guest_session": config("DRF_GUEST_SESSION_THROTTLE_RATE", default="20/hour"),
         "auth_register": config("DRF_AUTH_REGISTER_THROTTLE_RATE", default="5/hour"),
         "auth_password_reset_request": config(
             "DRF_AUTH_PASSWORD_RESET_REQUEST_THROTTLE_RATE",

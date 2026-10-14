@@ -311,6 +311,9 @@ class BillingSettings(models.Model):
     return_url = models.URLField(blank=True)
     enforcement_enabled = models.BooleanField(null=True, blank=True)
     sales_enabled = models.BooleanField(default=True)
+    # Anyone opening the app gets a throwaway guest account, no sign-in --
+    # for showing the content to a reviewer (sms.ir's site check).
+    guest_access_enabled = models.BooleanField(default=False)
     last_test_at = models.DateTimeField(null=True, blank=True)
     last_test_ok = models.BooleanField(null=True, blank=True)
     last_test_message = models.CharField(max_length=255, blank=True)
@@ -321,3 +324,11 @@ class BillingSettings(models.Model):
 
     class Meta:
         verbose_name_plural = "billing settings"
+
+
+class GuestAccount(models.Model):
+    """Marks a throwaway account made for a visitor while guest access is on."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="guest_account")
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)

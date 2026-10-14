@@ -456,6 +456,23 @@ when the console leaves it unset. With sales switched off, checkout answers
 503 `SALES_PAUSED`. `fake` is for development only and refused in
 production.
 
+### Guest access — off unless switched on in the console
+
+While the console's «تنظیمات دسترسی» switch is on (`/ops/access/`), the app
+opens without signing in, e.g. for a reviewer checking the site:
+
+- **GET `/guest/status/`** — no auth → `{ enabled }`.
+- **POST `/guest/session/`** — no auth, throttled per IP (`guest_session`,
+  default 20/hour) → 201, the same body as login, for a new throwaway
+  account (`user.is_guest: true`, onboarded, no password). 403
+  `GUEST_ACCESS_DISABLED` when the switch is off.
+
+Guests hold only the free plan, cannot buy (403 `GUEST_CANNOT_BUY` from
+quote/checkout) and are left out of the console's users list. Switching
+guest access off deactivates every guest and revokes their sessions;
+`python manage.py delete_guest_accounts` (or the console button) then
+removes them. `UserSerializer` carries `is_guest` for every account.
+
 ### Billing console — superuser only, `/ops/`
 
 Server-rendered Persian console (on unless `BILLING_CONSOLE_ENABLED=False`;

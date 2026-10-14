@@ -29,6 +29,7 @@ from apps.accounts.services import (
     revoke_platform_role,
 )
 from apps.billing import config, services
+from apps.billing import guest as guest_tools
 from apps.billing.gateways import GatewayError, ZarinpalGateway
 from apps.billing.catalog import SCOPE_TYPES, TOPIC_CATEGORY_CHOICES
 from apps.billing.jalali import fa_digits, month_start
@@ -194,6 +195,12 @@ def _daily_counts(qs, field, days=7):
     return [qs.filter(**{f"{field}__date": today - timedelta(days=d)}).count() for d in range(days - 1, -1, -1)]
 
 
+def _people():
+    """Real accounts: guests (made while guest access is on) are left out of
+    the users list, its counts and the export."""
+    return User.objects.filter(guest_account__isnull=True)
+
+
 def _grantable_plans():
     return Plan.objects.filter(is_free=False).exclude(status=Plan.STATUS_INACTIVE).prefetch_related("prices")
 
@@ -205,7 +212,7 @@ def users(request):
     now = timezone.now()
     segment = request.GET.get("seg", "all")
     q = request.GET.get("q", "")
-    base = User.objects.select_related("learner_profile").order_by("-date_joined")
+    base = _people().select_related("learner_profile").order_by("-date_joined")
     qs = _search(_segment_filter(base, segment, now), q)
     page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
     users_on_page = list(page.object_list)
@@ -233,7 +240,7 @@ def users(request):
     kpis = [
         {"label": "مشترک فعال", "value": subscribed.count(), "bars": _sparkline(_daily_counts(paid, "paid_at"))},
         {"label": "خرید این هفته", "value": paid.filter(paid_at__gte=week_ago).count(), "bars": _sparkline(_daily_counts(paid, "paid_at"))},
-        {"label": "انقضا تا ۷ روز", "value": expiring.values("user").distinct().count(), "bars": _sparkline(_daily_counts(User.objects.all(), "date_joined")), "warn": True},
+        {"label": "انقضا تا ۷ روز", "value": expiring.values("user").distinct().count(), "bars": _sparkline(_daily_counts(_people(), "date_joined")), "warn": True},
     ]
     segments = [
         (key, label, _segment_filter(base, key, now).count())
@@ -422,7 +429,7 @@ def user_role(request, pk):
 @superuser_required
 def users_export(request):
     now = timezone.now()
-    qs = _search(_segment_filter(User.objects.select_related("learner_profile").order_by("-date_joined"), request.GET.get("seg", "all"), now), request.GET.get("q", ""))
+    qs = _search(_segment_filter(_people().select_related("learner_profile").order_by("-date_joined"), request.GET.get("seg", "all"), now), request.GET.get("q", ""))
     active = {}
     for ent in _active_entitlements_qs(now).filter(user__in=qs):
         active.setdefault(ent.user_id, []).append(ent)
@@ -825,6 +832,51 @@ def gateway_test(request):
 
 
 # -- sales and audit ----------------------------------------------------------
+
+# -- guest access -------------------------------------------------------------
+
+@superuser_required
+def access(request):
+    current = config.current()
+    if request.method == "POST":
+        op = request.POST.get("op")
+        if op == "delete_guests":
+            if current.guest_access:
+                messages.error(request, "اول ورود مهمان را خاموش کنید.")
+            else:
+                count = guest_tools.delete_guests()
+                services.record(request, "guests_delete", fa_digits(f"حذف {count} حساب مهمان"))
+                messages.success(request, fa_digits(f"{count} حساب مهمان حذف شد."))
+            return redirect("console:access")
+        if not request.user.check_password(request.POST.get("password", "")):
+            messages.error(request, "رمز حساب درست نیست؛ چیزی تغییر نکرد.")
+            return redirect("console:access")
+        enable = request.POST.get("guest_access") == "on"
+        row = BillingSettings.objects.first() or BillingSettings()
+        row.guest_access_enabled = enable
+        row.updated_by = request.user
+        row.save()
+        if enable:
+            # Guests deactivated by an earlier switch-off may sign in again.
+            guest_tools.guests().update(is_active=True)
+            services.record(request, "guest_access", "روشن کردن ورود بدون نام کاربری و رمز")
+            messages.success(request, "ورود مهمان روشن شد. سرورهای دیگر تا نیم دقیقه‌ی دیگر آن را می‌خوانند.")
+        else:
+            ended = guest_tools.end_guest_sessions()
+            services.record(request, "guest_access", "خاموش کردن ورود بدون نام کاربری و رمز", details={"sessions_ended": ended})
+            messages.success(request, "ورود مهمان خاموش شد و همه‌ی مهمان‌ها خارج شدند.")
+        return redirect("console:access")
+
+    guests = guest_tools.guests()
+    return render(request, "billing/console/access.html", {
+        "active": "access",
+        "cfg": current,
+        "guest_count": guests.count(),
+        "guest_today": guests.filter(date_joined__gte=timezone.now() - timedelta(days=1)).count(),
+        "guest_sessions": UserSession.objects.filter(user__guest_account__isnull=False, revoked_at__isnull=True, refresh_expires_at__gt=timezone.now()).count(),
+        "last_change": AdminAction.objects.filter(action="guest_access").select_related("actor").first(),
+    })
+
 
 @superuser_required
 def sales(request):

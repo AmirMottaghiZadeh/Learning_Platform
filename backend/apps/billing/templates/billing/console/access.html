@@ -1,0 +1,65 @@
+{% extends "billing/console/base.html" %}
+{% load billing_extras %}
+{% block title %}تنظیمات دسترسی{% endblock %}
+{% block style %}
+  .opt { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 16px; border: 2px solid var(--line); cursor: pointer; background: var(--card); }
+  .opt:has(input:checked) { border-color: var(--accent); }
+  .opt input { accent-color: #0F5C52; margin-top: 5px; width: 18px; height: 18px; }
+{% endblock %}
+{% block content %}
+  <div class="row" style="align-items:flex-end">
+    <div class="grow stack" style="gap:4px">
+      <span class="eyebrow">دسترسی به اپ</span>
+      <h1>تنظیمات دسترسی</h1>
+      <span class="sub">ورود بدون نام کاربری و رمز، برای وقتی که کسی (مثلاً کارشناس sms.ir) باید محتوا را بدون ثبت‌نام ببیند.</span>
+    </div>
+    <span class="chip {% if cfg.guest_access %}warn{% else %}accent{% endif %}">ورود مهمان {% if cfg.guest_access %}روشن{% else %}خاموش{% endif %}</span>
+  </div>
+
+  <div class="grid g3">
+    <div class="kpi"><div><span class="sub">حساب‌های مهمان</span><b>{{ guest_count|num }}</b></div></div>
+    <div class="kpi"><div><span class="sub">مهمان‌های ۲۴ ساعت اخیر</span><b>{{ guest_today|num }}</b></div></div>
+    <div class="kpi"><div><span class="sub">نشست‌های مهمانِ باز</span><b>{{ guest_sessions|num }}</b></div></div>
+  </div>
+
+  <div class="grid g2" style="align-items:start">
+    <form method="post" class="card stack" style="gap:16px">
+      {% csrf_token %}
+      <h2>ورود بدون نام کاربری و رمز</h2>
+      <div class="grid g2">
+        <label class="opt"><input type="radio" name="guest_access" value="on" {% if cfg.guest_access %}checked{% endif %}>
+          <span class="stack" style="gap:2px"><b>روشن</b><span class="sub" style="font-size:12.5px">هر کس اپ را باز کند، بدون ورود وارد صفحه‌ی اصلی می‌شود</span></span></label>
+        <label class="opt"><input type="radio" name="guest_access" value="off" {% if not cfg.guest_access %}checked{% endif %}>
+          <span class="stack" style="gap:2px"><b>خاموش</b><span class="sub" style="font-size:12.5px">ورود و ثبت‌نام مثل همیشه لازم است</span></span></label>
+      </div>
+      <div style="padding:14px;border-radius:14px;background:var(--warn-bg);border:1px solid var(--warn-line)">
+        <label class="lbl" for="password" style="color:var(--warn)">برای ذخیره، رمز حساب خودتان را دوباره وارد کنید</label>
+        <input class="fld ltr" id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn primary" type="submit">ذخیره</button>
+      {% if last_change %}<span class="sub" style="font-size:12.5px">آخرین تغییر: {{ last_change.summary }} · {{ last_change.actor.get_username|default:"—" }} · {{ last_change.created_at|jdate:"time" }}</span>{% endif %}
+    </form>
+
+    <div class="stack" style="gap:16px">
+      <section class="card stack">
+        <h2>وقتی روشن است</h2>
+        <ul style="margin:0;padding-inline-start:18px;line-height:2;font-weight:600;color:var(--prose)">
+          <li>هر بیننده یک حساب مهمانِ جدا و موقت روی دستگاه خودش می‌گیرد.</li>
+          <li>مهمان فقط امکانات پلن رایگان را دارد و نمی‌تواند خرید کند.</li>
+          <li>از هر IP حداکثر ۲۰ حساب مهمان در ساعت ساخته می‌شود.</li>
+          <li>مهمان‌ها در فهرست کاربران و آمارها نمی‌آیند.</li>
+          <li>نسخه‌ی وب بلافاصله اثر می‌گیرد؛ اپ اندروید فقط از نسخه‌ی بعدی.</li>
+        </ul>
+      </section>
+      <section class="card stack">
+        <h2>حذف حساب‌های مهمان</h2>
+        <span class="sub">با خاموش کردن، همه‌ی مهمان‌ها خارج می‌شوند. بعد می‌توانید حساب‌ها و پیشرفتشان را کامل پاک کنید.</span>
+        <form method="post" onsubmit="return confirm('همه‌ی حساب‌های مهمان و پیشرفتشان پاک شود؟')">
+          {% csrf_token %}<input type="hidden" name="op" value="delete_guests">
+          <button class="btn danger" type="submit" style="width:100%" {% if cfg.guest_access or not guest_count %}disabled{% endif %}>حذف {{ guest_count|num }} حساب مهمان</button>
+        </form>
+        {% if cfg.guest_access %}<span class="sub" style="font-size:12.5px">تا ورود مهمان روشن است، حذف ممکن نیست.</span>{% endif %}
+      </section>
+    </div>
+  </div>
+{% endblock %}

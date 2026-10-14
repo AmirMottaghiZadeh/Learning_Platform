@@ -14,6 +14,7 @@ from apps.core.exceptions import PlatformAPIError
 
 from . import config, services
 from .gateways import GatewayError, get_gateway
+from .guest import is_guest
 from .models import Feature, Order, Plan, PlanFeature
 from .serializers import (
     CatalogSerializer,
@@ -36,6 +37,8 @@ def _billing_error(exc):
 
 
 def _priced(request):
+    if is_guest(request.user):
+        raise PlatformAPIError("Sign in to buy.", code="GUEST_CANNOT_BUY", status_code=403)
     body = PurchaseRequestSerializer(data=request.data)
     body.is_valid(raise_exception=True)
     try:

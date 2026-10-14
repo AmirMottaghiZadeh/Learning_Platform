@@ -101,6 +101,9 @@ class UserSerializer(serializers.ModelSerializer):
     # False right after signing up with an SMS code, until a password is
     # chosen -- the app keeps the user on "choose a password" until then.
     has_password = serializers.SerializerMethodField()
+    # A throwaway account made while guest access is on (apps.billing.guest):
+    # no password, no sign-in screens.
+    is_guest = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -112,9 +115,13 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "phone",
             "has_password",
+            "is_guest",
             "roles",
             "profile",
         ]
+
+    def get_is_guest(self, obj) -> bool:
+        return hasattr(obj, "guest_account")
 
     def get_roles(self, obj) -> list[str]:
         return sorted(set(active_role_keys(obj)))

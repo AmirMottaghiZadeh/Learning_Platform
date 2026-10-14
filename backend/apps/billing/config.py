@@ -27,6 +27,7 @@ class BillingConfig:
     return_url: str
     enforcement: bool
     sales_enabled: bool
+    guest_access: bool
     # Where each value came from, for the console: "panel" or "env".
     sources: dict
 
@@ -66,5 +67,6 @@ def current():
             r is not None and r.enforcement_enabled is not None,
         ),
         sales_enabled=r.sales_enabled if r is not None else True,
+        guest_access=bool(r and r.guest_access_enabled),
         sources=sources,
     )

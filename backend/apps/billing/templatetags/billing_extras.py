@@ -68,6 +68,13 @@ def initial(value):
     return (str(value or "?").strip() or "?")[0]
 
 
+@register.simple_tag
+def guest_access_on():
+    from apps.billing import config
+
+    return config.current().guest_access
+
+
 @register.filter
 def get_item(mapping, key):
     return mapping.get(key) if mapping else None
