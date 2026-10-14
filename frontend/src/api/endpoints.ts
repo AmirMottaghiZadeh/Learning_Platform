@@ -67,6 +67,15 @@ export const authApi = {
   }) => apiClient.post<User>("/auth/onboarding/", body).then((r) => r.data),
 };
 
+// Guest access, switched on from the console (/ops/access/): the app opens
+// without signing in, each visitor on a throwaway account of their own.
+export const guestApi = {
+  status: () =>
+    apiClient.get<{ enabled: boolean }>("/guest/status/", { skipAuth: true } as never).then((r) => r.data),
+  start: () =>
+    apiClient.post<AuthTokenResponse>("/guest/session/", null, { skipAuth: true } as never).then((r) => r.data),
+};
+
 // --- drug knowledge ---------------------------------------------------
 
 // --- lessons -------------------------------------------------------------

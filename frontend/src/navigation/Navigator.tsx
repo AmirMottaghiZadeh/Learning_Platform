@@ -45,7 +45,7 @@ export function Navigator() {
   if (status === "loading") content = <LoadingState />;
   else if (status === "signedOut") content = <AuthScreen />;
   // Signed in with an SMS code: a password comes before anything else.
-  else if (user && (user.has_password === false || mustSetPassword)) content = <SetPasswordScreen />;
+  else if (user && !user.is_guest && (user.has_password === false || mustSetPassword)) content = <SetPasswordScreen />;
   else if (user && !user.profile.is_onboarded) content = <OnboardingScreen />;
   else {
     content = (

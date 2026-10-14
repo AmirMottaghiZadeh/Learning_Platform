@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { authApi } from "@/api/endpoints";
+import { authApi, guestApi } from "@/api/endpoints";
 import { configureAuth } from "@/api/client";
 import { AuthTokenResponse, User } from "@/api/types";
 import { queryClient, queryPersister } from "@/api/queryClient";
@@ -38,6 +38,16 @@ export const useAuth = create<AuthState>((set, get) => ({
   hydrate: async () => {
     const stored = await sessionStore.load();
     if (!stored) {
+      // Guest access on: open the app on a throwaway account instead of the
+      // sign-in screen. Any failure just means the sign-in screen.
+      try {
+        if ((await guestApi.status()).enabled) {
+          await get().applyAuth(await guestApi.start());
+          return;
+        }
+      } catch {
+        /* fall through to signed out */
+      }
       set({ status: "signedOut" });
       return;
     }

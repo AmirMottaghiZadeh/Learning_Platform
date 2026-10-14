@@ -159,7 +159,12 @@ export function ProfileScreen() {
         <Row label={t("profilePlanning")} icon="profile-planning" onPress={() => navigate("planning")} />
         <Row label={t("mistakesTitle")} icon="edu-mistakes" onPress={() => navigate("mistakes")} />
         <Row label={t("profileNotifications")} icon="profile-notifications" />
-        <Row label={t("profileLogout")} icon="profile-logout" danger onPress={signOut} />
+        {user?.is_guest ? (
+          // A guest has no account to log out of: this leads to the sign-in screen.
+          <Row label={t("profileGuestSignIn")} icon="profile-logout" onPress={signOut} />
+        ) : (
+          <Row label={t("profileLogout")} icon="profile-logout" danger onPress={signOut} />
+        )}
       </View>
     </ScrollView>
   );

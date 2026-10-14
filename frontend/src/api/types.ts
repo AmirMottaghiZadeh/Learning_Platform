@@ -22,6 +22,8 @@ export interface User {
   phone: string | null;
   /** false right after an SMS sign-up, until a password is chosen */
   has_password: boolean;
+  /** a throwaway account made while guest access is on: no sign-in screens */
+  is_guest?: boolean;
   first_name: string;
   last_name: string;
   roles: string[];

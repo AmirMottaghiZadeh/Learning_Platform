@@ -186,6 +186,7 @@ export const strings = {
     profilePlanning: "برنامه‌ریزی مطالعه",
     profileNotifications: "اعلان‌ها",
     profileLogout: "خروج از حساب",
+    profileGuestSignIn: "ورود یا ثبت‌نام",
 
     statsTitle: "آمار و تحلیل",
     statsAccuracy: "دقت کلی",
@@ -461,6 +462,7 @@ export const strings = {
     profilePlanning: "Study planning",
     profileNotifications: "Notifications",
     profileLogout: "Log out",
+    profileGuestSignIn: "Sign in or sign up",
 
     statsTitle: "Statistics",
     statsAccuracy: "Overall accuracy",
