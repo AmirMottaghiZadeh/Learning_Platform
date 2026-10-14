@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.exceptions import PlatformAPIError
+from apps.billing.enforcement import require_feature
 
 from . import services
 from .serializers import (
@@ -52,6 +53,7 @@ class TopicDetailView(APIView):
         article = services.get_topic(content_id)
         if article is None:
             raise PlatformAPIError("No such topic.", code="NOT_FOUND", status_code=404)
+        require_feature(request, "uptodate", item=content_id, consume=True)
         return Response(UptodateArticleSerializer(article).data)
 
 
@@ -61,6 +63,7 @@ class ImageDetailView(APIView):
     @extend_schema(responses=UptodateImageSerializer)
     def get(self, request, image_id):
         _require_available()
+        require_feature(request, "uptodate")
         image = services.get_image(image_id)
         if image is None:
             raise PlatformAPIError("No such image.", code="NOT_FOUND", status_code=404)

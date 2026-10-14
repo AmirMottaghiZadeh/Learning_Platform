@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     "apps.calculators",
     # Medscape Diseases & Conditions / Guidelines reference articles.
     "apps.medscape",
+    # Plans, products, payments and the superuser console at /ops/.
+    "apps.billing",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -286,6 +288,20 @@ FLASHCARDS_API_ENABLED = config("FLASHCARDS_API_ENABLED", default=False, cast=bo
 # The staff console at /ops/data-quality/ -- on unless switched off; every
 # page needs a staff login, and applying a change needs a superuser.
 DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=True, cast=bool)
+
+# Billing. With enforcement off (the default) every learner keeps full
+# access whatever the plans say -- turn it on once the free plan and the
+# paid plans are set up in the console. The console itself (/ops/, superusers
+# only) is on unless switched off.
+BILLING_ENFORCEMENT_ENABLED = config("BILLING_ENFORCEMENT_ENABLED", default=False, cast=bool)
+BILLING_CONSOLE_ENABLED = config("BILLING_CONSOLE_ENABLED", default=True, cast=bool)
+# "zarinpal" or, for local development and tests only, "fake".
+BILLING_GATEWAY = config("BILLING_GATEWAY", default="zarinpal")
+BILLING_GATEWAY_TIMEOUT_SECONDS = config("BILLING_GATEWAY_TIMEOUT_SECONDS", default=15, cast=int)
+ZARINPAL_MERCHANT_ID = config("ZARINPAL_MERCHANT_ID", default="")
+ZARINPAL_SANDBOX = config("ZARINPAL_SANDBOX", default=False, cast=bool)
+# Where the "back to the app" button on the payment result page leads.
+BILLING_RETURN_URL = config("BILLING_RETURN_URL", default="http://localhost:8081")
 
 # Directory holding the UpToDate snapshot (fts.db, content.db, toc.db, info.json).
 # The /uptodate/ endpoints answer 503 when the files are not present.

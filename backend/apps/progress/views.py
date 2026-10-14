@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.billing.enforcement import require_feature
 from apps.core.exceptions import PlatformAPIError
 from apps.lessons.data.study_topics import STUDY_TOPICS
 from apps.lessons.selectors import topic_progress
@@ -35,6 +36,7 @@ class StatisticsView(APIView):
 
     @extend_schema(responses=StatisticsSerializer)
     def get(self, request):
+        require_feature(request, "stats")
         return Response(StatisticsSerializer(statistics(request.user)).data)
 
 
@@ -77,10 +79,12 @@ class StudyPlanView(APIView):
 
     @extend_schema(responses=StudyPlanSerializer)
     def get(self, request):
+        require_feature(request, "stats")
         return Response(StudyPlanSerializer(get_plan(request.user)).data)
 
     @extend_schema(request=StudyPlanSerializer, responses=StudyPlanSaveResponseSerializer)
     def put(self, request):
+        require_feature(request, "stats")
         plan = get_plan(request.user)
         serializer = StudyPlanSerializer(plan, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -94,6 +98,7 @@ class PlanTodayView(APIView):
 
     @extend_schema(responses=PlanTodaySerializer)
     def get(self, request):
+        require_feature(request, "stats")
         plan = get_plan(request.user)
         items = planning.today_items(request.user, plan)
         topics = [

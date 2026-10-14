@@ -12,6 +12,7 @@ urlpatterns = [
     path("", include("apps.lexicomp.urls")),
     path("", include("apps.calculators.urls")),
     path("", include("apps.medscape.urls")),
+    path("", include("apps.billing.urls")),
 ]
 
 if settings.QUIZ_API_ENABLED:

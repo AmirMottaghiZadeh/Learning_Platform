@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.exceptions import PlatformAPIError
+from apps.billing.enforcement import require_feature, require_topic_content
 from apps.drugs.models import Ingredient
 from apps.progress.services import XP_PER_REVIEW, record_study
 
@@ -30,6 +31,7 @@ class DueCardsView(APIView):
 
     @extend_schema(responses=LeitnerCardSerializer(many=True))
     def get(self, request):
+        require_feature(request, "flashcards")
         cards = (
             LeitnerCard.objects.filter(user=request.user, due_at__lte=timezone.now())
             .select_related("ingredient")
@@ -71,6 +73,7 @@ class SeedView(APIView):
 
     @extend_schema(request=None, responses=BoxSummarySerializer)
     def post(self, request):
+        require_feature(request, "flashcards")
         result = seed_deck(request.user)
         return Response(result, status=201 if result["created"] else 200)
 
@@ -84,6 +87,7 @@ class ReviewView(APIView):
             card = LeitnerCard.objects.select_related("ingredient").get(pk=pk, user=request.user)
         except LeitnerCard.DoesNotExist:
             raise PlatformAPIError("No such card.", code="NOT_FOUND", status_code=404)
+        require_feature(request, "flashcards", item=card.ingredient.slug, consume=True)
 
         body = ReviewSerializer(data=request.data)
         body.is_valid(raise_exception=True)
@@ -169,6 +173,8 @@ class TopicDeckView(APIView):
         slugs = deck_slugs(topic_key)
         if slugs is None:
             raise _unknown_topic()
+        require_feature(request, "flashcards")
+        require_topic_content(request, topic_key)
         by_slug = {
             ing.slug: ing
             for ing in Ingredient.objects.filter(slug__in=slugs).prefetch_related("flashcard_facts")
@@ -207,6 +213,8 @@ class TopicAnswerView(APIView):
             raise PlatformAPIError(
                 "That drug is not in this topic's deck.", code="NOT_IN_DECK", status_code=422
             )
+        require_topic_content(request, topic_key)
+        require_feature(request, "flashcards", item=slug, consume=True)
 
         ingredient = Ingredient.objects.get(slug=slug)
         card, _ = LeitnerCard.objects.get_or_create(user=request.user, ingredient=ingredient)

@@ -1,5 +1,6 @@
 from .base import *
 from decouple import config
+from django.core.exceptions import ImproperlyConfigured
 from config.security import (
     validate_production_broker,
     validate_production_cache,
@@ -36,6 +37,8 @@ READINESS_REQUIRE_BROKER = config(
 QUIZ_API_ENABLED = config("QUIZ_API_ENABLED", default=False, cast=bool)
 FLASHCARDS_API_ENABLED = config("FLASHCARDS_API_ENABLED", default=False, cast=bool)
 DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=True, cast=bool)
+if BILLING_GATEWAY == "fake":
+    raise ImproperlyConfigured("BILLING_GATEWAY=fake approves every payment; it is for development only.")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)

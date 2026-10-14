@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.exceptions import PlatformAPIError
+from apps.billing.enforcement import require_feature
 
 from . import services
 from .serializers import (
@@ -54,5 +55,7 @@ class InteractionCheckView(APIView):
         _require_available()
         body = InteractionCheckRequestSerializer(data=request.data)
         body.is_valid(raise_exception=True)
-        results = services.check_interactions(body.validated_data["generic_ids"])
+        ids = body.validated_data["generic_ids"]
+        require_feature(request, "lexicomp", item=",".join(sorted(map(str, ids))), consume=True)
+        results = services.check_interactions(ids)
         return Response(LexicompInteractionSerializer(results, many=True).data)

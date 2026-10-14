@@ -7,6 +7,8 @@ client-side, so it always needs the full set rather than one page of it.
 
 from rest_framework import generics
 
+from apps.billing.enforcement import require_feature
+
 from .models import Calculator, CalculatorCategory
 from .serializers import CalculatorCategorySerializer, CalculatorDetailSerializer, CalculatorListSerializer
 
@@ -40,3 +42,8 @@ class CalculatorDetailView(generics.RetrieveAPIView):
     serializer_class = CalculatorDetailSerializer
     lookup_field = "slug"
     queryset = Calculator.objects.prefetch_related("categories", "tags")
+
+    def get_object(self):
+        calculator = super().get_object()
+        require_feature(self.request, "calculators", item=calculator.slug, consume=True)
+        return calculator

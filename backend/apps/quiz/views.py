@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.exceptions import PlatformAPIError
+from apps.billing.enforcement import require_atc_content, require_feature, require_topic_content
 from apps.lessons.data.study_topics import STUDY_TOPICS
 from apps.progress.services import (
     XP_PER_CORRECT_ANSWER,
@@ -104,6 +105,7 @@ class QuizStartView(APIView):
 
     @extend_schema(request=QuizStartSerializer, responses=QuizSessionSerializer)
     def post(self, request):
+        require_feature(request, "quiz")
         body = QuizStartSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         ingredient_slug = body.validated_data["ingredient_slug"].strip()
@@ -140,6 +142,8 @@ class QuizStartView(APIView):
                 raise PlatformAPIError(
                     "Unknown study topic.", code="INVALID_CATEGORY", status_code=400
                 )
+            require_topic_content(request, category)
+            require_atc_content(request, atc_code)
 
             picked = sample_bank_questions(category, atc_code, count)
             if len(picked) < count:
@@ -167,6 +171,7 @@ class QuizReviewMistakesView(APIView):
     @extend_schema(request=None, responses=QuizSessionSerializer)
     def post(self, request, session_id):
         source = _owned_session(request.user, session_id)
+        require_feature(request, "quiz")
         if not source.is_finished:
             raise PlatformAPIError(
                 "That quiz isn't finished yet.", code="QUIZ_NOT_FINISHED", status_code=409
@@ -232,6 +237,7 @@ class QuizAnswerView(APIView):
             raise PlatformAPIError(
                 "That question is already answered.", code="ALREADY_ANSWERED", status_code=409
             )
+        require_feature(request, "quiz", item=question.bank_question_id or f"q{question.pk}", consume=True)
 
         is_correct = data["selected_index"] == question.correct_index
         QuizAnswer.objects.create(

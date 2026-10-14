@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.exceptions import PlatformAPIError
+from apps.billing.enforcement import require_atc_content, require_feature
 from apps.drugs.serializers import LessonDrugSerializer
 
 from .selectors import (
@@ -71,6 +72,8 @@ class ChapterView(APIView):
 
     @extend_schema(responses=ChapterSerializer)
     def get(self, request, atc_code):
+        require_feature(request, "lessons")
+        require_atc_content(request, atc_code)
         result = get_chapter(request.user, atc_code)
         if result is None:
             raise _chapter_not_found()
@@ -78,6 +81,8 @@ class ChapterView(APIView):
 
     @extend_schema(request=ChapterProgressUpdateSerializer, responses=ChapterSerializer)
     def post(self, request, atc_code):
+        require_feature(request, "lessons")
+        require_atc_content(request, atc_code)
         result = get_chapter(request.user, atc_code)
         if result is None:
             raise _chapter_not_found()
@@ -119,6 +124,7 @@ class LessonDrugView(APIView):
 
     @extend_schema(responses=LessonDrugSerializer)
     def get(self, request, slug):
+        require_feature(request, "lessons")
         drug = get_lesson_drug(slug)
         if drug is None:
             raise PlatformAPIError("No drug with that slug.", code="NOT_FOUND", status_code=404)

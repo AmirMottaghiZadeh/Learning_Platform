@@ -14,6 +14,8 @@ from rest_framework import generics, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.billing.enforcement import require_feature
+
 from .models import Article, ArticleImage
 from .serializers import ArticleDetailSerializer, ArticleImageSerializer, ArticleListSerializer
 
@@ -104,8 +106,18 @@ class ArticleDetailView(generics.RetrieveAPIView):
     lookup_field = "slug"
     queryset = Article.objects.all()
 
+    def get_object(self):
+        article = super().get_object()
+        require_feature(self.request, "medscape", item=article.slug, consume=True)
+        return article
+
 
 class ArticleImageDetailView(generics.RetrieveAPIView):
     serializer_class = ArticleImageSerializer
     lookup_url_kwarg = "image_id"
     queryset = ArticleImage.objects.all()
+
+    def get_object(self):
+        image = super().get_object()
+        require_feature(self.request, "medscape")
+        return image
