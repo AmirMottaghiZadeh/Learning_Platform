@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Platform, Pressable, View } from "react-native";
 
 import { ApiError } from "@/api/client";
@@ -134,6 +134,30 @@ export function AuthScreen() {
     setCode(digits.slice(0, codeLength));
     if (digits.length === codeLength && !busy) verify(digits.slice(0, codeLength));
   };
+  const onCodeRef = useRef(onCode);
+  onCodeRef.current = onCode;
+
+  // Chrome on Android (WebOTP): read the code straight from the SMS, fill it
+  // and sign in -- no typing. Works when the SMS's last line is
+  // "@app.pharmenta.ir #12345" (the site's domain, then the code). iOS
+  // offers the code above the keyboard through autoComplete below instead.
+  useEffect(() => {
+    if (Platform.OS !== "web" || step !== "code" || mode === "login") return;
+    if (typeof window === "undefined" || !("OTPCredential" in window)) return;
+    const abort = new AbortController();
+    const credentials = navigator.credentials as unknown as {
+      get: (options: object) => Promise<{ code?: string } | null>;
+    };
+    credentials
+      .get({ otp: { transport: ["sms"] }, signal: abort.signal })
+      .then((otp) => {
+        if (otp?.code) onCodeRef.current(otp.code);
+      })
+      .catch(() => {
+        /* the learner typed it, left the step, or the browser declined */
+      });
+    return () => abort.abort();
+  }, [step, mode, sentTo]);
 
   const title = mode === "login" ? t("loginTitle") : mode === "signup" ? t("signupTitle") : t("resetTitle");
   const subtitle =
