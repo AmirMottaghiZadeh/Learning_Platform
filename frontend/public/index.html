@@ -39,6 +39,24 @@
         height: 100%;
         flex: 1;
       }
+      /* Every text field sits inside its own rounded box. The browser's
+         focus outline is drawn on the bare <input> -- a square-cornered
+         rectangle inside that box -- so it goes, and the box itself shows
+         focus with a soft ring that follows its corners. */
+      input,
+      textarea {
+        outline: none;
+      }
+      div:has(> input:focus),
+      div:has(> textarea:focus) {
+        box-shadow: 0 0 0 3px rgba(15, 92, 82, 0.28);
+      }
+      @media (prefers-color-scheme: dark) {
+        div:has(> input:focus),
+        div:has(> textarea:focus) {
+          box-shadow: 0 0 0 3px rgba(157, 212, 184, 0.35);
+        }
+      }
     </style>
   </head>
 
