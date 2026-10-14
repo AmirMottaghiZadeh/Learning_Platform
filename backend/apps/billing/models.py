@@ -187,7 +187,12 @@ class Order(models.Model):
         (STATUS_CANCELED, "لغوشده"),
     ]
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="billing_orders")
+    # Null once the buyer's account is deleted: a paid order stays for the
+    # sales figures and the books, labelled with who it was.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="billing_orders"
+    )
+    deleted_user_label = models.CharField(max_length=160, blank=True)
     plan = models.ForeignKey(Plan, on_delete=models.PROTECT, related_name="orders")
     price = models.ForeignKey(PlanPrice, on_delete=models.SET_NULL, null=True, related_name="orders")
     duration_days = models.PositiveIntegerField(null=True, blank=True)

@@ -218,6 +218,49 @@ class DiscountAndReportTests(ConsoleTestCase):
         self.assertContains(self.client.get(reverse("console:audit")), "خروج از همه‌ی دستگاه‌ها")
 
 
+class DeleteUserTests(ConsoleTestCase):
+    def delete(self, user, confirm="09120000000", password="pw-123456"):
+        return self.client.post(reverse("console:user_delete", args=[user.pk]), {"confirm": confirm, "password": password}, follow=True)
+
+    def test_detail_page_offers_deletion(self):
+        res = self.client.get(reverse("console:user", args=[self.learner.pk]))
+        self.assertContains(res, "حذف همیشگی کاربر")
+
+    def test_deletes_everything_but_keeps_paid_orders_for_sales(self):
+        paid = services.create_order(self.learner, self.plan.prices.get())
+        services.mark_paid(paid.pk, gateway="fake", ref_id="R1")
+        pending = services.create_order(self.learner, self.plan.prices.get())
+        pk = self.learner.pk
+
+        res = self.delete(self.learner, confirm="۰۹۱۲۰۰۰۰۰۰۰")  # Persian digits are fine
+        self.assertContains(res, "حذف شد")
+        self.assertFalse(User.objects.filter(pk=pk).exists())
+        self.assertFalse(LearnerProfile.objects.filter(user_id=pk).exists())
+        self.assertFalse(Entitlement.objects.filter(user_id=pk).exists())
+        self.assertFalse(Order.objects.filter(pk=pending.pk).exists())
+        paid.refresh_from_db()
+        self.assertIsNone(paid.user)
+        self.assertIn("سارا محمدی", paid.deleted_user_label)
+
+        sales = self.client.get(reverse("console:sales"))
+        self.assertContains(sales, "کاربر حذف‌شده")
+        self.assertContains(sales, "۱۵۰٬۰۰۰ تومان")
+        action = AdminAction.objects.get(action="user_delete")
+        self.assertEqual(action.details["phone"], "09120000000")
+        self.assertIn("سارا محمدی", action.summary)
+
+    def test_wrong_confirmation_or_password_deletes_nothing(self):
+        self.assertContains(self.delete(self.learner, confirm="09129999999"), "دقیق وارد کنید")
+        self.assertContains(self.delete(self.learner, password="nope"), "رمز حساب درست نیست")
+        self.assertTrue(User.objects.filter(pk=self.learner.pk).exists())
+
+    def test_superusers_and_yourself_cannot_be_deleted(self):
+        other = User.objects.create_superuser(username="boss", email="boss@example.com", password="x")
+        self.assertContains(self.delete(other, confirm="boss@example.com"), "سوپریوزر از پنل حذف نمی‌شوند")
+        self.assertContains(self.delete(self.admin, confirm="root@example.com"), "سوپریوزر از پنل حذف نمی‌شوند")
+        self.assertTrue(User.objects.filter(pk=other.pk).exists())
+
+
 class GatewayPageTests(ConsoleTestCase):
     def setUp(self):
         super().setUp()

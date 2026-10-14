@@ -28,7 +28,7 @@
   </div>
 
   <nav class="tabs" aria-label="بخش‌های پرونده">
-    <a href="#access">اشتراک و دسترسی‌ها</a><a href="#usage">مصرف</a><a href="#payments">پرداخت‌ها</a><a href="#devices">دستگاه‌ها</a><a href="#roles">نقش‌ها</a><a href="#log">گزارش تغییرات</a>
+    <a href="#access">اشتراک و دسترسی‌ها</a><a href="#usage">مصرف</a><a href="#payments">پرداخت‌ها</a><a href="#devices">دستگاه‌ها</a><a href="#roles">نقش‌ها</a><a href="#log">گزارش تغییرات</a><a href="#delete" style="color:var(--deny)">حذف حساب</a>
   </nav>
 
   <div class="grid g2" style="align-items:start">
@@ -131,5 +131,29 @@
         <div class="row" style="padding:10px 0;border-top:1px solid var(--line-2)"><b class="grow">{{ a.summary }}</b><span class="sub" style="font-size:12.5px">{{ a.actor.get_username|default:"سیستم" }} · {{ a.created_at|jdate:"time" }}</span></div>
       {% empty %}<p class="sub">هنوز تغییری از پنل روی این کاربر ثبت نشده.</p>{% endfor %}
     </div>
+  </section>
+
+  <section class="card stack" id="delete" aria-labelledby="h-delete" style="border:2px solid var(--deny-line);background:var(--deny-bg)">
+    <h2 id="h-delete" style="color:var(--deny)">حذف حساب</h2>
+    {% if u.is_superuser or u == request.user %}
+      <p class="sub">حساب خودتان و حساب‌های سوپریوزر از پنل حذف نمی‌شوند.</p>
+    {% else %}
+      <p style="margin:0;line-height:1.9;font-weight:600;color:#5B2418">
+        حساب، پروفایل، شماره‌ی موبایل، پیشرفت، فلش‌کارت‌ها، آزمون‌ها، اشتراک‌ها و نشست‌های این کاربر برای همیشه پاک می‌شود و برگشت‌پذیر نیست.
+        پرداخت‌های موفقش در گزارش فروش با برچسب «کاربر حذف‌شده» می‌ماند. اگر فقط نمی‌خواهید وارد شود، «مسدود کردن» کافی است.
+      </p>
+      <form method="post" action="{% url 'console:user_delete' u.pk %}" class="grid g3" style="align-items:end" onsubmit="return confirm('{{ label|escapejs }} برای همیشه حذف شود؟')">
+        {% csrf_token %}
+        <div>
+          <label class="lbl" for="confirm">برای تأیید، {% if u.learner_profile.phone %}شماره‌ی موبایل{% else %}ایمیل یا نام کاربری{% endif %} این کاربر را بنویسید</label>
+          <input class="fld ltr" id="confirm" name="confirm" autocomplete="off" required placeholder="{% if u.learner_profile.phone %}{{ u.learner_profile.phone }}{% elif u.email %}{{ u.email }}{% else %}{{ u.username }}{% endif %}">
+        </div>
+        <div>
+          <label class="lbl" for="del-password">رمز حساب خودتان</label>
+          <input class="fld ltr" id="del-password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn danger" type="submit" style="background:var(--deny);color:#FFFFFF;border-color:var(--deny)">حذف همیشگی کاربر</button>
+      </form>
+    {% endif %}
   </section>
 {% endblock %}

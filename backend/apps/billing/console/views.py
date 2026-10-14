@@ -426,6 +426,48 @@ def user_role(request, pk):
     return _back_to_user(request, user)
 
 
+def _confirmation_matches(user, typed):
+    """The operator typed this user's mobile number, email or username."""
+    typed = latin_digits(typed).strip().lower()
+    if not typed:
+        return False
+    profile = getattr(user, "learner_profile", None)
+    known = {(user.email or "").lower(), user.username.lower(), (getattr(profile, "phone", None) or "").lower()}
+    return typed in known - {""}
+
+
+@superuser_required
+@require_POST
+def user_delete(request, pk):
+    user = get_object_or_404(User.objects.select_related("learner_profile"), pk=pk)
+    if user == request.user or user.is_superuser:
+        messages.error(request, "حساب خودتان و حساب‌های سوپریوزر از پنل حذف نمی‌شوند.")
+        return redirect("console:user", pk=user.pk)
+    if not _confirmation_matches(user, request.POST.get("confirm", "")):
+        messages.error(request, "برای تأیید، شماره‌ی موبایل یا ایمیل همین کاربر را دقیق وارد کنید.")
+        return redirect(f"{reverse('console:user', args=[user.pk])}#delete")
+    if not request.user.check_password(request.POST.get("password", "")):
+        messages.error(request, "رمز حساب درست نیست؛ کاربر حذف نشد.")
+        return redirect(f"{reverse('console:user', args=[user.pk])}#delete")
+
+    label = user_label(user)
+    contact = user_contact(user)
+    snapshot = f"{label} · {contact}" if contact and contact != label else label
+    paid = Order.objects.filter(user=user, status=Order.STATUS_PAID)
+    with transaction.atomic():
+        services.record(request, "user_delete", f"حذف کاربر {snapshot}"[:255], target_user=user, details={
+            "user_id": user.pk, "username": user.username, "email": user.email,
+            "phone": getattr(getattr(user, "learner_profile", None), "phone", None) or "",
+            "paid_orders_kept": paid.count(),
+        })
+        # Paid orders stay, unlinked, for the sales figures; unpaid ones go.
+        paid.update(deleted_user_label=snapshot[:160])
+        Order.objects.filter(user=user).exclude(status=Order.STATUS_PAID).delete()
+        user.delete()
+    messages.success(request, f"کاربر «{label}» و همه‌ی اطلاعاتش حذف شد. پرداخت‌هایش در گزارش فروش ماند.")
+    return redirect("console:users")
+
+
 @superuser_required
 def users_export(request):
     now = timezone.now()
@@ -906,7 +948,10 @@ def sales(request):
         ],
         "by_plan": [{**r, "pct": round(100 * (r["total"] or 0) / peak)} for r in by_plan],
         "page": page, "status": status, "statuses": Order.STATUS_CHOICES,
-        "labels": {o.pk: user_label(o.user) for o in page.object_list},
+        "labels": {
+            o.pk: user_label(o.user) if o.user else f"کاربر حذف‌شده ({o.deleted_user_label or '—'})"
+            for o in page.object_list
+        },
     })
 
 

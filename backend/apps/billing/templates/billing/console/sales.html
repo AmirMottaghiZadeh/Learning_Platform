@@ -30,7 +30,7 @@
           {% for o in page %}
             <tr>
               <td>{{ o.created_at|jdate:"time" }}</td>
-              <td><a href="{% url 'console:user' o.user_id %}">{{ labels|get_item:o.pk }}</a></td>
+              <td>{% if o.user_id %}<a href="{% url 'console:user' o.user_id %}">{{ labels|get_item:o.pk }}</a>{% else %}<span class="sub">{{ labels|get_item:o.pk }}</span>{% endif %}</td>
               <td>{{ o.plan.name_fa }}</td>
               <td>{{ o.payable_toman|toman }}</td>
               <td>{% if o.discount %}<span class="ltr mono">{{ o.discount.code }}</span>{% else %}—{% endif %}</td>
