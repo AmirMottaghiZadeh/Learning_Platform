@@ -447,9 +447,14 @@ the feature or a content feature fences the content, `QUOTA_EXCEEDED`
 (`details: { feature, limit, period, used }`) when a cap is used up. A cap
 counts each item (article, calculator, card, question) once per period;
 searching and browsing lists stay open, opening an item counts. Staff are
-never locked. Gateway: `BILLING_GATEWAY=zarinpal` with `ZARINPAL_MERCHANT_ID`
-(`ZARINPAL_SANDBOX=True` for test payments); `fake` is for development only
-and refused in production.
+never locked. Gateway: Zarinpal, configured on the console's «درگاه پرداخت»
+page (merchant id, sandbox, return URL, the enforcement switch and a sales
+switch; saving asks for the operator's password again and is audited), each
+value falling back to `BILLING_GATEWAY` / `ZARINPAL_MERCHANT_ID` /
+`ZARINPAL_SANDBOX` / `BILLING_RETURN_URL` / `BILLING_ENFORCEMENT_ENABLED`
+when the console leaves it unset. With sales switched off, checkout answers
+503 `SALES_PAUSED`. `fake` is for development only and refused in
+production.
 
 ### Billing console — superuser only, `/ops/`
 
@@ -459,7 +464,9 @@ in production `https://api.pharmenta.ir/ops/`), its own sign-in page
 a drawer per user, full record with access, usage, payments, devices and
 roles; grant, extend, revoke, block, sign out everywhere; CSV export), the
 plan builder (basics → features and caps → prices → publish), features
-(edit, switch off, define new content or custom ones), discount codes
+(edit, switch off, define new content or custom ones), the payment gateway
+(settings plus a connection test that asks Zarinpal for an unpaid 1,000-Toman
+payment), discount codes
 (Jalali dates), sales and the audit log of every console action
 (`billing.AdminAction`).
 

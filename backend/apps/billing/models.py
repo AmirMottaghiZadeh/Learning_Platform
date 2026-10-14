@@ -295,3 +295,29 @@ class AdminAction(models.Model):
     class Meta:
         ordering = ["-created_at", "-id"]
         indexes = [models.Index(fields=["target_user", "-created_at"], name="billing_action_user_idx")]
+
+
+class BillingSettings(models.Model):
+    """The console's gateway and switches: one row. An empty field (or no
+    row) falls back to the environment variable of the same meaning, so the
+    console only overrides what an operator has actually set."""
+
+    GATEWAY_CHOICES = [("zarinpal", "زرین‌پال")]
+
+    gateway = models.CharField(max_length=20, choices=GATEWAY_CHOICES, blank=True)
+    zarinpal_merchant_id = models.CharField(max_length=64, blank=True)
+    # None = use the environment's value.
+    zarinpal_sandbox = models.BooleanField(null=True, blank=True)
+    return_url = models.URLField(blank=True)
+    enforcement_enabled = models.BooleanField(null=True, blank=True)
+    sales_enabled = models.BooleanField(default=True)
+    last_test_at = models.DateTimeField(null=True, blank=True)
+    last_test_ok = models.BooleanField(null=True, blank=True)
+    last_test_message = models.CharField(max_length=255, blank=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "billing settings"

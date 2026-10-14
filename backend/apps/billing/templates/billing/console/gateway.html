@@ -1,0 +1,95 @@
+{% extends "billing/console/base.html" %}
+{% load billing_extras %}
+{% block title %}درگاه پرداخت{% endblock %}
+{% block style %}
+  .opt { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--line); cursor: pointer; background: var(--card); }
+  .opt:has(input:checked) { border-color: var(--accent); }
+  .opt input { accent-color: #0F5C52; margin-top: 5px; }
+  .src { font-size: 11.5px; font-weight: 800; color: var(--faint); }
+  .stat b { font-size: 17px; }
+{% endblock %}
+{% block content %}
+  <div class="row" style="align-items:flex-end">
+    <div class="grow stack" style="gap:4px">
+      <span class="eyebrow">فروش</span>
+      <h1>درگاه پرداخت</h1>
+      <span class="sub">اتصال به زرین‌پال، و کلیدهای فروش و قفل امکانات.</span>
+    </div>
+    <span class="chip {% if cfg.sales_enabled %}accent{% else %}deny{% endif %}">فروش {% if cfg.sales_enabled %}فعال{% else %}متوقف{% endif %}</span>
+    <span class="chip {% if cfg.enforcement %}accent{% else %}warn{% endif %}">قفل امکانات {% if cfg.enforcement %}روشن{% else %}خاموش{% endif %}</span>
+    {% if cfg.sandbox %}<span class="chip warn">حالت آزمایشی</span>{% endif %}
+  </div>
+
+  <div class="grid g4">
+    <div class="card stack stat" style="gap:4px"><span class="sub">درگاه</span><b>{% if cfg.gateway == 'zarinpal' %}زرین‌پال{% elif cfg.gateway == 'fake' %}آزمایشی محلی{% else %}{{ cfg.gateway }}{% endif %}</b><span class="src">{% if cfg.sources.gateway == 'panel' %}از همین صفحه{% else %}از تنظیمات سرور{% endif %}</span></div>
+    <div class="card stack stat" style="gap:4px"><span class="sub">مرچنت‌کد</span><b class="ltr" style="text-align:right">{{ masked|default:"تنظیم نشده" }}</b><span class="src">{% if not masked %}—{% elif cfg.sources.merchant_id == 'panel' %}از همین صفحه{% else %}از تنظیمات سرور{% endif %}</span></div>
+    <div class="card stack stat" style="gap:4px"><span class="sub">آخرین پرداخت موفق</span><b>{% if last_paid %}{{ last_paid.paid_at|ago }}{% else %}هنوز نه{% endif %}</b><span class="src">{% if last_paid %}{{ last_paid.plan.name_fa }} · {{ last_paid.payable_toman|toman }}{% endif %}</span></div>
+    <div class="card stack stat" style="gap:4px"><span class="sub">آخرین آزمایش اتصال</span><b style="color:{% if row.last_test_ok %}var(--accent){% elif row.last_test_ok is False %}var(--deny){% else %}var(--ink){% endif %}">{% if row.last_test_at %}{% if row.last_test_ok %}موفق{% else %}ناموفق{% endif %}{% else %}انجام نشده{% endif %}</b><span class="src">{{ row.last_test_at|ago }}</span></div>
+  </div>
+
+  <div class="grid g2" style="align-items:start">
+    <form method="post" class="card stack" style="gap:16px">
+      {% csrf_token %}
+      <h2>تنظیمات</h2>
+
+      <div>
+        <label class="lbl" for="merchant_id">مرچنت‌کد زرین‌پال</label>
+        <input class="fld ltr mono" id="merchant_id" name="merchant_id" autocomplete="off" placeholder="{% if masked %}برای تغییر، کد جدید را وارد کنید{% else %}xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx{% endif %}">
+        {% if row.zarinpal_merchant_id %}<label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700;font-size:13px"><input type="checkbox" name="clear_merchant" style="accent-color:#93331F">پاک کردن کد ذخیره‌شده و استفاده از تنظیمات سرور</label>{% endif %}
+      </div>
+
+      <fieldset style="border:0;margin:0;padding:0">
+        <legend class="lbl">حالت آزمایشی (sandbox)</legend>
+        <div class="grid g3">
+          <label class="opt"><input type="radio" name="sandbox" value="off" {% if row.zarinpal_sandbox is False %}checked{% endif %}><span class="stack" style="gap:0"><b>خاموش</b><span class="sub" style="font-size:12px">پرداخت واقعی</span></span></label>
+          <label class="opt"><input type="radio" name="sandbox" value="on" {% if row.zarinpal_sandbox %}checked{% endif %}><span class="stack" style="gap:0"><b>روشن</b><span class="sub" style="font-size:12px">بدون پول واقعی</span></span></label>
+          <label class="opt"><input type="radio" name="sandbox" value="env" {% if row.zarinpal_sandbox is None %}checked{% endif %}><span class="stack" style="gap:0"><b>تنظیمات سرور</b><span class="sub" style="font-size:12px">الان: {% if cfg.sandbox %}روشن{% else %}خاموش{% endif %}</span></span></label>
+        </div>
+      </fieldset>
+
+      <div>
+        <label class="lbl" for="return_url">لینک بازگشت به اپ بعد از پرداخت</label>
+        <input class="fld ltr" id="return_url" name="return_url" value="{{ row.return_url }}" placeholder="{{ cfg.return_url }}">
+      </div>
+
+      <fieldset style="border:0;margin:0;padding:0">
+        <legend class="lbl">قفل امکانات طبق پلن‌ها</legend>
+        <div class="grid g3">
+          <label class="opt"><input type="radio" name="enforcement" value="on" {% if row.enforcement_enabled %}checked{% endif %}><span class="stack" style="gap:0"><b>روشن</b><span class="sub" style="font-size:12px">هر کس فقط امکانات پلنش را دارد</span></span></label>
+          <label class="opt"><input type="radio" name="enforcement" value="off" {% if row.enforcement_enabled is False %}checked{% endif %}><span class="stack" style="gap:0"><b>خاموش</b><span class="sub" style="font-size:12px">همه به همه‌چیز دسترسی دارند</span></span></label>
+          <label class="opt"><input type="radio" name="enforcement" value="env" {% if row.enforcement_enabled is None %}checked{% endif %}><span class="stack" style="gap:0"><b>تنظیمات سرور</b><span class="sub" style="font-size:12px">الان: {% if cfg.enforcement %}روشن{% else %}خاموش{% endif %}</span></span></label>
+        </div>
+      </fieldset>
+
+      <label style="display:flex;gap:10px;align-items:center;font-weight:800"><input type="checkbox" name="sales_enabled" {% if cfg.sales_enabled %}checked{% endif %} style="width:20px;height:20px;accent-color:#0F5C52">فروش فعال باشد (خاموش = دکمه‌ی خرید در اپ خطای «فروش موقتاً متوقف است» می‌دهد)</label>
+
+      <div style="padding:14px;border-radius:14px;background:var(--warn-bg);border:1px solid var(--warn-line)">
+        <label class="lbl" for="password" style="color:var(--warn)">برای ذخیره، رمز حساب خودتان را دوباره وارد کنید</label>
+        <input class="fld ltr" id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn primary" type="submit">ذخیره‌ی تنظیمات</button>
+      {% if last_change %}<span class="sub" style="font-size:12.5px">آخرین تغییر: {{ last_change.actor.get_username|default:"—" }} · {{ last_change.created_at|jdate:"time" }}</span>{% endif %}
+    </form>
+
+    <div class="stack" style="gap:16px">
+      <section class="card stack">
+        <h2>آزمایش اتصال</h2>
+        <span class="sub">یک درخواست پرداخت ۱٬۰۰۰ تومانی به زرین‌پال فرستاده می‌شود، بدون اینکه کسی پرداختش کند. اگر زرین‌پال آن را بپذیرد، مرچنت‌کد درست است.</span>
+        <form method="post" action="{% url 'console:gateway_test' %}">{% csrf_token %}<button class="btn outline" type="submit" style="width:100%">آزمایش اتصال</button></form>
+        {% if row.last_test_message %}<div class="flash {% if row.last_test_ok %}success{% else %}error{% endif %}" style="font-size:13px">{{ row.last_test_message }}</div>{% endif %}
+      </section>
+      <section class="card stack">
+        <h2>آدرس بازگشت از درگاه</h2>
+        <span class="sub">زرین‌پال خریدار را بعد از پرداخت به این آدرس برمی‌گرداند. دامنه‌ی آن باید همان دامنه‌ای باشد که درگاه را برایش در زرین‌پال ثبت کرده‌اید.</span>
+        <code class="ltr mono" style="display:block;padding:12px;border-radius:12px;background:var(--soft);font-size:13px;word-break:break-all">{{ callback_url }}</code>
+      </section>
+      {% if last_failed %}
+      <section class="card stack">
+        <h2>آخرین خطای پرداخت</h2>
+        <span class="sub" style="font-size:12.5px">{{ last_failed.created_at|jdate:"time" }}</span>
+        <span style="font-weight:700">{{ last_failed.error }}</span>
+      </section>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

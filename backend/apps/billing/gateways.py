@@ -2,9 +2,10 @@
 gateway itself that they did -- the return to our callback alone proves
 nothing, since anyone can open that URL.
 
-BILLING_GATEWAY picks one: "zarinpal" (ZARINPAL_MERCHANT_ID, with
-ZARINPAL_SANDBOX for test payments) or "fake", which approves everything
-and exists only for local development and tests.
+The gateway, merchant id and sandbox switch come from the console's
+"درگاه پرداخت" page, falling back to BILLING_GATEWAY / ZARINPAL_MERCHANT_ID /
+ZARINPAL_SANDBOX. "fake" approves everything and exists only for local
+development and tests.
 """
 
 import json
@@ -15,6 +16,8 @@ import urllib.request
 from dataclasses import dataclass
 
 from django.conf import settings
+
+from . import config
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +39,11 @@ class ZarinpalGateway:
 
     name = "zarinpal"
 
-    def __init__(self):
-        self.merchant_id = settings.ZARINPAL_MERCHANT_ID
-        host = "sandbox.zarinpal.com" if settings.ZARINPAL_SANDBOX else "payment.zarinpal.com"
+    def __init__(self, merchant_id=None, sandbox=None):
+        cfg = config.current()
+        self.merchant_id = merchant_id if merchant_id is not None else cfg.merchant_id
+        sandbox = cfg.sandbox if sandbox is None else sandbox
+        host = "sandbox.zarinpal.com" if sandbox else "payment.zarinpal.com"
         self.api = f"https://{host}/pg/v4/payment"
         self.start_url = f"https://{host}/pg/StartPay/"
         if not self.merchant_id:
@@ -86,6 +91,21 @@ class ZarinpalGateway:
         authority = data["authority"]
         return self.start_url + urllib.parse.quote(authority), authority
 
+    def test(self, callback_url):
+        """Ask for a payment of 1,000 Toman and never send anyone to pay it:
+        proves the merchant id is accepted and the gateway answers. Returns
+        a Persian message; raises GatewayError when it does not work."""
+        body = self._post("request.json", {
+            "merchant_id": self.merchant_id,
+            "amount": 10_000,
+            "callback_url": callback_url,
+            "description": "آزمایش اتصال از پنل مدیریت فارمنتا",
+        })
+        data = body.get("data") or {}
+        if data.get("code") != 100:
+            raise GatewayError(self._errors(body) or f"Zarinpal refused the request: {body}")
+        return "زرین‌پال درخواست را پذیرفت؛ مرچنت‌کد درست است."
+
     def verify(self, order, params):
         if params.get("Status") != "OK":
             return Verification(False, message="پرداخت انجام نشد یا لغو شد.")
@@ -119,7 +139,7 @@ class FakeGateway:
 
 
 def get_gateway():
-    name = settings.BILLING_GATEWAY
+    name = config.current().gateway
     if name == "zarinpal":
         return ZarinpalGateway()
     if name == "fake":

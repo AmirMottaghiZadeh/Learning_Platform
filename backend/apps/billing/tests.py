@@ -278,6 +278,17 @@ class ZarinpalTests(TestCase):
 
 @override_settings(BILLING_ENFORCEMENT_ENABLED=True)
 class EnforcementTests(TestCase):
+    def test_console_switch_overrides_the_environment(self):
+        from . import config
+        from .models import BillingSettings
+
+        narrow_free_plan("lessons")
+        BillingSettings.objects.create(enforcement_enabled=False)
+        try:
+            self.assertEqual(self.client.get("/api/v1/me/statistics/").status_code, 200)
+        finally:
+            config.clear_cache()
+
     def setUp(self):
         self.user = User.objects.create_user(username="c@example.com", email="c@example.com", password="x")
         self.client = APIClient()

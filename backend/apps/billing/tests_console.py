@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -5,8 +7,9 @@ from django.utils import timezone
 
 from apps.accounts.models import LearnerProfile
 
-from . import services
-from .models import AdminAction, DiscountCode, Entitlement, Feature, Order, Plan, PlanFeature, PlanPrice
+from . import config, services
+from .gateways import ZarinpalGateway
+from .models import AdminAction, BillingSettings, DiscountCode, Entitlement, Feature, Order, Plan, PlanFeature, PlanPrice
 
 User = get_user_model()
 
@@ -213,3 +216,77 @@ class DiscountAndReportTests(ConsoleTestCase):
         self.assertContains(res, "سارا محمدی")
         self.client.post(reverse("console:user_logout_all", args=[self.learner.pk]))
         self.assertContains(self.client.get(reverse("console:audit")), "خروج از همه‌ی دستگاه‌ها")
+
+
+class GatewayPageTests(ConsoleTestCase):
+    def setUp(self):
+        super().setUp()
+        config.clear_cache()
+
+    def tearDown(self):
+        config.clear_cache()
+
+    def save(self, **fields):
+        data = {"password": "pw-123456", "sandbox": "env", "enforcement": "env", "sales_enabled": "on", "return_url": ""}
+        data.update(fields)
+        return self.client.post(reverse("console:gateway"), data, follow=True)
+
+    def test_page_falls_back_to_the_environment(self):
+        with self.settings(ZARINPAL_MERCHANT_ID="", BILLING_ENFORCEMENT_ENABLED=False):
+            res = self.client.get(reverse("console:gateway"))
+        self.assertContains(res, "تنظیم نشده")
+        self.assertContains(res, "/api/v1/billing/callback/")
+
+    def test_wrong_password_saves_nothing(self):
+        res = self.save(password="nope", merchant_id="11111111-2222-3333-4444-555555555555")
+        self.assertContains(res, "رمز حساب درست نیست")
+        self.assertFalse(BillingSettings.objects.exists())
+
+    def test_panel_values_override_the_environment_and_are_audited(self):
+        with self.settings(ZARINPAL_MERCHANT_ID="env-merchant", BILLING_ENFORCEMENT_ENABLED=False, ZARINPAL_SANDBOX=False):
+            self.save(merchant_id="11111111-2222-3333-4444-555555555555", sandbox="on", enforcement="on",
+                      return_url="https://app.pharmenta.ir")
+            cfg = config.current()
+            self.assertEqual(cfg.merchant_id, "11111111-2222-3333-4444-555555555555")
+            self.assertTrue(cfg.sandbox)
+            self.assertTrue(cfg.enforcement)
+            self.assertEqual(cfg.return_url, "https://app.pharmenta.ir")
+            self.assertEqual(cfg.sources["merchant_id"], "panel")
+            res = self.client.get(reverse("console:gateway"))
+            self.assertContains(res, "••••••••5555")
+            self.assertNotContains(res, "11111111-2222")
+            action = AdminAction.objects.get(action="gateway_settings")
+            self.assertEqual(action.details["after"]["merchant"], "••••••••5555")
+
+            # Leaving the field empty keeps the saved id; clearing falls back to the environment.
+            self.save(sandbox="env", enforcement="env")
+            self.assertEqual(config.current().merchant_id, "11111111-2222-3333-4444-555555555555")
+            self.assertFalse(config.current().enforcement)
+            self.save(clear_merchant="on")
+            self.assertEqual(config.current().merchant_id, "env-merchant")
+
+    def test_bad_merchant_and_return_url_are_refused(self):
+        self.assertContains(self.save(merchant_id="short"), "۳۶ کاراکتری")
+        self.assertContains(self.save(return_url="ftp://x"), "https://")
+        self.assertFalse(BillingSettings.objects.exists())
+
+    def test_paused_sales_refuse_checkout(self):
+        self.save(sales_enabled="")
+        from rest_framework.test import APIClient
+
+        api = APIClient()
+        api.force_authenticate(self.learner)
+        res = api.post("/api/v1/billing/checkout/", {"price_id": self.plan.prices.get().pk}, format="json")
+        self.assertEqual(res.status_code, 503)
+        self.assertEqual(res.json()["code"], "SALES_PAUSED")
+
+    def test_connection_test_records_the_result(self):
+        self.save(merchant_id="11111111-2222-3333-4444-555555555555")
+        with mock.patch.object(ZarinpalGateway, "_post", return_value={"data": {"code": 100, "authority": "A1"}, "errors": []}):
+            res = self.client.post(reverse("console:gateway_test"), follow=True)
+        self.assertContains(res, "مرچنت‌کد درست است")
+        self.assertTrue(BillingSettings.objects.get().last_test_ok)
+        with mock.patch.object(ZarinpalGateway, "_post", return_value={"data": [], "errors": {"code": -9, "message": "merchant invalid"}}):
+            res = self.client.post(reverse("console:gateway_test"), follow=True)
+        self.assertContains(res, "اتصال ناموفق")
+        self.assertFalse(BillingSettings.objects.get().last_test_ok)

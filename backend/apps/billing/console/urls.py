@@ -29,6 +29,8 @@ urlpatterns = [
     path("features/<int:pk>/", views.feature_edit, name="feature_edit"),
     path("discounts/", views.discounts, name="discounts"),
     path("discounts/<int:pk>/toggle/", views.discount_toggle, name="discount_toggle"),
+    path("gateway/", views.gateway, name="gateway"),
+    path("gateway/test/", views.gateway_test, name="gateway_test"),
     path("sales/", views.sales, name="sales"),
     path("audit/", views.audit, name="audit"),
 ]

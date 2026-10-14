@@ -4,6 +4,7 @@ Persian, right to left; every change goes through apps.billing.services and
 is written to the audit log."""
 
 import csv
+import re
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -27,12 +28,14 @@ from apps.accounts.services import (
     revoke_all_user_sessions,
     revoke_platform_role,
 )
-from apps.billing import services
+from apps.billing import config, services
+from apps.billing.gateways import GatewayError, ZarinpalGateway
 from apps.billing.catalog import SCOPE_TYPES, TOPIC_CATEGORY_CHOICES
 from apps.billing.jalali import fa_digits, month_start
 from apps.billing.models import (
     PERIOD_CHOICES,
     AdminAction,
+    BillingSettings,
     DiscountCode,
     Entitlement,
     Feature,
@@ -735,6 +738,90 @@ def discount_toggle(request, pk):
     code.save(update_fields=["is_active"])
     services.record(request, "discount_toggle", f"کد {code.code}: {'فعال' if code.is_active else 'غیرفعال'}")
     return redirect("console:discounts")
+
+
+# -- payment gateway ----------------------------------------------------------
+
+def _masked(merchant_id):
+    return f"••••••••{merchant_id[-4:]}" if merchant_id else ""
+
+
+def _tristate(value):
+    return {"on": True, "off": False}.get(value)
+
+
+@superuser_required
+def gateway(request):
+    current = config.current()
+    if request.method == "POST":
+        if not request.user.check_password(request.POST.get("password", "")):
+            messages.error(request, "رمز حساب درست نیست؛ چیزی ذخیره نشد.")
+            return redirect("console:gateway")
+        row = BillingSettings.objects.first() or BillingSettings()
+        before = {
+            "merchant": _masked(current.merchant_id), "sandbox": current.sandbox, "return_url": current.return_url,
+            "enforcement": current.enforcement, "sales": current.sales_enabled,
+        }
+        merchant = latin_digits(request.POST.get("merchant_id", "")).strip()
+        if request.POST.get("clear_merchant") == "on":
+            row.zarinpal_merchant_id = ""
+        elif merchant:
+            if not re.fullmatch(r"[A-Za-z0-9-]{20,64}", merchant):
+                messages.error(request, "مرچنت‌کد باید همان کد ۳۶ کاراکتری پنل زرین‌پال باشد.")
+                return redirect("console:gateway")
+            row.zarinpal_merchant_id = merchant
+        return_url = request.POST.get("return_url", "").strip()
+        if return_url and not re.fullmatch(r"https?://\S+", return_url):
+            messages.error(request, "لینک بازگشت باید با https:// شروع شود.")
+            return redirect("console:gateway")
+        row.gateway = "zarinpal"
+        row.return_url = return_url
+        row.zarinpal_sandbox = _tristate(request.POST.get("sandbox"))
+        row.enforcement_enabled = _tristate(request.POST.get("enforcement"))
+        row.sales_enabled = request.POST.get("sales_enabled") == "on"
+        row.updated_by = request.user
+        row.save()
+        after = config.current()
+        services.record(request, "gateway_settings", "تغییر تنظیمات درگاه پرداخت", details={
+            "before": before,
+            "after": {
+                "merchant": _masked(after.merchant_id), "sandbox": after.sandbox, "return_url": after.return_url,
+                "enforcement": after.enforcement, "sales": after.sales_enabled,
+            },
+        })
+        messages.success(request, "تنظیمات درگاه ذخیره شد. سرورهای دیگر تا نیم دقیقه‌ی دیگر آن را می‌خوانند.")
+        return redirect("console:gateway")
+
+    row = BillingSettings.objects.first()
+    return render(request, "billing/console/gateway.html", {
+        "active": "gateway",
+        "cfg": current,
+        "row": row,
+        "masked": _masked(current.merchant_id),
+        "last_paid": Order.objects.filter(status=Order.STATUS_PAID).select_related("plan").order_by("-paid_at").first(),
+        "last_failed": Order.objects.filter(status=Order.STATUS_FAILED).exclude(error="").order_by("-created_at").first(),
+        "callback_url": request.build_absolute_uri(reverse("billing-callback")),
+        "last_change": AdminAction.objects.filter(action="gateway_settings").select_related("actor").first(),
+    })
+
+
+@superuser_required
+@require_POST
+def gateway_test(request):
+    row = BillingSettings.objects.first() or BillingSettings(gateway="zarinpal")
+    cfg = config.current()
+    try:
+        if cfg.gateway != "zarinpal":
+            raise GatewayError(f"درگاه فعلی «{cfg.gateway}» است، نه زرین‌پال.")
+        message = ZarinpalGateway().test(request.build_absolute_uri(reverse("billing-callback")))
+        ok = True
+    except GatewayError as exc:
+        message, ok = f"اتصال ناموفق: {exc}"[:255], False
+    row.last_test_at, row.last_test_ok, row.last_test_message = timezone.now(), ok, message
+    row.save()
+    services.record(request, "gateway_test", "آزمایش اتصال درگاه: " + ("موفق" if ok else "ناموفق"))
+    (messages.success if ok else messages.error)(request, message)
+    return redirect("console:gateway")
 
 
 # -- sales and audit ----------------------------------------------------------

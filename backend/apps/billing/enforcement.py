@@ -2,16 +2,15 @@
 learner's plans include the feature (and count the use when it is capped),
 and whether a content feature fences this content off.
 
-Inert unless BILLING_ENFORCEMENT_ENABLED, and never applied to staff, so
-operators always see everything.
+Inert unless switched on (the console's gateway page, else
+BILLING_ENFORCEMENT_ENABLED), and never applied to staff, so operators
+always see everything.
 """
-
-from django.conf import settings
 
 from apps.core.exceptions import PlatformAPIError
 from apps.lessons.data.study_topics import STUDY_TOPICS
 
-from . import services
+from . import config, services
 from .catalog import SCOPE_ATC_PREFIX, SCOPE_TOPIC_CATEGORY
 
 _TOPIC_CATEGORY = {t["key"]: t["category"] for t in STUDY_TOPICS}
@@ -19,12 +18,9 @@ _TOPIC_CATEGORY = {t["key"]: t["category"] for t in STUDY_TOPICS}
 
 def _applies(request):
     user = getattr(request, "user", None)
-    return (
-        settings.BILLING_ENFORCEMENT_ENABLED
-        and user is not None
-        and user.is_authenticated
-        and not user.is_staff
-    )
+    if user is None or not user.is_authenticated or user.is_staff:
+        return False
+    return config.current().enforcement
 
 
 def require_feature(request, key, *, item=None, consume=False):

@@ -2,7 +2,6 @@
 buying -- an order, then the gateway, then our callback, which confirms the
 payment with the gateway before granting anything."""
 
-from django.conf import settings
 from django.db.models import Prefetch
 from django.shortcuts import render
 from django.urls import reverse
@@ -13,7 +12,7 @@ from rest_framework.views import APIView
 
 from apps.core.exceptions import PlatformAPIError
 
-from . import services
+from . import config, services
 from .gateways import GatewayError, get_gateway
 from .models import Feature, Order, Plan, PlanFeature
 from .serializers import (
@@ -80,7 +79,7 @@ class MyAccessView(APIView):
             for key, grant in have.items()
         ]
         return Response(MyAccessSerializer({
-            "enforced": settings.BILLING_ENFORCEMENT_ENABLED,
+            "enforced": config.current().enforcement,
             "features": features,
             "entitlements": services.active_entitlements(user),
         }).data)
@@ -101,6 +100,8 @@ class CheckoutView(APIView):
 
     @extend_schema(request=PurchaseRequestSerializer, responses=CheckoutSerializer)
     def post(self, request):
+        if not config.current().sales_enabled:
+            raise PlatformAPIError("Sales are paused for now.", code="SALES_PAUSED", status_code=503)
         price, discount = _priced(request)
         order = services.create_order(request.user, price, discount)
         if order.payable_toman == 0:
@@ -141,7 +142,7 @@ def payment_callback(request):
     opens in their browser, says how it went and links back to the app."""
     authority = (request.GET.get("Authority") or "").strip()
     order = Order.objects.select_related("plan").filter(authority=authority).first() if authority else None
-    context = {"order": order, "return_url": settings.BILLING_RETURN_URL, "ok": False, "message": ""}
+    context = {"order": order, "return_url": config.current().return_url, "ok": False, "message": ""}
     if order is None:
         context["message"] = "سفارشی برای این پرداخت پیدا نشد."
         return render(request, "billing/payment_result.html", context, status=404)
