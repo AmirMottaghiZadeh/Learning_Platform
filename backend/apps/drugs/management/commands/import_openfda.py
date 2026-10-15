@@ -20,6 +20,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from apps.drugs.data.atc_l4_fa import ATC_L4_FA
 from apps.drugs.data.atc_supplement import ATC_SUPPLEMENT
 from apps.drugs.models import (
     CLINICAL_FIELD_KEYS,
@@ -226,7 +227,8 @@ class Command(BaseCommand):
             obj = atc_cache.get(code)
             if obj is None:
                 obj, _ = AtcCode.objects.get_or_create(
-                    code=code, defaults={"name": atc_name or code}
+                    code=code,
+                    defaults={"name": atc_name or code, "name_fa": ATC_L4_FA.get(code, "")},
                 )
                 if atc_name and obj.name != atc_name:
                     obj.name = atc_name

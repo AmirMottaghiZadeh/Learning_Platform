@@ -226,6 +226,18 @@ def get_chapter(user, atc_code):
 
     ingredients = sorted(ingredients, key=chapter_code)
 
+    # The ATC level-4 class (N04BC "Dopamine agonists") each drug sits under
+    # in this chapter -- the lowest of its codes here, the same one it is
+    # sorted by, so a chapter's drugs come out already grouped by class.
+    for ingredient in ingredients:
+        own = [c for c in ingredient.atc_codes.all() if c.code.startswith(atc_code)]
+        group = min(own, key=lambda c: c.code) if own else None
+        ingredient.atc_group = (
+            {"code": group.code, "name_fa": group.name_fa, "name_en": group.name}
+            if group
+            else None
+        )
+
     progress, _ = ChapterProgress.objects.get_or_create(user=user, atc_code=atc_code)
     read_slugs = read_slugs_for_user(user) & {i.slug for i in ingredients}
     return category, ingredients, progress, read_slugs

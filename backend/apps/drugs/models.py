@@ -42,6 +42,8 @@ class AtcCode(models.Model):
 
     code = models.CharField(max_length=8, unique=True)
     name = models.CharField(max_length=255)
+    # Persian name, from apps.drugs.data.atc_l4_fa; blank when none is known.
+    name_fa = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ["code"]

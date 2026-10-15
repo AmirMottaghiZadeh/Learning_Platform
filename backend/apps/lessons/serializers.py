@@ -38,6 +38,14 @@ class ChapterProgressSerializer(serializers.Serializer):
     last_opened_at = serializers.DateTimeField()
 
 
+class AtcGroupSerializer(serializers.Serializer):
+    """The ATC level-4 class a drug is listed under within its chapter."""
+
+    code = serializers.CharField()
+    name_fa = serializers.CharField(allow_blank=True)
+    name_en = serializers.CharField()
+
+
 class ChapterDrugSerializer(serializers.Serializer):
     """A chapter's drug list entry: just what the list shows. The lesson text
     is fetched per drug (GET /lessons/drugs/<slug>/) when one is opened --
@@ -47,6 +55,7 @@ class ChapterDrugSerializer(serializers.Serializer):
     slug = serializers.CharField()
     name = serializers.CharField()
     pharm_classes = serializers.ListField(child=serializers.CharField())
+    atc_group = AtcGroupSerializer(allow_null=True)
 
 
 class ChapterSerializer(serializers.Serializer):

@@ -183,8 +183,9 @@ populated L2 subgroup.
   "anatomical_name_fa": "دستگاه قلب و عروق", "anatomical_name_en": "…",  // true ATC L1, for rigour
   "drugs": [                             // the list only -- names, no lesson
     { "slug": "acebutolol-149", "name": "acebutolol",    //   content (see below)
-      "pharm_classes": ["beta-Adrenergic Blocker"] }
-  ],
+      "pharm_classes": ["beta-Adrenergic Blocker"],
+      "atc_group": { "code": "C07AB", "name_fa": "…", "name_en": "Beta blocking agents, selective" } }
+  ],                                     // ordered by atc_group.code: a group is one run
   "progress": { "read_drug_slugs": ["acebutolol-149"], "scroll_pct": 42,
                 "last_opened_at": "…" }
 }

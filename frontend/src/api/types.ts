@@ -93,11 +93,21 @@ export interface LessonDrug extends IngredientListItem {
   lesson_sections: LessonSection[];
 }
 
+/** The ATC level-4 class (N04BC) a drug is listed under within its chapter. */
+export interface AtcGroup {
+  code: string;
+  /** blank when no Persian name is known */
+  name_fa: string;
+  name_en: string;
+}
+
 /** A chapter's drug list entry: names only, the lesson comes per drug. */
 export interface ChapterDrug {
   slug: string;
   name: string;
   pharm_classes: string[];
+  /** drugs arrive ordered by it, so each group is one contiguous run */
+  atc_group: AtcGroup | null;
 }
 
 export interface Subgroup {

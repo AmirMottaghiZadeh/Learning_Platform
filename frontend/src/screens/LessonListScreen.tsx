@@ -3,12 +3,32 @@ import React from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
 import { lessonsApi } from "@/api/endpoints";
+import type { AtcGroup, ChapterDrug } from "@/api/types";
 import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+
+type ListItem =
+  | { kind: "group"; group: AtcGroup }
+  | { kind: "drug"; drug: ChapterDrug; index: number };
+
+/** The chapter's drugs (already ordered by ATC level-4 class) with a header
+ *  item in front of each class, so the list reads as sections. */
+function withGroupHeaders(drugs: ChapterDrug[]): ListItem[] {
+  const items: ListItem[] = [];
+  let current = "";
+  drugs.forEach((drug, index) => {
+    if (drug.atc_group && drug.atc_group.code !== current) {
+      current = drug.atc_group.code;
+      items.push({ kind: "group", group: drug.atc_group });
+    }
+    items.push({ kind: "drug", drug, index });
+  });
+  return items;
+}
 
 export function LessonListScreen() {
   const { t, isFa, n, row } = useLang();
@@ -22,6 +42,9 @@ export function LessonListScreen() {
     queryFn: () => lessonsApi.chapter(code),
     enabled: !!code,
   });
+
+  const items = withGroupHeaders(data?.drugs ?? []);
+  const headerIndices = items.flatMap((item, i) => (item.kind === "group" ? [i] : []));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
@@ -80,10 +103,60 @@ export function LessonListScreen() {
       ) : (
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 22, paddingBottom: 40, gap: 10 }}
+          stickyHeaderIndices={headerIndices}
+          contentContainerStyle={{ padding: 22, paddingTop: 12, paddingBottom: 40, gap: 10 }}
           showsVerticalScrollIndicator={false}
         >
-          {(data?.drugs ?? []).map((drug, i) => {
+          {items.map((item) => {
+            if (item.kind === "group") {
+              const { group } = item;
+              const name = isFa && group.name_fa ? group.name_fa : group.name_en;
+              const sub = isFa && group.name_fa ? group.name_en : "";
+              return (
+                <View
+                  key={`g-${group.code}`}
+                  style={{
+                    flexDirection: row,
+                    alignItems: "center",
+                    gap: 10,
+                    backgroundColor: colors.cardBg,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.sheetLine,
+                    paddingTop: 12,
+                    paddingBottom: 8,
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: colors.leitnerActiveBg,
+                      borderRadius: 8,
+                      paddingHorizontal: 8,
+                      paddingVertical: 2,
+                    }}
+                  >
+                    <AppText
+                      weight="800"
+                      size={11.5}
+                      color={colors.accent}
+                      style={{ writingDirection: "ltr", letterSpacing: 0.3 }}
+                    >
+                      {group.code}
+                    </AppText>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <AppText weight="800" size={13.5}>
+                      {name}
+                    </AppText>
+                    {sub ? (
+                      <AppText muted weight="600" size={11} style={{ writingDirection: "ltr" }}>
+                        {sub}
+                      </AppText>
+                    ) : null}
+                  </View>
+                </View>
+              );
+            }
+            const { drug, index } = item;
             const done = data?.progress.read_drug_slugs.includes(drug.slug);
             return (
               <Pressable
@@ -111,7 +184,7 @@ export function LessonListScreen() {
                   }}
                 >
                   <AppText weight="800" size={12} color={done ? colors.onAccent : colors.muted}>
-                    {done ? "✓" : n(i + 1)}
+                    {done ? "✓" : n(index + 1)}
                   </AppText>
                 </View>
                 <View style={{ flex: 1 }}>

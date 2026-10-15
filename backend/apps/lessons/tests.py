@@ -86,12 +86,30 @@ class LessonTaxonomyTests(TestCase):
         # The real ATC anatomical group survives, unmodified, for rigour.
         self.assertEqual(res.data["anatomical_name_fa"], "قلب و عروق")
 
+    def test_chapter_drugs_carry_their_level4_atc_group(self):
+        code = AtcCode.objects.create(
+            code="C07AA", name="Beta blocking agents, non-selective", name_fa="مسدودکننده‌های بتا، غیرانتخابی"
+        )
+        propranolol = Ingredient.objects.create(name="propranolol", rxcui="8787", slug="propranolol-8787")
+        propranolol.atc_codes.add(code)
+
+        res = self.client.get("/api/v1/lessons/chapters/C07/")
+        groups = {d["name"]: d["atc_group"] for d in res.data["drugs"]}
+        self.assertEqual(
+            groups["propranolol"],
+            {"code": "C07AA", "name_fa": "مسدودکننده‌های بتا، غیرانتخابی",
+             "name_en": "Beta blocking agents, non-selective"},
+        )
+        # Drugs come out ordered by group, so a group is one contiguous run.
+        codes = [d["atc_group"]["code"] for d in res.data["drugs"]]
+        self.assertEqual(codes, sorted(codes))
+
     def test_chapter_lists_names_only_not_lesson_text(self):
         # The list screen shows names; each drug's lesson is fetched on its
         # own when opened, so the chapter carries no lesson content at all.
         res = self.client.get("/api/v1/lessons/chapters/C07/")
         for drug in res.data["drugs"]:
-            self.assertEqual(set(drug), {"slug", "name", "pharm_classes"})
+            self.assertEqual(set(drug), {"slug", "name", "pharm_classes", "atc_group"})
         self.assertNotIn("exam_points", res.data)
 
     def test_lesson_drug_returns_the_lesson_text_but_not_the_raw_label(self):
