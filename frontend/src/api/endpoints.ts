@@ -11,6 +11,7 @@ import {
   DeckProgress,
   LeitnerCard,
   LessonDrug,
+  LessonDrugSearchResult,
   LessonGroup,
   LexicompDrug,
   LexicompInteraction,
@@ -87,6 +88,9 @@ export const lessonsApi = {
   saveProgress: (code: string, body: { drug_slug?: string; scroll_pct?: number }) =>
     apiClient.post<Chapter>(`/lessons/chapters/${code}/`, body).then((r) => r.data),
   drug: (slug: string) => apiClient.get<LessonDrug>(`/lessons/drugs/${slug}/`).then((r) => r.data),
+  // Drugs by English or Persian name, best match first.
+  search: (q: string) =>
+    apiClient.get<LessonDrugSearchResult[]>("/lessons/search/", { params: { q } }).then((r) => r.data),
 };
 
 // --- me ---------------------------------------------------------------

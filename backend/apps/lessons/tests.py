@@ -267,3 +267,67 @@ class StudyTopicsCoverageTests(SimpleTestCase):
         used = {topic["category"] for topic in STUDY_TOPICS}
         orphans = {c["key"] for c in CATEGORIES} - used
         self.assertEqual(orphans, set(), f"Unused categories: {sorted(orphans)}")
+
+
+class DrugSearchTests(TestCase):
+    """GET /lessons/search/?q= -- quick find by English or Persian name."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(username="s", email="s@example.com", password="x")
+        self.client.force_authenticate(self.user)
+        c = AtcCategory.objects.create(code="C", name_en="Cardiovascular system", name_fa="قلب و عروق", level=1)
+        b = AtcCategory.objects.create(code="B", name_en="Blood", name_fa="خون", level=1)
+        n = AtcCategory.objects.create(code="N", name_en="Nervous system", name_fa="عصبی", level=1)
+        AtcCategory.objects.create(code="C07", name_en="Beta blocking agents", name_fa="مسدودکننده‌های بتا", level=2, parent=c)
+        AtcCategory.objects.create(code="B01", name_en="Antithrombotic agents", name_fa="ضدترومبوز", level=2, parent=b)
+        AtcCategory.objects.create(code="N02", name_en="Analgesics", name_fa="مسکن‌ها", level=2, parent=n)
+
+        self.metoprolol = _ingredient("metoprolol", "6918", "C07AB02")
+        self.metoprolol.name_fa = "متوپرولول"
+        self.metoprolol.save()
+        aspirin = _ingredient("aspirin", "1191", "N02BA01")
+        aspirin.atc_codes.add(AtcCode.objects.create(code="B01AC06", name="aspirin"))
+        aspirin.name_fa = "آسپرین"
+        aspirin.save()
+        ceftobiprole = _ingredient("ceftobiprole", "1000", "C07ZZ99")
+        ceftobiprole.name_fa = "سفتوبی‌پرول"
+        ceftobiprole.save()
+        # no ATC code -> in no lesson chapter -> never a result
+        Ingredient.objects.create(name="metoclopramide-x", name_fa="متوکلوپرامید", rxcui="9", slug="mx-9")
+
+    def search(self, q):
+        res = self.client.get("/api/v1/lessons/search/", {"q": q})
+        self.assertEqual(res.status_code, 200)
+        return res.data
+
+    def test_english_and_persian_names(self):
+        self.assertEqual([r["slug"] for r in self.search("metop")], [self.metoprolol.slug])
+        result = self.search("متوپرو")[0]
+        self.assertEqual((result["name"], result["name_fa"]), ("metoprolol", "متوپرولول"))
+        self.assertEqual(result["chapters"], [{"code": "C07", "name_fa": "مسدودکننده‌های بتا", "name_en": "Beta blocking agents"}])
+
+    def test_persian_spellings_fold_together(self):
+        for q in ["سفتوبی پرول", "سفتوبیپرول", "سفتوبيپرول", "سفتوبی‌پرول"]:
+            self.assertEqual([r["name"] for r in self.search(q)], ["ceftobiprole"], q)
+        self.assertEqual([r["name"] for r in self.search("اسپرین")], ["aspirin"])  # آ typed as ا
+
+    def test_every_chapter_of_a_drug_is_listed(self):
+        chapters = self.search("aspirin")[0]["chapters"]
+        self.assertEqual([c["code"] for c in chapters], ["B01", "N02"])
+
+    def test_better_matches_first(self):
+        _ingredient("pro", "2000", "C07AA01")
+        names = [r["name"] for r in self.search("pro")]
+        self.assertEqual(names[0], "pro")  # exact before partial
+        self.assertIn("metoprolol", names)
+
+    def test_drugs_outside_the_lessons_are_left_out(self):
+        self.assertEqual(self.search("متوکلو"), [])
+
+    def test_too_short_or_empty(self):
+        self.assertEqual(self.search("m"), [])
+        self.assertEqual(self.search(""), [])
+
+    def test_needs_sign_in(self):
+        self.assertEqual(APIClient().get("/api/v1/lessons/search/", {"q": "metop"}).status_code, 401)

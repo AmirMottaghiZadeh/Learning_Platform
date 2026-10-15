@@ -31,8 +31,8 @@ class IngredientProfileSectionInline(admin.TabularInline):
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ["name", "rxcui", "n_products", "n_source_records", "atc_summary"]
-    search_fields = ["name", "rxcui"]
+    list_display = ["name", "name_fa", "rxcui", "n_products", "n_source_records", "atc_summary"]
+    search_fields = ["name", "name_fa", "rxcui"]
     list_filter = ["atc_codes"]
     ordering = ["name"]
     readonly_fields = ["slug", "created_at", "updated_at", "source_fetched_at"]

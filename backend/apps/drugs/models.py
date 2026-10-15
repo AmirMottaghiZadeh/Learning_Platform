@@ -87,6 +87,9 @@ class Ingredient(models.Model):
 
     rxcui = models.CharField(max_length=16, unique=True)
     name = models.CharField(max_length=255, db_index=True)
+    # Persian name ("سیتالوپرام"), from the pipeline's ingredient_name_fa;
+    # blank until import_openfda has filled it.
+    name_fa = models.CharField(max_length=255, blank=True)
     slug = models.SlugField(max_length=280, unique=True)
 
     n_products = models.PositiveIntegerField(

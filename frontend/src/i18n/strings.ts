@@ -168,6 +168,8 @@ export const strings = {
     leitnerStartBtn: "شروع مرور دوز روزانه",
 
     lessonsTitle: "درسنامه",
+    lessonsSearchPlaceholder: "جست‌وجوی دارو به فارسی یا انگلیسی…",
+    lessonsSearchEmpty: "دارویی با این نام در درسنامه نیست.",
     lessonsUnit: "درس",
     emptyDrugsTitle: "دارویی در این زیرگروه نیست",
     emptyDrugsSub: "محتوای این زیرگروه در حال تدوین است. زیرگروه دیگری را انتخاب کن.",
@@ -444,6 +446,8 @@ export const strings = {
     leitnerStartBtn: "Start daily dose",
 
     lessonsTitle: "Lessons",
+    lessonsSearchPlaceholder: "Search a drug in English or Persian…",
+    lessonsSearchEmpty: "No drug by that name in the lessons.",
     lessonsUnit: "lessons",
     emptyDrugsTitle: "No drugs in this subgroup",
     emptyDrugsSub: "Content for this subgroup is still being written. Pick another subgroup.",

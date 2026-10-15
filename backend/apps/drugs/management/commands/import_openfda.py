@@ -8,7 +8,9 @@ row per ingredient, carrying every clinical field plus its fa/en summary) and
 The command is idempotent — every ingredient is matched on its RXCUI — so it is
 safe to re-run as upstream summaries get filled in. ``--only-summaries`` limits
 the write to the ``summary_fa`` / ``summary_en`` columns of sections that
-already exist, which is the common case once the raw text is stable.
+already exist, which is the common case once the raw text is stable;
+``--only-names`` likewise writes just each ingredient's Persian name
+(``ingredient_name_fa`` -> ``Ingredient.name_fa``).
 """
 
 import json
@@ -47,6 +49,12 @@ def _json_list(value):
     return parsed if isinstance(parsed, list) else []
 
 
+def _name_fa(row):
+    """The ingredient's Persian name -- blank for a pipeline file from
+    before the column existed."""
+    return (row["ingredient_name_fa"] or "").strip() if "ingredient_name_fa" in row.keys() else ""
+
+
 class Command(BaseCommand):
     help = "Import OpenFDA ingredient clinical profiles from the pipeline SQLite DB."
 
@@ -60,6 +68,11 @@ class Command(BaseCommand):
             "--only-summaries",
             action="store_true",
             help="Only update summary_fa / summary_en on existing sections.",
+        )
+        parser.add_argument(
+            "--only-names",
+            action="store_true",
+            help="Only update the Persian name (name_fa) of existing ingredients.",
         )
         parser.add_argument(
             "--limit",
@@ -79,6 +92,7 @@ class Command(BaseCommand):
             raise CommandError(f"Source database not found: {source}")
 
         only_summaries = options["only_summaries"]
+        only_names = options["only_names"]
         limit = options["limit"]
         dry_run = options["dry_run"]
 
@@ -87,7 +101,7 @@ class Command(BaseCommand):
         try:
             atc_fallback = self._load_atc_fallback(conn)
             rows = self._iter_profiles(conn, limit)
-            stats = self._import(rows, atc_fallback, only_summaries, dry_run)
+            stats = self._import(rows, atc_fallback, only_summaries, dry_run, only_names=only_names)
         finally:
             conn.close()
 
@@ -134,7 +148,7 @@ class Command(BaseCommand):
 
     # -- writing ----------------------------------------------------------
 
-    def _import(self, rows, atc_fallback, only_summaries, dry_run):
+    def _import(self, rows, atc_fallback, only_summaries, dry_run, only_names=False):
         stats = {
             "ingredients_created": 0,
             "ingredients_updated": 0,
@@ -152,6 +166,13 @@ class Command(BaseCommand):
                     stats["skipped"] += 1
                     continue
 
+                if only_names:
+                    if Ingredient.objects.filter(rxcui=rxcui).exclude(name_fa=_name_fa(row)).update(
+                        name_fa=_name_fa(row)
+                    ):
+                        stats["ingredients_updated"] += 1
+                    continue
+
                 if only_summaries:
                     self._sync_summaries(row, stats)
                     continue
@@ -160,6 +181,7 @@ class Command(BaseCommand):
                     rxcui=rxcui,
                     defaults={
                         "name": name,
+                        "name_fa": _name_fa(row),
                         "slug": Ingredient.build_slug(name, rxcui),
                         "n_products": _int(row["n_products"]),
                         "n_source_records": _int(row["n_source_records"]),

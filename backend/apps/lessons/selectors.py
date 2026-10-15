@@ -9,6 +9,7 @@ one "Hypertension" topic instead of being scattered across unrelated-looking
 ATC codes. A chapter can appear under more than one topic.
 """
 
+import re
 from collections import defaultdict
 
 from django.db.models import Prefetch
@@ -241,3 +242,91 @@ def get_lesson_drug(slug):
         )
         .first()
     )
+
+
+# -- drug search --------------------------------------------------------------
+
+# Persian text arrives in more than one spelling: Arabic yeh/kaf from some
+# keyboards, alef with madda or hamza, a zero-width non-joiner (or a space,
+# or nothing) inside a compound name, the odd diacritic. Both the query and
+# the names are folded to one form before comparing, so "سفتوبی‌پرول",
+# "سفتوبی پرول" and "سفتوبيپرول" all find the same drug.
+_FOLD = str.maketrans({
+    "ي": "ی", "ى": "ی", "ئ": "ی", "ك": "ک", "ة": "ه", "ۀ": "ه",
+    "آ": "ا", "أ": "ا", "إ": "ا", "ؤ": "و",
+    "‌": None, "‍": None, " ": None, "-": None, " ": None,
+})
+_DIACRITICS = re.compile("[ً-ْٰ]")
+
+SEARCH_MIN_CHARS = 2
+SEARCH_LIMIT = 20
+
+
+def fold(text):
+    return _DIACRITICS.sub("", (text or "").lower()).translate(_FOLD)
+
+
+def _rank(query, name, name_fa):
+    """0 exact, 1 prefix, 2 a later word starts with it, 3 anywhere, None no
+    match -- the better of the English and Persian names."""
+    best = None
+    for raw in (name, name_fa):
+        folded = fold(raw)
+        if not folded or query not in folded:
+            continue
+        if folded == query:
+            rank = 0
+        elif folded.startswith(query):
+            rank = 1
+        elif any(fold(word).startswith(query) for word in re.split(r"[\s\-‌/,()]+", raw or "")[1:]):
+            rank = 2
+        else:
+            rank = 3
+        best = rank if best is None else min(best, rank)
+    return best
+
+
+def search_drugs(query, limit=SEARCH_LIMIT):
+    """Lesson drugs whose English or Persian name matches `query`, best
+    first, each with the lesson chapters (ATC L2) it can be opened in. Drugs
+    in no chapter aren't part of the lessons and are left out."""
+    query = fold(query)
+    if len(query) < SEARCH_MIN_CHARS:
+        return []
+    candidates = (
+        Ingredient.objects.filter(atc_codes__isnull=False)
+        .values_list("pk", "slug", "name", "name_fa")
+        .distinct()
+    )
+    ranked = []
+    for pk, slug, name, name_fa in candidates:
+        rank = _rank(query, name, name_fa)
+        if rank is not None:
+            ranked.append((rank, len(name), name.lower(), pk, slug, name, name_fa))
+    ranked.sort()
+    top = ranked[:limit]
+    if not top:
+        return []
+
+    codes_by_pk = defaultdict(set)
+    for pk, code in Ingredient.atc_codes.through.objects.filter(
+        ingredient_id__in=[r[3] for r in top]
+    ).values_list("ingredient_id", "atccode__code"):
+        codes_by_pk[pk].add(code[:3])
+    chapters = {
+        c.code: c
+        for c in AtcCategory.objects.filter(level=2, code__in={c for codes in codes_by_pk.values() for c in codes})
+    }
+
+    results = []
+    for *_order, pk, slug, name, name_fa in top:
+        drug_chapters = [chapters[c] for c in sorted(codes_by_pk[pk]) if c in chapters]
+        if not drug_chapters:
+            continue
+        results.append({
+            "slug": slug,
+            "name": name,
+            "name_fa": name_fa,
+            "chapters": [{"code": c.code, "name_fa": c.name_fa, "name_en": c.name_en} for c in drug_chapters],
+        })
+    return results

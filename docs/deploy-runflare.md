@@ -96,6 +96,10 @@ DJANGO_SETTINGS_MODULE=config.settings.local \
 python manage.py import_openfda --source /home/amir/Documents/openfda/pipeline_v2/pipeline_v2.db
 ```
 
+To fill in only the Persian drug names (used by the lessons' search) on a
+database that already has the drugs, add `--only-names` -- it touches nothing
+else and takes seconds.
+
 Expected rows: `drugs_ingredient` 1794, `drugs_atccode` 542,
 `drugs_atccategory` 98, `drugs_ingredient_atc_codes` 1918,
 `drugs_ingredientprofilesection` 21528.

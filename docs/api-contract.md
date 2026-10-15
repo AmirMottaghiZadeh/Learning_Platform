@@ -198,6 +198,25 @@ read everywhere it appears, so re-opening the same drug through a different,
 unrelated chapter shows it already read instead of asking the learner to read
 it again. `scroll_pct`/`last_opened_at` stay per-chapter on `ChapterProgress`.
 
+### `GET /lessons/search/?q=` — find a drug by name
+
+The lessons' quick find. Matches `q` (at least 2 characters) against each
+drug's English `name` and Persian `name_fa`, with Persian spellings folded
+together (ي/ی, ك/ک, آ/ا, zero-width non-joiner or space inside a name,
+diacritics). Best first: exact, then prefix, then a later word's start, then
+anywhere; at most 20. Drugs in no lesson chapter are left out. Requires the
+`lessons` feature.
+
+```jsonc
+[
+  { "slug": "aspirin-1191", "name": "aspirin", "name_fa": "آسپرین",
+    "chapters": [                          // every chapter it's taught in;
+      { "code": "A01", "name_fa": "…", "name_en": "…" },   // the first opens it
+      { "code": "B01", "name_fa": "…", "name_en": "…" }
+    ] }
+]
+```
+
 ### `GET /lessons/drugs/{slug}/` — one drug's lesson
 
 Fetched when the learner opens a drug from a chapter's list. 404 (platform

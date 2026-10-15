@@ -80,7 +80,8 @@ python manage.py runserver
 ```
 
 `import_openfda` reads `UPTODATE`-style upstreams read-only; re-run any time
-(idempotent), or `--only-summaries` to sync just the fa/en summaries.
+(idempotent), or `--only-summaries` to sync just the fa/en summaries, or
+`--only-names` to sync just the Persian drug names (`ingredient_name_fa`).
 
 ### Frontend, locally
 

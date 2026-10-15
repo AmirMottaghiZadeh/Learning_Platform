@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 
 import { lessonsApi } from "@/api/endpoints";
 import { ScreenChrome } from "@/components/ScreenChrome";
@@ -9,22 +9,33 @@ import { Card } from "@/components/primitives/Card";
 import { IconImage, iconFor } from "@/components/primitives/IconImage";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
+import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
-import { LessonGroup } from "@/api/types";
+import { LessonDrugSearchResult, LessonGroup } from "@/api/types";
+import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
 import { LessonCategory, groupByCategory } from "@/utils/lessonCategories";
 
 export function LessonsScreen() {
-  const { t } = useLang();
+  const { t, isFa, row } = useLang();
   const { colors } = useTheme();
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [openTopic, setOpenTopic] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const query = useDebounced(q.trim(), 250);
+  const searching = query.length >= 2;
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["lesson-groups"],
     queryFn: lessonsApi.groups,
+  });
+  const { data: hits, isFetching: hitsLoading, isError: hitsError } = useQuery({
+    queryKey: ["lesson-search", query],
+    queryFn: () => lessonsApi.search(query),
+    enabled: searching,
+    staleTime: 5 * 60_000,
   });
 
   const categories = useMemo(() => groupByCategory(data ?? []), [data]);
@@ -34,7 +45,56 @@ export function LessonsScreen() {
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
       <ScreenChrome title={t("lessonsTitle")} help="lessons" />
-      {isError ? (
+      <View
+        style={{
+          flexDirection: row,
+          alignItems: "center",
+          gap: 8,
+          backgroundColor: colors.inputBg,
+          borderWidth: 1,
+          borderColor: q ? colors.accent : colors.trackBg,
+          borderRadius: 14,
+          paddingHorizontal: 14,
+          paddingVertical: 11,
+          marginBottom: spacing.md,
+        }}
+      >
+        <AppText weight="800" size={16} color={q ? colors.accent : colors.muted} style={{ lineHeight: 20 }}>
+          ⌕
+        </AppText>
+        <TextInput
+          value={q}
+          onChangeText={setQ}
+          placeholder={t("lessonsSearchPlaceholder")}
+          placeholderTextColor={colors.muted}
+          autoCorrect={false}
+          autoCapitalize="none"
+          returnKeyType="search"
+          style={{
+            flex: 1,
+            fontFamily: fontFamily("600"),
+            fontSize: 14,
+            color: colors.ink,
+            textAlign: isFa ? "right" : "left",
+            padding: 0,
+          }}
+        />
+        {hitsLoading && searching ? (
+          <AppText muted size={12}>
+            …
+          </AppText>
+        ) : q ? (
+          <Pressable onPress={() => setQ("")} hitSlop={10} accessibilityLabel="clear">
+            <AppText muted weight="700" size={17} style={{ lineHeight: 20 }}>
+              ×
+            </AppText>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {searching ? (
+        <DrugSearchResults hits={hits} loading={hitsLoading && !hits} failed={hitsError} />
+      ) : isError ? (
         <Card>
           <AppText weight="700" color={colors.denyLabel}>
             {t("loadFailed")}
@@ -53,6 +113,103 @@ export function LessonsScreen() {
         ))
       )}
     </Screen>
+  );
+}
+
+/** The drug search's answers, in place of the topic list while a query is
+ * typed: each drug's name in both languages, opening its lesson in its first
+ * chapter -- or, for a drug taught in several, in whichever chapter is tapped. */
+function DrugSearchResults({
+  hits,
+  loading,
+  failed,
+}: {
+  hits: LessonDrugSearchResult[] | undefined;
+  loading: boolean;
+  failed: boolean;
+}) {
+  const { t, isFa, row } = useLang();
+  const { colors, shadows } = useTheme();
+  const navigate = useNav((s) => s.navigate);
+
+  if (loading) return <LoadingState />;
+  if (failed) {
+    return (
+      <AppText weight="700" color={colors.denyLabel} style={{ paddingVertical: 12 }}>
+        {t("loadFailed")}
+      </AppText>
+    );
+  }
+  if (!hits || hits.length === 0) {
+    return (
+      <AppText muted weight="600" size={13} center style={{ paddingVertical: 24 }}>
+        {t("lessonsSearchEmpty")}
+      </AppText>
+    );
+  }
+
+  const open = (slug: string, code: string) => navigate("lessonDetail", { code, slug });
+
+  return (
+    <View style={{ gap: 8 }}>
+      {hits.map((hit) => {
+        const primary = isFa ? hit.name_fa || hit.name : hit.name;
+        const secondary = isFa ? (hit.name_fa ? hit.name : "") : hit.name_fa;
+        return (
+          <View
+            key={hit.slug}
+            style={[
+              { backgroundColor: colors.cardBg, borderRadius: 16, borderWidth: 1, borderColor: colors.border },
+              shadows.raisedSm,
+            ]}
+          >
+            <Pressable
+              onPress={() => open(hit.slug, hit.chapters[0].code)}
+              style={{ flexDirection: row, alignItems: "center", gap: 10, padding: 14 }}
+            >
+              <View style={{ flex: 1 }}>
+                <AppText weight="800" size={15}>
+                  {primary}
+                </AppText>
+                {secondary ? (
+                  <AppText muted weight="600" size={12.5} style={{ marginTop: 1 }}>
+                    {secondary}
+                  </AppText>
+                ) : null}
+              </View>
+              {hit.chapters.length === 1 ? (
+                <AppText muted weight="700" size={11.5} numberOfLines={1} style={{ maxWidth: "45%" }}>
+                  {isFa ? hit.chapters[0].name_fa : hit.chapters[0].name_en}
+                </AppText>
+              ) : null}
+              <AppText muted size={14}>
+                {isFa ? "‹" : "›"}
+              </AppText>
+            </Pressable>
+            {hit.chapters.length > 1 ? (
+              <View style={{ flexDirection: row, flexWrap: "wrap", gap: 6, paddingHorizontal: 14, paddingBottom: 12 }}>
+                {hit.chapters.map((chapter) => (
+                  <Pressable
+                    key={chapter.code}
+                    onPress={() => open(hit.slug, chapter.code)}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 999,
+                      backgroundColor: colors.accent + "14",
+                    }}
+                  >
+                    <AppText weight="700" size={11.5} color={colors.accent}>
+                      {isFa ? chapter.name_fa : chapter.name_en}
+                    </AppText>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        );
+      })}
+    </View>
   );
 }
 

@@ -607,3 +607,12 @@ export interface MedscapeArticleDetail extends MedscapeArticleListItem {
   categories: { category: string; specialty: string }[];
   sections: MedscapeSection[];
 }
+
+/** One hit of the lessons' drug search (GET /lessons/search/?q=). */
+export interface LessonDrugSearchResult {
+  slug: string;
+  name: string;
+  name_fa: string;
+  /** the lesson chapters the drug appears in; the first opens it */
+  chapters: { code: string; name_fa: string; name_en: string }[];
+}

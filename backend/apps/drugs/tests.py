@@ -25,7 +25,7 @@ def _make_source_db(directory, profiles, atc_rows=()):
     path.unlink(missing_ok=True)
     conn = sqlite3.connect(path)
 
-    profile_cols = ["ingredient_rxcui", "ingredient_name", "n_products",
+    profile_cols = ["ingredient_rxcui", "ingredient_name", "ingredient_name_fa", "n_products",
                     "n_source_records", "pharm_class_epc", "atc_codes"]
     for field in CLINICAL_FIELD_KEYS:
         profile_cols += [
@@ -131,6 +131,7 @@ class ImportOpenfdaTests(TestCase):
             {
                 "ingredient_rxcui": "52175",
                 "ingredient_name": "losartan",
+                "ingredient_name_fa": "لوزارتان",
                 "n_products": 7,
                 "n_source_records": 206,
                 "pharm_class_epc": '["Angiotensin 2 Receptor Blocker"]',
@@ -160,6 +161,20 @@ class ImportOpenfdaTests(TestCase):
 
     def _source(self):
         return _make_source_db(self._tmp.name, self.profiles, self.atc_rows)
+
+    def test_import_sets_the_persian_name(self):
+        call_command("import_openfda", source=self._source())
+        self.assertEqual(Ingredient.objects.get(rxcui="52175").name_fa, "لوزارتان")
+        self.assertEqual(Ingredient.objects.get(rxcui="5487").name_fa, "")  # none in the source
+
+    def test_only_names_updates_just_the_persian_name(self):
+        call_command("import_openfda", source=self._source())
+        Ingredient.objects.filter(rxcui="52175").update(name_fa="", n_products=99)
+        self.profiles[0]["ingredient_name_fa"] = "لوزارتان پتاسیم"
+        call_command("import_openfda", source=self._source(), only_names=True)
+        losartan = Ingredient.objects.get(rxcui="52175")
+        self.assertEqual(losartan.name_fa, "لوزارتان پتاسیم")
+        self.assertEqual(losartan.n_products, 99)  # nothing else touched
 
     def test_import_creates_ingredients_sections_and_atc(self):
         call_command("import_openfda", source=self._source())

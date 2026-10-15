@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,11 +12,13 @@ from .selectors import (
     get_lesson_drug,
     lesson_groups,
     mark_drug_read,
+    search_drugs,
     topics_for_chapter,
 )
 from .serializers import (
     ChapterProgressUpdateSerializer,
     ChapterSerializer,
+    DrugSearchResultSerializer,
     LessonGroupSerializer,
 )
 
@@ -114,6 +116,20 @@ class ChapterView(APIView):
         return Response(
             ChapterSerializer(_chapter_payload(category, ingredients, progress, read_slugs)).data
         )
+
+
+class LessonDrugSearchView(APIView):
+    """Quick find for the lessons: drugs by English or Persian name."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        parameters=[OpenApiParameter("q", str, description="Part of a drug's English or Persian name.")],
+        responses=DrugSearchResultSerializer(many=True),
+    )
+    def get(self, request):
+        require_feature(request, "lessons")
+        return Response(DrugSearchResultSerializer(search_drugs(request.query_params.get("q", "")), many=True).data)
 
 
 class LessonDrugView(APIView):

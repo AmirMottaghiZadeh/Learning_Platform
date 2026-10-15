@@ -71,3 +71,17 @@ class ChapterSerializer(serializers.Serializer):
 class ChapterProgressUpdateSerializer(serializers.Serializer):
     drug_slug = serializers.CharField(required=False, allow_blank=True)
     scroll_pct = serializers.IntegerField(required=False, min_value=0, max_value=100)
+
+
+class DrugSearchChapterSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name_fa = serializers.CharField()
+    name_en = serializers.CharField()
+
+
+class DrugSearchResultSerializer(serializers.Serializer):
+    slug = serializers.CharField()
+    name = serializers.CharField()
+    name_fa = serializers.CharField(allow_blank=True)
+    # The lesson chapters the drug appears in; the first opens it.
+    chapters = DrugSearchChapterSerializer(many=True)
