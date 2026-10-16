@@ -48,13 +48,18 @@ function substitute(template: string, scope: Record<string, ScopeValue>): string
   });
 }
 
+// Some formulas open with a comment line ("// Last Updated ..."). Left in
+// place, `return // comment` + newline + `(function...)` is `return;` --
+// the formula quietly yields nothing and the calculator shows no result.
+const LEADING_COMMENTS = /^(?:\s+|\/\/[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/)*/;
+
 /** The scoring formulas are plain JS IIFEs copied verbatim from the source
  * snapshot (e.g. `(function() { return $0 + $1; })();`) -- this is our own
  * bundled reference data, not user input, so evaluating it directly is the
  * same trust boundary as running any other code shipped in the app. */
 function runRaw(formula: string, scope: Record<string, ScopeValue>): unknown {
   try {
-    const substituted = substitute(formula, scope);
+    const substituted = substitute(formula, scope).replace(LEADING_COMMENTS, "");
     // eslint-disable-next-line no-new-func
     const fn = new Function(`return ${substituted}`);
     return fn();
