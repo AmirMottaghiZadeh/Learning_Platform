@@ -642,7 +642,9 @@ function QuestionInput({
         <View
           style={[
             {
-              flexDirection: row,
+              // The number, then its unit on the right, in both languages --
+              // so not the language-dependent `row`.
+              flexDirection: "row",
               alignItems: "center",
               gap: 8,
               marginTop: 10,
@@ -686,7 +688,7 @@ function QuestionInput({
             }}
           />
           {unit ? (
-            <AppText muted weight="700" size={12}>
+            <AppText muted weight="700" size={12} style={{ textAlign: "left", writingDirection: "ltr" }}>
               {stripHtml(isFa && unit.title_fa ? unit.title_fa : unit.title)}
             </AppText>
           ) : null}
