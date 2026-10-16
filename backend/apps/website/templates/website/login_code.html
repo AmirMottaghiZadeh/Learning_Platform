@@ -1,0 +1,10 @@
+{% extends "website/base.html" %}
+{% block content %}
+<div class="wrap"><div class="center-card">
+  <h1>کد تأیید</h1><p class="sub">کدی که به <span dir="ltr">{{ phone }}</span> پیامک شد را وارد کنید.</p>
+  <form method="post">{% csrf_token %}
+    <div class="form-row"><label class="sr" for="code">کد</label><input class="input" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" dir="ltr" style="text-align:center;font-size:22px;letter-spacing:6px" required autofocus></div>
+    <button class="btn p block" type="submit">تأیید و ورود</button></form>
+  <p style="margin-top:14px;font-size:14px"><a href="{% url 'site:login' %}" style="color:var(--p)">تغییر شماره یا ارسال دوباره</a></p>
+</div></div>
+{% endblock %}

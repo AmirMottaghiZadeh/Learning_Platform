@@ -34,6 +34,8 @@ run python manage.py migrate --no-input
 # (the no-Redis deployment). No-op for a Redis cache.
 run python manage.py createcachetable
 run python manage.py load_atc_reference
+# Starting content for the public site (menus, home blocks, pages); only fills what is empty.
+run python manage.py seed_website
 # Must run here, not at build time: production settings use WhiteNoise's
 # ManifestStaticFilesStorage, so the staticfiles.json manifest has to be built
 # under the production settings module (the image builds it under local, which

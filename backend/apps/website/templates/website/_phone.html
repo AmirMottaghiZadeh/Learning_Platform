@@ -1,0 +1,28 @@
+<div class="phone" aria-hidden="true"><div class="sc">
+{% if screen == "card" %}
+<div class="ey">فلش‌کارت · جعبهٔ ۲</div><div class="prog"><i style="width:40%"></i></div>
+<div class="fcard"><small>اندیکاسیون اصلی</small><b>آپومورفین</b><small>برای دیدن پاسخ بزنید</small></div>
+<div class="bx5"><i>۱</i><i class="on">۲</i><i>۳</i><i>۴</i><i>۵</i></div>
+<div style="display:flex;gap:8px"><div class="op" style="flex:1;text-align:center">سخت بود</div><div class="op ok" style="flex:1;text-align:center">بلد بودم</div></div>
+{% elif screen == "quiz" %}
+<div class="ey">آزمون · سؤال ۴ از ۱۰</div><div class="prog"><i style="width:40%"></i></div>
+<h5 style="font-size:15px;margin-top:6px">کدام دارو آگونیست دوپامین است؟</h5>
+<div class="opts"><div class="op">carbidopa</div><div class="op ok">pramipexole</div><div class="op">selegiline</div><div class="op">entacapone</div></div>
+<div class="btnx">بعدی</div>
+{% elif screen == "dash" %}
+<div class="ey">سلام</div><h5>امروز هم مرور کنیم</h5>
+<div class="stat"><div><b>۱۲ روز</b>پیاپی</div><div><b>۸۶٪</b>دقت</div></div>
+<div class="mt" style="margin-top:6px">این هفته</div>
+<div class="bars"><i style="height:30%"></i><i style="height:55%"></i><i style="height:40%"></i><i style="height:80%"></i><i style="height:65%"></i><i style="height:35%"></i><i class="t" style="height:90%"></i></div>
+<div class="calc"><div><span>۲۰ فلش‌کارت</span><span>‹</span></div><div><span>آزمون N04</span><span>‹</span></div></div>
+{% elif screen == "calc" %}
+<div class="ey">ابزارها</div><h5>ماشین‌حساب‌های بالینی</h5>
+<div class="calc"><div><span>کلیرانس کراتینین</span><span>‹</span></div><div><span>دوز بر اساس وزن</span><span>‹</span></div><div><span>سرعت انفوزیون</span><span>‹</span></div><div><span>BMI و سطح بدن</span><span>‹</span></div></div>
+{% else %}
+<div class="ey">بیماری پارکینسون</div><h5>داروهای ضدپارکینسون</h5><div class="mt">N04 · دستگاه عصبی · ۱۷ درس</div>
+<div class="gh"><span class="code">N04BC</span>آگونیست‌های دوپامین</div>
+<div class="row"><span>apomorphine</span><s class="d">✓</s></div><div class="row"><span>bromocriptine</span><s class="d">✓</s></div><div class="row"><span>pramipexole</span><s>۳</s></div><div class="row"><span>ropinirole</span><s>۴</s></div>
+<div class="gh"><span class="code">N04BD</span>مهارکننده‌های MAO-B</div>
+<div class="row"><span>rasagiline</span><s>۶</s></div><div class="row"><span>selegiline</span><s>۷</s></div>
+{% endif %}
+</div></div>

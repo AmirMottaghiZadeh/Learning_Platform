@@ -9,6 +9,7 @@ python manage.py check --deploy
 python manage.py migrate --no-input
 python manage.py createcachetable
 python manage.py load_atc_reference
+python manage.py seed_website
 
 # No-op unless DJANGO_SUPERUSER_USERNAME/EMAIL/PASSWORD are set — for hosts
 # with no shell/one-off-job access (Render's free plan, same issue we hit on

@@ -37,6 +37,7 @@ correctness, scoring, streak/XP, review scheduling, mistake attribution.
 | `flashcards` | Leitner cards; `build_flashcards` extracts each drug's card facts (5 sections) — **locked** behind `FLASHCARDS_API_ENABLED` |
 | `quiz` | server-scored quiz from a question bank built off the card facts (`build_question_bank`), feeds progress + mistakes — **locked** behind `QUIZ_API_ENABLED` |
 | `uptodate` | read-only search + article API over the bundled UpToDate SQLite snapshot (no models); 503 when the snapshot is absent |
+| `website` | the public site and blog on `pharmenta.ir` (served on the `SITE_HOSTS` domains) and its panel at `/panel/` -- see [docs/deploy-site.md](docs/deploy-site.md) |
 | `data_quality_center` | staff console at `/ops/data-quality/` to edit section summaries, with superuser approval and an audit trail (off with `DATA_QUALITY_CENTER_ENABLED=False`) |
 | `billing` | plans, one-off products, discount codes, Zarinpal payments and per-feature access (`BILLING_ENFORCEMENT_ENABLED`, off by default); superuser console at `/ops/` (off with `BILLING_CONSOLE_ENABLED=False`) |
 

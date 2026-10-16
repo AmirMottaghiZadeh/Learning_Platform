@@ -1,0 +1,32 @@
+{% load billing_extras %}
+<div class="plans">
+{% for card in cards %}{% with plan=card.plan %}
+<article class="pl{% if plan.slug == site.featured_plan_slug %} f{% endif %}" data-plan>
+  {% if plan.slug == site.featured_plan_slug %}<span class="badge">پیشنهادی</span>{% endif %}
+  <h3>{{ plan.name_fa }}</h3>
+  {% if plan.tagline_fa %}<p class="tag">{{ plan.tagline_fa }}</p>{% endif %}
+  {% if plan.is_free %}
+    <div class="price num">۰ <small>تومان</small></div>
+  {% elif card.prices %}
+    {% with first=card.prices.0 %}<div class="price num" data-price>{{ first.price_toman|num }} <small>تومان / {{ first.duration_label }}</small></div>{% endwith %}
+    {% if card.prices|length > 1 %}
+    <div class="chips" role="group" aria-label="مدت اشتراک">
+      {% for pr in card.prices %}<a class="chip{% if forloop.first %} on{% endif %}" href="{% url 'site:checkout' pr.pk %}" data-opt data-amount="{{ pr.price_toman|num }}" data-label="{{ pr.duration_label }}">{{ pr.duration_label }}</a>{% endfor %}
+    </div>
+    {% endif %}
+  {% else %}
+    <div class="price"><small>به‌زودی</small></div>
+  {% endif %}
+  <ul>
+    {% for f in card.features %}<li><span>{{ f.name }}{% if f.limit is not None %} · {{ f.limit|num }} {{ f.unit }} {{ f.period }}{% endif %}</span></li>{% empty %}<li><span>دسترسی به بخش‌های رایگان اپ</span></li>{% endfor %}
+  </ul>
+  {% if plan.is_free %}
+    <a class="btn block" href="{{ site.app_url }}">شروع رایگان</a>
+  {% elif card.prices %}
+    <a class="btn p block" href="{% url 'site:checkout' card.prices.0.pk %}" data-buy>خرید اشتراک</a>
+  {% endif %}
+</article>
+{% endwith %}{% empty %}
+<p class="hd2">پلن‌ها به‌زودی اعلام می‌شود.</p>
+{% endfor %}
+</div>

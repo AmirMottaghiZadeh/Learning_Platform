@@ -50,10 +50,15 @@ INSTALLED_APPS = [
     "apps.medscape",
     # Plans, products, payments and the superuser console at /ops/.
     "apps.billing",
+    # The public site and blog (pharmenta.ir) and its panel (/panel/).
+    "apps.website",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # Sends the site's domains (SITE_HOSTS) to the website urlconf; the API
+    # host keeps the default one.
+    "apps.website.middleware.SiteHostMiddleware",
     "apps.core.logging.RequestIdMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     # Compress API responses (JSON compresses 4-5x; nothing in front of the
@@ -66,10 +71,11 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "apps.website.middleware.SiteMaintenanceMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
-TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.debug", "django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages"]}}]
+TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.debug", "django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages", "apps.website.context.site"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 DATABASE_URL = config("DATABASE_URL", default="postgresql://postgres:postgres@127.0.0.1:5432/pharmexa")
@@ -458,3 +464,20 @@ LOGGING = {
         },
     },
 }
+
+# The public website (apps.website). Requests whose Host is one of SITE_HOSTS
+# get the site and its panel; any other host (api.pharmenta.ir) the API.
+# `site.localhost` resolves to 127.0.0.1 in browsers, so the site can be tried
+# locally next to the API.
+SITE_HOSTS = [h.strip().lower() for h in config("SITE_HOSTS", default="pharmenta.ir,site.localhost").split(",") if h.strip()]
+# Where "web app" buttons on the site lead.
+SITE_APP_URL = config("SITE_APP_URL", default="https://app.pharmenta.ir")
+# The site's own public origin, for canonical links, the sitemap and the feed.
+SITE_PUBLIC_URL = config("SITE_PUBLIC_URL", default="https://pharmenta.ir")
+# The site's own hosts (and www.<host>, which redirects to it) are always valid
+# hosts and trusted origins for its forms.
+_site_extra = [f"www.{h}" for h in SITE_HOSTS if not h.endswith("localhost")]
+ALLOWED_HOSTS = list(dict.fromkeys([*ALLOWED_HOSTS, *SITE_HOSTS, *_site_extra]))
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys([
+    *CSRF_TRUSTED_ORIGINS, *[f"https://{h}" for h in SITE_HOSTS if not h.endswith("localhost")],
+]))

@@ -1,0 +1,37 @@
+{% extends "website/base.html" %}
+{% load billing_extras %}
+{% block head %}
+{% if post.is_live %}<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"{{ post.title|escapejs }}","datePublished":"{{ post.published_at.isoformat }}","dateModified":"{{ post.updated_at.isoformat }}","inLanguage":"fa","mainEntityOfPage":"{{ meta_canonical }}"{% if meta_image %},"image":"{{ meta_image }}"{% endif %},"author":{"@type":"Person","name":"{{ post.author.get_full_name|default:site.site_name|escapejs }}"},"publisher":{"@type":"Organization","name":"{{ site.site_name|escapejs }}"}}</script>{% endif %}
+{% endblock %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumbs" aria-label="مسیر"><a href="{% url 'site:home' %}">خانه</a> ‹ <a href="{% url 'site:blog' %}">مقالات</a>{% if post.category %} ‹ <a href="{{ post.category.get_absolute_url }}">{{ post.category.name }}</a>{% endif %}</nav>
+  <div class="art">
+    <article>
+      {% if post.category %}<a class="pill" href="{{ post.category.get_absolute_url }}">{{ post.category.name }}</a>{% endif %}
+      <h1>{{ post.title }}</h1>
+      <div class="meta"><span>{{ post.author.get_full_name|default:site.site_name }}</span>{% if post.published_at %}<span>{{ post.published_at|jdate:"long" }}</span>{% endif %}<span>{{ post.reading_minutes|fa }} دقیقه مطالعه</span><span>{{ post.views|num }} بازدید</span></div>
+      {% if post.cover %}<img class="cover" src="{{ post.cover.url }}" alt="{{ post.cover.alt|default:post.title }}">{% endif %}
+      {% if post.excerpt %}<p class="prose" style="font-size:19px;color:var(--ink);margin-bottom:12px">{{ post.excerpt }}</p>{% endif %}
+      <div class="prose">{{ body|safe }}</div>
+      {% if post.tags.all %}<div class="tags">{% for t in post.tags.all %}<a href="{{ t.get_absolute_url }}">#{{ t.name }}</a>{% endfor %}</div>{% endif %}
+      {% if older or newer %}<div class="adj">{% if newer %}<a href="{{ newer.get_absolute_url }}"><small>مطلب بعدی</small><b>{{ newer.title }}</b></a>{% else %}<span></span>{% endif %}{% if older %}<a href="{{ older.get_absolute_url }}"><small>مطلب قبلی</small><b>{{ older.title }}</b></a>{% endif %}</div>{% endif %}
+      {% if comments_open %}
+      <section class="cm" id="comments"><h3>نظرها ({{ comment_count|fa }})</h3>
+        {% for c, replies in comments %}<div class="comment"><div class="who"><b>{{ c.name }}</b>{% if c.is_staff_reply %}<span class="staff">تیم {{ site.site_name }}</span>{% endif %}<span>{{ c.created_at|jdate:"long" }}</span></div><p>{{ c.body|linebreaksbr }}</p>
+          {% for r in replies %}<div class="comment reply"><div class="who"><b>{{ r.name }}</b>{% if r.is_staff_reply %}<span class="staff">تیم {{ site.site_name }}</span>{% endif %}<span>{{ r.created_at|jdate:"long" }}</span></div><p>{{ r.body|linebreaksbr }}</p></div>{% endfor %}</div>{% endfor %}
+        <form method="post" action="{% url 'site:comment' post.slug %}" style="margin-top:18px">{% csrf_token %}
+          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <div class="form-row"><label class="sr" for="c-name">نام</label><input class="input" id="c-name" name="name" placeholder="نام" required maxlength="80"><label class="sr" for="c-email">ایمیل</label><input class="input" id="c-email" type="email" name="email" placeholder="ایمیل (نمایش داده نمی‌شود)" dir="ltr"><label class="sr" for="c-body">نظر</label><textarea class="textarea" id="c-body" name="body" placeholder="نظر شما" required maxlength="2000"></textarea></div>
+          <button class="btn p" type="submit">ثبت نظر</button></form></section>
+      {% endif %}
+    </article>
+    <aside class="side">
+      {% if toc|length > 1 %}<div class="box"><b>در این مطلب</b><nav class="toc" aria-label="فهرست مطالب">{% for id, level, text in toc %}<a class="l{{ level }}" href="#{{ id }}">{{ text }}</a>{% endfor %}</nav></div>{% endif %}
+      <div class="box cta"><b>{{ site.site_name }}</b><p style="margin-bottom:14px;opacity:.9">درس، فلش‌کارت و آزمون ATC در یک اپ.</p><a class="btn s" href="{% url 'site:download' %}">دانلود اپ</a></div>
+      {% if related %}<div class="box"><b>مطالب مرتبط</b><div class="toc">{% for r in related %}<a href="{{ r.get_absolute_url }}">{{ r.title }}</a>{% endfor %}</div></div>{% endif %}
+    </aside>
+  </div>
+  {% include "website/_newsletter.html" with source="post" %}
+</div>
+{% endblock %}

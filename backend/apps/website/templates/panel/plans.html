@@ -1,0 +1,15 @@
+{% extends "panel/base.html" %}
+{% load billing_extras %}
+{% block title %}پلن‌ها و قیمت‌ها{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>پلن‌ها و قیمت‌ها</h1><div class="sub">آنچه روی سایت و در اپ فروخته می‌شود؛ قیمت‌ها از همین پلن‌ها خوانده می‌شود</div></div>
+  <div class="acts">{% if request.user.is_superuser %}<a class="btn p" href="{{ new_url }}"><svg class="i"><use href="#i-plus"/></svg>پلن جدید</a><a class="btn" href="{{ ops_url }}">کنسول فروش</a>{% endif %}</div></div>
+{% if not request.user.is_superuser %}<div class="note">ساخت و ویرایش پلن و قیمت فقط برای مدیر اصلی (کنسول فروش) باز است. اینجا فقط می‌بینید.</div>{% endif %}
+<div class="card" style="padding:6px 8px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>پلن</th><th>نوع</th><th>وضعیت</th><th>قیمت‌ها</th><th>امکانات</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr><td class="ttl">{{ r.plan.name_fa }}{% if r.featured %} <span class="chip ok">پیشنهادی در سایت</span>{% endif %}<div class="sm" dir="ltr" style="text-align:right">{{ r.plan.slug }}</div></td><td>{{ r.plan.get_kind_display }}</td>
+<td><span class="chip {% if r.plan.status == 'active' %}ok{% elif r.plan.status == 'hidden' %}rv{% endif %}">{{ r.plan.get_status_display }}</span></td>
+<td>{% if r.plan.is_free %}رایگان{% else %}{% for p in r.prices %}<div class="num">{{ p.duration_label }}: {{ p.price_toman|toman }}</div>{% empty %}<span class="sm">بدون قیمت</span>{% endfor %}{% endif %}</td><td class="num">{{ r.plan.feature_count|fa }}</td>
+<td><div class="ac">{% if request.user.is_superuser %}<a class="btn s" href="{{ r.edit }}"><svg class="i"><use href="#i-edit"/></svg>ویرایش</a>{% endif %}</div></td></tr>
+{% empty %}<tr><td colspan="6" class="empty">هنوز پلنی تعریف نشده است.</td></tr>{% endfor %}</tbody></table></div></div>
+<p class="note">برای نمایش نشان «پیشنهادی» روی یک پلن، نشانی (slug) آن را در «تنظیمات › صفحهٔ اصلی» بنویسید.</p>
+{% endblock %}

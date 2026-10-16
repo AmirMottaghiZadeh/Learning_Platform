@@ -1,0 +1,65 @@
+{% load static billing_extras website_extras %}<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{ meta_title }}</title>
+<meta name="description" content="{{ meta_description }}">
+{% if meta_noindex %}<meta name="robots" content="noindex, follow">{% endif %}
+{% if meta_canonical %}<link rel="canonical" href="{{ meta_canonical }}">{% endif %}
+<meta property="og:site_name" content="{{ site.site_name }}">
+<meta property="og:locale" content="fa_IR">
+<meta property="og:type" content="{{ meta_type|default:'website' }}">
+<meta property="og:title" content="{{ meta_title }}">
+<meta property="og:description" content="{{ meta_description }}">
+{% if meta_canonical %}<meta property="og:url" content="{{ meta_canonical }}">{% endif %}
+{% if meta_image %}<meta property="og:image" content="{{ meta_image }}"><meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}
+{% if site.google_verification %}<meta name="google-site-verification" content="{{ site.google_verification }}">{% endif %}
+<meta name="theme-color" content="#0F5C52">
+<link rel="alternate" type="application/rss+xml" title="{{ site.site_name }}" href="{% url 'site:feed' %}">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230F5C52'/%3E%3Ctext x='32' y='45' font-size='36' font-weight='900' text-anchor='middle' fill='white' font-family='sans-serif'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="{% static 'website/fonts/Vazirmatn_500Medium.ttf' %}" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="{% static 'website/site.css' %}">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+{% block head %}{% endblock %}
+{{ site.analytics_head|safe }}
+</head>
+<body>
+<a class="skip" href="#main">رفتن به محتوا</a>
+{% if site.bar_enabled and site.bar_text %}
+<div class="ab"><div class="wrap"><span>{{ site.bar_text }}</span>{% if site.bar_url %}<a href="{{ site.bar_url }}">{{ site.bar_link_text|default:"بیشتر بخوانید" }}</a>{% endif %}</div></div>
+{% endif %}
+<header class="hdr">
+  <div class="wrap">
+    <a class="logo" href="{% url 'site:home' %}" aria-label="{{ site.site_name }}"><i>P</i>{{ site.site_name }}</a>
+    <nav class="nav" id="nav" aria-label="منوی اصلی">
+      {% for item in menus.header %}{% nav_on request.path item.url as active %}<a href="{{ item.url }}" class="{% if active %}on{% endif %}"{% if item.new_tab %} target="_blank" rel="noopener"{% endif %}>{{ item.label }}</a>{% endfor %}
+    </nav>
+    <div class="grow"></div>
+    <div class="acts">
+      <button class="icon-btn" id="theme" type="button" aria-label="تغییر تم روشن و تیره"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 13a8 8 0 11-10-10 6.5 6.5 0 0010 10z"/></svg></button>
+      {% if request.user.is_authenticated %}<a class="btn s hide-s" href="{% url 'site:account' %}">حساب من</a>{% else %}<a class="btn s hide-s" href="{% url 'site:login' %}">ورود</a>{% endif %}
+      <a class="btn p s" href="{% url 'site:download' %}">دانلود اپ</a>
+      <button class="icon-btn menu-btn" id="menu" type="button" aria-label="باز کردن منو" aria-expanded="false" aria-controls="nav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+{% if messages %}<div class="flash" role="status">{% for m in messages %}<div class="{{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+<main id="main">{% block content %}{% endblock %}</main>
+<footer class="ft">
+  <div class="wrap">
+    <div>
+      <a class="logo" href="{% url 'site:home' %}"><i>P</i>{{ site.site_name }}</a>
+      <p class="about">{{ site.tagline }}</p>
+      {% if site.socials %}<div class="social">{% for key, label, url in site.socials %}<a href="{{ url }}" rel="noopener" target="_blank">{{ label }}</a>{% endfor %}</div>{% endif %}
+      {% if site.contact_email %}<p class="about" dir="ltr" style="text-align:right">{{ site.contact_email }}</p>{% endif %}
+    </div>
+    <div><h4>محصول</h4>{% for item in menus.foot_product %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
+    <div><h4>منابع</h4>{% for item in menus.foot_resources %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
+    <div><h4>شرکت</h4>{% for item in menus.foot_company %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
+    <div class="dis"><span>{{ site.footer_note }}</span><span>© {{ site.copyright_text }}</span></div>
+  </div>
+</footer>
+<script src="{% static 'website/site.js' %}" defer></script>
+</body>
+</html>

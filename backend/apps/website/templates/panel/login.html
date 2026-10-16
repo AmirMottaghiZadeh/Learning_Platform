@@ -1,0 +1,16 @@
+{% load static %}<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow">
+<title>ورود به پنل | {{ site_settings.site_name }}</title><link rel="stylesheet" href="{% static 'website/panel.css' %}">
+<script>try{var t=localStorage.getItem("panel-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script></head>
+<body class="panel auth">
+<div class="login">
+  <div class="brand" style="color:var(--ink);padding:0"><span class="logo" style="background:var(--sb);color:#9DD4B8">P</span><span><b>{{ site_settings.site_name }}</b></span></div>
+  <h1>ورود به پنل مدیریت</h1><p class="sub">با شمارهٔ موبایل، ایمیل یا نام کاربری وارد شوید.</p>
+  {% if error %}<div class="toast error" role="alert" style="margin-bottom:12px">{{ error }}</div>{% endif %}
+  <form method="post" class="grid">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+    <div class="field"><label for="identifier">شمارهٔ موبایل یا ایمیل</label><input class="inp" id="identifier" name="identifier" dir="ltr" autocomplete="username" required autofocus></div>
+    <div class="field"><label for="password">رمز عبور</label><input class="inp" id="password" type="password" name="password" autocomplete="current-password" required></div>
+    <button class="btn p" type="submit" style="justify-content:center;height:44px">ورود</button>
+  </form>
+</div>
+</body></html>

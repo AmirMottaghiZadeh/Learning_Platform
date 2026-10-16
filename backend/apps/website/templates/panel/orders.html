@@ -1,0 +1,14 @@
+{% extends "panel/base.html" %}
+{% load billing_extras %}
+{% block title %}سفارش‌ها{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>سفارش‌ها</h1><div class="sub">خریدهای انجام‌شده از سایت و اپ</div></div>{% if request.user.is_superuser %}<div class="acts"><a class="btn" href="{{ sales_url }}">گزارش فروش</a></div>{% endif %}</div>
+<div class="grid kpis"><div class="card kpi"><div class="l">درآمد ۳۰ روز (تومان)</div><div class="v num">{{ summary.revenue_30|num }}</div></div><div class="card kpi"><div class="l">سفارش پرداخت‌شده</div><div class="v num">{{ summary.orders_30|num }}</div></div><div class="card kpi"><div class="l">ناموفق (۳۰ روز)</div><div class="v num">{{ summary.failed_30|num }}</div></div><div class="card kpi"><div class="l">در انتظار پرداخت</div><div class="v num">{{ summary.pending|num }}</div></div></div>
+<div class="tabs">{% for key, label, n in tabs %}<a class="{% if key == status %}on{% endif %}" href="?status={{ key }}">{{ label }} <span class="num">{{ n|fa }}</span></a>{% endfor %}</div>
+<div class="toolbar"><form method="get"><input type="hidden" name="status" value="{{ status }}"><label class="sr" for="q">جستجو</label><input class="inp" id="q" name="q" value="{{ q }}" placeholder="موبایل، کد پیگیری یا پلن" style="width:260px"><button class="btn" type="submit">جستجو</button></form></div>
+<div class="card" style="padding:6px 8px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>شمارهٔ سفارش</th><th>خریدار</th><th>پلن</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th><th>کد پیگیری</th></tr></thead><tbody>
+{% for o in page.object_list %}<tr><td class="num">#{{ o.pk|fa }}</td><td dir="ltr" style="text-align:right">{{ o.user.learner_profile.phone|default:o.deleted_user_label|default:"—" }}</td><td>{{ o.plan.name_fa }}{% if o.duration_days %} <span class="sm">· {{ o.duration_days|fa }} روز</span>{% endif %}</td>
+<td class="num">{{ o.payable_toman|toman }}{% if o.discount_toman %}<div class="sm">تخفیف {{ o.discount_toman|toman }}</div>{% endif %}</td><td><span class="chip {% if o.status == 'paid' %}ok{% elif o.status == 'failed' %}bad{% elif o.status == 'pending' %}rv{% endif %}">{{ o.get_status_display }}</span></td><td class="sm">{{ o.created_at|jdate:"time" }}</td><td dir="ltr" style="text-align:right">{{ o.ref_id|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="7" class="empty">سفارشی پیدا نشد.</td></tr>{% endfor %}</tbody></table></div></div>
+{% include "panel/_pagination.html" %}
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "website/base.html" %}
+{% block content %}
+<div class="wrap"><div class="center-card">
+  <h1>ورود یا ثبت‌نام</h1><p class="sub">با شمارهٔ موبایل وارد شوید؛ حساب شما همان حساب اپ است.</p>
+  <form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+    <div class="form-row"><label for="phone">شمارهٔ موبایل</label><input class="input" id="phone" name="phone" inputmode="tel" autocomplete="tel" placeholder="09123456789" dir="ltr" required autofocus>
+    <details style="padding:0 14px"><summary style="min-height:48px;font-size:14px">ورود با رمز عبور</summary><div class="form-row" style="padding-bottom:12px"><label class="sr" for="password">رمز عبور</label><input class="input" id="password" type="password" name="password" autocomplete="current-password" placeholder="رمز عبور (اختیاری)"></div></details></div>
+    <button class="btn p block" type="submit">ادامه</button>
+    <p style="color:var(--muted);font-size:13px;margin-top:12px">بدون رمز عبور، کد تأیید پیامک می‌شود.</p>
+  </form></div></div>
+{% endblock %}
