@@ -176,7 +176,7 @@ function Choices({ question, variant, value, choiceIndex, onChoose, showWeights 
 
 function Numeric({ question, variant, value, unitIndex, onChange, onUnit }: FieldProps) {
   const { colors } = useTheme();
-  const { isFa } = useLang();
+  const { isFa, t } = useLang();
   const unit = question.units[unitIndex] ?? question.units[0];
   const factor = () => unitFactorOf(unit);
   // The input shows what was typed, in the chosen unit; `value` is already
@@ -220,6 +220,9 @@ function Numeric({ question, variant, value, unitIndex, onChange, onUnit }: Fiel
           placeholderTextColor={colors.muted}
           style={{
             flex: 1,
+            // An input has a width of its own (about twenty characters); without
+            // this it would not shrink and would push the unit out of the box.
+            minWidth: 0,
             fontFamily: fontFamily(big ? "800" : "700"),
             fontSize: big ? 30 : 15,
             color: colors.ink,
@@ -229,11 +232,20 @@ function Numeric({ question, variant, value, unitIndex, onChange, onUnit }: Fiel
           }}
         />
         {unit ? (
-          <AppText muted weight="700" size={big ? 14 : 12} style={{ textAlign: "left", writingDirection: "ltr" }}>
+          <AppText muted weight="700" size={big ? 14 : 12} style={{ textAlign: "left", writingDirection: "ltr", flexShrink: 0 }}>
             {stripHtml(isFa && unit.title_fa ? unit.title_fa : unit.title)}
           </AppText>
         ) : null}
       </View>
+      {big && (unit?.min_value || unit?.max_value) ? (
+        <AppText muted weight="600" size={11.5} style={{ writingDirection: isFa ? "rtl" : "ltr", textAlign: isFa ? "right" : "left" }}>
+          {t("calcAllowed")}:{" "}
+          <AppText weight="700" size={11.5} muted style={{ writingDirection: "ltr" }}>
+            {[unit?.min_value ? Number(unit.min_value) : "", unit?.max_value ? Number(unit.max_value) : ""].join(" – ").replace(/^ – (.+)$/, "≤ $1").replace(/^(.+) – $/, "≥ $1")}
+            {unit ? ` ${stripHtml(isFa && unit.title_fa ? unit.title_fa : unit.title)}` : ""}
+          </AppText>
+        </AppText>
+      ) : null}
       {question.units.length > 1 ? (
         <View
           style={{

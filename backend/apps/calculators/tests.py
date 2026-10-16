@@ -393,3 +393,24 @@ class FormulaErrataTests(TestCase):
 
         rows = [{"position": 0, "formula": "results += $8;"}]
         self.assertIs(fix_results("1", rows), rows)
+
+
+class QuestionUnitTests(TestCase):
+    def test_unit_goes_before_the_question_mark(self):
+        from apps.calculators.errata import _with_unit
+
+        self.assertEqual(_with_unit("Age?", "years"), "Age (years)?")
+        self.assertEqual(_with_unit("LDH? (Measured at Admission)", "U/L"), "LDH (U/L)? (Measured at Admission)")
+        self.assertEqual(_with_unit("Resting pulse rate", "beats/min"), "Resting pulse rate (beats/min)")
+        self.assertEqual(_with_unit("سن؟", "سال"), "سن (سال)؟")
+        self.assertEqual(_with_unit("Age (years)?", "years"), "Age (years)?")  # already there
+
+    def test_questions_are_fixed_once_and_others_left_alone(self):
+        from apps.calculators.errata import fix_questions
+
+        qs = [{"position": 1, "title": "Age?", "title_fa": "سن؟"}, {"position": 2, "title": "Sex?", "title_fa": "جنسیت؟"}]
+        fixed = fix_questions("286", qs)
+        self.assertEqual((fixed[0]["title"], fixed[0]["title_fa"]), ("Age (years)?", "سن (سال)؟"))
+        self.assertEqual(fixed[1], qs[1])
+        self.assertEqual(fix_questions("286", fixed), fixed)
+        self.assertIs(fix_questions("999999", qs), qs)

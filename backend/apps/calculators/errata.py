@@ -98,3 +98,62 @@ def fix_results(calculator_id, results):
             row = {**row, "formula": formula.replace(fix[0], fix[1])}
         out.append(row)
     return out
+
+
+# A multiple-choice question whose choices are bare numbers or ranges ("<50",
+# "120-129") says what is measured but not in what unit, so the learner is
+# asked for "Age?" or "CrCl?" with nothing to say how it is counted. The unit
+# is added to the question's title, in English and in Persian.
+#   calculator id -> question position -> (unit, Persian unit)
+QUESTION_UNITS = {
+    "286": {1: ("years", "سال")},
+    "451": {0: ("years", "سال")},
+    "489": {1: ("years", "سال")},
+    "731": {0: ("years", "سال")},
+    "272": {2: ("years", "سال")},
+    "536": {0: ("years", "سال")},
+    "252": {1: ("years", "سال")},
+    "253": {1: ("years", "سال")},
+    "98": {1: ("years", "سال")},
+    "99": {1: ("years", "سال")},
+    "114": {4: ("years", "سال")},
+    "469": {0: ("years", "سال")},
+    "284": {0: ("years", "سال")},
+    "675": {4: ("kg/m²", "kg/m²")},
+    "45": {2: ("×10⁹/L", "×10⁹/L")},
+    "113": {1: ("×10⁹/L", "×10⁹/L")},
+    "268": {2: ("×10³/µL", "×10³/µL")},
+    "72": {1: ("U/L", "U/L")},
+    "190": {3: ("U/L", "U/L"), 4: ("U/L", "U/L")},
+    "53": {1: ("mL/min", "mL/min")},
+    "841": {1: ("mL/min/1.73 m²", "mL/min/1.73 m²")},
+    "530": {0: ("beats/min", "ضربان در دقیقه")},
+    "676": {1: ("beats/min", "ضربان در دقیقه")},
+    "376": {0: ("mmHg", "mmHg")},
+}
+
+
+def _with_unit(title, unit):
+    """`Age?` -> `Age (years)?`; `Resting pulse rate` -> `Resting pulse rate (beats/min)`.
+    A title that already carries the unit in brackets is left as it is."""
+    if not title or f"({unit})" in title:
+        return title
+    m = re.search(r"\s*[?؟]", title) or re.search(r"\s*:\s*$", title)
+    if m:
+        return f"{title[: m.start()]} ({unit}){title[m.start():].lstrip()}"
+    return f"{title} ({unit})"
+
+
+def fix_questions(calculator_id, questions):
+    """`questions` with the units named in the titles that lack them. Returns a
+    new list; the input is untouched, and a second run changes nothing."""
+    fixes = QUESTION_UNITS.get(str(calculator_id))
+    if not fixes:
+        return questions
+    out = []
+    for q in questions:
+        pair = fixes.get(q.get("position"))
+        if pair:
+            q = {**q, "title": _with_unit(q.get("title"), pair[0]), "title_fa": _with_unit(q.get("title_fa"), pair[1])}
+        out.append(q)
+    return out
