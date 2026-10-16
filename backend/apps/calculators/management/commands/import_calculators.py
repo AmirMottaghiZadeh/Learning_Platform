@@ -269,7 +269,7 @@ class Command(BaseCommand):
                             "disclaimer_footer": rec["disclaimer_footer"] or "",
                             "disclaimer_footer_fa": rec["disclaimer_footer_fa"] or "",
                             "questions": _questions_for(conn, rec["id"]),
-                            "results": fix_results(slug, _results_for(conn, rec["id"])),
+                            "results": fix_results(calculator_id, _results_for(conn, rec["id"])),
                             "error_checks": _error_checks_for(conn, rec["id"]),
                             "formula_strings_fa": _formula_strings_fa(rec["formula_strings_fa"]),
                             "references": _references_for(conn, rec["id"]),

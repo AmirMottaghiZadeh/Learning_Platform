@@ -5,8 +5,8 @@ from apps.calculators.errata import fix_results
 
 def apply_fixes(apps, schema_editor):
     Calculator = apps.get_model("calculators", "Calculator")
-    for calc in Calculator.objects.all().only("pk", "slug", "results"):
-        fixed = fix_results(calc.slug, calc.results)
+    for calc in Calculator.objects.all().only("pk", "calculator_id", "results"):
+        fixed = fix_results(calc.calculator_id, calc.results)
         if fixed != calc.results:
             Calculator.objects.filter(pk=calc.pk).update(results=fixed)
 

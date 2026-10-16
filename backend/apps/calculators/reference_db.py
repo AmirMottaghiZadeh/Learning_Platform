@@ -132,7 +132,7 @@ def load(conn, meta, *, prune=False, log=print):
             seen.add(uid)
             fields = {f: row[f] for f in _TEXT_FIELDS}
             fields.update({f: loads(row[f], {} if f == "formula_strings_fa" else []) for f in _JSON_FIELDS})
-            fields["results"] = fix_results(fields["slug"], fields["results"])
+            fields["results"] = fix_results(fields["calculator_id"], fields["results"])
             holder = slugs.get(fields["slug"])
             if holder is not None and holder != uid:
                 log(f"  skipped {uid}: slug '{fields['slug']}' already belongs to {holder}")

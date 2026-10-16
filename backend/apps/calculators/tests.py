@@ -339,8 +339,8 @@ class CalculatorApiTests(TestCase):
 class FormulaErrataTests(TestCase):
     """The corrections to the source's mistaken formulas (apps/calculators/errata.py)."""
 
-    GENEVA = "revised-geneva-clinical-prediction-rule-for-pulmonary-embolism-676"
-    GARFIELD = "garfield-af-risk-calculator-685"
+    GENEVA = "676"
+    GARFIELD = "685"
 
     def test_geneva_score_adds_the_surgery_question_not_a_missing_one(self):
         from apps.calculators.errata import fix_results
@@ -353,10 +353,10 @@ class FormulaErrataTests(TestCase):
     def test_fixes_apply_once(self):
         from apps.calculators.errata import FORMULA_ERRATA, fix_results
 
-        for slug, per_row in FORMULA_ERRATA.items():
+        for calculator_id, per_row in FORMULA_ERRATA.items():
             rows = [{"position": p, "formula": "x $result1 $result2 $result3 results += $8; results += $1 +$2 +$3 + $4 + $5 + $6 + $7 + $8 + $9 + $10;"} for p in per_row]
-            once = fix_results(slug, rows)
-            self.assertEqual(fix_results(slug, once), once, slug)
+            once = fix_results(calculator_id, rows)
+            self.assertEqual(fix_results(calculator_id, once), once, calculator_id)
 
     def test_one_based_results_are_renumbered_once(self):
         from apps.calculators.errata import fix_results
@@ -378,13 +378,13 @@ class FormulaErrataTests(TestCase):
         from apps.calculators.errata import fix_results
 
         rows = [{"position": 0, "answer": "$result0", "formula": "return 1;"}, {"position": 1, "answer": "$result1", "formula": "return $result0;"}]
-        self.assertEqual(fix_results("abcd2-score-6", rows), rows)
+        self.assertEqual(fix_results("6", rows), rows)
 
     def test_renal_cell_survival_row_compares_the_stage_the_stage_row_returns(self):
         from apps.calculators.errata import fix_results
 
         rows = [{"position": 2, "formula": 'if (stage == "Stage III") {', "condition_formula": '($result1 == "Stage I") || ($result1 == "Stage IV")'}]
-        fixed = fix_results("renal-cell-carcinoma-tnm-staging-573", rows)[0]
+        fixed = fix_results("573", rows)[0]
         self.assertEqual(fixed["formula"], 'if (stage == "III") {')
         self.assertEqual(fixed["condition_formula"], '($result1 == "I") || ($result1 == "IV")')
 
@@ -392,4 +392,4 @@ class FormulaErrataTests(TestCase):
         from apps.calculators.errata import fix_results
 
         rows = [{"position": 0, "formula": "results += $8;"}]
-        self.assertIs(fix_results("something-else-1", rows), rows)
+        self.assertIs(fix_results("1", rows), rows)
