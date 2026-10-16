@@ -29,6 +29,7 @@ import {
   extractNumericValue,
   formatNumber,
   hasUnsupportedQuestions,
+  unitFactorOf,
 } from "@/utils/calculatorEngine";
 import { AboutBlock, parseAboutHtml, stripHtml } from "@/utils/html";
 
@@ -55,6 +56,8 @@ export function CalculatorDetailScreen() {
   // (e.g. "Left" and "Right" both scoring 1), so highlighting by value alone
   // would light up every choice with that score.
   const [choiceIndexes, setChoiceIndexes] = useState<Record<number, number>>({});
+  // Which of a numeric question's units the learner picked (default: the first).
+  const [unitIndexes, setUnitIndexes] = useState<Record<number, number>>({});
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<ComputedResult[] | null>(null);
@@ -98,11 +101,14 @@ export function CalculatorDetailScreen() {
    * by per-step "Next" gating and the final defensive re-check in compute(). */
   const validate = (q: CalculatorQuestion, value: number | undefined): string | null => {
     if (value === undefined) return t("calculatorFillRequired");
-    const unit = q.units[0];
+    const unit = q.units[unitIndexes[q.position] ?? 0] ?? q.units[0];
     if (unit) {
-      const min = unit.min_value !== null ? parseFloat(unit.min_value) : null;
-      const max = unit.max_value !== null ? parseFloat(unit.max_value) : null;
-      if ((min !== null && value < min) || (max !== null && value > max)) {
+      // `value` is already multiplied by unit_factor; the unit's limits are
+      // in the unit the learner typed in.
+      const typed = Number((value / unitFactorOf(unit)).toPrecision(12));
+      const min = unit.min_value ? parseFloat(unit.min_value) : NaN;
+      const max = unit.max_value ? parseFloat(unit.max_value) : NaN;
+      if ((!Number.isNaN(min) && typed < min) || (!Number.isNaN(max) && typed > max)) {
         const minMsg = isFa ? unit.min_value_msg_fa || unit.min_value_msg : unit.min_value_msg;
         const maxMsg = isFa ? unit.max_value_msg_fa || unit.max_value_msg : unit.max_value_msg;
         return minMsg || maxMsg || t("calculatorOutOfRange");
@@ -198,6 +204,11 @@ export function CalculatorDetailScreen() {
             value={answers[currentQuestion.position]}
             onChange={(v) => setAnswer(currentQuestion.position, v)}
             choiceIndex={choiceIndexes[currentQuestion.position]}
+            unitIndex={unitIndexes[currentQuestion.position] ?? 0}
+            onUnit={(index) => {
+              setError(null);
+              setUnitIndexes((cur) => ({ ...cur, [currentQuestion.position]: index }));
+            }}
             onChoose={(index, v) => {
               setChoiceIndexes((cur) => ({ ...cur, [currentQuestion.position]: index }));
               setAnswer(currentQuestion.position, v);
@@ -557,22 +568,23 @@ function QuestionInput({
   value,
   onChange,
   choiceIndex,
+  unitIndex,
+  onUnit,
   onChoose,
 }: {
   question: CalculatorQuestion;
   value: number | undefined;
   onChange: (value: number | undefined) => void;
   choiceIndex: number | undefined;
+  unitIndex: number;
+  onUnit: (index: number) => void;
   onChoose: (index: number, value: number | undefined) => void;
 }) {
   const { colors, shadows } = useTheme();
   const { isFa, row } = useLang();
-  const unit = question.units[0];
+  const unit = question.units[unitIndex] ?? question.units[0];
 
-  const unitFactor = () => {
-    const f = unit?.unit_factor !== null && unit?.unit_factor !== undefined ? parseFloat(unit.unit_factor) : 1;
-    return Number.isNaN(f) || f === 0 ? 1 : f;
-  };
+  const unitFactor = () => unitFactorOf(unit);
 
   // The TextInput shows what the user typed, in their units; `value` (what
   // the parent tracks) is already multiplied by unit_factor for the formula
@@ -680,6 +692,38 @@ function QuestionInput({
           ) : null}
         </View>
       )}
+
+      {question.type !== "multiple_choice" && question.units.length > 1 ? (
+        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+          {question.units.map((u, i) => {
+            const selected = i === unitIndex;
+            return (
+              <Pressable
+                key={i}
+                onPress={() => {
+                  if (selected) return;
+                  // Keep the quantity, change how it is written: 30 g/L
+                  // becomes 3 g/dL rather than staying "30".
+                  if (value !== undefined) setText(String(Number((value / unitFactorOf(u)).toFixed(6))));
+                  onUnit(i);
+                }}
+                style={{
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  borderColor: selected ? colors.accent : colors.trackBg,
+                  backgroundColor: selected ? `${colors.accent}1a` : colors.softBg,
+                }}
+              >
+                <AppText weight="700" size={12} color={selected ? colors.accent : colors.ink}>
+                  {stripHtml(isFa && u.title_fa ? u.title_fa : u.title)}
+                </AppText>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
     </View>
   );
 }

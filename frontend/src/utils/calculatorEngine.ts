@@ -394,6 +394,13 @@ const MAX_RANGE_COMBINATIONS = 3000;
 // the sweep below find that interior optimum too, to the grid's resolution.
 const NUMERIC_RANGE_SAMPLE_POINTS = 21;
 
+/** What a number typed in `unit` is multiplied by to get the value the
+ * formulas use (1 when the source gives no usable factor). */
+export function unitFactorOf(unit: { unit_factor: string | null } | undefined): number {
+  const f = unit?.unit_factor !== null && unit?.unit_factor !== undefined ? parseFloat(unit.unit_factor) : 1;
+  return Number.isNaN(f) || f === 0 ? 1 : f;
+}
+
 /** `null` only when this question has neither a real bound NOR an answer to
  * pin it to -- shouldn't happen by the time ranges are computed (every
  * question is validated as answered first), but kept as the genuine
@@ -418,9 +425,12 @@ function questionDomain(
       .filter((v) => !Number.isNaN(v));
     if (values.length > 0) return { values, pinned: false };
   } else {
+    // The unit's limits are in its own scale; the formula works on the
+    // value times unit_factor, so the sweep must too.
     const unit = q.units[0];
-    const min = unit?.min_value !== null && unit?.min_value !== undefined ? parseFloat(unit.min_value) : NaN;
-    const max = unit?.max_value !== null && unit?.max_value !== undefined ? parseFloat(unit.max_value) : NaN;
+    const factor = unitFactorOf(unit);
+    const min = unit?.min_value !== null && unit?.min_value !== undefined ? parseFloat(unit.min_value) * factor : NaN;
+    const max = unit?.max_value !== null && unit?.max_value !== undefined ? parseFloat(unit.max_value) * factor : NaN;
     if (!Number.isNaN(min) && !Number.isNaN(max)) {
       if (min === max) return { values: [min], pinned: false };
       const points: number[] = [];
