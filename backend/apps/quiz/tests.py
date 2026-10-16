@@ -3,20 +3,15 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from apps.drugs.models import AtcCategory, AtcCode, Ingredient, IngredientProfileSection
-from apps.flashcards.card_facts import build_fact_rows
-from apps.flashcards.models import FlashcardFact
 from apps.progress.models import LearnerProgress, Mistake
 
-from .bank_generator import generate_bank
 from .bank_selectors import sample_bank_questions
 from .models import BankQuestion, QuizSession
 
 
 def _seed_atc_world():
-    """Enough drugs across several ATC L2 groups, each with distinct
-    indications content, to build a 5-question bank-backed quiz for one
-    class (every ingredient's text embeds its own index, so none of it
-    collides with bank_generator's cross-ingredient duplicate filter)."""
+    """Enough drugs across several ATC L2 groups, each with its own questions,
+    to build a 5-question bank-backed quiz for one class."""
     classes = {
         "C07": "Beta blockers", "C03": "Diuretics", "C09": "ACE inhibitors",
         "C08": "Calcium channel blockers", "C10": "Statins",
@@ -25,16 +20,18 @@ def _seed_atc_world():
         AtcCategory.objects.get_or_create(
             code=code, defaults={"name_en": name, "name_fa": name, "level": 2}
         )
+    bank = []
     for i, code in enumerate(list(classes) * 3):
         ing = Ingredient.objects.create(name=f"drug{i}", rxcui=str(1000 + i), slug=f"drug{i}-{1000+i}")
         atc, _ = AtcCode.objects.get_or_create(code=f"{code}AA{i:02d}", defaults={"name": "x"})
         ing.atc_codes.add(atc)
-        summary = "\n".join(f"- کاربرد اختصاصی شماره {i}-{j} برای drug{i}" for j in range(5))
-        IngredientProfileSection.objects.create(
-            ingredient=ing, field="indications_and_usage", summary_fa=summary
-        )
-    FlashcardFact.objects.bulk_create(build_fact_rows()[0])
-    BankQuestion.objects.bulk_create(generate_bank())
+        for j in range(2):
+            options = [f"کاربرد شمارهٔ {i}-{j}-{k}" for k in range(4)]
+            bank.append(BankQuestion(
+                ingredient=ing, field="indication", prompt_fa=f"کدام مورد از موارد مصرف «drug{i}» است؟ ({j})",
+                options_fa=options, correct_index=(i + j) % 4,
+            ))
+    BankQuestion.objects.bulk_create(bank)
 
 
 @override_settings(ROOT_URLCONF="apps.quiz.urls")
@@ -292,32 +289,6 @@ class QuizApiTests(TestCase):
             "tone": "info",
             "count": 5,
         }])
-
-
-class QuestionBankGenerationTests(TestCase):
-    def test_two_questions_per_card_section_from_the_card_facts(self):
-        _seed_atc_world()
-        per_drug = {}
-        for q in BankQuestion.objects.all():
-            per_drug.setdefault(q.ingredient_id, []).append(q)
-            self.assertEqual(q.field, "indication")
-            self.assertTrue(q.prompt_fa.startswith("کدام مورد زیر از موارد مصرف"))
-            self.assertEqual(len(set(q.options_fa)), 4)
-            card_facts = set(
-                FlashcardFact.objects.filter(ingredient_id=q.ingredient_id, lang="fa")
-                .values_list("text", flat=True)
-            )
-            self.assertIn(q.options_fa[q.correct_index], card_facts)
-            others = [o for i, o in enumerate(q.options_fa) if i != q.correct_index]
-            self.assertFalse(card_facts & set(others))
-        self.assertEqual(len(per_drug), 15)
-        self.assertTrue(all(len(qs) == 2 for qs in per_drug.values()))
-
-    def test_command_needs_the_flashcard_facts_first(self):
-        from django.core.management import CommandError, call_command
-
-        with self.assertRaises(CommandError):
-            call_command("build_question_bank")
 
 
 @override_settings(ROOT_URLCONF="apps.core.quiz_maintenance_urls")

@@ -313,11 +313,11 @@ Both apps are fully built and migrated. Their routes are wired only when
 otherwise the maintenance router answers every path with
 `503 {"code": "FEATURE_NOT_AVAILABLE"}`.
 
-### Flashcards (`apps.flashcards`) — Leitner, card facts from `build_flashcards`
+### Flashcards (`apps.flashcards`) — Leitner
 
-A card is `(learner, ingredient)`. What it says comes from `FlashcardFact`,
-rebuilt by `python manage.py build_flashcards` from the profile summaries, in
-five sections: `indication`, `adr_common`, `adr_serious`, `dosage_forms`,
+A card is `(learner, ingredient)`. What it says comes from `FlashcardFact`, which
+is empty until the content made by the study-content pipeline is loaded (the
+earlier rule-based builder was retired), in five sections: `indication`, `adr_common`, `adr_serious`, `dosage_forms`,
 `contra_boxed` (boxed warning, then contraindications). Boxes 1..5; intervals
 0 / 3 / 7 / 16 / 35 days.
 
@@ -358,11 +358,10 @@ Progress is a `TopicProgress` row per (learner, topic).
 
 ### Quiz (`apps.quiz`) — server-scored, feeds progress + mistakes
 
-Questions come from a pre-built bank (`BankQuestion`), rebuilt by
-`python manage.py build_question_bank` from the flashcard facts (run
-`build_flashcards` first): up to 10 four-option questions per drug, 2 from each
-of the five card sections, distractors from same-ATC-class drugs. A question's
-`field` is its card section.
+Questions come from a pre-built bank (`BankQuestion`), which is empty until the
+content made by the study-content pipeline is loaded (the earlier rule-based
+generator was retired); until then `POST /quiz/start/` answers 422
+`INSUFFICIENT_QUESTIONS`. A question's `field` is its card section.
 
 - **POST `/quiz/start/`** — `{category, count}` (count ∈ 5|10|15|20) →
   `{ id, category, question_count, questions: [{ id, order, prompt_fa, prompt_en,

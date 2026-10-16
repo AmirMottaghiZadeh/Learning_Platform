@@ -34,8 +34,8 @@ correctness, scoring, streak/XP, review scheduling, mistake attribution.
 | `drugs` | `Ingredient` / `IngredientProfileSection` / `AtcCode` / `AtcCategory`; `import_openfda` loads the OpenFDA pipeline SQLite; `load_atc_reference` seeds the bilingual ATC tree |
 | `lessons` | ATC taxonomy → chapters (drug + section content), per-chapter progress |
 | `progress` | `LearnerProgress` (xp, streak, totals), `DailyStudy`, `Mistake`, `StudyPlan`; the `/me/*` endpoints |
-| `flashcards` | Leitner cards; `build_flashcards` extracts each drug's card facts (5 sections) — **locked** behind `FLASHCARDS_API_ENABLED` |
-| `quiz` | server-scored quiz from a question bank built off the card facts (`build_question_bank`), feeds progress + mistakes — **locked** behind `QUIZ_API_ENABLED` |
+| `flashcards` | Leitner cards. Card content (`FlashcardFact`) is empty until the LLM-built content from `study_content` is loaded (the rule-based builder was retired) — **locked** behind `FLASHCARDS_API_ENABLED` |
+| `quiz` | server-scored quiz, feeds progress + mistakes. The question bank (`BankQuestion`) is empty until the LLM-built content from `study_content` is loaded (the rule-based builder was retired) — **locked** behind `QUIZ_API_ENABLED` |
 | `uptodate` | read-only search + article API over the bundled UpToDate SQLite snapshot (no models); 503 when the snapshot is absent |
 | `website` | the public site and blog on `pharmenta.ir` (served on the `SITE_HOSTS` domains) and its panel at `/panel/` -- see [docs/deploy-site.md](docs/deploy-site.md) |
 | `data_quality_center` | staff console at `/ops/data-quality/` to edit section summaries, with superuser approval and an audit trail (off with `DATA_QUALITY_CENTER_ENABLED=False`) |
@@ -75,8 +75,6 @@ python manage.py import_openfda            # needs the OpenFDA pipeline SQLite
 python manage.py import_calculators_db --source calculators.db   # from export_reference_db
 python manage.py import_guidelines_db  --source guidelines.db
 python manage.py import_diseases_db    --source diseases.db
-python manage.py build_flashcards          # card facts, from the profile summaries
-python manage.py build_question_bank       # quiz bank, from the card facts
 python manage.py runserver
 ```
 

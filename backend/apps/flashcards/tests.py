@@ -7,15 +7,27 @@ from apps.drugs.models import Ingredient, IngredientProfileSection
 from apps.lessons.selectors import mark_drug_read
 from apps.progress.models import LearnerProgress
 
-from .card_facts import adr_facts, build_fact_rows, facts_for_ingredient
 from .models import FlashcardFact, LeitnerCard
 from .services import due_card_count, seed_deck
 
 
+_SECTION_OF_FIELD = {"indications_and_usage": "indication", "dosage_forms_and_strengths": "dosage_forms"}
+
+
 def _refresh_facts():
-    """What build_flashcards does: rebuild every drug's card facts."""
+    """Card facts for the test drugs, written straight from their summaries
+    (the cards' content now arrives from outside, not from a generator here):
+    the bullets of the two fields that map onto a card section."""
     FlashcardFact.objects.all().delete()
-    FlashcardFact.objects.bulk_create(build_fact_rows()[0])
+    rows = []
+    for sec in IngredientProfileSection.objects.filter(field__in=_SECTION_OF_FIELD):
+        for lang, text in (("fa", sec.summary_fa), ("en", sec.summary_en)):
+            facts = [line.lstrip("- ").strip() for line in text.splitlines() if line.strip()]
+            for order, fact in enumerate(facts):
+                rows.append(FlashcardFact(
+                    ingredient_id=sec.ingredient_id, section=_SECTION_OF_FIELD[sec.field], lang=lang, order=order, text=fact,
+                ))
+    FlashcardFact.objects.bulk_create(rows)
 
 
 def _rich_ingredient(name, rxcui, n_products=0):
@@ -146,59 +158,6 @@ class FlashcardLockedTests(TestCase):
         client = APIClient()
         self.assertEqual(client.get("/flashcards/").status_code, 503)
         self.assertEqual(client.post("/flashcards/seed/").status_code, 503)
-
-
-class CardFactExtractionTests(TestCase):
-    def test_adr_groups_by_heading_and_by_label(self):
-        summary = "\n".join([
-            "عوارض شایع:",
-            "- سردرد خفیف و گذرا در شروع درمان",
-            "- تهوع و ناراحتی گوارشی",
-            "عوارض مهم و جدی:",
-            "- واکنش‌های پوستی شدید: موارد نادر سندرم استیونس-جانسون",
-            "نادر:",
-            "- ریزش موی برگشت‌پذیر در مصرف طولانی",
-            "- شایع: خواب‌آلودگی در روزهای اول مصرف",
-            "- جدی: آنژیوادم که نیاز به قطع فوری دارد",
-        ])
-        facts = adr_facts(summary)
-        self.assertEqual(facts["adr_common"], [
-            "سردرد خفیف و گذرا در شروع درمان",
-            "تهوع و ناراحتی گوارشی",
-            "خواب‌آلودگی در روزهای اول مصرف",
-        ])
-        # a label that names a thing ("severe skin reactions") stays on the
-        # fact; the rare group is left out; a "serious" bullet label is a group
-        self.assertEqual(facts["adr_serious"], [
-            "واکنش‌های پوستی شدید: موارد نادر سندرم استیونس-جانسون",
-            "آنژیوادم که نیاز به قطع فوری دارد",
-        ])
-
-    def test_an_organ_system_heading_keeps_the_current_group(self):
-        summary = "عوارض شایع:\nقلبی:\n- تپش قلب در دوزهای بالا"
-        self.assertEqual(adr_facts(summary)["adr_common"], ["تپش قلب در دوزهای بالا"])
-
-    def test_ungrouped_adverse_reactions_are_not_guessed(self):
-        self.assertEqual(adr_facts("- سرگیجه هنگام برخاستن"), {"adr_common": [], "adr_serious": []})
-
-    def test_contra_boxed_puts_the_boxed_warning_first(self):
-        facts = facts_for_ingredient({
-            "contraindications": "- حساسیت شناخته‌شده به دارو",
-            "boxed_warning": "- خطر مرگ جنین در بارداری",
-        })
-        self.assertEqual(facts["contra_boxed"], ["خطر مرگ جنین در بارداری", "حساسیت شناخته‌شده به دارو"])
-
-    def test_build_flashcards_command_replaces_all_facts(self):
-        from io import StringIO
-
-        from django.core.management import call_command
-
-        _rich_ingredient("losartan", "52175")
-        out = StringIO()
-        call_command("build_flashcards", stdout=out)
-        self.assertIn("saved 4 flashcard facts", out.getvalue())  # 2 sections x fa/en
-        call_command("build_flashcards", stdout=StringIO())
-        self.assertEqual(FlashcardFact.objects.count(), 4)
 
 
 @override_settings(ROOT_URLCONF="apps.flashcards.urls")
