@@ -358,13 +358,35 @@ class FormulaErrataTests(TestCase):
             once = fix_results(slug, rows)
             self.assertEqual(fix_results(slug, once), once, slug)
 
-    def test_garfield_rows_read_the_three_common_values(self):
+    def test_one_based_results_are_renumbered_once(self):
         from apps.calculators.errata import fix_results
 
-        rows = [{"position": 3, "formula": "Math.exp($result1) Math.exp($result2) Math.exp($result3+0.6)"}]
-        self.assertEqual(
-            fix_results(self.GARFIELD, rows)[0]["formula"], "Math.exp($result0) Math.exp($result1) Math.exp($result2+0.6)"
-        )
+        rows = [
+            {"position": 0, "answer": "$result1", "formula": "return $2;"},
+            {"position": 1, "answer": "$result2", "formula": "return $result1 + 1;"},
+            {"position": 2, "answer": "$result3", "formula": "return $result1 + $result2;", "condition_formula": "$result2 > 0"},
+        ]
+        fixed = fix_results(self.GARFIELD, rows)
+        self.assertEqual([r["answer"] for r in fixed], ["$result0", "$result1", "$result2"])
+        self.assertEqual(fixed[1]["formula"], "return $result0 + 1;")
+        self.assertEqual(fixed[2]["formula"], "return $result0 + $result1;")
+        self.assertEqual(fixed[2]["condition_formula"], "$result1 > 0")
+        self.assertEqual(fix_results(self.GARFIELD, fixed), fixed)  # a second run changes nothing
+        self.assertEqual(rows[1]["formula"], "return $result1 + 1;")  # input untouched
+
+    def test_zero_based_calculators_are_not_renumbered(self):
+        from apps.calculators.errata import fix_results
+
+        rows = [{"position": 0, "answer": "$result0", "formula": "return 1;"}, {"position": 1, "answer": "$result1", "formula": "return $result0;"}]
+        self.assertEqual(fix_results("abcd2-score-6", rows), rows)
+
+    def test_renal_cell_survival_row_compares_the_stage_the_stage_row_returns(self):
+        from apps.calculators.errata import fix_results
+
+        rows = [{"position": 2, "formula": 'if (stage == "Stage III") {', "condition_formula": '($result1 == "Stage I") || ($result1 == "Stage IV")'}]
+        fixed = fix_results("renal-cell-carcinoma-tnm-staging-573", rows)[0]
+        self.assertEqual(fixed["formula"], 'if (stage == "III") {')
+        self.assertEqual(fixed["condition_formula"], '($result1 == "I") || ($result1 == "IV")')
 
     def test_other_calculators_are_left_alone(self):
         from apps.calculators.errata import fix_results

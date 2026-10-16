@@ -12,13 +12,27 @@ row here, with why, when another one turns up.
 
 import re
 
+_RESULT_TOKEN = re.compile(r"\$result(\d+)(?!\d)")
+_REF_FIELDS = ("formula", "condition_formula", "title_formula", "sub_title_formula", "answer", "answer_fa")
 
-def _shift_results_down(formula):
-    """`$result1/2/3` -> `$result0/1/2`. Only while the formula still reads
-    `$result3`, which a corrected one never does, so it is applied once."""
-    if "$result3" not in formula:
-        return formula
-    return re.sub(r"\$result([123])(?!\d)", lambda m: f"$result{int(m.group(1)) - 1}", formula)
+# Calculators whose source numbers its results from 1: the first row's answer
+# is `$result1`, the next `$result2`, and later formulas read them the same
+# way. The app (like the other calculators) reads `$resultN` as the row at
+# position N, so these formulas read the wrong row, or the row itself, and
+# showed nothing or a wrong number.
+ONE_BASED_RESULTS = {
+    "garfield-af-risk-calculator-685",
+    "international-igan-prediction-tool-at-biopsy-pediatrics-713",
+    "international-igan-prediction-tool-post-biopsy-pediatric-890",
+    "pittsburgh-sleep-quality-index-psqi-603",
+    "reducing-vascular-risk-in-patients-living-with-diabetes-503",
+}
+
+
+def _stage_names_without_prefix(row):
+    """`== "Stage III"` -> `== "III"` in the formula and its condition."""
+    fix = lambda text: re.sub(r'(==\s*)"Stage ', r'\1"', text or "")
+    return {**row, "formula": fix(row.get("formula")), "condition_formula": fix(row.get("condition_formula"))}
 
 
 FORMULA_ERRATA = {
@@ -31,27 +45,41 @@ FORMULA_ERRATA = {
     # The ten AUDIT items are questions 0-9, but the score adds `$1 .. $10`:
     # it drops the first item and reads a question that does not exist ("$10"
     # is read as "$1" followed by a 0), so every score came out wrong.
+    # The stage row answers "I", "II", "III" or "IV", but the survival row (and
+    # the condition that shows it) compare it with "Stage I" ... "Stage IV",
+    # so the survival rates were never shown.
+    "renal-cell-carcinoma-tnm-staging-573": {2: _stage_names_without_prefix},
     "alcohol-use-disorders-identification-test-audit-474": {
         0: (
             "results += $1 +$2 +$3 + $4 + $5 + $6 + $7 + $8 + $9 + $10;",
             "results += $0 + $1 + $2 + $3 + $4 + $5 + $6 + $7 + $8 + $9;",
         ),
     },
-    # The three projection rows (2 years, 1 year, 6 months) read the
-    # mortality, stroke and bleeding values as `$result1 .. $result3`, but
-    # those are rows 0, 1 and 2 (row 3 is the row itself). One off, so they
-    # never produced anything.
-    "garfield-af-risk-calculator-685": {
-        3: _shift_results_down,
-        4: _shift_results_down,
-        5: _shift_results_down,
-    },
 }
 
 
+def renumber_from_one(results):
+    """`$resultN` -> `$result(N-1)` in every formula and answer. Applied only
+    while the first row's answer is still `$result1`, which it no longer is
+    once renumbered, so a second run changes nothing."""
+    if not results or (results[0].get("answer") or "").strip() != "$result1":
+        return results
+    shift = lambda text: _RESULT_TOKEN.sub(lambda m: f"$result{max(int(m.group(1)) - 1, 0)}", text)
+    out = []
+    for row in results:
+        row = dict(row)
+        for field in _REF_FIELDS:
+            if row.get(field):
+                row[field] = shift(row[field])
+        out.append(row)
+    return out
+
+
 def fix_results(slug, results):
-    """`results` (the list stored on a calculator) with the known formula
-    mistakes for `slug` corrected. Returns a new list; the input is untouched."""
+    """`results` (the list stored on a calculator) with the known mistakes
+    for `slug` corrected. Returns a new list; the input is untouched."""
+    if slug in ONE_BASED_RESULTS:
+        results = renumber_from_one(results)
     fixes = FORMULA_ERRATA.get(slug)
     if not fixes:
         return results
@@ -60,9 +88,7 @@ def fix_results(slug, results):
         fix = fixes.get(row.get("position"))
         formula = row.get("formula") or ""
         if callable(fix):
-            fixed = fix(formula)
-            if fixed != formula:
-                row = {**row, "formula": fixed}
+            row = fix(row)
         elif fix and fix[0] in formula:
             row = {**row, "formula": formula.replace(fix[0], fix[1])}
         out.append(row)
