@@ -1,15 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useState } from "react";
-import { Pressable, TextInput, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { calculatorsApi } from "@/api/endpoints";
 import { CalculatorQuestion } from "@/api/types";
 import { ResultsView } from "@/components/calculator/ResultsView";
-import { DateInput, DaysInput } from "@/components/calculator/DateInput";
+import { QuestionFlow } from "@/components/calculator/flow/QuestionFlow";
 import { describeInputs } from "@/components/calculator/common";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
-import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
@@ -17,7 +16,6 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
-import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
 import {
   CalculatorAnswers,
@@ -155,25 +153,6 @@ export function CalculatorDetailScreen() {
     );
   };
 
-  const isLastStep = step === data.questions.length - 1;
-  const currentQuestion = data.questions[step];
-
-  const goNext = () => {
-    const err = validate(currentQuestion, answers[currentQuestion.position]);
-    if (err) {
-      setError(err);
-      return;
-    }
-    setError(null);
-    if (isLastStep) compute();
-    else setStep((s) => s + 1);
-  };
-
-  const goPrev = () => {
-    setError(null);
-    setStep((s) => Math.max(0, s - 1));
-  };
-
   const editAnswers = () => {
     setResults(null);
     setError(null);
@@ -201,62 +180,25 @@ export function CalculatorDetailScreen() {
           </AppText>
         </Card>
       ) : results === null ? (
-        <View style={{ marginBottom: spacing.lg }}>
-          <AppText weight="800" size={12} muted style={{ marginBottom: spacing.lg, ...dirStyle(isFa) }}>
-            {n(step + 1)} {t("calculatorStepOf")} {n(data.questions.length)}
-          </AppText>
-
-          {currentQuestion.type === "date_input" ? (
-            <DateInput
-              key={`${currentQuestion.position}-${isFa}`}
-              question={currentQuestion}
-              value={answers[currentQuestion.position]}
-              onChange={(v) => setAnswer(currentQuestion.position, v)}
-            />
-          ) : currentQuestion.type === "days_input" ? (
-            <DaysInput
-              key={currentQuestion.position}
-              question={currentQuestion}
-              value={answers[currentQuestion.position]}
-              onChange={(v) => setAnswer(currentQuestion.position, v)}
-            />
-          ) : (
-            <QuestionInput
-              key={currentQuestion.position}
-              question={currentQuestion}
-              value={answers[currentQuestion.position]}
-              onChange={(v) => setAnswer(currentQuestion.position, v)}
-              choiceIndex={choiceIndexes[currentQuestion.position]}
-              unitIndex={unitIndexes[currentQuestion.position] ?? 0}
-              onUnit={(index) => {
-                setError(null);
-                setUnitIndexes((cur) => ({ ...cur, [currentQuestion.position]: index }));
-              }}
-              onChoose={(index, v) => {
-                setChoiceIndexes((cur) => ({ ...cur, [currentQuestion.position]: index }));
-                setAnswer(currentQuestion.position, v);
-              }}
-            />
-          )}
-
-          {error ? (
-            <AppText size={12} weight="700" color={colors.denyLabel} style={{ marginTop: 14 }}>
-              {error}
-            </AppText>
-          ) : null}
-
-          <View style={{ flexDirection: row, gap: 10, marginTop: spacing.lg }}>
-            {step > 0 ? (
-              <Button label={t("calculatorPrevious")} variant="secondary" onPress={goPrev} style={{ flex: 1 }} />
-            ) : null}
-            <Button
-              label={isLastStep ? t("calculatorComputeBtn") : t("calculatorNext")}
-              onPress={goNext}
-              disabled={validate(currentQuestion, answers[currentQuestion.position]) !== null}
-              style={{ flex: 1 }}
-            />
-          </View>
-        </View>
+        <QuestionFlow
+          data={data}
+          info={modelInfo}
+          answers={answers}
+          choiceIndexes={choiceIndexes}
+          unitIndexes={unitIndexes}
+          step={step}
+          setStep={setStep}
+          setAnswer={setAnswer}
+          choose={(position, index, value) => {
+            setChoiceIndexes((cur) => ({ ...cur, [position]: index }));
+            setAnswer(position, value);
+          }}
+          setUnit={(position, index) => setUnitIndexes((cur) => ({ ...cur, [position]: index }))}
+          validate={validate}
+          error={error}
+          setError={setError}
+          compute={compute}
+        />
       ) : (
         <View style={{ gap: 10, marginBottom: spacing.lg }}>
           <ResultsView
@@ -378,173 +320,6 @@ function AboutBody({ html }: { html: string }) {
           </AppText>
         );
       })}
-    </View>
-  );
-}
-
-function QuestionInput({
-  question,
-  value,
-  onChange,
-  choiceIndex,
-  unitIndex,
-  onUnit,
-  onChoose,
-}: {
-  question: CalculatorQuestion;
-  value: number | undefined;
-  onChange: (value: number | undefined) => void;
-  choiceIndex: number | undefined;
-  unitIndex: number;
-  onUnit: (index: number) => void;
-  onChoose: (index: number, value: number | undefined) => void;
-}) {
-  const { colors, shadows } = useTheme();
-  const { isFa, row } = useLang();
-  const unit = question.units[unitIndex] ?? question.units[0];
-
-  const unitFactor = () => unitFactorOf(unit);
-
-  // The TextInput shows what the user typed, in their units; `value` (what
-  // the parent tracks) is already multiplied by unit_factor for the formula
-  // engine, so the two can legitimately differ and the input must not be
-  // controlled from `value` directly. It's still the right *initial* text
-  // though -- this question remounts fresh each time the stepper revisits
-  // it (a new `key` per step), so without seeding from `value` here, going
-  // back to an already-answered numeric question would show it as blank.
-  const [text, setText] = useState(() => (value === undefined ? "" : String(Number((value / unitFactor()).toFixed(6)))));
-
-  return (
-    <View>
-      <AppText weight="700" size={13.5} style={{ lineHeight: 20, ...dirStyle(isFa) }}>
-        {stripHtml(isFa && question.title_fa ? question.title_fa : question.title)}
-      </AppText>
-      {question.more_information || question.more_information_fa ? (
-        <AppText muted weight="600" size={12} style={{ marginTop: 3, lineHeight: 18, ...dirStyle(isFa) }}>
-          {stripHtml(
-            isFa && question.more_information_fa
-              ? question.more_information_fa
-              : question.more_information ?? "",
-          )}
-        </AppText>
-      ) : null}
-
-      {question.type === "multiple_choice" ? (
-        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-          {question.choices.map((choice, i) => {
-            const factor = choice.answer_factor !== null ? parseFloat(choice.answer_factor) : NaN;
-            const selected = choiceIndex === i && value !== undefined;
-            const choiceLabel = isFa && choice.title_primary_fa ? choice.title_primary_fa : choice.title_primary;
-            return (
-              <Pressable
-                key={i}
-                onPress={() => onChoose(i, Number.isNaN(factor) ? undefined : factor)}
-                style={[
-                  {
-                    paddingHorizontal: 14,
-                    paddingVertical: 9,
-                    borderRadius: 999,
-                    borderWidth: 1,
-                    borderColor: selected ? colors.accent : colors.trackBg,
-                    backgroundColor: selected ? `${colors.accent}1a` : colors.softBg,
-                  },
-                ]}
-              >
-                <AppText weight="700" size={12.5} color={selected ? colors.accent : colors.ink}>
-                  {stripHtml(choiceLabel)}
-                </AppText>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : (
-        <View
-          style={[
-            {
-              // The number, then its unit on the right, in both languages --
-              // so not the language-dependent `row`.
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 10,
-              backgroundColor: colors.inputBg,
-              borderWidth: 1,
-              borderColor: colors.trackBg,
-              borderRadius: 12,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-            },
-            shadows.raisedSm,
-          ]}
-        >
-          <TextInput
-            value={text}
-            onChangeText={(next) => {
-              setText(next);
-              const num = parseFloat(next);
-              if (next.trim() === "" || Number.isNaN(num)) {
-                onChange(undefined);
-                return;
-              }
-              onChange(num * unitFactor());
-            }}
-            keyboardType="decimal-pad"
-            selectTextOnFocus
-            autoComplete="off"
-            autoCorrect={false}
-            textContentType="none"
-            importantForAutofill="no"
-            placeholder="0"
-            placeholderTextColor={colors.muted}
-            style={{
-              flex: 1,
-              fontFamily: fontFamily("600"),
-              fontSize: 14,
-              color: colors.ink,
-              textAlign: "left",
-              writingDirection: "ltr",
-              padding: 0,
-            }}
-          />
-          {unit ? (
-            <AppText muted weight="700" size={12} style={{ textAlign: "left", writingDirection: "ltr" }}>
-              {stripHtml(isFa && unit.title_fa ? unit.title_fa : unit.title)}
-            </AppText>
-          ) : null}
-        </View>
-      )}
-
-      {question.type !== "multiple_choice" && question.units.length > 1 ? (
-        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-          {question.units.map((u, i) => {
-            const selected = i === unitIndex;
-            return (
-              <Pressable
-                key={i}
-                onPress={() => {
-                  if (selected) return;
-                  // Keep the quantity, change how it is written: 30 g/L
-                  // becomes 3 g/dL rather than staying "30".
-                  if (value !== undefined) setText(String(Number((value / unitFactorOf(u)).toFixed(6))));
-                  onUnit(i);
-                }}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 7,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: selected ? colors.accent : colors.trackBg,
-                  backgroundColor: selected ? `${colors.accent}1a` : colors.softBg,
-                }}
-              >
-                <AppText weight="700" size={12} color={selected ? colors.accent : colors.ink}>
-                  {stripHtml(isFa && u.title_fa ? u.title_fa : u.title)}
-                </AppText>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : null}
     </View>
   );
 }
