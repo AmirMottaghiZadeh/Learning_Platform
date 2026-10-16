@@ -158,3 +158,17 @@ export function parseAboutHtml(html: string): AboutBlock[] {
   }
   return blocks;
 }
+
+const LRI = "\u2066";
+const PDI = "\u2069";
+const NUMBER_WITH_UNIT =
+  /[-+\u2212]?[\d\u06F0-\u06F9]+(?:[.,\u066B][\d\u06F0-\u06F9]+)*(?:\s?(?:%|[A-Za-z\u00B5\u03BC\u00B0][\w.\u00B5\u03BC\u00B0\u00B2\u00B3\u00B7^*%-]*(?:(?:\s*\/\s*|\s)[\w.\u00B5\u03BC\u00B0\u00B2\u00B3\u00B7^*%-]+)*))?/g;
+
+/** Keeps every number with its unit reading left to right ("12.5 mg/dL")
+ * inside Persian text, where the surrounding right-to-left direction would
+ * otherwise put the unit on the number's left. Text with no Persian letters
+ * at all is isolated as a whole. */
+export function ltrNumbers(text: string): string {
+  if (!/[\u0600-\u06EF\u06FA-\u06FF]/.test(text)) return `${LRI}${text}${PDI}`;
+  return text.replace(NUMBER_WITH_UNIT, (m) => `${LRI}${m}${PDI}`);
+}

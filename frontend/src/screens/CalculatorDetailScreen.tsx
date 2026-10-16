@@ -31,7 +31,7 @@ import {
   hasUnsupportedQuestions,
   unitFactorOf,
 } from "@/utils/calculatorEngine";
-import { AboutBlock, parseAboutHtml, stripHtml } from "@/utils/html";
+import { AboutBlock, ltrNumbers, parseAboutHtml, stripHtml } from "@/utils/html";
 
 /** Right-aligned/RTL for the real Persian content now available, left/LTR
  * for the untranslated-fallback or English-mode case -- the same per-element
@@ -263,7 +263,7 @@ export function CalculatorDetailScreen() {
                     color={tc ? tc.label : colors.accent}
                     style={{ textAlign: "center" }}
                   >
-                    {stripHtml(displayAnswer ?? "")}
+                    {isFa ? ltrNumbers(stripHtml(displayAnswer ?? "")) : stripHtml(displayAnswer ?? "")}
                   </AppText>
                   {range && numericValue !== null ? (
                     <ScoreGauge
