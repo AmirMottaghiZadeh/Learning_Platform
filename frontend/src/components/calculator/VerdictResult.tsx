@@ -7,11 +7,25 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { polarity, resultText, valueKind } from "@/utils/calculatorModel";
 
-import { Chip, Collapse, Extras, ResultCard, ResultProps, RichLines, Tone, toneOf, useDisplayText, useShown, useToneStyle } from "./common";
+import {
+  Chip,
+  Collapse,
+  Explain,
+  Hero,
+  ResultCard,
+  ResultProps,
+  RichLines,
+  Tone,
+  tiersTones,
+  toneOf,
+  useDisplayText,
+  useShown,
+  useToneStyle,
+} from "./common";
 
 function Badge({ kind, color, bg }: { kind: "ok" | "alert" | "neutral"; color: string; bg: string }) {
   return (
-    <Svg width={46} height={46} viewBox="0 0 48 48">
+    <Svg width={52} height={52} viewBox="0 0 48 48">
       <Circle cx="24" cy="24" r="22" fill={bg} stroke={color} strokeWidth={2} />
       {kind === "ok" ? (
         <Path d="M14 25l7 7 14-15" fill="none" stroke={color} strokeWidth={4.5} strokeLinecap="round" strokeLinejoin="round" />
@@ -24,8 +38,9 @@ function Badge({ kind, color, bg }: { kind: "ok" | "alert" | "neutral"; color: s
   );
 }
 
-/** A verdict: yes/no with a badge, a position on a ladder of categories, or
- * a decision with the action to take. */
+/** A verdict, centred in the colour of how serious it is: a yes/no badge, a
+ * position on a ladder of categories, or a decision with the action to take.
+ * What explains it sits below. */
 export function VerdictResult({ results, info }: ResultProps) {
   const { colors } = useTheme();
   const { isFa, row, t } = useLang();
@@ -37,17 +52,20 @@ export function VerdictResult({ results, info }: ResultProps) {
   const m = shown(main);
   const rest = results.filter((r) => r.position !== main.position).map(shown).filter((r) => r.text);
   const pol = polarity(m.en);
-  const tone: Tone = toneOf(m.en) !== "info" ? toneOf(m.en) : pol === "ok" ? "ok" : pol === "alert" ? "caution" : "info";
+  // What the words say, else whether it is good or bad news.
+  const tone: Tone = toneOf(m.en) !== "info" ? toneOf(m.en) : pol === "ok" ? "ok" : pol === "alert" ? "warn" : "info";
 
   if (info.verdict === "ladder" && info.ladder) {
     const at = info.ladder.findIndex((r) => r.en === m.en);
+    const tones = tiersTones(info.ladder.map((r) => r.en));
+    const headTone = at >= 0 ? tones[at] : tone;
     return (
-      <ResultCard title={m.title}>
-        {at < 0 ? <Chip text={m.text} tone={tone} /> : null}
+      <ResultCard title={m.title} tone={headTone} center>
+        <Hero label={m.text} tone={headTone} />
         <View style={{ gap: 4 }}>
           {info.ladder.map((rung, i) => {
             const active = i === at;
-            const rt = toneStyle(toneOf(rung.en) !== "info" ? toneOf(rung.en) : "ok");
+            const rt = toneStyle(tones[i]);
             return (
               <View
                 key={i}
@@ -63,7 +81,7 @@ export function VerdictResult({ results, info }: ResultProps) {
                   backgroundColor: active ? rt.bg : "transparent",
                 }}
               >
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: active ? rt.label : colors.trackBg }} />
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: active ? rt.label : `${rt.label}55` }} />
                 <AppText weight={active ? "800" : "600"} size={12.5} color={active ? rt.label : colors.muted} style={{ flex: 1, writingDirection: isFa ? "rtl" : "ltr" }}>
                   {display((isFa ? rung.fa : rung.en) || rung.en)}
                 </AppText>
@@ -71,18 +89,18 @@ export function VerdictResult({ results, info }: ResultProps) {
             );
           })}
         </View>
-        <Extras items={rest} />
+        <Explain items={rest} />
       </ResultCard>
     );
   }
 
   if (info.verdict === "decision") {
     return (
-      <ResultCard title={m.title} tone={tone}>
-        <Chip text={t("calcAction")} tone={tone === "info" ? "ok" : tone} />
-        <AppText weight="900" size={19} style={{ lineHeight: 30, writingDirection: isFa ? "rtl" : "ltr" }}>
-          {display(m.text)}
-        </AppText>
+      <ResultCard title={m.title} tone={tone} center>
+        <View style={{ alignItems: "center", gap: 8 }}>
+          <Chip text={t("calcAction")} tone={tone === "info" ? "ok" : tone} />
+          <Hero label={m.text} tone={tone === "info" ? "ok" : tone} />
+        </View>
         {rest.length ? (
           <Collapse title={t("calcWhy")}>
             {rest.map((r, i) => (
@@ -99,16 +117,14 @@ export function VerdictResult({ results, info }: ResultProps) {
     );
   }
 
-  const ts = toneStyle(pol === "ok" ? "ok" : pol === "alert" ? (tone === "deny" ? "deny" : "caution") : "info");
+  const ts = toneStyle(tone);
   return (
-    <ResultCard title={m.title} tone={pol === "ok" ? "ok" : pol === "alert" ? (tone === "deny" ? "deny" : "caution") : "info"}>
-      <View style={{ flexDirection: row, alignItems: "center", gap: 12 }}>
+    <ResultCard title={m.title} tone={tone} center>
+      <View style={{ alignItems: "center", gap: 10 }}>
         <Badge kind={pol} color={ts.label} bg={ts.bg === "transparent" ? colors.softBg : ts.bg} />
-        <AppText weight="900" size={18} style={{ flex: 1, lineHeight: 28, writingDirection: isFa ? "rtl" : "ltr" }}>
-          {display(resultText(m.text))}
-        </AppText>
+        <Hero label={resultText(m.text)} tone={tone} />
       </View>
-      <Extras items={rest} />
+      <Explain items={rest} />
     </ResultCard>
   );
 }

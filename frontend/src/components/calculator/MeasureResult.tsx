@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { AppText } from "@/components/primitives/AppText";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { extractNumericValue } from "@/utils/calculatorEngine";
 import { MeasureValue, parseMeasure, valueKind } from "@/utils/calculatorModel";
 
-import { Chip, Extras, Ltr, ResultCard, ResultProps, TierBar, bandAt, toneOf, useShown } from "./common";
+import { Explain, Hero, Ltr, ResultCard, ResultProps, TierBar, bandAt, tiersTones, useShown } from "./common";
 
-/** A measured quantity: a big number with its unit, a switch between the
- * units the calculator can answer in, and the calculator's own reference
- * tiers when it has them. */
+/** A measured quantity: the number with its unit centred, a switch between
+ * the units the calculator can answer in, its reference tier (named in the
+ * colour of how serious it is) and the tier bar, then any explanation. */
 export function MeasureResult({ results, ranges, altResults }: ResultProps) {
   const { isFa } = useLang();
   const { colors } = useTheme();
@@ -37,26 +36,17 @@ export function MeasureResult({ results, ranges, altResults }: ResultProps) {
   const useTiers = !!range && range.bands.length > 0 && value !== null && picked === 0;
   const band = useTiers && range && value !== null ? bandAt(range.bands, value) : null;
   const bandText = band ? (isFa ? band.textFa || band.text : band.text) : null;
-  const tone = band ? toneOf(band.text) : "info";
+  const tone = band && range ? tiersTones(range.bands.map((b) => b.text))[range.bands.indexOf(band)] : "info";
   const others = results.filter((r) => r.position !== primary.position).map(shown).filter((r) => r.text && r.text !== bandText);
 
   return (
-    <ResultCard title={p.title} tone={tone}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, direction: "ltr", flexWrap: "wrap" }}>
-        <AppText weight="900" size={42} style={{ writingDirection: "ltr", textAlign: "left", lineHeight: 52 }}>
-          {current ? current.value : p.text}
-        </AppText>
-        {current?.unit ? (
-          <AppText weight="700" size={16} muted style={{ writingDirection: "ltr", textAlign: "left" }}>
-            {current.unit}
-          </AppText>
-        ) : null}
-      </View>
+    <ResultCard title={p.title} tone={tone} center>
+      <Hero value={current ? current.value : p.text} unit={current?.unit} label={bandText} tone={tone} />
       {options.length > 1 ? (
         <View
           style={{
             flexDirection: "row",
-            alignSelf: "flex-start",
+            alignSelf: "center",
             direction: "ltr",
             borderRadius: 999,
             borderWidth: 1,
@@ -78,9 +68,8 @@ export function MeasureResult({ results, ranges, altResults }: ResultProps) {
           ))}
         </View>
       ) : null}
-      {bandText ? <Chip text={bandText} tone={tone} /> : null}
       {useTiers && range && value !== null ? <TierBar value={value} range={range} isFa={isFa} /> : null}
-      <Extras items={others} />
+      <Explain items={others} />
     </ResultCard>
   );
 }

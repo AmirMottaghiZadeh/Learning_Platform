@@ -1,16 +1,14 @@
 import React from "react";
-import { View } from "react-native";
 
-import { AppText } from "@/components/primitives/AppText";
 import { useLang } from "@/i18n/LanguageProvider";
 import { extractNumericValue } from "@/utils/calculatorEngine";
 import { splitLeadingNumber, valueKind } from "@/utils/calculatorModel";
 
-import { Chip, Extras, ResultCard, ResultProps, TierBar, bandAt, toneOf, useShown } from "./common";
+import { Explain, Hero, ResultCard, ResultProps, TierBar, bandAt, tiersTones, toneOf, useShown } from "./common";
 
-/** A clinical score: the number out of its maximum, the tier it falls in
- * (from the calculator's own interpretation rows) and a bar of all the tiers
- * with a marker. Other results (a risk, a sentence) sit underneath. */
+/** A clinical score: the number out of its maximum with the tier it falls in
+ * (from the calculator's own interpretation rows) centred and coloured by how
+ * serious the tier is, the bar of all tiers, and what else it says below. */
 export function ScoreResult({ results, ranges }: ResultProps) {
   const { isFa, t } = useLang();
   const shown = useShown();
@@ -20,28 +18,26 @@ export function ScoreResult({ results, ranges }: ResultProps) {
   const range = ranges.get(primary.position);
   const band = range ? bandAt(range.bands, value) : null;
   const tierText = band ? (isFa ? band.textFa || band.text : band.text) : null;
-  const tone = band ? toneOf(band.text) : "info";
+  const tone = band && range ? tiersTones(range.bands.map((b) => b.text))[range.bands.indexOf(band)] : "info";
   const others = results
     .filter((r) => r.position !== primary.position)
     .map(shown)
     .filter((r) => r.text && r.text !== tierText);
   const lead = splitLeadingNumber(primary.answerText ?? "");
+  // A score with no tiers of its own may still carry its meaning in its text.
+  const label = tierText ?? (lead && lead.rest ? lead.rest : null);
+  const labelTone = tierText ? tone : toneOf(label ?? "");
 
   return (
-    <ResultCard title={p.title} tone={tone}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, direction: "ltr" }}>
-        <AppText weight="900" size={42} style={{ writingDirection: "ltr", textAlign: "left", lineHeight: 52 }}>
-          {lead ? lead.value : p.text}
-        </AppText>
-        {range && !range.maxOpen ? (
-          <AppText weight="700" size={14} muted>
-            {t("calcOutOf")} {range.max}
-          </AppText>
-        ) : null}
-      </View>
-      {tierText ? <Chip text={tierText} tone={tone} /> : lead && lead.rest ? <Chip text={lead.rest} tone="info" /> : null}
+    <ResultCard title={p.title} tone={labelTone} center>
+      <Hero
+        value={lead ? lead.value : p.text}
+        suffix={range && !range.maxOpen ? `${t("calcOutOf")} ${range.max}` : undefined}
+        label={label}
+        tone={labelTone}
+      />
       {range ? <TierBar value={value} range={range} isFa={isFa} /> : null}
-      <Extras items={others} />
+      <Explain items={others} />
     </ResultCard>
   );
 }

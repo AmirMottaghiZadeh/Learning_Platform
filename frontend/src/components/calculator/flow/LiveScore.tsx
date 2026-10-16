@@ -14,7 +14,7 @@ import {
 } from "@/utils/calculatorEngine";
 import { isDisplayedResult, valueKind } from "@/utils/calculatorModel";
 
-import { Chip, TierBar, bandAt, toneOf } from "../common";
+import { Chip, TierBar, bandAt, tiersTones } from "../common";
 
 const num = (v: string | null | undefined) => (v === null || v === undefined || v === "" ? NaN : parseFloat(v));
 
@@ -98,7 +98,7 @@ export function LiveScore({ data, answers }: { data: CalculatorDetail; answers: 
             ) : null}
           </View>
         </View>
-        {tierText ? <Chip text={tierText} tone={band ? toneOf(band.text) : "info"} /> : null}
+        {tierText && range && band ? <Chip text={tierText} tone={tiersTones(range.bands.map((b) => b.text))[range.bands.indexOf(band)]} /> : null}
       </View>
       {range ? <TierBar value={value} range={range} isFa={isFa} showNames={false} /> : null}
     </Card>

@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, View, ViewStyle } from "react-native";
 
-import { CalculatorAnswers, ComputedResult, ResultRange, ScoreBand, classifyResultTone } from "@/utils/calculatorEngine";
+import { CalculatorAnswers, ComputedResult, ResultRange, ScoreBand } from "@/utils/calculatorEngine";
 import { CalculatorDetail, SectionTone } from "@/api/types";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
@@ -10,6 +10,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
 import { ModelInfo, resultText } from "@/utils/calculatorModel";
+import { Severity, severityLevels, severityOfText } from "@/utils/severity";
 import { ltrNumbers } from "@/utils/html";
 
 /** What every result layout receives. `results` are the ones that have an
@@ -27,25 +28,41 @@ export interface ResultProps {
   inputs: { label: string; value: string }[];
 }
 
-export type Tone = "ok" | "caution" | "deny" | "info";
+/** `ok` through `deny` are four steps of seriousness (green, amber, orange,
+ * red); `info` is no signal at all. */
+export type Tone = "ok" | "caution" | "warn" | "deny" | "info";
 
-/** The theme's colours for a tone; "ok" is the accent, which the app has no
- * dedicated tone for. */
+const LEVEL_TONES: Tone[] = ["ok", "caution", "warn", "deny"];
+
+export function toneOfLevel(level: Severity): Tone {
+  return LEVEL_TONES[level];
+}
+
+/** The theme's colours for a tone. The app has no orange, so `warn` is made
+ * here, next to the accent green, the amber and the red it sits between. */
 export function useToneStyle() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   return (tone: Tone): { bg: string; border: string; label: string } => {
     if (tone === "ok") return { bg: `${colors.accent}14`, border: `${colors.accent}55`, label: colors.accent };
     if (tone === "info") return { bg: "transparent", border: "transparent", label: colors.accent };
-    const t = toneColors((tone === "deny" ? "deny" : "caution") as SectionTone, colors);
-    return t;
+    if (tone === "warn") {
+      return isDark
+        ? { bg: "#221812", border: "#4A3022", label: "#F2A06B" }
+        : { bg: "#FFF3EA", border: "#F0C9AE", label: "#C2561A" };
+    }
+    return toneColors((tone === "deny" ? "deny" : "caution") as SectionTone, colors);
   };
 }
 
-/** Tone of a piece of English text, from the same words the rest of the app
- * uses. */
+/** Tone of a piece of English text, from what its words say. */
 export function toneOf(text: string): Tone {
-  const t = classifyResultTone(text);
-  return t === "deny" ? "deny" : t === "caution" ? "caution" : "info";
+  const level = severityOfText(text);
+  return level === null ? "info" : toneOfLevel(level);
+}
+
+/** The tone of each tier of a ladder given lowest-first. */
+export function tiersTones(texts: string[]): Tone[] {
+  return severityLevels(texts).map(toneOfLevel);
 }
 
 export function useShown() {
@@ -90,11 +107,14 @@ export function useDisplayText() {
 export function ResultCard({
   title,
   tone = "info",
+  center = false,
   children,
   style,
 }: {
   title?: string;
   tone?: Tone;
+  /** Centre the title (for results whose headline is centred). */
+  center?: boolean;
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
@@ -105,7 +125,7 @@ export function ResultCard({
   return (
     <Card style={{ gap: 10, ...(tinted ? { backgroundColor: t.bg, borderColor: t.border } : null), ...style }}>
       {title ? (
-        <AppText weight="800" size={13} style={{ writingDirection: isFa ? "rtl" : "ltr" }}>
+        <AppText weight="800" size={13} center={center} style={{ writingDirection: isFa ? "rtl" : "ltr" }}>
           {title}
         </AppText>
       ) : null}
@@ -211,6 +231,7 @@ export function TierBar({
   const { colors } = useTheme();
   const toneStyle = useToneStyle();
   const { min, max, bands } = range;
+  const bandTones = tiersTones(bands.map((b) => b.text));
   const span = max - min || 1;
   const pct = (v: number) => `${Math.max(0, Math.min(100, ((v - min) / span) * 100))}%` as const;
   const active = bandAt(bands, value);
@@ -224,7 +245,7 @@ export function TierBar({
             <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: pct(value), backgroundColor: colors.accent, borderRadius: 5 }} />
           ) : (
             bands.map((b, i) => {
-              const tone = toneStyle(toneOf(b.text));
+              const tone = toneStyle(bandTones[i]);
               const isActive = b === active;
               return (
                 <View
@@ -430,5 +451,69 @@ export function Extras({ items }: { items: Extra[] }) {
         </Collapse>
       ))}
     </>
+  );
+}
+
+/** The headline of a result, centred: the number (with its unit or "out of")
+ * and, under it, the tier it falls in, large and in the colour of how serious
+ * that tier is. */
+export function Hero({
+  value,
+  unit,
+  suffix,
+  label,
+  tone = "info",
+  size = 46,
+}: {
+  value?: string;
+  unit?: string;
+  suffix?: string;
+  label?: string | null;
+  tone?: Tone;
+  size?: number;
+}) {
+  const toneStyle = useToneStyle();
+  const { colors } = useTheme();
+  const { isFa } = useLang();
+  const display = useDisplayText();
+  const color = tone === "info" ? colors.ink : toneStyle(tone).label;
+  return (
+    <View style={{ alignItems: "center", gap: 4 }}>
+      {value ? (
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, direction: "ltr", flexWrap: "wrap" }}>
+          <AppText weight="900" size={size} center style={{ writingDirection: "ltr", lineHeight: Math.round(size * 1.2) }}>
+            {value}
+          </AppText>
+          {unit ? (
+            <AppText weight="700" size={16} muted style={{ writingDirection: "ltr", textAlign: "left" }}>
+              {unit}
+            </AppText>
+          ) : null}
+          {suffix ? (
+            <AppText weight="700" size={14} muted>
+              {suffix}
+            </AppText>
+          ) : null}
+        </View>
+      ) : null}
+      {label ? (
+        <AppText weight="900" size={21} color={color} center style={{ lineHeight: 32, writingDirection: isFa ? "rtl" : "ltr" }}>
+          {display(label)}
+        </AppText>
+      ) : null}
+    </View>
+  );
+}
+
+/** What a result means, under its headline: a hairline, then the extra rows
+ * and paragraphs. Nothing at all when there are none. */
+export function Explain({ items }: { items: { title: string; text: string }[] }) {
+  const { colors } = useTheme();
+  if (!items.some((i) => i.text)) return null;
+  return (
+    <View style={{ gap: 10, marginTop: 4 }}>
+      <View style={{ height: 1, backgroundColor: colors.border }} />
+      <Extras items={items} />
+    </View>
   );
 }

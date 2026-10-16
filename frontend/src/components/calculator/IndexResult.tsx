@@ -1,17 +1,14 @@
 import React from "react";
-import { View } from "react-native";
 
-import { AppText } from "@/components/primitives/AppText";
 import { useLang } from "@/i18n/LanguageProvider";
 import { extractNumericValue } from "@/utils/calculatorEngine";
 import { splitLeadingNumber, valueKind } from "@/utils/calculatorModel";
 
-import { Chip, Extras, ResultCard, ResultProps, TierBar, bandAt, toneOf, useShown } from "./common";
+import { Explain, Hero, ResultCard, ResultProps, TierBar, bandAt, tiersTones, toneOf, useShown } from "./common";
 
-/** An index or ratio: the number, then the decision thresholds the
- * calculator itself applies (its interpretation rows, drawn as tiers) and
- * what the number means. With no thresholds in the data the card is just the
- * number and its interpretation. */
+/** An index or ratio: the number centred, what it means in the colour of how
+ * serious that is, the decision thresholds the calculator itself applies
+ * (its interpretation rows, drawn as tiers), then any explanation below. */
 export function IndexResult({ results, ranges }: ResultProps) {
   const { isFa } = useLang();
   const shown = useShown();
@@ -28,24 +25,15 @@ export function IndexResult({ results, ranges }: ResultProps) {
   const inline = lead?.rest.replace(/^\(|\)$/g, "").trim();
   const inlineIsUnit = !!inline && inline.length <= 14 && !/\s/.test(inline);
   const interpretation = bandText ?? (inline && !inlineIsUnit ? inline : null);
-  const tone = toneOf(`${band?.text ?? ""} ${leadEn?.rest ?? ""}`);
+  const tone =
+    band && range ? tiersTones(range.bands.map((b) => b.text))[range.bands.indexOf(band)] : toneOf(leadEn?.rest ?? "");
   const others = results.filter((r) => r.position !== primary.position).map(shown).filter((r) => r.text && r.text !== interpretation);
 
   return (
-    <ResultCard title={p.title} tone={tone}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, direction: "ltr" }}>
-        <AppText weight="900" size={42} style={{ writingDirection: "ltr", textAlign: "left", lineHeight: 52 }}>
-          {lead ? lead.value : p.text}
-        </AppText>
-        {inlineIsUnit ? (
-          <AppText weight="700" size={14} muted style={{ writingDirection: "ltr", textAlign: "left" }}>
-            {inline}
-          </AppText>
-        ) : null}
-      </View>
-      {interpretation ? <Chip text={interpretation} tone={tone} /> : null}
+    <ResultCard title={p.title} tone={tone} center>
+      <Hero value={lead ? lead.value : p.text} unit={inlineIsUnit ? inline : undefined} label={interpretation} tone={tone} />
       {hasTiers && range && value !== null ? <TierBar value={value} range={range} isFa={isFa} /> : null}
-      <Extras items={others} />
+      <Explain items={others} />
     </ResultCard>
   );
 }
