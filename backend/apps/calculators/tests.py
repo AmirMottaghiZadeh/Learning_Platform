@@ -334,3 +334,40 @@ class CalculatorApiTests(TestCase):
         arrhythmia = next(row for row in res.data if row["name"] == "Arrhythmia")
         cardiology = next(row for row in res.data if row["name"] == "Cardiology")
         self.assertEqual(arrhythmia["parent_id"], cardiology["id"])
+
+
+class FormulaErrataTests(TestCase):
+    """The corrections to the source's mistaken formulas (apps/calculators/errata.py)."""
+
+    GENEVA = "revised-geneva-clinical-prediction-rule-for-pulmonary-embolism-676"
+    GARFIELD = "garfield-af-risk-calculator-685"
+
+    def test_geneva_score_adds_the_surgery_question_not_a_missing_one(self):
+        from apps.calculators.errata import fix_results
+
+        rows = [{"position": 0, "formula": "results += $7;\n\tresults += $8;"}]
+        fixed = fix_results(self.GENEVA, rows)
+        self.assertEqual(fixed[0]["formula"], "results += $7;\n\tresults += $2;")
+        self.assertEqual(rows[0]["formula"], "results += $7;\n\tresults += $8;")  # input untouched
+
+    def test_fixes_apply_once(self):
+        from apps.calculators.errata import FORMULA_ERRATA, fix_results
+
+        for slug, per_row in FORMULA_ERRATA.items():
+            rows = [{"position": p, "formula": "x $result1 $result2 $result3 results += $8; results += $1 +$2 +$3 + $4 + $5 + $6 + $7 + $8 + $9 + $10;"} for p in per_row]
+            once = fix_results(slug, rows)
+            self.assertEqual(fix_results(slug, once), once, slug)
+
+    def test_garfield_rows_read_the_three_common_values(self):
+        from apps.calculators.errata import fix_results
+
+        rows = [{"position": 3, "formula": "Math.exp($result1) Math.exp($result2) Math.exp($result3+0.6)"}]
+        self.assertEqual(
+            fix_results(self.GARFIELD, rows)[0]["formula"], "Math.exp($result0) Math.exp($result1) Math.exp($result2+0.6)"
+        )
+
+    def test_other_calculators_are_left_alone(self):
+        from apps.calculators.errata import fix_results
+
+        rows = [{"position": 0, "formula": "results += $8;"}]
+        self.assertIs(fix_results("something-else-1", rows), rows)

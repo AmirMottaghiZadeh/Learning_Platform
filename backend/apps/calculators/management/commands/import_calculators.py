@@ -19,6 +19,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from apps.calculators.errata import fix_results
 from apps.calculators.models import Calculator, CalculatorCategory, CalculatorTag
 
 DEFAULT_SOURCE = "/home/amir/Documents/Learning Platform/backend/data/calculators_all.sqlite"
@@ -252,12 +253,13 @@ class Command(BaseCommand):
                         skipped += 1
                         continue
 
+                    slug = Calculator.build_slug(name, calculator_id)
                     calculator, was_created = Calculator.objects.update_or_create(
                         uid=uid,
                         defaults={
                             "calculator_id": calculator_id,
                             "url": rec["url"] or "",
-                            "slug": Calculator.build_slug(name, calculator_id),
+                            "slug": slug,
                             "name": name,
                             "name_fa": rec["name_fa"] or "",
                             "description": (rec["description"] or "").strip(),
@@ -267,7 +269,7 @@ class Command(BaseCommand):
                             "disclaimer_footer": rec["disclaimer_footer"] or "",
                             "disclaimer_footer_fa": rec["disclaimer_footer_fa"] or "",
                             "questions": _questions_for(conn, rec["id"]),
-                            "results": _results_for(conn, rec["id"]),
+                            "results": fix_results(slug, _results_for(conn, rec["id"])),
                             "error_checks": _error_checks_for(conn, rec["id"]),
                             "formula_strings_fa": _formula_strings_fa(rec["formula_strings_fa"]),
                             "references": _references_for(conn, rec["id"]),

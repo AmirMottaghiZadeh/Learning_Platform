@@ -69,16 +69,33 @@ function substitute(template: string, scope: Record<string, ScopeValue>, asSourc
 // the formula quietly yields nothing and the calculator shows no result.
 const LEADING_COMMENTS = /^(?:\s+|\/\/[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/)*/;
 
-/** The scoring formulas are plain JS IIFEs copied verbatim from the source
- * snapshot (e.g. `(function() { return $0 + $1; })();`) -- this is our own
- * bundled reference data, not user input, so evaluating it directly is the
- * same trust boundary as running any other code shipped in the app. */
+/** The scoring formulas are plain JS copied verbatim from the source
+ * snapshot -- this is our own bundled reference data, not user input, so
+ * evaluating it directly is the same trust boundary as running any other code
+ * shipped in the app. Most are one expression, an IIFE such as
+ * `(function() { return $0 + $1; })();`, run as `return <formula>`. A few are
+ * scripts (a `var DATA = [...]` table and a helper function, then the IIFE):
+ * those are not an expression, so they run through `eval` inside a function
+ * of their own (their `var`s stay local) and the value is that of the last
+ * statement, as on the source site. */
 function runRaw(formula: string, scope: Record<string, ScopeValue>): unknown {
+  let substituted: string;
   try {
-    const substituted = substitute(formula, scope, true).replace(LEADING_COMMENTS, "");
+    substituted = substitute(formula, scope, true).replace(LEADING_COMMENTS, "");
+  } catch {
+    return undefined;
+  }
+  let compiled: (() => unknown) | null = null;
+  try {
     // eslint-disable-next-line no-new-func
-    const fn = new Function(`return ${substituted}`);
-    return fn();
+    compiled = new Function(`return ${substituted}`) as () => unknown;
+  } catch {
+    compiled = null;
+  }
+  try {
+    if (compiled) return compiled();
+    // eslint-disable-next-line no-new-func
+    return (new Function("source", "return eval(source)") as (source: string) => unknown)(substituted);
   } catch {
     return undefined;
   }
