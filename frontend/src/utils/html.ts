@@ -169,6 +169,14 @@ const NUMBER_WITH_UNIT =
  * otherwise put the unit on the number's left. Text with no Persian letters
  * at all is isolated as a whole. */
 export function ltrNumbers(text: string): string {
-  if (!/[\u0600-\u06EF\u06FA-\u06FF]/.test(text)) return `${LRI}${text}${PDI}`;
-  return text.replace(NUMBER_WITH_UNIT, (m) => `${LRI}${m}${PDI}`);
+  // A line break ends the bidi paragraph, and with it any isolate, so each
+  // line is isolated on its own.
+  return text
+    .split("\n")
+    .map((line) =>
+      !/[\u0600-\u06EF\u06FA-\u06FF]/.test(line)
+        ? `${LRI}${line}${PDI}`
+        : line.replace(NUMBER_WITH_UNIT, (m) => `${LRI}${m}${PDI}`),
+    )
+    .join("\n");
 }

@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
-import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
 
 import { calculatorsApi } from "@/api/endpoints";
 import { CalculatorQuestion } from "@/api/types";
+import { ResultsView } from "@/components/calculator/ResultsView";
+import { DateInput, DaysInput } from "@/components/calculator/DateInput";
+import { describeInputs } from "@/components/calculator/common";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Button } from "@/components/primitives/Button";
@@ -17,21 +19,18 @@ import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
-import { toneColors } from "@/theme/tone";
 import {
   CalculatorAnswers,
   ComputedResult,
   ResultRange,
   checkErrors,
-  classifyResultTone,
   computeCalculator,
   computeResultRanges,
-  extractNumericValue,
-  formatNumber,
   hasUnsupportedQuestions,
   unitFactorOf,
 } from "@/utils/calculatorEngine";
-import { AboutBlock, ltrNumbers, parseAboutHtml, stripHtml } from "@/utils/html";
+import { classifyCalculator, isDisplayedResult } from "@/utils/calculatorModel";
+import { AboutBlock, parseAboutHtml, stripHtml } from "@/utils/html";
 
 /** Right-aligned/RTL for the real Persian content now available, left/LTR
  * for the untranslated-fallback or English-mode case -- the same per-element
@@ -65,6 +64,8 @@ export function CalculatorDetailScreen() {
   // possible answer combination is real work, worth doing once right after
   // the learner asks for a result, not on every screen open.
   const [ranges, setRanges] = useState<Map<number, ResultRange>>(new Map());
+  // The same results in the other unit system, for formulas that have one.
+  const [altResults, setAltResults] = useState<ComputedResult[] | null>(null);
   const [meaningOpen, setMeaningOpen] = useState(false);
   // Back from the result returns to editing the answers, and from a later
   // question to the previous one, before leaving the calculator.
@@ -87,6 +88,8 @@ export function CalculatorDetailScreen() {
   if (isLoading || !data) return <LoadingState />;
 
   const unsupported = hasUnsupportedQuestions(data.questions);
+  const modelInfo = classifyCalculator(data);
+  const shownPositions = new Set(data.results.filter(isDisplayedResult).map((r) => r.position));
 
   const setAnswer = (position: number, value: number | undefined) => {
     setAnswers((cur) => {
@@ -135,6 +138,11 @@ export function CalculatorDetailScreen() {
     }
     setError(null);
     setResults(computeCalculator(data.questions, data.results, answers, { stringsFa: data.formula_strings_fa }));
+    setAltResults(
+      data.results.some((r) => /user_units/.test(r.formula ?? ""))
+        ? computeCalculator(data.questions, data.results, answers, { stringsFa: data.formula_strings_fa, unitSystem: "us" })
+        : null,
+    );
     // The result itself (above) is cheap -- shows immediately on tap. The
     // full achievable range (for the gauge) sweeps many answer combinations
     // and can take up to ~1s for a calculator with several numeric
@@ -198,22 +206,38 @@ export function CalculatorDetailScreen() {
             {n(step + 1)} {t("calculatorStepOf")} {n(data.questions.length)}
           </AppText>
 
-          <QuestionInput
-            key={currentQuestion.position}
-            question={currentQuestion}
-            value={answers[currentQuestion.position]}
-            onChange={(v) => setAnswer(currentQuestion.position, v)}
-            choiceIndex={choiceIndexes[currentQuestion.position]}
-            unitIndex={unitIndexes[currentQuestion.position] ?? 0}
-            onUnit={(index) => {
-              setError(null);
-              setUnitIndexes((cur) => ({ ...cur, [currentQuestion.position]: index }));
-            }}
-            onChoose={(index, v) => {
-              setChoiceIndexes((cur) => ({ ...cur, [currentQuestion.position]: index }));
-              setAnswer(currentQuestion.position, v);
-            }}
-          />
+          {currentQuestion.type === "date_input" ? (
+            <DateInput
+              key={`${currentQuestion.position}-${isFa}`}
+              question={currentQuestion}
+              value={answers[currentQuestion.position]}
+              onChange={(v) => setAnswer(currentQuestion.position, v)}
+            />
+          ) : currentQuestion.type === "days_input" ? (
+            <DaysInput
+              key={currentQuestion.position}
+              question={currentQuestion}
+              value={answers[currentQuestion.position]}
+              onChange={(v) => setAnswer(currentQuestion.position, v)}
+            />
+          ) : (
+            <QuestionInput
+              key={currentQuestion.position}
+              question={currentQuestion}
+              value={answers[currentQuestion.position]}
+              onChange={(v) => setAnswer(currentQuestion.position, v)}
+              choiceIndex={choiceIndexes[currentQuestion.position]}
+              unitIndex={unitIndexes[currentQuestion.position] ?? 0}
+              onUnit={(index) => {
+                setError(null);
+                setUnitIndexes((cur) => ({ ...cur, [currentQuestion.position]: index }));
+              }}
+              onChoose={(index, v) => {
+                setChoiceIndexes((cur) => ({ ...cur, [currentQuestion.position]: index }));
+                setAnswer(currentQuestion.position, v);
+              }}
+            />
+          )}
 
           {error ? (
             <AppText size={12} weight="700" color={colors.denyLabel} style={{ marginTop: 14 }}>
@@ -235,46 +259,15 @@ export function CalculatorDetailScreen() {
         </View>
       ) : (
         <View style={{ gap: 10, marginBottom: spacing.lg }}>
-          {results
-            .filter((r) => r.visible && r.answerText !== null)
-            .map((r) => {
-              // Always classified/measured from the English text -- see
-              // calculatorEngine.ts's ComputedResult on why.
-              const tone = classifyResultTone(r.answerText!);
-              const tc = tone ? toneColors(tone, colors) : null;
-              const range = ranges.get(r.position);
-              const numericValue = extractNumericValue(r.answerText!);
-              const displayTitle = isFa ? r.titleFa : r.title;
-              const displayAnswer = isFa ? r.answerTextFa ?? r.answerText : r.answerText;
-              return (
-                <Card
-                  key={r.position}
-                  style={{
-                    gap: 4,
-                    ...(tc ? { backgroundColor: tc.bg, borderColor: tc.border } : null),
-                  }}
-                >
-                  <AppText weight="800" size={13} style={dirStyle(isFa)}>
-                    {stripHtml(displayTitle)}
-                  </AppText>
-                  <AppText
-                    weight="900"
-                    size={18}
-                    color={tc ? tc.label : colors.accent}
-                    style={{ textAlign: "center" }}
-                  >
-                    {isFa ? ltrNumbers(stripHtml(displayAnswer ?? "")) : stripHtml(displayAnswer ?? "")}
-                  </AppText>
-                  {range && numericValue !== null ? (
-                    <ScoreGauge
-                      value={numericValue}
-                      range={range}
-                      needleColor={tc ? tc.label : colors.accent}
-                    />
-                  ) : null}
-                </Card>
-              );
-            })}
+          <ResultsView
+            data={data}
+            info={modelInfo}
+            results={results.filter((r) => r.visible && r.answerText !== null && shownPositions.has(r.position))}
+            ranges={ranges}
+            answers={answers}
+            altResults={altResults}
+            inputs={describeInputs(data, answers, choiceIndexes, unitIndexes, isFa, stripHtml, unitFactorOf)}
+          />
 
           {data.about || data.about_fa ? (
             <View style={{ borderRadius: 14, backgroundColor: colors.softBg, overflow: "hidden" }}>
@@ -334,180 +327,6 @@ export function CalculatorDetailScreen() {
         </AppText>
       ) : null}
     </Screen>
-  );
-}
-
-/** A half-circle dial, needle pointing from `range.min` (left) to
- * `range.max` (right) at this result's actual computed value -- `range` is
- * the calculator's own real achievable bounds (apps.calculators data swept
- * through every answer combination it allows, see computeResultRanges).
- * When the calculator's own data has more than one meaning across that
- * range (e.g. ASDAS-CRP legitimately crosses "Inactive" / "Moderate" /
- * "High" / "Very High" disease activity between its min and max), the arc
- * is drawn as one colored segment per band instead of a single flat track
- * -- a single min/max caption pair was hiding every band in between.
- * Colors reuse the same tone language as everywhere else in the app
- * (classifyResultTone -> toneColors), not invented ones. A calculator with
- * no dependent row at all (`range.bands` empty) falls back to one neutral
- * arc, same as before bands existed.
- *
- * "Glass/floating" styling, chosen from five mockups: a thinner,
- * rounded-cap arc instead of a flat band. (That style's floating value
- * badge over the dial was tried and dropped -- the card already shows
- * the answer prominently above the gauge, so repeating it inside the
- * dial was redundant clutter.) */
-function ScoreGauge({
-  value,
-  range,
-  needleColor,
-}: {
-  value: number;
-  range: ResultRange;
-  needleColor: string;
-}) {
-  const { colors } = useTheme();
-  const { isFa, row } = useLang();
-  const W = 260;
-  const H = 150;
-  const cx = W / 2;
-  const cy = 115;
-  const r = 92;
-  const needleLen = 76;
-  const strokeWidth = 10;
-
-  // The dial itself stays min-left/max-right regardless of language -- a
-  // gauge reads as a universal left-to-right scale even in an RTL app.
-  const toFraction = (v: number) =>
-    range.max > range.min ? Math.min(1, Math.max(0, (v - range.min) / (range.max - range.min))) : 0;
-  const angleAt = (fraction: number) => Math.PI * (1 - fraction);
-  const pointAt = (radius: number, angle: number) => ({ x: cx + radius * Math.cos(angle), y: cy - radius * Math.sin(angle) });
-
-  const angle = angleAt(toFraction(value));
-  const tipX = cx + needleLen * Math.cos(angle);
-  const tipY = cy - needleLen * Math.sin(angle);
-
-  const toneColor = (text: string) => {
-    const tone = classifyResultTone(text);
-    return tone ? toneColors(tone, colors).label : colors.accent;
-  };
-  // Every band must be visibly its own colour. Tone words give the
-  // semantic hue (red/amber/accent), but neighbours often share one --
-  // "High" and "Very High" are both red, and a tier set with no tone words
-  // at all (PORT's Class I-V, Brain Metastases' "3.4 / 4.7 / 8.8 Months")
-  // would paint every band the same accent. A run of same-hue neighbours
-  // is shaded light-to-dark along the scale instead: distinct and ordered,
-  // without claiming a severity the calculator itself never states.
-  const bandColors = range.bands.map((b) => toneColor(b.text));
-  const shadedColors = bandColors.map((c, i) => {
-    let start = i;
-    while (start > 0 && bandColors[start - 1] === c) start--;
-    let end = i;
-    while (end < bandColors.length - 1 && bandColors[end + 1] === c) end++;
-    if (end === start) return c;
-    const alpha = Math.round((0.38 + (0.62 * (i - start)) / (end - start)) * 255);
-    return c + alpha.toString(16).padStart(2, "0");
-  });
-
-  const currentIndex = range.bands.findIndex((b) => value >= b.from && value <= b.to);
-  const resolvedNeedleColor = currentIndex >= 0 ? bandColors[currentIndex] : needleColor;
-
-  // The numeric cutoff between two bands (e.g. Aortic Stenosis Risk
-  // Score's 7 and 57) is exactly what the user needs to read off the
-  // gauge, not just infer from where the color changes -- only when there
-  // are few enough of them to label without the numbers overlapping; a
-  // 14-rung table (Framingham's risk-% ladder) still gets its full-color
-  // arc and its legend below, just not individual tick numbers.
-  const showThresholdTicks = range.bands.length >= 2 && range.bands.length <= 6;
-
-  return (
-    <View style={{ alignItems: "center", marginTop: 10 }}>
-      <View style={{ width: W, height: H }}>
-        <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-          {range.bands.length > 0 ? (
-            range.bands.map((b, i) => {
-              const p1 = pointAt(r, angleAt(toFraction(b.from)));
-              const p2 = pointAt(r, angleAt(toFraction(b.to)));
-              return (
-                <Path
-                  key={i}
-                  d={`M ${p1.x} ${p1.y} A ${r} ${r} 0 0 1 ${p2.x} ${p2.y}`}
-                  stroke={shadedColors[i]}
-                  strokeWidth={strokeWidth}
-                  strokeLinecap="round"
-                  fill="none"
-                  opacity={0.92}
-                />
-              );
-            })
-          ) : (
-            <Path
-              d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
-              stroke={colors.trackBg}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              fill="none"
-            />
-          )}
-          {showThresholdTicks
-            ? range.bands.slice(0, -1).map((b, i) => {
-                const tickAngle = angleAt(toFraction(b.to));
-                const tickInner = pointAt(r - 7, tickAngle);
-                const tickOuter = pointAt(r + 7, tickAngle);
-                const labelPoint = pointAt(r + 20, tickAngle);
-                return (
-                  <React.Fragment key={`tick-${i}`}>
-                    <Line x1={tickInner.x} y1={tickInner.y} x2={tickOuter.x} y2={tickOuter.y} stroke={colors.cardBg} strokeWidth={2.5} />
-                    <SvgText x={labelPoint.x} y={labelPoint.y + 4} fontSize={10} fontWeight="800" fill={colors.ink} textAnchor="middle">
-                      {formatNumber(b.to)}
-                    </SvgText>
-                  </React.Fragment>
-                );
-              })
-            : null}
-          <Line x1={cx} y1={cy} x2={tipX} y2={tipY} stroke={resolvedNeedleColor} strokeWidth={2.5} strokeLinecap="round" />
-          <Circle cx={cx} cy={cy} r={5} fill={colors.cardBg} stroke={resolvedNeedleColor} strokeWidth={2.5} />
-          <Circle cx={tipX} cy={tipY} r={5.5} fill={resolvedNeedleColor} />
-        </Svg>
-      </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", width: W, marginTop: -4 }}>
-        {/* An open end has no real number to show (see ResultRange.minOpen)
-            -- its outermost cutoff as an inequality instead. Forced LTR:
-            in an RTL run the bidi algorithm would mirror "<" into ">". */}
-        <AppText weight="700" size={11} muted style={{ writingDirection: "ltr" }}>
-          {range.minOpen && range.bands.length > 1 ? `< ${formatNumber(range.bands[0].to)}` : formatNumber(range.min)}
-        </AppText>
-        <AppText weight="700" size={11} muted style={{ writingDirection: "ltr" }}>
-          {range.maxOpen && range.bands.length > 1
-            ? `> ${formatNumber(range.bands[range.bands.length - 1].from)}`
-            : formatNumber(range.max)}
-        </AppText>
-      </View>
-      {range.bands.length > 0 ? (
-        // One band per line, each label wrapping inside the card. A tier's
-        // meaning can be a whole sentence (ADviSED's "Clinical
-        // Implication"), and laid out as one unbreakable line in a
-        // horizontal row it ran straight off the screen. Capped at three
-        // lines -- the full text is in that result's own card below.
-        <View style={{ alignSelf: "stretch", marginTop: 12, gap: 7 }}>
-          {range.bands.map((b, i) => (
-            <View key={i} style={{ flexDirection: row, alignItems: "flex-start", gap: 7 }}>
-              <View
-                style={{ width: 8, height: 8, borderRadius: 999, marginTop: 5, backgroundColor: shadedColors[i], opacity: 0.92 }}
-              />
-              <AppText
-                weight={i === currentIndex ? "800" : "600"}
-                size={11.5}
-                muted={i !== currentIndex}
-                numberOfLines={3}
-                style={{ flex: 1, lineHeight: 18, textAlign: isFa ? "right" : "left", writingDirection: isFa ? "rtl" : "ltr" }}
-              >
-                {stripHtml(isFa ? b.textFa : b.text)}
-              </AppText>
-            </View>
-          ))}
-        </View>
-      ) : null}
-    </View>
   );
 }
 

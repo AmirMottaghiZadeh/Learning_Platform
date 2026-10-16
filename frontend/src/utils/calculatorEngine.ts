@@ -34,15 +34,31 @@ export interface ComputedResult {
 // cost of the range search on 28-question calculators like SNAP-IV).
 const SCOPE_TOKEN = /\$(?:result\d+|user_units|si_units|us_units|\d+)/g;
 
-function substitute(template: string, scope: Record<string, ScopeValue>): string {
-  return template.replace(SCOPE_TOKEN, (token) => {
-    if (Object.prototype.hasOwnProperty.call(scope, token)) return String(scope[token]);
+/** How a value reads when it is pasted into formula source. Text a formula
+ * produced earlier (`$result0` = "T2") has to become a string literal, or the
+ * formula that joins or compares it throws; numbers and numeric-looking text
+ * stay bare so arithmetic still works, and a token already written inside
+ * quotes is left alone. */
+function literal(value: ScopeValue, whole: string, offset: number, length: number): string {
+  if (typeof value !== "string") return String(value);
+  if (value.trim() !== "" && !Number.isNaN(Number(value))) return value;
+  const before = whole[offset - 1];
+  const after = whole[offset + length];
+  if ((before === '"' || before === "'" || before === "`") && before === after) return value;
+  return JSON.stringify(value);
+}
+
+function substitute(template: string, scope: Record<string, ScopeValue>, asSource = false): string {
+  return template.replace(SCOPE_TOKEN, (token, offset: number, whole: string) => {
+    const render = (v: ScopeValue, suffix = "") =>
+      asSource ? literal(v, whole, offset, token.length) + suffix : String(v) + suffix;
+    if (Object.prototype.hasOwnProperty.call(scope, token)) return render(scope[token]);
     // Same as the old passes for a token that isn't defined: its longest
     // defined prefix is still replaced ("$10" with only "$1" defined reads
     // as that value followed by "0").
     for (let end = token.length - 1; end > 1; end--) {
       const prefix = token.slice(0, end);
-      if (Object.prototype.hasOwnProperty.call(scope, prefix)) return String(scope[prefix]) + token.slice(end);
+      if (Object.prototype.hasOwnProperty.call(scope, prefix)) return render(scope[prefix], token.slice(end));
     }
     return token;
   });
@@ -59,7 +75,7 @@ const LEADING_COMMENTS = /^(?:\s+|\/\/[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/)*/;
  * same trust boundary as running any other code shipped in the app. */
 function runRaw(formula: string, scope: Record<string, ScopeValue>): unknown {
   try {
-    const substituted = substitute(formula, scope).replace(LEADING_COMMENTS, "");
+    const substituted = substitute(formula, scope, true).replace(LEADING_COMMENTS, "");
     // eslint-disable-next-line no-new-func
     const fn = new Function(`return ${substituted}`);
     return fn();
@@ -101,7 +117,7 @@ function formatAnswerTemplate(template: string, scope: Record<string, ScopeValue
 /** Question types whose numeric mapping isn't implemented yet -- a calculator
  * containing one of these can't be safely computed (better to say so than to
  * silently guess at a medical score). */
-export const UNSUPPORTED_QUESTION_TYPES: CalculatorQuestion["type"][] = ["date_input"];
+export const UNSUPPORTED_QUESTION_TYPES: CalculatorQuestion["type"][] = [];
 
 export function hasUnsupportedQuestions(questions: CalculatorQuestion[]): boolean {
   return questions.some((q) => UNSUPPORTED_QUESTION_TYPES.includes(q.type));
@@ -265,19 +281,24 @@ export interface ComputeOptions {
    * returns itself (see translatorFor). Without it, `answerTextFa` for
    * such a row is the English text. */
   stringsFa?: Record<string, string>;
+  /** Which of the source site's two unit systems the formulas should answer
+   * in, for the handful that branch on `$user_units == $us_units`. SI is the
+   * default; passing "us" runs the US branch so the result can be offered in
+   * both units. */
+  unitSystem?: "si" | "us";
 }
 
 export function computeCalculator(
   questions: CalculatorQuestion[],
   results: CalculatorResultDef[],
   answers: CalculatorAnswers,
-  { overrides, stopAfter, stringsFa }: ComputeOptions = {},
+  { overrides, stopAfter, stringsFa, unitSystem }: ComputeOptions = {},
 ): ComputedResult[] {
   // A handful of formulas reference a unit-system toggle that lives outside
   // the question list on the source site (`$user_units == $si_units`) --
   // default all three to the same value so that comparison is stable and
   // picks the SI-labelled branch, since we don't build that toggle (yet).
-  const scope: Record<string, ScopeValue> = { $user_units: 0, $si_units: 0, $us_units: 1 };
+  const scope: Record<string, ScopeValue> = { $user_units: unitSystem === "us" ? 1 : 0, $si_units: 0, $us_units: 1 };
   for (const q of questions) {
     const value = answers[q.position];
     if (value !== undefined) scope[`$${q.position}`] = value;
@@ -337,8 +358,8 @@ export function computeCalculator(
 // the same tone language already used for drug warnings elsewhere in the app
 // is not inventing a clinical judgment -- it's just surfacing the one the
 // calculator's own formula already made.
-const DANGER_PATTERN = /\b(high|severe|critical|abnormal)\b/i;
-const CAUTION_PATTERN = /\b(moderate|intermediate|mild|borderline|elevated)\b/i;
+const DANGER_PATTERN = /\b(high|severe|severely|critical|abnormal)\b/i;
+const CAUTION_PATTERN = /\b(moderate|medium|intermediate|mild|borderline|elevated)\b/i;
 
 /** `null` means no reliable tone signal in the text -- the caller should
  * keep its default (neutral) styling rather than guess. Always pass the
