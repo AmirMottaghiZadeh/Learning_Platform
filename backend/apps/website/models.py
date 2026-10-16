@@ -615,6 +615,25 @@ class DailyStat(models.Model):
                 cls.objects.filter(day=day, kind=kind, key=key).update(count=models.F("count") + n)
 
 
+class VisitorDay(models.Model):
+    """One distinct visitor (by IP) on one day, for the unique-visitor counts.
+
+    Only a keyed hash of the address is kept -- the address itself is never
+    stored -- so the same visitor is recognisable across days (needed to count
+    distinct visitors over a week or a month) without the table identifying
+    anyone."""
+
+    day = models.DateField()
+    ip_hash = models.CharField(max_length=32)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["day", "ip_hash"], name="website_visitor_once")]
+        indexes = [models.Index(fields=["ip_hash"], name="website_visitor_ip")]
+
+    def __str__(self):
+        return f"{self.day} {self.ip_hash[:8]}"
+
+
 # -- staff ----------------------------------------------------------------------------
 
 class StaffRole(models.Model):

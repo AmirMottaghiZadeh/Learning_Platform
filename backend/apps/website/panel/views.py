@@ -5,7 +5,7 @@ from datetime import timedelta
 from django.contrib import messages
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, get_user_model, login, logout
 from django.core.cache import cache
-from django.db.models import Q, Sum
+from django.db.models import Count, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -18,7 +18,7 @@ from apps.accounts.phone import looks_like_phone, normalize_phone
 
 from .. import services
 from ..models import (
-    ActivityLog, Announcement, Comment, ContactMessage, DailyStat, DownloadLink, Media, Page, Post, Redirect, SiteSettings, StaffRole,
+    ActivityLog, Announcement, Comment, ContactMessage, DailyStat, DownloadLink, Media, Page, Post, Redirect, SiteSettings, StaffRole, VisitorDay,
 )
 from ..permissions import can, panel_required, role_of
 from . import forms
@@ -84,9 +84,22 @@ def _series(kind, days, key=None):
     return [(start + timedelta(days=i), by_day.get(start + timedelta(days=i), 0)) for i in range(days)]
 
 
-def _paths(values, width=560, height=150, pad=10):
+def _unique_series(days):
+    """Distinct visitor IPs per day, oldest first."""
+    today = timezone.localdate()
+    start = today - timedelta(days=days - 1)
+    by_day = dict(VisitorDay.objects.filter(day__gte=start).values_list("day").annotate(n=Count("id")).values_list("day", "n"))
+    return [(start + timedelta(days=i), by_day.get(start + timedelta(days=i), 0)) for i in range(days)]
+
+
+def _unique_between(first, last):
+    """Distinct IPs over a span of days -- a visitor on three days counts once."""
+    return VisitorDay.objects.filter(day__range=(first, last)).values("ip_hash").distinct().count()
+
+
+def _paths(values, width=560, height=150, pad=10, top=None):
     """(line path, area path) for a list of numbers drawn in a width x height box."""
-    top = max(values) if values and max(values) else 1
+    top = top or (max(values) if values and max(values) else 1)
     step = (width - 2 * pad) / max(len(values) - 1, 1)
     pts = [(pad + i * step, height - pad - (v / top) * (height - 2 * pad)) for i, v in enumerate(values)]
     line = "M" + " L".join(f"{x:.1f} {y:.1f}" for x, y in pts)
@@ -110,6 +123,9 @@ def dashboard(request):
     prev_end = timezone.localdate() - timedelta(days=days)
     prev_views = DailyStat.objects.filter(kind=DailyStat.VIEW, day__range=(prev_start, prev_end)).aggregate(n=Sum("count"))["n"] or 0
     views_total = sum(n for _, n in views)
+    today = timezone.localdate()
+    uniques_total = _unique_between(today - timedelta(days=days - 1), today)
+    prev_uniques = _unique_between(prev_start, prev_end)
     line, area = _paths([n for _, n in views])
     downloads = _series(DailyStat.DOWNLOAD, days)
     subs = _series(DailyStat.SUBSCRIBE, days)
@@ -120,7 +136,8 @@ def dashboard(request):
     platforms = [{"name": store_names.get(r["key"], r["key"]), "n": r["n"], "pct": round(100 * r["n"] / top)} for r in by_store[:5]]
 
     ctx = {
-        "views_total": views_total, "views_delta": _delta(views_total, prev_views), "chart_line": line, "chart_area": area,
+        "views_total": views_total, "views_delta": _delta(views_total, prev_views),
+        "uniques_total": uniques_total, "uniques_delta": _delta(uniques_total, prev_uniques), "chart_line": line, "chart_area": area,
         "chart_max": max([n for _, n in views] or [0]), "chart_first": jalali_format(views[0][0]), "chart_last": jalali_format(views[-1][0]),
         "downloads_total": sum(n for _, n in downloads), "subscribers_new": sum(n for _, n in subs),
         "platforms": platforms, "show_sales": can(request.user, "orders.view"),
@@ -169,14 +186,20 @@ def stats(request):
     days = {"7": 7, "30": 30, "90": 90}.get(request.GET.get("range"), 30)
     since = timezone.localdate() - timedelta(days=days - 1)
     views = _series(DailyStat.VIEW, days)
-    line, area = _paths([n for _, n in views])
+    uniques = _unique_series(days)
+    top = max([n for _, n in views] + [1])
+    line, area = _paths([n for _, n in views], top=top)
+    uline, _ = _paths([n for _, n in uniques], top=top)
+    unique_by_day = dict(uniques)
     post_rows = list(DailyStat.objects.filter(kind=DailyStat.POST, day__gte=since).values("key").annotate(n=Sum("count")).order_by("-n")[:10])
     titles = dict(Post.objects.filter(pk__in=[r["key"] for r in post_rows if r["key"].isdigit()]).values_list("pk", "title"))
     top_posts = [{"title": titles.get(int(r["key"]), "(حذف‌شده)"), "n": r["n"], "pk": int(r["key"])} for r in post_rows if r["key"].isdigit()]
     top_pages = list(DailyStat.objects.filter(kind=DailyStat.VIEW, day__gte=since).values("key").annotate(n=Sum("count")).order_by("-n")[:10])
-    table = [{"day": jalali_format(d), "views": n, "downloads": dict(_series(DailyStat.DOWNLOAD, days)).get(d, 0)} for d, n in reversed(views[-14:])]
+    downloads_by_day = dict(_series(DailyStat.DOWNLOAD, days))
+    table = [{"day": jalali_format(d), "views": n, "uniques": unique_by_day.get(d, 0), "downloads": downloads_by_day.get(d, 0)} for d, n in reversed(views[-14:])]
     return render_panel(request, "panel/stats.html", {
-        "range": str(days), "total": sum(n for _, n in views), "line": line, "area": area, "top_posts": top_posts, "top_pages": top_pages, "table": table,
+        "range": str(days), "total": sum(n for _, n in views), "line": line, "area": area, "uline": uline,
+        "uniques": _unique_between(since, timezone.localdate()), "top_posts": top_posts, "top_pages": top_pages, "table": table,
         "downloads": sum(n for _, n in _series(DailyStat.DOWNLOAD, days)), "subs": sum(n for _, n in _series(DailyStat.SUBSCRIBE, days)),
         "contacts": sum(n for _, n in _series(DailyStat.CONTACT, days)), "signins": sum(n for _, n in _series(DailyStat.SIGNIN, days)),
     }, active="stats")

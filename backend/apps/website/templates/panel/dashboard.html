@@ -6,6 +6,7 @@
   <div class="acts"><a class="btn" href="{% url 'panel:stats' %}"><svg class="i"><use href="#i-chart"/></svg>آمار کامل</a></div></div>
 <div class="grid kpis">
   <div class="card kpi"><div class="l">بازدید سایت</div><div class="v num">{{ views_total|num }}</div>{% if views_delta is not None %}<div class="d{% if views_delta < 0 %} n{% endif %}">{% if views_delta >= 0 %}▲{% else %}▼{% endif %} {{ views_delta|fa }}٪ نسبت به ماه قبل</div>{% else %}<div class="d" style="color:var(--muted)">داده‌ای برای مقایسه نیست</div>{% endif %}</div>
+  <div class="card kpi"><div class="l">بازدیدکنندهٔ یکتا</div><div class="v num">{{ uniques_total|num }}</div>{% if uniques_delta is not None %}<div class="d{% if uniques_delta < 0 %} n{% endif %}">{% if uniques_delta >= 0 %}▲{% else %}▼{% endif %} {{ uniques_delta|fa }}٪ نسبت به ماه قبل</div>{% else %}<div class="d" style="color:var(--muted)">IP متمایز در ۳۰ روز</div>{% endif %}</div>
   {% if show_sales %}
   <div class="card kpi"><div class="l">اشتراک فعال</div><div class="v num">{{ active_subs|num }}</div><div class="d" style="color:var(--muted)">کاربر با اشتراک معتبر</div></div>
   <div class="card kpi"><div class="l">درآمد ۳۰ روز (تومان)</div><div class="v num">{{ revenue|num }}</div>{% if revenue_delta is not None %}<div class="d{% if revenue_delta < 0 %} n{% endif %}">{% if revenue_delta >= 0 %}▲{% else %}▼{% endif %} {{ revenue_delta|fa }}٪</div>{% else %}<div class="d" style="color:var(--muted)">{{ orders_paid|fa }} سفارش پرداخت‌شده</div>{% endif %}</div>

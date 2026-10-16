@@ -10,7 +10,7 @@ from django.db.models import Prefetch, Q
 from django.utils import timezone
 from django.utils.text import slugify
 
-from .models import Announcement, ContentBlock, DailyStat, Post
+from .models import Announcement, ContentBlock, DailyStat, Post, VisitorDay
 
 BOT_RE = re.compile(r"bot|crawl|spider|slurp|facebookexternalhit|preview|monitor|uptime|curl|wget|python-requests", re.I)
 
@@ -40,11 +40,28 @@ def throttle(request, scope, limit, seconds):
         return True
 
 
+VISITOR_KEEP_DAYS = 400
+
+
+def record_visitor(request):
+    """Notes that this IP visited today. A visitor's first hit of the day
+    writes one row; the rest are skipped from the cache without touching the
+    database. Rows older than a year are dropped, once a day."""
+    today = timezone.localdate()
+    digest = ip_hash(request)[:32]
+    if not cache.add(f"website:visitor:{today}:{digest}", 1, 90000):
+        return
+    VisitorDay.objects.bulk_create([VisitorDay(day=today, ip_hash=digest)], ignore_conflicts=True)
+    if cache.add(f"website:visitor-prune:{today}", 1, 90000):
+        VisitorDay.objects.filter(day__lt=today - timedelta(days=VISITOR_KEEP_DAYS)).delete()
+
+
 def record_view(request, key, *, post=None):
     """Counts a page view unless it is a bot, staff, or the panel."""
     if is_bot(request) or (request.user.is_authenticated and request.user.is_staff):
         return
     DailyStat.bump(DailyStat.VIEW, key[:200])
+    record_visitor(request)
     if post is not None:
         DailyStat.bump(DailyStat.POST, str(post.pk))
         Post.objects.filter(pk=post.pk).update(views=post.views + 1)
