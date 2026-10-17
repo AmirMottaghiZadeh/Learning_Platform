@@ -296,7 +296,7 @@ details .ans{padding:0 0 22px;color:var(--muted);font-size:15.5px;line-height:2;
 .prose h3{font-size:22px;margin:28px 0 8px;color:var(--ink);scroll-margin-top:90px}
 .prose h4{font-size:18px;margin:20px 0 6px;color:var(--ink)}
 .prose a{color:var(--p);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px}
-.prose ul,.prose ol{padding-inline-start:26px;margin:0 0 16px}
+.prose ul,.prose ol{padding-inline-start:26px;margin:0 0 16px}.prose ol{list-style-type:persian}
 .prose li{margin-bottom:6px}
 .prose li::marker{color:var(--p)}
 .prose blockquote{margin:24px 0;padding:16px 24px;border-radius:var(--r);background:var(--tint);color:var(--ink);border-inline-start:4px solid var(--p)}
@@ -308,7 +308,8 @@ details .ans{padding:0 0 22px;color:var(--muted);font-size:15.5px;line-height:2;
 .prose pre,.prose code{font-family:ui-monospace,Menlo,monospace;direction:ltr}
 .prose pre{background:var(--bg2);padding:14px;border-radius:14px;overflow:auto;font-size:14px}
 .prose hr{border:0;border-top:1px solid var(--line);margin:30px 0}
-.prose .callout{border-radius:var(--r);background:var(--tint);padding:18px 24px;margin:22px 0}
+.prose .lead{font-size:19px;line-height:2;color:var(--ink2)}
+.prose .callout{border-radius:var(--r);background:var(--tint);padding:18px 24px;margin:22px 0}.prose .callout>:last-child{margin-bottom:0}
 .prose .cta-app{border-radius:var(--r);background:linear-gradient(135deg,#0F5C52,#14806F);color:#fff;padding:24px 28px;margin:26px 0;text-align:center}
 .prose .cta-app a{color:#fff;font-weight:700}
 .prose .ta-center{text-align:center}.prose .ta-left{text-align:left}.prose .ta-right{text-align:right}

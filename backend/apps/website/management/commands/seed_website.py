@@ -10,6 +10,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 
+from apps.website import page_texts
 from apps.website.models import (
     Announcement, AppRelease, Category, ContentBlock, DownloadLink, MenuItem, Page, Post, SiteSettings, Tag, unique_slug,
 )
@@ -50,7 +51,6 @@ BLOCKS = [
     (ContentBlock.FAQ, "برای گروه‌ها پلن دارید؟", "برای دانشکده‌ها و گروه‌های آموزشی از صفحهٔ تماس با ما پیام بدهید.", "", "", ""),
 ]
 
-ABOUT = "<p>فارمنتا یک اپ آموزشی دوزبانهٔ داروشناسی است. درس‌ها بر پایهٔ طبقه‌بندی جهانی ATC و خلاصه‌ای از برچسب رسمی داروها ساخته شده‌اند و با فلش‌کارت و آزمون تکمیل می‌شوند.</p><h2>هدف ما</h2><p>یادگیری داروها را ساختاریافته و ماندگار کنیم؛ طوری که هر دارو را در جای درست طبقه‌بندی و کنار داروهای هم‌گروهش ببینید.</p><div class=\"callout\"><p>فارمنتا ابزار آموزشی است و جایگزین مرجع بالینی نیست.</p></div>"
 
 
 class Command(BaseCommand):
@@ -72,8 +72,8 @@ class Command(BaseCommand):
                 ContentBlock.objects.create(kind=kind, title=title, text=text, badge=badge, bullets=bullets, screen=screen, order=order * 10)
             made.append("home blocks")
         if not Page.objects.exists():
-            Page.objects.create(title="دربارهٔ ما", slug="about", body_html=ABOUT, status=Page.PUBLISHED)
-            Page.objects.create(title="تماس با ما", slug="contact", kind=Page.KIND_CONTACT, body_html="<p>پرسش، پیشنهاد یا گزارش مشکل دارید؟ پیام بگذارید.</p>", status=Page.PUBLISHED)
+            Page.objects.create(title="دربارهٔ ما", slug="about", body_html=page_texts.ABOUT, status=Page.PUBLISHED)
+            Page.objects.create(title="تماس با ما", slug="contact", kind=Page.KIND_CONTACT, body_html=page_texts.CONTACT, status=Page.PUBLISHED)
             Page.objects.create(title="قوانین و مقررات", slug="terms", body_html="<p>متن قوانین و مقررات را در پنل ویرایش کنید.</p>", status=Page.DRAFT)
             Page.objects.create(title="حریم خصوصی", slug="privacy", body_html="<p>متن حریم خصوصی را در پنل ویرایش کنید.</p>", status=Page.DRAFT)
             made.append("pages")
