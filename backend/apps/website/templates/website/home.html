@@ -5,91 +5,117 @@
 {% endblock %}
 {% block content %}
 <section class="hero">
+  <div class="aur" aria-hidden="true"><i></i><i></i><i></i></div>
   <div class="wrap">
     <div>
+      <span class="eyb">{{ site.tagline|default:"آموزش داروشناسی بر پایهٔ طبقه‌بندی ATC" }}</span>
       <h1>{% if site.hero_highlight and site.hero_highlight in site.hero_title %}{% for part in site.hero_title|split_highlight:site.hero_highlight %}{{ part }}{% endfor %}{% else %}{{ site.hero_title }}{% endif %}</h1>
       <p class="lead">{{ site.hero_text }}</p>
       <div class="row">
-        <a class="btn p" href="{{ site.hero_primary_url }}">{{ site.hero_primary_label }}</a>
+        <a class="btn p" href="{{ site.hero_primary_url }}">{{ site.hero_primary_label }}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg></a>
         {% if site.hero_secondary_label %}<a class="btn" href="{{ site.app_url }}">{{ site.hero_secondary_label }}</a>{% endif %}
       </div>
-      {% if blocks.stat %}<div class="trust">{% for s in blocks.stat|slice:":3" %}<div><b class="num">{{ s.title }}</b>{{ s.text }}</div>{% endfor %}</div>{% endif %}
+      {% if blocks.stat %}<div class="trust">{% for s in blocks.stat|slice:":3" %}<div><b class="num" data-count>{{ s.title }}</b>{{ s.text }}</div>{% endfor %}</div>{% endif %}
     </div>
-    <div class="hv">
-      <div class="blob"></div>
-      {% include "website/_phone.html" with screen="list" %}
-      <div class="fl" style="top:80px;inset-inline-start:0"><i>N04</i><div><b>۱۷ درس</b><span>ضدپارکینسون</span></div></div>
-      <div class="fl" style="bottom:90px;inset-inline-end:-6px"><i>✓</i><div><b>۱۲ روز پیاپی</b><span>مرور روزانه</span></div></div>
-      <div class="fl" style="top:260px;inset-inline-end:-20px"><i>۵</i><div><b>جعبهٔ لایتنر</b><span>مرور فاصله‌دار</span></div></div>
+    <div class="hv" data-tilt>
+      <div class="tilt">{% include "website/_phone.html" with screen="list" %}</div>
+      <div class="fl" style="top:70px;inset-inline-end:0"><i>✓</i><div><b>۱۲ روز پیاپی</b><span>مرور روزانه</span></div></div>
+      <div class="fl gold" style="bottom:110px;inset-inline-start:-10px"><i>۵</i><div><b>جعبهٔ لایتنر</b><span>مرور فاصله‌دار</span></div></div>
+      <div class="fl solid" style="top:300px;inset-inline-start:0">N04 · داروهای ضدپارکینسون</div>
     </div>
   </div>
 </section>
 
-{% if announcement %}
-<div class="wrap" style="margin-top:28px"><a class="rel" href="{{ announcement.get_absolute_url }}" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="pill {{ announcement.level }}">{{ announcement.get_level_display }}</span><b>{{ announcement.title }}</b><span style="color:var(--muted);flex:1">{{ announcement.summary|truncatechars:90 }}</span><span style="color:var(--p);font-weight:700">بیشتر ‹</span></a></div>
-{% endif %}
+<div class="marq" aria-hidden="true"><div class="track">
+  {% for i in "ab" %}<span>متفورمین · Metformin</span><span>آتورواستاتین · Atorvastatin</span><span>سیتالوپرام · Citalopram</span><span>آموکسی‌سیلین · Amoxicillin</span><span>متوپرولول · Metoprolol</span><span>لوزارتان · Losartan</span><span>آسپرین · Aspirin</span><span>وارفارین · Warfarin</span>{% endfor %}
+</div></div>
 
-{% if blocks.stat %}
-<div class="wrap"><div class="stats">{% for s in blocks.stat %}<div><b class="num">{{ s.title }}</b><span>{{ s.text }}</span></div>{% endfor %}</div></div>
+{% if announcement %}
+<div class="wrap" style="margin-top:28px"><a class="rel rv" href="{{ announcement.get_absolute_url }}" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="pill {{ announcement.level }}">{{ announcement.get_level_display }}</span><b>{{ announcement.title }}</b><span style="color:var(--muted);flex:1">{{ announcement.summary|truncatechars:90 }}</span><span style="color:var(--p);font-weight:700">بیشتر ‹</span></a></div>
 {% endif %}
 
 {% if blocks.feature %}
 <section class="sec wrap" id="features">
-  <div class="hd2"><span class="ey">ابزارها</span><h2>همه چیز برای یادگیری ماندگار</h2><p>چند ابزار که کنار هم کار می‌کنند.</p></div>
-  <div class="f4">{% for b in blocks.feature %}<div class="card"><span class="ic">{{ b.badge|default:forloop.counter|fa }}</span><b>{{ b.title }}</b><p>{{ b.text }}</p></div>{% endfor %}</div>
+  <div class="hd2 center rv"><span class="ey">ابزارها</span><h2>همه چیز برای یادگیری ماندگار</h2><p>چند ابزار که کنار هم کار می‌کنند.</p></div>
+  <div class="f4">{% for b in blocks.feature %}<div class="card rv" style="--d:{{ forloop.counter0 }}00ms"><span class="ic">{{ b.badge|default:forloop.counter|fa }}</span><b>{{ b.title }}</b><p>{{ b.text }}</p></div>{% endfor %}</div>
 </section>
 {% endif %}
 
-{% for b in blocks.showcase %}
-<section class="wrap show{% if forloop.counter|divisibleby:2 %} rev{% endif %}">
-  <div class="txt"><span class="ey">{{ b.badge }}</span><h3>{{ b.title }}</h3><p>{{ b.text }}</p>
-    {% if b.bullet_list %}<ul class="checks">{% for x in b.bullet_list %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
-    <a class="btn p s" href="{% url 'site:download' %}">همین حالا امتحان کنید</a></div>
-  <div class="pv">{% include "website/_phone.html" with screen=b.screen %}</div>
+{% if blocks.showcase %}
+<section class="sec wrap" id="tour">
+  <div class="tour rv" data-tabs>
+    <div class="tabs" role="tablist" aria-label="نگاهی به اپ">
+      {% for b in blocks.showcase %}<button class="tab" type="button" role="tab" id="tab-{{ forloop.counter }}" aria-controls="panel-{{ forloop.counter }}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{ b.badge|default:b.title }}</button>{% endfor %}
+    </div>
+    {% for b in blocks.showcase %}
+    <div class="show" role="tabpanel" id="panel-{{ forloop.counter }}" aria-labelledby="tab-{{ forloop.counter }}">
+      <div class="txt"><span class="ey">{{ b.badge }}</span><h3>{{ b.title }}</h3><p>{{ b.text }}</p>
+        {% if b.bullet_list %}<ul class="checks">{% for x in b.bullet_list %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+        <a class="btn p s" href="{% url 'site:download' %}">همین حالا امتحان کنید</a></div>
+      <div class="pv">
+        {% if b.screen == "card" %}
+        <div style="text-align:center">
+          <button class="flipc" type="button" aria-pressed="false" aria-label="برگرداندن کارت">
+            <span class="in"><span class="fc front"><small>جعبهٔ ۲ از ۵</small><strong>لوزارتان</strong><small>مکانیسم اثر؟</small></span><span class="fc back"><small style="color:var(--p2)">پاسخ</small><strong>مهار گیرندهٔ آنژیوتانسین II (ARB)</strong></span></span>
+          </button>
+          <p class="hint" style="margin:14px 0 0;font-size:13.5px;color:var(--p);font-weight:700">کارت را بزنید تا برگردد.</p>
+        </div>
+        {% else %}{% include "website/_phone.html" with screen=b.screen %}{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 </section>
-{% endfor %}
+{% endif %}
 
-<section class="sec wrap">
-  <div class="hd2"><span class="ey">گروه‌های اصلی</span><h2>چهارده گروه ATC، یک نقشهٔ کامل</h2><p>از کدام گروه شروع می‌کنید؟</p></div>
-  <div class="atc">{% atc_groups as groups %}{% for code, name in groups %}<div{% if code == "N" %} class="h"{% endif %}><b>{{ code }}</b><span>{{ name }}</span></div>{% endfor %}</div>
+{% if blocks.stat %}
+<section class="sec wrap"><div class="stats rv">{% for s in blocks.stat %}<div><b class="num" data-count>{{ s.title }}</b><span>{{ s.text }}</span></div>{% endfor %}</div></section>
+{% endif %}
+
+<section class="sec wrap" id="atc">
+  <div class="hd2 center rv"><span class="ey">گروه‌های اصلی</span><h2>چهارده گروه ATC، یک نقشهٔ کامل</h2><p>از کدام گروه شروع می‌کنید؟</p></div>
+  <div class="atc">{% atc_groups as groups %}{% for code, name in groups %}<div class="rv" style="--d:{{ forloop.counter0 }}0ms"><b>{{ code }}</b><span>{{ name }}</span></div>{% endfor %}</div>
 </section>
 
 {% if blocks.audience %}
 <section class="sec wrap">
-  <div class="hd2"><span class="ey">چه کسی؟</span><h2>فارمنتا برای چه کسانی است؟</h2></div>
-  <div class="g4">{% for b in blocks.audience %}<div class="card"><span class="ic">{{ b.badge }}</span><b>{{ b.title }}</b><p>{{ b.text }}</p></div>{% endfor %}</div>
+  <div class="hd2 center rv"><span class="ey">چه کسی؟</span><h2>فارمنتا برای چه کسانی است؟</h2></div>
+  <div class="g4">{% for b in blocks.audience %}<div class="card rv" style="--d:{{ forloop.counter0 }}00ms"><span class="ic">{{ b.badge }}</span><b>{{ b.title }}</b><p>{{ b.text }}</p></div>{% endfor %}</div>
 </section>
 {% endif %}
 
 {% if blocks.step %}
-<section class="sec wrap" id="how">
-  <div class="hd2"><span class="ey">نحوهٔ کار</span><h2>چهار قدم تا یادگیری ماندگار</h2></div>
-  <div class="steps">{% for b in blocks.step %}<div class="step"><em>{{ forloop.counter|fa }}</em><b>{{ b.title }}</b><p>{{ b.text }}</p></div>{% endfor %}</div>
+<section class="sec alt" id="how">
+  <div class="wrap">
+    <div class="hd2 center rv"><span class="ey">نحوهٔ کار</span><h2>چهار قدم تا یادگیری ماندگار</h2></div>
+    <div class="steps">{% for b in blocks.step %}<div class="step rv" style="--d:{{ forloop.counter0 }}00ms"><em>{{ forloop.counter|fa }}</em><b>{{ b.title }}</b><p>{{ b.text }}</p></div>{% endfor %}</div>
+  </div>
 </section>
 {% endif %}
 
 <section class="sec wrap" id="plans">
-  <div class="hd2"><span class="ey">پلن‌ها</span><h2>پلنی که به شما می‌خورد</h2><p>قیمت‌ها همین‌جا و بدون واسطه است؛ پرداخت با درگاه امن.</p></div>
-  {% include "website/_pricing.html" %}
-  <p style="margin-top:18px"><a href="{% url 'site:plans' %}" style="color:var(--p);font-weight:700">مقایسهٔ کامل امکانات ‹</a></p>
+  <div class="hd2 center rv"><span class="ey">پلن‌ها</span><h2>پلنی که به شما می‌خورد</h2><p>قیمت‌ها همین‌جا و بدون واسطه است؛ پرداخت با درگاه امن.</p></div>
+  <div class="rv">{% include "website/_pricing.html" %}</div>
+  <p style="margin-top:22px;text-align:center"><a href="{% url 'site:plans' %}" style="color:var(--p);font-weight:700">مقایسهٔ کامل امکانات ‹</a></p>
 </section>
 
 {% if blocks.faq %}
 <section class="sec wrap" id="faq">
-  <div class="hd2"><span class="ey">سؤالات متداول</span><h2>پاسخ پرسش‌های رایج</h2></div>
-  <div class="faq">{% for b in blocks.faq %}<details{% if forloop.first %} open{% endif %}><summary>{{ b.title }}</summary><div class="ans">{{ b.text|linebreaksbr }}</div></details>{% endfor %}</div>
+  <div class="hd2 center rv"><span class="ey">سؤالات متداول</span><h2>پاسخ پرسش‌های رایج</h2></div>
+  <div class="faq">{% for b in blocks.faq %}<details class="rv"{% if forloop.first %} open{% endif %}><summary>{{ b.title }}</summary><div class="ans">{{ b.text|linebreaksbr }}</div></details>{% endfor %}</div>
 </section>
 {% endif %}
 
 {% if posts %}
 <section class="sec wrap">
-  <div class="hd2"><span class="ey">مقالات</span><h2>تازه‌ترین مقالات</h2><p>آموزش و اطلاعیه‌های {{ site.site_name }}</p></div>
-  <div class="posts">{% for post in posts %}{% include "website/_post_card.html" %}{% endfor %}</div>
+  <div class="hd2 center rv"><span class="ey">مقالات</span><h2>تازه‌ترین مقالات</h2><p>آموزش و اطلاعیه‌های {{ site.site_name }}</p></div>
+  <div class="posts">{% for post in posts %}<div class="rv" style="--d:{{ forloop.counter0 }}00ms;display:flex">{% include "website/_post_card.html" %}</div>{% endfor %}</div>
 </section>
 {% endif %}
 
 <section class="sec wrap" id="download">
-  <div class="dlx">
+  <div class="dlx rv">
+    <div class="aur" aria-hidden="true"><i></i><i></i><i></i></div>
     <div><h2>{{ site.site_name }} را همین حالا نصب کنید</h2><p>اندروید، iOS و نسخهٔ وب. با یک حساب، همهٔ دستگاه‌ها.</p>{% include "website/_downloads.html" %}</div>
     <div class="qr" aria-hidden="true"><svg viewBox="0 0 21 21" width="100%" height="100%" shape-rendering="crispEdges"><path fill="#12201D" d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0zM2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2zM9 0h2v2H9zM9 3h3v2H9zM8 8h2v2H8zM11 9h3v2h-3zM9 12h2v3H9zM13 13h3v2h-3zM16 11h2v2h-2zM18 14h3v2h-3zM12 17h2v4h-2zM16 17h2v2h-2zM19 19h2v2h-2z"/></svg></div>
   </div>

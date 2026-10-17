@@ -3,12 +3,12 @@
 {% block content %}
 <div class="wrap">
   <nav class="crumbs" aria-label="مسیر"><a href="{% url 'site:home' %}">خانه</a> ‹ دانلود</nav>
-  <section class="hero" style="margin-top:22px;border-radius:34px"><div class="wrap" style="padding-block:44px"><div>
+  <section class="hero rv" style="margin-top:22px;border-radius:36px;border:1px solid var(--line);background:var(--glass)"><div class="aur dim" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap" style="padding-block:48px"><div>
     <h1 style="font-size:clamp(30px,4vw,46px)">{{ site.site_name }} را نصب کنید</h1>
     <p class="lead">اندروید، iOS و مرورگر؛ پیشرفت شما بین دستگاه‌ها هماهنگ می‌ماند.</p>
     {% include "website/_downloads.html" with downloads=links %}
     {% if latest %}<div class="trust">{% for p, r in latest.items %}<div><b class="num">{{ r.version|fa }}</b>آخرین نسخهٔ {{ r.get_platform_display }}{% if r.size_mb %} · {{ r.size_mb|fa }} مگابایت{% endif %}</div>{% endfor %}</div>{% endif %}
-  </div><div class="hv" style="min-height:560px"><div class="blob"></div>{% include "website/_phone.html" with screen="dash" %}</div></div></section>
+  </div><div class="hv" style="min-height:600px" data-tilt><div class="tilt">{% include "website/_phone.html" with screen="dash" %}</div></div></div></section>
   {% if releases %}
   <section class="sec"><div class="hd2"><h2 style="font-size:28px">تاریخچهٔ نسخه‌ها</h2></div><div class="notes">
     {% for r in releases %}<article class="rel"><header><b style="font-size:18px" class="num">{{ r.get_platform_display }} {{ r.version|fa }}</b>{% if r.is_latest %}<span class="pill">آخرین</span>{% endif %}{% if r.channel == "beta" %}<span class="pill promo">آزمایشی</span>{% endif %}<span style="color:var(--muted);font-size:13px">{{ r.released_at|jdate:"long" }}</span></header><div class="prose" style="font-size:15.5px">{{ r.notes_html|safe }}</div></article>{% endfor %}
