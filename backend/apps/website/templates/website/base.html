@@ -58,6 +58,12 @@
     <div><h4>محصول</h4>{% for item in menus.foot_product %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
     <div><h4>منابع</h4>{% for item in menus.foot_resources %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
     <div><h4>شرکت</h4>{% for item in menus.foot_company %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
+    <div class="trustbar">
+      <div><b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z"/><path d="M8.8 12.2l2.2 2.2 4.4-4.6"/></svg>نماد اعتماد الکترونیکی</b><span>{{ site.site_name }} نماد اعتماد الکترونیکی (اینماد) دارد. برای دیدن اطلاعات آن روی نماد بزنید.</span></div>
+      {% comment %}eNamad's code, kept as issued: the referrerpolicy attributes let its
+      server see which site shows the seal despite our same-origin policy{% endcomment %}
+      <div class="seal"><a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8214551&Code=bPdud0H5Uf2XbmxNnJXDamdKRmBiNbQ4'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8214551&Code=bPdud0H5Uf2XbmxNnJXDamdKRmBiNbQ4' alt='' style='cursor:pointer' code='bPdud0H5Uf2XbmxNnJXDamdKRmBiNbQ4'></a></div>
+    </div>
     <div class="dis"><span>{{ site.footer_note }}</span><span>© {{ site.copyright_text }}</span></div>
   </div>
 </footer>
