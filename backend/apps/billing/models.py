@@ -204,6 +204,10 @@ class Order(models.Model):
     gateway = models.CharField(max_length=20, blank=True)
     authority = models.CharField(max_length=64, null=True, blank=True, unique=True)
     ref_id = models.CharField(max_length=64, blank=True)
+    # The gateway's own id for the settled payment when it differs from the
+    # tracking code shown to the buyer (SEP's RefNum, which verify and reverse
+    # take); one receipt may settle only one order.
+    gateway_ref = models.CharField(max_length=64, blank=True, db_index=True)
     card_pan = models.CharField(max_length=32, blank=True)
     error = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -302,26 +306,53 @@ class AdminAction(models.Model):
         indexes = [models.Index(fields=["target_user", "-created_at"], name="billing_action_user_idx")]
 
 
+class PaymentGateway(models.Model):
+    """A payment gateway the console has set up: at most one per kind. The
+    enabled ones are offered in priority order (lowest first); with none set
+    up at all, the environment's BILLING_GATEWAY / ZARINPAL_* apply."""
+
+    KIND_ZARINPAL, KIND_SEP = "zarinpal", "sep"
+    KIND_CHOICES = [(KIND_ZARINPAL, "زرین‌پال"), (KIND_SEP, "سامان (سپ)")]
+
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, unique=True)
+    title = models.CharField(max_length=60, blank=True)
+    is_enabled = models.BooleanField(default=True)
+    priority = models.PositiveSmallIntegerField(default=10)
+    # Zarinpal's merchant id, or SEP's terminal number.
+    merchant_id = models.CharField(max_length=64, blank=True)
+    sandbox = models.BooleanField(default=False)
+    last_test_at = models.DateTimeField(null=True, blank=True)
+    last_test_ok = models.BooleanField(null=True, blank=True)
+    last_test_message = models.CharField(max_length=255, blank=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["priority", "id"]
+
+    def __str__(self):
+        return self.display_name
+
+    @property
+    def display_name(self):
+        return self.title or self.get_kind_display()
+
+
 class BillingSettings(models.Model):
-    """The console's gateway and switches: one row. An empty field (or no
-    row) falls back to the environment variable of the same meaning, so the
-    console only overrides what an operator has actually set."""
+    """The console's switches: one row. An empty field (or no row) falls
+    back to the environment variable of the same meaning, so the console
+    only overrides what an operator has actually set. The gateways
+    themselves are PaymentGateway rows."""
 
-    GATEWAY_CHOICES = [("zarinpal", "زرین‌پال")]
-
-    gateway = models.CharField(max_length=20, choices=GATEWAY_CHOICES, blank=True)
-    zarinpal_merchant_id = models.CharField(max_length=64, blank=True)
-    # None = use the environment's value.
-    zarinpal_sandbox = models.BooleanField(null=True, blank=True)
     return_url = models.URLField(blank=True)
     enforcement_enabled = models.BooleanField(null=True, blank=True)
     sales_enabled = models.BooleanField(default=True)
     # Anyone opening the app gets a throwaway guest account, no sign-in --
     # for showing the content to a reviewer (sms.ir's site check).
     guest_access_enabled = models.BooleanField(default=False)
-    last_test_at = models.DateTimeField(null=True, blank=True)
-    last_test_ok = models.BooleanField(null=True, blank=True)
-    last_test_message = models.CharField(max_length=255, blank=True)
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )

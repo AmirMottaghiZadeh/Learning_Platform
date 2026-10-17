@@ -1,0 +1,42 @@
+{% extends "billing/console/base.html" %}
+{% block title %}{% if gw.pk %}ویرایش {{ gw.display_name }}{% else %}افزودن {{ gw.get_kind_display }}{% endif %}{% endblock %}
+{% block content %}
+  <div class="row" style="align-items:flex-end">
+    <div class="grow stack" style="gap:4px">
+      <a class="eyebrow" href="{% url 'console:gateway' %}">درگاه پرداخت ‹</a>
+      <h1>{% if gw.pk %}ویرایش {{ gw.display_name }}{% else %}افزودن {{ gw.get_kind_display }}{% endif %}</h1>
+    </div>
+  </div>
+  <div class="grid g2" style="align-items:start">
+    <form method="post" class="card stack" style="gap:16px">
+      {% csrf_token %}
+      {% if not gw.pk %}<input type="hidden" name="kind" value="{{ gw.kind }}">{% endif %}
+      <div>
+        <label class="lbl" for="merchant_id">{{ label }}</label>
+        <input class="fld ltr mono" id="merchant_id" name="merchant_id" autocomplete="off" inputmode="{% if gw.kind == 'sep' %}numeric{% else %}text{% endif %}"
+          placeholder="{% if masked %}الان {{ masked }} — برای تغییر، مقدار جدید را وارد کنید{% elif gw.kind == 'sep' %}مثلاً 12345678{% else %}xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx{% endif %}" {% if not masked %}required{% endif %}>
+      </div>
+      <div>
+        <label class="lbl" for="title">نامی که خریدار می‌بیند (اختیاری)</label>
+        <input class="fld" id="title" name="title" value="{{ gw.title }}" placeholder="{{ gw.get_kind_display }}" maxlength="60">
+      </div>
+      <div>
+        <label class="lbl" for="priority">ترتیب (عدد کوچک‌تر = اول)</label>
+        <input class="fld ltr" id="priority" name="priority" value="{{ gw.priority }}" inputmode="numeric" style="max-width:140px">
+      </div>
+      <label style="display:flex;gap:10px;align-items:center;font-weight:800"><input type="checkbox" name="is_enabled" {% if gw.is_enabled %}checked{% endif %} style="width:20px;height:20px;accent-color:#0F5C52">فعال باشد</label>
+      {% if gw.kind == 'zarinpal' %}<label style="display:flex;gap:10px;align-items:center;font-weight:800"><input type="checkbox" name="sandbox" {% if gw.sandbox %}checked{% endif %} style="width:20px;height:20px;accent-color:#8A5A00">حالت آزمایشی زرین‌پال (sandbox، بدون پول واقعی)</label>{% endif %}
+      <div style="padding:14px;border-radius:14px;background:var(--warn-bg);border:1px solid var(--warn-line)">
+        <label class="lbl" for="password" style="color:var(--warn)">برای ذخیره، رمز حساب خودتان را دوباره وارد کنید</label>
+        <input class="fld ltr" id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn primary" type="submit">ذخیره</button>
+    </form>
+    <section class="card stack">
+      <h2>آدرس بازگشت این درگاه</h2>
+      <span class="sub">این آدرس را در فرم درگاه بنویسید؛ دامنهٔ آن باید همان دامنه‌ای باشد که درگاه برایش ثبت می‌شود.</span>
+      <code class="ltr mono" style="display:block;padding:12px;border-radius:12px;background:var(--soft);font-size:13px;word-break:break-all">{{ callback }}</code>
+      {% if gw.kind == 'sep' %}<span class="sub" style="font-size:12.5px">سپ پس از پرداخت با درخواست POST به این آدرس برمی‌گردد و پرداخت باید ظرف ۳۰ دقیقه تأیید شود؛ فارمنتا این کار را خودکار انجام می‌دهد. IP خروجی سرور باید در سپ ثبت شده باشد.</span>{% endif %}
+    </section>
+  </div>
+{% endblock %}

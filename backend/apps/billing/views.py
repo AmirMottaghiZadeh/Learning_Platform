@@ -2,9 +2,12 @@
 buying -- an order, then the gateway, then our callback, which confirms the
 payment with the gateway before granting anything."""
 
+from django.conf import settings
+from django.core import signing
 from django.db.models import Prefetch
-from django.shortcuts import render
-from django.urls import reverse
+from django.shortcuts import redirect, render
+from django.urls import NoReverseMatch, reverse
+from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -13,7 +16,7 @@ from rest_framework.views import APIView
 from apps.core.exceptions import PlatformAPIError
 
 from . import config, services
-from .gateways import GatewayError, get_gateway
+from .gateways import GatewayError, get_gateway, start_payment
 from .guest import is_guest
 from .models import Feature, Order, Plan, PlanFeature
 from .serializers import (
@@ -113,10 +116,9 @@ class CheckoutView(APIView):
 
         profile = getattr(request.user, "learner_profile", None)
         try:
-            gateway = get_gateway()
-            url, authority = gateway.start(
+            url = start_payment(
                 order,
-                request.build_absolute_uri(reverse("billing-callback")),
+                lambda kind: callback_url(request, kind),
                 description=f"خرید {price.plan.name_fa} · {price.duration_label}",
                 mobile=getattr(profile, "phone", None) or "",
                 email=request.user.email or "",
@@ -126,8 +128,6 @@ class CheckoutView(APIView):
             raise PlatformAPIError(
                 "The payment gateway is not available right now.", code="GATEWAY_ERROR", status_code=502
             ) from exc
-        order.gateway, order.authority = gateway.name, authority
-        order.save(update_fields=["gateway", "authority"])
         return Response(CheckoutSerializer({"order_id": order.pk, "status": order.status, "payment_url": url}).data, status=201)
 
 
@@ -140,29 +140,96 @@ class MyOrdersView(APIView):
         return Response(OrderSerializer(orders, many=True).data)
 
 
-def payment_callback(request):
-    """Where the gateway sends the learner back. A plain page, not JSON: it
-    opens in their browser, says how it went and links back to the app."""
-    authority = (request.GET.get("Authority") or "").strip()
-    order = Order.objects.select_related("plan").filter(authority=authority).first() if authority else None
-    context = {"order": order, "return_url": config.current().return_url, "ok": False, "message": ""}
-    if order is None:
-        context["message"] = "سفارشی برای این پرداخت پیدا نشد."
-        return render(request, "billing/payment_result.html", context, status=404)
+def callback_url(request, kind):
+    """The absolute URL a gateway sends the buyer back to, on the host the
+    purchase started from (the site's /pay/callback/<kind>/ or the API's)."""
+    return request.build_absolute_uri(reverse("billing-callback-gateway", args=[kind]))
 
-    if order.status == Order.STATUS_PAID:
-        context["ok"] = True
-        return render(request, "billing/payment_result.html", context)
+
+RESULT_SALT = "billing.payment-result"
+# How long a result link keeps working: long enough for the buyer to come
+# back to the tab, short enough that an old shared link goes dead.
+RESULT_MAX_AGE = 7 * 24 * 3600
+
+
+def result_url(order):
+    return reverse("billing-result", args=[signing.dumps(order.pk, salt=RESULT_SALT, compress=True)])
+
+
+def _result_context(request, order, message=""):
+    try:
+        retry_url = reverse("site:checkout", args=[order.price_id]) if order and order.price_id else ""
+    except NoReverseMatch:  # the API host has no checkout page
+        retry_url = ""
+    return {
+        "order": order, "return_url": config.current().return_url, "message": message, "retry_url": retry_url,
+        # Links to the site stay relative on the site's own domain.
+        "site_url": "" if getattr(request, "is_site", False) else settings.SITE_PUBLIC_URL.rstrip("/"),
+    }
+
+
+def _failed(request, order, message, status=200):
+    return render(request, "billing/payment_failed.html", _result_context(request, order, message), status=status)
+
+
+@csrf_exempt
+def payment_callback(request, kind=None):
+    """Where a gateway sends the buyer back -- with a GET (Zarinpal) or a POST
+    (SEP). The payment is confirmed with the gateway itself, then the buyer is
+    sent on to the result page, so a refresh never posts the receipt twice.
+    The bare /callback/ is Zarinpal's from before gateways had their own."""
+    params = request.POST if request.method == "POST" else request.GET
+    orders = Order.objects.select_related("plan")
+    try:
+        if kind is None:
+            authority = (params.get("Authority") or "").strip()
+            order = orders.filter(authority=authority).first() if authority else None
+            gateway = get_gateway(order.gateway) if order else None
+        else:
+            gateway = get_gateway(kind)
+            order = gateway.find_order(orders, params)
+    except GatewayError:
+        return _failed(request, None, "این درگاه پرداخت شناخته نشد.", status=404)
+    if order is None:
+        return _failed(request, None, "سفارشی برای این پرداخت پیدا نشد.", status=404)
+    if order.status == Order.STATUS_PAID or order.gateway != gateway.name:
+        return redirect(result_url(order))
 
     try:
-        result = get_gateway().verify(order, request.GET)
+        result = gateway.verify(order, params)
     except GatewayError:
-        context["message"] = "ارتباط با درگاه برقرار نشد. اگر مبلغ از حساب شما کم شده، تا ۷۲ ساعت برمی‌گردد یا با پشتیبانی تماس بگیرید."
-        return render(request, "billing/payment_result.html", context, status=502)
+        # The order stays pending: the result page says the outcome is not known yet.
+        return redirect(result_url(order))
     if result.ok:
-        order = services.mark_paid(order.pk, gateway=order.gateway, ref_id=result.ref_id, card_pan=result.card_pan)
-        context.update(order=order, ok=True)
-        return render(request, "billing/payment_result.html", context)
-    services.mark_failed(order, result.message)
-    context["message"] = result.message
-    return render(request, "billing/payment_result.html", context)
+        services.mark_paid(
+            order.pk, gateway=order.gateway, ref_id=result.ref_id, card_pan=result.card_pan,
+            gateway_ref=result.gateway_ref,
+        )
+    else:
+        services.mark_failed(order, result.message)
+    return redirect(result_url(order))
+
+
+def payment_result(request, token):
+    """The page the buyer lands on after the gateway: success, or what went
+    wrong and what to do next. The link carries the order signed, so nobody
+    can read another buyer's receipt by changing a number."""
+    try:
+        pk = signing.loads(token, salt=RESULT_SALT, max_age=RESULT_MAX_AGE)
+    except signing.BadSignature:
+        return _failed(request, None, "این لینک نتیجهٔ پرداخت معتبر نیست یا منقضی شده است.", status=404)
+    order = Order.objects.select_related("plan").filter(pk=pk).first()
+    if order is None:
+        return _failed(request, None, "سفارشی برای این پرداخت پیدا نشد.", status=404)
+    if order.status == Order.STATUS_PAID:
+        return render(request, "billing/payment_success.html", _result_context(request, order))
+    if order.status == Order.STATUS_PENDING:
+        return _failed(request, order, (
+            "پاسخ درگاه هنوز به ما نرسیده و وضعیت پرداخت روشن نیست. اگر مبلغ از حساب شما کم شده، "
+            "یا تا چند دقیقهٔ دیگر اشتراک فعال می‌شود یا بانک ظرف ۷۲ ساعت آن را برمی‌گرداند."
+        ))
+    return _failed(request, order, order.error if _is_persian(order.error) else "")
+
+
+def _is_persian(text):
+    return any("\u0600" <= ch <= "\u06ff" for ch in text or "")

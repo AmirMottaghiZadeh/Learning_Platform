@@ -276,7 +276,7 @@ def create_order(user, price, discount=None):
     )
 
 
-def mark_paid(order_id, *, gateway, ref_id="", card_pan=""):
+def mark_paid(order_id, *, gateway, ref_id="", card_pan="", gateway_ref=""):
     """Settle a verified payment: idempotent -- a second call (the gateway
     retrying the callback, a double click) changes nothing."""
     with transaction.atomic():
@@ -287,9 +287,10 @@ def mark_paid(order_id, *, gateway, ref_id="", card_pan=""):
         order.gateway = gateway
         order.ref_id = ref_id[:64]
         order.card_pan = card_pan[:32]
+        order.gateway_ref = gateway_ref[:64]
         order.paid_at = timezone.now()
         order.error = ""
-        order.save(update_fields=["status", "gateway", "ref_id", "card_pan", "paid_at", "error"])
+        order.save(update_fields=["status", "gateway", "ref_id", "card_pan", "gateway_ref", "paid_at", "error"])
         if order.discount_id:
             DiscountCode.objects.filter(pk=order.discount_id).update(used_count=F("used_count") + 1)
         if order.user_id:  # the buyer may have been deleted mid-payment

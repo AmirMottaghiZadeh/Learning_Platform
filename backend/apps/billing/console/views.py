@@ -4,10 +4,15 @@ Persian, right to left; every change goes through apps.billing.services and
 is written to the audit log."""
 
 import csv
+import json
 import re
+import socket
+import urllib.request
 from datetime import datetime, timedelta
 from functools import wraps
+from urllib.parse import urlsplit
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, get_user_model, login, logout
 from django.core.cache import caches
@@ -30,7 +35,7 @@ from apps.accounts.services import (
 )
 from apps.billing import config, services
 from apps.billing import guest as guest_tools
-from apps.billing.gateways import GatewayError, ZarinpalGateway
+from apps.billing.gateways import GatewayError, SepGateway, ZarinpalGateway
 from apps.billing.catalog import SCOPE_TYPES, TOPIC_CATEGORY_CHOICES
 from apps.billing.jalali import fa_digits, month_start
 from apps.billing.models import (
@@ -41,6 +46,7 @@ from apps.billing.models import (
     Entitlement,
     Feature,
     Order,
+    PaymentGateway,
     Plan,
     PlanFeature,
     PlanPrice,
@@ -789,7 +795,7 @@ def discount_toggle(request, pk):
     return redirect("console:discounts")
 
 
-# -- payment gateway ----------------------------------------------------------
+# -- payment gateways ---------------------------------------------------------
 
 def _masked(merchant_id):
     return f"••••••••{merchant_id[-4:]}" if merchant_id else ""
@@ -797,6 +803,48 @@ def _masked(merchant_id):
 
 def _tristate(value):
     return {"on": True, "off": False}.get(value)
+
+
+# What each gateway calls its merchant id, and what a valid one looks like.
+GATEWAY_FIELDS = {
+    PaymentGateway.KIND_ZARINPAL: ("مرچنت‌کد زرین‌پال", r"[A-Za-z0-9-]{20,64}", "مرچنت‌کد باید همان کد ۳۶ کاراکتری پنل زرین‌پال باشد."),
+    PaymentGateway.KIND_SEP: ("شمارهٔ ترمینال سپ", r"\d{5,12}", "شمارهٔ ترمینال سپ باید فقط رقم باشد (همان TerminalId که سپ داده است)."),
+}
+
+
+def _site_url():
+    return settings.SITE_PUBLIC_URL.rstrip("/")
+
+
+def _site_callback(kind):
+    """The callback on the site's own domain, which is what gets registered
+    with a gateway, whichever host this page is served from."""
+    return _site_url() + reverse("billing-callback-gateway", args=[kind], urlconf="config.urls_site")
+
+
+def _gateway_facts():
+    """What a gateway's application form asks for: the site, the callback for
+    each kind, the port, and the address the site's domain points at."""
+    site = _site_url()
+    host = urlsplit(site).hostname or ""
+    try:
+        inbound_ip = socket.gethostbyname(host) if host else ""
+    except OSError:
+        inbound_ip = ""
+    return {
+        "site_url": site,
+        "host": host,
+        "port": 443 if site.startswith("https://") else 80,
+        "inbound_ip": inbound_ip,
+        "callbacks": [
+            (label, _site_callback(kind))
+            for kind, label in PaymentGateway.KIND_CHOICES
+        ],
+    }
+
+
+def _gateway_state(g):
+    return {"kind": g.kind, "enabled": g.is_enabled, "priority": g.priority, "merchant": _masked(g.merchant_id), "sandbox": g.sandbox}
 
 
 @superuser_required
@@ -807,69 +855,143 @@ def gateway(request):
             messages.error(request, "رمز حساب درست نیست؛ چیزی ذخیره نشد.")
             return redirect("console:gateway")
         row = BillingSettings.objects.first() or BillingSettings()
-        before = {
-            "merchant": _masked(current.merchant_id), "sandbox": current.sandbox, "return_url": current.return_url,
-            "enforcement": current.enforcement, "sales": current.sales_enabled,
-        }
-        merchant = latin_digits(request.POST.get("merchant_id", "")).strip()
-        if request.POST.get("clear_merchant") == "on":
-            row.zarinpal_merchant_id = ""
-        elif merchant:
-            if not re.fullmatch(r"[A-Za-z0-9-]{20,64}", merchant):
-                messages.error(request, "مرچنت‌کد باید همان کد ۳۶ کاراکتری پنل زرین‌پال باشد.")
-                return redirect("console:gateway")
-            row.zarinpal_merchant_id = merchant
+        before = {"return_url": current.return_url, "enforcement": current.enforcement, "sales": current.sales_enabled}
         return_url = request.POST.get("return_url", "").strip()
         if return_url and not re.fullmatch(r"https?://\S+", return_url):
             messages.error(request, "لینک بازگشت باید با https:// شروع شود.")
             return redirect("console:gateway")
-        row.gateway = "zarinpal"
         row.return_url = return_url
-        row.zarinpal_sandbox = _tristate(request.POST.get("sandbox"))
         row.enforcement_enabled = _tristate(request.POST.get("enforcement"))
         row.sales_enabled = request.POST.get("sales_enabled") == "on"
         row.updated_by = request.user
         row.save()
         after = config.current()
-        services.record(request, "gateway_settings", "تغییر تنظیمات درگاه پرداخت", details={
+        services.record(request, "gateway_settings", "تغییر تنظیمات فروش", details={
             "before": before,
-            "after": {
-                "merchant": _masked(after.merchant_id), "sandbox": after.sandbox, "return_url": after.return_url,
-                "enforcement": after.enforcement, "sales": after.sales_enabled,
-            },
+            "after": {"return_url": after.return_url, "enforcement": after.enforcement, "sales": after.sales_enabled},
         })
-        messages.success(request, "تنظیمات درگاه ذخیره شد. سرورهای دیگر تا نیم دقیقه‌ی دیگر آن را می‌خوانند.")
+        messages.success(request, "تنظیمات ذخیره شد. سرورهای دیگر تا نیم دقیقه‌ی دیگر آن را می‌خوانند.")
         return redirect("console:gateway")
 
-    row = BillingSettings.objects.first()
+    gateways = list(PaymentGateway.objects.all())
+    defined = {g.kind for g in gateways}
     return render(request, "billing/console/gateway.html", {
         "active": "gateway",
         "cfg": current,
-        "row": row,
-        "masked": _masked(current.merchant_id),
+        "row": BillingSettings.objects.first(),
+        "gateways": [(g, _masked(g.merchant_id), GATEWAY_FIELDS[g.kind][0]) for g in gateways],
+        "env_gateway": current.gateways[0] if current.gateways and current.gateways[0].source == "env" else None,
+        "env_masked": _masked(settings.ZARINPAL_MERCHANT_ID),
+        "addable": [(k, label) for k, label in PaymentGateway.KIND_CHOICES if k not in defined],
+        "facts": _gateway_facts(),
+        "outbound_ip": caches["default"].get("billing:outbound-ip"),
         "last_paid": Order.objects.filter(status=Order.STATUS_PAID).select_related("plan").order_by("-paid_at").first(),
         "last_failed": Order.objects.filter(status=Order.STATUS_FAILED).exclude(error="").order_by("-created_at").first(),
-        "callback_url": request.build_absolute_uri(reverse("billing-callback")),
-        "last_change": AdminAction.objects.filter(action="gateway_settings").select_related("actor").first(),
+        "last_change": AdminAction.objects.filter(action__in=["gateway_settings", "gateway_edit"]).select_related("actor").first(),
+    })
+
+
+@superuser_required
+def gateway_edit(request, pk=None):
+    if pk is None:
+        kind = request.GET.get("kind") or request.POST.get("kind")
+        if kind not in GATEWAY_FIELDS or PaymentGateway.objects.filter(kind=kind).exists():
+            messages.error(request, "این درگاه را نمی‌شود افزود.")
+            return redirect("console:gateway")
+        gw = PaymentGateway(kind=kind, priority=10 * (PaymentGateway.objects.count() + 1))
+    else:
+        gw = get_object_or_404(PaymentGateway, pk=pk)
+    label, pattern, hint = GATEWAY_FIELDS[gw.kind]
+    if request.method == "POST":
+        url = reverse("console:gateway_edit", args=[gw.pk]) if gw.pk else f"{reverse('console:gateway_new')}?kind={gw.kind}"
+        if not request.user.check_password(request.POST.get("password", "")):
+            messages.error(request, "رمز حساب درست نیست؛ چیزی ذخیره نشد.")
+            return redirect(url)
+        before = _gateway_state(gw) if gw.pk else None
+        merchant = latin_digits(request.POST.get("merchant_id", "")).strip()
+        if merchant:
+            if not re.fullmatch(pattern, merchant):
+                messages.error(request, hint)
+                return redirect(url)
+            gw.merchant_id = merchant
+        elif not gw.merchant_id:
+            messages.error(request, f"{label} را وارد کنید.")
+            return redirect(url)
+        try:
+            gw.priority = max(0, min(999, int(latin_digits(request.POST.get("priority", "") or "10"))))
+        except ValueError:
+            messages.error(request, "ترتیب باید عدد باشد.")
+            return redirect(url)
+        gw.title = request.POST.get("title", "").strip()[:60]
+        gw.is_enabled = request.POST.get("is_enabled") == "on"
+        gw.sandbox = gw.kind == PaymentGateway.KIND_ZARINPAL and request.POST.get("sandbox") == "on"
+        gw.updated_by = request.user
+        gw.save()
+        services.record(request, "gateway_edit", f"{'افزودن' if before is None else 'ویرایش'} درگاه {gw.display_name}", details={
+            "before": before, "after": _gateway_state(gw),
+        })
+        messages.success(request, f"درگاه {gw.display_name} ذخیره شد.")
+        return redirect("console:gateway")
+    return render(request, "billing/console/gateway_form.html", {
+        "active": "gateway", "gw": gw, "label": label, "masked": _masked(gw.merchant_id),
+        "callback": _site_callback(gw.kind),
     })
 
 
 @superuser_required
 @require_POST
-def gateway_test(request):
-    row = BillingSettings.objects.first() or BillingSettings(gateway="zarinpal")
-    cfg = config.current()
+def gateway_toggle(request, pk):
+    gw = get_object_or_404(PaymentGateway, pk=pk)
+    gw.is_enabled = not gw.is_enabled
+    gw.updated_by = request.user
+    gw.save(update_fields=["is_enabled", "updated_by", "updated_at"])
+    services.record(request, "gateway_edit", f"درگاه {gw.display_name}: {'فعال' if gw.is_enabled else 'غیرفعال'}")
+    if not PaymentGateway.objects.filter(is_enabled=True).exists():
+        messages.warning(request, "هیچ درگاهی فعال نیست؛ تا یکی را فعال نکنید، خرید ممکن نیست.")
+    else:
+        messages.success(request, f"درگاه {gw.display_name} {'فعال' if gw.is_enabled else 'غیرفعال'} شد.")
+    return redirect("console:gateway")
+
+
+@superuser_required
+@require_POST
+def gateway_test(request, pk):
+    gw = get_object_or_404(PaymentGateway, pk=pk)
+    callback = _site_callback(gw.kind)
     try:
-        if cfg.gateway != "zarinpal":
-            raise GatewayError(f"درگاه فعلی «{cfg.gateway}» است، نه زرین‌پال.")
-        message = ZarinpalGateway().test(request.build_absolute_uri(reverse("billing-callback")))
+        if gw.kind == PaymentGateway.KIND_ZARINPAL:
+            message = ZarinpalGateway(gw.merchant_id, gw.sandbox).test(callback)
+        else:
+            message = SepGateway(gw.merchant_id).test(callback)
         ok = True
     except GatewayError as exc:
         message, ok = f"اتصال ناموفق: {exc}"[:255], False
-    row.last_test_at, row.last_test_ok, row.last_test_message = timezone.now(), ok, message
-    row.save()
-    services.record(request, "gateway_test", "آزمایش اتصال درگاه: " + ("موفق" if ok else "ناموفق"))
+    gw.last_test_at, gw.last_test_ok, gw.last_test_message = timezone.now(), ok, message
+    gw.save(update_fields=["last_test_at", "last_test_ok", "last_test_message", "updated_at"])
+    services.record(request, "gateway_test", f"آزمایش اتصال {gw.display_name}: " + ("موفق" if ok else "ناموفق"))
     (messages.success if ok else messages.error)(request, message)
+    return redirect("console:gateway")
+
+
+OUTBOUND_IP_URL = "https://api.ipify.org?format=json"
+
+
+@superuser_required
+@require_POST
+def gateway_outbound_ip(request):
+    """The address this server's calls to a gateway come from -- the one SEP
+    must have on its list. It can differ from the address the domain points
+    at, so it is asked of an outside service rather than guessed."""
+    try:
+        with urllib.request.urlopen(OUTBOUND_IP_URL, timeout=8) as response:
+            ip = json.loads(response.read().decode()).get("ip", "")
+    except (OSError, ValueError):
+        ip = ""
+    if ip:
+        caches["default"].set("billing:outbound-ip", {"ip": ip, "at": timezone.now()}, 7 * 24 * 3600)
+        messages.success(request, f"IP خروجی این سرور: {ip}")
+    else:
+        messages.error(request, "IP خروجی پیدا نشد؛ سرور به سرویس بررسی IP دسترسی ندارد. آن را از پشتیبانی ران‌فلر بپرسید.")
     return redirect("console:gateway")
 
 

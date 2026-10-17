@@ -71,14 +71,43 @@ class PurchaseFlowTests(SiteTestCase):
         order = Order.objects.get()
         self.assertEqual(order.status, Order.STATUS_PENDING)
         self.assertEqual(order.payable_toman, 200000)
-        self.assertIn("/pay/callback/", res["Location"])
-        # the gateway sends the buyer back to the callback
+        self.assertIn("/pay/callback/fake/", res["Location"])
+        # the gateway sends the buyer back to the callback, which moves on to the result page
         back = self.client.get(res["Location"].split("localhost")[-1], **HOST)
-        self.assertEqual(back.status_code, 200)
+        self.assertEqual(back.status_code, 302)
+        self.assertIn("/pay/result/", back["Location"])
+        page = self.client.get(back["Location"], **HOST)
+        self.assertContains(page, "پرداخت موفق بود")
         order.refresh_from_db()
         self.assertEqual(order.status, Order.STATUS_PAID)
         self.assertTrue(Entitlement.objects.filter(user=order.user, plan=self.plan).exists())
         self.assertContains(self.client.get("/account/", **HOST), "حرفه‌ای")
+
+    def test_a_failed_payment_offers_to_try_again(self):
+        self.sign_in()
+        res = self.client.post(f"/checkout/{self.price.pk}/", {"action": "pay"}, **HOST)
+        order = Order.objects.get()
+        page = self.client.get(f"/pay/callback/fake/?Authority={order.authority}&Status=NOK", **HOST, follow=True)
+        self.assertContains(page, "پرداخت انجام نشد")
+        self.assertContains(page, f"/checkout/{self.price.pk}/")
+        self.assertContains(page, 'href="/contact/"')
+
+    def test_the_buyer_picks_a_gateway_when_there_are_several(self):
+        from apps.billing.models import PaymentGateway
+
+        PaymentGateway.objects.create(kind="zarinpal", merchant_id="m" * 36, priority=1)
+        PaymentGateway.objects.create(kind="sep", merchant_id="21009876", priority=2, title="بانک سامان")
+        billing_config.clear_cache()
+        self.addCleanup(billing_config.clear_cache)
+        self.sign_in()
+        page = self.client.get(f"/checkout/{self.price.pk}/", **HOST)
+        self.assertContains(page, 'name="gateway" value="sep"')
+        self.assertContains(page, "بانک سامان")
+        with mock.patch("apps.billing.gateways.SepGateway.start", return_value=("https://sep.shaparak.ir/OnlinePG/SendToken?token=T1", "T1")) as start:
+            res = self.client.post(f"/checkout/{self.price.pk}/", {"action": "pay", "gateway": "sep"}, **HOST)
+        self.assertEqual(res["Location"], "https://sep.shaparak.ir/OnlinePG/SendToken?token=T1")
+        self.assertIn("/pay/callback/sep/", start.call_args.args[1])
+        self.assertEqual((Order.objects.get().gateway, Order.objects.get().authority), ("sep", "T1"))
 
     def test_discount_code_is_applied(self):
         DiscountCode.objects.create(code="OFF50", percent=50)

@@ -9,9 +9,10 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from . import services
-from .gateways import GatewayError, ZarinpalGateway
+from . import config
+from .gateways import GatewayError, SepGateway, ZarinpalGateway, start_payment
 from .jalali import format_date, month_start, to_gregorian, to_jalali
-from .models import DiscountCode, Entitlement, Feature, Order, Plan, PlanFeature, PlanPrice, UsageRecord
+from .models import DiscountCode, Entitlement, Feature, Order, PaymentGateway, Plan, PlanFeature, PlanPrice, UsageRecord
 
 User = get_user_model()
 
@@ -187,12 +188,16 @@ class PurchaseApiTests(TestCase):
         self.assertEqual(res.status_code, 201)
         order = Order.objects.get(pk=res.json()["order_id"])
         self.assertEqual(order.status, Order.STATUS_PENDING)
-        self.assertIn("/api/v1/billing/callback/?Authority=FAKE-", res.json()["payment_url"])
+        self.assertIn("/api/v1/billing/callback/fake/?Authority=FAKE-", res.json()["payment_url"])
 
-        callback = f"/api/v1/billing/callback/?Authority={order.authority}&Status=OK"
-        page = self.client.get(callback)
+        callback = f"/api/v1/billing/callback/fake/?Authority={order.authority}&Status=OK"
+        back = self.client.get(callback)
+        self.assertEqual(back.status_code, 302)
+        self.assertIn("/api/v1/billing/result/", back["Location"])
+        page = self.client.get(back["Location"])
         self.assertContains(page, "پرداخت موفق بود")
         self.assertContains(page, "https://app.example.com")
+        self.assertContains(page, f"FAKE{order.pk}")
         self.client.get(callback)  # a retried callback
         order.refresh_from_db()
         self.assertEqual(order.status, Order.STATUS_PAID)
@@ -207,11 +212,31 @@ class PurchaseApiTests(TestCase):
     def test_cancelled_payment_grants_nothing(self):
         res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk}, format="json")
         order = Order.objects.get(pk=res.json()["order_id"])
-        page = self.client.get(f"/api/v1/billing/callback/?Authority={order.authority}&Status=NOK")
+        page = self.client.get(f"/api/v1/billing/callback/fake/?Authority={order.authority}&Status=NOK", follow=True)
         self.assertContains(page, "پرداخت انجام نشد")
+        self.assertContains(page, "لغو شد")
         order.refresh_from_db()
         self.assertEqual(order.status, Order.STATUS_FAILED)
         self.assertFalse(Entitlement.objects.exists())
+
+    def test_the_callback_from_before_per_gateway_paths_still_works(self):
+        res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk}, format="json")
+        order = Order.objects.get(pk=res.json()["order_id"])
+        page = self.client.get(f"/api/v1/billing/callback/?Authority={order.authority}&Status=OK", follow=True)
+        self.assertContains(page, "پرداخت موفق بود")
+
+    def test_a_result_link_cannot_be_forged(self):
+        res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk}, format="json")
+        self.assertEqual(self.client.get(f"/api/v1/billing/result/{res.json()['order_id']}/").status_code, 404)
+
+    def test_a_payment_whose_verify_did_not_answer_is_shown_as_unknown(self):
+        res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk}, format="json")
+        order = Order.objects.get(pk=res.json()["order_id"])
+        with mock.patch("apps.billing.gateways.FakeGateway.verify", side_effect=GatewayError("down")):
+            page = self.client.get(f"/api/v1/billing/callback/fake/?Authority={order.authority}&Status=OK", follow=True)
+        self.assertContains(page, "وضعیت پرداخت هنوز روشن نیست")
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.STATUS_PENDING)
 
     def test_full_discount_skips_the_gateway_and_counts_the_use(self):
         code = DiscountCode.objects.create(code="GIFT", percent=100, max_uses=1)
@@ -232,8 +257,10 @@ class PurchaseApiTests(TestCase):
         res = self.client.post("/api/v1/billing/quote/", {"price_id": self.price.pk}, format="json")
         self.assertEqual(res.json()["code"], "PRICE_NOT_AVAILABLE")
 
-    def test_unknown_authority(self):
+    def test_unknown_authority_and_gateway(self):
         self.assertEqual(self.client.get("/api/v1/billing/callback/?Authority=nope&Status=OK").status_code, 404)
+        self.assertEqual(self.client.get("/api/v1/billing/callback/fake/?Authority=nope&Status=OK").status_code, 404)
+        self.assertEqual(self.client.get("/api/v1/billing/callback/paypal/").status_code, 404)
 
 
 def _fake_urlopen(responses):
@@ -274,6 +301,122 @@ class ZarinpalTests(TestCase):
         urlopen, _ = _fake_urlopen([{"data": [], "errors": {"code": -9, "message": "validation"}}])
         with mock.patch("urllib.request.urlopen", urlopen), self.assertRaises(GatewayError):
             ZarinpalGateway().start(self.order, "https://api/cb", description="x")
+
+
+class SepTests(TestCase):
+    def setUp(self):
+        config.clear_cache()
+        self.addCleanup(config.clear_cache)
+        PaymentGateway.objects.create(kind="sep", merchant_id="21009876")
+        user = User.objects.create_user(username="s@example.com", password="x")
+        plan = make_plan("p", [])
+        self.order = Order.objects.create(
+            user=user, plan=plan, amount_toman=150_000, payable_toman=150_000, gateway="sep", authority="TOKEN-1",
+        )
+        self.back = {"State": "OK", "Status": "2", "RefNum": "REF-9", "ResNum": str(self.order.pk), "Token": "TOKEN-1"}
+
+    @staticmethod
+    def verified(amount=1_500_000, code=0, success=True):
+        return {
+            "TransactionDetail": {"RRN": "14000123", "RefNum": "REF-9", "MaskedPan": "621986****8080", "OrginalAmount": amount, "AffectiveAmount": amount},
+            "ResultCode": code, "ResultDescription": "", "Success": success,
+        }
+
+    def test_start_asks_for_a_token_in_rials_and_sends_the_buyer_to_sep(self):
+        urlopen, calls = _fake_urlopen([{"status": 1, "token": "TOKEN-1"}])
+        with mock.patch("urllib.request.urlopen", urlopen):
+            url, token = SepGateway().start(self.order, "https://pharmenta.ir/pay/callback/sep/", description="خرید", mobile="09120000000")
+        self.assertEqual(token, "TOKEN-1")
+        self.assertEqual(url, "https://sep.shaparak.ir/OnlinePG/SendToken?token=TOKEN-1")
+        sent = calls[0][1]
+        self.assertEqual((sent["TerminalId"], sent["Amount"], sent["ResNum"]), ("21009876", 1_500_000, str(self.order.pk)))
+        self.assertEqual(sent["RedirectUrl"], "https://pharmenta.ir/pay/callback/sep/")
+
+    def test_a_refused_token_raises(self):
+        urlopen, _ = _fake_urlopen([{"status": -1, "errorCode": "5", "errorDesc": "invalid terminal"}])
+        with mock.patch("urllib.request.urlopen", urlopen), self.assertRaises(GatewayError):
+            SepGateway().start(self.order, "https://x/cb", description="x")
+
+    def test_the_order_is_found_only_with_its_own_token(self):
+        orders = Order.objects.all()
+        self.assertEqual(SepGateway.find_order(orders, self.back), self.order)
+        self.assertIsNone(SepGateway.find_order(orders, {**self.back, "Token": "OTHER"}))
+        self.assertIsNone(SepGateway.find_order(orders, {**self.back, "ResNum": "abc"}))
+
+    def test_verify_checks_result_and_amount(self):
+        urlopen, calls = _fake_urlopen([self.verified()])
+        with mock.patch("urllib.request.urlopen", urlopen):
+            result = SepGateway().verify(self.order, self.back)
+        self.assertTrue(result.ok)
+        self.assertEqual((result.ref_id, result.card_pan, result.gateway_ref), ("14000123", "621986****8080", "REF-9"))
+        self.assertEqual(calls[0][1], {"RefNum": "REF-9", "TerminalNumber": 21009876})
+
+    def test_a_short_payment_is_reversed(self):
+        urlopen, calls = _fake_urlopen([self.verified(amount=10_000), {"ResultCode": 0, "Success": True}])
+        with mock.patch("urllib.request.urlopen", urlopen):
+            result = SepGateway().verify(self.order, self.back)
+        self.assertFalse(result.ok)
+        self.assertIn("برگشت داده شد", result.message)
+        self.assertIn("ReverseTransaction", calls[1][0])
+
+    def test_rejections_explain_themselves(self):
+        urlopen, _ = _fake_urlopen([{"ResultCode": -106, "ResultDescription": "ip", "Success": False}])
+        with mock.patch("urllib.request.urlopen", urlopen):
+            self.assertIn("IP سرور", SepGateway().verify(self.order, self.back).message)
+        cancelled = SepGateway().verify(self.order, {**self.back, "State": "CanceledByUser", "Status": "1"})
+        self.assertEqual((cancelled.ok, cancelled.message), (False, "پرداخت را لغو کردید."))
+
+    def test_a_receipt_settles_one_order_only(self):
+        Order.objects.create(
+            user=self.order.user, plan=self.order.plan, amount_toman=1, payable_toman=1, gateway="sep",
+            authority="TOKEN-0", status=Order.STATUS_PAID, gateway_ref="REF-9",
+        )
+        self.assertIn("سفارش دیگری", SepGateway().verify(self.order, self.back).message)
+
+    def test_sep_posts_back_and_the_order_is_paid(self):
+        urlopen, _ = _fake_urlopen([self.verified()])
+        with mock.patch("urllib.request.urlopen", urlopen):
+            back = self.client.post("/api/v1/billing/callback/sep/", self.back)
+        self.assertEqual(back.status_code, 302)
+        self.order.refresh_from_db()
+        self.assertEqual((self.order.status, self.order.ref_id, self.order.gateway_ref), (Order.STATUS_PAID, "14000123", "REF-9"))
+        self.assertContains(self.client.get(back["Location"]), "14000123")
+
+
+class GatewayChoiceTests(TestCase):
+    def setUp(self):
+        config.clear_cache()
+        self.addCleanup(config.clear_cache)
+        user = User.objects.create_user(username="c@example.com", password="x")
+        self.order = Order.objects.create(user=user, plan=make_plan("p", []), amount_toman=1000, payable_toman=1000)
+
+    def start(self, **kw):
+        return start_payment(self.order, lambda kind: f"https://pharmenta.ir/pay/callback/{kind}/", description="x", **kw)
+
+    def test_the_next_gateway_takes_over_when_the_first_refuses(self):
+        PaymentGateway.objects.create(kind="sep", merchant_id="21009876", priority=1)
+        PaymentGateway.objects.create(kind="zarinpal", merchant_id="m" * 36, priority=2)
+        urlopen, calls = _fake_urlopen([{"status": -1, "errorCode": "-106"}, {"data": {"code": 100, "authority": "A9"}, "errors": []}])
+        with mock.patch("urllib.request.urlopen", urlopen):
+            url = self.start()
+        self.assertIn("zarinpal.com/pg/StartPay/A9", url)
+        self.order.refresh_from_db()
+        self.assertEqual((self.order.gateway, self.order.authority), ("zarinpal", "A9"))
+        self.assertIn("/pay/callback/zarinpal/", calls[1][1]["callback_url"])
+
+    def test_disabled_gateways_are_skipped_and_a_chosen_one_is_used_alone(self):
+        PaymentGateway.objects.create(kind="sep", merchant_id="21009876", priority=1, is_enabled=False)
+        PaymentGateway.objects.create(kind="zarinpal", merchant_id="m" * 36, priority=2)
+        self.assertEqual([g.kind for g in config.enabled_gateways()], ["zarinpal"])
+        urlopen, _ = _fake_urlopen([{"status": -1}])
+        with mock.patch("urllib.request.urlopen", urlopen), self.assertRaises(GatewayError):
+            self.start(kind="sep")
+
+    def test_with_no_gateway_set_up_the_environment_applies(self):
+        with self.settings(BILLING_GATEWAY="zarinpal", ZARINPAL_MERCHANT_ID="env-m", ZARINPAL_SANDBOX=False):
+            config.clear_cache()
+            (spec,) = config.current().gateways
+            self.assertEqual((spec.kind, spec.merchant_id, spec.source), ("zarinpal", "env-m", "env"))
 
 
 @override_settings(BILLING_ENFORCEMENT_ENABLED=True)

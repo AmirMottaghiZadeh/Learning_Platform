@@ -8,8 +8,9 @@ from django.utils import timezone
 from apps.accounts.models import LearnerProfile
 
 from . import config, services
+from . import gateways
 from .gateways import ZarinpalGateway
-from .models import AdminAction, BillingSettings, DiscountCode, Entitlement, Feature, Order, Plan, PlanFeature, PlanPrice
+from .models import AdminAction, BillingSettings, DiscountCode, Entitlement, Feature, Order, PaymentGateway, Plan, PlanFeature, PlanPrice
 
 User = get_user_model()
 
@@ -262,56 +263,73 @@ class DeleteUserTests(ConsoleTestCase):
 
 
 class GatewayPageTests(ConsoleTestCase):
+    MERCHANT = "11111111-2222-3333-4444-555555555555"
+
     def setUp(self):
         super().setUp()
         config.clear_cache()
-
-    def tearDown(self):
-        config.clear_cache()
+        self.addCleanup(config.clear_cache)
 
     def save(self, **fields):
-        data = {"password": "pw-123456", "sandbox": "env", "enforcement": "env", "sales_enabled": "on", "return_url": ""}
+        data = {"password": "pw-123456", "enforcement": "env", "sales_enabled": "on", "return_url": ""}
         data.update(fields)
         return self.client.post(reverse("console:gateway"), data, follow=True)
 
-    def test_page_falls_back_to_the_environment(self):
-        with self.settings(ZARINPAL_MERCHANT_ID="", BILLING_ENFORCEMENT_ENABLED=False):
+    def add(self, kind, **fields):
+        data = {"password": "pw-123456", "kind": kind, "priority": "10", "is_enabled": "on"}
+        data.update(fields)
+        return self.client.post(f"{reverse('console:gateway_new')}?kind={kind}", data, follow=True)
+
+    def test_page_falls_back_to_the_environment_and_lists_what_a_gateway_asks_for(self):
+        with self.settings(BILLING_GATEWAY="zarinpal", ZARINPAL_MERCHANT_ID="", SITE_PUBLIC_URL="https://pharmenta.ir"):
+            config.clear_cache()
             res = self.client.get(reverse("console:gateway"))
-        self.assertContains(res, "تنظیم نشده")
-        self.assertContains(res, "/api/v1/billing/callback/")
+        self.assertContains(res, "از تنظیمات سرور")
+        self.assertContains(res, "https://pharmenta.ir/pay/callback/sep/")
+        self.assertContains(res, "https://pharmenta.ir/pay/callback/zarinpal/")
+        self.assertContains(res, "443")
+        self.assertContains(res, "افزودن سامان (سپ)")
 
-    def test_wrong_password_saves_nothing(self):
-        res = self.save(password="nope", merchant_id="11111111-2222-3333-4444-555555555555")
+    def test_adding_a_gateway_needs_the_password_and_a_valid_id(self):
+        res = self.add("sep", password="nope", merchant_id="21009876")
         self.assertContains(res, "رمز حساب درست نیست")
-        self.assertFalse(BillingSettings.objects.exists())
+        self.assertContains(self.add("sep", merchant_id="abc"), "فقط رقم")
+        self.assertContains(self.add("zarinpal", merchant_id="short"), "۳۶ کاراکتری")
+        self.assertFalse(PaymentGateway.objects.exists())
 
-    def test_panel_values_override_the_environment_and_are_audited(self):
-        with self.settings(ZARINPAL_MERCHANT_ID="env-merchant", BILLING_ENFORCEMENT_ENABLED=False, ZARINPAL_SANDBOX=False):
-            self.save(merchant_id="11111111-2222-3333-4444-555555555555", sandbox="on", enforcement="on",
-                      return_url="https://app.pharmenta.ir")
+        res = self.add("sep", merchant_id="۲۱۰۰۹۸۷۶", title="بانک سامان")
+        gw = PaymentGateway.objects.get()
+        self.assertEqual((gw.kind, gw.merchant_id, gw.title, gw.is_enabled), ("sep", "21009876", "بانک سامان", True))
+        self.assertContains(res, "••••••••9876")
+        self.assertNotContains(res, "21009876")
+        self.assertEqual(AdminAction.objects.get(action="gateway_edit").details["after"]["merchant"], "••••••••9876")
+        self.assertEqual([g.kind for g in config.enabled_gateways()], ["sep"])
+        # one of each kind
+        self.add("sep", merchant_id="21009999")
+        self.assertEqual(PaymentGateway.objects.count(), 1)
+
+    def test_editing_keeps_the_saved_id_when_left_empty_and_toggling_switches_it(self):
+        self.add("zarinpal", merchant_id=self.MERCHANT, sandbox="on")
+        gw = PaymentGateway.objects.get()
+        self.assertTrue(gw.sandbox)
+        self.client.post(reverse("console:gateway_edit", args=[gw.pk]), {"password": "pw-123456", "priority": "5", "is_enabled": "on"})
+        gw.refresh_from_db()
+        self.assertEqual((gw.merchant_id, gw.priority, gw.sandbox), (self.MERCHANT, 5, False))
+        res = self.client.post(reverse("console:gateway_toggle", args=[gw.pk]), follow=True)
+        self.assertContains(res, "هیچ درگاهی فعال نیست")
+        self.assertEqual(config.enabled_gateways(), [])
+
+    def test_general_settings_are_saved_and_audited(self):
+        with self.settings(BILLING_ENFORCEMENT_ENABLED=False):
+            self.save(enforcement="on", return_url="https://app.pharmenta.ir")
             cfg = config.current()
-            self.assertEqual(cfg.merchant_id, "11111111-2222-3333-4444-555555555555")
-            self.assertTrue(cfg.sandbox)
             self.assertTrue(cfg.enforcement)
             self.assertEqual(cfg.return_url, "https://app.pharmenta.ir")
-            self.assertEqual(cfg.sources["merchant_id"], "panel")
-            res = self.client.get(reverse("console:gateway"))
-            self.assertContains(res, "••••••••5555")
-            self.assertNotContains(res, "11111111-2222")
-            action = AdminAction.objects.get(action="gateway_settings")
-            self.assertEqual(action.details["after"]["merchant"], "••••••••5555")
-
-            # Leaving the field empty keeps the saved id; clearing falls back to the environment.
-            self.save(sandbox="env", enforcement="env")
-            self.assertEqual(config.current().merchant_id, "11111111-2222-3333-4444-555555555555")
+            self.assertEqual(AdminAction.objects.get(action="gateway_settings").details["after"]["enforcement"], True)
+            self.save()
             self.assertFalse(config.current().enforcement)
-            self.save(clear_merchant="on")
-            self.assertEqual(config.current().merchant_id, "env-merchant")
-
-    def test_bad_merchant_and_return_url_are_refused(self):
-        self.assertContains(self.save(merchant_id="short"), "۳۶ کاراکتری")
         self.assertContains(self.save(return_url="ftp://x"), "https://")
-        self.assertFalse(BillingSettings.objects.exists())
+        self.assertContains(self.save(password="nope"), "رمز حساب درست نیست")
 
     def test_paused_sales_refuse_checkout(self):
         self.save(sales_enabled="")
@@ -323,13 +341,35 @@ class GatewayPageTests(ConsoleTestCase):
         self.assertEqual(res.status_code, 503)
         self.assertEqual(res.json()["code"], "SALES_PAUSED")
 
-    def test_connection_test_records_the_result(self):
-        self.save(merchant_id="11111111-2222-3333-4444-555555555555")
+    def test_connection_test_records_the_result_on_the_gateway(self):
+        self.add("zarinpal", merchant_id=self.MERCHANT)
+        gw = PaymentGateway.objects.get()
         with mock.patch.object(ZarinpalGateway, "_post", return_value={"data": {"code": 100, "authority": "A1"}, "errors": []}):
-            res = self.client.post(reverse("console:gateway_test"), follow=True)
+            res = self.client.post(reverse("console:gateway_test", args=[gw.pk]), follow=True)
         self.assertContains(res, "مرچنت‌کد درست است")
-        self.assertTrue(BillingSettings.objects.get().last_test_ok)
+        gw.refresh_from_db()
+        self.assertTrue(gw.last_test_ok)
         with mock.patch.object(ZarinpalGateway, "_post", return_value={"data": [], "errors": {"code": -9, "message": "merchant invalid"}}):
-            res = self.client.post(reverse("console:gateway_test"), follow=True)
+            res = self.client.post(reverse("console:gateway_test", args=[gw.pk]), follow=True)
         self.assertContains(res, "اتصال ناموفق")
-        self.assertFalse(BillingSettings.objects.get().last_test_ok)
+        gw.refresh_from_db()
+        self.assertFalse(gw.last_test_ok)
+
+    def test_sep_connection_test_names_an_unregistered_ip(self):
+        self.add("sep", merchant_id="21009876")
+        gw = PaymentGateway.objects.get()
+        with mock.patch.object(gateways, "_post_json", return_value={"status": -1, "errorCode": "-106", "errorDesc": "ip not allowed"}):
+            res = self.client.post(reverse("console:gateway_test", args=[gw.pk]), follow=True)
+        self.assertContains(res, "ip not allowed")
+        with mock.patch.object(gateways, "_post_json", return_value={"status": 1, "token": "T"}):
+            res = self.client.post(reverse("console:gateway_test", args=[gw.pk]), follow=True)
+        self.assertContains(res, "IP سرور درست است")
+
+    def test_outbound_ip_is_looked_up_and_remembered(self):
+        import io
+
+        with mock.patch("urllib.request.urlopen", return_value=io.BytesIO(b'{"ip": "185.1.2.3"}')):
+            res = self.client.post(reverse("console:gateway_outbound_ip"), follow=True)
+        self.assertContains(res, "185.1.2.3", count=2)
+
+

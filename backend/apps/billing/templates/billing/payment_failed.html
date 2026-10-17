@@ -1,0 +1,29 @@
+{% extends "billing/_payment_base.html" %}
+{% load billing_extras %}
+{% block title %}{% if order.status == "pending" %}وضعیت پرداخت روشن نیست{% else %}پرداخت ناموفق{% endif %}{% endblock %}
+{% block body_class %}failed{% endblock %}
+{% block content %}
+  {% if order.status == "pending" %}
+    <div class="badge wait" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+    <h1>وضعیت پرداخت هنوز روشن نیست</h1>
+    <div class="why wait">{{ message }}</div>
+  {% else %}
+    <div class="badge bad" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></div>
+    <h1>پرداخت انجام نشد</h1>
+    {% if message %}<div class="why">{{ message }}</div>{% endif %}
+    <p>اگر مبلغی از حساب شما کم شده، بانک حداکثر ظرف ۷۲ ساعت آن را به همان کارت برمی‌گرداند.</p>
+  {% endif %}
+  {% if order %}
+  <dl>
+    <dt>سفارش</dt><dd>{{ order.pk|fa }}</dd>
+    <dt>خرید</dt><dd>{{ order.plan.name_fa }}</dd>
+    <dt>مبلغ</dt><dd>{{ order.payable_toman|toman }}</dd>
+    <dt>زمان</dt><dd>{{ order.created_at|jdate:"time" }}</dd>
+  </dl>
+  {% endif %}
+  <div class="acts">
+    {% if retry_url and order.status == "failed" %}<a class="btn p" href="{{ retry_url }}">دوباره امتحان کنید</a>{% endif %}
+    <a class="btn{% if not retry_url or order.status != "failed" %} p{% endif %}" href="{{ return_url }}">بازگشت به فارمنتا</a>
+  </div>
+  <p class="note">مشکل حل نشد؟ با شمارهٔ سفارش از <a href="{{ site_url }}/contact/">تماس با ما</a> پیام بدهید.</p>
+{% endblock %}

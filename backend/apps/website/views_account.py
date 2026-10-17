@@ -15,7 +15,8 @@ from apps.accounts.phone import InvalidPhone, normalize_phone
 from apps.accounts.sms import mask
 from apps.billing import config as billing_config
 from apps.billing import services as billing
-from apps.billing.gateways import GatewayError, get_gateway
+from apps.billing.gateways import GatewayError, start_payment
+from apps.billing.views import callback_url
 from apps.billing.models import Order
 
 from . import services
@@ -138,6 +139,7 @@ def checkout(request, price_id):
     except billing.BillingError as exc:
         error, discount = str(exc), None
         quote = billing.quote(price, None)
+    gateways = billing_config.enabled_gateways()
     if request.method == "POST" and request.POST.get("action") == "pay" and not error:
         if not billing_config.current().sales_enabled:
             messages.error(request, "فروش موقتاً متوقف است؛ کمی بعد دوباره تلاش کنید.")
@@ -148,21 +150,23 @@ def checkout(request, price_id):
             messages.success(request, "اشتراک شما فعال شد.")
             return redirect("site:account")
         profile = getattr(request.user, "learner_profile", None)
+        kinds = [g.kind for g in gateways]
+        chosen = request.POST.get("gateway") if request.POST.get("gateway") in kinds else None
         try:
-            gateway = get_gateway()
-            url, authority = gateway.start(
-                order, request.build_absolute_uri(reverse("billing-callback")),
+            url = start_payment(
+                order, lambda kind: callback_url(request, kind), kind=chosen,
                 description=f"خرید {price.plan.name_fa} · {price.duration_label}",
                 mobile=getattr(profile, "phone", None) or "", email=request.user.email or "",
             )
         except GatewayError as exc:
             billing.mark_failed(order, str(exc))
-            messages.error(request, "درگاه پرداخت الان در دسترس نیست؛ کمی بعد دوباره امتحان کنید.")
+            messages.error(request, "درگاه پرداخت الان در دسترس نیست؛ کمی بعد دوباره امتحان کنید یا درگاه دیگری را انتخاب کنید.")
             return redirect(request.path)
-        order.gateway, order.authority = gateway.name, authority
-        order.save(update_fields=["gateway", "authority"])
         return redirect(url)
     amount, off, payable = quote
-    ctx = {"price": price, "amount": amount, "off": off, "payable": payable, "code": code if not error else "", "error": error, "nav": "plans"}
+    ctx = {
+        "price": price, "amount": amount, "off": off, "payable": payable, "code": code if not error else "",
+        "error": error, "nav": "plans", "gateways": gateways,
+    }
     ctx.update(_meta("خرید اشتراک"))
     return render(request, "website/checkout.html", ctx)
