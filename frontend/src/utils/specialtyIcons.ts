@@ -5,6 +5,8 @@ import { IconName } from "@/components/primitives/IconImage";
  * left out on purpose; their tiles keep the monogram fallback. */
 const SPECIALTY_ICONS: Record<string, IconName> = {
   // Calculator domains
+  "Addiction Medicine": "spec-addiction",
+  "Cardiac Surgery": "spec-cardiac-surgery",
   Cardiology: "spec-cardiology",
   "COVID-19": "spec-covid",
   "Critical Care": "spec-critical-care",
@@ -38,19 +40,25 @@ const SPECIALTY_ICONS: Record<string, IconName> = {
 
   // Medscape specialties (names that differ from the calculator ones)
   "Allergy Immunology": "topic-resp-allergy",
+  Anatomy: "spec-anatomy",
   Anesthesiology: "topic-cns-anesthesia",
   "Cancer Guides": "spec-oncology",
+  "Clinical Procedures": "spec-procedures",
   Dentistry: "topic-dental",
   Dermatology: "cat-dermatology",
   "Emergency Medicine": "spec-emergency",
+  Genomics: "spec-genomics",
   "Infectious Diseases": "spec-infectious",
   "Laboratory Medicine": "spec-pathology",
   Neurology: "spec-neurology",
   "Obstetrics Gynecology": "spec-obgyn",
   Pathology: "spec-pathology",
+  "Perioperative Care": "spec-perioperative",
+  "Plastic Surgery": "spec-plastic-surgery",
   Psychiatry: "spec-mental-health",
   Pulmonology: "spec-respirology",
   Radiology: "spec-imaging",
+  "Rare Diseases": "spec-rare-diseases",
   Rehabilitation: "spec-rehab",
   "Sports Medicine": "spec-physio",
   "Pediatrics Cardiac": "spec-pediatrics",
@@ -63,6 +71,8 @@ const SPECIALTY_ICONS: Record<string, IconName> = {
   Ophthalmology: "topic-sense-eye",
   "Orthopedic Surgery": "spec-orthopedics",
   Otolaryngology: "spec-ent",
+  "Thoracic Surgery": "spec-thoracic-surgery",
+  Trauma: "spec-trauma",
 };
 
 export function specialtyIcon(name: string): IconName | null {
