@@ -74,8 +74,8 @@ class Command(BaseCommand):
         if not Page.objects.exists():
             Page.objects.create(title="دربارهٔ ما", slug="about", body_html=page_texts.ABOUT, status=Page.PUBLISHED)
             Page.objects.create(title="تماس با ما", slug="contact", kind=Page.KIND_CONTACT, body_html=page_texts.CONTACT, status=Page.PUBLISHED)
-            Page.objects.create(title="قوانین و مقررات", slug="terms", body_html="<p>متن قوانین و مقررات را در پنل ویرایش کنید.</p>", status=Page.DRAFT)
-            Page.objects.create(title="حریم خصوصی", slug="privacy", body_html="<p>متن حریم خصوصی را در پنل ویرایش کنید.</p>", status=Page.DRAFT)
+            Page.objects.create(title="قوانین و مقررات", slug="terms", body_html=page_texts.TERMS.strip(), status=Page.PUBLISHED)
+            Page.objects.create(title="حریم خصوصی", slug="privacy", body_html=page_texts.PRIVACY.strip(), status=Page.PUBLISHED)
             made.append("pages")
         if not DownloadLink.objects.exists():
             DownloadLink.objects.create(store="web", label="وب‌اپ", url=settings.SITE_APP_URL, platform=AppRelease.WEB, order=100)
