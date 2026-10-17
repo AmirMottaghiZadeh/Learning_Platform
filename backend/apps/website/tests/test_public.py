@@ -173,6 +173,13 @@ class DownloadAndMachineTests(TestCase):
         row.save()
         self.assertIn("Disallow: /\n", self.client.get("/robots.txt", **HOST).content.decode())
 
+    def test_enamad_verification_file(self):
+        res = self.client.get("/11601693.txt", **HOST)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, b"")
+        self.assertEqual(res["Content-Type"], "text/plain; charset=utf-8")
+        self.assertEqual(self.client.head("/11601693.txt", **HOST).status_code, 200)
+
     def test_rss(self):
         make_post("مطلب فید", slug="feed")
         self.assertContains(self.client.get("/rss.xml", **HOST), "مطلب فید")

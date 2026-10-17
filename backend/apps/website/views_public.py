@@ -12,7 +12,7 @@ from django.http import Http404, HttpResponse, HttpResponseNotModified
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_safe
 
 from . import services
 from .models import (
@@ -306,6 +306,13 @@ def robots(request):
             body += site.robots_extra.strip() + "\n"
         body += f"\nSitemap: {services.absolute('/sitemap.xml')}\n"
     return HttpResponse(body, content_type="text/plain; charset=utf-8")
+
+
+@require_safe
+def verification_file(request):
+    """An empty file at the site root that eNamad fetches to confirm we own
+    the domain. HEAD is allowed too, in case the checker only asks for that."""
+    return HttpResponse("", content_type="text/plain; charset=utf-8")
 
 
 @require_GET

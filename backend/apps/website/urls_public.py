@@ -23,6 +23,7 @@ urlpatterns = [
     path("robots.txt", v.robots, name="robots"),
     path("sitemap.xml", v.sitemap, name="sitemap"),
     path("rss.xml", v.feed, name="feed"),
+    path("11601693.txt", v.verification_file, name="enamad"),
     # buying
     path("account/", views_account.account, name="account"),
     path("account/login/", views_account.login_phone, name="login"),
