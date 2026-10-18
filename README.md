@@ -17,6 +17,7 @@ progress dashboard, and a read-only UpToDate clinical reference.
 
 Progress and the full plan: **[PHASES.md](PHASES.md)**.
 API shapes: **[docs/api-contract.md](docs/api-contract.md)**.
+Import, export and database commands: **[docs/data-commands.md](docs/data-commands.md)**.
 
 ---
 
