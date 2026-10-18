@@ -3,8 +3,8 @@ gateway itself that they did -- the return to our callback alone proves
 nothing, since anyone can open that URL.
 
 The gateways and their merchant ids come from the console's "درگاه پرداخت"
-page, falling back to BILLING_GATEWAY / ZARINPAL_MERCHANT_ID /
-ZARINPAL_SANDBOX when none is set up there. Each gateway answers on its own
+page, falling back to the matching environment settings when none is set up
+there. Each gateway answers on its own
 callback (/pay/callback/<kind>/). "fake" approves everything and exists only
 for local development and tests.
 """
@@ -250,6 +250,111 @@ class SepGateway:
             logger.exception("sep reverse failed", extra={"ref_num": ref_num})
 
 
+class ZibalGateway:
+    """Zibal's IPG REST API.
+
+    Zibal sends the buyer back with ``trackId`` and ``success``. The callback
+    is only a hint: the payment is settled after a server-to-server verify,
+    and the amount returned by verify must match the order in Rials.
+    """
+
+    name = "zibal"
+    REQUEST_URL = "https://gateway.zibal.ir/v1/request"
+    VERIFY_URL = "https://gateway.zibal.ir/v1/verify"
+    PAY_URL = "https://gateway.zibal.ir/start"
+
+    def __init__(self, merchant_id=None, sandbox=None):
+        spec = config.gateway_spec(self.name)
+        if merchant_id is None:
+            merchant_id = spec.merchant_id if spec else (
+                getattr(settings, "ZIBAL_MERCHANT", "") or getattr(settings, "ZIBAL_MERCHANT_ID", "")
+            )
+        # Zibal uses the same API host for its test merchant. Keep the flag in
+        # the shared model for a consistent console, but do not alter URLs.
+        self.merchant_id = merchant_id
+        self.sandbox = spec.sandbox if sandbox is None and spec else bool(sandbox)
+        if not self.merchant_id:
+            raise GatewayError("ZIBAL_MERCHANT is not set.")
+
+    def _post(self, url, payload):
+        return _post_json(url, payload, "Zibal")
+
+    @staticmethod
+    def _message(body):
+        return str(body.get("message") or body.get("error") or "").strip()
+
+    @staticmethod
+    def _is_ok(body):
+        try:
+            return int(body.get("resultCode")) == 100
+        except (TypeError, ValueError):
+            return False
+
+    @staticmethod
+    def _success(value):
+        return str(value).strip().lower() in {"1", "true", "ok", "success"}
+
+    @staticmethod
+    def find_order(orders, params):
+        track_id = str(params.get("trackId") or "").strip()
+        return orders.filter(authority=track_id).first() if track_id else None
+
+    def start(self, order, callback_url, *, description, mobile="", email=""):
+        payload = {
+            "merchant": self.merchant_id,
+            "amount": order.payable_toman * 10,
+            "callbackUrl": callback_url,
+            "orderId": str(order.pk),
+            "description": description[:255],
+        }
+        if mobile:
+            payload["mobile"] = mobile
+        body = self._post(self.REQUEST_URL, payload)
+        if not self._is_ok(body) or body.get("trackId") in (None, ""):
+            raise GatewayError(self._message(body) or f"Zibal refused the request: {body}")
+        track_id = str(body["trackId"])
+        return f"{self.PAY_URL}/{urllib.parse.quote(track_id)}", track_id
+
+    def test(self, callback_url):
+        body = self._post(self.REQUEST_URL, {
+            "merchant": self.merchant_id,
+            "amount": 10_000,
+            "callbackUrl": callback_url,
+            "orderId": f"test-{uuid.uuid4().hex[:16]}",
+            "description": "آزمایش اتصال از پنل مدیریت فارمنتا",
+        })
+        if not self._is_ok(body):
+            raise GatewayError(self._message(body) or f"Zibal refused the request: {body}")
+        return "زیبال درخواست را پذیرفت؛ مرچنت درست است."
+
+    def verify(self, order, params):
+        track_id = str(params.get("trackId") or "").strip()
+        if not self._success(params.get("success")) or not track_id:
+            return Verification(False, message="پرداخت انجام نشد یا لغو شد.")
+        if order.__class__.objects.filter(gateway=self.name, gateway_ref=track_id).exclude(pk=order.pk).exists():
+            logger.warning("zibal receipt reused", extra={"order": order.pk})
+            return Verification(False, message="این رسید پرداخت پیش‌تر برای سفارش دیگری استفاده شده است.")
+        body = self._post(self.VERIFY_URL, {"merchant": self.merchant_id, "trackId": track_id})
+        if not self._is_ok(body):
+            logger.warning("zibal verify rejected", extra={"order": order.pk, "body": body})
+            return Verification(False, message=self._message(body) or "تأیید پرداخت از زیبال ناموفق بود.")
+        expected = order.payable_toman * 10
+        paid = body.get("amount")
+        try:
+            amount_matches = int(paid) == expected
+        except (TypeError, ValueError):
+            amount_matches = False
+        if not amount_matches:
+            logger.warning("zibal amount mismatch", extra={"order": order.pk, "paid": paid, "expected": expected})
+            return Verification(False, message="مبلغ پرداخت‌شده با مبلغ سفارش یکی نبود.")
+        return Verification(
+            True,
+            ref_id=str(body.get("refNumber") or body.get("trackId") or track_id),
+            card_pan=str(body.get("cardNumber") or ""),
+            gateway_ref=track_id,
+        )
+
+
 class FakeGateway:
     """Approves every payment without leaving the server. Never in production."""
 
@@ -268,7 +373,7 @@ class FakeGateway:
         return Verification(True, ref_id=f"FAKE{order.pk}", card_pan="")
 
 
-CLASSES = {"zarinpal": ZarinpalGateway, "sep": SepGateway, "fake": FakeGateway}
+CLASSES = {"zarinpal": ZarinpalGateway, "sep": SepGateway, "zibal": ZibalGateway, "fake": FakeGateway}
 
 
 def get_gateway(kind=None):
@@ -286,7 +391,9 @@ def get_gateway(kind=None):
         raise GatewayError(f"Unknown payment gateway {kind!r}.")
     if kind == "zarinpal":
         return ZarinpalGateway(spec.merchant_id, spec.sandbox)
-    return SepGateway(spec.merchant_id)
+    if kind == "sep":
+        return SepGateway(spec.merchant_id)
+    return ZibalGateway(spec.merchant_id, spec.sandbox)
 
 
 def start_payment(order, callback_for, *, kind=None, description, mobile="", email=""):

@@ -69,7 +69,7 @@ def _settings_changed(**kwargs):
     clear_cache()
 
 
-ENV_NAMES = {"zarinpal": "زرین‌پال", "fake": "آزمایشی محلی"}
+ENV_NAMES = {"zarinpal": "زرین‌پال", "sep": "سامان (سپ)", "zibal": "زیبال", "fake": "آزمایشی محلی"}
 
 
 def _gateways():
@@ -80,10 +80,14 @@ def _gateways():
             GatewaySpec(g.kind, g.display_name, g.merchant_id, g.sandbox, g.is_enabled, "panel") for g in rows
         )
     kind = settings.BILLING_GATEWAY
-    return (GatewaySpec(
-        kind, ENV_NAMES.get(kind, kind), settings.ZARINPAL_MERCHANT_ID if kind == "zarinpal" else "",
-        settings.ZARINPAL_SANDBOX, True, "env",
-    ),)
+    merchant = ""
+    sandbox = False
+    if kind == "zarinpal":
+        merchant, sandbox = settings.ZARINPAL_MERCHANT_ID, settings.ZARINPAL_SANDBOX
+    elif kind == "zibal":
+        merchant = getattr(settings, "ZIBAL_MERCHANT", "") or getattr(settings, "ZIBAL_MERCHANT_ID", "")
+        sandbox = settings.ZIBAL_SANDBOX
+    return (GatewaySpec(kind, ENV_NAMES.get(kind, kind), merchant, sandbox, True, "env"),)
 
 
 def current():

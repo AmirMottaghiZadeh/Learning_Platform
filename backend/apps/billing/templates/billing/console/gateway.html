@@ -57,7 +57,7 @@
       </div>
     {% empty %}
       <div class="flash" style="font-size:13.5px">
-        {% if env_gateway %}هنوز درگاهی در این صفحه تعریف نشده؛ فعلاً «{{ env_gateway.name }}» از تنظیمات سرور استفاده می‌شود{% if env_gateway.kind == 'zarinpal' %} (مرچنت‌کد: <span class="ltr mono">{{ env_masked|default:"تنظیم نشده" }}</span>){% endif %}. با افزودن اولین درگاه، تنظیمات این صفحه جای آن را می‌گیرد.{% else %}هیچ درگاهی تعریف نشده است.{% endif %}
+        {% if env_gateway %}هنوز درگاهی در این صفحه تعریف نشده؛ فعلاً «{{ env_gateway.name }}» از تنظیمات سرور استفاده می‌شود{% if env_gateway.kind == 'zarinpal' or env_gateway.kind == 'zibal' %} (مرچنت: <span class="ltr mono">{{ env_masked|default:"تنظیم نشده" }}</span>){% endif %}. با افزودن اولین درگاه، تنظیمات این صفحه جای آن را می‌گیرد.{% else %}هیچ درگاهی تعریف نشده است.{% endif %}
       </div>
     {% endfor %}
   </section>
@@ -65,7 +65,7 @@
   <div class="grid g2" style="align-items:start">
     <section class="card stack" style="gap:14px">
       <h2>اطلاعات لازم برای فرم درگاه</h2>
-      <span class="sub">زرین‌پال و سپ این‌ها را هنگام درخواست درگاه می‌خواهند.</span>
+      <span class="sub">زرین‌پال، سپ و زیبال این اطلاعات را هنگام درخواست درگاه می‌خواهند.</span>
       <div class="fact">
         <span class="sub">آدرس سایت</span><code class="ltr mono">{{ facts.site_url }}</code>
         {% for label, url in facts.callbacks %}<span class="sub">آدرس بازگشت {{ label }}</span><code class="ltr mono">{{ url }}</code>{% endfor %}

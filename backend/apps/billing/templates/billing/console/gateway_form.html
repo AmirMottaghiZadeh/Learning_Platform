@@ -37,6 +37,7 @@
       <span class="sub">این آدرس را در فرم درگاه بنویسید؛ دامنهٔ آن باید همان دامنه‌ای باشد که درگاه برایش ثبت می‌شود.</span>
       <code class="ltr mono" style="display:block;padding:12px;border-radius:12px;background:var(--soft);font-size:13px;word-break:break-all">{{ callback }}</code>
       {% if gw.kind == 'sep' %}<span class="sub" style="font-size:12.5px">سپ پس از پرداخت با درخواست POST به این آدرس برمی‌گردد و پرداخت باید ظرف ۳۰ دقیقه تأیید شود؛ فارمنتا این کار را خودکار انجام می‌دهد. IP خروجی سرور باید در سپ ثبت شده باشد.</span>{% endif %}
+      {% if gw.kind == 'zibal' %}<span class="sub" style="font-size:12.5px">زیبال پس از پرداخت با پارامترهای trackId و success به این آدرس برمی‌گردد؛ فارمنتا مبلغ را از API زیبال استعلام و سپس سفارش را قطعی می‌کند.</span>{% endif %}
     </section>
   </div>
 {% endblock %}

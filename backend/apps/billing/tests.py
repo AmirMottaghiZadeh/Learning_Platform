@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 
 from . import services
 from . import config
-from .gateways import GatewayError, SepGateway, ZarinpalGateway, start_payment
+from .gateways import GatewayError, SepGateway, ZibalGateway, ZarinpalGateway, start_payment
 from .jalali import format_date, month_start, to_gregorian, to_jalali
 from .models import DiscountCode, Entitlement, Feature, Order, PaymentGateway, Plan, PlanFeature, PlanPrice, UsageRecord
 
@@ -301,6 +301,46 @@ class ZarinpalTests(TestCase):
         urlopen, _ = _fake_urlopen([{"data": [], "errors": {"code": -9, "message": "validation"}}])
         with mock.patch("urllib.request.urlopen", urlopen), self.assertRaises(GatewayError):
             ZarinpalGateway().start(self.order, "https://api/cb", description="x")
+
+
+@override_settings(ZIBAL_MERCHANT="merchant-1")
+class ZibalTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="zb@example.com", password="x")
+        plan = make_plan("zibal-plan", [])
+        self.order = Order.objects.create(
+            user=user, plan=plan, amount_toman=150_000, payable_toman=150_000,
+            gateway="zibal", authority="987654",
+        )
+
+    def test_start_sends_rials_and_returns_the_pay_url(self):
+        urlopen, calls = _fake_urlopen([{"resultCode": 100, "trackId": 987654, "message": "موفق"}])
+        with mock.patch("urllib.request.urlopen", urlopen):
+            url, track_id = ZibalGateway().start(self.order, "https://api/cb", description="خرید", mobile="09120000000")
+        self.assertEqual((track_id, url), ("987654", "https://gateway.zibal.ir/start/987654"))
+        self.assertEqual(calls[0][1], {
+            "merchant": "merchant-1", "amount": 1_500_000, "callbackUrl": "https://api/cb",
+            "orderId": str(self.order.pk), "description": "خرید", "mobile": "09120000000",
+        })
+
+    def test_verify_checks_callback_and_amount(self):
+        urlopen, calls = _fake_urlopen([{
+            "resultCode": "100", "trackId": 987654, "amount": 1_500_000,
+            "cardNumber": "6037****1234", "refNumber": "REF-1",
+        }])
+        with mock.patch("urllib.request.urlopen", urlopen):
+            result = ZibalGateway().verify(self.order, {"trackId": "987654", "success": "1"})
+        self.assertTrue(result.ok)
+        self.assertEqual((result.ref_id, result.card_pan, result.gateway_ref), ("REF-1", "6037****1234", "987654"))
+        self.assertEqual(calls[0][1], {"merchant": "merchant-1", "trackId": "987654"})
+        self.assertFalse(ZibalGateway().verify(self.order, {"trackId": "987654", "success": "0"}).ok)
+
+    def test_verify_rejects_an_amount_mismatch(self):
+        urlopen, _ = _fake_urlopen([{"resultCode": 100, "trackId": 987654, "amount": 100}])
+        with mock.patch("urllib.request.urlopen", urlopen):
+            result = ZibalGateway().verify(self.order, {"trackId": "987654", "success": "1"})
+        self.assertFalse(result.ok)
+        self.assertIn("مبلغ", result.message)
 
 
 class SepTests(TestCase):

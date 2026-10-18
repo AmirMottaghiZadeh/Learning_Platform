@@ -35,7 +35,7 @@ from apps.accounts.services import (
 )
 from apps.billing import config, services
 from apps.billing import guest as guest_tools
-from apps.billing.gateways import GatewayError, SepGateway, ZarinpalGateway
+from apps.billing.gateways import GatewayError, SepGateway, ZibalGateway, ZarinpalGateway
 from apps.billing.catalog import SCOPE_TYPES, TOPIC_CATEGORY_CHOICES
 from apps.billing.jalali import fa_digits, month_start
 from apps.billing.models import (
@@ -809,6 +809,7 @@ def _tristate(value):
 GATEWAY_FIELDS = {
     PaymentGateway.KIND_ZARINPAL: ("مرچنت‌کد زرین‌پال", r"[A-Za-z0-9-]{20,64}", "مرچنت‌کد باید همان کد ۳۶ کاراکتری پنل زرین‌پال باشد."),
     PaymentGateway.KIND_SEP: ("شمارهٔ ترمینال سپ", r"\d{5,12}", "شمارهٔ ترمینال سپ باید فقط رقم باشد (همان TerminalId که سپ داده است)."),
+    PaymentGateway.KIND_ZIBAL: ("مرچنت زیبال", r"[A-Za-z0-9_-]{1,64}", "مرچنت زیبال باید فقط شامل حروف لاتین، عدد، خط تیره یا زیرخط باشد."),
 }
 
 
@@ -881,7 +882,7 @@ def gateway(request):
         "row": BillingSettings.objects.first(),
         "gateways": [(g, _masked(g.merchant_id), GATEWAY_FIELDS[g.kind][0]) for g in gateways],
         "env_gateway": current.gateways[0] if current.gateways and current.gateways[0].source == "env" else None,
-        "env_masked": _masked(settings.ZARINPAL_MERCHANT_ID),
+        "env_masked": _masked(current.gateways[0].merchant_id) if current.gateways and current.gateways[0].source == "env" else "",
         "addable": [(k, label) for k, label in PaymentGateway.KIND_CHOICES if k not in defined],
         "facts": _gateway_facts(),
         "outbound_ip": caches["default"].get("billing:outbound-ip"),
@@ -961,6 +962,8 @@ def gateway_test(request, pk):
     try:
         if gw.kind == PaymentGateway.KIND_ZARINPAL:
             message = ZarinpalGateway(gw.merchant_id, gw.sandbox).test(callback)
+        elif gw.kind == PaymentGateway.KIND_ZIBAL:
+            message = ZibalGateway(gw.merchant_id, gw.sandbox).test(callback)
         else:
             message = SepGateway(gw.merchant_id).test(callback)
         ok = True

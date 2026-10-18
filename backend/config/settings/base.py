@@ -306,6 +306,9 @@ BILLING_GATEWAY = config("BILLING_GATEWAY", default="zarinpal")
 BILLING_GATEWAY_TIMEOUT_SECONDS = config("BILLING_GATEWAY_TIMEOUT_SECONDS", default=15, cast=int)
 ZARINPAL_MERCHANT_ID = config("ZARINPAL_MERCHANT_ID", default="")
 ZARINPAL_SANDBOX = config("ZARINPAL_SANDBOX", default=False, cast=bool)
+ZIBAL_MERCHANT = config("ZIBAL_MERCHANT", default="")
+ZIBAL_MERCHANT_ID = config("ZIBAL_MERCHANT_ID", default=ZIBAL_MERCHANT)
+ZIBAL_SANDBOX = config("ZIBAL_SANDBOX", default=False, cast=bool)
 # Where the "back to the app" button on the payment result page leads.
 BILLING_RETURN_URL = config("BILLING_RETURN_URL", default="http://localhost:8081")
 

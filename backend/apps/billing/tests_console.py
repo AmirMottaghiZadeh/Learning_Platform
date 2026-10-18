@@ -9,7 +9,7 @@ from apps.accounts.models import LearnerProfile
 
 from . import config, services
 from . import gateways
-from .gateways import ZarinpalGateway
+from .gateways import ZibalGateway, ZarinpalGateway
 from .models import AdminAction, BillingSettings, DiscountCode, Entitlement, Feature, Order, PaymentGateway, Plan, PlanFeature, PlanPrice
 
 User = get_user_model()
@@ -308,6 +308,17 @@ class GatewayPageTests(ConsoleTestCase):
         self.add("sep", merchant_id="21009999")
         self.assertEqual(PaymentGateway.objects.count(), 1)
 
+    def test_zibal_can_be_added_and_tested(self):
+        res = self.add("zibal", merchant_id="merchant-1")
+        gw = PaymentGateway.objects.get()
+        self.assertEqual((gw.kind, gw.merchant_id), ("zibal", "merchant-1"))
+        self.assertContains(res, "مرچنت زیبال")
+        with mock.patch.object(ZibalGateway, "test", return_value="زیبال درخواست را پذیرفت؛ مرچنت درست است."):
+            res = self.client.post(reverse("console:gateway_test", args=[gw.pk]), follow=True)
+        self.assertContains(res, "مرچنت درست است")
+        gw.refresh_from_db()
+        self.assertTrue(gw.last_test_ok)
+
     def test_editing_keeps_the_saved_id_when_left_empty_and_toggling_switches_it(self):
         self.add("zarinpal", merchant_id=self.MERCHANT, sandbox="on")
         gw = PaymentGateway.objects.get()
@@ -371,5 +382,4 @@ class GatewayPageTests(ConsoleTestCase):
         with mock.patch("urllib.request.urlopen", return_value=io.BytesIO(b'{"ip": "185.1.2.3"}')):
             res = self.client.post(reverse("console:gateway_outbound_ip"), follow=True)
         self.assertContains(res, "185.1.2.3", count=2)
-
 

@@ -309,16 +309,21 @@ class AdminAction(models.Model):
 class PaymentGateway(models.Model):
     """A payment gateway the console has set up: at most one per kind. The
     enabled ones are offered in priority order (lowest first); with none set
-    up at all, the environment's BILLING_GATEWAY / ZARINPAL_* apply."""
+    up at all, the environment's BILLING_GATEWAY and matching gateway settings
+    apply."""
 
-    KIND_ZARINPAL, KIND_SEP = "zarinpal", "sep"
-    KIND_CHOICES = [(KIND_ZARINPAL, "زرین‌پال"), (KIND_SEP, "سامان (سپ)")]
+    KIND_ZARINPAL, KIND_SEP, KIND_ZIBAL = "zarinpal", "sep", "zibal"
+    KIND_CHOICES = [
+        (KIND_ZARINPAL, "زرین‌پال"),
+        (KIND_SEP, "سامان (سپ)"),
+        (KIND_ZIBAL, "زیبال"),
+    ]
 
     kind = models.CharField(max_length=20, choices=KIND_CHOICES, unique=True)
     title = models.CharField(max_length=60, blank=True)
     is_enabled = models.BooleanField(default=True)
     priority = models.PositiveSmallIntegerField(default=10)
-    # Zarinpal's merchant id, or SEP's terminal number.
+    # The gateway's merchant id or terminal number, depending on its kind.
     merchant_id = models.CharField(max_length=64, blank=True)
     sandbox = models.BooleanField(default=False)
     last_test_at = models.DateTimeField(null=True, blank=True)
