@@ -25,6 +25,9 @@ cd backend
 | `import_guidelines_db` | medscape | فایل `guidelines.db` را وارد می‌کند | دستی |
 | `import_diseases_db` | medscape | فایل `diseases.db` را وارد می‌کند | دستی |
 | `import_openfda` | drugs | پروفایل بالینی داروها را از پایپلاین openFDA وارد می‌کند | دستی |
+| `import_study_content` | quiz | سؤال‌ها و فلش‌کارت‌ها را از `study_content.db` پایپلاین وارد می‌کند | دستی |
+| `export_study_content_db` | quiz | بانک سؤال و فلش‌کارت‌ها را به فایل `study_content.db` قابل‌حمل می‌برد | دستی، برای انتقال |
+| `import_study_content_db` | quiz | آن فایل قابل‌حمل را روی سرور وارد می‌کند | دستی |
 | `import_calculators` | calculators | ماشین‌حساب‌ها را از خروجی پایپلاین ترجمه وارد می‌کند | دستی |
 | `import_medscape_articles` | medscape | مقاله‌های بیماری و گایدلاین را از فایل‌های JSON خام وارد می‌کند | دستی |
 | `migrate_uptodate_to_mysql` | uptodate | نسخهٔ SQLite آپ‌تودیت را به MySQL کپی می‌کند | دستی، یک بار |
@@ -249,3 +252,54 @@ python manage.py delete_guest_accounts
 
 - **آپ‌تودیت و لکسی‌کامپ:** از فایل SQLite روی دیسک خوانده می‌شوند (۲٫۷ گیگابایت و ۹۵ مگابایت) و روی سرور نیستند؛ آپ‌تودیت می‌تواند با `migrate_uptodate_to_mysql` به MySQL برود.
 - **سؤال‌ها و فلش‌کارت‌ها:** در `study_content.db` بیرون از مخزن ساخته می‌شوند و هنوز دستور ایمپورتی ندارند (`docs/study-content.md`).
+
+### `import_study_content` و جفت اکسپورت/ایمپورت سرور — سؤال و فلش‌کارت
+
+سؤال‌ها و فلش‌کارت‌ها را پایپلاین `study_content` روی لپ‌تاپ می‌سازد. مسیر کامل تا سرور سه گام است:
+
+```bash
+# ۱) روی لپ‌تاپ: از دیتابیس پایپلاین به فارمنتای محلی (یا فقط: python3 10_import_to_pharmenta.py در پوشهٔ study_content)
+python manage.py import_study_content --dry-run
+python manage.py import_study_content
+
+# ۲) روی لپ‌تاپ: فایل قابل‌حمل ساخته می‌شود (پیش‌فرض: /home/amir/Documents/pharmenta-reference-data/study_content.db)
+python manage.py export_study_content_db
+
+# ۳) روی سرور، بعد از آپلود فایل
+python manage.py import_study_content_db --source study_content.db --dry-run
+python manage.py import_study_content_db --source study_content.db
+```
+
+| دستور | گزینه | کار |
+|---|---|---|
+| `import_study_content` | `--source` | مسیر `study_content.db` پایپلاین (پیش‌فرض: `/home/amir/Documents/openfda/study_content/study_content.db`) |
+| | `--statuses` | وضعیت‌های واردشونده؛ پیش‌فرض `draft,verified,approved` |
+| | `--dry-run` | فقط گزارش، بدون نوشتن |
+| `export_study_content_db` | `--out` | پوشهٔ مقصد؛ پیش‌فرض `/home/amir/Documents/pharmenta-reference-data` |
+| `import_study_content_db` | `--source` (الزامی) | مسیر فایل خروجی `export_study_content_db` |
+| | `--dry-run` | ایمپورت کامل و برگرداندن همه |
+| | `--prune` | سؤال‌ها و فلش‌کارت‌هایی را که در فایل نیستند **پاک می‌کند** |
+
+`import_study_content` جدول‌های بانک سؤال و فلش‌کارت را **کاملاً جایگزین** می‌کند. `import_study_content_db` ردیف‌ها را اضافه یا در جا به‌روز می‌کند (سؤال‌ها با شناسهٔ پایپلاین، فلش‌کارت‌ها به‌صورت گروه «دارو، بخش، زبان»)، پس اجرای دوباره امن است. داروها با RxCUI تطبیق می‌خورند؛ داروی ناموجود روی سرور رد می‌شود و در گزارش می‌آید. کل کار در یک تراکنش است.
+
+===================================================================================================
+
+۱. دستور داخل study_content: فایل 10_import_to_pharmenta.py. هر بار که محتوای جدید ساخته شد، این را اجرا کنید:
+cd /home/amir/Documents/openfda/study_content
+python3 10_import_to_pharmenta.py                 # وارد فارمنتای محلی می‌کند
+python3 10_import_to_pharmenta.py --dry-run       # فقط گزارش، بدون نوشتن
+python3 10_import_to_pharmenta.py --statuses verified,approved   # فقط موارد بررسی‌شده
+python3 10_import_to_pharmenta.py --export        # بعدش فایل قابل‌حمل را هم می‌سازد
+این دستور backend را با virtualenv خودش اجرا می‌کند، پس نیازی نیست جای دیگری بروید. مثل دستور ایمپورت قبلی، جدول‌های سؤال و فلش‌کارت را کامل جایگزین می‌کند. توضیحش به README همان پوشه اضافه شد.
+
+۲. دستور اکسپورت در Learning Platform: export_study_content_db
+cd backend && .venv/bin/python manage.py export_study_content_db
+فایل study_content.db را در /home/amir/Documents/pharmenta-reference-data/ می‌سازد، کنار calculators.db و بقیه. همین الان یک بار اجرا کردم: ۷۸۳ سؤال و ۲۲۰۴ عبارت فلش‌کارت، حجم ۱٫۳ مگابایت. روش نوشتنش مثل export_reference_db است: اول فایل موقت، و فقط وقتی کامل شد نام اصلی می‌گیرد.
+
+۳. دستور ایمپورت برای سرور: import_study_content_db
+python manage.py import_study_content_db --source study_content.db --dry-run
+python manage.py import_study_content_db --source study_content.db
+- اجرای دوباره‌اش امن است: سؤال‌ها با شناسه‌ی پایپلاین به‌روز یا اضافه می‌شوند، و فلش‌کارت‌های هر دارو به تفکیک بخش و زبان جایگزین می‌شوند.
+- داروها با RxCUI تطبیق می‌خورند؛ داروی ناموجود روی سرور رد می‌شود و در گزارش می‌آید.
+- --prune سؤال‌ها و فلش‌کارت‌هایی را که در فایل نیستند پاک می‌کند (پیش‌فرض خاموش).
+- همه‌ی کار در یک تراکنش است؛ اگر خطا بدهد چیزی عوض نمی‌شود.

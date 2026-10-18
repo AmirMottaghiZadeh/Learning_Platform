@@ -123,3 +123,31 @@ frontend typecheck + web build on every push and PR.
 - **Web frontend** — `frontend/Dockerfile` (nginx) or GitHub Pages via
   `.github/workflows/frontend-pages.yml` (manual dispatch).
 - **Native** — `frontend/eas.json`; `eas build --platform ios|android`.
+
+
+
+هر سه کار آماده است و هر کدام را آزمایش کردم.
+
+۱. دستور داخل study_content: فایل 10_import_to_pharmenta.py. هر بار که محتوای جدید ساخته شد، این را اجرا کنید:
+cd /home/amir/Documents/openfda/study_content
+python3 10_import_to_pharmenta.py                 # وارد فارمنتای محلی می‌کند
+python3 10_import_to_pharmenta.py --dry-run       # فقط گزارش، بدون نوشتن
+python3 10_import_to_pharmenta.py --statuses verified,approved   # فقط موارد بررسی‌شده
+python3 10_import_to_pharmenta.py --export        # بعدش فایل قابل‌حمل را هم می‌سازد
+این دستور backend را با virtualenv خودش اجرا می‌کند، پس نیازی نیست جای دیگری بروید. مثل دستور ایمپورت قبلی، جدول‌های سؤال و فلش‌کارت را کامل جایگزین می‌کند. توضیحش به README همان پوشه اضافه شد.
+
+۲. دستور اکسپورت در Learning Platform: export_study_content_db
+cd backend && .venv/bin/python manage.py export_study_content_db
+فایل study_content.db را در /home/amir/Documents/pharmenta-reference-data/ می‌سازد، کنار calculators.db و بقیه. همین الان یک بار اجرا کردم: ۷۸۳ سؤال و ۲۲۰۴ عبارت فلش‌کارت، حجم ۱٫۳ مگابایت. روش نوشتنش مثل export_reference_db است: اول فایل موقت، و فقط وقتی کامل شد نام اصلی می‌گیرد.
+
+۳. دستور ایمپورت برای سرور: import_study_content_db
+python manage.py import_study_content_db --source study_content.db --dry-run
+python manage.py import_study_content_db --source study_content.db
+- اجرای دوباره‌اش امن است: سؤال‌ها با شناسه‌ی پایپلاین به‌روز یا اضافه می‌شوند، و فلش‌کارت‌های هر دارو به تفکیک بخش و زبان جایگزین می‌شوند.
+- داروها با RxCUI تطبیق می‌خورند؛ داروی ناموجود روی سرور رد می‌شود و در گزارش می‌آید.
+- --prune سؤال‌ها و فلش‌کارت‌هایی را که در فایل نیستند پاک می‌کند (پیش‌فرض خاموش).
+- همه‌ی کار در یک تراکنش است؛ اگر خطا بدهد چیزی عوض نمی‌شود.
+
+آزمایش‌ها: ایمپورت را روی دیتابیس پر (۷۸۳ به‌روزشده) و روی دیتابیس خالی (۷۸۳ و ۲۲۰۴ اضافه‌شده، مثل سرور تازه) امتحان کردم؛ هر دو در تراکنشی که برگردانده شد. هر دو دستور و روش کار در docs/data-commands.md هم ثبت شد.
+
+برای سرور یادتان باشد: قبل از ایمپورت باید دو migration جدید (quiz 0008 و flashcards 0005) روی سرور اجرا شده باشند. docker-start.sh خودش migrate را اجرا می‌کند، پس با دیپلوی بعدی اجرا می‌شوند. همه‌ی تغییرات پروژه‌ی Learning Platform هنوز commit نشده‌اند.

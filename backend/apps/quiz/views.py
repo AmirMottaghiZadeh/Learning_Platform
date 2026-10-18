@@ -41,11 +41,10 @@ def _questions_from_bank(session, picked):
             session=session,
             order=i,
             prompt_fa=bq.prompt_fa,
-            # No English bank content yet -- fall back to Persian rather
-            # than show an empty question in English mode.
-            prompt_en=bq.prompt_fa,
+            # Fall back to Persian when a bank row has no English side.
+            prompt_en=bq.prompt_en or bq.prompt_fa,
             options_fa=bq.options_fa,
-            options_en=bq.options_fa,
+            options_en=bq.options_en or bq.options_fa,
             correct_index=bq.correct_index,
             subject_slug=bq.ingredient.slug,
             field=bq.field,
@@ -259,6 +258,8 @@ def _extra_context(question, limit=2):
     the source bank row is gone (a bank rebuild) or there's nothing else."""
     if not question.bank_question_id or not question.field:
         return []
+    own = question.bank_question
+    lead = [own.explanation_fa] if own and own.explanation_fa else []
     siblings = (
         BankQuestion.objects.filter(
             ingredient_id=question.bank_question.ingredient_id, field=question.field
@@ -266,7 +267,7 @@ def _extra_context(question, limit=2):
         .exclude(pk=question.bank_question_id)
         .order_by("id")[:limit]
     )
-    return [bq.options_fa[bq.correct_index] for bq in siblings if bq.options_fa]
+    return lead + [bq.options_fa[bq.correct_index] for bq in siblings if bq.options_fa]
 
 
 class QuizFinishView(APIView):

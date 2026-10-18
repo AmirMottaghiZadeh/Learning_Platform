@@ -7,7 +7,15 @@ COUNT_CHOICES = [5, 10, 15, 20]
 
 # Bank questions come only from the five flashcard sections, built from the
 # exact facts build_flashcards extracted (apps.quiz.bank_generator).
-BANK_FIELD_CHOICES = SECTION_CHOICES
+# Question topics from the study_content pipeline that are not card sections.
+EXTRA_QUESTION_TOPICS = [
+    ("adverse_effect", "عوارض جانبی", "Adverse effects", "caution"),
+    ("class_level", "مقایسه در گروه دارویی", "Within the drug class", "info"),
+    ("pregnancy", "بارداری و شیردهی", "Pregnancy and lactation", "special"),
+    ("counseling", "مشاوره به بیمار", "Patient counseling", "info"),
+    ("monitoring", "پایش", "Monitoring", "info"),
+]
+BANK_FIELD_CHOICES = SECTION_CHOICES + [(k, en) for k, _fa, en, _t in EXTRA_QUESTION_TOPICS]
 
 # The clinical fields the bank was built from before the flashcard sections
 # -- still valid on QuizQuestion so past sessions keep their field tag.
@@ -23,6 +31,7 @@ LEGACY_FIELD_CHOICES = [
 # toneColors(), the same colors the flashcard back gives each section.
 FIELD_META = {
     **{key: (fa, tone) for key, fa, _en, tone in CARD_SECTIONS},
+    **{key: (fa, tone) for key, fa, _en, tone in EXTRA_QUESTION_TOPICS},
     "indications_and_usage": ("اندیکاسیون", "info"),
     "adverse_reactions": ("عوارض جانبی", "caution"),
     "warnings": ("هشدار", "caution"),
@@ -88,6 +97,14 @@ class BankQuestion(models.Model):
     prompt_fa = models.TextField()
     options_fa = models.JSONField(default=list)
     correct_index = models.PositiveSmallIntegerField()
+    # English side and the teaching text -- filled by import_study_content
+    # (empty for the retired rule-based rows).
+    prompt_en = models.TextField(blank=True, default="")
+    options_en = models.JSONField(default=list, blank=True)
+    explanation_fa = models.TextField(blank=True, default="")
+    explanation_en = models.TextField(blank=True, default="")
+    # study_content question id, so a re-import can find its own rows.
+    source_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     # Rule-based, not a quality guess: "hard" means every distractor was
     # drawn from an ingredient in the subject's own ATC subclass (so picking
     # the right answer takes knowing the specific fact, not just recognizing
