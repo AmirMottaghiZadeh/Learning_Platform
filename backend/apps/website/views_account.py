@@ -144,6 +144,9 @@ def checkout(request, price_id):
         if not billing_config.current().sales_enabled:
             messages.error(request, "فروش موقتاً متوقف است؛ کمی بعد دوباره تلاش کنید.")
             return redirect(request.path)
+        if not gateways:
+            messages.error(request, "هیچ درگاه پرداخت فعالی تنظیم نشده است؛ لطفاً کمی بعد دوباره تلاش کنید.")
+            return redirect(request.path)
         order = billing.create_order(request.user, price, discount)
         if order.payable_toman == 0:
             billing.mark_paid(order.pk, gateway="free")
@@ -162,11 +165,18 @@ def checkout(request, price_id):
             billing.mark_failed(order, str(exc))
             messages.error(request, "درگاه پرداخت الان در دسترس نیست؛ کمی بعد دوباره امتحان کنید یا درگاه دیگری را انتخاب کنید.")
             return redirect(request.path)
-        return redirect(url)
+        response = redirect(url)
+        # Zibal validates the merchant domain through the Referer header. The
+        # production security policy is intentionally relaxed for this one
+        # cross-origin payment navigation.
+        if order.gateway == "zibal":
+            response["Referrer-Policy"] = "origin"
+        return response
     amount, off, payable = quote
     ctx = {
         "price": price, "amount": amount, "off": off, "payable": payable, "code": code if not error else "",
         "error": error, "nav": "plans", "gateways": gateways,
+        "has_zibal": any(g.kind == "zibal" for g in gateways),
     }
     ctx.update(_meta("خرید اشتراک"))
     return render(request, "website/checkout.html", ctx)

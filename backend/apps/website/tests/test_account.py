@@ -109,6 +109,37 @@ class PurchaseFlowTests(SiteTestCase):
         self.assertIn("/pay/callback/sep/", start.call_args.args[1])
         self.assertEqual((Order.objects.get().gateway, Order.objects.get().authority), ("sep", "T1"))
 
+    def test_checkout_shows_zibal_and_redirects_with_referrer_policy(self):
+        from apps.billing.models import PaymentGateway
+
+        PaymentGateway.objects.create(kind="zibal", merchant_id="merchant-1", priority=1)
+        billing_config.clear_cache()
+        self.addCleanup(billing_config.clear_cache)
+        self.sign_in()
+        page = self.client.get(f"/checkout/{self.price.pk}/", **HOST)
+        self.assertContains(page, 'name="gateway" value="zibal"')
+        self.assertContains(page, "zibal-trust-v4.js")
+        with mock.patch(
+            "apps.billing.gateways.ZibalGateway.start",
+            return_value=("https://gateway.zibal.ir/start/123", "123"),
+        ) as start:
+            res = self.client.post(f"/checkout/{self.price.pk}/", {"action": "pay", "gateway": "zibal"}, **HOST)
+        self.assertEqual(res["Location"], "https://gateway.zibal.ir/start/123")
+        self.assertEqual(res["Referrer-Policy"], "origin")
+        self.assertIn("/pay/callback/zibal/", start.call_args.args[1])
+        self.assertEqual((Order.objects.get().gateway, Order.objects.get().authority), ("zibal", "123"))
+
+    def test_checkout_does_not_create_an_order_without_an_active_gateway(self):
+        from apps.billing.models import PaymentGateway
+
+        PaymentGateway.objects.create(kind="zibal", merchant_id="merchant-1", is_enabled=False)
+        billing_config.clear_cache()
+        self.addCleanup(billing_config.clear_cache)
+        self.sign_in()
+        res = self.client.post(f"/checkout/{self.price.pk}/", {"action": "pay"}, **HOST, follow=True)
+        self.assertContains(res, "هیچ درگاه پرداخت فعالی")
+        self.assertFalse(Order.objects.exists())
+
     def test_discount_code_is_applied(self):
         DiscountCode.objects.create(code="OFF50", percent=50)
         self.sign_in()
