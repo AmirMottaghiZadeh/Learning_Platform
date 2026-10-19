@@ -286,7 +286,10 @@ class ZibalGateway:
     @staticmethod
     def _is_ok(body):
         try:
-            return int(body.get("resultCode")) == 100
+            # Zibal's documented response key is ``result``. Accept the
+            # older ``resultCode`` spelling as well for compatible proxies.
+            code = body.get("result", body.get("resultCode"))
+            return int(code) == 100
         except (TypeError, ValueError):
             return False
 
