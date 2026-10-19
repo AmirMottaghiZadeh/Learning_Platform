@@ -43,6 +43,9 @@ services:
         value: False
       - key: DATA_QUALITY_CENTER_ENABLED
         value: False
+      # Apply the feature access and quota rules configured in /ops/.
+      - key: BILLING_ENFORCEMENT_ENABLED
+        value: True
 
       # Paste the external Postgres connection string here (e.g. from Neon).
       - key: DATABASE_URL

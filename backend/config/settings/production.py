@@ -9,6 +9,10 @@ from config.security import (
 
 DEBUG = False
 
+# Plan features and quotas must be enforced in the deployed application. The
+# console can still override this value explicitly through BillingSettings.
+BILLING_ENFORCEMENT_ENABLED = config("BILLING_ENFORCEMENT_ENABLED", default=True, cast=bool)
+
 SECRET_KEY = validate_production_secret_key(SECRET_KEY)
 CACHES = validate_production_cache(CACHES)
 

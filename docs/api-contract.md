@@ -424,7 +424,7 @@ language changed, summary longer than its source.
 
 ---
 
-## Billing — ✅ built (`apps.billing`), enforcement off by default
+## Billing — ✅ built (`apps.billing`), enforcement on in production
 
 A **plan** (`kind: "plan"`, a subscription tier) or **product** (`kind:
 "product"`, sold on its own) is a set of **features**, each optionally capped
@@ -460,7 +460,8 @@ once) and `custom` ones (enforced only once code checks the key).
   linking to `BILLING_RETURN_URL`. HTML, not JSON.
 - **GET `/billing/orders/`** — the learner's last 50 orders.
 
-With `BILLING_ENFORCEMENT_ENABLED=True`, content endpoints answer **402**:
+With billing enforcement enabled (the production default; it can also be
+controlled from the billing console), content endpoints answer **402**:
 `PREMIUM_REQUIRED` (`details.feature`) when no plan of the learner includes
 the feature or a content feature fences the content, `QUOTA_EXCEEDED`
 (`details: { feature, limit, period, used }`) when a cap is used up. A cap

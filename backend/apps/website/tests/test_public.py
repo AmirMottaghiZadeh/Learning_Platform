@@ -24,6 +24,11 @@ class HostRoutingTests(TestCase):
         res = self.client.get("/", **HOST)
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "فارمنتا")
+        self.assertContains(res, "8214551")
+
+    def test_enamad_is_only_shown_on_home(self):
+        self.assertContains(self.client.get("/", **HOST), "8214551")
+        self.assertNotContains(self.client.get("/plans/", **HOST), "8214551")
 
     def test_api_host_keeps_api(self):
         res = self.client.get("/api/v1/health/", HTTP_HOST="testserver")
