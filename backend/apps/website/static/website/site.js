@@ -2,6 +2,18 @@
   var root=document.documentElement;
   var still=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  document.querySelectorAll("[data-resend-wait]").forEach(function(button){
+    var remaining=Number(button.dataset.resendWait)||0;
+    if(remaining<=0)return;
+    button.disabled=true;
+    button.textContent="ارسال دوباره تا "+remaining.toLocaleString("fa-IR")+" ثانیه";
+    var timer=setInterval(function(){
+      remaining-=1;
+      if(remaining<=0){clearInterval(timer);button.disabled=false;button.textContent="ارسال دوبارهٔ کد"}
+      else button.textContent="ارسال دوباره تا "+remaining.toLocaleString("fa-IR")+" ثانیه";
+    },1000);
+  });
+
   // theme toggle
   var theme=document.getElementById("theme");
   if(theme)theme.addEventListener("click",function(){

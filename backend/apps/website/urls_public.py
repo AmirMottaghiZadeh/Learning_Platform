@@ -28,6 +28,7 @@ urlpatterns = [
     path("account/", views_account.account, name="account"),
     path("account/login/", views_account.login_phone, name="login"),
     path("account/code/", views_account.login_code, name="login_code"),
+    path("account/password/", views_account.set_password, name="set_password"),
     path("account/logout/", views_account.logout_view, name="logout"),
     path("checkout/<int:price_id>/", views_account.checkout, name="checkout"),
     # last: an editor-made page by its slug

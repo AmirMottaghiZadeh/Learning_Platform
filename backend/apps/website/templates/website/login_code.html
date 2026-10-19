@@ -1,10 +1,20 @@
 {% extends "website/base.html" %}
 {% block content %}
-<div class="wrap"><div class="center-card">
-  <h1>کد تأیید</h1><p class="sub">کدی که به <span dir="ltr">{{ phone }}</span> پیامک شد را وارد کنید.</p>
-  <form method="post">{% csrf_token %}
-    <div class="form-row"><label class="sr" for="code">کد</label><input class="input" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" dir="ltr" style="text-align:center;font-size:22px;letter-spacing:6px" required autofocus></div>
-    <button class="btn p block" type="submit">تأیید و ورود</button></form>
-  <p style="margin-top:14px;font-size:14px"><a href="{% url 'site:login' %}" style="color:var(--p)">تغییر شماره یا ارسال دوباره</a></p>
+<div class="wrap"><div class="center-card auth-card">
+  <h1>تأیید شمارهٔ موبایل</h1>
+  <p class="sub">کد {{ code_length }} رقمی پیامک‌شده به <b dir="ltr">{{ phone }}</b> را وارد کنید.</p>
+  <form method="post" class="auth-form auth-code">
+    {% csrf_token %}
+    {% include "website/_auth_fields.html" %}
+    <button class="btn p block" type="submit">تأیید و ادامه</button>
+  </form>
+  <div class="auth-actions">
+    <a href="{% url 'site:login' %}?mode={{ mode }}&amp;next={{ next|urlencode }}">تغییر شماره</a>
+    <form method="post">
+      {% csrf_token %}
+      <button class="auth-resend" type="submit" name="action" value="resend" data-resend-wait="{{ resend_in }}">ارسال دوبارهٔ کد</button>
+    </form>
+  </div>
+  <p class="auth-link"><a href="{% url 'site:login' %}?mode=login&amp;next={{ next|urlencode }}">بازگشت به ورود</a></p>
 </div></div>
 {% endblock %}

@@ -39,8 +39,8 @@
     <div class="grow"></div>
     <div class="acts">
       <button class="icon-btn" id="theme" type="button" aria-label="تغییر تم روشن و تیره"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 13a8 8 0 11-10-10 6.5 6.5 0 0010 10z"/></svg></button>
-      {% if request.user.is_authenticated %}<a class="btn s hide-s" href="{% url 'site:account' %}">حساب من</a>{% else %}<a class="btn s hide-s" href="{% url 'site:login' %}">ورود</a>{% endif %}
-      <a class="btn p s" href="{% url 'site:download' %}">دانلود اپ</a>
+      {% if request.user.is_authenticated %}<a class="btn s" href="{% url 'site:account' %}">حساب من</a>{% else %}<a class="btn s" href="{% url 'site:login' %}">ثبت‌نام / ورود</a>{% endif %}
+      <a class="btn p s hide-s" href="{% url 'site:download' %}">دانلود اپ</a>
       <button class="icon-btn menu-btn" id="menu" type="button" aria-label="باز کردن منو" aria-expanded="false" aria-controls="nav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     </div>
   </div>
