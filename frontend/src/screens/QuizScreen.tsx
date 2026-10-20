@@ -153,6 +153,14 @@ export function QuizScreen() {
     },
   });
 
+  const quizErrorMessage = (error: unknown, fallback: string) => {
+    if (!(error instanceof ApiError)) return fallback;
+    if (error.code === "QUOTA_EXCEEDED") return t("quizQuotaExceeded");
+    if (error.code === "PREMIUM_REQUIRED") return t("quizPremiumRequired");
+    if (error.status === 401) return t("quizLoginRequired");
+    return error.message;
+  };
+
   const finish = useMutation({
     mutationFn: () => quizApi.finish(session!.id),
     onSuccess: (r) => {
@@ -236,7 +244,7 @@ export function QuizScreen() {
               </AppText>
             ) : start.isError ? (
               <AppText weight="700" size={13} color={colors.denyLabel} center>
-                {start.error instanceof ApiError ? start.error.message : t("quizStartFailed")}
+                {quizErrorMessage(start.error, t("quizStartFailed"))}
               </AppText>
             ) : (
               <AppText muted weight="600" size={13} center>
@@ -503,7 +511,7 @@ export function QuizScreen() {
           ) : null}
           {start.isError && !insufficientData && !locked ? (
             <AppText size={11.5} weight="700" color={colors.denyLabel} style={{ marginBottom: 10, textAlign: "center" }}>
-              {start.error instanceof ApiError ? start.error.message : t("quizStartFailed")}
+              {quizErrorMessage(start.error, t("quizStartFailed"))}
             </AppText>
           ) : null}
           <Button
@@ -682,7 +690,7 @@ export function QuizScreen() {
           return (
             <Pressable
               key={i}
-              disabled={answered}
+              disabled={answered || answer.isPending}
               onPress={() => {
                 setPicked(i);
                 answer.mutate(i);
@@ -705,6 +713,12 @@ export function QuizScreen() {
           );
         })}
       </View>
+
+      {answer.isError ? (
+        <AppText color={colors.denyLabel} style={{ marginTop: spacing.md }}>
+          {quizErrorMessage(answer.error, t("quizAnswerFailed"))}
+        </AppText>
+      ) : null}
 
       {answered && answerResult.extra_context.length > 0 ? (
         <View style={{ backgroundColor: colors.softBg, borderRadius: 16, padding: 14, marginTop: 16 }}>
@@ -737,6 +751,7 @@ export function QuizScreen() {
               setIndex(index + 1);
               setPicked(null);
               setAnswerResult(null);
+              answer.reset();
             } else {
               finish.mutate();
             }

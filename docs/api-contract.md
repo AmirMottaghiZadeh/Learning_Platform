@@ -374,6 +374,17 @@ generator was retired); until then `POST /quiz/start/` answers 422
   once only — sets the score, calls `record_quiz_answers` + `record_study(
   quizzes=1, xp=score·10)`, and `bump_mistake("drug_class", …)` per wrong answer.
 
+Quiz prompts preserve the full bank text in both languages, including clinical
+scenarios longer than 300 characters. Deployments must apply quiz migration
+`0009_alter_quizquestion_prompts` to widen existing session question columns.
+
+With billing enforcement enabled, starting a quiz checks plan access; answering
+a question also checks and consumes the question allowance. A successful start
+can therefore be followed by 402 `QUOTA_EXCEEDED` on answering. Missing bearer
+credentials instead return 401 `NOT_AUTHENTICATED`. Check the response of the
+actual authenticated POST when diagnosing a 402; opening its URL directly in a
+browser does not send the app's bearer token.
+
 ### uptodate — ✅ built (Phase 6a) · read-only, no models
 
 Served straight from the bundled UpToDate SQLite snapshot

@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
+from apps.billing import config as billing_config
+from apps.billing.models import PlanFeature, UsageRecord
 from apps.drugs.models import AtcCategory, AtcCode, Ingredient, IngredientProfileSection
 from apps.progress.models import LearnerProgress, Mistake
 
@@ -57,6 +59,55 @@ class QuizApiTests(TestCase):
         q = data["questions"][0]
         self.assertEqual(len(q["options_fa"]), 4)
         self.assertNotIn("correct_index", q)
+
+    def test_start_preserves_long_bank_prompts_in_both_languages(self):
+        prompt_fa = "شرح بالینی طولانی سؤال آزمون. " * 30
+        prompt_en = "A long clinical scenario for the quiz question. " * 30
+        BankQuestion.objects.update(prompt_fa=prompt_fa, prompt_en=prompt_en)
+
+        data = self._start()
+
+        for question in data["questions"]:
+            self.assertEqual(question["prompt_fa"], prompt_fa)
+            self.assertEqual(question["prompt_en"], prompt_en)
+
+    def test_drug_quiz_preserves_long_persian_prompt_as_english_fallback(self):
+        prompt = "شرح بالینی طولانی سؤال آزمون. " * 30
+        BankQuestion.objects.filter(ingredient__slug="drug0-1000").update(
+            prompt_fa=prompt, prompt_en=""
+        )
+
+        response = self.client.post(
+            "/quiz/start/", {"ingredient_slug": "drug0-1000"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        for question in response.data["questions"]:
+            self.assertEqual(question["prompt_fa"], prompt)
+            self.assertEqual(question["prompt_en"], prompt)
+
+    def test_review_mistakes_preserves_long_prompts(self):
+        prompt_fa = "شرح بالینی طولانی سؤال آزمون. " * 30
+        prompt_en = "A long clinical scenario for the quiz question. " * 30
+        BankQuestion.objects.update(prompt_fa=prompt_fa, prompt_en=prompt_en)
+        data = self._start()
+        session = QuizSession.objects.get(pk=data["id"])
+        question = session.questions.first()
+        answer = self.client.post(
+            f"/quiz/{session.id}/answer/",
+            {"question_id": question.id, "selected_index": (question.correct_index + 1) % 4},
+            format="json",
+        )
+        self.assertEqual(answer.status_code, 200, answer.data)
+        finish = self.client.post(f"/quiz/{session.id}/finish/")
+        self.assertEqual(finish.status_code, 200, finish.data)
+
+        response = self.client.post(f"/quiz/{session.id}/review-mistakes/")
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(len(response.data["questions"]), 1)
+        self.assertEqual(response.data["questions"][0]["prompt_fa"], prompt_fa)
+        self.assertEqual(response.data["questions"][0]["prompt_en"], prompt_en)
 
     def test_answer_is_scored_server_side(self):
         data = self._start()
@@ -289,6 +340,84 @@ class QuizApiTests(TestCase):
             "tone": "info",
             "count": 5,
         }])
+
+
+@override_settings(ROOT_URLCONF="apps.quiz.urls", BILLING_ENFORCEMENT_ENABLED=True)
+class QuizAccessTests(TestCase):
+    def setUp(self):
+        billing_config.clear_cache()
+        self.addCleanup(billing_config.clear_cache)
+        _seed_atc_world()
+        self.user = get_user_model().objects.create_user(username="quiz-access", password="x")
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+    def _start_question(self):
+        response = self.client.post(
+            "/quiz/start/", {"ingredient_slug": "drug0-1000"}, format="json"
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        return QuizSession.objects.get(pk=response.data["id"]).questions.first()
+
+    def _answer(self, question):
+        return self.client.post(
+            f"/quiz/{question.session_id}/answer/",
+            {"question_id": question.pk, "selected_index": question.correct_index},
+            format="json",
+        )
+
+    def test_answer_with_billing_enforced_and_unlimited_access_succeeds(self):
+        response = self._answer(self._start_question())
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertTrue(response.data["correct"])
+
+    def test_answer_with_remaining_quota_succeeds_and_counts_question_once(self):
+        PlanFeature.objects.filter(plan__is_free=True, feature__key="quiz").update(
+            limit=1, period="day"
+        )
+        question = self._start_question()
+
+        response = self._answer(question)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(
+            UsageRecord.objects.get(user=self.user, feature_key="quiz").item_key,
+            str(question.bank_question_id),
+        )
+
+    def test_exhausted_quota_returns_402_without_recording_an_answer(self):
+        PlanFeature.objects.filter(plan__is_free=True, feature__key="quiz").update(
+            limit=0, period="day"
+        )
+        question = self._start_question()
+
+        response = self._answer(question)
+
+        self.assertEqual(response.status_code, 402, response.data)
+        self.assertEqual(response.data["code"], "QUOTA_EXCEEDED")
+        self.assertEqual(response.data["details"]["feature"], "quiz")
+        self.assertFalse(hasattr(question, "answer"))
+        self.assertFalse(UsageRecord.objects.filter(user=self.user).exists())
+
+    def test_missing_plan_access_returns_402_on_start(self):
+        PlanFeature.objects.filter(plan__is_free=True, feature__key="quiz").delete()
+
+        response = self.client.post(
+            "/quiz/start/", {"ingredient_slug": "drug0-1000"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, 402, response.data)
+        self.assertEqual(response.data["code"], "PREMIUM_REQUIRED")
+        self.assertFalse(QuizSession.objects.filter(user=self.user).exists())
+
+    def test_unauthenticated_answer_returns_401_instead_of_402(self):
+        question = self._start_question()
+        self.client.force_authenticate(user=None)
+
+        response = self._answer(question)
+
+        self.assertEqual(response.status_code, 401, response.data)
+        self.assertEqual(response.data["code"], "NOT_AUTHENTICATED")
 
 
 @override_settings(ROOT_URLCONF="apps.core.quiz_maintenance_urls")

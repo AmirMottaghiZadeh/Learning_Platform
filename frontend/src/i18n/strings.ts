@@ -79,6 +79,10 @@ export const strings = {
     quizPreviousBest: "بهترین امتیاز قبلی",
     quizSelectAnOption: "یک گزینه را انتخاب کن",
     quizStartFailed: "شروع آزمون ممکن نشد. دوباره امتحان کن.",
+    quizAnswerFailed: "ثبت پاسخ ممکن نشد. دوباره امتحان کن.",
+    quizQuotaExceeded: "سهمیهٔ سؤال‌های آزمون شما تمام شده است. سهمیه و دسترسی پلن خود را بررسی کنید.",
+    quizPremiumRequired: "پلن شما دسترسی به آزمون را ندارد. دسترسی پلن خود را بررسی کنید.",
+    quizLoginRequired: "برای ثبت پاسخ، دوباره وارد حساب کاربری شوید.",
 
 
 
@@ -394,6 +398,10 @@ export const strings = {
     quizPreviousBest: "Previous best",
     quizSelectAnOption: "Pick an option",
     quizStartFailed: "Couldn't start the quiz. Try again.",
+    quizAnswerFailed: "Couldn't save your answer. Try again.",
+    quizQuotaExceeded: "You have used your quiz question allowance. Check your plan's allowance and access.",
+    quizPremiumRequired: "Your plan does not include quizzes. Check your plan's access.",
+    quizLoginRequired: "Sign in again to save your answer.",
 
 
 

@@ -126,8 +126,9 @@ class QuizQuestion(models.Model):
         QuizSession, on_delete=models.CASCADE, related_name="questions"
     )
     order = models.PositiveSmallIntegerField()
-    prompt_fa = models.CharField(max_length=300)
-    prompt_en = models.CharField(max_length=300)
+    # Keep the complete bank prompts, including long clinical scenarios.
+    prompt_fa = models.TextField()
+    prompt_en = models.TextField()
     options_fa = models.JSONField(default=list)
     options_en = models.JSONField(default=list)
     correct_index = models.PositiveSmallIntegerField()
