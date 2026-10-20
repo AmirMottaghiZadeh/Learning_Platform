@@ -18,6 +18,8 @@ progress dashboard, and a read-only UpToDate clinical reference.
 Progress and the full plan: **[PHASES.md](PHASES.md)**.
 API shapes: **[docs/api-contract.md](docs/api-contract.md)**.
 Import, export and database commands: **[docs/data-commands.md](docs/data-commands.md)**.
+برنامهٔ سئوی حرفه‌ای، راهنمای تنظیمات گوگل و robots.txt:
+**[docs/seo-plan.fa.md](docs/seo-plan.fa.md)**.
 
 ---
 
@@ -51,6 +53,28 @@ correctness, scoring, streak/XP, review scheduling, mistake attribution.
 per screen · `navigation/Navigator.tsx` gates on auth + onboarding.
 
 ---
+
+## پنل مدیریت محتوای سایت
+
+- **پنل مدیریت:** [https://pharmenta.ir/panel/](https://pharmenta.ir/panel/)
+- **ورود مستقیم:** [https://pharmenta.ir/panel/login/](https://pharmenta.ir/panel/login/)
+- **اجرای محلی با بک‌اند روی پورت ۸۰۰۰:** [http://site.localhost:8000/panel/](http://site.localhost:8000/panel/)
+
+از این پنل می‌توانید مطالب و برگه‌ها، رسانه‌ها، منوها، محتوای صفحهٔ اصلی،
+نظرات و تنظیمات سئوی سایت را مدیریت کنید. دسترسی هر حساب به نقش آن بستگی دارد.
+برای ورود از حساب فعال مدیر (`is_superuser`) یا حسابی استفاده کنید که مدیر
+در بخش «کاربران و نقش‌ها» به آن نقش داده است. برای ساخت حساب مدیر، در محیط
+بک‌اند متصل به پایگاه‌دادهٔ موردنظر اجرا کنید:
+
+```bash
+cd backend
+python manage.py createsuperuser
+```
+
+پنل روی دامنه‌های تنظیم‌شده در `SITE_HOSTS` ارائه می‌شود؛ پیش‌فرض آن
+`pharmenta.ir,site.localhost` است. مسیرها در `backend/config/urls_site.py` و
+`backend/apps/website/panel/urls.py` تعریف شده‌اند.
+جزئیات راه‌اندازی و نقش‌ها: [docs/deploy-site.md](docs/deploy-site.md).
 
 ## Running it
 
