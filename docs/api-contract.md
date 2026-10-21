@@ -397,7 +397,9 @@ in `content.db`, section names from the `toc.db` tree. English content only
   specialty, e.g. "Cardiovascular Medicine"; `updated` is the topic's own
   "last updated" date such as "Feb 11, 2026", or ""; `snippet` is plain text
   around the first query hit in the article body, skipping the title/author
-  header). Empty `search` → `[]`.
+  header, or the body's opening when the query is absent from the preview).
+  Search matches **article titles only**, using AND across word prefixes;
+  article body text never qualifies a result. Empty `search` → `[]`.
 - **GET `/uptodate/topics/{id}/`** — `{ id, title, section, version, updated,
   contributors[], outline_html, body_html }`. 404 if the id is unknown.
 

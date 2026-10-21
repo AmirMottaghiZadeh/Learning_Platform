@@ -244,6 +244,7 @@ def _section_for(content_id: str) -> str:
 
 
 def search_topics(query: str, limit: int = 25) -> list[dict]:
+    """Find topic articles by title only; body text is read for hit previews."""
     words = _search_words(query)
     if not words:
         return []
@@ -256,8 +257,8 @@ def search_topics(query: str, limit: int = 25) -> list[dict]:
         with _mysql_conn().cursor() as cur:
             cur.execute(
                 "SELECT title, contentId, LEFT(content, %s) AS head, "
-                "MATCH(title, content) AGAINST (%s IN BOOLEAN MODE) AS relevance "
-                "FROM fts WHERE MATCH(title, content) AGAINST (%s IN BOOLEAN MODE) "
+                "MATCH(title) AGAINST (%s IN BOOLEAN MODE) AS relevance "
+                "FROM fts WHERE MATCH(title) AGAINST (%s IN BOOLEAN MODE) "
                 "AND type = %s ORDER BY relevance DESC LIMIT %s",
                 (SNIPPET_SOURCE_CHARS, match, match, TOPIC_TYPE, limit),
             )
@@ -266,7 +267,7 @@ def search_topics(query: str, limit: int = 25) -> list[dict]:
         match = " ".join(f'"{w}"*' for w in words)
         rows = _sqlite_conn("fts").execute(
             "SELECT title, contentId, substr(content, 1, ?) AS head FROM fts "
-            "WHERE fts MATCH ? AND type = ? ORDER BY rank LIMIT ?",
+            "WHERE title MATCH ? AND type = ? ORDER BY rank LIMIT ?",
             (SNIPPET_SOURCE_CHARS, match, TOPIC_TYPE, limit),
         ).fetchall()
 

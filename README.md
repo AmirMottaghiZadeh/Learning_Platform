@@ -175,3 +175,20 @@ python manage.py import_study_content_db --source study_content.db
 آزمایش‌ها: ایمپورت را روی دیتابیس پر (۷۸۳ به‌روزشده) و روی دیتابیس خالی (۷۸۳ و ۲۲۰۴ اضافه‌شده، مثل سرور تازه) امتحان کردم؛ هر دو در تراکنشی که برگردانده شد. هر دو دستور و روش کار در docs/data-commands.md هم ثبت شد.
 
 برای سرور یادتان باشد: قبل از ایمپورت باید دو migration جدید (quiz 0008 و flashcards 0005) روی سرور اجرا شده باشند. docker-start.sh خودش migrate را اجرا می‌کند، پس با دیپلوی بعدی اجرا می‌شوند. همه‌ی تغییرات پروژه‌ی Learning Platform هنوز commit نشده‌اند.
+
+
+
+
+
+
+**بیلد اندروید:**
+
+```
+eas build --platform android --profile production
+```
+
+**بیلد iOS با تنظیم فعلی:**
+
+```
+eas build --platform ios --profile production
+```

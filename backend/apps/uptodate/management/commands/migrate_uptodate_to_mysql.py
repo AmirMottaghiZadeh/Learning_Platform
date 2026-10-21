@@ -26,6 +26,7 @@ import pymysql
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from apps.uptodate.mysql_schema import ensure_title_search_index
 from apps.uptodate.services import mysql_config
 
 DEFAULT_CHECKPOINT_FILE = Path.home() / ".uptodate_mysql_migration_checkpoint.json"
@@ -49,7 +50,7 @@ CREATE TABLE IF NOT EXISTS fts (
     content LONGTEXT,
     KEY ix_fts_type (type),
     KEY ix_fts_contentId (contentId),
-    FULLTEXT KEY ft_fts_search (title, content)
+    FULLTEXT KEY ft_fts_title (title)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS content (
@@ -207,6 +208,7 @@ class Command(BaseCommand):
         with mysql_conn.cursor() as cur:
             for statement in [s.strip() for s in SCHEMA.split(";") if s.strip()]:
                 cur.execute(statement)
+        ensure_title_search_index(mysql_conn)
         mysql_conn.commit()
 
     # -- checkpointing --------------------------------------------------

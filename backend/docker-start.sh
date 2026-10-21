@@ -30,6 +30,9 @@ run() {
 }
 
 run python manage.py migrate --no-input
+# Existing MySQL mirrors need a title-only index before serving searches.
+# No-op when UpToDate uses the read-only SQLite snapshot.
+run python manage.py ensure_uptodate_search_index
 # Creates the Postgres cache table(s) when CACHE_BACKEND is the DatabaseCache
 # (the no-Redis deployment). No-op for a Redis cache.
 run python manage.py createcachetable

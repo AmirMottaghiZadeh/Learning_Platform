@@ -28,7 +28,7 @@ class TopicSearchView(APIView):
 
     @extend_schema(
         parameters=[
-            OpenApiParameter("search", str, description="Clinical topic query."),
+            OpenApiParameter("search", str, description="Topic title query (all word prefixes must match the title)."),
             OpenApiParameter("limit", int, description="Max results (default 25)."),
         ],
         responses=UptodateSearchResultSerializer(many=True),

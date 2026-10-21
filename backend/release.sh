@@ -7,6 +7,7 @@ export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-config.settings.product
 
 python manage.py check --deploy
 python manage.py migrate --no-input
+python manage.py ensure_uptodate_search_index
 python manage.py createcachetable
 python manage.py load_atc_reference
 python manage.py seed_website
