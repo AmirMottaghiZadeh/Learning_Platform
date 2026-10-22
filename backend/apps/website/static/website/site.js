@@ -82,19 +82,6 @@
     counters.forEach(function(el){co.observe(el)});
   }
 
-  // the hero phone leans toward the pointer (mouse only)
-  var fine=window.matchMedia&&matchMedia("(hover: hover) and (pointer: fine)").matches;
-  document.querySelectorAll("[data-tilt]").forEach(function(area){
-    var tilt=area.querySelector(".tilt");
-    if(!tilt||still||!fine)return;
-    var section=area.closest("section")||area;
-    section.addEventListener("mousemove",function(e){
-      var r=section.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
-      tilt.style.setProperty("--ry",(x*-16).toFixed(2)+"deg");tilt.style.setProperty("--rx",(y*10).toFixed(2)+"deg");
-    });
-    section.addEventListener("mouseleave",function(){tilt.style.setProperty("--ry","0deg");tilt.style.setProperty("--rx","0deg")});
-  });
-
   // tabs: one panel at a time; arrow keys move between tabs (right/left
   // swapped for the right-to-left page), Home/End jump to the ends
   document.querySelectorAll("[data-tabs]").forEach(function(box){
@@ -119,8 +106,46 @@
     if(tabs.length)select(0);
   });
 
-  // flashcards turn over on press
-  document.querySelectorAll(".flipc").forEach(function(card){
+  // the Leitner deck: turn the card, answer, and the card travels to its box
+  var CARDS=[
+    ["لوزارتان","Losartan","مکانیسم اثر؟","مهار گیرندهٔ آنژیوتانسین II (ARB)",1],
+    ["متفورمین","Metformin","مکانیسم اثر؟","کاهش تولید گلوکز در کبد",2],
+    ["وارفارین","Warfarin","مکانیسم اثر؟","آنتاگونیست ویتامین K",1],
+    ["سالبوتامول","Salbutamol","گروه دارویی؟","آگونیست کوتاه‌اثر گیرندهٔ β2",3],
+    ["امپرازول","Omeprazole","مکانیسم اثر؟","مهار پمپ پروتون",1],
+    ["آتورواستاتین","Atorvastatin","مکانیسم اثر؟","مهار آنزیم HMG-CoA ردوکتاز",4],
+    ["سیتالوپرام","Citalopram","گروه دارویی؟","مهارکنندهٔ انتخابی بازجذب سروتونین (SSRI)",2]
+  ];
+  document.querySelectorAll("[data-leitner]").forEach(function(box){
+    var card=box.querySelector(".lt-card"),bins=[].slice.call(box.querySelectorAll(".bin")),hint=box.querySelector(".lt-hint");
+    var counts=[3,2,1,1,0],i=0,busy=false;
+    function f(k){return card.querySelector('[data-f="'+k+'"]')}
+    function show(){
+      var c=CARDS[i%CARDS.length];card.setAttribute("aria-pressed","false");
+      f("box").textContent="جعبهٔ "+toFa(c[4])+" از ۵";f("name").textContent=c[0];f("en").textContent=c[1];f("q").textContent=c[2];f("a").textContent=c[3];
+      bins.forEach(function(b,k){b.classList.toggle("hot",k===c[4]-1)});
+    }
+    function paint(){bins.forEach(function(b,k){b.querySelector("b").textContent=toFa(counts[k])})}
     card.addEventListener("click",function(){card.setAttribute("aria-pressed",card.getAttribute("aria-pressed")==="true"?"false":"true")});
+    function next(){i++;show();if(!still&&card.animate)card.animate([{opacity:0,transform:"translateY(-24px) rotate(3deg)"},{opacity:1,transform:"none"}],{duration:420,easing:"cubic-bezier(.16,1,.3,1)"})}
+    function answer(ok){
+      if(busy)return;busy=true;
+      var c=CARDS[i%CARDS.length],from=c[4]-1,to=ok?Math.min(4,from+1):0;
+      hint.textContent=ok?(to===from?"این کارت در جعبهٔ آخر می‌ماند.":"کارت به جعبهٔ "+toFa(to+1)+" رفت و دیرتر برمی‌گردد."):"کارت به جعبهٔ ۱ برگشت و فردا دوباره می‌آید.";
+      counts[from]--;counts[to]++;c[4]=to+1;
+      if(still||!document.body.animate){paint();next();busy=false;return}
+      var a=card.getBoundingClientRect(),b=bins[to].getBoundingClientRect(),fly=document.createElement("div");
+      fly.className="lt-fly";fly.textContent=c[0];
+      fly.style.cssText="left:"+a.left+"px;top:"+a.top+"px;width:"+a.width+"px;height:"+a.height+"px;font-size:22px";
+      document.body.appendChild(fly);card.style.opacity="0";
+      var dx=b.left+b.width/2-(a.left+a.width/2),dy=b.top+b.height/2-(a.top+a.height/2),sc=Math.max(b.width/a.width,.15);
+      fly.animate([{transform:"none"},{transform:"translate("+dx+"px,"+dy+"px) scale("+sc+") rotate("+(ok?-8:8)+"deg)",opacity:.6}],{duration:650,easing:"cubic-bezier(.5,0,.2,1)"}).onfinish=function(){
+        fly.remove();paint();card.style.opacity="";
+        bins[to].animate([{transform:"scale(1)"},{transform:"scale(1.14)"},{transform:"scale(1)"}],{duration:380,easing:"cubic-bezier(.3,1.5,.5,1)"});
+        next();busy=false;
+      };
+    }
+    box.querySelectorAll("[data-ans]").forEach(function(btn){btn.addEventListener("click",function(){answer(btn.dataset.ans==="1")})});
+    show();paint();
   });
 })();

@@ -19,7 +19,7 @@
       "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/app-icon-foreground.png",
-        "backgroundColor": "#0F5C52"
+        "backgroundColor": "#FFFFFF"
       }
     },
     "web": {
@@ -37,7 +37,7 @@
         {
           "image": "./assets/icons/app-icon-foreground.png",
           "resizeMode": "contain",
-          "backgroundColor": "#0F5C52"
+          "backgroundColor": "#FFFFFF"
         }
       ]
     ],

@@ -11,6 +11,24 @@ def atc_groups():
     return [(code, names[1]) for code, names in ATC_L1.items()]
 
 
+# A feature card's title picks the app's own icon for it, so cards keep the
+# right picture when editors reorder or reword them; first match wins.
+FEATURE_ICONS = (
+    ("فلش", "edu-flashcards"), ("لایتنر", "edu-flashcards"), ("آزمون", "edu-quiz"),
+    ("ماشین", "entry-calculator"), ("محاسبه", "entry-calculator"), ("بیماری", "entry-diseases"),
+    ("راهنما", "entry-guidelines"), ("درس", "edu-lessons"), ("ATC", "edu-lessons"),
+)
+
+
+@register.filter
+def feature_icon(title):
+    """Static path of the app icon that fits a feature title, or ""."""
+    for word, name in FEATURE_ICONS:
+        if word in (title or ""):
+            return f"website/img/{name}.png"
+    return ""
+
+
 @register.simple_tag
 def nav_on(path, url):
     """True when `url` is the current section of the site."""

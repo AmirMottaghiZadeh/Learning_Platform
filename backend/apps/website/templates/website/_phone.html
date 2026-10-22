@@ -1,28 +1,61 @@
-<div class="phone" aria-hidden="true"><div class="sc">
-{% if screen == "card" %}
-<div class="ey">فلش‌کارت · جعبهٔ ۲</div><div class="prog"><i style="width:40%"></i></div>
-<div class="fcard"><small>اندیکاسیون اصلی</small><b>آپومورفین</b><small>برای دیدن پاسخ بزنید</small></div>
-<div class="bx5"><i>۱</i><i class="on">۲</i><i>۳</i><i>۴</i><i>۵</i></div>
-<div style="display:flex;gap:8px"><div class="op" style="flex:1;text-align:center">سخت بود</div><div class="op ok" style="flex:1;text-align:center">بلد بودم</div></div>
-{% elif screen == "quiz" %}
-<div class="ey">آزمون · سؤال ۴ از ۱۰</div><div class="prog"><i style="width:40%"></i></div>
-<h5 style="font-size:15px;margin-top:6px">کدام دارو آگونیست دوپامین است؟</h5>
-<div class="opts"><div class="op">carbidopa</div><div class="op ok">pramipexole</div><div class="op">selegiline</div><div class="op">entacapone</div></div>
-<div class="btnx">بعدی</div>
-{% elif screen == "dash" %}
-<div class="ey">سلام</div><h5>امروز هم مرور کنیم</h5>
-<div class="stat"><div><b>۱۲ روز</b>پیاپی</div><div><b>۸۶٪</b>دقت</div></div>
-<div class="mt" style="margin-top:6px">این هفته</div>
-<div class="bars"><i style="height:30%"></i><i style="height:55%"></i><i style="height:40%"></i><i style="height:80%"></i><i style="height:65%"></i><i style="height:35%"></i><i class="t" style="height:90%"></i></div>
-<div class="calc"><div><span>۲۰ فلش‌کارت</span><span>‹</span></div><div><span>آزمون N04</span><span>‹</span></div></div>
-{% elif screen == "calc" %}
-<div class="ey">ابزارها</div><h5>ماشین‌حساب‌های بالینی</h5>
-<div class="calc"><div><span>کلیرانس کراتینین</span><span>‹</span></div><div><span>دوز بر اساس وزن</span><span>‹</span></div><div><span>سرعت انفوزیون</span><span>‹</span></div><div><span>BMI و سطح بدن</span><span>‹</span></div></div>
+{% load static %}{% comment %}An iPhone 15 Pro drawn to scale: every length inside is in em, and one em is one
+point of the real 393 x 852 pt screen, so the device scales from one width (--w).
+screen="app" shows the web app's real first screen (light and dark captures);
+the other screens are drawn in the app's own look.{% endcomment %}
+<div class="iphone{% if screen == 'app' %} is-app{% endif %}" data-ui{% if screen == "app" %} role="img" aria-label="صفحهٔ اول وب‌اپ {{ site.site_name }} روی آیفون"{% else %} aria-hidden="true"{% endif %}>
+  <span class="ip-key ip-action"></span><span class="ip-key ip-vup"></span><span class="ip-key ip-vdn"></span><span class="ip-key ip-pwr"></span>
+  <div class="ip-body"><div class="ip-screen">
+{% if screen == "app" %}
+    <img class="shot shot-l" src="{% static 'website/img/app-home-light.webp' %}" width="786" height="1704" alt="" fetchpriority="high" decoding="async">
+    <img class="shot shot-d" src="{% static 'website/img/app-home-dark.webp' %}" width="786" height="1704" alt="" loading="lazy" decoding="async">
 {% else %}
-<div class="ey">بیماری پارکینسون</div><h5>داروهای ضدپارکینسون</h5><div class="mt">N04 · دستگاه عصبی · ۱۷ درس</div>
-<div class="gh"><span class="code">N04BC</span>آگونیست‌های دوپامین</div>
-<div class="row"><span>apomorphine</span><s class="d">✓</s></div><div class="row"><span>bromocriptine</span><s class="d">✓</s></div><div class="row"><span>pramipexole</span><s>۳</s></div><div class="row"><span>ropinirole</span><s>۴</s></div>
-<div class="gh"><span class="code">N04BD</span>مهارکننده‌های MAO-B</div>
-<div class="row"><span>rasagiline</span><s>۶</s></div><div class="row"><span>selegiline</span><s>۷</s></div>
+    <div class="sc">
+{% if screen == "card" %}
+      <div class="sc-hd"><small>فلش‌کارت · جعبهٔ ۲</small><b>مرور امروز</b><div class="sc-prog"><i style="width:40%"></i></div></div>
+      <div class="sc-body">
+        <div class="sc-fcard"><small>اندیکاسیون اصلی</small><b>آپومورفین</b><small>برای دیدن پاسخ بزنید</small></div>
+        <div class="sc-bx5"><i>۱</i><i class="on">۲</i><i>۳</i><i>۴</i><i>۵</i></div>
+        <div class="sc-two"><span>سخت بود</span><span class="ok">بلد بودم</span></div>
+      </div>
+{% elif screen == "quiz" %}
+      <div class="sc-hd"><small>آزمون · سؤال ۴ از ۱۰</small><b>داروهای ضدپارکینسون</b><div class="sc-prog"><i style="width:40%"></i></div></div>
+      <div class="sc-body">
+        <p class="sc-q">کدام دارو آگونیست دوپامین است؟</p>
+        <div class="sc-op">carbidopa</div><div class="sc-op ok">pramipexole</div><div class="sc-op">selegiline</div><div class="sc-op">entacapone</div>
+        <div class="sc-btn">بعدی</div>
+      </div>
+{% elif screen == "dash" %}
+      <div class="sc-hd"><small>سلام</small><b>امروز هم مرور کنیم</b></div>
+      <div class="sc-body">
+        <div class="sc-stat"><div><b>۱۲ روز</b>پیاپی</div><div><b>۸۶٪</b>دقت</div></div>
+        <div class="sc-card"><small>این هفته</small><div class="sc-bars"><i style="height:30%"></i><i style="height:55%"></i><i style="height:40%"></i><i style="height:80%"></i><i style="height:65%"></i><i style="height:35%"></i><i class="t" style="height:90%"></i></div></div>
+        <div class="sc-row"><span>۲۰ فلش‌کارت</span><s>‹</s></div><div class="sc-row"><span>آزمون N04</span><s>‹</s></div>
+      </div>
+{% elif screen == "calc" %}
+      <div class="sc-hd"><small>ابزارها</small><b>ماشین‌حساب‌های بالینی</b></div>
+      <div class="sc-body">
+        <div class="sc-row"><span>کلیرانس کراتینین</span><s>‹</s></div><div class="sc-row"><span>دوز بر اساس وزن</span><s>‹</s></div><div class="sc-row"><span>سرعت انفوزیون</span><s>‹</s></div><div class="sc-row"><span>BMI و سطح بدن</span><s>‹</s></div>
+      </div>
+{% else %}
+      <div class="sc-hd"><small>N04 · دستگاه عصبی · ۱۷ درس</small><b>داروهای ضدپارکینسون</b></div>
+      <div class="sc-body">
+        <div class="sc-gh"><span class="code">N04BC</span>آگونیست‌های دوپامین</div>
+        <div class="sc-row en"><span>apomorphine</span><s class="d"></s></div><div class="sc-row en"><span>bromocriptine</span><s class="d"></s></div><div class="sc-row en"><span>pramipexole</span><s>۳</s></div><div class="sc-row en"><span>ropinirole</span><s>۴</s></div>
+        <div class="sc-gh"><span class="code">N04BD</span>مهارکننده‌های MAO-B</div>
+        <div class="sc-row en"><span>rasagiline</span><s>۶</s></div><div class="sc-row en"><span>selegiline</span><s>۷</s></div>
+      </div>
 {% endif %}
-</div></div>
+      <nav class="sc-tabs">
+        <span{% if screen == "dash" or screen == "calc" %} class="on"{% endif %}><img src="{% static 'website/img/nav-home.png' %}" alt="">خانه</span>
+        <span{% if screen == "list" or not screen %} class="on"{% endif %}><img src="{% static 'website/img/nav-lessons.png' %}" alt="">درسنامه</span>
+        <span{% if screen == "card" %} class="on"{% endif %}><img src="{% static 'website/img/nav-flashcards.png' %}" alt="">فلش‌کارت</span>
+        <span{% if screen == "quiz" %} class="on"{% endif %}><img src="{% static 'website/img/nav-quiz.png' %}" alt="">آزمون</span>
+        <span><img src="{% static 'website/img/nav-profile.png' %}" alt="">پروفایل</span>
+      </nav>
+    </div>
+{% endif %}
+    <div class="ip-status" aria-hidden="true"><span class="ip-time"><span>9:41</span></span><span class="ip-icons"><svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg viewBox="0 0 16 12"><path d="M8 2.6c2.3 0 4.4.9 6 2.4l1.2-1.3A10.3 10.3 0 008 .8 10.3 10.3 0 00.8 3.7L2 5c1.6-1.5 3.7-2.4 6-2.4zm0 3.5c1.3 0 2.5.5 3.5 1.3l1.2-1.3A7 7 0 008 4.3a7 7 0 00-4.7 1.8l1.2 1.3C5.5 6.6 6.7 6.1 8 6.1zm0 3.4c.5 0 .9.2 1.2.5L8 11.4 6.8 10c.3-.3.7-.5 1.2-.5z"/></svg><svg class="ip-batt" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.6" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.2"/><path d="M25 4.3v4.4c.9-.3 1.5-1.2 1.5-2.2s-.6-1.9-1.5-2.2z" opacity=".45"/></svg></span></div>
+    <span class="ip-island" aria-hidden="true"></span>
+    <span class="ip-home" aria-hidden="true"></span>
+  </div></div>
+</div>
