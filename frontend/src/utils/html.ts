@@ -164,10 +164,21 @@ const PDI = "\u2069";
 const NUMBER_WITH_UNIT =
   /[-+\u2212]?[\d\u06F0-\u06F9]+(?:[.,\u066B][\d\u06F0-\u06F9]+)*(?:\s?(?:%|[A-Za-z\u00B5\u03BC\u00B0][\w.\u00B5\u03BC\u00B0\u00B2\u00B3\u00B7^*%-]*(?:(?:\s*\/\s*|\s)[\w.\u00B5\u03BC\u00B0\u00B2\u00B3\u00B7^*%-]+)*))?/g;
 
-/** Keeps every number with its unit reading left to right ("12.5 mg/dL")
- * inside Persian text, where the surrounding right-to-left direction would
- * otherwise put the unit on the number's left. Text with no Persian letters
- * at all is isolated as a whole. */
+// A comparison in front of the number stays with it, and so does a Latin
+// name it compares ("EDACS < 16", "≥ 10 mg"), and a range stays one piece
+// ("11%-17%"): left in the Persian direction, "EDACS < 16" came out as
+// "16 > EDACS" and a range's two ends swapped places.
+const COMPARED_NUMBER = new RegExp(
+  `(?:(?:[A-Za-z][\\w-]*\\s*)?(?:[<>\\u2264\\u2265]=?|=)\\s*)?(?:${NUMBER_WITH_UNIT.source})` +
+    `(?:\\s?[-\\u2013]\\s?(?:${NUMBER_WITH_UNIT.source}))*`,
+  "g",
+);
+
+/** Keeps every number with its unit, and a comparison in front of it,
+ * reading left to right ("12.5 mg/dL", "EDACS < 16") inside Persian text,
+ * where the surrounding right-to-left direction would otherwise put the unit
+ * on the number's left. Text with no Persian letters at all is isolated as a
+ * whole. */
 export function ltrNumbers(text: string): string {
   // A line break ends the bidi paragraph, and with it any isolate, so each
   // line is isolated on its own.
@@ -176,7 +187,7 @@ export function ltrNumbers(text: string): string {
     .map((line) =>
       !/[\u0600-\u06EF\u06FA-\u06FF]/.test(line)
         ? `${LRI}${line}${PDI}`
-        : line.replace(NUMBER_WITH_UNIT, (m) => `${LRI}${m}${PDI}`),
+        : line.replace(COMPARED_NUMBER, (m) => `${LRI}${m}${PDI}`),
     )
     .join("\n");
 }

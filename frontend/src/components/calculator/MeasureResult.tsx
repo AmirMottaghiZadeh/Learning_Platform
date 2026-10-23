@@ -6,13 +6,14 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { extractNumericValue } from "@/utils/calculatorEngine";
 import { MeasureValue, parseMeasure, valueKind } from "@/utils/calculatorModel";
 
-import { Explain, Hero, Ltr, ResultCard, ResultProps, TierBar, bandAt, tiersTones, useShown } from "./common";
+import { Explain, Hero, Interpretation, Ltr, ResultCard, ResultProps, TierBar, showTierBar, useShown, useTier } from "./common";
 
 /** A measured quantity: the number with its unit centred, a switch between
- * the units the calculator can answer in, its reference tier (named in the
- * colour of how serious it is) and the tier bar, then any explanation. */
+ * the units the calculator can answer in, its reference tier (a short name
+ * in the colour of how serious it is, a longer one in its own box) and the
+ * tier bar, then any explanation. */
 export function MeasureResult({ results, ranges, altResults }: ResultProps) {
-  const { isFa } = useLang();
+  const { isFa, t } = useLang();
   const { colors } = useTheme();
   const shown = useShown();
   const primary = results.find((r) => valueKind(r.answerText) === "numunit") ?? results.find((r) => valueKind(r.answerText) === "num") ?? results[0];
@@ -34,14 +35,24 @@ export function MeasureResult({ results, ranges, altResults }: ResultProps) {
   const range = ranges.get(primary.position);
   const value = extractNumericValue(primary.answerText ?? "");
   const useTiers = !!range && range.bands.length > 0 && value !== null && picked === 0;
-  const band = useTiers && range && value !== null ? bandAt(range.bands, value) : null;
-  const bandText = band ? (isFa ? band.textFa || band.text : band.text) : null;
-  const tone = band && range ? tiersTones(range.bands.map((b) => b.text))[range.bands.indexOf(band)] : "info";
-  const others = results.filter((r) => r.position !== primary.position).map(shown).filter((r) => r.text && r.text !== bandText);
+  const tier = useTier(useTiers ? range : undefined, value, results);
+  const label = tier?.style === "headline" ? tier.text : null;
+  const tone = tier ? tier.tone : "info";
+  const standIn = tier && tier.style !== "value" ? tier.source : null;
+  const others = results
+    .filter((r) => r.position !== primary.position && r.position !== standIn)
+    .map(shown)
+    .filter((r) => r.text && r.text !== label);
 
   return (
-    <ResultCard title={p.title} tone={tone} center>
-      <Hero value={current ? current.value : p.text} unit={current?.unit} label={bandText} tone={tone} />
+    <ResultCard title={p.title} tone={tier?.style === "callout" ? "info" : tone} center>
+      <Hero
+        value={current ? current.value : p.text}
+        unit={current?.unit}
+        caption={tier?.style === "headline" ? tier.title : null}
+        label={label}
+        tone={tone}
+      />
       {options.length > 1 ? (
         <View
           style={{
@@ -68,7 +79,10 @@ export function MeasureResult({ results, ranges, altResults }: ResultProps) {
           ))}
         </View>
       ) : null}
-      {useTiers && range && value !== null ? <TierBar value={value} range={range} isFa={isFa} /> : null}
+      {useTiers && range && value !== null && showTierBar(range) ? <TierBar value={value} range={range} active={tier?.band} isFa={isFa} /> : null}
+      {tier?.style === "callout" ? (
+        <Interpretation title={tier.title ?? t("calcInterpretation")} text={tier.text} tone={tier.tone} />
+      ) : null}
       <Explain items={others} />
     </ResultCard>
   );

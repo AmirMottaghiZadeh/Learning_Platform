@@ -14,7 +14,7 @@ import {
 } from "@/utils/calculatorEngine";
 import { isDisplayedResult, valueKind } from "@/utils/calculatorModel";
 
-import { Chip, TierBar, bandAt, tiersTones } from "../common";
+import { Chip, TierBar, showTierBar, useTier } from "../common";
 
 const num = (v: string | null | undefined) => (v === null || v === undefined || v === "" ? NaN : parseFloat(v));
 
@@ -62,24 +62,25 @@ export function useLiveScore(data: CalculatorDetail, answers: CalculatorAnswers)
     return () => clearTimeout(id);
   }, [data, primary]);
 
-  const value = useMemo(() => {
-    if (primary === null) return null;
+  const { value, rows } = useMemo(() => {
+    if (primary === null) return { value: null, rows: [] };
     const computed = computeCalculator(data.questions, data.results, filled(data, answers), { stringsFa: data.formula_strings_fa });
     const text = computed.find((r) => r.position === primary)?.answerText;
-    return text ? extractNumericValue(text) : null;
+    return { value: text ? extractNumericValue(text) : null, rows: computed };
   }, [data, answers, primary]);
 
-  return { value, range };
+  // `rows` lets the tier be read off its own row where bands meet (see bandFor).
+  return { value, range, rows };
 }
 
-/** "Score so far": the number, the tier it is in and the bar of tiers with a
- * marker, updating with every answer. */
+/** "Score so far": the number, the tier it is in (when the tier has a short
+ * name -- a sentence of interpretation waits for the result) and the bar of
+ * tiers with a marker, updating with every answer. */
 export function LiveScore({ data, answers }: { data: CalculatorDetail; answers: CalculatorAnswers }) {
   const { t, isFa } = useLang();
-  const { value, range } = useLiveScore(data, answers);
+  const { value, range, rows } = useLiveScore(data, answers);
+  const tier = useTier(range ?? undefined, value, rows);
   if (value === null) return null;
-  const band = range ? bandAt(range.bands, value) : null;
-  const tierText = band ? (isFa ? band.textFa || band.text : band.text) : null;
   return (
     <Card style={{ gap: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
@@ -98,9 +99,13 @@ export function LiveScore({ data, answers }: { data: CalculatorDetail; answers: 
             ) : null}
           </View>
         </View>
-        {tierText && range && band ? <Chip text={tierText} tone={tiersTones(range.bands.map((b) => b.text))[range.bands.indexOf(band)]} /> : null}
+        {tier?.style === "headline" ? (
+          <View style={{ maxWidth: "60%" }}>
+            <Chip text={tier.text} tone={tier.tone} />
+          </View>
+        ) : null}
       </View>
-      {range ? <TierBar value={value} range={range} isFa={isFa} showNames={false} /> : null}
+      {range && showTierBar(range) ? <TierBar value={value} range={range} active={tier?.band} isFa={isFa} showNames={false} /> : null}
     </Card>
   );
 }

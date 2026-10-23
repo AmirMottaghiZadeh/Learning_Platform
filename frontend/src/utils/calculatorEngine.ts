@@ -417,6 +417,11 @@ export interface ResultRange {
    * the gauge then falls back to one neutral arc, same as before bands
    * existed. */
   bands: ScoreBand[];
+  /** Position of the row whose output the bands are, so the result screen
+   * can show a tier under that row's own title ("Action", "Interpretation",
+   * "Mortality") and not repeat the row below it. Absent when there are no
+   * bands. */
+  source?: number;
 }
 
 // Below this many combinations, every one of them is actually evaluated --
@@ -1220,7 +1225,7 @@ function resolveRange(
       || variety > best.variety
       || (variety === best.variety && bands.length < best.range.bands.length)
     ) {
-      best = { range: { ...scale, bands }, variety };
+      best = { range: { ...scale, bands, source: candidate.position }, variety };
     }
   }
   if (best) return best.range;

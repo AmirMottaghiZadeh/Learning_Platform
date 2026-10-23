@@ -9,7 +9,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
-import { ModelInfo, resultText } from "@/utils/calculatorModel";
+import { ModelInfo, resultText, valueKind } from "@/utils/calculatorModel";
 import { Severity, severityLevels, severityOfText } from "@/utils/severity";
 import { ltrNumbers } from "@/utils/html";
 
@@ -197,13 +197,112 @@ export function Rows({ rows }: { rows: { label: string; value: string }[] }) {
   );
 }
 
-/** The band a value falls in: the last one that starts at or below it. */
-export function bandAt(bands: ScoreBand[], value: number): ScoreBand | null {
-  let hit: ScoreBand | null = null;
-  for (const b of bands) {
-    if (value >= b.from && value <= b.to) hit = b;
+const plain = (text: string) => resultText(text).replace(/\s+/g, " ").toLowerCase();
+
+/** The band a value is in. Neighbouring bands of a whole-number score share
+ * their edge (BISAP: 0 to 0 and 0 to 1), so a score on that edge is in both;
+ * then the row the bands were read from, when its output is at hand, says
+ * which one it really is (its text contains that band's, echoed score aside),
+ * and failing that the higher band is taken, as before. */
+export function bandFor(bands: ScoreBand[], value: number, sourceText?: string | null): ScoreBand | null {
+  const hits = bands.filter((b) => value >= b.from && value <= b.to);
+  if (hits.length <= 1) return hits[0] ?? null;
+  if (sourceText) {
+    const said = plain(sourceText);
+    const match = hits.find((b) => {
+      const own = plain(b.text);
+      return own !== "" && (said === own || said.includes(own));
+    });
+    if (match) return match;
   }
-  return hit;
+  return hits[hits.length - 1];
+}
+
+/** A tier's wording as shown: its markup and entities ("&lt; 16") decoded,
+ * and a doubled percent sign in the source ("0.5-0.7%%") made single. */
+export function tierText(band: ScoreBand, isFa: boolean): string {
+  return resultText(isFa ? band.textFa || band.text : band.text).replace(/%{2,}/g, "%");
+}
+
+/** Whether the tier bar tells the learner anything. An open-ended scale (the
+ * result reads an unbounded input such as age) cut in two is drawn over ends
+ * made up for room, so it says no more than the tier itself does. */
+export function showTierBar(range: ResultRange): boolean {
+  if (range.bands.length === 0) return !range.minOpen && !range.maxOpen;
+  return !((range.minOpen || range.maxOpen) && range.bands.length <= 2);
+}
+
+const HEADLINE_MAX = 32;
+
+/** The tier a result falls in, ready to show:
+ * - `headline`: a short label ("Low risk"), or a number or percentage under
+ *   the title of the row it came from ("Mortality" / "0.1-0.2%"), shown
+ *   large under the result's number;
+ * - `callout`: a sentence or more, shown in its own box;
+ * - `value`: a number or percentage from a row that has no title of its
+ *   own, which means nothing on its own, so it isn't shown.
+ * `source` is the row the tier was read from; a headline or callout stands
+ * in for it, so the layout leaves it out of the list. */
+export interface Tier {
+  band: ScoreBand;
+  text: string;
+  tone: Tone;
+  style: "headline" | "callout" | "value";
+  title: string | null;
+  source: number | null;
+}
+
+export function useTier(range: ResultRange | undefined, value: number | null, results: ComputedResult[]): Tier | null {
+  const { isFa } = useLang();
+  const shown = useShown();
+  if (!range || range.bands.length === 0 || value === null) return null;
+  const row = range.source !== undefined ? results.find((r) => r.position === range.source) : undefined;
+  const band = bandFor(range.bands, value, row?.answerText);
+  if (!band) return null;
+  const text = tierText(band, isFa);
+  if (!text) return null;
+  const kind = valueKind(tierText(band, false));
+  const numeric = kind === "num" || kind === "pct" || kind === "numunit";
+  const title = row ? shown(row).title || null : null;
+  const short = text.length <= HEADLINE_MAX && !text.includes("\n");
+  return {
+    band,
+    text,
+    tone: tiersTones(range.bands.map((b) => b.text))[range.bands.indexOf(band)],
+    style: !short ? "callout" : numeric && !title ? "value" : "headline",
+    title,
+    source: row ? row.position : null,
+  };
+}
+
+/** A tier's meaning that runs to a sentence or more: in its own box, tinted
+ * by how serious it is, under the title of the row it came from, one
+ * sentence to a line. */
+export function Interpretation({ title, text, tone }: { title: string; text: string; tone: Tone }) {
+  const { colors } = useTheme();
+  const { isFa } = useLang();
+  const toneStyle = useToneStyle();
+  const t = toneStyle(tone);
+  const tinted = tone !== "info";
+  const lines = text.replace(/([.!?؟])\s+(?=\S)/g, "$1\n");
+  return (
+    <View
+      style={{
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: tinted ? t.border : colors.border,
+        backgroundColor: tinted ? t.bg : colors.softBg,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        gap: 6,
+      }}
+    >
+      <AppText weight="800" size={12.5} color={tinted ? t.label : colors.ink} style={{ writingDirection: isFa ? "rtl" : "ltr" }}>
+        {title}
+      </AppText>
+      <RichLines text={lines} />
+    </View>
+  );
 }
 
 function fmt(v: number) {
@@ -220,11 +319,14 @@ function fmt(v: number) {
 export function TierBar({
   value,
   range,
+  active: activeBand,
   showNames = true,
   isFa,
 }: {
   value: number;
   range: Pick<ResultRange, "min" | "max" | "minOpen" | "maxOpen" | "bands">;
+  /** The band to highlight when the layout already knows it (see bandFor). */
+  active?: ScoreBand | null;
   showNames?: boolean;
   isFa: boolean;
 }) {
@@ -234,9 +336,9 @@ export function TierBar({
   const bandTones = tiersTones(bands.map((b) => b.text));
   const span = max - min || 1;
   const pct = (v: number) => `${Math.max(0, Math.min(100, ((v - min) / span) * 100))}%` as const;
-  const active = bandAt(bands, value);
-  const names = showNames && bands.length > 0 && bands.length <= 4 && bands.every((b) => (isFa ? b.textFa || b.text : b.text).length <= 26);
-  const boundaries = bands.length > 0 ? bands.slice(1).map((b) => b.from) : [];
+  const active = activeBand ?? bandFor(bands, value);
+  const names = showNames && bands.length > 0 && bands.length <= 4 && bands.every((b) => tierText(b, isFa).length <= 26);
+  const boundaries = [...new Set(bands.slice(1).map((b) => b.from))].filter((v) => v > min && v < max);
   return (
     <View style={{ gap: 4, direction: "ltr" }}>
       <View style={{ height: 22, justifyContent: "flex-end" }}>
@@ -303,7 +405,7 @@ export function TierBar({
                   numberOfLines={2}
                   style={{ lineHeight: 15, writingDirection: isFa ? "rtl" : "ltr" }}
                 >
-                  {(isFa ? b.textFa || b.text : b.text).replace(/\s+/g, " ")}
+                  {tierText(b, isFa).replace(/\s+/g, " ")}
                 </AppText>
               </View>
             );
@@ -461,6 +563,7 @@ export function Hero({
   value,
   unit,
   suffix,
+  caption,
   label,
   tone = "info",
   size = 46,
@@ -468,6 +571,8 @@ export function Hero({
   value?: string;
   unit?: string;
   suffix?: string;
+  /** What the label answers ("Action", "Risk group"), small above it. */
+  caption?: string | null;
   label?: string | null;
   tone?: Tone;
   size?: number;
@@ -495,6 +600,11 @@ export function Hero({
             </AppText>
           ) : null}
         </View>
+      ) : null}
+      {label && caption ? (
+        <AppText weight="700" size={12} muted center style={{ writingDirection: isFa ? "rtl" : "ltr" }}>
+          {caption}
+        </AppText>
       ) : null}
       {label ? (
         <AppText weight="900" size={21} color={color} center style={{ lineHeight: 32, writingDirection: isFa ? "rtl" : "ltr" }}>
