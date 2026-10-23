@@ -6,8 +6,8 @@
   <div class="art">
     <article class="dn-drug">
       <a class="pill" href="{% url 'site:drugs' %}#{{ category.code|lower }}">{{ subgroup.name }}</a>
-      <h1>{{ name_fa }} <span class="en" dir="ltr">{{ name_en }}</span></h1>
-      <p class="dn-intro">{{ name_fa }} ({{ name_en }}) دارویی از گروه <b>{{ subgroup.name }}</b> در دستهٔ {{ category.name }} است{% if atc_codes %}؛ کد ATC: <span dir="ltr">{{ atc_codes|join:", " }}</span>{% endif %}.</p>
+      <h1>{{ name_fa }}{% if has_fa %} <span class="en" dir="ltr">{{ name_en }}</span>{% endif %}</h1>
+      <p class="dn-intro">{{ both }} دارویی از گروه <b>{{ subgroup.name }}</b> در دستهٔ {{ category.name }} است{% if atc_codes %}؛ کد ATC: <span dir="ltr">{{ atc_codes|join:", " }}</span>{% endif %}.</p>
       <div class="meta"><span>{{ editorial }}</span><span>منبع: برچسب رسمی دارو (FDA)</span><span>به‌روزرسانی {{ updated|jdate:"long" }}</span></div>
 
       {% for s in sections %}

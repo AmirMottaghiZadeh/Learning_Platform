@@ -15,7 +15,7 @@
     {% for s in g.subgroups %}
     <div class="dn-sub" data-drug-group>
       <h3>{{ s.name }} <span dir="ltr">{{ s.code }}</span></h3>
-      <ul class="dn-list">{% for d in s.drugs %}<li data-drug-name="{{ d.name_fa }} {{ d.name }}"><a href="{% url 'site:drug' d.slug %}"><b>{{ d.name_fa }}</b><span dir="ltr">{{ d.name }}</span></a></li>{% endfor %}</ul>
+      <ul class="dn-list">{% for d in s.drugs %}<li data-drug-name="{{ d.name_fa }} {{ d.name }}"><a href="{% url 'site:drug' d.slug %}"><b>{{ d.name_fa }}</b>{% if d.name_fa|lower != d.name|lower %}<span dir="ltr">{{ d.name }}</span>{% endif %}</a></li>{% endfor %}</ul>
     </div>
     {% endfor %}
   </section>

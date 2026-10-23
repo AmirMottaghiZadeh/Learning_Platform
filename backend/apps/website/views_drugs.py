@@ -55,6 +55,11 @@ POPULAR = [
 FA_ORDER = "آابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی"
 
 
+def english_name(name):
+    """"amoxicillin" -> "Amoxicillin"."""
+    return name[:1].upper() + name[1:]
+
+
 def fa_key(text):
     """Sort key in Persian alphabetical order (Unicode puts پ چ ژ گ after ی)."""
     folded = text.replace("ي", "ی").replace("ك", "ک").replace("‌", "")
@@ -164,7 +169,7 @@ def _build_catalog():
         entries.append({
             "slug": ingredient.slug,
             "name": ingredient.name,
-            "name_fa": ingredient.name_fa or ingredient.name,
+            "name_fa": ingredient.name_fa or english_name(ingredient.name),
             "code": _group_code(ingredient),
             "updated": max(s["updated"] for s in shown),
         })
@@ -272,20 +277,23 @@ def drug_detail(request, slug):
     related = [e for e in entries if e["code"][:5] == code[:5] and e["slug"] != ingredient.slug]
     if len(related) < 4:
         related += [e for e in entries if e["code"][:3] == code[:3] and e["code"][:5] != code[:5]][: 6 - len(related)]
-    name_fa = ingredient.name_fa or ingredient.name
-    name_en = ingredient.name[:1].upper() + ingredient.name[1:]
+    name_en = english_name(ingredient.name)
+    # Without a Persian name the page names the drug once, in English.
+    name_fa = ingredient.name_fa or name_en
+    both = f"{name_fa} ({name_en})" if ingredient.name_fa else name_en
     updated = max(s["updated"] for s in sections)
 
-    title = f"{name_fa} ({name_en}): مکانیسم اثر، موارد مصرف و عوارض"
+    title = f"{both}: مکانیسم اثر، موارد مصرف و عوارض"
     indication = next((s["text"] for s in sections if s["key"] == "indication"), "")
     first_uses = "، ".join(
         line.lstrip("-• ").split(":")[-1].strip() for line in indication.splitlines() if line.strip()
     )
-    description = f"{name_fa} ({name_en})، از {subgroup['name']}. موارد مصرف: {first_uses}"
+    description = f"{both}، از {subgroup['name']}. موارد مصرف: {first_uses}"
     description = (description[:150].rsplit(" ", 1)[0] + "…") if len(description) > 155 else description
 
     ctx = {
-        "drug": ingredient, "name_fa": name_fa, "name_en": name_en, "sections": sections, "in_app": in_app,
+        "drug": ingredient, "name_fa": name_fa, "name_en": name_en, "has_fa": bool(ingredient.name_fa), "both": both,
+        "sections": sections, "in_app": in_app,
         "category": category, "subgroup": subgroup, "atc_codes": sorted(a.code for a in ingredient.atc_codes.all()),
         "related": related[:8], "updated": updated, "editorial": settings.SITE_EDITORIAL_NAME, "nav": "drugs",
     }
@@ -304,11 +312,14 @@ def drug_detail(request, slug):
             "author": seo.editorial_team(),
             "publisher": {"@id": services.absolute("/#organization")},
             "audience": {"@type": "MedicalAudience", "audienceType": "Clinician"},
+            # A MedicalEntity, not a Drug: schema.org makes Drug a kind of
+            # Product too, and Google then checks the page as a product
+            # listing ("offers, review or aggregateRating should be
+            # specified") and reports every drug page as invalid.
             "about": {
-                "@type": "Drug",
+                "@type": "MedicalEntity",
                 "name": name_en,
                 "alternateName": name_fa,
-                "drugClass": {"@type": "DrugClass", "name": subgroup["name"]},
                 "code": [{"@type": "MedicalCode", "codeValue": c, "codingSystem": "ATC"} for c in ctx["atc_codes"]],
             },
         },

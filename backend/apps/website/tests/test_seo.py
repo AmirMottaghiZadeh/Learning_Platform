@@ -90,6 +90,8 @@ class DrugPageTests(TestCase):
         page = next(n for n in nodes if n["@type"] == "MedicalWebPage")
         self.assertEqual(page["about"]["name"], "Amoxicillin")
         self.assertEqual(page["about"]["code"][0]["codeValue"], "J01CA")
+        # No Product-like type anywhere: Google would demand offers/ratings.
+        self.assertNotIn('"Drug"', json.dumps(nodes))
 
     def test_sitemap_lists_drug_pages(self):
         body = self.client.get("/sitemap.xml", **HOST).content.decode()
