@@ -19,8 +19,7 @@
     <div style="display:flex;justify-content:center;min-height:85px;margin-top:10px" aria-label="نشان اعتماد پرداخت زیبال">
       <script>
         (function () {
-          var dark = document.documentElement.getAttribute("data-theme") === "dark" ||
-            (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches && !document.documentElement.getAttribute("data-theme"));
+          var dark = document.documentElement.getAttribute("data-theme") === "dark";
           var script = document.createElement("script");
           script.src = "https://zibal.ir/trust/scripts/zibal-trust-v4.js" + (dark ? "?theme=dark" : "");
           document.currentScript.parentNode.insertBefore(script, document.currentScript.nextSibling);

@@ -15,6 +15,13 @@ import { useAppFonts } from "@/theme/fonts";
 
 registerServiceWorker();
 
+/** Status bar text dark on the light theme, light on the dark one -- "auto"
+ * would follow the phone's dark mode, not the app's theme. */
+function ThemedStatusBar() {
+  const { isDark } = useTheme();
+  return <StatusBar style={isDark ? "light" : "dark"} />;
+}
+
 function Gate() {
   const [fontsLoaded] = useAppFonts();
   const themeReady = useTheme().ready;
@@ -43,7 +50,7 @@ export default function App() {
             client={queryClient}
             persistOptions={{ persister: queryPersister, maxAge: CACHE_MAX_AGE, buster: CACHE_BUSTER }}
           >
-            <StatusBar style="auto" />
+            <ThemedStatusBar />
             <Gate />
           </PersistQueryClientProvider>
         </LanguageProvider>

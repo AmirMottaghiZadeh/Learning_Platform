@@ -25,12 +25,7 @@
   --font:"Vazirmatn",system-ui,"Segoe UI",Tahoma,sans-serif;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0B1E1B;--bg2:#10292A;--surface:#132F2B;--glass:#132F2B;--ink:#E7F4EF;--ink2:#C3D8D1;--muted:#9FB9B1;--line:#21453F;
-  --p:#8FDDBF;--p2:#6CCBAE;--onp:#062019;--deep:#0E3F39;--mint:#1F4A43;--light:#183F39;--tint:#163A35;
-  --coral:#E27D65;--coral-t:#F29D88;--coral-ink:#F5B3A3;--coral-soft:#3B2620;--on-coral:#2A0F07;
-  --stroke:rgba(231,244,239,.08);--edge:transparent;--edge-p:transparent;--h:#E7F4EF;
-  --band:#0E3F39;--band-ink:#C3E3D7;--band-num:#8FDDBF;color-scheme:dark}}
+/* Light unless the visitor picked dark with the theme button (data-theme). */
 :root[data-theme="dark"]{
   --bg:#0B1E1B;--bg2:#10292A;--surface:#132F2B;--glass:#132F2B;--ink:#E7F4EF;--ink2:#C3D8D1;--muted:#9FB9B1;--line:#21453F;
   --p:#8FDDBF;--p2:#6CCBAE;--onp:#062019;--deep:#0E3F39;--mint:#1F4A43;--light:#183F39;--tint:#163A35;
@@ -130,7 +125,6 @@ p{margin:0}
 .ip-screen::after{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;background:linear-gradient(118deg,rgba(255,255,255,.12),rgba(255,255,255,0) 30%)}
 .shot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .shot-d{display:none}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .shot-l{display:none}:root:not([data-theme="light"]) .shot-d{display:block}:root:not([data-theme="light"]) .is-app .ip-home{background:rgba(255,255,255,.85)}:root:not([data-theme="light"]) .is-app .ip-screen{background:#0F1413}}
 :root[data-theme="dark"] .shot-l{display:none}:root[data-theme="dark"] .shot-d{display:block}:root[data-theme="dark"] .is-app .ip-home{background:rgba(255,255,255,.85)}:root[data-theme="dark"] .is-app .ip-screen{background:#0F1413}
 .ip-status{position:absolute;inset:0 0 auto;height:54em;z-index:4;color:#fff;pointer-events:none}
 .ip-time{position:absolute;left:0;width:134em;top:15em;height:24em;display:flex;align-items:center;justify-content:center}

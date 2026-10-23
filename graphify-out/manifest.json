@@ -1998,27 +1998,27 @@
     "semantic_hash": ""
   },
   "frontend/src/components/AlphabeticalArticleList.tsx": {
-    "mtime": 1791365751.6467767,
-    "seen": 1792686658.683375,
-    "ast_hash": "517ee6ee88ccd339757e41f86b429b03",
+    "mtime": 1792776819.3228312,
+    "seen": 1792777078.352669,
+    "ast_hash": "4f8dd98a26dd2fab7ce0f055616a8a23",
     "semantic_hash": ""
   },
   "frontend/src/components/AppShell.tsx": {
-    "mtime": 1791577049.8781538,
-    "seen": 1792686658.6833787,
-    "ast_hash": "2c34ff7776e283effe6c0776ed2fea53",
+    "mtime": 1792776764.4771812,
+    "seen": 1792777078.352676,
+    "ast_hash": "e9ffa3b110bcfd5b2e5cb9625913c5ff",
     "semantic_hash": ""
   },
   "frontend/src/components/AuthLayout.tsx": {
-    "mtime": 1791914664.423545,
-    "seen": 1792686658.683382,
-    "ast_hash": "76d9efeceb1bc404c6339daec6e08902",
+    "mtime": 1792776764.4811833,
+    "seen": 1792777078.3526797,
+    "ast_hash": "d27db95f554e9cd1aecebb9c428495e5",
     "semantic_hash": ""
   },
   "frontend/src/components/BottomNav.tsx": {
-    "mtime": 1791894991.4534397,
-    "seen": 1792686658.683387,
-    "ast_hash": "d4bbe5452ba68fdfad84741314c65a02",
+    "mtime": 1792776780.0832136,
+    "seen": 1792777078.352684,
+    "ast_hash": "8155af67ef512b6d5ce0fccedcf35cbb",
     "semantic_hash": ""
   },
   "frontend/src/components/GlassToggles.tsx": {
@@ -2028,9 +2028,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/HeaderMesh.tsx": {
-    "mtime": 1788915570.8847795,
-    "seen": 1792686658.6833951,
-    "ast_hash": "b2109c73b72809bc811372bdcfffb87c",
+    "mtime": 1792776764.4771812,
+    "seen": 1792777078.3526912,
+    "ast_hash": "fc1dbf3b8b07a6ca2261adcd618e9d46",
     "semantic_hash": ""
   },
   "frontend/src/components/HelpSheet.tsx": {
@@ -2244,9 +2244,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/primitives/Screen.tsx": {
-    "mtime": 1788914329.452203,
-    "seen": 1792686658.6835597,
-    "ast_hash": "664dc1ac02c18f3cead9ec38246553d3",
+    "mtime": 1792776819.3028457,
+    "seen": 1792777078.352831,
+    "ast_hash": "8fba559abba93282e6e78b7e6de70382",
     "semantic_hash": ""
   },
   "frontend/src/hooks/useDebounced.ts": {
@@ -2268,9 +2268,9 @@
     "semantic_hash": ""
   },
   "frontend/src/navigation/Navigator.tsx": {
-    "mtime": 1792712218.9803805,
-    "seen": 1792713312.5757005,
-    "ast_hash": "36607ebfa896c68fff8007988fca85c7",
+    "mtime": 1792776764.4811833,
+    "seen": 1792777078.3528464,
+    "ast_hash": "dc1bc0e42671723c3f4e86ea9434d575",
     "semantic_hash": ""
   },
   "frontend/src/navigation/back.ts": {
@@ -2310,9 +2310,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/DashboardScreen.tsx": {
-    "mtime": 1791662384.5229409,
-    "seen": 1792686658.6836064,
-    "ast_hash": "8382cb282a10275d1c9f2d328e0eb0d7",
+    "mtime": 1792776764.4771812,
+    "seen": 1792777078.3529317,
+    "ast_hash": "cafc076e49c81d2fc531020da8aa5cd2",
     "semantic_hash": ""
   },
   "frontend/src/screens/EducationScreen.tsx": {
@@ -2328,9 +2328,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/LessonDetailScreen.tsx": {
-    "mtime": 1791892778.3352027,
-    "seen": 1792686658.6836183,
-    "ast_hash": "7a58e13f785ac0f7b376d3e0fa9b1730",
+    "mtime": 1792776819.31084,
+    "seen": 1792777078.3529477,
+    "ast_hash": "99d97a8e9a2249630ef7c68e799e745d",
     "semantic_hash": ""
   },
   "frontend/src/screens/LessonListScreen.tsx": {
@@ -2352,9 +2352,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeArticleScreen.tsx": {
-    "mtime": 1791895749.4903452,
-    "seen": 1792686658.6836338,
-    "ast_hash": "f8ccbf9c2677c3c6c240bf29270b4f7d",
+    "mtime": 1792776819.314837,
+    "seen": 1792777078.3529625,
+    "ast_hash": "ff35f636916442e9c14b7b85ae044eae",
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeBrowseScreen.tsx": {
@@ -2370,9 +2370,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeOutlineScreen.tsx": {
-    "mtime": 1791895749.4903452,
-    "seen": 1792686658.6836455,
-    "ast_hash": "a8f841eecb7df7236b5eab7ee2396b83",
+    "mtime": 1792776819.318834,
+    "seen": 1792777078.3529732,
+    "ast_hash": "1ab97d8bd2c3a2ff790090fa370560cd",
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeSpecialtyScreen.tsx": {
@@ -2406,15 +2406,15 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/ProfileScreen.tsx": {
-    "mtime": 1792712218.9803805,
-    "seen": 1792713312.5758402,
-    "ast_hash": "fe6ea5b76cfed8edbd9bf5e7549b4b3e",
+    "mtime": 1792776819.3228312,
+    "seen": 1792777078.3529959,
+    "ast_hash": "ebe7378930e47e507e8aefd2fcf8b3ee",
     "semantic_hash": ""
   },
   "frontend/src/screens/QuizScreen.tsx": {
-    "mtime": 1792530482.7097359,
-    "seen": 1792686658.6836703,
-    "ast_hash": "c6511115091888fde35a2a1804db844f",
+    "mtime": 1792776819.318834,
+    "seen": 1792777078.352999,
+    "ast_hash": "272c3745213d9294920f2915370b1de6",
     "semantic_hash": ""
   },
   "frontend/src/screens/SetPasswordScreen.tsx": {
@@ -2436,15 +2436,15 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/UptodateOutlineScreen.tsx": {
-    "mtime": 1792712218.9843807,
-    "seen": 1792713312.5758576,
-    "ast_hash": "4726ab39e3df3cd1cd23c961d292e7cd",
+    "mtime": 1792776819.31084,
+    "seen": 1792777078.3530138,
+    "ast_hash": "f4e93d813ba3526dd8de2dbb289b41e3",
     "semantic_hash": ""
   },
   "frontend/src/screens/UptodateScreen.tsx": {
-    "mtime": 1792712218.9843807,
-    "seen": 1792713312.5758617,
-    "ast_hash": "f809b3961ef82905baa86f8f37bca211",
+    "mtime": 1792776819.318834,
+    "seen": 1792777078.3530166,
+    "ast_hash": "2ed278016ffa3bfe96269abf2b094467",
     "semantic_hash": ""
   },
   "frontend/src/store/auth.ts": {
@@ -3102,9 +3102,9 @@
     "semantic_hash": ""
   },
   "frontend/public/index.html": {
-    "mtime": 1792073225.8835068,
-    "seen": 1792686658.6840215,
-    "ast_hash": "59fae1541ac999b279cdcc830c8a2c8d",
+    "mtime": 1792776764.4771812,
+    "seen": 1792777078.3534749,
+    "ast_hash": "34f17395457925485597f971c145fd9e",
     "semantic_hash": ""
   },
   "Icon_Candidates/460b06e1-7af5-45a1-b6d3-0a03f91f0963.png": {

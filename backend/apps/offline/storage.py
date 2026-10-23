@@ -15,12 +15,15 @@ signed, expiring token.
 """
 
 import json
+import logging
 import time
 from pathlib import Path
 
 from django.conf import settings
 from django.core import signing
 from django.urls import reverse
+
+logger = logging.getLogger(__name__)
 
 MANIFEST_CACHE_SECONDS = 300
 FILE_TOKEN_SALT = "offline-package-file"
@@ -63,7 +66,16 @@ def _read_manifest(dataset: str) -> dict | None:
     if using_s3():
         try:
             body = _s3().get_object(Bucket=settings.OFFLINE_S3_BUCKET, Key=_prefix() + key)["Body"].read()
-        except Exception:
+        except Exception as exc:
+            # Nothing uploaded yet is normal; anything else (a wrong endpoint,
+            # a proxy that breaks the request signature, bad keys, TLS) makes
+            # the package look unpublished, so say why in the log.
+            code = getattr(exc, "response", {}).get("Error", {}).get("Code", "")
+            if code not in ("NoSuchKey", "404"):
+                logger.warning(
+                    "offline: cannot read %s from %s (bucket %s): %s",
+                    key, settings.OFFLINE_S3_ENDPOINT_URL or "AWS", settings.OFFLINE_S3_BUCKET, code or exc,
+                )
             return None
     else:
         root = local_dir()

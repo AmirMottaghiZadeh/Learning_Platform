@@ -17,7 +17,7 @@
   // theme toggle
   var theme=document.getElementById("theme");
   if(theme)theme.addEventListener("click",function(){
-    var dark=root.getAttribute("data-theme")==="dark"||(!root.getAttribute("data-theme")&&matchMedia("(prefers-color-scheme: dark)").matches);
+    var dark=root.getAttribute("data-theme")==="dark";
     var next=dark?"light":"dark";root.setAttribute("data-theme",next);
     try{localStorage.setItem("theme",next)}catch(e){}
   });

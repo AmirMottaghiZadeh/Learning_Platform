@@ -321,3 +321,32 @@ class ApiTests(TestCase):
     def test_unknown_dataset_is_404(self):
         res = self.client.post("/api/v1/offline/packages/medscape/urls/", {}, format="json")
         self.assertEqual(res.status_code, 404)
+
+
+@override_settings(OFFLINE_S3_BUCKET="pharmenta-dl", OFFLINE_S3_ENDPOINT_URL="https://s3.example.test", OFFLINE_PACKAGES_DIR="")
+class BucketManifestTests(TestCase):
+    """A manifest the bucket won't hand over must not vanish silently: the
+    package then looks unpublished in the app, so the log has to say why."""
+
+    def setUp(self):
+        storage.clear_cache()
+        self.addCleanup(storage.clear_cache)
+
+    def _client_raising(self, code):
+        from unittest import mock
+
+        from botocore.exceptions import ClientError
+
+        client = mock.Mock()
+        client.get_object.side_effect = ClientError({"Error": {"Code": code}}, "GetObject")
+        return mock.patch.object(storage, "_s3", return_value=client)
+
+    def test_a_broken_signature_is_logged(self):
+        with self._client_raising("SignatureDoesNotMatch"), self.assertLogs("apps.offline.storage", "WARNING") as logs:
+            self.assertIsNone(storage.latest_manifest("uptodate"))
+        self.assertIn("SignatureDoesNotMatch", logs.output[0])
+        self.assertIn("https://s3.example.test", logs.output[0])
+
+    def test_nothing_uploaded_yet_is_quiet(self):
+        with self._client_raising("NoSuchKey"), self.assertNoLogs("apps.offline.storage", "WARNING"):
+            self.assertIsNone(storage.latest_manifest("uptodate"))

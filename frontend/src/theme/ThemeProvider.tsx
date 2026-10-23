@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useColorScheme } from "react-native";
 
 import { THEME, ThemeColors, ThemeMode, shadow } from "./tokens";
 
@@ -19,7 +18,6 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const system = useColorScheme();
   const [override, setOverride] = useState<ThemeMode | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -31,7 +29,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setReady(true));
   }, []);
 
-  const mode: ThemeMode = override ?? (system === "dark" ? "dark" : "light");
+  // Light unless the learner picked dark in the app: the phone's own dark
+  // mode no longer switches it.
+  const mode: ThemeMode = override ?? "light";
 
   const value = useMemo<ThemeContextValue>(() => {
     const setMode = (next: ThemeMode) => {
