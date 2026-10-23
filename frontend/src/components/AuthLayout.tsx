@@ -16,7 +16,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
   const { colors } = useTheme();
   return (
     <AppShell>
-      <HeaderMesh>
+      <HeaderMesh bleedTop>
         {/* Keyboard avoidance is handled once, centrally, by AppShell. */}
         <View style={{ flex: 1 }}>
           <GlassToggles />

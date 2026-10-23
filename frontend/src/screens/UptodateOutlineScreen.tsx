@@ -11,9 +11,9 @@ import { uptodateSource } from "@/offline/sources";
 import { useNav } from "@/store/nav";
 import { useReader } from "@/store/reader";
 import { useTheme } from "@/theme/ThemeProvider";
-import { layout } from "@/theme/tokens";
 import { stripHtml } from "@/utils/html";
 import { numberedOutline, outlineTops, shortDate } from "@/utils/uptodateOutline";
+import { useNavClearance } from "@/components/BottomNav";
 
 const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 
@@ -27,6 +27,7 @@ const isAllCaps = (title: string) => /[A-Z]/.test(title) && title === title.toUp
  * contents. UpToDate's content is English-only, so the article's own text
  * is laid out left to right whatever the app's language. */
 export function UptodateOutlineScreen() {
+  const navClearance = useNavClearance();
   const { t, n, row, isFa } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
@@ -129,7 +130,7 @@ export function UptodateOutlineScreen() {
           </AppText>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: layout.bottomNavHeight + 24 }}>
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: navClearance + 24 }}>
           <AppText weight="800" size={13} muted>
             {t("articleContents")}
           </AppText>

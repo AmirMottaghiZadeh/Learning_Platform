@@ -3,7 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <!-- viewport-fit=cover: without it iOS reports every safe-area inset as
+         0, so the app can't keep its bars clear of the Dynamic Island and the
+         home indicator; AppShell and BottomNav pad for them instead. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
     <title>%WEB_TITLE%</title>
 
     <!-- Installable web app (PWA). Paths are relative so they resolve under the

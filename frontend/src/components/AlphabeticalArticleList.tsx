@@ -4,7 +4,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { MedscapeArticleListItem } from "@/api/types";
 import { AppText } from "@/components/primitives/AppText";
 import { useTheme } from "@/theme/ThemeProvider";
-import { layout } from "@/theme/tokens";
+import { useNavClearance } from "@/components/BottomNav";
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const ROW_HEIGHT = 46;
@@ -58,6 +58,7 @@ export function AlphabeticalArticleList({
   onPressItem: (slug: string) => void;
   emptyText: string;
 }) {
+  const navClearance = useNavClearance();
   const { colors } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
 
@@ -84,7 +85,7 @@ export function AlphabeticalArticleList({
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: layout.bottomNavHeight + 24, paddingRight: 10 }}
+        contentContainerStyle={{ paddingBottom: navClearance + 24, paddingRight: 10 }}
         showsVerticalScrollIndicator={false}
       >
         {sections.map((section) => (

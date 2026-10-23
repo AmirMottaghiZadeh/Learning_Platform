@@ -34,6 +34,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { layout } from "@/theme/tokens";
 import { buildMedscapeModel, referencesTop } from "@/utils/medscapeArticle";
+import { useNavClearance } from "@/components/BottomNav";
 
 const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 
@@ -98,6 +99,7 @@ const useReaderCtx = () => React.useContext(ReaderContext) as ReaderCtx;
  * Opened at `params.path` (a section path from the article's home page);
  * the section in view is remembered for the home page's "continue" button. */
 export function MedscapeArticleScreen() {
+  const navClearance = useNavClearance();
   const { t, n, row, isFa } = useLang();
   const { colors, isDark } = useTheme();
   const band = useBandColors();
@@ -307,7 +309,7 @@ export function MedscapeArticleScreen() {
           ref={scrollRef}
           onScroll={onScroll}
           scrollEventThrottle={64}
-          contentContainerStyle={{ paddingBottom: layout.bottomNavHeight + 90 }}
+          contentContainerStyle={{ paddingBottom: navClearance + 90 }}
         >
           <View ref={contentRef} onLayout={onContentLayout} style={{ paddingHorizontal: 18, paddingTop: 16, gap: 26 }}>
             {data.sections.map((section, i) => (
@@ -324,7 +326,7 @@ export function MedscapeArticleScreen() {
 
       <View
         pointerEvents="box-none"
-        style={{ position: "absolute", left: 0, right: 0, bottom: layout.bottomNavHeight + 12, alignItems: "center" }}
+        style={{ position: "absolute", left: 0, right: 0, bottom: navClearance + 12, alignItems: "center" }}
       >
         <View style={{ flexDirection: row, gap: 4, backgroundColor: pillBg, borderRadius: 999, padding: 5 }}>
           <PillButton label={t("articleToc")} color={pillInk} onPress={() => setTocOpen(true)} />

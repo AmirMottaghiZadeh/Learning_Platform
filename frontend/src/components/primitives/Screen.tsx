@@ -10,6 +10,7 @@ import {
 
 import { useTheme } from "@/theme/ThemeProvider";
 import { layout, motion } from "@/theme/tokens";
+import { useNavClearance } from "@/components/BottomNav";
 
 type Props = {
   children: React.ReactNode;
@@ -29,6 +30,7 @@ export function Screen({
   onRefresh,
   contentStyle,
 }: Props) {
+  const navClearance = useNavClearance();
   const { colors } = useTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
@@ -66,7 +68,7 @@ export function Screen({
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.appBg }}
-      contentContainerStyle={{ paddingBottom: layout.bottomNavHeight + 24 }}
+      contentContainerStyle={{ paddingBottom: navClearance + 24 }}
       showsVerticalScrollIndicator={false}
       refreshControl={
         onRefresh ? (

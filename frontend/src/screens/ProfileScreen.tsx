@@ -12,8 +12,10 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { useNavClearance } from "@/components/BottomNav";
 
 export function ProfileScreen() {
+  const navClearance = useNavClearance();
   const { t, n, toggle: toggleLang, row } = useLang();
   const { colors, shadows } = useTheme();
   const user = useAuth((s) => s.user);
@@ -71,11 +73,11 @@ export function ProfileScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.appBg }}
-      contentContainerStyle={{ paddingBottom: 96 }}
+      contentContainerStyle={{ paddingBottom: navClearance + 24 }}
       showsVerticalScrollIndicator={false}
     >
       <View style={{ borderBottomLeftRadius: 28, borderBottomRightRadius: 28, overflow: "hidden" }}>
-        <HeaderMesh>
+        <HeaderMesh bleedTop>
           <View style={{ padding: 20, paddingBottom: 44 }}>
             <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center" }}>
               <AppText weight="800" size={17} color="#fff">

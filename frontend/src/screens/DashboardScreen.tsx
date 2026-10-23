@@ -44,7 +44,7 @@ export function DashboardScreen() {
 
   return (
     <Screen padded={false} refreshing={isRefetching} onRefresh={refetch}>
-      <HeaderMesh>
+      <HeaderMesh bleedTop>
         <View style={{ padding: 20, paddingBottom: 26 }}>
           <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center" }}>
             <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, LayoutChangeEvent, Pressable, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
@@ -10,6 +11,13 @@ import { AppText } from "./primitives/AppText";
 import { IconImage, IconName } from "./primitives/IconImage";
 
 const PILL_W = 56;
+
+/** How much room to leave under a screen's content so its end isn't hidden
+ * behind the tab bar -- which grows by the home-indicator strip (see
+ * BottomNav) -- plus `extra` breathing space. */
+export function useNavClearance(extra = 0) {
+  return layout.bottomNavHeight + useSafeAreaInsets().bottom + extra;
+}
 
 const TAB_META: Record<
   TabKey,
@@ -50,6 +58,7 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
 };
 
 export function BottomNav() {
+  const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { t, isFa } = useLang();
   const screen = useNav((s) => s.screen);
@@ -86,13 +95,15 @@ export function BottomNav() {
         left: 0,
         right: 0,
         bottom: 0,
-        height: layout.bottomNavHeight,
+        // Grows down over the home indicator (iPhone) / gesture bar so the
+        // bar runs to the bottom edge with its tabs clear of it.
+        height: layout.bottomNavHeight + insets.bottom,
         backgroundColor: colors.navBg,
         borderTopWidth: 1,
         borderTopColor: colors.border,
         flexDirection: isFa ? "row-reverse" : "row",
         alignItems: "center",
-        paddingBottom: 6,
+        paddingBottom: 6 + insets.bottom,
       }}
     >
       <Animated.View

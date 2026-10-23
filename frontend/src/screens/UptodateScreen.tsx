@@ -14,8 +14,8 @@ import { uptodateSource } from "@/offline/sources";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
-import { layout } from "@/theme/tokens";
 import { shortDate } from "@/utils/uptodateOutline";
+import { useNavClearance } from "@/components/BottomNav";
 
 const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 // The busiest sections among the results get a filter chip; the rest are
@@ -30,6 +30,7 @@ function escapeRegExp(text: string) {
  * and one chip per clinical section among the results, then a card per
  * topic with its section, title, a snippet around the hit and its date. */
 export function UptodateScreen() {
+  const navClearance = useNavClearance();
   const { t, n, row, isFa } = useLang();
   const { colors, shadows } = useTheme();
   const goBack = useNav((s) => s.goBack);
@@ -141,7 +142,7 @@ export function UptodateScreen() {
         ) : null}
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: layout.bottomNavHeight + 24 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: navClearance + 24 }}>
         {locked ? (
           <View style={{ backgroundColor: colors.cardBg, borderRadius: 16, padding: 16 }}>
             <AppText weight="800" size={15} color={colors.accent}>

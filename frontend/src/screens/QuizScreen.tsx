@@ -21,6 +21,7 @@ import { fontFamily } from "@/theme/fonts";
 import { layout, spacing } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
 import { groupByCategory } from "@/utils/lessonCategories";
+import { useNavClearance } from "@/components/BottomNav";
 
 const COUNTS = [5, 10, 15, 20];
 const MASTERY_HIGH = 70;
@@ -48,6 +49,7 @@ function masteryColors(pct: number, colors: ReturnType<typeof useTheme>["colors"
 }
 
 export function QuizScreen() {
+  const navClearance = useNavClearance();
   const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
   const setTab = useNav((s) => s.setTab);
@@ -498,7 +500,7 @@ export function QuizScreen() {
             // room for it via contentContainerStyle, but scroll={false}
             // (used here for the sticky footer) doesn't, so this footer has
             // to reserve it itself or it renders half-hidden behind the nav.
-            paddingBottom: layout.bottomNavHeight + 14,
+            paddingBottom: navClearance + 14,
             backgroundColor: colors.appBg,
             borderTopWidth: 1,
             borderTopColor: colors.trackBg,

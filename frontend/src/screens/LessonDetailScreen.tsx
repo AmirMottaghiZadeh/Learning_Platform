@@ -11,8 +11,8 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
-import { layout } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
+import { useNavClearance } from "@/components/BottomNav";
 
 // The upstream summaries are already structured plain text -- lines starting
 // "- " are a bullet list (true for 10 of the 12 clinical fields, e.g. dose,
@@ -197,6 +197,7 @@ function sectionText(b: LessonSection, isFa: boolean): string {
 }
 
 export function LessonDetailScreen() {
+  const navClearance = useNavClearance();
   const { isFa, n, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
@@ -334,7 +335,7 @@ export function LessonDetailScreen() {
         contentContainerStyle={{
           paddingHorizontal: 22,
           paddingTop: 20,
-          paddingBottom: layout.bottomNavHeight + 24,
+          paddingBottom: navClearance + 24,
         }}
         showsVerticalScrollIndicator={false}
       >

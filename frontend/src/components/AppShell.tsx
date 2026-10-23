@@ -1,6 +1,6 @@
-import React from "react";
+import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, useWindowDimensions, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme/ThemeProvider";
 import { layout, radius } from "@/theme/tokens";
@@ -30,15 +30,46 @@ import { MeshBackground } from "./MeshBackground";
  * needs "padding", Android needs "height" (web's KeyboardAvoidingView is a
  * no-op, so `undefined` there changes nothing).
  */
-export function AppShell({ children }: { children: React.ReactNode }) {
+const TopInset = createContext<{ claim: () => () => void }>({ claim: () => () => undefined });
+
+/**
+ * For a header that paints the strip under the status bar / Dynamic Island
+ * itself (the green HeaderMesh at the top of Home, Profile and sign-in):
+ * while `enabled`, AppShell leaves that strip to it, and this returns how
+ * tall it is so the header can pad its content below it.
+ */
+export function useBleedTop(enabled: boolean) {
+  const { claim } = useContext(TopInset);
+  const insets = useSafeAreaInsets();
+  useLayoutEffect(() => (enabled ? claim() : undefined), [enabled, claim]);
+  return enabled ? insets.top : 0;
+}
+
+/**
+ * The safe areas -- the strip under the status bar or Dynamic Island, and
+ * the one over the home indicator -- are filled by the app itself, not left
+ * to show the mesh ground behind it (which read as a stray band above the
+ * header and below the tab bar on an iPhone). The top strip is the screen's
+ * own background unless a header claims it (useBleedTop); the bottom one is
+ * the screen's background too, or, with `padBottom={false}`, left to the
+ * BottomNav, which grows into it.
+ */
+export function AppShell({ children, padBottom = true }: { children: React.ReactNode; padBottom?: boolean }) {
   const { colors, shadows } = useTheme();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const showMockupFrame = Platform.OS === "web" && width > layout.appMaxWidth;
+  const [claims, setClaims] = useState(0);
+  const claim = useCallback(() => {
+    setClaims((n) => n + 1);
+    return () => setClaims((n) => n - 1);
+  }, []);
+  const topInset = useMemo(() => ({ claim }), [claim]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.meshBg }}>
       <MeshBackground />
-      <SafeAreaView style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <SafeAreaView edges={["left", "right"]} style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
         <View
           style={[
             {
@@ -51,14 +82,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             showMockupFrame && shadows.shell,
           ]}
         >
+          {claims === 0 ? <View style={{ height: insets.top }} /> : null}
           <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={
               Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined
             }
           >
-            {children}
+            <TopInset.Provider value={topInset}>{children}</TopInset.Provider>
           </KeyboardAvoidingView>
+          {padBottom ? <View style={{ height: insets.bottom }} /> : null}
         </View>
       </SafeAreaView>
     </View>

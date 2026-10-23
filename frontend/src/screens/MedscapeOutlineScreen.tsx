@@ -10,8 +10,8 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useReader } from "@/store/reader";
 import { useTheme } from "@/theme/ThemeProvider";
-import { layout } from "@/theme/tokens";
 import { buildMedscapeModel, summaryTop, tocLabel } from "@/utils/medscapeArticle";
+import { useNavClearance } from "@/components/BottomNav";
 
 const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 
@@ -21,6 +21,7 @@ const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
  * goes to the reader at that section; the button below picks up where the
  * reader was last left. */
 export function MedscapeOutlineScreen() {
+  const navClearance = useNavClearance();
   const { t, n, row } = useLang();
   const { colors } = useTheme();
   const band = useBandColors();
@@ -97,7 +98,7 @@ export function MedscapeOutlineScreen() {
           </AppText>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: layout.bottomNavHeight + 24 }}>
+        <ScrollView contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: navClearance + 24 }}>
           {summary ? (
             <Pressable
               onPress={() => read(summary.path)}

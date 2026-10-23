@@ -50,7 +50,7 @@ export function Navigator() {
   else if (user && !user.profile.is_onboarded) content = <OnboardingScreen />;
   else {
     content = (
-      <AppShell>
+      <AppShell padBottom={false}>
         <View style={{ flex: 1 }}>
           <ScreenTransition>
             <CurrentScreen />
