@@ -626,3 +626,54 @@ export interface LessonDrugSearchResult {
   /** the lesson chapters the drug appears in; the first opens it */
   chapters: { code: string; name_fa: string; name_en: string }[];
 }
+
+// --- offline reference packages (GET /offline/packages/) ---------------
+
+export type OfflineDataset = "uptodate" | "lexicomp";
+
+export interface OfflinePackageFile {
+  name: string;
+  size: number;
+  sha256: string;
+  md5: string;
+}
+
+/** A built package as published in the bucket (its latest.json). */
+export interface OfflineManifest {
+  format: number;
+  dataset: OfflineDataset;
+  build: string;
+  source_version: string;
+  created_at: string;
+  files: OfflinePackageFile[];
+  total_size: number;
+  /** [part, offset, length] of the sealed index record */
+  index: [number, number, number];
+  /** hex of a sealed known plaintext, to tell a wrong key from bad data */
+  check: string;
+}
+
+export interface OfflinePackageInfo {
+  dataset: OfflineDataset;
+  /** whether this learner's plan lets them keep it offline */
+  entitled: boolean;
+  license_days: number;
+  /** null until something is published */
+  package: OfflineManifest | null;
+}
+
+export interface OfflinePackageUrls {
+  build: string;
+  expires_at: string;
+  files: (OfflinePackageFile & { url: string })[];
+}
+
+export interface OfflineLicense {
+  build: string;
+  server_time: string;
+  valid_until: string;
+  /** base64 raw AES key (native app) */
+  key?: string;
+  /** base64 key wrapped with RSA-OAEP to the browser's key (web) */
+  wrapped_key?: string;
+}

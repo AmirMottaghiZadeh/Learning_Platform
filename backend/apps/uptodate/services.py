@@ -161,10 +161,10 @@ def _updated_from_text(text: str) -> str:
     return match.group(1) if match else ""
 
 
-def _snippet(content: str, words: list[str], title: str = "") -> str:
-    """A short plain-text excerpt around the first query hit in the article
-    body (not the title/author header), or the body's opening when the hit
-    sits further in than the text read."""
+def snippet_source(content: str, title: str = "") -> str:
+    """The article body's opening as clean plain text, without the
+    title/author header -- what `_snippet` cuts its excerpt from. The offline
+    packages store this per topic, so the app cuts the same excerpt."""
     text = (content or "").replace("\xa0", " ")
     header = _UPDATED_RE.search(text)
     if header:
@@ -175,7 +175,14 @@ def _snippet(content: str, words: list[str], title: str = "") -> str:
     text = _GLYPHS_RE.sub(" ", text)
     text = _GLUED_RE.sub(" ", text)
     text = _RUN_IN_HEADING_RE.sub(" ", text)
-    text = re.sub(r"\s+", " ", text).strip()
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _snippet(content: str, words: list[str], title: str = "") -> str:
+    """A short plain-text excerpt around the first query hit in the article
+    body (not the title/author header), or the body's opening when the hit
+    sits further in than the text read."""
+    text = snippet_source(content, title)
     if not text:
         return ""
 
@@ -297,8 +304,14 @@ def get_topic(content_id: str) -> dict | None:
         ).fetchone()
     if not row:
         return None
+    return article_from_row(content_id, row["gzip"], row["version"], _section_for(content_id))
+
+
+def article_from_row(content_id: str, blob: bytes, version, section: str) -> dict | None:
+    """One `content` row as the API's article shape; the offline packages
+    build their article records with this too."""
     try:
-        doc = json.loads(zlib.decompress(row["gzip"]))
+        doc = json.loads(zlib.decompress(blob))
     except Exception:
         return None
     contributors = []
@@ -309,11 +322,11 @@ def get_topic(content_id: str) -> dict | None:
     return {
         "id": content_id,
         "title": doc.get("title", ""),
-        "section": _section_for(content_id),
+        "section": section,
         "contributors": contributors,
         "outline_html": doc.get("outlineHtml", ""),
         "body_html": doc.get("bodyHtml", ""),
-        "version": str(row["version"] or snapshot_version()),
+        "version": str(version or snapshot_version()),
         "updated": _updated_from_html(doc.get("bodyHtml", "")),
     }
 

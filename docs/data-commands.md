@@ -35,6 +35,7 @@ cd backend
 | `clean_profile_boilerplate` | drugs | جمله‌های بی‌فایده را از خلاصه‌های دارویی پاک می‌کند | دستی |
 | `backup_database` | core | نسخهٔ پشتیبان Postgres می‌گیرد | دستی |
 | `delete_guest_accounts` | billing | همهٔ حساب‌های مهمان را پاک می‌کند | دستی |
+| `build_offline_package` | offline | بستهٔ رمزنگاری‌شدهٔ آفلاین UpToDate یا Lexicomp را برای دانلود در اپ می‌سازد | دستی، روی لپ‌تاپ |
 
 ## ۱. دستورهایی که خودکار اجرا می‌شوند
 
@@ -265,6 +266,74 @@ python manage.py delete_guest_accounts
 ### خروجی از پنل
 
 - **فهرست کاربران (CSV):** در پنل مدیریت فروش (`/ops/users/`) دکمهٔ خروجی، کاربران را با همان فیلتر و جست‌وجوی فعلی در فایل `pharmenta-users-YYYYMMDD.csv` می‌دهد (`/ops/users/export.csv`).
+
+## ۷. بستهٔ آفلاین UpToDate و Lexicomp
+
+اپ (اندروید، iOS و وب/PWA) می‌تواند UpToDate و Lexicomp را دانلود کند و بدون اینترنت بخواند. بسته‌ها روی لپ‌تاپ، از همان فایل‌های SQLite، ساخته می‌شوند و دستی در Object Storage رانفلر آپلود می‌شوند. سرور هیچ‌وقت خودش این فایل‌ها را نمی‌سازد.
+
+### `build_offline_package`
+
+```bash
+cd backend
+.venv/bin/python manage.py build_offline_package uptodate --out ~/offline-packages
+.venv/bin/python manage.py build_offline_package lexicomp --out ~/offline-packages
+```
+
+| گزینه | کار |
+|---|---|
+| `uptodate` یا `lexicomp` | کدام بسته ساخته شود |
+| `--out` | پوشه‌ای که بسته در آن نوشته می‌شود (اجباری) |
+| `--source` | پوشهٔ فایل‌های SQLite؛ پیش‌فرض `UPTODATE_DB_DIR` / `LEXICOMP_DB_DIR` |
+| `--part-size-mb` | اندازهٔ هر قطعه؛ پیش‌فرض ۱۰۰ |
+
+پیش‌نیاز: `OFFLINE_PACKAGE_SECRET` در `.env` لپ‌تاپ، **دقیقاً همان مقداری که روی سرور است**. اگر فرق کند، اپ نمی‌تواند بسته را باز کند. این مقدار را بعد از انتشار اولین بسته عوض نکنید؛ عوض کردنش همهٔ بسته‌های دانلودشده را بی‌استفاده می‌کند.
+
+خروجی (نمونه):
+
+```
+~/offline-packages/
+  uptodate/
+    latest.json
+    uptodate-1-20261023-ab12cd/part-000.bin … part-010.bin, manifest.json
+  lexicomp/
+    latest.json
+    lexicomp-202606-20261023-ef34gh/part-000.bin, manifest.json
+```
+
+حدود ۴ دقیقه برای UpToDate (حدود ۱ گیگ، ۱۱ قطعه) و چند ثانیه برای Lexicomp (حدود ۱۴ مگ). دستور در پایان بسته را با کلید خودش باز می‌کند تا مطمئن شود سالم است.
+
+### آپلود در Object Storage
+
+ساختار پوشه را عیناً در باکت نگه دارید (اگر `OFFLINE_S3_PREFIX` گذاشته‌اید، زیر همان پیشوند):
+
+1. اول پوشهٔ build را آپلود کنید: `uptodate/<build>/` با همهٔ `part-*.bin`ها.
+2. **آخر از همه** `uptodate/latest.json` را آپلود کنید (جایگزین قبلی). اپ هر چه `latest.json` بگوید دانلود می‌کند؛ اگر قبل از قطعه‌ها آپلود شود، دانلود کاربران خطا می‌دهد.
+3. بعد از چند دقیقه (سرور `latest.json` را ۵ دقیقه نگه می‌دارد) نسخهٔ جدید در اپ با نقطهٔ «نسخهٔ جدید» دیده می‌شود.
+4. پوشهٔ build قبلی را تا چند روز نگه دارید، تا دانلودهای نیمه‌کارهٔ کاربران تمام شود یا به نسخهٔ جدید بروند؛ بعد پاکش کنید.
+
+باکت باید **خصوصی** باشد؛ اپ با لینک‌های امضاشدهٔ ۲۴ ساعته دانلود می‌کند. برای نسخهٔ وب، CORS باکت باید `GET` را از `https://app.pharmenta.ir` با هدر `Range` اجازه بدهد و `Content-Length` و `Content-Range` را expose کند. با متغیرهای `OFFLINE_S3_*` در `.env` این دستور قانون CORS را می‌گذارد و مثل مرورگر امتحانش می‌کند (و می‌گوید باکت خصوصی است یا عمومی):
+
+```bash
+.venv/bin/python manage.py offline_bucket_cors          # تنظیم و بررسی
+.venv/bin/python manage.py offline_bucket_cors --show   # فقط بررسی
+```
+
+بعد از آپلود `uptodate/latest.json` یک بار دیگر با `--show` اجرا کنید تا دانلود واقعی هم بررسی شود.
+
+### متغیرهای محیطی سرور
+
+| متغیر | کار |
+|---|---|
+| `OFFLINE_PACKAGE_SECRET` | کلید اصلی؛ همان مقدار لپ‌تاپ |
+| `OFFLINE_S3_ENDPOINT_URL` | فقط آدرس سرور S3، با `https://` و بدون نام باکت و مسیر؛ مثلاً `https://s3.example.ir` |
+| `OFFLINE_S3_BUCKET` | فقط نام باکت؛ مثلاً `pharmenta-dl` |
+| `OFFLINE_S3_ACCESS_KEY_ID` / `OFFLINE_S3_SECRET_ACCESS_KEY` | کلیدهای دسترسی باکت |
+| `OFFLINE_S3_REGION` | اگر سرویس لازم دارد؛ معمولاً خالی |
+| `OFFLINE_S3_ADDRESSING_STYLE` | `path` (پیش‌فرض) یا `virtual` |
+| `OFFLINE_S3_PREFIX` | پوشه‌ای در باکت که بسته‌ها زیرش آپلود شده‌اند؛ پیش‌فرض ریشه |
+| `OFFLINE_LICENSE_DAYS` | چند روز اپ بدون اینترنت از بسته استفاده می‌کند؛ پیش‌فرض ۳۰ |
+
+فقط کاربر با پلن پولیِ فعال که UpToDate/Lexicomp را دارد (و ادمین‌ها) می‌تواند دانلود کند و کلید بگیرد، حتی وقتی اجبار پلن‌ها خاموش است.
 
 ## منبع‌هایی که وارد دیتابیس نمی‌شوند
 

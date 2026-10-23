@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import { authApi, guestApi } from "@/api/endpoints";
-import { configureAuth } from "@/api/client";
+import { ApiError, configureAuth } from "@/api/client";
 import { AuthTokenResponse, User } from "@/api/types";
 import { queryClient, queryPersister } from "@/api/queryClient";
 import { useNav } from "@/store/nav";
@@ -64,7 +64,18 @@ export const useAuth = create<AuthState>((set, get) => ({
         await get().refresh();
         set({ user: await authApi.me(), status: "signedIn" });
       }
-    } catch {
+    } catch (error) {
+      // No answer at all (offline, server unreachable) is not a rejected
+      // session: open with the profile last seen online, so the app -- and
+      // the offline UpToDate/Lexicomp packages -- still work. Requests
+      // re-authenticate on their own once the network is back.
+      if (!(error instanceof ApiError)) {
+        const user = await sessionStore.loadUser();
+        if (user) {
+          set({ user, status: "signedIn" });
+          return;
+        }
+      }
       await get().signOut();
     }
   },
@@ -144,4 +155,9 @@ configureAuth({
   getAccessToken: () => useAuth.getState().accessToken,
   refreshAccessToken: () => useAuth.getState().refresh(),
   onAuthFailed: () => useAuth.getState().signOut(),
+});
+
+// Keep the last-seen profile for offline starts (see hydrate).
+useAuth.subscribe((state, previous) => {
+  if (state.user !== previous.user) void sessionStore.saveUser(state.user);
 });

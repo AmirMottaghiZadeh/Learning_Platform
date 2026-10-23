@@ -3,13 +3,14 @@ import React, { useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { ApiError } from "@/api/client";
-import { uptodateApi } from "@/api/endpoints";
 import { UptodateSearchResult } from "@/api/types";
 import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
+import { OfflineDownloadButton } from "@/components/offline/OfflineDownloadButton";
 import { AppText } from "@/components/primitives/AppText";
 import { IconImage } from "@/components/primitives/IconImage";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
+import { uptodateSource } from "@/offline/sources";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
@@ -40,7 +41,7 @@ export function UptodateScreen() {
 
   const { data, isFetching, error } = useQuery({
     queryKey: ["uptodate-search", query],
-    queryFn: () => uptodateApi.search(query),
+    queryFn: () => uptodateSource.search(query),
     enabled: query.length >= 2,
     retry: false,
   });
@@ -78,6 +79,7 @@ export function UptodateScreen() {
           <AppText weight="900" size={18} style={{ flex: 1 }}>
             {t("uptodateScreenTitle")}
           </AppText>
+          <OfflineDownloadButton dataset="uptodate" />
           <LangToggleButton />
         </View>
 

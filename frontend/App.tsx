@@ -7,9 +7,13 @@ import { CACHE_BUSTER, CACHE_MAX_AGE, queryClient, queryPersister } from "@/api/
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { LanguageProvider, useLang } from "@/i18n/LanguageProvider";
 import { Navigator } from "@/navigation/Navigator";
+import { useOfflineBoot } from "@/offline/boot";
+import { registerServiceWorker } from "@/offline/serviceWorker";
 import { useAuth } from "@/store/auth";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { useAppFonts } from "@/theme/fonts";
+
+registerServiceWorker();
 
 function Gate() {
   const [fontsLoaded] = useAppFonts();
@@ -20,6 +24,8 @@ function Gate() {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+  // Offline UpToDate/Lexicomp packages: resume downloads, renew licenses.
+  useOfflineBoot();
 
   if (!fontsLoaded || !themeReady || !langReady) return <LoadingState />;
   return <Navigator />;

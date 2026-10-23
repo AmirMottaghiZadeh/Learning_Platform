@@ -65,10 +65,13 @@ export function ScreenChrome({
   title,
   onBack,
   help,
+  actions,
 }: {
   title: string;
   onBack?: () => void;
   help?: HelpKey;
+  /** extra buttons at the start of the header's button group */
+  actions?: React.ReactNode;
 }) {
   const { colors } = useTheme();
   const { isFa, row } = useLang();
@@ -96,6 +99,7 @@ export function ScreenChrome({
         </AppText>
       </View>
       <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
+        {actions}
         {help ? (
           <ChromeButton onPress={() => setHelpOpen(true)}>
             <AppText weight="800" size={13} color={colors.accent}>

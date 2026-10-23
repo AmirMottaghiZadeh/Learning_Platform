@@ -16,6 +16,7 @@ the per-address request throttles, is what keeps the SMS credit safe.
 
 import hashlib
 import hmac
+import logging
 import secrets
 from datetime import timedelta
 
@@ -29,6 +30,7 @@ from .services import _request_metadata, ensure_default_learner_role, record_sec
 from .sms import SmsSendError, mask, send_code
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class OtpError(Exception):
@@ -112,6 +114,9 @@ def request_code(phone, purpose, *, request=None):
     try:
         message_id = send_code(phone, code)
     except SmsSendError as exc:
+        # The reason (missing setting, sms.ir's own message, unreachable) goes
+        # to the log, so a 503 in production can be traced; never the code.
+        logger.error("SMS code to %s not sent: %s", mask(phone), exc)
         # Not sent, so it mustn't count against the resend gap or daily cap.
         row.delete()
         raise OtpError(

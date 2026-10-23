@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     "apps.uptodate",
     # Same, for the Lexicomp drug-interactions snapshot.
     "apps.lexicomp",
+    # Encrypted UpToDate/Lexicomp packages the app downloads for offline use.
+    "apps.offline",
     # Interactive clinical calculators (Medscape/QxMD snapshot).
     "apps.calculators",
     # Medscape Diseases & Conditions / Guidelines reference articles.
@@ -331,6 +333,27 @@ LEXICOMP_DB_DIR = config(
     "LEXICOMP_DB_DIR",
     default="/home/amir/Documents/Lexicomp_Drug_Interactions",
 )
+
+# Offline packages (apps.offline): encrypted UpToDate/Lexicomp downloads.
+# OFFLINE_PACKAGE_SECRET derives every build's key -- the same value must be
+# set where packages are built (manage.py build_offline_package) and on the
+# API server, and never change while built packages are in use.
+OFFLINE_PACKAGE_SECRET = config("OFFLINE_PACKAGE_SECRET", default="")
+# The private S3-compatible bucket (Runflare Object Storage) holding the
+# uploaded packages; the app downloads from it with presigned links.
+OFFLINE_S3_ENDPOINT_URL = config("OFFLINE_S3_ENDPOINT_URL", default="")
+OFFLINE_S3_BUCKET = config("OFFLINE_S3_BUCKET", default="")
+OFFLINE_S3_ACCESS_KEY_ID = config("OFFLINE_S3_ACCESS_KEY_ID", default="")
+OFFLINE_S3_SECRET_ACCESS_KEY = config("OFFLINE_S3_SECRET_ACCESS_KEY", default="")
+OFFLINE_S3_REGION = config("OFFLINE_S3_REGION", default="")
+# "path" suits most S3-compatible services; "virtual" for bucket subdomains.
+OFFLINE_S3_ADDRESSING_STYLE = config("OFFLINE_S3_ADDRESSING_STYLE", default="path")
+# Folder inside the bucket the package tree was uploaded under ("" = root).
+OFFLINE_S3_PREFIX = config("OFFLINE_S3_PREFIX", default="")
+# Development only: serve a locally built package tree instead of a bucket.
+OFFLINE_PACKAGES_DIR = config("OFFLINE_PACKAGES_DIR", default="")
+OFFLINE_LICENSE_DAYS = config("OFFLINE_LICENSE_DAYS", default=30, cast=int)
+OFFLINE_URL_TTL_SECONDS = config("OFFLINE_URL_TTL_SECONDS", default=24 * 3600, cast=int)
 
 # EmailOrUsernameBackend first: the product only shows/asks for "email" (see
 # apps.accounts.backends for why the derived `username` field alone isn't

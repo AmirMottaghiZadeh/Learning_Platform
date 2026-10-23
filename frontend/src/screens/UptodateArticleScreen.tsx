@@ -3,12 +3,12 @@ import React, { useMemo, useRef, useState } from "react";
 import { Modal, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
 import { WebView } from "react-native-webview";
 
-import { uptodateApi } from "@/api/endpoints";
 import { ChromeButton } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
+import { uptodateSource } from "@/offline/sources";
 import { useNav } from "@/store/nav";
 import { useReader } from "@/store/reader";
 import { useBackInterceptor } from "@/navigation/back";
@@ -330,7 +330,7 @@ function UptodateArticle() {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["uptodate-topic", id],
-    queryFn: () => uptodateApi.topic(id),
+    queryFn: () => uptodateSource.topic(id),
     enabled: !!id,
   });
 
@@ -360,7 +360,7 @@ function UptodateArticle() {
     isError: graphicTopicError,
   } = useQuery({
     queryKey: ["uptodate-topic", graphicId],
-    queryFn: () => uptodateApi.topic(graphicId as string),
+    queryFn: () => uptodateSource.topic(graphicId as string),
     enabled: !!graphicId,
   });
 
@@ -373,7 +373,7 @@ function UptodateArticle() {
       );
       if (!imageIds.length) return raw;
       const images = await Promise.all(
-        imageIds.map((imageId) => uptodateApi.image(imageId).catch(() => null)),
+        imageIds.map((imageId) => uptodateSource.image(imageId).catch(() => null)),
       );
       let substituted = raw;
       imageIds.forEach((imageId, i) => {

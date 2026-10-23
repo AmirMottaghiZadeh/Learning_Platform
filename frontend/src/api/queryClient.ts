@@ -45,6 +45,13 @@ for (const key of REFERENCE_KEYS) {
   queryClient.setQueryDefaults([key], { staleTime: (query) => (isEmptyList(query.state.data) ? 0 : DAY) });
 }
 
+// UpToDate and Lexicomp read the package on this device first (see
+// src/offline/sources.ts), so they must run with no network as well: React
+// Query would otherwise park them as "paused" until it sees a connection.
+for (const key of ["uptodate-search", "uptodate-topic", "uptodate-graphic-html", "lexicomp-search"]) {
+  queryClient.setQueryDefaults([key], { networkMode: "always" });
+}
+
 // --- persistence across app restarts ---------------------------------------
 //
 // Only small, reused answers are written to device storage. Android's

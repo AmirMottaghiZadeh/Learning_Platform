@@ -14,6 +14,7 @@ export type ScreenKey =
   | "uptodateOutline"
   | "uptodateArticle"
   | "lexicomp"
+  | "downloads"
   | "education"
   | "guidelines"
   | "diseasesConditions"

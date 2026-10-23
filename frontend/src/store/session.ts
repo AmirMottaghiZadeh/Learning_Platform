@@ -2,6 +2,8 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import type { User } from "@/api/types";
+
 /**
  * Token storage: expo-secure-store on native, AsyncStorage on web (SecureStore
  * is unavailable there). Only the refresh token really needs to persist; the
@@ -13,6 +15,10 @@ const KEYS = {
   refresh: "pharmexa.refresh",
   session: "pharmexa.session",
 } as const;
+
+/** The signed-in user's profile as last seen online: what the app starts
+ * with when it is opened without internet. Not a credential. */
+const USER_KEY = "pharmexa.user";
 
 const web = Platform.OS === "web";
 
@@ -51,6 +57,22 @@ export const sessionStore = {
     ]);
   },
   async clear() {
-    await Promise.all([set(KEYS.access, null), set(KEYS.refresh, null), set(KEYS.session, null)]);
+    await Promise.all([
+      set(KEYS.access, null),
+      set(KEYS.refresh, null),
+      set(KEYS.session, null),
+      AsyncStorage.removeItem(USER_KEY),
+    ]);
+  },
+  async saveUser(user: User | null) {
+    await (user ? AsyncStorage.setItem(USER_KEY, JSON.stringify(user)) : AsyncStorage.removeItem(USER_KEY));
+  },
+  async loadUser(): Promise<User | null> {
+    try {
+      const raw = await AsyncStorage.getItem(USER_KEY);
+      return raw ? (JSON.parse(raw) as User) : null;
+    } catch {
+      return null;
+    }
   },
 };

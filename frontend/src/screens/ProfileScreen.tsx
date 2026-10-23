@@ -158,6 +158,7 @@ export function ProfileScreen() {
         <Row label={t("profileFullStats")} icon="profile-full-stats" onPress={() => navigate("statistics")} />
         <Row label={t("profilePlanning")} icon="profile-planning" onPress={() => navigate("planning")} />
         <Row label={t("mistakesTitle")} icon="edu-mistakes" onPress={() => navigate("mistakes")} />
+        <Row label={t("offlineTitle")} icon="profile-downloads" onPress={() => navigate("downloads")} />
         <Row label={t("profileNotifications")} icon="profile-notifications" />
         {user?.is_guest ? (
           // A guest has no account to log out of: this leads to the sign-in screen.

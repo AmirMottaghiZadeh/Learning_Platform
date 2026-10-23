@@ -34,6 +34,7 @@ export const ICONS = {
   "nav-lessons": require("../../../assets/icons/nav-lessons.png"),
   "nav-profile": require("../../../assets/icons/nav-profile.png"),
   "nav-quiz": require("../../../assets/icons/nav-quiz.png"),
+  "profile-downloads": require("../../../assets/icons/profile-downloads.png"),
   "profile-full-stats": require("../../../assets/icons/profile-full-stats.png"),
   "profile-logout": require("../../../assets/icons/profile-logout.png"),
   "profile-notifications": require("../../../assets/icons/profile-notifications.png"),

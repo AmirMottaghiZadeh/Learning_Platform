@@ -3,14 +3,15 @@ import React, { useMemo, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 
 import { ApiError } from "@/api/client";
-import { lexicompApi } from "@/api/endpoints";
 import { LexicompDrug, LexicompInteraction } from "@/api/types";
 import { ScreenChrome } from "@/components/ScreenChrome";
+import { OfflineDownloadButton } from "@/components/offline/OfflineDownloadButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { Screen } from "@/components/primitives/Screen";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
+import { lexicompSource } from "@/offline/sources";
 import { StringKey } from "@/i18n/strings";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -46,7 +47,7 @@ export function LexicompScreen() {
 
   const { data, isFetching, error } = useQuery({
     queryKey: ["lexicomp-search", query],
-    queryFn: () => lexicompApi.search(query),
+    queryFn: () => lexicompSource.search(query),
     enabled: query.length >= 2,
     retry: false,
   });
@@ -59,7 +60,9 @@ export function LexicompScreen() {
   );
 
   const check = useMutation({
-    mutationFn: () => lexicompApi.checkInteractions(selectedGenericIds),
+    mutationFn: () => lexicompSource.checkInteractions(selectedGenericIds),
+    // answered from the device when Lexicomp is downloaded, so no network needed
+    networkMode: "always",
   });
 
   const addDrug = (drug: LexicompDrug) => {
@@ -75,7 +78,11 @@ export function LexicompScreen() {
 
   return (
     <Screen>
-      <ScreenChrome title={t("lexicompScreenTitle")} onBack={goBack} />
+      <ScreenChrome
+        title={t("lexicompScreenTitle")}
+        onBack={goBack}
+        actions={<OfflineDownloadButton dataset="lexicomp" size={30} />}
+      />
       <AppText muted weight="600" size={12} style={{ marginBottom: 14 }}>
         {t("lexicompSourceNote")}
       </AppText>

@@ -2,12 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
-import { uptodateApi } from "@/api/endpoints";
 import { countWords, readingMinutes } from "@/components/article/numbering";
 import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
+import { uptodateSource } from "@/offline/sources";
 import { useNav } from "@/store/nav";
 import { useReader } from "@/store/reader";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -37,7 +37,7 @@ export function UptodateOutlineScreen() {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["uptodate-topic", id],
-    queryFn: () => uptodateApi.topic(id),
+    queryFn: () => uptodateSource.topic(id),
     enabled: !!id,
   });
 

@@ -10,6 +10,7 @@ urlpatterns = [
     path("", include("apps.progress.urls")),
     path("", include("apps.uptodate.urls")),
     path("", include("apps.lexicomp.urls")),
+    path("", include("apps.offline.urls")),
     path("", include("apps.calculators.urls")),
     path("", include("apps.medscape.urls")),
     path("", include("apps.billing.urls")),

@@ -21,6 +21,10 @@ import {
   MedscapeImage,
   MedscapeKind,
   Mistake,
+  OfflineDataset,
+  OfflineLicense,
+  OfflinePackageInfo,
+  OfflinePackageUrls,
   PlanToday,
   QuizAnswerResult,
   QuizOverview,
@@ -150,6 +154,20 @@ export const lexicompApi = {
   checkInteractions: (genericIds: number[]) =>
     apiClient
       .post<LexicompInteraction[]>("/lexicomp/interactions/", { generic_ids: genericIds })
+      .then((r) => r.data),
+};
+
+// Encrypted packages for reading UpToDate/Lexicomp without the network (see
+// src/offline). Download links point straight at the bucket.
+export const offlineApi = {
+  packages: () => apiClient.get<OfflinePackageInfo[]>("/offline/packages/").then((r) => r.data),
+  urls: (dataset: OfflineDataset, build?: string) =>
+    apiClient
+      .post<OfflinePackageUrls>(`/offline/packages/${dataset}/urls/`, build ? { build } : {})
+      .then((r) => r.data),
+  license: (dataset: OfflineDataset, build: string, publicKey?: string) =>
+    apiClient
+      .post<OfflineLicense>(`/offline/packages/${dataset}/license/`, { build, public_key: publicKey ?? "" })
       .then((r) => r.data),
 };
 
