@@ -58,3 +58,10 @@ def person(user):
     if user is None:
         return "—"
     return user.get_full_name() or user.get_username() or "—"
+
+
+@register.filter
+def oneline(value):
+    """Text on one line with single spaces: what a meta description (typed in
+    the panel, maybe over several lines) should be."""
+    return " ".join(str(value or "").split())

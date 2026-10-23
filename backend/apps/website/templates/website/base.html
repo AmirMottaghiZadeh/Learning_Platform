@@ -4,26 +4,32 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{{ meta_title }}</title>
-<meta name="description" content="{{ meta_description }}">
+<meta name="description" content="{{ meta_description|oneline }}">
 {% if meta_noindex %}<meta name="robots" content="noindex, follow">{% endif %}
 {% if meta_canonical %}<link rel="canonical" href="{{ meta_canonical }}">{% endif %}
 <meta property="og:site_name" content="{{ site.site_name }}">
 <meta property="og:locale" content="fa_IR">
 <meta property="og:type" content="{{ meta_type|default:'website' }}">
 <meta property="og:title" content="{{ meta_title }}">
-<meta property="og:description" content="{{ meta_description }}">
+<meta property="og:description" content="{{ meta_description|oneline }}">
 {% if meta_canonical %}<meta property="og:url" content="{{ meta_canonical }}">{% endif %}
-{% if meta_image %}<meta property="og:image" content="{{ meta_image }}"><meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}
+<meta property="og:image" content="{{ meta_image|default:og_default }}"><meta property="og:image:alt" content="{{ site.site_name }}">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{{ meta_title }}"><meta name="twitter:description" content="{{ meta_description|oneline }}"><meta name="twitter:image" content="{{ meta_image|default:og_default }}">
 {% if site.google_verification %}<meta name="google-site-verification" content="{{ site.google_verification }}">{% endif %}
 <meta name="theme-color" content="#EDF5F0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B1E1B" media="(prefers-color-scheme: dark)">
 <link rel="alternate" type="application/rss+xml" title="{{ site.site_name }}" href="{% url 'site:feed' %}">
-<link rel="icon" type="image/png" href="{% static 'website/img/app-logo.png' %}">
-<link rel="preload" href="{% static 'website/fonts/Vazirmatn_500Medium.ttf' %}" as="font" type="font/ttf" crossorigin>
-<link rel="preload" href="{% static 'website/fonts/Vazirmatn_900Black.ttf' %}" as="font" type="font/ttf" crossorigin>
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="{% static 'website/fonts/Vazirmatn_500Medium.woff2' %}" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{% static 'website/fonts/Vazirmatn_900Black.woff2' %}" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="{% static 'website/site.css' %}">
 <script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 {% block head %}{% endblock %}
+{{ structured_data }}
 {{ site.analytics_head|safe }}
 </head>
 <body>

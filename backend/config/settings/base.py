@@ -500,6 +500,15 @@ SITE_HOSTS = [h.strip().lower() for h in config("SITE_HOSTS", default="pharmenta
 SITE_APP_URL = config("SITE_APP_URL", default="https://app.pharmenta.ir")
 # The site's own public origin, for canonical links, the sitemap and the feed.
 SITE_PUBLIC_URL = config("SITE_PUBLIC_URL", default="https://pharmenta.ir")
+# The public drug pages on the site (/drugs/): only drugs with an ATC code
+# under one of these prefixes get a page. Opened one category at a time, so
+# each can be reviewed before Google sees it; everything else stays in the app.
+SITE_DRUG_ATC_PREFIXES = [
+    p.strip().upper() for p in config("SITE_DRUG_ATC_PREFIXES", default="J01").split(",") if p.strip()
+]
+# Who the site names as the author of its drug pages and of articles that
+# have no named author.
+SITE_EDITORIAL_NAME = config("SITE_EDITORIAL_NAME", default="تیم علمی فارمنتا")
 # The site's own hosts (and www.<host>, which redirects to it) are always valid
 # hosts and trusted origins for its forms.
 _site_extra = [f"www.{h}" for h in SITE_HOSTS if not h.endswith("localhost")]

@@ -1,20 +1,23 @@
 """The public pages: home, blog, plans, downloads, announcements, contact, pages,
 and the machine-readable ones (sitemap, feed, robots)."""
 
+import json
 from datetime import timedelta
 from xml.sax.saxutils import escape
 
+from django.conf import settings
 from django.contrib import messages
+from django.contrib.staticfiles import finders
 from django.core.paginator import Paginator
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from django.http import Http404, HttpResponse, HttpResponseNotModified
+from django.http import FileResponse, Http404, HttpResponse, HttpResponseNotModified
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_safe
 
-from . import services
+from . import seo, services
 from .models import (
     Announcement, AppRelease, Category, Comment, ContactMessage, ContentBlock, DailyStat, DownloadLink, Media, Page, Post,
     SiteSettings, Subscriber, Tag,
@@ -48,7 +51,12 @@ def home(request):
         "downloads": list(DownloadLink.objects.filter(is_active=True)),
         "nav": "home",
     }
+    if settings.SITE_DRUG_ATC_PREFIXES:
+        from .views_drugs import popular
+
+        ctx["drugs"] = popular()
     ctx.update(_page_meta(request, description=site.description, canonical="/"))
+    ctx["structured_data"] = seo.home_graph(site, title=ctx["meta_title"], description=" ".join(site.description.split()))
     return render(request, "website/home.html", ctx)
 
 
@@ -116,6 +124,14 @@ def post_detail(request, slug):
     }
     ctx.update(_page_meta(request, title=post.meta_title, description=post.meta_description, image=image,
                           noindex=post.noindex or not post.is_live, canonical=post.canonical_url or post.get_absolute_url(), kind="article"))
+    if post.is_live:
+        trail = [("خانه", "/"), ("مقالات", "/blog/")]
+        if post.category_id:
+            trail.append((post.category.name, post.category.get_absolute_url()))
+        trail.append((post.title, None))
+        ctx["structured_data"] = seo.page_graph(
+            site, seo.breadcrumbs(trail), seo.article(post, site, canonical=ctx["meta_canonical"], image=ctx["meta_image"] or None),
+        )
     return render(request, "website/post_detail.html", ctx)
 
 
@@ -250,6 +266,8 @@ def page_detail(request, slug):
     services.record_view(request, request.path)
     ctx = {"page": page, "nav": f"page:{page.slug}"}
     ctx.update(_page_meta(request, title=page.meta_title, description=page.meta_description, noindex=page.noindex or page.status != Page.PUBLISHED))
+    if page.status == Page.PUBLISHED and not page.noindex:
+        ctx["structured_data"] = seo.page_graph(SiteSettings.get(), seo.breadcrumbs([("خانه", "/"), (page.title, None)]))
     return render(request, "website/page.html", ctx)
 
 
@@ -295,6 +313,42 @@ def media(request, pk, name):
     return response
 
 
+@require_safe
+def brand_file(request, name):
+    """An icon at a fixed root URL (/favicon.ico, /apple-touch-icon.png, ...),
+    served from the app's static files so its address never changes."""
+    path, content_type = seo.BRAND_FILES[name]
+    found = finders.find(path)
+    if not found:
+        raise Http404
+    response = FileResponse(open(found, "rb"), content_type=content_type)
+    response["Cache-Control"] = "public, max-age=604800"
+    return response
+
+
+@require_GET
+def webmanifest(request):
+    site = SiteSettings.get()
+    body = {
+        "name": site.site_name,
+        "short_name": site.site_name,
+        "description": " ".join(site.description.split()),
+        "lang": "fa",
+        "dir": "rtl",
+        "start_url": "/",
+        "display": "browser",
+        "background_color": "#EDF5F0",
+        "theme_color": "#EDF5F0",
+        "icons": [
+            {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"},
+        ],
+    }
+    response = HttpResponse(json.dumps(body, ensure_ascii=False), content_type="application/manifest+json; charset=utf-8")
+    response["Cache-Control"] = "public, max-age=86400"
+    return response
+
+
 @require_GET
 def robots(request):
     site = SiteSettings.get()
@@ -318,7 +372,15 @@ def verification_file(request):
 @require_GET
 def sitemap(request):
     entries = [("/", None, "1.0"), ("/blog/", None, "0.8"), ("/plans/", None, "0.8"), ("/download/", None, "0.7"), ("/announcements/", None, "0.5")]
-    entries += [(p.get_absolute_url(), p.updated_at, "0.7") for p in Post.objects.live().only("slug", "updated_at")]
+    if settings.SITE_DRUG_ATC_PREFIXES:
+        from .views_drugs import catalog
+
+        drugs = catalog()
+        if drugs:
+            entries.append(("/drugs/", max(d["updated"] for d in drugs), "0.9"))
+            entries += [(f"/drugs/{d['slug']}/", d["updated"], "0.8") for d in drugs]
+    posts = Post.objects.live().filter(noindex=False).only("slug", "updated_at", "canonical_url")
+    entries += [(p.get_absolute_url(), p.updated_at, "0.7") for p in posts if not p.canonical_url or p.canonical_url.rstrip("/") == services.absolute(p.get_absolute_url()).rstrip("/")]
     entries += [(p.get_absolute_url(), p.updated_at, "0.4") for p in Page.objects.filter(status=Page.PUBLISHED, noindex=False).exclude(kind=Page.KIND_CONTACT).only("slug", "updated_at")]
     entries += [("/contact/", None, "0.3")]
     entries += [(c.get_absolute_url(), None, "0.5") for c in Category.objects.filter(posts__in=Post.objects.live()).distinct()]

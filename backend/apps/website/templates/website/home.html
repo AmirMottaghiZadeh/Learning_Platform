@@ -2,7 +2,6 @@
 {% load static billing_extras website_extras %}
 {% block head %}
 <link rel="preload" as="image" href="{% static 'website/img/app-home-light.webp' %}" type="image/webp">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"{{ site.site_name }}","url":"{{ meta_canonical }}","description":"{{ site.description|escapejs }}"}</script>
 {% endblock %}
 {% block content %}
 <section class="hero">
@@ -75,6 +74,14 @@
   <div class="hd2 rv"><h2>چهارده گروه ATC، یک نقشهٔ کامل</h2><p>از کدام گروه شروع می‌کنید؟</p></div>
   <div class="atc">{% atc_groups as groups %}{% for code, name in groups %}<div class="rv" style="--d:{{ forloop.counter0 }}0ms"><b>{{ code }}</b><span>{{ name }}</span></div>{% endfor %}</div>
 </section>
+
+{% if drugs %}
+<section class="sec wrap" id="drugs">
+  <div class="hd2 rv"><h2>دارونامهٔ فارسی فارمنتا</h2><p>مکانیسم اثر، موارد مصرف و عوارض جانبی داروها به زبان ساده؛ شروع با آنتی‌بیوتیک‌ها.</p></div>
+  <ul class="dn-chips rv">{% for d in drugs %}<li><a href="{% url 'site:drug' d.slug %}">{{ d.name_fa }}</a></li>{% endfor %}</ul>
+  <p class="more-link"><a href="{% url 'site:drugs' %}">همهٔ داروهای دارونامه ‹</a></p>
+</section>
+{% endif %}
 
 {% if blocks.audience %}
 <section class="sec wrap">

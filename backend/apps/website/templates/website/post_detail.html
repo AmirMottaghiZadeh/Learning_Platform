@@ -1,8 +1,5 @@
 {% extends "website/base.html" %}
 {% load billing_extras %}
-{% block head %}
-{% if post.is_live %}<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"{{ post.title|escapejs }}","datePublished":"{{ post.published_at.isoformat }}","dateModified":"{{ post.updated_at.isoformat }}","inLanguage":"fa","mainEntityOfPage":"{{ meta_canonical }}"{% if meta_image %},"image":"{{ meta_image }}"{% endif %},"author":{"@type":"Person","name":"{{ post.author.get_full_name|default:site.site_name|escapejs }}"},"publisher":{"@type":"Organization","name":"{{ site.site_name|escapejs }}"}}</script>{% endif %}
-{% endblock %}
 {% block content %}
 <div class="wrap">
   <nav class="crumbs" aria-label="مسیر"><a href="{% url 'site:home' %}">خانه</a> ‹ <a href="{% url 'site:blog' %}">مقالات</a>{% if post.category %} ‹ <a href="{{ post.category.get_absolute_url }}">{{ post.category.name }}</a>{% endif %}</nav>
@@ -10,7 +7,7 @@
     <article>
       {% if post.category %}<a class="pill" href="{{ post.category.get_absolute_url }}">{{ post.category.name }}</a>{% endif %}
       <h1>{{ post.title }}</h1>
-      <div class="meta"><span>{{ post.author.get_full_name|default:site.site_name }}</span>{% if post.published_at %}<span>{{ post.published_at|jdate:"long" }}</span>{% endif %}<span>{{ post.reading_minutes|fa }} دقیقه مطالعه</span><span>{{ post.views|num }} بازدید</span></div>
+      <div class="meta"><span>{{ post.author.get_full_name|default:editorial_name }}</span>{% if post.published_at %}<span>{{ post.published_at|jdate:"long" }}</span>{% endif %}<span>{{ post.reading_minutes|fa }} دقیقه مطالعه</span><span>{{ post.views|num }} بازدید</span></div>
       {% if post.cover %}<img class="cover" src="{{ post.cover.url }}" alt="{{ post.cover.alt|default:post.title }}">{% endif %}
       {% if post.excerpt %}<p class="prose" style="font-size:19px;color:var(--ink);margin-bottom:12px">{{ post.excerpt }}</p>{% endif %}
       <div class="prose">{{ body|safe }}</div>
