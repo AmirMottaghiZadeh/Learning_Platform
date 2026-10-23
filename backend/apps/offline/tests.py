@@ -350,3 +350,32 @@ class BucketManifestTests(TestCase):
     def test_nothing_uploaded_yet_is_quiet(self):
         with self._client_raising("NoSuchKey"), self.assertNoLogs("apps.offline.storage", "WARNING"):
             self.assertIsNone(storage.latest_manifest("uptodate"))
+
+
+@override_settings(
+    OFFLINE_S3_BUCKET="pharmenta-dl",
+    OFFLINE_S3_ENDPOINT_URL="https://s3.example.test",
+    OFFLINE_S3_ACCESS_KEY_ID="test",
+    OFFLINE_S3_SECRET_ACCESS_KEY="test",
+    OFFLINE_PACKAGES_DIR="",
+)
+class DownloadHostTests(TestCase):
+    """Links are signed for the endpoint and, with OFFLINE_S3_DOWNLOAD_URL,
+    handed out on the custom domain whose proxy forwards to it."""
+
+    def _link(self):
+        from urllib.parse import urlsplit
+
+        url = storage.file_urls(None, "uptodate", "uptodate-1-20261023-abc123", ["part-000.bin"], 600)["part-000.bin"]
+        return urlsplit(url)
+
+    def test_links_stay_on_the_endpoint_by_default(self):
+        link = self._link()
+        self.assertEqual((link.scheme, link.netloc), ("https", "s3.example.test"))
+
+    @override_settings(OFFLINE_S3_DOWNLOAD_URL="https://s3.pharmenta.test")
+    def test_links_move_to_the_download_host_with_their_signature(self):
+        link = self._link()
+        self.assertEqual((link.scheme, link.netloc), ("https", "s3.pharmenta.test"))
+        self.assertEqual(link.path, "/pharmenta-dl/uptodate/uptodate-1-20261023-abc123/part-000.bin")
+        self.assertIn("X-Amz-Signature=", link.query)

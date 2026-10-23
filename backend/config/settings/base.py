@@ -348,6 +348,12 @@ OFFLINE_S3_SECRET_ACCESS_KEY = config("OFFLINE_S3_SECRET_ACCESS_KEY", default=""
 OFFLINE_S3_REGION = config("OFFLINE_S3_REGION", default="")
 # "path" suits most S3-compatible services; "virtual" for bucket subdomains.
 OFFLINE_S3_ADDRESSING_STYLE = config("OFFLINE_S3_ADDRESSING_STYLE", default="path")
+# Optional: the host the app downloads from, e.g. a custom domain in front of
+# the bucket. Links are still signed for OFFLINE_S3_ENDPOINT_URL and only their
+# scheme and host are swapped, which works when that domain's proxy forwards
+# with the endpoint's own Host header -- Runflare's custom domains do. Setting
+# the custom domain as the endpoint instead breaks every signature.
+OFFLINE_S3_DOWNLOAD_URL = config("OFFLINE_S3_DOWNLOAD_URL", default="")
 # Folder inside the bucket the package tree was uploaded under ("" = root).
 OFFLINE_S3_PREFIX = config("OFFLINE_S3_PREFIX", default="")
 # Development only: serve a locally built package tree instead of a bucket.

@@ -9,7 +9,7 @@
 | Postgres | سرویس دیتابیس رانفلر | دیتابیس اصلی |
 | MySQL | — | نسخهٔ کپی UpToDate (`UPTODATE_MYSQL_URL`) |
 | دیسک سرویس بک‌اند | — | فایل‌های Lexicomp (`LEXICOMP_DB_DIR`) |
-| Object Storage | باکت `pharmenta-dl` روی `https://s3-pish.runflare.cloud` | بسته‌های آفلاین |
+| Object Storage | باکت `pharmenta-dl` روی `https://s3-pish.runflare.cloud`؛ دانلود اپ از `https://s3.pharmenta.ir` | بسته‌های آفلاین |
 | DNS | DNS رانفلر | رکوردهای `pharmenta.ir` |
 
 رانفلر سرویس را از `Dockerfile` ریشهٔ شاخهٔ انتخاب‌شده می‌سازد و نمی‌شود فایل دیگری را به آن معرفی کرد. برای همین وب‌اپ شاخهٔ جدای `deploy-web` دارد که در آن `Dockerfile.frontend` جای `Dockerfile` نشسته است.

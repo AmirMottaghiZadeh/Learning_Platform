@@ -31,7 +31,7 @@ curl -s https://api.pharmenta.ir/api/v1/ready/
 
 1. یک سرویس پایش uptime که به سرورهای داخل ایران دسترسی دارد، هر ۱ تا ۵ دقیقه این سه نشانی را بررسی کند: `/api/v1/ready/` (انتظار: 200 و `"status":"ok"`)، `https://app.pharmenta.ir/` و `https://pharmenta.ir/`.
 2. هشدار به ایمیل یا پیام‌رسان فرستاده شود.
-3. انقضای گواهی SSL هر سه دامنه و `s3-pish.runflare.cloud` هم پایش شود.
+3. انقضای گواهی SSL هر سه دامنه، `s3.pharmenta.ir` و `s3-pish.runflare.cloud` هم پایش شود.
 
 ### لاگ‌ها
 
@@ -147,7 +147,7 @@ pg_restore --clean --if-exists --no-owner -d "<DATABASE_URL مقصد>" ~/pharmen
 | مورد | مقدار یا محل |
 |---|---|
 | دامنه‌ها و سرویس‌ها | [01-overview.md](01-overview.md)، بخش «دامنه‌ها و سرویس‌ها» |
-| Endpoint و باکت Object Storage | `https://s3-pish.runflare.cloud`، `pharmenta-dl` |
+| Endpoint و باکت Object Storage | `https://s3-pish.runflare.cloud`، `pharmenta-dl`؛ دامنهٔ دانلود `https://s3.pharmenta.ir` |
 | مسیر Lexicomp روی دیسک سرویس | مقدار `LEXICOMP_DB_DIR` در env رانفلر |
 | شناسه و متن قالب پیامک sms.ir | پنل sms.ir؛ آخرین خط باید `@app.pharmenta.ir ##CODE#` باشد |
 | شناسهٔ بستهٔ اپ | `com.pharmexa.learning`. **هرگز عوض نشود**؛ فروشگاه‌ها اپ با شناسهٔ دیگر را اپ جدا می‌دانند |
@@ -166,10 +166,10 @@ pg_restore --clean --if-exists --no-owner -d "<DATABASE_URL مقصد>" ~/pharmen
 | پرداخت ناموفق یا برنگشتن از درگاه | شناسهٔ پذیرنده، نشانی بازگشت، IP خروجی ثبت‌نشده در درگاه | کنسول ← درگاه پرداخت ← «آزمون اتصال» و «IP خروجی» |
 | UpToDate: `503 FEATURE_NOT_AVAILABLE` | `UPTODATE_MYSQL_URL` نادرست یا MySQL در دسترس نیست | لاگ؛ اتصال MySQL |
 | Lexicomp: `503` | `interact.db` یا `info.json` در `LEXICOMP_DB_DIR` نیست | فایل‌ها روی دیسک سرویس |
-| دکمهٔ دانلود آفلاین دیده نمی‌شود | `latest.json` آپلود نشده؛ کش ۵ دقیقه‌ای سرور؛ متغیرهای `OFFLINE_S3_*` | `/api/v1/offline/packages/` با توکن یک کاربر |
+| دکمهٔ دانلود آفلاین دیده نمی‌شود («هنوز منتشر نشده») | `latest.json` آپلود نشده؛ کش ۵ دقیقه‌ای سرور؛ متغیرهای `OFFLINE_S3_*`؛ `OFFLINE_S3_ENDPOINT_URL` روی دامنهٔ اختصاصی گذاشته شده (`SignatureDoesNotMatch`) | سطر `offline: cannot read …` در لاگ؛ `/api/v1/offline/packages/` با توکن یک کاربر. Endpoint باید `https://s3-pish.runflare.cloud` باشد و دامنهٔ اختصاصی فقط در `OFFLINE_S3_DOWNLOAD_URL` |
 | دانلود آفلاین خطای «آسیب‌دیده» | `OFFLINE_PACKAGE_SECRET` لپ‌تاپ و سرور فرق دارد؛ قطعه ناقص آپلود شده | اسکریپت «بررسی کامل بودن آپلود» در [07-data.md](07-data.md#بررسی-کامل-بودن-آپلود) |
 | دانلود آفلاین در وب شکست می‌خورد ولی در اپ نه | CORS باکت | `offline_bucket_cors --show` |
-| دانلود آفلاین با خطای SSL | گواهی دامنهٔ Object Storage معتبر نیست (مثلاً دامنهٔ اختصاصی با گواهی موقت `cert-manager.local`) | `OFFLINE_S3_ENDPOINT_URL` را روی `https://s3-pish.runflare.cloud` نگه دارید |
+| دانلود آفلاین با خطای SSL | گواهی دامنهٔ Object Storage معتبر نیست (مثلاً دامنهٔ اختصاصی با گواهی موقت `cert-manager.local`) | `OFFLINE_S3_ENDPOINT_URL` را روی `https://s3-pish.runflare.cloud` نگه دارید؛ اگر خطا از `s3.pharmenta.ir` است، گواهی آن را بررسی کنید یا موقتاً `OFFLINE_S3_DOWNLOAD_URL` را خالی کنید |
 | دامنهٔ تازه خطای SSL می‌دهد | رانفلر هنوز گواهی Let's Encrypt را صادر نکرده و گواهی موقت `cert-manager.local` سرو می‌شود | `echo \| openssl s_client -connect <دامنه>:443 -servername <دامنه> \| openssl x509 -noout -issuer`؛ اگر چند ساعت ماند، پشتیبانی رانفلر |
 | وب‌اپ بعد از دیپلوی نسخهٔ قدیمی را نشان می‌دهد | `deploy-web` به‌روز نشده؛ Service Worker | [08-deployment.md](08-deployment.md)، بخش «وب‌اپ»؛ یک بار بارگذاری مجدد صفحه نسخهٔ تازه را می‌آورد |
 | کندی یا مصرف زیاد حافظهٔ بک‌اند | تعداد worker زیاد (CPU میزبان شمرده می‌شود) | `WEB_CONCURRENCY` را صریح بگذارید |

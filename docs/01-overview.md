@@ -73,7 +73,8 @@ flowchart LR
 | `https://pharmenta.ir` (و `www.pharmenta.ir` که به آن هدایت می‌شود) | بک‌اند | سایت معرفی، بلاگ، پلن‌ها و خرید، دانلود، پنل محتوا `/panel/`، کنسول فروش `/ops/` |
 | `https://app.pharmenta.ir` | وب‌اپ (از شاخهٔ `deploy-web`) | نسخهٔ وب اپ (PWA) |
 | `https://api.pharmenta.ir` | بک‌اند | API در `/api/v1/`، Swagger در `/api/v1/docs/`، کنسول‌ها در `/ops/` و `/ops/data-quality/`، ادمین Django در `/admin/` |
-| `https://s3-pish.runflare.cloud` | Object Storage، باکت `pharmenta-dl` | بسته‌های آفلاین (خصوصی؛ فقط با لینک امضاشده) |
+| `https://s3-pish.runflare.cloud` | Object Storage، باکت `pharmenta-dl` | بسته‌های آفلاین (خصوصی؛ فقط با لینک امضاشده). سرور با همین نشانی به باکت وصل می‌شود |
+| `https://s3.pharmenta.ir` | دامنهٔ اختصاصی همان Object Storage | دامنهٔ لینک‌های دانلودی که اپ می‌گیرد (`OFFLINE_S3_DOWNLOAD_URL`) |
 
 بک‌اند بر اساس `Host` درخواست تصمیم می‌گیرد: هاست‌هایی که در `SITE_HOSTS` هستند سایت را می‌گیرند (`config/urls_site.py`) و بقیه API را (`config/urls.py`). جزئیات در [12-website.md](12-website.md).
 

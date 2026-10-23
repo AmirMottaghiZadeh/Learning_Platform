@@ -18,6 +18,7 @@ import json
 import logging
 import time
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
 from django.core import signing
@@ -106,16 +107,29 @@ def clear_cache():
     _manifests.clear()
 
 
+def _on_download_host(url: str) -> str:
+    """A presigned link moved onto OFFLINE_S3_DOWNLOAD_URL's scheme and host.
+    The signature covers the endpoint's host, so this only works behind a
+    proxy that forwards with that Host header (see the setting)."""
+    base = getattr(settings, "OFFLINE_S3_DOWNLOAD_URL", "")
+    if not base:
+        return url
+    target = urlsplit(base)
+    return urlunsplit(urlsplit(url)._replace(scheme=target.scheme, netloc=target.netloc))
+
+
 def file_urls(request, dataset: str, build: str, names: list[str], ttl: int) -> dict[str, str]:
     """{part name: a GET link valid for `ttl` seconds}."""
     keys = {name: f"{dataset}/{build}/{name}" for name in names}
     if using_s3():
         client = _s3()
         return {
-            name: client.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": settings.OFFLINE_S3_BUCKET, "Key": _prefix() + key},
-                ExpiresIn=ttl,
+            name: _on_download_host(
+                client.generate_presigned_url(
+                    "get_object",
+                    Params={"Bucket": settings.OFFLINE_S3_BUCKET, "Key": _prefix() + key},
+                    ExpiresIn=ttl,
+                )
             )
             for name, key in keys.items()
         }

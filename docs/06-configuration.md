@@ -158,7 +158,8 @@
 | متغیر | پیش‌فرض | رانفلر | کار |
 |---|---|---|---|
 | `OFFLINE_PACKAGE_SECRET` | خالی | **راز**؛ دقیقاً همان مقدار `.env` لپ‌تاپ | کلید اصلی همهٔ بسته‌ها. بعد از انتشار اولین بسته **هرگز** عوض نشود |
-| `OFFLINE_S3_ENDPOINT_URL` | خالی | `https://s3-pish.runflare.cloud` | فقط نشانی سرور، بدون باکت و مسیر |
+| `OFFLINE_S3_ENDPOINT_URL` | خالی | `https://s3-pish.runflare.cloud` | فقط نشانی سرور، بدون باکت و مسیر. دامنهٔ اختصاصی (`s3.pharmenta.ir`) را اینجا **نگذارید**: پراکسی آن هدر `Host` را عوض می‌کند و امضای همهٔ درخواست‌ها `SignatureDoesNotMatch` می‌شود |
+| `OFFLINE_S3_DOWNLOAD_URL` | خالی | `https://s3.pharmenta.ir` | دامنه‌ای که لینک‌های دانلود اپ روی آن داده می‌شوند. لینک‌ها همچنان برای Endpoint امضا می‌شوند و فقط دامنه‌شان عوض می‌شود. خالی = خود Endpoint |
 | `OFFLINE_S3_BUCKET` | خالی | `pharmenta-dl` | |
 | `OFFLINE_S3_ACCESS_KEY_ID` / `OFFLINE_S3_SECRET_ACCESS_KEY` | خالی | **راز** | کلیدهای Object Storage |
 | `OFFLINE_S3_REGION` | خالی | — | |
