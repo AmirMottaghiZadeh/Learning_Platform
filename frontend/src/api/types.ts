@@ -1,4 +1,4 @@
-/** Response shapes — mirror `docs/api-contract.md`. */
+/** Response shapes — mirror `docs/05-api.md`. */
 
 export type StudyField = "" | "pharmacy" | "medicine" | "nursing";
 export type StudyGoal = "" | "comprehensive" | "residency" | "final" | "clinical";

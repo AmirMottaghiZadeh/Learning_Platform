@@ -6,7 +6,7 @@
 - `backend/apps/*/tests.py` contains backend tests colocated with Django apps.
 - `frontend/` holds the Expo app; main entry points are `frontend/App.tsx` and `frontend/src/`.
 - `frontend/src/`: `api/` (client + typed endpoints), `theme/` (design tokens), `i18n/`, `components/`, `screens/`, `store/` (zustand: auth, nav state machine), `navigation/`.
-- `PHASES.md` tracks the rewrite plan and progress; `docs/api-contract.md` is the API contract.
+- `PHASES.md` tracks the rewrite plan and progress; `docs/` holds the project documentation (index: `docs/README.md`, API contract: `docs/05-api.md`).
 
 ## Build, Test, and Development Commands
 
@@ -40,4 +40,4 @@ PRs should include a concise summary, testing performed, linked issues when appl
 
 ## Security & Configuration Tips
 
-Use `.env.example` files as templates and do not commit secrets, local databases, virtual environments, generated exports, `.expo/`, or build output. Prefer settings in `backend/config/settings/`. Deploy config: `backend/render.yaml`, `frontend/Dockerfile`, `frontend/eas.json`.
+Use `.env.example` files as templates and do not commit secrets, local databases, virtual environments, generated exports, `.expo/`, or build output. Prefer settings in `backend/config/settings/`. Deploy config: root `Dockerfile` (backend), `Dockerfile.frontend` (web app, via the `deploy-web` branch), `frontend/eas.json`; see `docs/08-deployment.md`.
