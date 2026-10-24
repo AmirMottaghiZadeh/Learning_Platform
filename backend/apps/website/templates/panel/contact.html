@@ -1,0 +1,14 @@
+{% extends "panel/base.html" %}
+{% load billing_extras %}
+{% block title %}پیام‌های تماس{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>پیام‌های تماس</h1><div class="sub">پیام‌هایی که از فرم «تماس با ما» می‌رسد</div></div></div>
+<div class="tabs">{% for key, label, n in tabs %}<a class="{% if key == status %}on{% endif %}" href="?status={{ key }}">{{ label }} <span class="num">{{ n|fa }}</span></a>{% endfor %}</div>
+<div class="toolbar"><form method="get"><input type="hidden" name="status" value="{{ status }}"><label class="sr" for="q">جستجو</label><input class="inp" id="q" name="q" value="{{ q }}" placeholder="جستجو" style="width:260px"><button class="btn" type="submit">جستجو</button></form></div>
+<div class="grid">{% for m in page.object_list %}<details class="card"{% if m.status == "new" %} open{% endif %}><summary style="cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>{{ m.name }}</b><span class="chip {% if m.status == 'new' %}rv{% elif m.status == 'answered' %}ok{% endif %}">{{ m.get_status_display }}</span><span>{{ m.subject|default:"بدون موضوع" }}</span><span class="sm" style="color:var(--muted);margin-inline-start:auto">{{ m.created_at|jdate:"time" }}</span></summary>
+<p style="margin:12px 0;white-space:pre-wrap">{{ m.message }}</p><p class="sm" style="color:var(--muted)">{% if m.email %}ایمیل: <span dir="ltr">{{ m.email }}</span> {% endif %}{% if m.phone %}· تلفن: <span dir="ltr">{{ m.phone }}</span>{% endif %}</p>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">{% for k, l in m.STATUS_CHOICES %}{% if k != m.status %}<form method="post" action="{% url 'panel:contact_action' m.pk %}">{% csrf_token %}<button class="btn s" type="submit" name="action" value="{{ k }}">{{ l }}</button></form>{% endif %}{% endfor %}
+<form method="post" action="{% url 'panel:contact_action' m.pk %}" data-confirm="این پیام حذف شود؟">{% csrf_token %}<button class="btn s danger" type="submit" name="action" value="delete">حذف</button></form></div></details>
+{% empty %}<div class="card empty">پیامی نیست.</div>{% endfor %}</div>
+{% include "panel/_pagination.html" %}
+{% endblock %}

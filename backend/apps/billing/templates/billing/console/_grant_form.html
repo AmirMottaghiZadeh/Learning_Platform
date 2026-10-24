@@ -1,0 +1,27 @@
+<form method="post" action="{% url 'console:user_grant' target.pk %}" class="stack" style="gap:10px">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <div>
+    <label class="lbl" for="grant-plan-{{ target.pk }}">پلن یا محصول</label>
+    <select class="fld" id="grant-plan-{{ target.pk }}" name="plan" required>
+      {% for p in plans %}<option value="{{ p.pk }}">{{ p.name_fa }} · {{ p.get_kind_display }}{% if p.status == 'hidden' %} (مخفی){% endif %}</option>{% empty %}<option value="">هنوز پلنی ساخته نشده</option>{% endfor %}
+    </select>
+  </div>
+  <div class="grid g2">
+    <div>
+      <label class="lbl" for="grant-days-{{ target.pk }}">مدت</label>
+      <select class="fld" id="grant-days-{{ target.pk }}" name="days">
+        {% for value, label in durations %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="lbl" for="grant-custom-{{ target.pk }}">یا تعداد روز دلخواه</label>
+      <input class="fld" id="grant-custom-{{ target.pk }}" name="custom_days" inputmode="numeric" placeholder="مثلاً ۴۵">
+    </div>
+  </div>
+  <div>
+    <label class="lbl" for="grant-note-{{ target.pk }}">دلیل (در گزارش تغییرات می‌ماند)</label>
+    <input class="fld" id="grant-note-{{ target.pk }}" name="note" placeholder="مثلاً هدیه، جبران قطعی، فروش سازمانی">
+  </div>
+  <button class="btn primary" type="submit">دادن دسترسی</button>
+</form>

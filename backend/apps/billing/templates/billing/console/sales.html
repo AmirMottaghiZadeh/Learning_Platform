@@ -1,0 +1,50 @@
+{% extends "billing/console/base.html" %}
+{% load billing_extras %}
+{% block title %}فروش{% endblock %}
+{% block content %}
+  <div class="stack" style="gap:4px">
+    <span class="eyebrow">گزارش‌ها</span>
+    <h1>فروش</h1>
+    <span class="sub">«این ماه» یعنی از اول ماه شمسی جاری.</span>
+  </div>
+  <div class="grid g4">
+    {% for k in kpis %}<div class="kpi"><div><span class="sub">{{ k.label }}</span><b>{% if k.money %}{{ k.value|num }} <span style="font-size:14px">تومان</span>{% else %}{{ k.value|num }}{% endif %}</b></div></div>{% endfor %}
+  </div>
+  <section class="card stack">
+    <h2>فروش این ماه به تفکیک پلن</h2>
+    {% for r in by_plan %}
+      <div class="row" style="gap:12px">
+        <b style="flex:0 1 200px">{{ r.plan__name_fa }}</b>
+        <span class="bar grow" style="height:12px;border-radius:6px;flex:1 1 200px"><i style="width:{{ r.pct }}%"></i></span>
+        <span style="flex:0 1 220px;font-weight:700">{{ r.total|toman }} · {{ r.n|fa }} خرید</span>
+      </div>
+    {% empty %}<p class="sub">این ماه هنوز فروشی ثبت نشده.</p>{% endfor %}
+  </section>
+  <section class="card stack">
+    <div class="row"><h2 class="grow">سفارش‌ها</h2>
+      <nav class="segs" aria-label="وضعیت سفارش"><a href="?" {% if not status %}aria-current="true"{% endif %}>همه</a>{% for value, label in statuses %}<a href="?status={{ value }}" {% if status == value %}aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}</nav></div>
+    <div class="scroll-x">
+      <table class="list">
+        <thead><tr><th>تاریخ</th><th>کاربر</th><th>پلن</th><th>مبلغ</th><th>تخفیف</th><th>وضعیت</th><th>کد پیگیری</th></tr></thead>
+        <tbody>
+          {% for o in page %}
+            <tr>
+              <td>{{ o.created_at|jdate:"time" }}</td>
+              <td>{% if o.user_id %}<a href="{% url 'console:user' o.user_id %}">{{ labels|get_item:o.pk }}</a>{% else %}<span class="sub">{{ labels|get_item:o.pk }}</span>{% endif %}</td>
+              <td>{{ o.plan.name_fa }}</td>
+              <td>{{ o.payable_toman|toman }}</td>
+              <td>{% if o.discount %}<span class="ltr mono">{{ o.discount.code }}</span>{% else %}—{% endif %}</td>
+              <td><span class="chip {% if o.status == 'paid' %}accent{% elif o.status == 'failed' %}deny{% elif o.status == 'pending' %}warn{% endif %}">{{ o.get_status_display }}</span>{% if o.error %}<br><span class="sub" style="font-size:12px">{{ o.error|truncatechars:60 }}</span>{% endif %}</td>
+              <td class="ltr mono">{{ o.ref_id|default:"—" }}</td>
+            </tr>
+          {% empty %}<tr><td colspan="7" class="empty">سفارشی نیست.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page.paginator.num_pages > 1 %}
+    <div class="pager"><span>صفحه‌ی {{ page.number|fa }} از {{ page.paginator.num_pages|fa }}</span><span class="row" style="gap:6px">
+      {% if page.has_previous %}<a class="btn small" href="?status={{ status }}&amp;page={{ page.previous_page_number }}">قبلی</a>{% endif %}
+      {% if page.has_next %}<a class="btn small" href="?status={{ status }}&amp;page={{ page.next_page_number }}">بعدی</a>{% endif %}</span></div>
+    {% endif %}
+  </section>
+{% endblock %}

@@ -1,0 +1,70 @@
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.core.exceptions import PlatformAPIError
+from apps.billing.enforcement import require_feature
+
+from . import services
+from .serializers import (
+    UptodateArticleSerializer,
+    UptodateImageSerializer,
+    UptodateSearchResultSerializer,
+)
+
+
+def _require_available():
+    if not services.is_available():
+        raise PlatformAPIError(
+            "The UpToDate reference is not available.",
+            code="FEATURE_NOT_AVAILABLE",
+            status_code=503,
+        )
+
+
+class TopicSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("search", str, description="Topic title query (all word prefixes must match the title)."),
+            OpenApiParameter("limit", int, description="Max results (default 25)."),
+        ],
+        responses=UptodateSearchResultSerializer(many=True),
+    )
+    def get(self, request):
+        _require_available()
+        query = request.query_params.get("search", "").strip()
+        try:
+            limit = min(50, max(1, int(request.query_params.get("limit", 25))))
+        except ValueError:
+            limit = 25
+        results = services.search_topics(query, limit=limit) if query else []
+        return Response(UptodateSearchResultSerializer(results, many=True).data)
+
+
+class TopicDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=UptodateArticleSerializer)
+    def get(self, request, content_id):
+        _require_available()
+        article = services.get_topic(content_id)
+        if article is None:
+            raise PlatformAPIError("No such topic.", code="NOT_FOUND", status_code=404)
+        require_feature(request, "uptodate", item=content_id, consume=True)
+        return Response(UptodateArticleSerializer(article).data)
+
+
+class ImageDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=UptodateImageSerializer)
+    def get(self, request, image_id):
+        _require_available()
+        require_feature(request, "uptodate")
+        image = services.get_image(image_id)
+        if image is None:
+            raise PlatformAPIError("No such image.", code="NOT_FOUND", status_code=404)
+        return Response(UptodateImageSerializer(image).data)

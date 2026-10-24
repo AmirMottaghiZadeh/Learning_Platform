@@ -1,0 +1,19 @@
+{% extends "billing/_payment_base.html" %}
+{% load billing_extras %}
+{% block title %}پرداخت موفق{% endblock %}
+{% block content %}
+  <div class="badge ok" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+  <h1>پرداخت موفق بود</h1>
+  <p>{{ order.plan.name_fa }} برای حساب شما فعال شد و روی همهٔ دستگاه‌هایتان در دسترس است.</p>
+  <dl>
+    <dt>سفارش</dt><dd>{{ order.pk|fa }}</dd>
+    <dt>مبلغ</dt><dd>{{ order.payable_toman|toman }}</dd>
+    {% if order.ref_id %}<dt>کد پیگیری</dt><dd class="ltr">{{ order.ref_id }}</dd>{% endif %}
+    {% if order.card_pan %}<dt>کارت</dt><dd class="ltr">{{ order.card_pan }}</dd>{% endif %}
+    {% if order.paid_at %}<dt>زمان</dt><dd>{{ order.paid_at|jdate:"time" }}</dd>{% endif %}
+  </dl>
+  <div class="acts">
+    <a class="btn p" href="{{ return_url }}">رفتن به فارمنتا</a>
+  </div>
+  <p class="note">کد پیگیری را نگه دارید؛ برای هر پرسش دربارهٔ این خرید لازم است.</p>
+{% endblock %}

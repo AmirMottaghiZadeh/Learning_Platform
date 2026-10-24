@@ -1,0 +1,5 @@
+{% if site.newsletter_enabled %}
+<div class="nl"><div><h3>از تازه‌ها باخبر شوید</h3><p>اطلاعیه نسخه‌ها و مقاله‌های جدید، بدون هرزنامه.</p></div>
+<form method="post" action="{% url 'site:subscribe' %}">{% csrf_token %}<input type="hidden" name="source" value="{{ source|default:'site' }}"><input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+<label class="sr" for="nl-email">ایمیل</label><input class="input" id="nl-email" type="email" name="email" placeholder="ایمیل شما" required dir="ltr"><button class="btn p" type="submit">عضویت</button></form></div>
+{% endif %}

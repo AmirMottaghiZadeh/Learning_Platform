@@ -1,0 +1,12 @@
+{% extends "panel/base.html" %}
+{% load billing_extras %}
+{% block title %}سئو{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>سئو و تغییر مسیر</h1><div class="sub">سلامت صفحه‌های منتشرشده برای موتورهای جست‌وجو</div></div><div class="acts"><a class="btn" href="{% url 'panel:redirects' %}">تغییر مسیرها ({{ redirect_count|fa }})</a><a class="btn" href="{% url 'panel:settings' %}?tab=seo">تنظیمات سئو</a></div></div>
+<div class="grid kpis"><div class="card kpi"><div class="l">مطلب منتشرشده</div><div class="v num">{{ post_count|fa }}</div></div><div class="card kpi"><div class="l">مطلب نیازمند بهبود</div><div class="v num" style="color:{% if issue_count %}var(--warn){% else %}var(--ok){% endif %}">{{ issue_count|fa }}</div></div><div class="card kpi"><div class="l">صفحهٔ noindex</div><div class="v num">{{ noindex_pages|fa }}</div></div><div class="card kpi"><div class="l">وضعیت سایت</div><div class="v" style="font-size:18px">{% if site.noindex_site %}<span class="chip bad">ایندکس بسته است</span>{% else %}<span class="chip ok">قابل ایندکس</span>{% endif %}</div></div></div>
+<div class="grid" style="grid-template-columns:1fr 1fr">
+  <div class="card"><h2>فایل‌های برای موتور جست‌وجو</h2><div class="task"><a href="/sitemap.xml" target="_blank" rel="noopener" style="flex:1" dir="ltr">/sitemap.xml</a><span class="chip ok">نقشهٔ سایت</span></div><div class="task"><a href="/robots.txt" target="_blank" rel="noopener" style="flex:1" dir="ltr">/robots.txt</a><span class="chip ok">robots</span></div><div class="task"><a href="/rss.xml" target="_blank" rel="noopener" style="flex:1" dir="ltr">/rss.xml</a><span class="chip ok">خوراک</span></div>
+    <p class="note" style="margin-top:12px">نقشهٔ سایت را در Google Search Console ثبت کنید و کد تأیید را در «تنظیمات › سئو» بگذارید.</p></div>
+  <div class="card"><h2>مطلب‌هایی که نیاز به بهبود دارند</h2>{% for post, problems in issues %}<div class="task" style="align-items:flex-start"><a href="{% url 'panel:post_edit' post.pk %}" style="flex:1"><b>{{ post.title }}</b><div class="sm" style="color:var(--muted)">{{ problems|join:" · " }}</div></a></div>{% empty %}<p class="empty">همهٔ مطالب منتشرشده مشکل سئویی ندارند.</p>{% endfor %}</div>
+</div>
+{% endblock %}

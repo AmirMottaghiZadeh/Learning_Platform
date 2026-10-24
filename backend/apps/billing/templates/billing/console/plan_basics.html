@@ -1,0 +1,24 @@
+{% extends "billing/console/_wizard.html" %}
+{% block step %}
+  <form method="post" class="card stack" style="gap:16px">
+    {% csrf_token %}
+    <h2>اطلاعات پایه</h2>
+    {% if form.non_field_errors %}<div class="flash error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+    <div class="grid g2">
+      {% for field in form %}
+        <div{% if field.name == 'tagline_fa' %} style="grid-column:1/-1"{% endif %}>
+          <label class="lbl" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {% if field.name == 'kind' or field.name == 'audience' %}
+            <select class="fld" id="{{ field.id_for_label }}" name="{{ field.html_name }}"{% if field.field.disabled %} disabled{% endif %}>
+              {% for value, label in field.field.choices %}<option value="{{ value }}"{% if field.value|stringformat:"s" == value|stringformat:"s" %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+          {% else %}
+            <input class="fld{% if field.name == 'slug' or field.name == 'name_en' %} ltr{% endif %}" id="{{ field.id_for_label }}" name="{{ field.html_name }}" value="{{ field.value|default_if_none:'' }}"{% if field.field.required %} required{% endif %}>
+          {% endif %}
+          {% for e in field.errors %}<span class="sub" style="color:var(--deny)">{{ e }}</span>{% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="row" style="justify-content:flex-end"><button class="btn primary" type="submit">بعدی: امکانات</button></div>
+  </form>
+{% endblock %}

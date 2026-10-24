@@ -1,0 +1,56 @@
+{% extends "billing/console/base.html" %}
+{% load billing_extras %}
+{% block title %}پلن‌ساز{% endblock %}
+{% block style %}
+  .pcard { background: var(--card); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 10px; border: 2px solid transparent; }
+  .pcard:hover { border-color: var(--line); }
+  .pcard.free { border-color: var(--mint); }
+{% endblock %}
+{% block content %}
+  <div class="row" style="align-items:flex-end">
+    <div class="grow stack" style="gap:4px">
+      <span class="eyebrow">پلن‌ها و محصولات</span>
+      <h1>پلن‌ساز</h1>
+      <span class="sub">هر پلن مجموعه‌ای از امکانات با سقف دلخواه و چند قیمت است. تغییر یک پلن فقط روی خریدهای بعدی اثر دارد.</span>
+    </div>
+    <a class="btn" href="{% url 'console:plan_new' %}?kind=product">+ محصول تکی</a>
+    <a class="btn primary" href="{% url 'console:plan_new' %}?kind=plan">+ پلن اشتراک</a>
+  </div>
+
+  <h2>پلن‌های اشتراک</h2>
+  <div class="grid g3">
+    {% for p in plans %}
+      <div class="pcard{% if p.is_free %} free{% endif %}">
+        <div class="row" style="justify-content:space-between"><h3>{{ p.name_fa }}</h3>
+          <span class="chip {% if p.status == 'active' %}accent{% elif p.status == 'hidden' %}spec{% endif %}">{% if p.is_free %}رایگان · برای همه{% else %}{{ p.get_status_display }}{% endif %}</span></div>
+        <span class="sub">{{ p.tagline_fa|default:"—" }}</span>
+        <span class="sub" style="font-size:12.5px">{{ p.n_features|fa }} امکان{% if not p.is_free %} · {{ p.n_prices|fa }} قیمت · {{ p.n_active|num }} مشترک فعال{% endif %}</span>
+        <div class="row" style="gap:8px;margin-top:4px">
+          <a class="btn small primary" href="{% url 'console:plan_features' p.pk %}">ویرایش امکانات</a>
+          <a class="btn small" href="{% url 'console:plan_basics' p.pk %}">اطلاعات</a>
+          {% if not p.is_free %}<a class="btn small" href="{% url 'console:plan_prices' p.pk %}">قیمت‌ها</a>
+          <form method="post" action="{% url 'console:plan_copy' p.pk %}">{% csrf_token %}<button class="btn small" type="submit">کپی</button></form>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h2>محصولات تکی</h2>
+  <div class="grid g3">
+    {% for p in products %}
+      <div class="pcard">
+        <div class="row" style="justify-content:space-between"><h3>{{ p.name_fa }}</h3><span class="chip {% if p.status == 'active' %}accent{% elif p.status == 'hidden' %}spec{% endif %}">{{ p.get_status_display }}</span></div>
+        <span class="sub">{{ p.tagline_fa|default:"—" }}</span>
+        <span class="sub" style="font-size:12.5px">{{ p.n_features|fa }} امکان · {{ p.n_prices|fa }} قیمت · {{ p.n_active|num }} دارنده</span>
+        <div class="row" style="gap:8px;margin-top:4px">
+          <a class="btn small primary" href="{% url 'console:plan_features' p.pk %}">ویرایش امکانات</a>
+          <a class="btn small" href="{% url 'console:plan_basics' p.pk %}">اطلاعات</a>
+          <a class="btn small" href="{% url 'console:plan_prices' p.pk %}">قیمت‌ها</a>
+          <form method="post" action="{% url 'console:plan_copy' p.pk %}">{% csrf_token %}<button class="btn small" type="submit">کپی</button></form>
+        </div>
+      </div>
+    {% empty %}
+      <div class="card empty" style="grid-column:1/-1">هنوز محصول تکی نساخته‌اید؛ مثلاً «بسته‌ی آزمون پایان دوره».</div>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "panel/base.html" %}
+{% load billing_extras %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<form method="post" id="postform" novalidate>{% csrf_token %}
+<div class="hd"><div><h1>{{ heading }}</h1><div class="sub">{% if post %}آخرین ذخیره: {{ post.updated_at|jdate:"time" }} · {{ revision_count|fa }} نسخه{% else %}مطلب تازه{% endif %}</div></div>
+  <div class="acts">
+    {% if post %}<a class="btn" href="{{ preview_url }}" target="_blank" rel="noopener"><svg class="i"><use href="#i-eye"/></svg>پیش‌نمایش</a><a class="btn" href="{% url 'panel:post_revisions' post.pk %}"><svg class="i"><use href="#i-history"/></svg>نسخه‌ها</a>{% endif %}
+    <button class="btn" type="submit" name="intent" value="save">ذخیره</button>
+    {% if allow_publish %}<button class="btn p" type="submit" name="intent" value="publish">{% if post and post.status == 'published' %}به‌روزرسانی{% else %}انتشار{% endif %}</button>
+    {% else %}<button class="btn p" type="submit" name="intent" value="review">ارسال برای بازبینی</button>{% endif %}
+  </div></div>
+{% if form.errors %}<div class="toast error" role="alert">لطفاً خطاهای فرم را بررسی کنید: {% for f in form %}{% for e in f.errors %}{{ f.label }}: {{ e }} · {% endfor %}{% endfor %}{{ form.non_field_errors }}</div>{% endif %}
+<div class="edgrid">
+  <div class="doc">
+    <label class="sr" for="{{ form.title.id_for_label }}">عنوان</label>
+    <input class="title" id="{{ form.title.id_for_label }}" name="title" value="{{ form.title.value|default:'' }}" placeholder="عنوان مطلب" maxlength="220" required autofocus>
+    {{ form.body_html }}
+    <div class="ed-foot"><span id="wc">۰ کلمه</span><span id="rt">۱ دقیقه مطالعه</span></div>
+  </div>
+  <div class="side">
+    <div class="card"><b class="h">انتشار</b><div class="grid" style="gap:10px">
+      {% include "panel/_field.html" with field=form.status %}
+      {% if form.published_at %}{% include "panel/_field.html" with field=form.published_at %}{% endif %}
+      {% if form.featured %}{% include "panel/_field.html" with field=form.featured %}{% endif %}
+      {% include "panel/_field.html" with field=form.allow_comments %}
+    </div></div>
+    <div class="card"><b class="h">دسته و برچسب</b><div class="grid" style="gap:10px">{% include "panel/_field.html" with field=form.category %}{% include "panel/_field.html" with field=form.tags_text %}</div></div>
+    <div class="card"><b class="h">تصویر شاخص</b>{{ form.cover }}
+      <div class="cover-box" id="cover-box" role="button" tabindex="0" {% if post and post.cover %}style="background-image:url('{{ post.cover.url }}')"{% endif %}>{% if not post or not post.cover %}انتخاب یا بارگذاری تصویر{% endif %}</div>
+      <button class="btn s" type="button" id="cover-clear" style="margin-top:8px">حذف تصویر</button></div>
+    <div class="card"><b class="h">نشانی و خلاصه</b><div class="grid" style="gap:10px">{% include "panel/_field.html" with field=form.slug %}{% include "panel/_field.html" with field=form.excerpt %}</div></div>
+    <div class="card" id="seo"><b class="h">سئو</b>
+      <div class="snip" aria-label="پیش‌نمایش گوگل"><u id="sn-title">{{ form.title.value|default:'عنوان مطلب' }}</u><s id="sn-url" dir="ltr">pharmenta.ir › blog › {{ form.slug.value|default:'...' }}</s><p id="sn-desc">توضیح مطلب اینجا نمایش داده می‌شود.</p></div>
+      <div class="grid" style="gap:10px;margin-top:10px">{% include "panel/_field.html" with field=form.seo_title %}{% include "panel/_field.html" with field=form.seo_description %}{% include "panel/_field.html" with field=form.canonical_url %}{% include "panel/_field.html" with field=form.noindex %}</div>
+      <div class="score"><span>امتیاز سئو</span><b class="num" id="seo-score">۰ / ۱۰۰</b></div><div class="bar" style="margin-top:6px"><i id="seo-bar" style="width:0"></i></div>
+      <ul class="checks" id="seo-checks"></ul></div>
+    {% if post %}<div class="card"><b class="h">کارهای دیگر</b><div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn s" type="submit" formaction="{% url 'panel:post_duplicate' post.pk %}" formnovalidate><svg class="i"><use href="#i-copy"/></svg>تکثیر</button>
+      <button class="btn s danger" type="submit" formaction="{% url 'panel:post_delete' post.pk %}" formnovalidate data-confirm="این مطلب حذف شود؟"><svg class="i"><use href="#i-trash"/></svg>حذف</button></div></div>{% endif %}
+  </div>
+</div>
+</form>
+<dialog id="picker" aria-label="کتابخانهٔ رسانه"><div class="dh"><span>انتخاب تصویر</span><button class="ib" type="button" data-close aria-label="بستن"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="db"><div class="drop" id="pick-drop">تصویر را اینجا رها کنید یا <label class="btn s" style="cursor:pointer">انتخاب فایل<input type="file" id="pick-file" accept="image/*" multiple hidden></label></div><div class="pgrid" id="pick-grid"></div></div></dialog>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "billing/console/base.html" %}
+{% load billing_extras %}
+{% block title %}{% if plan %}{{ plan.name_fa }}{% else %}پلن جدید{% endif %} · پلن‌ساز{% endblock %}
+{% block style %}
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+  .steps li { flex: 1 1 150px; }
+  .steps a, .steps span.step { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; color: var(--muted); font-weight: 800; text-decoration: none; }
+  .steps .dot { width: 30px; height: 30px; border-radius: 50%; background: var(--line); color: var(--muted); display: flex; align-items: center; justify-content: center; flex: none; }
+  .steps .done a { background: var(--card); color: var(--ink); }
+  .steps .done .dot { background: var(--mint); color: var(--ink); }
+  .steps .current a, .steps .current span.step { background: var(--accent); color: #FFFFFF; }
+  .steps .current .dot { background: #FFFFFF; color: var(--accent); }
+  .preview { flex: 1 1 320px; max-width: 360px; padding: 30px 22px; display: flex; flex-direction: column; gap: 14px; background: var(--page-2); }
+  .pv { background: var(--card); border-radius: 28px; padding: 22px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 40px rgba(20,32,29,0.12); }
+  .pv li { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .pv li::before { content: "✓"; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex: none; }
+  {% block wizard_style %}{% endblock %}
+{% endblock %}
+{% block content %}
+  <div class="stack" style="gap:4px">
+    <a href="{% url 'console:plans' %}" class="sub" style="text-decoration:none">‹ همه‌ی پلن‌ها</a>
+    <span class="eyebrow">{% if plan %}{{ plan.get_kind_display }}{% if plan.is_free %} · پلن رایگان همه‌ی کاربران{% endif %}{% else %}ساخت پلن یا محصول جدید{% endif %}</span>
+    <h1>{% if plan %}{{ plan.name_fa }}{% else %}پلن جدید{% endif %}</h1>
+  </div>
+  <ol class="steps" aria-label="مراحل ساخت پلن">
+    {% for s in steps %}
+      <li class="{% if s.current %}current{% elif s.done %}done{% endif %}">
+        {% if plan and not s.current and not plan.is_free or plan and not s.current and s.key != 'prices' %}
+          <a href="{% if s.key == 'basics' %}{% url 'console:plan_basics' plan.pk %}{% elif s.key == 'features' %}{% url 'console:plan_features' plan.pk %}{% elif s.key == 'prices' %}{% url 'console:plan_prices' plan.pk %}{% else %}{% url 'console:plan_review' plan.pk %}{% endif %}"><span class="dot">{{ s.n }}</span>{{ s.label }}</a>
+        {% else %}
+          <span class="step" {% if s.current %}aria-current="step"{% endif %}><span class="dot">{{ s.n }}</span>{{ s.label }}</span>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+  {% block step %}{% endblock %}
+{% endblock %}
+{% block aside %}
+  <aside class="preview" aria-label="پیش‌نمایش پلن در اپ">
+    <span class="sub" style="font-weight:800">کاربر در اپ این را می‌بیند</span>
+    <div class="pv">
+      {% if plan.audience == 'pharmacy' %}<span class="chip blue" style="align-self:flex-start">ویژه‌ی داروسازی</span>{% elif plan.audience == 'medicine' %}<span class="chip blue" style="align-self:flex-start">ویژه‌ی پزشکی</span>{% endif %}
+      <b style="font-size:24px">{{ plan.name_fa|default:"نام پلن" }}</b>
+      <span class="sub">{% if plan.is_free %}رایگان{% elif cheapest %}از {{ cheapest.price_toman|toman }} · {{ cheapest.duration_label }}{% else %}قیمت هنوز تعیین نشده{% endif %}</span>
+      <div style="height:1px;background:var(--line-2)"></div>
+      <ul id="pv-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px">
+        {% for line in preview %}<li>{{ line }}</li>{% empty %}<li style="color:var(--muted)">هنوز امکانی انتخاب نشده</li>{% endfor %}
+      </ul>
+      {% if not plan.is_free %}<span class="btn primary" style="pointer-events:none">{% if plan.kind == 'product' %}خرید{% else %}خرید اشتراک{% endif %}</span>{% endif %}
+    </div>
+    <div style="padding:14px 16px;border-radius:16px;background:var(--warn-bg);border:1px solid var(--warn-line);font-size:12.5px;font-weight:700;color:#6B4E12;line-height:1.8">
+      {% if plan.is_free %}تغییر پلن رایگان فوراً برای همه‌ی کاربرانی که خرید ندارند اعمال می‌شود.{% else %}تغییر امکانات فقط روی خریدهای بعدی اثر دارد؛ مشترک‌های فعلی تا پایان اشتراکشان همان امکانات زمان خرید را دارند.{% endif %}
+    </div>
+  </aside>
+{% endblock %}

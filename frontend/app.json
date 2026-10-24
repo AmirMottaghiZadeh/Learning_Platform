@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Pharmenta",
+    "slug": "pharmexa-learning",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "pharmexa",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icons/app-icon-1024.png",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pharmexa.learning",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.pharmexa.learning",
+      "versionCode": 5,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/app-icon-foreground.png",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "Pharmenta",
+      "themeColor": "#0F5C52",
+      "backgroundColor": "#E7E4DC"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icons/app-icon-foreground.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      "@kesha-antonov/react-native-background-downloader"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "dddcd275-a0d2-42bd-aa4f-9199c7e44f02"
+      }
+    }
+  }
+}

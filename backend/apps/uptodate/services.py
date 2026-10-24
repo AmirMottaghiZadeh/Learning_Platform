@@ -1,0 +1,366 @@
+"""Read-only access to the UpToDate snapshot.
+
+The snapshot (~2.8 GB across several files) is a fixed, licensed content
+dump -- never imported into the main Postgres database. It has two possible
+homes:
+
+- Local SQLite files (`settings.UPTODATE_DB_DIR`) -- what local dev uses.
+  Opened read-only, one connection cached per file.
+- A remote MySQL mirror (`settings.UPTODATE_MYSQL_URL`) -- what a host with
+  no local disk for a multi-GB dataset (Render) uses instead. Populated by
+  `manage.py migrate_uptodate_to_mysql`, which is also the authority on the
+  MySQL schema (see that command's SCHEMA constant).
+
+Whichever is configured, this module exposes the same functions; only the
+handful of functions below that actually touch a connection branch on which
+backend is active. MySQL is preferred when `UPTODATE_MYSQL_URL` is set.
+
+SQLite layout (`settings.UPTODATE_DB_DIR`):
+  fts.db      -- FTS5 table `fts(title, displayTitle, type, contentId, content)`
+  content.db  -- `content(id, gzip, version)` -- gzip is zlib-compressed JSON
+                 {title, bodyHtml, outlineHtml, contributors, ...}
+  toc.db      -- `toc(id, title, parentId, section, contentId)` tree
+  images.db   -- `images(id, binary, type)` -- raw PNG/JPEG bytes for the
+                 <img src="<id>"> graphics referenced from bodyHtml; optional,
+                 figure/algorithm graphics answer 404 without it.
+  info.json   -- {version: 202607, ...}
+"""
+
+import base64
+import json
+import re
+import sqlite3
+import threading
+import zlib
+from functools import lru_cache
+from pathlib import Path
+
+import dj_database_url
+import pymysql
+import pymysql.cursors
+from django.conf import settings
+
+_LOCK = threading.Lock()
+_CONNS: dict[str, sqlite3.Connection] = {}
+_MYSQL_CONN: pymysql.connections.Connection | None = None
+
+# Only real topic articles (type 1); type 2/3 are outline/section fragments.
+TOPIC_TYPE = 1
+
+
+def _using_mysql() -> bool:
+    return bool(getattr(settings, "UPTODATE_MYSQL_URL", ""))
+
+
+def _dir() -> Path:
+    return Path(getattr(settings, "UPTODATE_DB_DIR", ""))
+
+
+def is_available() -> bool:
+    if _using_mysql():
+        return True
+    d = _dir()
+    return bool(d) and (d / "fts.db").is_file() and (d / "content.db").is_file()
+
+
+def _sqlite_conn(name: str) -> sqlite3.Connection:
+    with _LOCK:
+        conn = _CONNS.get(name)
+        if conn is None:
+            path = _dir() / f"{name}.db"
+            conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+            _CONNS[name] = conn
+        return conn
+
+
+def mysql_config() -> dict:
+    parsed = dj_database_url.parse(settings.UPTODATE_MYSQL_URL)
+    return {
+        "host": parsed["HOST"],
+        "port": parsed["PORT"] or 3306,
+        "user": parsed["USER"],
+        "password": parsed["PASSWORD"],
+        "database": parsed["NAME"],
+        "charset": "utf8mb4",
+        "cursorclass": pymysql.cursors.DictCursor,
+        # The Runflare-hosted instance presents a self-signed cert -- still
+        # encrypted in transit, just not verified against a CA.
+        "ssl": {"ssl": {}},
+        "ssl_verify_cert": False,
+        "ssl_verify_identity": False,
+        "connect_timeout": 10,
+    }
+
+
+def _mysql_conn() -> pymysql.connections.Connection:
+    global _MYSQL_CONN
+    with _LOCK:
+        if _MYSQL_CONN is not None:
+            try:
+                _MYSQL_CONN.ping(reconnect=True)
+                return _MYSQL_CONN
+            except Exception:
+                _MYSQL_CONN = None
+        _MYSQL_CONN = pymysql.connect(**mysql_config())
+        return _MYSQL_CONN
+
+
+def close_all() -> None:
+    global _MYSQL_CONN
+    with _LOCK:
+        for conn in _CONNS.values():
+            conn.close()
+        _CONNS.clear()
+        if _MYSQL_CONN is not None:
+            _MYSQL_CONN.close()
+            _MYSQL_CONN = None
+    snapshot_version.cache_clear()
+
+
+@lru_cache(maxsize=1)
+def snapshot_version() -> str:
+    if _using_mysql():
+        try:
+            with _mysql_conn().cursor() as cur:
+                cur.execute("SELECT value FROM meta WHERE `key` = 'version'")
+                row = cur.fetchone()
+                return str(row["value"]) if row else ""
+        except Exception:
+            return ""
+    try:
+        info = json.loads((_dir() / "info.json").read_text())
+        return str(info.get("version", ""))
+    except Exception:
+        return ""
+
+
+def _search_words(raw: str) -> list[str]:
+    return re.findall(r"[A-Za-z0-9؀-ۿ]+", raw or "")[:8]
+
+
+# How much of each hit's plain-text `content` the search reads to build its
+# snippet. The text opens with the title, contributors and dates; the body
+# starts right after "This topic last updated: <date>.", so a few KB covers
+# the header plus the opening paragraphs.
+SNIPPET_SOURCE_CHARS = 6000
+SNIPPET_RADIUS = 110
+_UPDATED_RE = re.compile(r"This topic last updated:\s*([A-Z][a-z]{2,8}\.? \d{1,2}, \d{4})\.?")
+# An all-caps run-in heading ("INTRODUCTION — ") wherever it sits.
+_RUN_IN_HEADING_RE = re.compile(r"\s*\b[A-Z][A-Z0-9 ,'()/&-]{2,80}\s+—\s+")
+# Sentence glued to the next one where block tags were dropped: "below.)The".
+_GLUED_RE = re.compile(r"(?<=[a-z0-9.)\]][.)\]])(?=[A-Z][a-z])")
+_BOILERPLATE_RE = re.compile(
+    r"\d{4}©.*?All Rights Reserved\.|Please read the Disclaimer at the end of this page\."
+)
+_GLYPHS_RE = re.compile(r"[●•▪◦■]")
+
+
+def _updated_from_text(text: str) -> str:
+    match = _UPDATED_RE.search(text or "")
+    return match.group(1) if match else ""
+
+
+def snippet_source(content: str, title: str = "") -> str:
+    """The article body's opening as clean plain text, without the
+    title/author header -- what `_snippet` cuts its excerpt from. The offline
+    packages store this per topic, so the app cuts the same excerpt."""
+    text = (content or "").replace("\xa0", " ")
+    header = _UPDATED_RE.search(text)
+    if header:
+        text = text[header.end():]
+    elif title and text.startswith(title):
+        text = text[len(title):]
+    text = _BOILERPLATE_RE.sub(" ", text)
+    text = _GLYPHS_RE.sub(" ", text)
+    text = _GLUED_RE.sub(" ", text)
+    text = _RUN_IN_HEADING_RE.sub(" ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _snippet(content: str, words: list[str], title: str = "") -> str:
+    """A short plain-text excerpt around the first query hit in the article
+    body (not the title/author header), or the body's opening when the hit
+    sits further in than the text read."""
+    text = snippet_source(content, title)
+    if not text:
+        return ""
+
+    lowered = text.lower()
+    phrase = " ".join(words).lower()
+    hit = lowered.find(phrase) if phrase else -1
+    if hit < 0:
+        hits = [i for i in (lowered.find(w.lower()) for w in words) if i >= 0]
+        hit = min(hits) if hits else -1
+
+    if hit < 0:
+        start, end = 0, SNIPPET_RADIUS * 2
+    else:
+        start, end = max(0, hit - SNIPPET_RADIUS), hit + SNIPPET_RADIUS
+    if start > 0:
+        space = text.find(" ", start)
+        start = space + 1 if 0 <= space < hit else start
+    if end < len(text):
+        space = text.rfind(" ", start, end)
+        end = space if space > start else end
+    excerpt = text[start:end].strip()
+    return ("…" if start > 0 else "") + excerpt + ("…" if end < len(text) else "")
+
+
+def _section_for(content_id: str) -> str:
+    """Top-level TOC ancestor title for an article, e.g. 'Cardiovascular Medicine'."""
+    content_id = str(content_id)
+    if _using_mysql():
+        conn = _mysql_conn()
+        with conn.cursor() as cur:
+            cur.execute("SELECT parentId FROM toc WHERE contentId = %s LIMIT 1", (content_id,))
+            row = cur.fetchone()
+            pid, seen = (row["parentId"] if row else None), set()
+            while pid and pid not in seen:
+                seen.add(pid)
+                cur.execute("SELECT title, parentId FROM toc WHERE id = %s", (pid,))
+                node = cur.fetchone()
+                if not node:
+                    break
+                if not node["parentId"]:
+                    return node["title"]
+                pid = node["parentId"]
+        return ""
+
+    try:
+        toc = _sqlite_conn("toc")
+    except sqlite3.OperationalError:
+        return ""
+    row = toc.execute(
+        "SELECT parentId FROM toc WHERE contentId = ? LIMIT 1", (content_id,)
+    ).fetchone()
+    if not row:
+        return ""
+    pid, seen = row["parentId"], set()
+    while pid and pid not in seen:
+        seen.add(pid)
+        node = toc.execute(
+            "SELECT title, parentId FROM toc WHERE id = ?", (pid,)
+        ).fetchone()
+        if not node:
+            break
+        if not node["parentId"]:
+            return node["title"]
+        pid = node["parentId"]
+    return ""
+
+
+def search_topics(query: str, limit: int = 25) -> list[dict]:
+    """Find topic articles by title only; body text is read for hit previews."""
+    words = _search_words(query)
+    if not words:
+        return []
+    limit = int(limit)
+
+    if _using_mysql():
+        # Boolean-mode fulltext: "+word*" requires the prefix in every match,
+        # the closest MySQL equivalent to FTS5's implicit-AND prefix query.
+        match = " ".join(f"+{w}*" for w in words)
+        with _mysql_conn().cursor() as cur:
+            cur.execute(
+                "SELECT title, contentId, LEFT(content, %s) AS head, "
+                "MATCH(title) AGAINST (%s IN BOOLEAN MODE) AS relevance "
+                "FROM fts WHERE MATCH(title) AGAINST (%s IN BOOLEAN MODE) "
+                "AND type = %s ORDER BY relevance DESC LIMIT %s",
+                (SNIPPET_SOURCE_CHARS, match, match, TOPIC_TYPE, limit),
+            )
+            rows = cur.fetchall()
+    else:
+        match = " ".join(f'"{w}"*' for w in words)
+        rows = _sqlite_conn("fts").execute(
+            "SELECT title, contentId, substr(content, 1, ?) AS head FROM fts "
+            "WHERE title MATCH ? AND type = ? ORDER BY rank LIMIT ?",
+            (SNIPPET_SOURCE_CHARS, match, TOPIC_TYPE, limit),
+        ).fetchall()
+
+    version = snapshot_version()
+    return [
+        {
+            "id": row["contentId"],
+            "title": row["title"],
+            "section": _section_for(row["contentId"]),
+            "version": version,
+            "snippet": _snippet(row["head"], words, row["title"]),
+            "updated": _updated_from_text((row["head"] or "").replace("\xa0", " ")),
+        }
+        for row in rows
+    ]
+
+
+def get_topic(content_id: str) -> dict | None:
+    content_id = str(content_id)
+    if _using_mysql():
+        with _mysql_conn().cursor() as cur:
+            cur.execute("SELECT gzip, version FROM content WHERE id = %s", (content_id,))
+            row = cur.fetchone()
+    else:
+        row = _sqlite_conn("content").execute(
+            "SELECT gzip, version FROM content WHERE id = ?", (content_id,)
+        ).fetchone()
+    if not row:
+        return None
+    return article_from_row(content_id, row["gzip"], row["version"], _section_for(content_id))
+
+
+def article_from_row(content_id: str, blob: bytes, version, section: str) -> dict | None:
+    """One `content` row as the API's article shape; the offline packages
+    build their article records with this too."""
+    try:
+        doc = json.loads(zlib.decompress(blob))
+    except Exception:
+        return None
+    contributors = []
+    for group in doc.get("contributors", []) or []:
+        for person in group.get("contributors", []) or []:
+            if person.get("name"):
+                contributors.append(person["name"])
+    return {
+        "id": content_id,
+        "title": doc.get("title", ""),
+        "section": section,
+        "contributors": contributors,
+        "outline_html": doc.get("outlineHtml", ""),
+        "body_html": doc.get("bodyHtml", ""),
+        "version": str(version or snapshot_version()),
+        "updated": _updated_from_html(doc.get("bodyHtml", "")),
+    }
+
+
+def _updated_from_html(body_html: str) -> str:
+    # The date sits in the header, well inside the first few KB.
+    head = re.sub(r"<[^>]+>", " ", (body_html or "")[:8000])
+    head = re.sub(r"(&nbsp;|\xa0|\s)+", " ", head)
+    return _updated_from_text(head)
+
+
+_IMAGE_TYPES = {"png", "jpeg", "gif", "webp"}
+
+
+def get_image(image_id: str) -> dict | None:
+    image_id = str(image_id)
+    if _using_mysql():
+        with _mysql_conn().cursor() as cur:
+            cur.execute("SELECT `binary`, type FROM images WHERE id = %s", (image_id,))
+            row = cur.fetchone()
+    else:
+        try:
+            conn = _sqlite_conn("images")
+            row = conn.execute(
+                "SELECT binary, type FROM images WHERE id = ?", (image_id,)
+            ).fetchone()
+        except sqlite3.OperationalError:
+            return None
+    if not row or not row["binary"]:
+        return None
+    img_type = (row["type"] or "").lower()
+    content_type = f"image/{img_type}" if img_type in _IMAGE_TYPES else "image/jpeg"
+    return {
+        "id": image_id,
+        "content_type": content_type,
+        "data_base64": base64.b64encode(row["binary"]).decode("ascii"),
+    }

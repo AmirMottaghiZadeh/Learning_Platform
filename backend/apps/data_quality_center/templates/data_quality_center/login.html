@@ -1,0 +1,40 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}ورود{% endblock %}
+{% block head %}
+<style>
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .login-card { width: min(400px, 100%); background: var(--surface); border-radius: 20px; padding: 32px 28px; box-shadow: 0 18px 50px rgba(20,32,29,.12); }
+  .login-card .brand { margin-bottom: 22px; }
+  .login-card h1 { font-size: 20px; font-weight: 800; margin: 0; }
+  .login-card p { font-size: 13px; color: var(--muted); margin: 4px 0 22px; }
+  .login-card .row { margin-bottom: 14px; }
+  .login-card .btn { width: 100%; justify-content: center; padding: 11px 18px; margin-top: 6px; }
+  .login-foot { margin-top: 18px; font-size: 12px; color: var(--faint); text-align: center; }
+</style>
+{% endblock %}
+{% block shell %}
+<div class="login-wrap">
+  <form class="login-card" method="post" action="{% url 'data_quality_center:login' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="brand">
+      <span class="brand-mark">P</span>
+      <span class="brand-name">مرکز کیفیت داده</span>
+      <span class="brand-sub">Pharmenta</span>
+    </div>
+    <h1>ورود کارکنان</h1>
+    <p>بازبینی و ویرایش داده‌های دارویی، با تأیید نهایی سوپریوزر.</p>
+    {% if error %}<div class="msgs"><div class="msg error">{{ error }}</div></div>{% endif %}
+    <div class="row">
+      <label class="field-label" for="username">نام کاربری</label>
+      <input class="input ltr" id="username" name="username" value="{{ username }}" autocomplete="username" autofocus required>
+    </div>
+    <div class="row">
+      <label class="field-label" for="password">رمز عبور</label>
+      <input class="input ltr" id="password" name="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="btn" type="submit">ورود</button>
+    <div class="login-foot">ورود و همهٔ تغییرها در ممیزی ثبت می‌شوند.</div>
+  </form>
+</div>
+{% endblock %}
