@@ -128,7 +128,10 @@ export function CalculatorsScreen() {
           </View>
         )
       ) : (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 10, marginHorizontal: -5 }}>
+          {/* Half-width cells with the gutter as padding: two always share a row.
+              A 48% width plus a fixed gap no longer fits below ~290px (a folded
+              Galaxy Fold, a phone with a large zoom) and drops to one column. */}
           {mainGroups.map((group) => {
             const total = group.subgroups.reduce((a, s) => a + s.calculators.length, 0);
             const label = isFa && group.name_fa ? group.name_fa : group.name;
@@ -136,7 +139,7 @@ export function CalculatorsScreen() {
               <Pressable
                 key={group.id}
                 onPress={() => navigate("calculatorDomain", { domainId: group.id })}
-                style={{ width: "48%" }}
+                style={{ width: "50%", paddingHorizontal: 5 }}
               >
                 <View
                   style={{

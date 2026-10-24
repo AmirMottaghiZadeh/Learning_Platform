@@ -14,6 +14,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { stripHtml } from "@/utils/html";
 import { numberedOutline, outlineTops, shortDate } from "@/utils/uptodateOutline";
 import { useNavClearance } from "@/components/BottomNav";
+import { useBleedTop } from "@/components/AppShell";
 
 const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 
@@ -30,6 +31,7 @@ export function UptodateOutlineScreen() {
   const navClearance = useNavClearance();
   const { t, n, row, isFa } = useLang();
   const { colors } = useTheme();
+  const bleedTop = useBleedTop(true);
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
   const id = String(useNav((s) => s.params.id ?? ""));
@@ -57,7 +59,7 @@ export function UptodateOutlineScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.softBg }}>
-      <View style={{ backgroundColor: colors.cardBg, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 20, gap: 12 }}>
+      <View style={{ backgroundColor: colors.cardBg, paddingHorizontal: 20, paddingTop: 18 + bleedTop, paddingBottom: 20, gap: 12 }}>
         <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
           <ChromeButton onPress={goBack} size={34}>
             <AppText weight="800" size={16} color={colors.ink}>

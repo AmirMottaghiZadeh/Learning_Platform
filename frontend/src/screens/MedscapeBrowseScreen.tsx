@@ -158,12 +158,15 @@ export function MedscapeBrowseScreen() {
             </View>
           ) : null}
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          {/* Half-width cells with the gutter as padding: two always share a row.
+              A 48% width plus a fixed gap no longer fits below ~290px (a folded
+              Galaxy Fold, a phone with a large zoom) and drops to one column. */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 10, marginHorizontal: -5 }}>
             {specialties.map((sp) => (
               <Pressable
                 key={sp.name}
                 onPress={() => openSpecialty(node!.category, sp.name)}
-                style={{ width: "48%" }}
+                style={{ width: "50%", paddingHorizontal: 5 }}
               >
                 <View
                   style={{

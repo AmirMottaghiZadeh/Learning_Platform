@@ -13,6 +13,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { toneColors } from "@/theme/tone";
 import { useNavClearance } from "@/components/BottomNav";
+import { useBleedTop } from "@/components/AppShell";
 
 // The upstream summaries are already structured plain text -- lines starting
 // "- " are a bullet list (true for 10 of the 12 clinical fields, e.g. dose,
@@ -198,6 +199,7 @@ function sectionText(b: LessonSection, isFa: boolean): string {
 
 export function LessonDetailScreen() {
   const navClearance = useNavClearance();
+  const bleedTop = useBleedTop(true);
   const { isFa, n, row } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
@@ -267,7 +269,7 @@ export function LessonDetailScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
-      <View style={{ paddingHorizontal: 20, paddingTop: 18 }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 18 + bleedTop }}>
         <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
           <View style={{ flexDirection: row, alignItems: "center", gap: 10 }}>
             <ChromeButton onPress={goBack} size={30}>

@@ -12,6 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 
 import { medscapeApi } from "@/api/endpoints";
 import { MedscapeBlock, MedscapeSection } from "@/api/types";
@@ -35,6 +36,7 @@ import { fontFamily } from "@/theme/fonts";
 import { layout } from "@/theme/tokens";
 import { buildMedscapeModel, referencesTop } from "@/utils/medscapeArticle";
 import { useNavClearance } from "@/components/BottomNav";
+import { useBleedTop } from "@/components/AppShell";
 
 const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 
@@ -100,6 +102,7 @@ const useReaderCtx = () => React.useContext(ReaderContext) as ReaderCtx;
  * the section in view is remembered for the home page's "continue" button. */
 export function MedscapeArticleScreen() {
   const navClearance = useNavClearance();
+  const bleedTop = useBleedTop(true);
   const { t, n, row, isFa } = useLang();
   const { colors, isDark } = useTheme();
   const band = useBandColors();
@@ -209,7 +212,8 @@ export function MedscapeArticleScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
-      <View style={{ backgroundColor: band.bg, paddingHorizontal: 16, paddingTop: 14, gap: 8 }}>
+      <View style={{ backgroundColor: band.bg, paddingHorizontal: 16, paddingTop: 14 + bleedTop, gap: 8 }}>
+        <StatusBar style="light" />
         <View style={{ flexDirection: row, alignItems: "center", gap: 10 }}>
           <BandButton onPress={goBack} label="back">
             <BackGlyph color={band.ink} />

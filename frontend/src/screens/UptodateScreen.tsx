@@ -16,6 +16,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { shortDate } from "@/utils/uptodateOutline";
 import { useNavClearance } from "@/components/BottomNav";
+import { useBleedTop } from "@/components/AppShell";
 
 const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 // The busiest sections among the results get a filter chip; the rest are
@@ -33,6 +34,7 @@ export function UptodateScreen() {
   const navClearance = useNavClearance();
   const { t, n, row, isFa } = useLang();
   const { colors, shadows } = useTheme();
+  const bleedTop = useBleedTop(true);
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
 
@@ -64,7 +66,7 @@ export function UptodateScreen() {
         style={{
           backgroundColor: colors.cardBg,
           paddingHorizontal: 20,
-          paddingTop: 18,
+          paddingTop: 18 + bleedTop,
           paddingBottom: 14,
           borderBottomWidth: 1,
           borderBottomColor: colors.trackBg,
@@ -109,6 +111,9 @@ export function UptodateScreen() {
             autoCapitalize="none"
             style={{
               flex: 1,
+              // lets the field shrink below a browser input's built-in width,
+              // so the clear button stays inside the box on a narrow phone
+              minWidth: 0,
               fontFamily: fontFamily("600"),
               fontSize: 15,
               color: colors.ink,
@@ -136,7 +141,7 @@ export function UptodateScreen() {
           <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8 }}>
             <Chip label={`${t("articleSearchAll")} · ${n(rows.length)}`} on={!activeSection} onPress={() => setSection(null)} />
             {sections.slice(0, MAX_SECTION_CHIPS).map(([name, count]) => (
-              <Chip key={name} label={`${name} · ${n(count)}`} on={activeSection === name} onPress={() => setSection(name)} />
+              <Chip key={name} label={name} count={n(count)} on={activeSection === name} onPress={() => setSection(name)} />
             ))}
           </View>
         ) : null}
@@ -192,12 +197,18 @@ export function UptodateScreen() {
   );
 }
 
-function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
+/** A filter pill. A section chip (`count` given) keeps its count in view and
+ * cuts the end of a long English section name ("Emergency Medicine (Adult
+ * and Pediatric)") short on a narrow phone, instead of running off screen. */
+function Chip({ label, count, on, onPress }: { label: string; count?: string; on: boolean; onPress: () => void }) {
   const { colors } = useTheme();
+  const textProps = { weight: on ? ("800" as const) : ("700" as const), size: 12, color: on ? colors.onAccent : colors.ink };
   return (
     <Pressable
       onPress={onPress}
       style={{
+        maxWidth: "100%",
+        flexDirection: "row",
         paddingHorizontal: 12,
         paddingVertical: 5,
         borderRadius: 999,
@@ -206,9 +217,20 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
         borderColor: on ? colors.accent : colors.trackBg,
       }}
     >
-      <AppText weight={on ? "800" : "700"} size={12} color={on ? colors.onAccent : colors.ink} style={{ lineHeight: 18 }}>
-        {label}
-      </AppText>
+      {count === undefined ? (
+        <AppText {...textProps} numberOfLines={1} style={{ lineHeight: 18 }}>
+          {label}
+        </AppText>
+      ) : (
+        <>
+          <AppText {...textProps} numberOfLines={1} style={[LTR, { lineHeight: 18, flexShrink: 1 }]}>
+            {label}
+          </AppText>
+          <AppText {...textProps} numberOfLines={1} style={[LTR, { lineHeight: 18, flexShrink: 0, marginLeft: 4 }]}>
+            {`· ${count}`}
+          </AppText>
+        </>
+      )}
     </Pressable>
   );
 }

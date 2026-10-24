@@ -157,6 +157,11 @@ export const radius = {
 
 export const layout = {
   appMaxWidth: 430,
+  /** Below this viewport width the web app fills the screen edge to edge;
+   * only a window at least this wide (a tablet, a desktop browser) gets the
+   * centred `appMaxWidth` mockup frame. 600 is where Android draws the
+   * phone/tablet line (sw600dp). */
+  mockupFrameMinWidth: 600,
   bottomNavHeight: 72,
   screenPadding: 20,
 } as const;

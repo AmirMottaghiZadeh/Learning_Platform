@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 
 import { medscapeApi } from "@/api/endpoints";
 import { BackGlyph, BandButton, BandLangToggle, BandSpacer, useBandColors } from "@/components/article/Band";
@@ -12,6 +13,7 @@ import { useReader } from "@/store/reader";
 import { useTheme } from "@/theme/ThemeProvider";
 import { buildMedscapeModel, summaryTop, tocLabel } from "@/utils/medscapeArticle";
 import { useNavClearance } from "@/components/BottomNav";
+import { useBleedTop } from "@/components/AppShell";
 
 const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 
@@ -22,6 +24,7 @@ const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
  * reader was last left. */
 export function MedscapeOutlineScreen() {
   const navClearance = useNavClearance();
+  const bleedTop = useBleedTop(true);
   const { t, n, row } = useLang();
   const { colors } = useTheme();
   const band = useBandColors();
@@ -59,7 +62,8 @@ export function MedscapeOutlineScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.appBg }}>
-      <View style={{ backgroundColor: band.bg, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 18, gap: 12 }}>
+      <View style={{ backgroundColor: band.bg, paddingHorizontal: 18, paddingTop: 16 + bleedTop, paddingBottom: 18, gap: 12 }}>
+        <StatusBar style="light" />
         <View style={{ flexDirection: row, alignItems: "center" }}>
           <BandButton onPress={goBack} label="back">
             <BackGlyph color={band.ink} />

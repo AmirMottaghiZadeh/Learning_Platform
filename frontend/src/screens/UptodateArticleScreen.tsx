@@ -4,6 +4,7 @@ import { Modal, Platform, Pressable, ScrollView, TextInput, View } from "react-n
 import { WebView } from "react-native-webview";
 
 import { ChromeButton } from "@/components/ScreenChrome";
+import { useBleedTop } from "@/components/AppShell";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useDebounced } from "@/hooks/useDebounced";
@@ -306,6 +307,7 @@ export function UptodateArticleScreen() {
 function UptodateArticle() {
   const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
+  const bleedTop = useBleedTop(true);
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
   const id = String(useNav((s) => s.params.id ?? ""));
@@ -507,7 +509,7 @@ function UptodateArticle() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
-      <View style={{ paddingHorizontal: 20, paddingTop: 16, gap: 12 }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 16 + bleedTop, gap: 12 }}>
         <View style={{ flexDirection: row, alignItems: "center", gap: 10 }}>
           <ChromeButton onPress={goBack} size={34}>
             <AppText weight="800" size={16} color={colors.ink}>

@@ -119,11 +119,14 @@ export function MedscapeGuidelinesScreen() {
                     style={{
                       alignItems: "center",
                       paddingVertical: 8,
+                      // keeps a label that wraps on a narrow phone ("Primary
+                      // Care Hacks") off its neighbour's
+                      paddingHorizontal: 4,
                       borderRadius: 9,
                       backgroundColor: active ? colors.accent : "transparent",
                     }}
                   >
-                    <AppText weight={active ? "800" : "700"} size={11.5} color={active ? colors.onAccent : colors.muted}>
+                    <AppText weight={active ? "800" : "700"} size={11.5} color={active ? colors.onAccent : colors.muted} center>
                       {sp.name}
                     </AppText>
                   </View>

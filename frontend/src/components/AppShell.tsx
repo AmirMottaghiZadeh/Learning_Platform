@@ -19,7 +19,10 @@ import { MeshBackground } from "./MeshBackground";
  * and all, instead of filling the real screen. Gating on actual viewport
  * width (not just the web/native platform split) makes both cases render
  * truly edge-to-edge, and only a genuinely wider desktop window gets the
- * mockup frame.
+ * mockup frame. The cut-off is a tablet width (mockupFrameMinWidth), not
+ * the 430px card itself: phones wider than 430 exist (iPhone 16/17 Pro Max
+ * at 440, Android phones with a smaller display-size setting at 450-500),
+ * and framing those left rounded corners and a sliver of mesh at both sides.
  *
  * Every screen renders inside this one component (Navigator wraps the whole
  * authenticated app in it, and AuthScreen/OnboardingScreen each use it
@@ -58,7 +61,7 @@ export function AppShell({ children, padBottom = true }: { children: React.React
   const { colors, shadows } = useTheme();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const showMockupFrame = Platform.OS === "web" && width > layout.appMaxWidth;
+  const showMockupFrame = Platform.OS === "web" && width >= layout.mockupFrameMinWidth;
   const [claims, setClaims] = useState(0);
   const claim = useCallback(() => {
     setClaims((n) => n + 1);

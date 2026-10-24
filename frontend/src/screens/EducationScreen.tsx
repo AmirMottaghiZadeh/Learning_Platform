@@ -44,7 +44,8 @@ export function EducationScreen() {
             onPress={() => setTab(p.tab as any)}
             style={[
               {
-                width: "48%",
+                flexGrow: 1,
+                flexBasis: "40%",
                 backgroundColor: colors.softBg,
                 borderRadius: 18,
                 alignItems: "center",

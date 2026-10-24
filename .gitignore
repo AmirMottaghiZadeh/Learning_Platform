@@ -89,3 +89,6 @@ resume.txt
 celerybeat-schedule
 celerybeat-schedule.*
 celerybeat.pid
+
+# Playwright MCP browser output (screenshots, snapshots, console logs)
+.playwright-mcp/

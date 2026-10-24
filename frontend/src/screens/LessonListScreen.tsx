@@ -5,6 +5,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { lessonsApi } from "@/api/endpoints";
 import type { AtcGroup, ChapterDrug } from "@/api/types";
 import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
+import { useBleedTop } from "@/components/AppShell";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -33,6 +34,7 @@ function withGroupHeaders(drugs: ChapterDrug[]): ListItem[] {
 export function LessonListScreen() {
   const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
+  const bleedTop = useBleedTop(true);
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
   const code = String(useNav((s) => s.params.code ?? ""));
@@ -48,7 +50,7 @@ export function LessonListScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
-      <View style={{ paddingHorizontal: 22, paddingTop: 18 }}>
+      <View style={{ paddingHorizontal: 22, paddingTop: 18 + bleedTop }}>
         <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
           <ChromeButton onPress={goBack} size={30}>
             <AppText weight="800" size={15} color={colors.ink}>
