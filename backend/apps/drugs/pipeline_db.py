@@ -15,21 +15,26 @@ _SUFFIXES = ("_summary_fa", "_summary_en")
 
 
 def rewrite_summaries(source, transform, backup_name, dry_run=False):
-    """`transform(field, lang, text)` over every `<field>_summary_<lang>`
-    cell of the pipeline file at `source`, writing back the ones it changes.
-    Returns (cells changed, ingredients changed, backup table or None)."""
+    """`transform(field, lang, text, names)` over every `<field>_summary_<lang>`
+    cell of the pipeline file at `source`, writing back the ones it changes;
+    `names` is the ingredient's (English name, Persian name). Returns (cells
+    changed, ingredients changed, backup table or None)."""
     conn = sqlite3.connect(source)
     try:
-        columns = [row[1] for row in conn.execute(f"PRAGMA table_info({TABLE})") if row[1].endswith(_SUFFIXES)]
+        all_columns = [row[1] for row in conn.execute(f"PRAGMA table_info({TABLE})")]
+        columns = [c for c in all_columns if c.endswith(_SUFFIXES)]
         if not columns:
             raise ValueError(f"{source} has no {TABLE} with summary columns")
+        # a pipeline file from before the Persian name existed has none
+        name_fa = "ingredient_name_fa" if "ingredient_name_fa" in all_columns else "''"
         changes = []  # (rowid, rxcui, column, old, new)
         for column in columns:
             field, lang = column[: -len("_summary_fa")], column[-2:]
-            for rowid, rxcui, text in conn.execute(
-                f"SELECT rowid, ingredient_rxcui, {column} FROM {TABLE} WHERE {column} IS NOT NULL AND {column} != ''"
+            for rowid, rxcui, name, persian_name, text in conn.execute(
+                f"SELECT rowid, ingredient_rxcui, ingredient_name, {name_fa}, {column} FROM {TABLE} "
+                f"WHERE {column} IS NOT NULL AND {column} != ''"
             ):
-                fixed = transform(field, lang, text)
+                fixed = transform(field, lang, text, (name, persian_name))
                 if fixed != text:
                     changes.append((rowid, rxcui, column, text, fixed))
         ingredients = len({c[0] for c in changes})

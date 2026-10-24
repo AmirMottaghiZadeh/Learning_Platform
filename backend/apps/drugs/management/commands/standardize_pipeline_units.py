@@ -28,7 +28,7 @@ class Command(BaseCommand):
         try:
             cells, ingredients, backup = rewrite_summaries(
                 opts["source"],
-                lambda field, lang, text: standardize_units(text) if lang == "fa" else text,
+                lambda field, lang, text, names: standardize_units(text) if lang == "fa" else text,
                 "units_fa",
                 dry_run=opts["dry_run"],
             )

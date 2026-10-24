@@ -407,3 +407,94 @@ class CleanBoilerplateInPipelineTests(TestCase):
             text = conn.execute("SELECT contraindications_summary_fa FROM ingredient_clinical_profiles").fetchone()[0]
             conn.close()
         self.assertEqual(text, "- مصرف همزمان با MAOI")
+
+
+class NullStatementTests(TestCase):
+    def test_lines_that_say_nothing(self):
+        from apps.drugs.null_statements import is_null_statement, name_words
+
+        names = name_words("linezolid", "لینزولید")
+        for line in [
+            "ندارد",
+            "هیچ منع مصرفی بر اساس داده‌های محدود موجود شناسایی نشده است",
+            "مطالعهٔ رسمی تداخل دارویی انجام نشده است",
+            "لینزولید مادهٔ کنترل‌شده نیست و اطلاعاتی دربارهٔ سوءمصرف یا وابستگی آن ارائه نشده است",
+            "شایع: موردی به‌طور اختصاصی در متن خام ذکر نشده است",
+        ]:
+            self.assertTrue(is_null_statement(line, "fa", names), line)
+        for line in ["None.", "No contraindication is stated", "Rare: none separately reported",
+                     "Linezolid is not a controlled substance"]:
+            self.assertTrue(is_null_statement(line, "en", names), line)
+
+    def test_a_specific_word_keeps_the_line(self):
+        from apps.drugs.null_statements import is_null_statement, name_words
+
+        names = name_words("linezolid", "لینزولید")
+        for line in [
+            "در کودکان بررسی نشده است",
+            "در کودکان زیر ۱۲ سال توصیه نمی‌شود",
+            "با نلفیناویر تداخل ندارد",
+            "مادهٔ کنترل‌شدهٔ جدول IV است و پتانسیل سوءمصرف دارد",
+            "با یا بدون غذا مصرف شود؛ غذا بر جذب تأثیر ندارد",
+        ]:
+            self.assertFalse(is_null_statement(line, "fa", names), line)
+        for line in ["This drug is not approved for use in pediatric patients", "Do not exceed the recommended dose"]:
+            self.assertFalse(is_null_statement(line, "en", names), line)
+
+    def test_the_pregnancy_section_is_left_alone(self):
+        from apps.drugs.management.commands.clean_profile_boilerplate import clean_text
+
+        self.assertEqual(clean_text("- داده کافی موجود نیست", "pregnancy", "fa")[1], 0)
+        self.assertEqual(clean_text("- None.\n- Avoid in severe renal impairment", "contraindications", "en"),
+                         ("- Avoid in severe renal impairment", 1))
+
+
+class OpenfdaReferenceDbTests(TestCase):
+    def setUp(self):
+        self.atc = AtcCode.objects.create(code="C02AC01", name="clonidine", name_fa="")
+        self.drug = Ingredient.objects.create(rxcui="2599", name="clonidine", name_fa="کلونیدین", slug="clonidine-2599",
+                                              pharm_classes=["Central alpha-2 Adrenergic Agonist"])
+        self.drug.atc_codes.add(self.atc)
+        for i, field in enumerate(["warnings", "drug_interactions", "dosage_and_administration"]):
+            IngredientProfileSection.objects.create(ingredient=self.drug, field=field, raw_text="x" * 30000 * (i + 1),
+                                                    summary_fa=f"خلاصه {field}", summary_en=f"summary {field}")
+
+    def test_round_trip_through_several_parts(self):
+        from apps.drugs import reference_db
+
+        with tempfile.TemporaryDirectory() as tmp:
+            paths, counts = reference_db.export(tmp, 300_000)
+            self.assertGreater(len(paths), 1)
+            self.assertEqual(counts, {"atc_code": 1, "ingredient": 1, "ingredient_atc": 1, "section": 3})
+            self.assertTrue(all(p.stat().st_size <= 300_000 for p in paths))
+
+            # the target drifts: a changed summary, a lost section, a lost
+            # ATC link, and an ingredient the file doesn't know
+            IngredientProfileSection.objects.filter(field="warnings").update(summary_fa="قدیمی")
+            IngredientProfileSection.objects.filter(field="drug_interactions").delete()
+            self.drug.atc_codes.clear()
+            other = Ingredient.objects.create(rxcui="1", name="other", slug="other-1")
+
+            parts = reference_db.open_parts(tmp)
+            try:
+                summary = reference_db.load(parts)
+            finally:
+                for conn, _ in parts:
+                    conn.close()
+        self.assertEqual(summary["section"], {"added": 1, "updated": 1, "unchanged": 1})
+        self.assertEqual(IngredientProfileSection.objects.get(field="warnings").summary_fa, "خلاصه warnings")
+        self.assertTrue(IngredientProfileSection.objects.filter(field="drug_interactions").exists())
+        self.assertEqual(list(self.drug.atc_codes.values_list("code", flat=True)), ["C02AC01"])
+        self.assertTrue(Ingredient.objects.filter(pk=other.pk).exists())  # nothing is deleted
+
+    def test_parts_of_two_exports_are_refused(self):
+        from django.core.management.base import CommandError
+
+        from apps.drugs import reference_db
+
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            reference_db.export(a, 300_000)
+            reference_db.export(b, 300_000)
+            (Path(a) / "openfda.part02.db").write_bytes((Path(b) / "openfda.part02.db").read_bytes())
+            with self.assertRaises(CommandError):
+                reference_db.open_parts(a)

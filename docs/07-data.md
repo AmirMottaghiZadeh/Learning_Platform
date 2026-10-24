@@ -16,7 +16,7 @@ python manage.py <دستور> [گزینه‌ها]                # کنسول س
 
 | داده | منبع روی لپ‌تاپ | چطور به سرور می‌رسد | کجا ذخیره می‌شود |
 |---|---|---|---|
-| داروها و خلاصه‌های بالینی | `/home/amir/Documents/openfda/pipeline_v2/pipeline_v2.db` (پایپلاین openFDA، حدود ۲٫۳ گیگ) | `import_openfda` از لپ‌تاپ به Postgres سرور، یا انتقال کامل دیتابیس | Postgres: `drugs_*` |
+| داروها و خلاصه‌های بالینی | `/home/amir/Documents/openfda/pipeline_v2/pipeline_v2.db` (پایپلاین openFDA، حدود ۲٫۳ گیگ) | روی لپ‌تاپ `import_openfda`، بعد `export_openfda_db` ← `import_openfda_db` روی سرور ([بالا](#انتقال-داروها-به-سرور-با-فایل-قابل‌حمل))، یا `import_openfda` مستقیم با `DATABASE_URL` سرور | Postgres: `drugs_*` |
 | گروه‌های ATC سطح ۱ و ۲ | `backend/apps/drugs/atc_reference.py` (داخل کد) | خودکار، هر شروع کانتینر | Postgres: `drugs_atccategory` |
 | کد ATC تکمیلی | `backend/apps/drugs/data/atc_supplement` | `apply_atc_supplement` | Postgres |
 | ماشین‌حساب‌ها | `backend/data/calculators.sqlite` (پایپلاین ترجمه) | `export_reference_db` ← `import_calculators_db` | Postgres: `calculators_*` |
@@ -25,7 +25,7 @@ python manage.py <دستور> [گزینه‌ها]                # کنسول س
 | UpToDate | `/home/amir/Documents/UpToDate/` (حدود ۲٫۷ گیگ SQLite) | `migrate_uptodate_to_mysql` | MySQL (`UPTODATE_MYSQL_URL`) |
 | Lexicomp | `/home/amir/Documents/Lexicomp_Drug_Interactions/` (`interact.db` حدود ۹۵ مگ، `info.json`) | کپی دستی فایل‌ها روی دیسک سرویس بک‌اند | دیسک (`LEXICOMP_DB_DIR`) |
 | بستهٔ آفلاین | از همان فایل‌های UpToDate و Lexicomp | `build_offline_package` و آپلود دستی | Object Storage |
-| فایل‌های قابل‌حمل | `/home/amir/Documents/pharmenta-reference-data/` (`calculators.db`، `guidelines.db`، `diseases.db`، `study_content.db`) | آپلود و ایمپورت | — |
+| فایل‌های قابل‌حمل | `/home/amir/Documents/pharmenta-reference-data/` (`calculators.db`، `guidelines.db`، `diseases.db`، `study_content.db`، و بخش‌های داروها در `openfda/`) | آپلود و ایمپورت | — |
 
 حجم دادهٔ دیتابیس محلی در آبان ۱۴۰۵ (برای مقایسه بعد از هر ایمپورت):
 
@@ -57,6 +57,7 @@ python manage.py <دستور> [گزینه‌ها]                # کنسول س
 | `apply_atc_supplement` | drugs | کد ATC برای ماده‌های بی‌کد | دستی |
 | `clean_profile_boilerplate` | drugs | پاک کردن جمله‌های بی‌فایده از خلاصه‌ها | دستی |
 | `standardize_pipeline_units` | drugs | واحدهای خلاصه‌های فارسی در فایل پایپلاین به‌صورت نماد انگلیسی | دستی |
+| `export_openfda_db` / `import_openfda_db` | drugs | فایل‌های قابل‌حمل داروها (برای سرور بدون فایل پایپلاین) | دستی |
 | `import_calculators` | calculators | ماشین‌حساب‌ها از پایپلاین ترجمه | دستی، روی لپ‌تاپ |
 | `import_medscape_articles` | medscape | مقاله‌ها از JSON خام اسکرپر | دستی، روی لپ‌تاپ |
 | `export_reference_db` | core | فایل قابل‌حمل ماشین‌حساب، گایدلاین و بیماری | دستی، روی لپ‌تاپ |
@@ -127,6 +128,31 @@ DATABASE_URL="postgresql://<user>:<رمز>@<host خارجی>:<port>/<db>?sslmode
   .venv/bin/python manage.py import_openfda
 ```
 
+### انتقال داروها به سرور با فایل قابل‌حمل
+
+سرور فایل پایپلاین openFDA را ندارد. داده‌ای که `import_openfda` روی لپ‌تاپ وارد کرده، با پاک‌سازی‌ها و استانداردسازی واحدها، در چند فایل SQLite جابه‌جا می‌شود: `openfda.part01.db`، `openfda.part02.db` و الی آخر. هیچ فایلی از `--max-mb` بزرگ‌تر نمی‌شود. محتوای فایل‌ها کدهای ATC، داروها، اتصال داروها به ATC و همهٔ بخش‌های پروفایل است (متن برچسب و خلاصه‌های فارسی و انگلیسی).
+
+```bash
+# روی لپ‌تاپ
+python manage.py export_openfda_db                      # → /home/amir/Documents/pharmenta-reference-data/openfda/
+
+# روی سرور، بعد از رساندن همهٔ بخش‌ها به یک پوشه
+python manage.py import_openfda_db --source <پوشه> --dry-run
+python manage.py import_openfda_db --source <پوشه>
+```
+
+| دستور | گزینه | کار |
+|---|---|---|
+| `export_openfda_db` | `--out` | پیش‌فرض `/home/amir/Documents/pharmenta-reference-data/openfda` |
+| | `--max-mb` | بیشترین حجم هر بخش؛ پیش‌فرض ۲۰۰ |
+| `import_openfda_db` | `--source` | پوشهٔ بخش‌ها یا یک بخش؛ پیش‌فرض همان پوشهٔ بالا |
+| | `--dry-run` | ایمپورت کامل و برگرداندن |
+
+- **بخش‌ها:** هر بخش جدول `meta` دارد: شناسهٔ خروجی، شمارهٔ بخش، تعداد کل بخش‌ها و تعداد ردیف‌ها. ایمپورت مجموعهٔ ناقص یا بخش‌هایی از دو خروجی متفاوت را رد می‌کند.
+- **خروجی دوباره:** بخش‌های خروجی قبلی در پوشه فقط وقتی جایگزین می‌شوند که مجموعهٔ تازه کامل نوشته شده باشد.
+- **ایمپورت:** فقط اضافه یا به‌روزرسانی می‌کند و چیزی را پاک نمی‌کند، چون سؤال‌ها و فلش‌کارت‌های هر دارو به آن وابسته‌اند. ردیف‌ها با RxCUI و (دارو، بخش) تطبیق داده می‌شوند. بخش‌ها با MD5 مقایسه می‌شوند، پس از دیتابیس مقصد فقط ردیف‌هایی خوانده و نوشته می‌شوند که فرق دارند. کل کار در یک تراکنش است.
+- **حجم فعلی:** حدود ۱۲۷ مگابایت، یعنی یک بخش.
+
 ### `apply_atc_supplement`
 
 - **کار:** به ماده‌هایی که هیچ کد ATC ندارند، از فهرست تکمیلی `apps/drugs/data/atc_supplement` کد می‌دهد، بدون ایمپورت دوبارهٔ openFDA. کدی را که از منبع آمده عوض نمی‌کند. درس‌نامه‌ها داروهای تازه را فوراً نشان می‌دهند.
@@ -135,7 +161,11 @@ DATABASE_URL="postgresql://<user>:<رمز>@<host خارجی>:<port>/<db>?sslmode
 
 ### `clean_profile_boilerplate`
 
-- **کار:** جمله‌های بی‌اطلاعات را از خلاصه‌های فارسی و انگلیسی پاک می‌کند: «حساسیت به اجزای دارو»، جمله‌های «اینجا چیزی نیست» و جمله‌های منفی‌ای که اشتباهی زیر موارد مصرف آمده‌اند.
+- **کار:** جمله‌های بی‌اطلاعات را از خلاصه‌های فارسی و انگلیسی پاک می‌کند:
+  - «حساسیت به اجزای دارو»
+  - جمله‌های منفی‌ای که اشتباهی زیر موارد مصرف آمده‌اند
+  - جمله‌هایی که فقط می‌گویند چیزی نیست، ذکر یا گزارش نشده، یا بررسی نشده است: «ندارد»، «None.»، «مطالعهٔ رسمی تداخل دارویی انجام نشده است»، «X مادهٔ کنترل‌شده نیست»
+- **قاعدهٔ جمله‌های خالی (`apps/drugs/null_statements.py`):** خطی حذف می‌شود که همهٔ کلمه‌هایش عمومی باشند یا نام خود دارو. یک کلمهٔ مشخص، مثل یک گروه بیمار، یک داروی دیگر یا «خطر»، خط را نگه می‌دارد. بخش بارداری و شیردهی از این قاعده مستثناست.
 - **گزینه‌ها:** `--dry-run` فقط گزارش می‌دهد. `--pipeline` همین پاک‌سازی را در فایل پایپلاین openFDA هم انجام می‌دهد. بدون آن، `import_openfda --only-summaries` جمله‌های پاک‌شده را از فایل پایپلاین برمی‌گرداند.
 - **پشتیبان:** متن قبلی هر خانهٔ تغییرکردهٔ فایل پایپلاین در جدول `boilerplate_backup_<تاریخ>` همان فایل می‌ماند.
 
@@ -376,6 +406,8 @@ for ds in ('uptodate', 'lexicomp'):
 | `reset_runflare_db.sh` | **همهٔ** جدول‌های دیتابیس رانفلر را پاک می‌کند؛ فقط با تایپ `YES`. برگشت‌ناپذیر |
 
 راه دیگر بدون اسکریپت: بکاپ با `backup_database` و بازگردانی با `pg_restore` ([09-operations.md](09-operations.md#بکاپ-و-بازیابی)).
+
+برای به‌روز کردن فقط داروها، انتقال کامل لازم نیست: `export_openfda_db` و `import_openfda_db` ([بالا](#انتقال-داروها-به-سرور-با-فایل-قابل‌حمل)).
 
 ## حساب‌ها
 

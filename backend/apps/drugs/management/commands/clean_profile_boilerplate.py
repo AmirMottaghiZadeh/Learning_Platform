@@ -39,6 +39,13 @@ summaries, per explicit user request. Runs over both `summary_fa` and
    caveat -- e.g. "Agitation associated with dementia ... (not indicated as
    an as-needed/'prn' treatment)" -- is correctly left alone).
 
+4. Everywhere but the pregnancy section, drop lines that say nothing at all:
+   that a section is empty, that nothing is mentioned or reported, that it was
+   not studied, or (abuse) that the drug is not controlled and not abused --
+   «ندارد»، «None.»، «مطالعهٔ رسمی تداخل دارویی انجام نشده است». Only when
+   every word in the line is generic or the drug's own name; one specific
+   word keeps it. See apps.drugs.null_statements.
+
 Idempotent and safe to re-run; only ever drops whole lines, never rewrites
 one, so it can't corrupt a sentence it decides to keep.
 
@@ -55,6 +62,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from apps.drugs.management.commands.import_openfda import DEFAULT_SOURCE
 from apps.drugs.models import IngredientProfileSection
+from apps.drugs.null_statements import is_null_statement, name_words
 from apps.drugs.pipeline_db import rewrite_summaries
 
 HYPERSENSITIVITY_MAX_LEN = 130
@@ -168,8 +176,14 @@ def is_negative_indication_en(content):
     return best is not None and best <= EARLY_POSITION_MAX
 
 
-def clean_text(text, field, lang):
-    """Returns (cleaned_text, n_lines_removed)."""
+# Point 4 leaves this section alone: what is known in pregnancy and
+# lactation, "no data" included, is the content itself.
+NULL_STATEMENTS_EXEMPT = {"pregnancy"}
+
+
+def clean_text(text, field, lang, names=frozenset()):
+    """Returns (cleaned_text, n_lines_removed). `names`: the drug's own name
+    words (null_statements.name_words), which a null line may carry."""
     kept = []
     removed = 0
     for raw in text.split("\n"):
@@ -190,6 +204,8 @@ def clean_text(text, field, lang):
                 is_negative_indication_fa(content) if lang == "fa"
                 else is_negative_indication_en(content)
             )
+        if not drop and field not in NULL_STATEMENTS_EXEMPT:
+            drop = is_null_statement(content, lang, names)
 
         if drop:
             removed += 1
@@ -220,19 +236,21 @@ class Command(BaseCommand):
         total_removed = 0
         emptied = 0
         to_save = []
-        for s in IngredientProfileSection.objects.exclude(summary_fa="", summary_en=""):
+        sections = IngredientProfileSection.objects.exclude(summary_fa="", summary_en="").select_related("ingredient")
+        for s in sections:
             update_fields = []
             removed_here = 0
+            names = name_words(s.ingredient.name, s.ingredient.name_fa)
 
             if s.summary_fa:
-                cleaned_fa, removed_fa = clean_text(s.summary_fa, s.field, "fa")
+                cleaned_fa, removed_fa = clean_text(s.summary_fa, s.field, "fa", names)
                 if removed_fa:
                     s.summary_fa = cleaned_fa
                     update_fields.append("summary_fa")
                     removed_here += removed_fa
 
             if s.summary_en:
-                cleaned_en, removed_en = clean_text(s.summary_en, s.field, "en")
+                cleaned_en, removed_en = clean_text(s.summary_en, s.field, "en", names)
                 if removed_en:
                     s.summary_en = cleaned_en
                     update_fields.append("summary_en")
@@ -260,8 +278,8 @@ class Command(BaseCommand):
         ))
 
         if options["pipeline"]:
-            def cleaned(field, lang, text):
-                kept, removed = clean_text(text, field, lang)
+            def cleaned(field, lang, text, names):
+                kept, removed = clean_text(text, field, lang, name_words(*names))
                 return kept if removed else text
 
             try:

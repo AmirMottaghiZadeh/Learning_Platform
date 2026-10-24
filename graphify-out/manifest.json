@@ -822,9 +822,9 @@
     "semantic_hash": ""
   },
   "backend/apps/drugs/management/commands/clean_profile_boilerplate.py": {
-    "mtime": 1792855130.1716397,
-    "seen": 1792855276.0104504,
-    "ast_hash": "95bf863c5d64dda0752a4d926ffb2a32",
+    "mtime": 1792859117.915683,
+    "seen": 1792859270.1942515,
+    "ast_hash": "22c5ffb9e4039bf5589de1fe3ad6d281",
     "semantic_hash": ""
   },
   "backend/apps/drugs/management/commands/import_openfda.py": {
@@ -888,9 +888,9 @@
     "semantic_hash": ""
   },
   "backend/apps/drugs/tests.py": {
-    "mtime": 1792856166.0428073,
-    "seen": 1792856913.8469195,
-    "ast_hash": "3ab35fb0f2f1842a4c41c9024c5aa18b",
+    "mtime": 1792863451.6116178,
+    "seen": 1792863515.0834994,
+    "ast_hash": "a841e5c83bef07d3b46c4199e5a25703",
     "semantic_hash": ""
   },
   "backend/apps/drugs/urls.py": {
@@ -4290,9 +4290,9 @@
     "semantic_hash": ""
   },
   "docs/07-data.md": {
-    "mtime": 1792856892.1696572,
-    "seen": 1792856913.848168,
-    "ast_hash": "f674629d526f945b99cd8ad00d111f2d",
+    "mtime": 1792866654.1749392,
+    "seen": 1792866681.8978028,
+    "ast_hash": "6269e398606314051f3d383f65121ff1",
     "semantic_hash": ""
   },
   "docs/08-deployment.md": {
@@ -4308,9 +4308,9 @@
     "semantic_hash": ""
   },
   "docs/10-commands.md": {
-    "mtime": 1792855216.349099,
-    "seen": 1792855276.0118568,
-    "ast_hash": "610f52d68b01560ad3c378ca1b34cf42",
+    "mtime": 1792863495.096663,
+    "seen": 1792863515.0847075,
+    "ast_hash": "14017897a7ae246c991d446c46782c00",
     "semantic_hash": ""
   },
   "docs/11-admin-consoles.md": {
@@ -4440,9 +4440,9 @@
     "semantic_hash": ""
   },
   "backend/apps/drugs/management/commands/standardize_pipeline_units.py": {
-    "mtime": 1792855129.9597702,
-    "seen": 1792855276.0104644,
-    "ast_hash": "fe80ac6bfe4877dcf6e2d1e26aa79f2b",
+    "mtime": 1792859117.915683,
+    "seen": 1792859270.194272,
+    "ast_hash": "f692495516b8771e3376a2cbbaa296b9",
     "semantic_hash": ""
   },
   "backend/apps/drugs/migrations/0006_standardize_fa_units.py": {
@@ -4452,15 +4452,39 @@
     "semantic_hash": ""
   },
   "backend/apps/drugs/pipeline_db.py": {
-    "mtime": 1792855129.9597702,
-    "seen": 1792855276.0105062,
-    "ast_hash": "6a9e26e4465bf7b55a6d2f3e7cfca4de",
+    "mtime": 1792859117.915683,
+    "seen": 1792859270.1943254,
+    "ast_hash": "b56eb74bf973ad102573e5c8e5019a66",
     "semantic_hash": ""
   },
   "frontend/src/utils/bidi.ts": {
     "mtime": 1792856815.9487872,
     "seen": 1792856913.847855,
     "ast_hash": "bc16b1258fc0bc53d371e47d5225313d",
+    "semantic_hash": ""
+  },
+  "backend/apps/drugs/null_statements.py": {
+    "mtime": 1792859065.2772079,
+    "seen": 1792859270.194319,
+    "ast_hash": "aaedcedca26e770c60d36a1bb90e6674",
+    "semantic_hash": ""
+  },
+  "backend/apps/drugs/management/commands/export_openfda_db.py": {
+    "mtime": 1792863332.9917235,
+    "seen": 1792863515.0834174,
+    "ast_hash": "a0c4c6930397a03bfc424b513b980629",
+    "semantic_hash": ""
+  },
+  "backend/apps/drugs/management/commands/import_openfda_db.py": {
+    "mtime": 1792863332.9957216,
+    "seen": 1792863515.08343,
+    "ast_hash": "c9251fedee4a4502a589bce61262c6ac",
+    "semantic_hash": ""
+  },
+  "backend/apps/drugs/reference_db.py": {
+    "mtime": 1792863332.9797297,
+    "seen": 1792863515.0834904,
+    "ast_hash": "e909661ac070f1f00583777ad8441b50",
     "semantic_hash": ""
   }
 }
