@@ -51,7 +51,8 @@
 | `seed_seo_content` | `--dry-run` | مقاله‌های اصلی سئو و صفحهٔ «روش تهیه و بازبینی محتوا» به‌صورت پیش‌نویس، و پیوند «دارونامه» در منوها (یک بار) | [12](12-website.md) |
 | `import_openfda` | `--source --only-summaries --only-names --limit --dry-run` | داروها از پایپلاین openFDA | [07](07-data.md) |
 | `apply_atc_supplement` | `--dry-run` | کد ATC برای ماده‌های بی‌کد | [07](07-data.md) |
-| `clean_profile_boilerplate` | `--dry-run` | پاک‌سازی خلاصه‌ها | [07](07-data.md) |
+| `clean_profile_boilerplate` | `--dry-run --pipeline` | پاک‌سازی خلاصه‌ها | [07](07-data.md) |
+| `standardize_pipeline_units` | `--source --dry-run` | واحدهای فارسی فایل پایپلاین به نماد انگلیسی | [07](07-data.md) |
 | `import_calculators` | `--source --limit --dry-run` | ماشین‌حساب از پایپلاین ترجمه | [07](07-data.md) |
 | `import_medscape_articles` | `--diseases-dir --guidelines-dir --disease-images-dir --guideline-images-dir --limit --dry-run` | مقاله از JSON اسکرپر | [07](07-data.md) |
 | `export_reference_db` | `--out --only` | فایل قابل‌حمل ماشین‌حساب، گایدلاین و بیماری | [07](07-data.md) |

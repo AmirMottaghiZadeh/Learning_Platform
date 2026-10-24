@@ -408,9 +408,9 @@
     "semantic_hash": ""
   },
   "backend/apps/calculators/errata.py": {
-    "mtime": 1792851986.211284,
-    "seen": 1792852386.5071194,
-    "ast_hash": "c3417f34889834a8de5ba1c54e1f38fc",
+    "mtime": 1792853767.78713,
+    "seen": 1792855276.0102296,
+    "ast_hash": "0581de2dae10db432b1b9593ba91e0c6",
     "semantic_hash": ""
   },
   "backend/apps/calculators/management/__init__.py": {
@@ -426,9 +426,9 @@
     "semantic_hash": ""
   },
   "backend/apps/calculators/management/commands/import_calculators.py": {
-    "mtime": 1792851584.7761273,
-    "seen": 1792852386.507137,
-    "ast_hash": "3c4012506d06e9a79b3d4c68e0df0435",
+    "mtime": 1792853767.7991383,
+    "seen": 1792855276.0102422,
+    "ast_hash": "3d9ef9cf2e9ab4371ac94c81c7dcdcca",
     "semantic_hash": ""
   },
   "backend/apps/calculators/management/commands/import_calculators_db.py": {
@@ -480,9 +480,9 @@
     "semantic_hash": ""
   },
   "backend/apps/calculators/reference_db.py": {
-    "mtime": 1792851584.7761273,
-    "seen": 1792852386.5071902,
-    "ast_hash": "0d81c55ad61d31972b0a31b59c07b140",
+    "mtime": 1792853767.7991383,
+    "seen": 1792855276.0102804,
+    "ast_hash": "a7a990d41c9df2174c629381c07b2276",
     "semantic_hash": ""
   },
   "backend/apps/calculators/serializers.py": {
@@ -492,9 +492,9 @@
     "semantic_hash": ""
   },
   "backend/apps/calculators/tests.py": {
-    "mtime": 1792852031.9699144,
-    "seen": 1792852386.5071995,
-    "ast_hash": "5c0721bd4009b8e33da9d812690a5ec7",
+    "mtime": 1792856166.0428073,
+    "seen": 1792856913.8466783,
+    "ast_hash": "00a860d307be40928c71866aa970c976",
     "semantic_hash": ""
   },
   "backend/apps/calculators/urls.py": {
@@ -822,15 +822,15 @@
     "semantic_hash": ""
   },
   "backend/apps/drugs/management/commands/clean_profile_boilerplate.py": {
-    "mtime": 1791577049.8341541,
-    "seen": 1792686658.6824527,
-    "ast_hash": "3d310611a3a943fc4078f103959d7a8b",
+    "mtime": 1792855130.1716397,
+    "seen": 1792855276.0104504,
+    "ast_hash": "95bf863c5d64dda0752a4d926ffb2a32",
     "semantic_hash": ""
   },
   "backend/apps/drugs/management/commands/import_openfda.py": {
-    "mtime": 1792107216.0371294,
-    "seen": 1792686658.682456,
-    "ast_hash": "28ec963b2fb425147af7c3114144ec57",
+    "mtime": 1792853796.5661838,
+    "seen": 1792855276.010455,
+    "ast_hash": "9a4ff69b9a65d158db4f6a2b9872f37c",
     "semantic_hash": ""
   },
   "backend/apps/drugs/management/commands/load_atc_reference.py": {
@@ -888,9 +888,9 @@
     "semantic_hash": ""
   },
   "backend/apps/drugs/tests.py": {
-    "mtime": 1792074210.108055,
-    "seen": 1792686658.6824963,
-    "ast_hash": "ba650dbaefb044ad9e28468795ad6b5c",
+    "mtime": 1792856166.0428073,
+    "seen": 1792856913.8469195,
+    "ast_hash": "3ab35fb0f2f1842a4c41c9024c5aa18b",
     "semantic_hash": ""
   },
   "backend/apps/drugs/urls.py": {
@@ -1986,9 +1986,9 @@
     "semantic_hash": ""
   },
   "frontend/src/api/queryClient.ts": {
-    "mtime": 1792712870.3860824,
-    "seen": 1792713312.5755706,
-    "ast_hash": "dd7a8cd79f94a610ff6b2e9745927a07",
+    "mtime": 1792855546.9935455,
+    "seen": 1792856913.8475542,
+    "ast_hash": "c339fa8a07e674335332e346abb7a5b2",
     "semantic_hash": ""
   },
   "frontend/src/api/types.ts": {
@@ -2208,9 +2208,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/primitives/AppText.tsx": {
-    "mtime": 1788914329.452203,
-    "seen": 1792686658.6835337,
-    "ast_hash": "80a033fcf30613f074c254217b4e4485",
+    "mtime": 1792856780.612888,
+    "seen": 1792856913.8476677,
+    "ast_hash": "6b3168633dc1628e0eb8da6344fac1ba",
     "semantic_hash": ""
   },
   "frontend/src/components/primitives/Button.tsx": {
@@ -4272,9 +4272,9 @@
     "semantic_hash": ""
   },
   "docs/04-frontend.md": {
-    "mtime": 1792758899.6063979,
-    "seen": 1792759740.2851448,
-    "ast_hash": "7970201dfa1e9654353faa2b7ca12c5c",
+    "mtime": 1792856892.1736553,
+    "seen": 1792856913.8481593,
+    "ast_hash": "a699bef4e038aca5f23a6911e20641e9",
     "semantic_hash": ""
   },
   "docs/05-api.md": {
@@ -4290,9 +4290,9 @@
     "semantic_hash": ""
   },
   "docs/07-data.md": {
-    "mtime": 1792759255.2553031,
-    "seen": 1792759740.2851567,
-    "ast_hash": "0adbc5de8b9d20e27d1e85c4feff30a5",
+    "mtime": 1792856892.1696572,
+    "seen": 1792856913.848168,
+    "ast_hash": "f674629d526f945b99cd8ad00d111f2d",
     "semantic_hash": ""
   },
   "docs/08-deployment.md": {
@@ -4308,9 +4308,9 @@
     "semantic_hash": ""
   },
   "docs/10-commands.md": {
-    "mtime": 1792768127.8140588,
-    "seen": 1792768149.6264243,
-    "ast_hash": "377afaf33e40cb75e0984d58110bf961",
+    "mtime": 1792855216.349099,
+    "seen": 1792855276.0118568,
+    "ast_hash": "610f52d68b01560ad3c378ca1b34cf42",
     "semantic_hash": ""
   },
   "docs/11-admin-consoles.md": {
@@ -4419,6 +4419,48 @@
     "mtime": 1792851767.6945612,
     "seen": 1792852386.5090122,
     "ast_hash": "dcc8c82427fa7223c531288191990ced",
+    "semantic_hash": ""
+  },
+  "backend/apps/calculators/migrations/0007_standardize_fa_units.py": {
+    "mtime": 1792853767.8151493,
+    "seen": 1792855276.0102696,
+    "ast_hash": "cfee8d3c412bfab8abf4e5baac761c42",
+    "semantic_hash": ""
+  },
+  "backend/apps/core/test_units_fa.py": {
+    "mtime": 1792856166.030805,
+    "seen": 1792856913.8467512,
+    "ast_hash": "bd1422ee4870e8fb0dbc9ee7e32514f8",
+    "semantic_hash": ""
+  },
+  "backend/apps/core/units_fa.py": {
+    "mtime": 1792856082.515384,
+    "seen": 1792856913.846763,
+    "ast_hash": "7de2f3172448ac80f3eb3c0c61cedc27",
+    "semantic_hash": ""
+  },
+  "backend/apps/drugs/management/commands/standardize_pipeline_units.py": {
+    "mtime": 1792855129.9597702,
+    "seen": 1792855276.0104644,
+    "ast_hash": "fe80ac6bfe4877dcf6e2d1e26aa79f2b",
+    "semantic_hash": ""
+  },
+  "backend/apps/drugs/migrations/0006_standardize_fa_units.py": {
+    "mtime": 1792853796.5821428,
+    "seen": 1792855276.01049,
+    "ast_hash": "063f27617695b007a8fbc22047ac2785",
+    "semantic_hash": ""
+  },
+  "backend/apps/drugs/pipeline_db.py": {
+    "mtime": 1792855129.9597702,
+    "seen": 1792855276.0105062,
+    "ast_hash": "6a9e26e4465bf7b55a6d2f3e7cfca4de",
+    "semantic_hash": ""
+  },
+  "frontend/src/utils/bidi.ts": {
+    "mtime": 1792856815.9487872,
+    "seen": 1792856913.847855,
+    "ast_hash": "bc16b1258fc0bc53d371e47d5225313d",
     "semantic_hash": ""
   }
 }

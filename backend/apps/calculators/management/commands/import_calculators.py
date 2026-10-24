@@ -19,7 +19,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from apps.calculators.errata import fix_questions, fix_results, fix_strings_fa
+from apps.calculators.errata import fix_questions, fix_results, fix_strings_fa, standardize_fa_units
 from apps.calculators.models import Calculator, CalculatorCategory, CalculatorTag
 
 DEFAULT_SOURCE = "/home/amir/Documents/Learning Platform/backend/data/calculators_all.sqlite"
@@ -256,7 +256,7 @@ class Command(BaseCommand):
                     slug = Calculator.build_slug(name, calculator_id)
                     calculator, was_created = Calculator.objects.update_or_create(
                         uid=uid,
-                        defaults={
+                        defaults=standardize_fa_units({
                             "calculator_id": calculator_id,
                             "url": rec["url"] or "",
                             "slug": slug,
@@ -273,7 +273,7 @@ class Command(BaseCommand):
                             "error_checks": _error_checks_for(conn, rec["id"]),
                             "formula_strings_fa": fix_strings_fa(calculator_id, _formula_strings_fa(rec["formula_strings_fa"])),
                             "references": _references_for(conn, rec["id"]),
-                        },
+                        }),
                     )
                     created += was_created
                     updated += not was_created

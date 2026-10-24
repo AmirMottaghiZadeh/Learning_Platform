@@ -41,13 +41,21 @@ summaries, per explicit user request. Runs over both `summary_fa` and
 
 Idempotent and safe to re-run; only ever drops whole lines, never rewrites
 one, so it can't corrupt a sentence it decides to keep.
+
+`--pipeline` makes the same cut in the openfda pipeline file as well (the old
+text kept in `boilerplate_backup_<date>`, see apps.drugs.pipeline_db): the
+cleanup used to run on Postgres only, and `import_openfda --only-summaries`
+then copied the dropped lines back from the pipeline.
 """
 
 import re
+import sqlite3
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
+from apps.drugs.management.commands.import_openfda import DEFAULT_SOURCE
 from apps.drugs.models import IngredientProfileSection
+from apps.drugs.pipeline_db import rewrite_summaries
 
 HYPERSENSITIVITY_MAX_LEN = 130
 
@@ -199,6 +207,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--dry-run", action="store_true")
+        parser.add_argument(
+            "--pipeline",
+            nargs="?",
+            const=DEFAULT_SOURCE,
+            help=f"Also clean the openfda pipeline SQLite file (default path: {DEFAULT_SOURCE}).",
+        )
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
@@ -244,3 +258,17 @@ class Command(BaseCommand):
             f"{'(dry-run) ' if dry_run else ''}{touched} sections touched, "
             f"{total_removed} boilerplate lines removed, {emptied} sections now empty"
         ))
+
+        if options["pipeline"]:
+            def cleaned(field, lang, text):
+                kept, removed = clean_text(text, field, lang)
+                return kept if removed else text
+
+            try:
+                cells, ingredients, backup = rewrite_summaries(options["pipeline"], cleaned, "boilerplate", dry_run=dry_run)
+            except (sqlite3.Error, ValueError) as exc:
+                raise CommandError(f"cannot clean {options['pipeline']}: {exc}") from exc
+            self.stdout.write(self.style.SUCCESS(
+                f"{'(dry-run) ' if dry_run else ''}pipeline: {cells} summaries in {ingredients} ingredients cleaned"
+                + (f"; old text kept in {backup}" if backup else "")
+            ))

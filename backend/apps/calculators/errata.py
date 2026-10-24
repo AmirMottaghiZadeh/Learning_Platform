@@ -16,6 +16,8 @@ row. Add a row here, with why, when another one turns up.
 
 import re
 
+from apps.core.units_fa import standardize_units
+
 _RESULT_TOKEN = re.compile(r"\$result(\d+)(?!\d)")
 _REF_FIELDS = ("formula", "condition_formula", "title_formula", "sub_title_formula", "answer", "answer_fa")
 
@@ -340,4 +342,39 @@ def fix_questions(calculator_id, questions):
         if (factors or {}).get(position) or (missing or {}).get(position):
             q = _with_choices(q, (factors or {}).get(position), (missing or {}).get(position))
         out.append(q)
+    return out
+
+
+# The Persian texts a calculator carries, beside the "_fa" keys inside its
+# questions, results and error checks.
+_FA_TEXT_FIELDS = ("name_fa", "description_fa", "about_fa", "disclaimer_footer_fa")
+_FA_JSON_FIELDS = ("questions", "results", "error_checks")
+
+
+def _fa_keys_standardized(value):
+    """`standardize_units` on the strings under every "_fa" key of a JSON value."""
+    if isinstance(value, list):
+        return [_fa_keys_standardized(v) for v in value]
+    if isinstance(value, dict):
+        return {
+            k: standardize_units(v) if k.endswith("_fa") and isinstance(v, str) else _fa_keys_standardized(v)
+            for k, v in value.items()
+        }
+    return value
+
+
+def standardize_fa_units(fields):
+    """A calculator's fields (any subset of the model's) with the units in its
+    Persian text written as standard symbols («میلی‌گرم بر کیلوگرم» ->
+    «mg/kg», see apps.core.units_fa). The English text is left alone. Returns
+    a new dict; the input is untouched, and a second run changes nothing."""
+    out = dict(fields)
+    for name in _FA_TEXT_FIELDS:
+        if name in out:
+            out[name] = standardize_units(out[name])
+    for name in _FA_JSON_FIELDS:
+        if name in out:
+            out[name] = _fa_keys_standardized(out[name])
+    if isinstance(out.get("formula_strings_fa"), dict):
+        out["formula_strings_fa"] = {k: standardize_units(v) for k, v in out["formula_strings_fa"].items()}
     return out

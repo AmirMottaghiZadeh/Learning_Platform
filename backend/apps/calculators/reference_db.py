@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from apps.core.reference_db import dumps, expected_count, loads, record_counts, rows
 
-from .errata import fix_questions, fix_results, fix_strings_fa
+from .errata import fix_questions, fix_results, fix_strings_fa, standardize_fa_units
 from .models import Calculator, CalculatorCategory, CalculatorTag
 
 DATASET = "calculators"
@@ -135,6 +135,7 @@ def load(conn, meta, *, prune=False, log=print):
             fields["results"] = fix_results(fields["calculator_id"], fields["results"])
             fields["questions"] = fix_questions(fields["calculator_id"], fields["questions"])
             fields["formula_strings_fa"] = fix_strings_fa(fields["calculator_id"], fields["formula_strings_fa"])
+            fields = standardize_fa_units(fields)
             holder = slugs.get(fields["slug"])
             if holder is not None and holder != uid:
                 log(f"  skipped {uid}: slug '{fields['slug']}' already belongs to {holder}")

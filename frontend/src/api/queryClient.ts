@@ -13,8 +13,10 @@ const DAY = 24 * 60 * MINUTE;
  * at least this long or entries would be dropped before they're restored. */
 export const CACHE_MAX_AGE = 7 * DAY;
 /** Bump whenever an API response shape changes: a cache written by an older
- * build is then discarded on start instead of being fed to newer code. */
-export const CACHE_BUSTER = "2026-10-17";
+ * build is then discarded on start instead of being fed to newer code. Also
+ * when data the app caches for a day was corrected on the server (calculator
+ * formulas, lesson text) and should not wait out that day. */
+export const CACHE_BUSTER = "2026-10-24";
 
 export const queryClient = new QueryClient({
   defaultOptions: {

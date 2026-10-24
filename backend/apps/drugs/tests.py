@@ -355,3 +355,55 @@ class AtcSupplementTests(TestCase):
 
         levo = Ingredient.objects.get(rxcui=self.LEVOTHYROXINE)
         self.assertEqual(list(levo.atc_codes.values_list("code", flat=True)), ["H03AA"])
+
+
+class StandardizePipelineUnitsTests(TestCase):
+    def test_units_are_written_as_symbols_with_the_old_text_backed_up(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = _make_source_db(tmp, [{
+                "ingredient_rxcui": "1",
+                "ingredient_name": "amoxicillin",
+                "dosage_and_administration_summary_fa": "۲۵ میلی‌گرم بر کیلوگرم در روز",
+                "warnings_summary_fa": "بدون واحد",
+            }])
+            call_command("standardize_pipeline_units", source=source, stdout=StringIO())
+            conn = sqlite3.connect(source)
+            text = conn.execute("SELECT dosage_and_administration_summary_fa, warnings_summary_fa FROM ingredient_clinical_profiles").fetchone()
+            backup = conn.execute(
+                "SELECT name FROM sqlite_master WHERE name LIKE 'units_fa_backup_%'"
+            ).fetchone()[0]
+            kept = conn.execute(f"SELECT ingredient_rxcui, column_name, old_value FROM {backup}").fetchall()
+            conn.close()
+            self.assertEqual(text, ("25 mg/kg/day", "بدون واحد"))
+            self.assertEqual(kept, [("1", "dosage_and_administration_summary_fa", "۲۵ میلی‌گرم بر کیلوگرم در روز")])
+
+            out = StringIO()
+            call_command("standardize_pipeline_units", source=source, stdout=out)
+            self.assertIn("0 summaries", out.getvalue())
+
+    def test_import_writes_the_summaries_with_symbols(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = _make_source_db(tmp, [{
+                "ingredient_rxcui": "2",
+                "ingredient_name": "heparin",
+                "dosage_and_administration": "80 units/kg",
+                "dosage_and_administration_summary_fa": "۸۰ واحد بر کیلوگرم",
+            }])
+            call_command("import_openfda", source=source, stdout=StringIO())
+        section = IngredientProfileSection.objects.get(ingredient__rxcui="2", field="dosage_and_administration")
+        self.assertEqual(section.summary_fa, "80 units/kg")
+
+
+class CleanBoilerplateInPipelineTests(TestCase):
+    def test_the_pipeline_file_loses_the_same_lines(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = _make_source_db(tmp, [{
+                "ingredient_rxcui": "3",
+                "ingredient_name": "x",
+                "contraindications_summary_fa": "- حساسیت به اجزای دارو\n- مصرف همزمان با MAOI",
+            }])
+            call_command("clean_profile_boilerplate", pipeline=source, stdout=StringIO())
+            conn = sqlite3.connect(source)
+            text = conn.execute("SELECT contraindications_summary_fa FROM ingredient_clinical_profiles").fetchone()[0]
+            conn.close()
+        self.assertEqual(text, "- مصرف همزمان با MAOI")

@@ -20,6 +20,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from apps.core.units_fa import standardize_units
 from apps.drugs.data.atc_l4_fa import ATC_L4_FA
 from apps.drugs.data.atc_supplement import ATC_SUPPLEMENT
 from apps.drugs.models import (
@@ -252,7 +253,9 @@ class Command(BaseCommand):
                         if f"{field}_n_contributing_products" in keys
                         else 0
                     ),
-                    "summary_fa": (row[f"{field}_summary_fa"] or "").strip()
+                    # Units as symbols («میلی‌گرم بر کیلوگرم» -> «mg/kg»), as
+                    # migration 0006 made them in the sections already there.
+                    "summary_fa": standardize_units((row[f"{field}_summary_fa"] or "").strip())
                     if f"{field}_summary_fa" in keys
                     else "",
                     "summary_en": (row[f"{field}_summary_en"] or "").strip()
@@ -274,7 +277,7 @@ class Command(BaseCommand):
         existing = {s.field: s for s in ingredient.sections.all()}
         for field, section in existing.items():
             fa_col, en_col = f"{field}_summary_fa", f"{field}_summary_en"
-            fa = (row[fa_col] or "").strip() if fa_col in keys else section.summary_fa
+            fa = standardize_units((row[fa_col] or "").strip()) if fa_col in keys else section.summary_fa
             en = (row[en_col] or "").strip() if en_col in keys else section.summary_en
             if fa != section.summary_fa or en != section.summary_en:
                 section.summary_fa = fa

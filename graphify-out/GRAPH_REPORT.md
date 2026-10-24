@@ -1,17 +1,17 @@
 # Graph Report - Learning Platform  (2026-10-24)
 
 ## Corpus Check
-- 488 files · ~390,658 words
+- 495 files · ~394,638 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 32 file(s) not represented in the graph (top: (none) 11, .ttf 7, .woff2 4)
 
 ## Summary
-- 4639 nodes · 13095 edges · 207 communities (120 shown, 87 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1201 edges (avg confidence: 0.94)
+- 4709 nodes · 13253 edges · 197 communities (114 shown, 83 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1207 edges (avg confidence: 0.94)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `cdaa8189`
+- Built from commit: `81921b23`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -22,7 +22,7 @@
 - console/views.py
 - react
 - Post
-- AppText
+- useLang
 - views_public.py
 - .reverse
 - package.json
@@ -32,12 +32,12 @@
 - website/models.py
 - GatewayError
 - ImportOpenfdaTests
-- billing/tests.py
-- Navigator.tsx
-- decks.py
+- billing/services.py
+- Page
+- views_drugs.py
 - data_quality_center/forms.py
 - accounts/views.py
-- calculators/tests.py
+- import_calculators.py
 - data_quality_center/views.py
 - calculatorEngine.ts
 - accounts/checks.py
@@ -48,11 +48,11 @@
 - progress/views.py
 - core/views.py
 - lessons/views.py
-- Command
+- DailyStat
 - store.ts
 - Calculator
 - SectionEditRequest
-- clear_cache
+- re
 - CalculatorDetailScreen.tsx
 - offline/views.py
 - common.tsx
@@ -61,7 +61,7 @@
 - QuizApiTests
 - sources.ts
 - billing/tests.py
-- VisitorDay
+- guest.py
 - PurchaseFlowTests
 - pack.py
 - drugs/serializers.py
@@ -72,90 +72,82 @@
 - import_medscape_articles.py
 - ResultCard
 - data_quality_center/tests.py
-- progress/models.py
+- فاز ۳ — اپ‌های بک‌اند (زیرفازی)
 - Article
 - test_phone_auth.py
 - ۶. پیکربندی و متغیرهای محیطی
-- drugs/admin.py
+- RegisterSerializer
 - 6. Lesson study topics (52)
-- LiveScore.tsx
+- ApiTests
 - throttling.py
-- django_utils
-- import_calculators.py
+- billing/models.py
+- WebsiteAuthTests
 - logging
 - ۷. داده: منبع‌ها، ایمپورت، اکسپورت و بستهٔ آفلاین
 - uptodate/services.py
 - dependencies
 - medscape/tests.py
-- ۲. راه‌اندازی محیط توسعه
+- crypto.web.ts
 - panel.js
 - DownloadAndMachineTests
-- guest.py
-- HealthCheckTests
+- اپ‌ها (`backend/apps/`)
+- django_core_management
 - SectionEdit
-- lexicomp/views.py
+- sms.py
 - maintenance_urls.py
 - ConsoleTestCase
 - StudyTopicsCoverageTests
 - LessonDetailScreen.tsx
-- settings/base.py
+- drugs/admin.py
 - UptodateTests
-- ReferenceDbTests
+- ResultProps
 - website_extras.py
 - clean_profile_boilerplate.py
 - PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa
 - porter.ts
 - storage.py
-- ReferenceImportCommand
+- downloader.ts
 - uptodate/views.py
 - DrugPageTests
-- offline/services.py
+- LexicompApiTests
 - offline/reader.ts
 - docs/README.md
-- views_drugs.py
+- 0003_about_contact_text.py
 - files.ts
 - django_core_management_base
 - site.js
-- ApiTests
-- WebsiteAuthTests
+- BuildTests
+- ۴. اپ (Expo — اندروید، iOS و وب)
 - downloader.web.ts
 - dqc_extras.py
 - Section
-- ImportCalculatorsTests
-- MedscapeApiTests
+- calculators/tests.py
+- DateResult.tsx
 - Repository Guidelines
-- QuizAccessTests
+- ReviewTests
 - Media
-- GatewayPageTests
-- CalculatorApiTests
-- tasks.py
+- ۲. راه‌اندازی محیط توسعه
+- bidi.ts
+- accounts/services.py
 - ۵. قرارداد API (نسخهٔ ۱)
-- lessons/serializers.py
+- bootstrap_superuser.py
 - ۹. نگهداری: مانیتورینگ، بکاپ، رازها و عیب‌یابی
 - tsconfig.json
 - ۱۲. سایت `pharmenta.ir` و پنل محتوا
 - django_apps
-- exceptions.py
 - sw.js
 - Command
-- _card_back_fields
+- scripts
 - Command
 - pagination.py
-- OfflinePackageCard.tsx
-- django_conf
-- Subscriber
-- HostRoutingTests
+- views_account.py
 - docker-start.sh
 - billing/apps.py
-- DateResult.tsx
 - .claude/CLAUDE.md
-- view.ts
+- OfflinePackageCard.tsx
 - app.config.js
 - .mcp.json
 - ۳. بک‌اند (Django)
-- PlanSerializer
-- downloader.ts
-- enqueue
 - data_quality_center/apps.py
 - drugs/apps.py
 - flashcards/apps.py
@@ -166,18 +158,16 @@
 - quiz/apps.py
 - uptodate/apps.py
 - website/apps.py
-- authentication.py
 - ۸. دیپلوی
 - ۱. معرفی و معماری
 - ۱۰. مرجع سریع دستورها
 - کنسول فروش (`/ops/`)
-- FlashcardFact
 - مستندات فارمنتا
 - فارمنتا (Pharmenta)
 
 ## God Nodes (most connected - your core abstractions)
 1. `useTheme()` - 163 edges
-2. `AppText()` - 153 edges
+2. `AppText()` - 157 edges
 3. `useLang()` - 143 edges
 4. `PlatformAPIError` - 79 edges
 5. `react` - 78 edges
@@ -196,277 +186,277 @@
   docs/07-data.md → backend/apps/drugs/models.py
 - `۳a — جدول مرجع ATC + `apps.lessons` ✅` --references--> `AtcCategory`  [INFERRED]
   PHASES.md → backend/apps/drugs/models.py
-- `فلش‌کارت — `/flashcards/` (ویژگی `flashcards`؛ پرچم `FLASHCARDS_API_ENABLED`)` --references--> `next_topic()`  [INFERRED]
-  docs/05-api.md → backend/apps/flashcards/decks.py
+- `ایمپورت از منبع خام (روی لپ‌تاپ)` --references--> `ArticleImage`  [INFERRED]
+  docs/07-data.md → backend/apps/medscape/models.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (207 total, 87 thin omitted)
+## Communities (197 total, 83 thin omitted)
 
 ### Community 0 - "api/types.ts"
-Cohesion: 0.03
-Nodes (90): حساب و احراز هویت — `/auth/`, flashcardsApi, lessonsApi, offlineApi, quizApi, AtcCode, AtcGroup, AuthTokenResponse (+82 more)
+Cohesion: 0.04
+Nodes (84): حساب و احراز هویت — `/auth/`, flashcardsApi, quizApi, AtcCode, AtcGroup, AuthTokenResponse, BoxSummary, CalculatorCategoryRef (+76 more)
 
 ### Community 1 - "django_db"
 Cohesion: 0.02
-Nodes (51): Migration, Migration, Migration, Migration, Migration, Migration, Migration, Migration (+43 more)
+Nodes (49): Migration, Migration, Migration, Migration, Migration, Migration, Migration, Migration (+41 more)
 
 ### Community 2 - "test_panel.py"
-Cohesion: 0.06
-Nodes (18): PostRevision, Meta, StaffRole, Meta, SiteTestCase, AdminTests, AuthorTests, AuthTests (+10 more)
+Cohesion: 0.07
+Nodes (12): AdminTests, AuthorTests, AuthTests, CommercePagesTests, InboxTests, make_user(), MediaTests, PanelCase (+4 more)
 
 ### Community 3 - "console/views.py"
 Cohesion: 0.05
-Nodes (69): DiscountForm, FeatureEditForm, Meta, FeatureForm, Meta, latin_digits(), parse_amount(), parse_jalali() (+61 more)
+Nodes (76): DiscountForm, FeatureEditForm, Meta, FeatureForm, Meta, latin_digits(), parse_amount(), parse_jalali() (+68 more)
 
 ### Community 4 - "react"
 Cohesion: 0.08
-Nodes (63): calculatorsApi, meApi, MedscapeKind, ALPHABET, AlphabeticalArticleList(), buildOffsets(), groupAlphabetically(), Section (+55 more)
+Nodes (63): calculatorsApi, meApi, medscapeApi, MedscapeKind, ALPHABET, AlphabeticalArticleList(), buildOffsets(), groupAlphabetically() (+55 more)
 
 ### Community 5 - "Post"
-Cohesion: 0.06
-Nodes (59): ActivityLog, Meta, Comment, Meta, ContactMessage, Meta, orders(), plans() (+51 more)
+Cohesion: 0.07
+Nodes (51): Comment, Meta, Post, Meta, StaffRole, Meta, Subscriber, Meta (+43 more)
 
-### Community 6 - "AppText"
-Cohesion: 0.15
-Nodes (74): قابلیت‌ها, قواعد کدنویسی اپ, ChecklistFlow(), HelpSheet(), LoadFailed(), AppText(), Button(), Card() (+66 more)
+### Community 6 - "useLang"
+Cohesion: 0.13
+Nodes (80): قابلیت‌ها, ساختار `frontend/src/`, شروع اپ, قواعد کدنویسی اپ, Gate(), AppShell(), AuthLayout(), BottomNav() (+72 more)
 
 ### Community 7 - "views_public.py"
-Cohesion: 0.05
-Nodes (57): site(), SiteMaintenanceMiddleware, DailyStat, Meta, SiteSettings, Meta, article(), breadcrumbs() (+49 more)
+Cohesion: 0.06
+Nodes (40): site(), SiteMaintenanceMiddleware, SiteSettings, Meta, login_view(), _safe_next(), add_toc(), blocks() (+32 more)
 
 ### Community 8 - ".reverse"
 Cohesion: 0.04
-Nodes (13): PhaseTwoAuthorizationTests, PhaseTwoSessionSecurityTests, AuthenticationSecurityTests, OnboardingTests, wrapper(), AccessTests, FeatureTests, PlanBuilderTests (+5 more)
+Nodes (15): AuthenticationSecurityTests, OnboardingTests, wrapper(), AccessTests, ConsoleTestCase, DeleteUserTests, DiscountAndReportTests, FeatureTests (+7 more)
 
 ### Community 9 - "package.json"
-Cohesion: 0.04
-Nodes (66): زبان، جهت و تم, App(), ThemedStatusBar(), devDependencies, @types/react, typescript, main, name (+58 more)
+Cohesion: 0.03
+Nodes (70): زبان، جهت و تم, App(), ThemedStatusBar(), main, name, private, version, API_BASE_URL (+62 more)
 
 ### Community 10 - "flashcards/views.py"
-Cohesion: 0.11
-Nodes (23): deck_slugs(), topic_meta(), BoxSummarySerializer, CategoryDecksSerializer, DeckAnswerSerializer, DeckOverviewSerializer, DeckProgressSerializer, LeitnerCardSerializer (+15 more)
+Cohesion: 0.05
+Nodes (37): FlashcardFactAdmin, LeitnerCardAdmin, all_decks(), _carded_slugs(), deck_slugs(), next_topic(), progress_map(), topic_meta() (+29 more)
 
 ### Community 11 - "calculators/reference_db.py"
-Cohesion: 0.08
-Nodes (15): export(), load(), Command, dumps(), expected_count(), loads(), record_counts(), rows() (+7 more)
+Cohesion: 0.05
+Nodes (22): Command, export(), load(), Command, _DryRun, dumps(), expected_count(), loads() (+14 more)
 
 ### Community 12 - "billing/views.py"
-Cohesion: 0.08
-Nodes (29): is_guest(), CatalogSerializer, CheckoutSerializer, MyAccessSerializer, OrderSerializer, Meta, PurchaseRequestSerializer, QuoteSerializer (+21 more)
+Cohesion: 0.05
+Nodes (43): enabled_gateways(), get_gateway(), start_payment(), is_guest(), CatalogSerializer, CheckoutSerializer, MyAccessSerializer, MyEntitlementSerializer (+35 more)
 
 ### Community 13 - "website/models.py"
 Cohesion: 0.04
-Nodes (35): Command, Command, Announcement, Meta, AppRelease, Meta, Category, Meta (+27 more)
+Nodes (36): Command, ActivityLog, Meta, Announcement, Meta, AppRelease, Meta, Category (+28 more)
 
 ### Community 14 - "GatewayError"
 Cohesion: 0.06
-Nodes (10): _post_json(), SepGateway, Verification, ZarinpalGateway, ZibalGateway, _fake_urlopen(), GatewayChoiceTests, SepTests (+2 more)
+Nodes (12): FakeGateway, GatewayError, _post_json(), SepGateway, Verification, ZarinpalGateway, ZibalGateway, _fake_urlopen() (+4 more)
 
 ### Community 15 - "ImportOpenfdaTests"
+Cohesion: 0.06
+Nodes (11): IngredientProfileSection, Meta, AtcSupplementTests, CleanBoilerplateInPipelineTests, DrugApiTests, ImportOpenfdaTests, LoadAtcReferenceTests, _make_source_db() (+3 more)
+
+### Community 16 - "billing/services.py"
+Cohesion: 0.08
+Nodes (20): Feature, Meta, UsageRecord, Meta, Access, active_entitlements(), check_feature(), content_lock() (+12 more)
+
+### Community 17 - "Page"
 Cohesion: 0.07
-Nodes (6): AtcSupplementTests, DrugApiTests, ImportOpenfdaTests, LoadAtcReferenceTests, _make_source_db(), ModelTests
+Nodes (6): clean_html(), _Cleaner, plain_text(), safe_url(), _Text, SanitizeTests
 
-### Community 16 - "billing/tests.py"
-Cohesion: 0.05
-Nodes (18): Access, check_feature(), content_lock(), effective_features(), take(), free_plan(), grant(), _monthly() (+10 more)
-
-### Community 17 - "Navigator.tsx"
-Cohesion: 0.09
-Nodes (43): ارتباط با API و کش, افزودن صفحهٔ تازه, دانلود آفلاین (`src/offline/`), ساختار `frontend/src/`, شروع اپ, ناوبری, وب‌اپ و PWA, پیکربندی اپ بومی (+35 more)
-
-### Community 18 - "decks.py"
-Cohesion: 0.14
-Nodes (8): all_decks(), _carded_slugs(), next_topic(), progress_map(), TopicProgress, Meta, l2_slug_index(), ordered_topic_slugs()
+### Community 18 - "views_drugs.py"
+Cohesion: 0.07
+Nodes (26): Command, article(), breadcrumbs(), editorial_team(), home_graph(), _id(), organization(), page_graph() (+18 more)
 
 ### Community 20 - "accounts/views.py"
-Cohesion: 0.04
-Nodes (82): Role, Meta, RoleAssignment, Meta, SecurityAuditEvent, Meta, SessionRefreshToken, Meta (+74 more)
+Cohesion: 0.05
+Nodes (49): CanManagePlatformRoles, CanViewSecurityAudit, HasPlatformPermission, HasRecentStepUp, LearnerProfileSerializer, Meta, LoginSerializer, OtpRequestResponseSerializer (+41 more)
 
-### Community 21 - "calculators/tests.py"
-Cohesion: 0.07
-Nodes (17): fix_questions(), fix_results(), fix_strings_fa(), renumber_from_one(), _stage_names_without_prefix(), _title_formula_as_result(), _with_choices(), _with_unit() (+9 more)
+### Community 21 - "import_calculators.py"
+Cohesion: 0.06
+Nodes (27): _fa_keys_standardized(), fix_questions(), fix_results(), fix_strings_fa(), renumber_from_one(), standardize_fa_units(), _title_formula_as_result(), _with_choices() (+19 more)
 
 ### Community 22 - "data_quality_center/views.py"
-Cohesion: 0.11
-Nodes (26): warning_count(), word_diff(), section_state(), _diffs(), discard(), history(), _login_key(), login_view() (+18 more)
+Cohesion: 0.12
+Nodes (25): warning_count(), section_state(), _diffs(), discard(), history(), _login_key(), login_view(), logout_view() (+17 more)
 
 ### Community 23 - "calculatorEngine.ts"
-Cohesion: 0.09
-Nodes (47): CalculatorErrorCheck, buildHeuristicSeeds(), cartesian(), classifyResultTone(), computeCalculator(), ComputeOptions, computeResultRanges(), computeTierBands() (+39 more)
+Cohesion: 0.08
+Nodes (56): CalculatorErrorCheck, useLiveScore(), buildHeuristicSeeds(), cartesian(), classifyResultTone(), computeCalculator(), ComputeOptions, computeResultRanges() (+48 more)
 
 ### Community 25 - "quiz/views.py"
-Cohesion: 0.06
-Nodes (41): record_quiz_answers(), BankQuestionAdmin, QuizQuestionInline, QuizSessionAdmin, preview_selection(), sample_bank_questions(), _sample_rows(), best_score_pct_for_topic() (+33 more)
+Cohesion: 0.07
+Nodes (36): record_quiz_answers(), BankQuestionAdmin, QuizQuestionInline, QuizSessionAdmin, best_score_pct_for_topic(), _finished_sessions(), _finished_topic_sessions(), topic_mastery_map() (+28 more)
 
 ### Community 26 - "MedscapeArticleScreen.tsx"
-Cohesion: 0.06
-Nodes (68): medscapeApi, MedscapeBlock, MedscapeSection, useBleedTop(), countMatches(), FindState, highlight(), ListMarker() (+60 more)
+Cohesion: 0.10
+Nodes (43): MedscapeBlock, MedscapeSection, countMatches(), FindState, highlight(), ListMarker(), LTR, NumberedHeading() (+35 more)
 
 ### Community 27 - "lexicomp/services.py"
-Cohesion: 0.10
-Nodes (13): _categories_for_generics(), check_interactions(), close_all(), _conn(), _dir(), _exceptions_for_monographs(), is_available(), _names_for_generics() (+5 more)
+Cohesion: 0.11
+Nodes (16): InteractionCheckRequestSerializer, LexicompDrugSerializer, LexicompInteractionSerializer, _categories_for_generics(), check_interactions(), _conn(), _dir(), _exceptions_for_monographs() (+8 more)
 
 ### Community 28 - ".request_code"
 Cohesion: 0.08
-Nodes (22): CodeRuleTests, PhoneAuthTestCase, ResetTests, SignUpTests, SmsIrBackendTests, برنامهٔ سئوی فارمنتا برای داروسازان و مراجع علمی حرفه‌ای, تقویم پیشنهادی نخستین هشت محتوای تخصصی, روش تبدیل پیشنهادها به کلمات کلیدی معتبر (+14 more)
+Nodes (21): CodeRuleTests, PhoneAuthTestCase, ResetTests, SignUpTests, برنامهٔ سئوی فارمنتا برای داروسازان و مراجع علمی حرفه‌ای, تقویم پیشنهادی نخستین هشت محتوای تخصصی, روش تبدیل پیشنهادها به کلمات کلیدی معتبر, ساخت Analytics از ابتدا (+13 more)
 
 ### Community 29 - "progress/views.py"
-Cohesion: 0.08
-Nodes (30): Mistake, Meta, StudyPlanItem, Meta, complete_item(), skip_item(), DashboardSerializer, FocusRowSerializer (+22 more)
+Cohesion: 0.04
+Nodes (53): DailyStudyAdmin, LearnerProgressAdmin, MistakeAdmin, StudyPlanAdmin, DailyStudy, Meta, LearnerProgress, Mistake (+45 more)
 
 ### Community 30 - "core/views.py"
-Cohesion: 0.14
-Nodes (12): check_broker(), check_cache(), check_database(), probe(), _timed(), HealthCheckSerializer, HealthChecksSerializer, ReadinessCheckSerializer (+4 more)
+Cohesion: 0.12
+Nodes (13): Migration, check_broker(), check_cache(), check_database(), probe(), _timed(), HealthCheckSerializer, HealthChecksSerializer (+5 more)
 
 ### Community 31 - "lessons/views.py"
+Cohesion: 0.08
+Nodes (26): _applies(), require_atc_content(), _require_content(), require_feature(), require_topic_content(), LessonDrugSerializer, get_chapter(), get_lesson_drug() (+18 more)
+
+### Community 32 - "DailyStat"
 Cohesion: 0.11
-Nodes (18): _applies(), require_atc_content(), _require_content(), require_feature(), require_topic_content(), LessonDrugSerializer, _topic_lookup(), topics_for_chapter() (+10 more)
+Nodes (14): DailyStat, Meta, VisitorDay, Meta, jalali_format(), dashboard(), _delta(), _paths() (+6 more)
 
 ### Community 33 - "store.ts"
-Cohesion: 0.13
-Nodes (38): useOfflineBoot(), requestPersistence(), closeReaders(), bootOffline(), cancel(), currentUserId(), DATASETS, DatasetState (+30 more)
+Cohesion: 0.12
+Nodes (38): offlineApi, OfflinePackageInfo, useOfflineBoot(), closeReaders(), bootOffline(), cancel(), currentUserId(), DATASETS (+30 more)
 
 ### Community 34 - "Calculator"
-Cohesion: 0.11
-Nodes (17): Calculator, Meta, CalculatorCategory, Meta, CalculatorTag, Meta, CalculatorCategorySerializer, Meta (+9 more)
+Cohesion: 0.08
+Nodes (19): Calculator, Meta, CalculatorCategory, Meta, CalculatorTag, Meta, CalculatorCategorySerializer, Meta (+11 more)
 
 ### Community 35 - "SectionEditRequest"
 Cohesion: 0.10
 Nodes (21): ReviewEvent, Meta, SectionEditRequest, Meta, approve(), _clean(), _client_ip(), _close() (+13 more)
 
+### Community 36 - "re"
+Cohesion: 0.11
+Nodes (12): _stage_names_without_prefix(), StandardizeUnitsTests, _adjective(), _chain(), _key(), _latin_quantity(), _spelling(), standardize_in() (+4 more)
+
 ### Community 37 - "CalculatorDetailScreen.tsx"
-Cohesion: 0.12
-Nodes (34): describeInputs(), DateInput(), DaysInput(), Field(), QuestionTitle(), CardsFlow(), flowLayout, Choices() (+26 more)
+Cohesion: 0.09
+Nodes (38): describeInputs(), CardsFlow(), ChecklistFlow(), flowLayout, LiveScore(), Choices(), FieldProps, FieldVariant (+30 more)
 
 ### Community 38 - "offline/views.py"
-Cohesion: 0.11
-Nodes (17): build_matches_dataset(), LicenseRequestSerializer, LicenseSerializer, OfflinePackageSerializer, PackageFileSerializer, PackageFileUrlSerializer, PackageManifestSerializer, PackageUrlsRequestSerializer (+9 more)
+Cohesion: 0.08
+Nodes (24): build_matches_dataset(), LicenseRequestSerializer, LicenseSerializer, OfflinePackageSerializer, PackageFileSerializer, PackageFileUrlSerializer, PackageManifestSerializer, PackageUrlsRequestSerializer (+16 more)
 
 ### Community 39 - "common.tsx"
 Cohesion: 0.16
 Nodes (25): bandFor(), Chip(), Collapse(), Extra, Extras(), fmt(), LEVEL_TONES, plain() (+17 more)
 
 ### Community 40 - "calculatorModel.ts"
-Cohesion: 0.15
-Nodes (23): CalculatorResultDef, StagingResult(), allWholeNumbers(), cache, classify(), classifyCalculator(), isNumeric(), LadderRung (+15 more)
+Cohesion: 0.14
+Nodes (24): CalculatorResultDef, StagingResult(), ComputedResult, allWholeNumbers(), cache, classify(), classifyCalculator(), isNumeric() (+16 more)
 
 ### Community 41 - "Ingredient"
-Cohesion: 0.04
-Nodes (34): Command, Command, AtcCategory, Meta, AtcCode, Meta, Ingredient, Meta (+26 more)
+Cohesion: 0.06
+Nodes (22): Command, AtcCategory, Meta, Ingredient, Meta, fold(), l2_slug_index(), _l2_slug_index() (+14 more)
+
+### Community 42 - "QuizApiTests"
+Cohesion: 0.10
+Nodes (3): QuizAccessTests, QuizApiTests, QuizLockedTests
 
 ### Community 43 - "sources.ts"
-Cohesion: 0.08
-Nodes (29): Coding Style & Naming Conventions, پایهٔ Django, lexicompApi, uptodateApi, LexicompDrug, LexicompInteraction, UptodateImage, cache (+21 more)
+Cohesion: 0.09
+Nodes (29): lexicompApi, uptodateApi, LexicompDrug, LexicompInteraction, UptodateArticle, UptodateImage, UptodateSearchResult, UptodateTopic (+21 more)
 
 ### Community 44 - "billing/tests.py"
-Cohesion: 0.31
-Nodes (8): _div(), fa_digits(), format_date(), _jal_cal(), _mod(), month_start(), to_gregorian(), to_jalali()
+Cohesion: 0.09
+Nodes (13): _div(), format_date(), _jal_cal(), _mod(), month_start(), to_gregorian(), to_jalali(), DiscountTests (+5 more)
 
-### Community 45 - "VisitorDay"
-Cohesion: 0.24
-Nodes (4): VisitorDay, Meta, UniqueVisitorTests, visit()
+### Community 45 - "guest.py"
+Cohesion: 0.09
+Nodes (12): AuthTokenResponseSerializer, OnboardingSerializer, UserSerializer, Meta, OnboardingView, create_guest(), GuestSessionView, GuestStatusView (+4 more)
 
 ### Community 47 - "pack.py"
-Cohesion: 0.07
-Nodes (20): build_lexicomp(), build_uptodate(), _info_version(), _porter_terms(), _ro(), _top_sections(), _varints(), Command (+12 more)
+Cohesion: 0.05
+Nodes (24): writing(), _make_snapshot(), build_lexicomp(), build_uptodate(), _info_version(), _porter_terms(), _ro(), _top_sections() (+16 more)
 
 ### Community 48 - "drugs/serializers.py"
-Cohesion: 0.10
-Nodes (14): AtcCodeSerializer, Meta, IngredientDetailSerializer, Meta, IngredientListSerializer, Meta, LessonDrugSectionSerializer, Meta (+6 more)
+Cohesion: 0.06
+Nodes (18): Command, AtcCode, Meta, AtcCodeSerializer, Meta, IngredientDetailSerializer, Meta, IngredientListSerializer (+10 more)
 
 ### Community 49 - "FlashcardApiTests"
-Cohesion: 0.11
-Nodes (5): FlashcardApiTests, FlashcardLockedTests, _refresh_facts(), _rich_ingredient(), TopicDeckTests
+Cohesion: 0.12
+Nodes (6): seed_deck(), FlashcardApiTests, FlashcardLockedTests, _refresh_facts(), _rich_ingredient(), TopicDeckTests
 
 ### Community 50 - "LessonTaxonomyTests"
-Cohesion: 0.08
-Nodes (4): DrugSearchTests, _ingredient(), LessonTaxonomyFallbackTests, LessonTaxonomyTests
+Cohesion: 0.06
+Nodes (8): ChapterProgress, Meta, ReadDrug, Meta, DrugSearchTests, _ingredient(), LessonTaxonomyFallbackTests, LessonTaxonomyTests
 
 ### Community 51 - "expo"
 Cohesion: 0.06
 Nodes (31): backgroundColor, foregroundImage, adaptiveIcon, package, versionCode, projectId, typedRoutes, expo (+23 more)
 
 ### Community 52 - "planning.py"
-Cohesion: 0.07
-Nodes (26): due_card_count(), mark_drug_read(), topic_chapters(), topic_progress(), StudyPlan, ensure_today_items(), _flashcard_recall_for_slugs(), _flatten() (+18 more)
+Cohesion: 0.06
+Nodes (25): due_card_count(), _seed_candidates(), _with_enough_content(), mark_drug_read(), ensure_today_items(), _flashcard_recall_for_slugs(), _flatten(), _goal_items() (+17 more)
 
 ### Community 53 - "import_medscape_articles.py"
 Cohesion: 0.16
 Nodes (7): _clean_blocks(), _clean_sections(), _clean_text(), Command, _extract_latest_update(), ImageResolver, _specialty_label()
 
 ### Community 54 - "ResultCard"
-Cohesion: 0.31
-Nodes (23): Explain(), Hero(), Interpretation(), Ltr(), ResultCard(), showTierBar(), toneOf(), useShown() (+15 more)
+Cohesion: 0.34
+Nodes (21): Explain(), Hero(), Interpretation(), ResultCard(), showTierBar(), toneOf(), useShown(), useTier() (+13 more)
 
 ### Community 55 - "data_quality_center/tests.py"
-Cohesion: 0.26
-Nodes (5): _canonical(), _numbers(), numbers_missing_from_source(), run_checks(), CheckTests
+Cohesion: 0.24
+Nodes (6): _canonical(), _numbers(), numbers_missing_from_source(), run_checks(), word_diff(), CheckTests
 
-### Community 56 - "progress/models.py"
-Cohesion: 0.05
-Nodes (28): Migration, seed(), DailyStudyAdmin, LearnerProgressAdmin, MistakeAdmin, StudyPlanAdmin, DailyStudy, Meta (+20 more)
+### Community 56 - "فاز ۳ — اپ‌های بک‌اند (زیرفازی)"
+Cohesion: 0.25
+Nodes (6): Migration, seed(), فاز ۳ — اپ‌های بک‌اند (زیرفازی), ۳a — جدول مرجع ATC + `apps.lessons` ✅, ۳c — `apps.flashcards` + `apps.quiz` (ساخته‌شده، پشت فلگ خاموش) ✅, ۳d — بازنویسی `data_quality_center` ✅
 
 ### Community 57 - "Article"
-Cohesion: 0.09
-Nodes (15): Command, Command, Article, Meta, ArticleImage, ArticleDetailSerializer, Meta, ArticleImageSerializer (+7 more)
+Cohesion: 0.07
+Nodes (17): ReferenceImportCommand, open_for_import(), Command, Command, Article, Meta, ArticleImage, ArticleDetailSerializer (+9 more)
 
 ### Community 58 - "test_phone_auth.py"
-Cohesion: 0.14
-Nodes (6): EmailOrUsernameBackend, looks_like_phone(), normalize_phone(), PhoneField, NormalizePhoneTests, _find_user()
+Cohesion: 0.08
+Nodes (14): EmailOrUsernameBackend, LearnerProfile, InvalidPhone, looks_like_phone(), normalize_phone(), PhoneField, NormalizePhoneTests, ProfileTests (+6 more)
 
 ### Community 59 - "۶. پیکربندی و متغیرهای محیطی"
 Cohesion: 0.12
 Nodes (16): HTTPS، CORS و CSRF, اپ (فرانت‌اند), ایمیل, بستهٔ آفلاین, حساب و احراز هویت, دادهٔ مرجع (UpToDate و Lexicomp), دیتابیس، کش و آمادگی, سایت (+8 more)
 
-### Community 60 - "drugs/admin.py"
-Cohesion: 0.27
-Nodes (5): AtcCategoryAdmin, AtcCodeAdmin, IngredientAdmin, IngredientProfileSectionAdmin, IngredientProfileSectionInline
-
 ### Community 61 - "6. Lesson study topics (52)"
 Cohesion: 0.06
 Nodes (34): 1. Bottom navigation (5 tabs), 2. Dashboard: entry points (درِ ورودی مسیرها), 3. Education hub (inside آموزش), 4. Profile menu and stats, 5. Lesson categories (12 body systems), 6. Lesson study topics (52), 7. Calculator specialties (30), 8. Diseases & Conditions: top-level groups (+26 more)
-
-### Community 62 - "LiveScore.tsx"
-Cohesion: 0.19
-Nodes (19): CalculatorDetail, CalculatorQuestion, ResultProps, LIST_FROM, LiveScore(), useLiveScore(), FieldProps, FlowProps (+11 more)
 
 ### Community 63 - "throttling.py"
 Cohesion: 0.11
 Nodes (9): BurstRateThrottle, DistributedAnonRateThrottle, DistributedScopedRateThrottle, DistributedUserRateThrottle, _fail_closed_scopes(), SharedCacheThrottleMixin, SustainedRateThrottle, throttle_cache() (+1 more)
 
-### Community 64 - "django_utils"
-Cohesion: 0.04
-Nodes (52): SessionTokenAuthenticationScheme, LearnerProfile, UserSession, Meta, ProfileTests, EntitlementAdmin, FeatureAdmin, OrderAdmin (+44 more)
-
-### Community 65 - "import_calculators.py"
-Cohesion: 0.20
-Nodes (9): Command, _error_checks_for(), _formula_strings_fa(), _import_categories(), _import_tags(), _questions_for(), _references_for(), _results_for() (+1 more)
+### Community 64 - "billing/models.py"
+Cohesion: 0.12
+Nodes (12): EntitlementAdmin, FeatureAdmin, OrderAdmin, PlanAdmin, PlanFeatureInline, PlanPriceInline, DiscountCode, Meta (+4 more)
 
 ### Community 66 - "logging"
-Cohesion: 0.12
-Nodes (3): PlatformTask, retry_delay_seconds(), configure_runtime()
+Cohesion: 0.06
+Nodes (11): password_reset_url_for_user(), send_password_reset_email(), send_password_reset_emails_for_email(), send_password_reset_email_task(), PlatformTask, retry_delay_seconds(), get_request_id(), JsonFormatter (+3 more)
 
 ### Community 67 - "۷. داده: منبع‌ها، ایمپورت، اکسپورت و بستهٔ آفلاین"
 Cohesion: 0.08
-Nodes (24): `apply_atc_supplement`, `clean_profile_boilerplate`, CORS و بررسی باکت, `ensure_uptodate_search_index`, `import_openfda`, Lexicomp, `migrate_uptodate_to_mysql`, UpToDate (+16 more)
+Nodes (25): `apply_atc_supplement`, `clean_profile_boilerplate`, CORS و بررسی باکت, `ensure_uptodate_search_index`, `import_openfda`, Lexicomp, `migrate_uptodate_to_mysql`, UpToDate (+17 more)
 
 ### Community 68 - "uptodate/services.py"
-Cohesion: 0.10
+Cohesion: 0.09
 Nodes (19): Command, article_from_row(), _dir(), get_image(), get_topic(), is_available(), mysql_config(), _mysql_conn() (+11 more)
 
 ### Community 69 - "dependencies"
-Cohesion: 0.06
-Nodes (33): dependencies, axios, expo, expo-crypto, expo-file-system, expo-font, @expo-google-fonts/vazirmatn, expo-linear-gradient (+25 more)
+Cohesion: 0.08
+Nodes (26): dependencies, axios, expo, expo-crypto, expo-file-system, expo-font, @expo-google-fonts/vazirmatn, expo-linear-gradient (+18 more)
 
 ### Community 70 - "medscape/tests.py"
-Cohesion: 0.27
-Nodes (5): _disease_record(), _guideline_record(), ImportMedscapeArticlesTests, _write_diseases_tree(), _write_guidelines()
+Cohesion: 0.12
+Nodes (6): _disease_record(), _guideline_record(), ImportMedscapeArticlesTests, MedscapeApiTests, _write_diseases_tree(), _write_guidelines()
 
-### Community 71 - "۲. راه‌اندازی محیط توسعه"
-Cohesion: 0.09
-Nodes (22): اجرای کامل با Docker, اندروید و iOS, اپ (Expo), بک‌اند, تست بستهٔ آفلاین بدون باکت, تست و بررسی, روال کار با مخزن, ساخت دیتابیس و اجرای سرور (+14 more)
+### Community 71 - "crypto.web.ts"
+Cohesion: 0.23
+Nodes (9): اجرای کامل با Docker, db(), idb(), keyring, openRecord(), openRecordBase64(), PackageKey, rsaPair() (+1 more)
 
 ### Community 72 - "panel.js"
 Cohesion: 0.16
@@ -476,57 +466,57 @@ Nodes (14): buildEditor(), align(), block(), exec(), sync(), toggleSource(), wra
 Cohesion: 0.11
 Nodes (4): CommentTests, DownloadAndMachineTests, make_post(), PostVisibilityTests
 
-### Community 74 - "guest.py"
-Cohesion: 0.08
-Nodes (14): BillingConfig, current(), gateway_spec(), access(), create_guest(), delete_guests(), end_guest_sessions(), guests() (+6 more)
+### Community 74 - "اپ‌ها (`backend/apps/`)"
+Cohesion: 0.06
+Nodes (22): BillingConfig, clear_cache(), current(), gateway_spec(), _gateways(), GatewaySpec, _load(), row() (+14 more)
 
-### Community 75 - "HealthCheckTests"
-Cohesion: 0.15
+### Community 75 - "django_core_management"
+Cohesion: 0.14
 Nodes (3): HealthCheckTests, OpenAPISchemaTests, ResponseCompressionTests
 
 ### Community 76 - "SectionEdit"
 Cohesion: 0.15
 Nodes (7): ReadOnlyAdmin, ReviewEventAdmin, SectionEditAdmin, SectionEditRequestAdmin, SectionEdit, Meta, مرکز کیفیت داده (`/ops/data-quality/`)
 
-### Community 77 - "lexicomp/views.py"
-Cohesion: 0.35
-Nodes (6): InteractionCheckRequestSerializer, LexicompDrugSerializer, LexicompInteractionSerializer, DrugSearchView, InteractionCheckView, _require_available()
-
-### Community 79 - "ConsoleTestCase"
-Cohesion: 0.15
-Nodes (3): ConsoleTestCase, DraftAndSubmitTests, ReviewTests
+### Community 77 - "sms.py"
+Cohesion: 0.21
+Nodes (6): _error_message(), send_code(), _send_smsir(), SentCode, SmsSendError, SmsIrBackendTests
 
 ### Community 81 - "LessonDetailScreen.tsx"
-Cohesion: 0.33
-Nodes (10): LessonSection, joinOpenParens(), LessonBlock, LessonLine, parenDepth(), parseLessonText(), sectionText(), splitIssues() (+2 more)
+Cohesion: 0.07
+Nodes (53): lessonsApi, LessonSection, TopInset, useBleedTop(), countWords(), numberByDepth(), Numbered, readingMinutes() (+45 more)
 
-### Community 82 - "settings/base.py"
-Cohesion: 0.11
-Nodes (3): build.sh script, DJANGO_SETTINGS_MODULE, release.sh script
+### Community 82 - "drugs/admin.py"
+Cohesion: 0.27
+Nodes (5): AtcCategoryAdmin, AtcCodeAdmin, IngredientAdmin, IngredientProfileSectionAdmin, IngredientProfileSectionInline
+
+### Community 84 - "ResultProps"
+Cohesion: 0.36
+Nodes (8): CalculatorDetail, CalculatorQuestion, ResultProps, LIST_FROM, FlowProps, CalculatorAnswers, ResultRange, ModelInfo
 
 ### Community 85 - "website_extras.py"
 Cohesion: 0.15
 Nodes (8): atc_groups(), feature_icon(), nav_on(), oneline(), person(), split_highlight(), split_lines(), آنچه کد انجام می‌دهد
 
 ### Community 86 - "clean_profile_boilerplate.py"
-Cohesion: 0.23
-Nodes (8): clean_text(), Command, is_hypersensitivity_boilerplate(), is_hypersensitivity_boilerplate_en(), is_negative_indication_en(), is_negative_indication_fa(), is_null_placeholder(), _normalize()
+Cohesion: 0.12
+Nodes (11): clean_text(), Command, cleaned(), is_hypersensitivity_boilerplate(), is_hypersensitivity_boilerplate_en(), is_negative_indication_en(), is_negative_indication_fa(), is_null_placeholder() (+3 more)
 
 ### Community 87 - "PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa"
-Cohesion: 0.10
-Nodes (14): validate_production_broker(), validate_production_cache(), validate_production_secret_key(), CorsPreflightTests, ProductionSecretKeyTests, PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa, 🎉 بازنویسی کامل شد, فاز ۰.۵ — حذف زیرساخت رهاشده ✅ (+6 more)
+Cohesion: 0.07
+Nodes (17): build.sh script, validate_production_broker(), validate_production_cache(), validate_production_secret_key(), CorsPreflightTests, ProductionSecretKeyTests, DJANGO_SETTINGS_MODULE, release.sh script (+9 more)
 
 ### Community 88 - "porter.ts"
 Cohesion: 0.23
 Nodes (8): firstRule(), isVowelLetter(), porterStem(), Rule, STEP2, STEP3, STEP4, Word
 
 ### Community 89 - "storage.py"
-Cohesion: 0.10
+Cohesion: 0.09
 Nodes (15): Command, cors_rule(), _request(), clear_cache(), file_urls(), is_configured(), latest_manifest(), local_dir() (+7 more)
 
-### Community 90 - "ReferenceImportCommand"
-Cohesion: 0.14
-Nodes (4): Command, ReferenceImportCommand, open_for_import(), Command
+### Community 90 - "downloader.ts"
+Cohesion: 0.20
+Nodes (6): downloader, DownloadEvents, PartJob, PartRef, tasks, @kesha-antonov/react-native-background-downloader
 
 ### Community 91 - "uptodate/views.py"
 Cohesion: 0.30
@@ -536,21 +526,13 @@ Nodes (8): UptodateArticleSerializer, UptodateImageSerializer, UptodateSearchRes
 Cohesion: 0.12
 Nodes (3): DrugPageTests, SiteIdentityTests, structured()
 
-### Community 93 - "offline/services.py"
-Cohesion: 0.24
-Nodes (7): has_paid_plan_with(), is_entitled(), is_guest(), issue_license(), license_days(), LicenseError, _wrap_for()
-
 ### Community 94 - "offline/reader.ts"
-Cohesion: 0.22
-Nodes (10): OfflineDataset, OfflineManifest, keyring, openRecord(), openRecordBase64(), PackageKey, sealed(), open (+2 more)
-
-### Community 96 - "views_drugs.py"
-Cohesion: 0.07
-Nodes (14): fa(), Migration, Migration, _build_catalog(), _drop_title(), english_name(), fa_key(), _group_code() (+6 more)
+Cohesion: 0.13
+Nodes (16): Coding Style & Naming Conventions, پایهٔ Django, OfflineDataset, OfflineLicense, OfflineManifest, keyring, openRecord(), openRecordBase64() (+8 more)
 
 ### Community 97 - "files.ts"
-Cohesion: 0.29
-Nodes (12): buildDir(), closeHandles(), ensureBuildDir(), handles, partFile(), partPath(), partSize(), readRange() (+4 more)
+Cohesion: 0.24
+Nodes (14): buildDir(), closeHandles(), ensureBuildDir(), handles, partFile(), partPath(), partSize(), readRange() (+6 more)
 
 ### Community 98 - "django_core_management_base"
 Cohesion: 0.11
@@ -560,41 +542,53 @@ Nodes (5): Command, ensure_title_search_index(), _has_title_search_index(), Mysq
 Cohesion: 0.33
 Nodes (9): answer(), countUp(), frame(), f(), next(), paint(), show(), toFa() (+1 more)
 
-### Community 100 - "ApiTests"
-Cohesion: 0.09
-Nodes (6): derive_key(), new_build_id(), ApiTests, BuildTests, DownloadHostTests, PackFormatTests
+### Community 100 - "BuildTests"
+Cohesion: 0.18
+Nodes (3): BuildTests, DownloadHostTests, PackFormatTests
+
+### Community 101 - "۴. اپ (Expo — اندروید، iOS و وب)"
+Cohesion: 0.29
+Nodes (8): ارتباط با API و کش, افزودن صفحهٔ تازه, دانلود آفلاین (`src/offline/`), ناوبری, وب‌اپ و PWA, پیکربندی اپ بومی, ۴. اپ (Expo — اندروید، iOS و وب), ScreenKey
 
 ### Community 102 - "downloader.web.ts"
 Cohesion: 0.20
 Nodes (9): downloader, DownloadEvents, newWorker(), PartJob, PartRef, Run, runFor(), runs (+1 more)
 
 ### Community 103 - "dqc_extras.py"
-Cohesion: 0.13
-Nodes (16): ago(), get_item(), guest_access_on(), initial(), jdate(), num(), toman(), action_label() (+8 more)
+Cohesion: 0.12
+Nodes (17): ago(), fa(), get_item(), guest_access_on(), initial(), jdate(), num(), toman() (+9 more)
 
-### Community 105 - "ImportCalculatorsTests"
-Cohesion: 0.32
-Nodes (3): _build_sqlite(), ImportCalculatorsTests, _one_calculator()
+### Community 105 - "calculators/tests.py"
+Cohesion: 0.09
+Nodes (7): _build_sqlite(), CalculatorApiTests, ChoiceErrataTests, FaUnitsTests, ImportCalculatorsTests, _one_calculator(), QuestionUnitTests
+
+### Community 106 - "DateResult.tsx"
+Cohesion: 0.43
+Nodes (7): hasPersian(), Ltr(), Rows(), DateResult(), useDateFormat(), parseAge(), parseDateText()
 
 ### Community 107 - "Repository Guidelines"
 Cohesion: 0.29
 Nodes (6): Build, Test, and Development Commands, Commit & Pull Request Guidelines, Project Structure & Module Organization, Repository Guidelines, Security & Configuration Tips, Testing Guidelines
 
 ### Community 109 - "Media"
-Cohesion: 0.03
-Nodes (31): Media, Meta, AnnouncementForm, Meta, CategoryForm, Meta, MediaMetaForm, Meta (+23 more)
+Cohesion: 0.04
+Nodes (34): make_slug(), Media, Meta, unique_slug(), AnnouncementForm, Meta, CategoryForm, Meta (+26 more)
 
-### Community 112 - "tasks.py"
+### Community 110 - "۲. راه‌اندازی محیط توسعه"
+Cohesion: 0.17
+Nodes (12): اندروید و iOS, اپ (Expo), بک‌اند, تست بستهٔ آفلاین بدون باکت, تست و بررسی, روال کار با مخزن, ساخت دیتابیس و اجرای سرور, نسخهٔ وب (+4 more)
+
+### Community 111 - "bidi.ts"
 Cohesion: 0.25
-Nodes (3): password_reset_url_for_user(), send_password_reset_email(), send_password_reset_email_task()
+Nodes (7): isolated(), ENGLISH_RUN, hasPersianLetters(), isolateEnglish(), LRI, PDI, RLM
+
+### Community 112 - "accounts/services.py"
+Cohesion: 0.06
+Nodes (25): SessionTokenAuthentication, SessionTokenAuthenticationScheme, Role, Meta, RoleAssignment, Meta, SessionRefreshToken, Meta (+17 more)
 
 ### Community 113 - "۵. قرارداد API (نسخهٔ ۱)"
-Cohesion: 0.11
-Nodes (18): Lexicomp — `/lexicomp/` (ویژگی `lexicomp`), Medscape — `/medscape/` (ویژگی `medscape`), UpToDate — `/uptodate/` (ویژگی `uptodate`), آزمون — `/quiz/` (ویژگی `quiz`؛ پرچم `QUIZ_API_ENABLED`), تغییر دادن API, داروها — `/drugs/` و `/atc/`, دانلود آفلاین — `/offline/`, درس‌نامه — `/lessons/` (ویژگی `lessons`) (+10 more)
-
-### Community 114 - "lessons/serializers.py"
-Cohesion: 0.22
-Nodes (6): AtcGroupSerializer, ChapterDrugSerializer, ChapterProgressSerializer, DrugSearchChapterSerializer, SubgroupSerializer, TopicSerializer
+Cohesion: 0.12
+Nodes (17): Lexicomp — `/lexicomp/` (ویژگی `lexicomp`), Medscape — `/medscape/` (ویژگی `medscape`), UpToDate — `/uptodate/` (ویژگی `uptodate`), آزمون — `/quiz/` (ویژگی `quiz`؛ پرچم `QUIZ_API_ENABLED`), تغییر دادن API, داروها — `/drugs/` و `/atc/`, دانلود آفلاین — `/offline/`, درس‌نامه — `/lessons/` (ویژگی `lessons`) (+9 more)
 
 ### Community 115 - "۹. نگهداری: مانیتورینگ، بکاپ، رازها و عیب‌یابی"
 Cohesion: 0.12
@@ -608,53 +602,29 @@ Nodes (6): compilerOptions, paths, strict, extends, include, expo/tsconfig.base
 Cohesion: 0.14
 Nodes (14): not_found(), آمار بازدید, حساب و خرید روی سایت, دارونامهٔ عمومی (`/drugs/`), رسانه, سئو, ساختار کد, صفحه‌های عمومی (+6 more)
 
-### Community 119 - "exceptions.py"
-Cohesion: 0.36
-Nodes (4): _first_message(), _message_from_data(), _normalize_code(), platform_exception_handler()
-
 ### Community 120 - "sw.js"
 Cohesion: 0.38
 Nodes (4): inScope(), referencedFiles(), SCOPE, storeShell()
+
+### Community 122 - "scripts"
+Cohesion: 0.18
+Nodes (10): devDependencies, @types/react, typescript, scripts, android, build:web, ios, start (+2 more)
 
 ### Community 123 - "Command"
 Cohesion: 0.12
 Nodes (5): Command, _int(), _json_list(), _name_fa(), Migration
 
-### Community 125 - "OfflinePackageCard.tsx"
-Cohesion: 0.24
-Nodes (13): OfflineDownloadButton(), OfflineSheet(), ERROR_TEXT, LOGO, NAME, OfflinePackageCard(), PHASE_TEXT, SUPPORTS_BACKGROUND (+5 more)
+### Community 126 - "views_account.py"
+Cohesion: 0.08
+Nodes (33): OneTimeCode, Meta, SecurityAuditEvent, Meta, account_for_signup(), _hash(), _new_code(), OtpError (+25 more)
 
-### Community 126 - "django_conf"
-Cohesion: 0.05
-Nodes (40): OneTimeCode, Meta, account_for_signup(), _hash(), _new_code(), OtpError, request_code(), user_for_phone() (+32 more)
-
-### Community 127 - "Subscriber"
-Cohesion: 0.25
-Nodes (3): Subscriber, Meta, FormsTests
-
-### Community 132 - "DateResult.tsx"
-Cohesion: 0.48
-Nodes (6): hasPersian(), Rows(), DateResult(), useDateFormat(), parseAge(), parseDateText()
-
-### Community 134 - "view.ts"
-Cohesion: 0.17
-Nodes (22): OfflinePackageInfo, InstalledPackage, licenseExpiresAt(), OfflineErrorCode, PendingPackage, formatDay(), PackagePhase, PackageView (+14 more)
+### Community 134 - "OfflinePackageCard.tsx"
+Cohesion: 0.12
+Nodes (38): DateInput(), DaysInput(), Field(), QuestionTitle(), OfflineDownloadButton(), OfflineSheet(), ERROR_TEXT, LOGO (+30 more)
 
 ### Community 182 - "۳. بک‌اند (Django)"
 Cohesion: 0.12
 Nodes (13): RequestIdMiddleware, SiteHostMiddleware, UpToDate و Lexicomp, افزودن یک قابلیت فروشی تازه, بستهٔ آفلاین (`apps.offline`), زنجیرهٔ middleware, صورتحساب و دسترسی (`apps.billing`), قواعد مشترک API (+5 more)
-
-### Community 183 - "PlanSerializer"
-Cohesion: 0.40
-Nodes (3): PlanFeatureItemSerializer, PlanSerializer, Meta
-
-### Community 184 - "downloader.ts"
-Cohesion: 0.20
-Nodes (6): downloader, DownloadEvents, PartJob, PartRef, tasks, @kesha-antonov/react-native-background-downloader
-
-### Community 196 - "authentication.py"
-Cohesion: 0.22
-Nodes (6): SessionTokenAuthentication, احراز هویت و حساب, ثبت‌نام و ورود, رمز عبور, نشست و توکن, نقش‌ها و رویدادهای امنیتی
 
 ### Community 204 - "۸. دیپلوی"
 Cohesion: 0.18
@@ -672,10 +642,6 @@ Nodes (8): اپ موبایل (EAS), تست و بررسی, توسعهٔ محلی,
 Cohesion: 0.25
 Nodes (8): ادمین Django (`/admin/`), درگاه پرداخت و کلیدهای فروش, دسترسی مهمان, ویژگی‌ها, پلن‌ها و محصول‌ها, کاربران, کنسول فروش (`/ops/`), ۱۱. کنسول‌های مدیریت
 
-### Community 217 - "FlashcardFact"
-Cohesion: 0.20
-Nodes (5): FlashcardFactAdmin, LeitnerCardAdmin, FlashcardFact, Meta, Command
-
 ### Community 226 - "مستندات فارمنتا"
 Cohesion: 0.50
 Nodes (4): سندهای دیگر مخزن, فهرست, قرارداد نگهداری این مستندات, مستندات فارمنتا
@@ -686,23 +652,23 @@ Nodes (3): شروع سریع, فارمنتا (Pharmenta), مستندات
 
 ## Knowledge Gaps
 - **8 isolated node(s):** `DJANGO_SETTINGS_MODULE`, `@expo/metro-runtime`, `expo-splash-screen`, `react-dom`, `react-native-web` (+3 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1512 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **87 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1531 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **83 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `فاز ۴ — اسکلت فرانت + دیزاین‌سیستم ✅` connect `AppText` to `django_utils`, `Navigator.tsx`, `package.json`, `PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa`?**
-  _High betweenness centrality (0.151) - this node is a cross-community bridge._
-- **Are the 26 inferred relationships involving `PlatformAPIError` (e.g. with `LoginView` and `OtpVerifyView`) actually correct?**
-  _`PlatformAPIError` has 26 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `فاز ۴ — اسکلت فرانت + دیزاین‌سیستم ✅` connect `useLang` to `accounts/services.py`, `package.json`, `PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa`?**
+  _High betweenness centrality (0.146) - this node is a cross-community bridge._
+- **Are the 2 inferred relationships involving `AppText()` (e.g. with `زبان، جهت و تم` and `فاز ۴ — اسکلت فرانت + دیزاین‌سیستم ✅`) actually correct?**
+  _`AppText()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `DJANGO_SETTINGS_MODULE`, `@expo/metro-runtime`, `expo-splash-screen` to the rest of the system?**
   _8 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `api/types.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.03393939393939394 - nodes in this community are weakly interconnected._
-- **Why does `UserSession` connect `django_utils` to `console/views.py`, `authentication.py`, `WebsiteAuthTests`, `AppText`, `.reverse`, `guest.py`, `accounts/views.py`, `PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa`?**
-  _High betweenness centrality (0.149) - this node is a cross-community bridge._
+  _Cohesion score 0.03576437587657784 - nodes in this community are weakly interconnected._
+- **Why does `UserSession` connect `accounts/services.py` to `billing/models.py`, `WebsiteAuthTests`, `console/views.py`, `useLang`, `اپ‌ها (`backend/apps/`)`, `guest.py`, `accounts/views.py`, `PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa`, `test_phone_auth.py`, `views_account.py`?**
+  _High betweenness centrality (0.143) - this node is a cross-community bridge._
+- **Are the 26 inferred relationships involving `PlatformAPIError` (e.g. with `LoginView` and `OtpVerifyView`) actually correct?**
+  _`PlatformAPIError` has 26 INFERRED edges - model-reasoned connections that need verification._
 - **Should `django_db` be split into smaller, more focused modules?**
-  _Cohesion score 0.022123893805309734 - nodes in this community are weakly interconnected._
-- **Why does `اپ‌ها (`backend/apps/`)` connect `django_utils` to `Calculator`, `SectionEditRequest`, `console/views.py`, `test_panel.py`, `views_public.py`, `Ingredient`, `SectionEdit`, `Media`, `website/models.py`, `decks.py`, `accounts/views.py`, `۳. بک‌اند (Django)`, `quiz/views.py`, `progress/models.py`, `FlashcardFact`, `django_conf`, `Article`?**
-  _High betweenness centrality (0.120) - this node is a cross-community bridge._
+  _Cohesion score 0.02353998203054807 - nodes in this community are weakly interconnected._

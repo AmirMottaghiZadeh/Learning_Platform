@@ -469,3 +469,24 @@ class ChoiceErrataTests(TestCase):
 
         q = {"position": 3, "choices": [{"title_primary": "Nearly every day", "answer_factor": "1"}]}
         self.assertEqual(fix_questions("317", [q]), [q])
+
+
+class FaUnitsTests(TestCase):
+    def test_only_the_persian_text_is_standardized(self):
+        from apps.calculators.errata import standardize_fa_units
+
+        fields = {
+            "name": "Dose (mg/kg)",
+            "about_fa": "<p>۱۰ میلی‌گرم بر کیلوگرم</p>",
+            "questions": [{"title": "Weight", "title_fa": "وزن (کیلوگرم)", "units": [{"title": "mg/dl", "title_fa": "میلی‌گرم/دسی‌لیتر"}]}],
+            "results": [{"answer": "$result0 mg", "answer_fa": "$result0 میلی‌گرم"}],
+            "formula_strings_fa": {"Give 2 g": "۲ گرم تجویز شود"},
+        }
+        fixed = standardize_fa_units(fields)
+        self.assertEqual(fixed["about_fa"], "<p>10 mg/kg</p>")
+        self.assertEqual(fixed["questions"][0]["title_fa"], "وزن (kg)")
+        self.assertEqual(fixed["questions"][0]["units"][0], {"title": "mg/dl", "title_fa": "mg/dL"})
+        self.assertEqual(fixed["results"][0]["answer_fa"], "$result0 mg")
+        self.assertEqual(fixed["formula_strings_fa"], {"Give 2 g": "2 g تجویز شود"})
+        self.assertEqual(fixed["name"], "Dose (mg/kg)")
+        self.assertEqual(standardize_fa_units(fixed), fixed)
