@@ -19,7 +19,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from apps.calculators.errata import fix_questions, fix_results
+from apps.calculators.errata import fix_questions, fix_results, fix_strings_fa
 from apps.calculators.models import Calculator, CalculatorCategory, CalculatorTag
 
 DEFAULT_SOURCE = "/home/amir/Documents/Learning Platform/backend/data/calculators_all.sqlite"
@@ -271,7 +271,7 @@ class Command(BaseCommand):
                             "questions": fix_questions(calculator_id, _questions_for(conn, rec["id"])),
                             "results": fix_results(calculator_id, _results_for(conn, rec["id"])),
                             "error_checks": _error_checks_for(conn, rec["id"]),
-                            "formula_strings_fa": _formula_strings_fa(rec["formula_strings_fa"]),
+                            "formula_strings_fa": fix_strings_fa(calculator_id, _formula_strings_fa(rec["formula_strings_fa"])),
                             "references": _references_for(conn, rec["id"]),
                         },
                     )

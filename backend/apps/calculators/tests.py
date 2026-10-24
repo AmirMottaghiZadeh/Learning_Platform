@@ -388,6 +388,31 @@ class FormulaErrataTests(TestCase):
         self.assertEqual(fixed["formula"], 'if (stage == "III") {')
         self.assertEqual(fixed["condition_formula"], '($result1 == "I") || ($result1 == "IV")')
 
+    def test_every_listed_replacement_applies(self):
+        from apps.calculators.errata import fix_results
+
+        rows = [{"position": 0, "formula": "var age = $2; var ondialysis = $10; results = bmivalue + gfrvalue + agevalue + $3 + $4 + $5 + $6 + $7 + $8 + $9;"}]
+        fixed = fix_results("325", rows)[0]["formula"]
+        self.assertEqual(fixed, "var age = $3; var ondialysis = $2; results = bmivalue + gfrvalue + agevalue + $4 + $5 + $6 + $7 + $8 + $9 + $10;")
+        self.assertEqual(fix_results("325", [{"position": 0, "formula": fixed}])[0]["formula"], fixed)
+
+    def test_a_title_formula_with_no_result_of_its_own_becomes_the_result(self):
+        from apps.calculators.errata import fix_results
+
+        rows = [{"position": 0, "formula": "", "title_formula": "(function() { return 'x'; })();", "answer": "", "answer_fa": None}]
+        fixed = fix_results("136", rows)[0]
+        self.assertEqual((fixed["formula"], fixed["answer"], fixed["answer_fa"]), ("(function() { return 'x'; })();", "$result0", "$result0"))
+        self.assertEqual(fix_results("136", [fixed]), [fixed])
+
+    def test_persian_for_the_new_result_text_is_added(self):
+        from apps.calculators.errata import STRINGS_FA, fix_strings_fa
+
+        strings = {"Fully eligible": "کاملاً واجد شرایط"}
+        fixed = fix_strings_fa("362", strings)
+        self.assertEqual(fixed, {**strings, **STRINGS_FA["362"]})
+        self.assertEqual(strings, {"Fully eligible": "کاملاً واجد شرایط"})  # input untouched
+        self.assertIs(fix_strings_fa("1", strings), strings)
+
     def test_other_calculators_are_left_alone(self):
         from apps.calculators.errata import fix_results
 
@@ -414,3 +439,33 @@ class QuestionUnitTests(TestCase):
         self.assertEqual(fixed[1], qs[1])
         self.assertEqual(fix_questions("286", fixed), fixed)
         self.assertIs(fix_questions("999999", qs), qs)
+
+
+class ChoiceErrataTests(TestCase):
+    def test_wrong_weights_are_corrected_by_title_and_a_missing_choice_added_once(self):
+        from apps.calculators.errata import fix_questions
+
+        intermittency = {
+            "position": 2,
+            "choices": [
+                {"title_primary": "Not at all", "answer_factor": "0"},
+                {"title_primary": "Less than 1 in 5 times", "answer_factor": "1"},
+                {"title_primary": "About half the time", "answer_factor": "2"},
+                {"title_primary": "More than half the time", "answer_factor": "4"},
+                {"title_primary": "Almost always", "answer_factor": "5"},
+            ],
+        }
+        fixed = fix_questions("338", [intermittency])
+        self.assertEqual(
+            [(c["title_primary"], c["answer_factor"]) for c in fixed[0]["choices"]],
+            [("Not at all", "0"), ("Less than 1 in 5 times", "1"), ("Less than half the time", "2"),
+             ("About half the time", "3"), ("More than half the time", "4"), ("Almost always", "5")],
+        )
+        self.assertEqual(fix_questions("338", fixed), fixed)
+        self.assertEqual(intermittency["choices"][2]["answer_factor"], "2")  # input untouched
+
+    def test_a_weight_already_changed_is_left_alone(self):
+        from apps.calculators.errata import fix_questions
+
+        q = {"position": 3, "choices": [{"title_primary": "Nearly every day", "answer_factor": "1"}]}
+        self.assertEqual(fix_questions("317", [q]), [q])

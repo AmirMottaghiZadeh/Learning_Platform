@@ -53,7 +53,6 @@ export function ChecklistFlow(p: FlowProps) {
                 p.setError(null);
                 p.setUnit(q.position, index);
               }}
-              showWeights={false}
             />
           </View>
         ))}

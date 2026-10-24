@@ -408,9 +408,9 @@
     "semantic_hash": ""
   },
   "backend/apps/calculators/errata.py": {
-    "mtime": 1792186967.8876178,
-    "seen": 1792686658.6821623,
-    "ast_hash": "cb024f00f4119f58580644a91088e07f",
+    "mtime": 1792851986.211284,
+    "seen": 1792852386.5071194,
+    "ast_hash": "c3417f34889834a8de5ba1c54e1f38fc",
     "semantic_hash": ""
   },
   "backend/apps/calculators/management/__init__.py": {
@@ -426,9 +426,9 @@
     "semantic_hash": ""
   },
   "backend/apps/calculators/management/commands/import_calculators.py": {
-    "mtime": 1792186928.3828406,
-    "seen": 1792686658.6821752,
-    "ast_hash": "0789f3e25012353a950ab2bcbe51e0ab",
+    "mtime": 1792851584.7761273,
+    "seen": 1792852386.507137,
+    "ast_hash": "3c4012506d06e9a79b3d4c68e0df0435",
     "semantic_hash": ""
   },
   "backend/apps/calculators/management/commands/import_calculators_db.py": {
@@ -480,9 +480,9 @@
     "semantic_hash": ""
   },
   "backend/apps/calculators/reference_db.py": {
-    "mtime": 1792186928.3828406,
-    "seen": 1792686658.6822145,
-    "ast_hash": "824223c12216110ef98eae3c60d09f46",
+    "mtime": 1792851584.7761273,
+    "seen": 1792852386.5071902,
+    "ast_hash": "0d81c55ad61d31972b0a31b59c07b140",
     "semantic_hash": ""
   },
   "backend/apps/calculators/serializers.py": {
@@ -492,9 +492,9 @@
     "semantic_hash": ""
   },
   "backend/apps/calculators/tests.py": {
-    "mtime": 1792186967.8996158,
-    "seen": 1792686658.682223,
-    "ast_hash": "8f00a7cf7d46014be5fadac8611a3227",
+    "mtime": 1792852031.9699144,
+    "seen": 1792852386.5071995,
+    "ast_hash": "5c0721bd4009b8e33da9d812690a5ec7",
     "semantic_hash": ""
   },
   "backend/apps/calculators/urls.py": {
@@ -2004,8 +2004,8 @@
     "semantic_hash": ""
   },
   "frontend/src/components/AppShell.tsx": {
-    "mtime": 1792845524.8965068,
-    "seen": 1792847109.2189987,
+    "mtime": 1792848862.201635,
+    "seen": 1792852386.5084338,
     "ast_hash": "b9d4c590eb606d3378f1814e1c0d92e9",
     "semantic_hash": ""
   },
@@ -2166,27 +2166,27 @@
     "semantic_hash": ""
   },
   "frontend/src/components/calculator/flow/CardsFlow.tsx": {
-    "mtime": 1792184656.0841787,
-    "seen": 1792686658.6835043,
-    "ast_hash": "0a68220b4d0b9bcf7a0c18dbaf609f53",
+    "mtime": 1792851798.2193182,
+    "seen": 1792852386.5085573,
+    "ast_hash": "9c4ad6054dc6ad85e2b79ec17c4b9df7",
     "semantic_hash": ""
   },
   "frontend/src/components/calculator/flow/ChecklistFlow.tsx": {
-    "mtime": 1792184656.0841787,
-    "seen": 1792686658.6835082,
-    "ast_hash": "8db90938c7150abcf5b47c94a7f75107",
+    "mtime": 1792851731.288743,
+    "seen": 1792852386.5085623,
+    "ast_hash": "e5579ada570ba2d9813d4098d9a22efd",
     "semantic_hash": ""
   },
   "frontend/src/components/calculator/flow/LiveScore.tsx": {
-    "mtime": 1792763467.484923,
-    "seen": 1792764651.8760014,
-    "ast_hash": "f832737ab4475c6887bd365f4a10a675",
+    "mtime": 1792851767.6945612,
+    "seen": 1792852386.508567,
+    "ast_hash": "edf498297287ffe0d954b04056d988da",
     "semantic_hash": ""
   },
   "frontend/src/components/calculator/flow/QuestionField.tsx": {
-    "mtime": 1792186997.4188511,
-    "seen": 1792686658.6835165,
-    "ast_hash": "4a89c1f240fde4f83488871e9e5fbd5b",
+    "mtime": 1792851731.288743,
+    "seen": 1792852386.508571,
+    "ast_hash": "3dfaa0684f7bdc3e72cfcda59be58e7e",
     "semantic_hash": ""
   },
   "frontend/src/components/calculator/flow/QuestionFlow.tsx": {
@@ -2304,8 +2304,8 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/CalculatorsScreen.tsx": {
-    "mtime": 1792846263.28329,
-    "seen": 1792847109.2192392,
+    "mtime": 1792848862.201635,
+    "seen": 1792852386.5088732,
     "ast_hash": "5b5487d5e275dac93055044738d5e41c",
     "semantic_hash": ""
   },
@@ -2316,8 +2316,8 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/EducationScreen.tsx": {
-    "mtime": 1792846231.8198967,
-    "seen": 1792847109.21925,
+    "mtime": 1792848862.201635,
+    "seen": 1792852386.5088875,
     "ast_hash": "888fcfdc2a3fb4e51c1499b935bd2a53",
     "semantic_hash": ""
   },
@@ -2328,14 +2328,14 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/LessonDetailScreen.tsx": {
-    "mtime": 1792846109.068144,
-    "seen": 1792847109.2192578,
+    "mtime": 1792848862.201635,
+    "seen": 1792852386.508898,
     "ast_hash": "08aced28a8f65eb1233145437b8daf8a",
     "semantic_hash": ""
   },
   "frontend/src/screens/LessonListScreen.tsx": {
-    "mtime": 1792846109.068144,
-    "seen": 1792847109.2192612,
+    "mtime": 1792848862.201635,
+    "seen": 1792852386.5089014,
     "ast_hash": "339d1e12aa42d3555e200f5084a92e9d",
     "semantic_hash": ""
   },
@@ -2352,26 +2352,26 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeArticleScreen.tsx": {
-    "mtime": 1792846109.072147,
-    "seen": 1792847109.219272,
+    "mtime": 1792848862.2056355,
+    "seen": 1792852386.508916,
     "ast_hash": "aa3a8d4acf4d22da622ac636c051bf72",
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeBrowseScreen.tsx": {
-    "mtime": 1792846247.5715833,
-    "seen": 1792847109.2192752,
+    "mtime": 1792848862.2056355,
+    "seen": 1792852386.5089197,
     "ast_hash": "19836658e84666659db4f0abbdddfafb",
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeGuidelinesScreen.tsx": {
-    "mtime": 1792846310.6001356,
-    "seen": 1792847109.219279,
+    "mtime": 1792848862.2056355,
+    "seen": 1792852386.5089233,
     "ast_hash": "dfd9e7f30a365a2cd65e0341a1371f74",
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeOutlineScreen.tsx": {
-    "mtime": 1792846109.072147,
-    "seen": 1792847109.2192822,
+    "mtime": 1792848862.2056355,
+    "seen": 1792852386.5089266,
     "ast_hash": "630c12af9ec87e5cead4196ff3ff07c8",
     "semantic_hash": ""
   },
@@ -2430,21 +2430,21 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/UptodateArticleScreen.tsx": {
-    "mtime": 1792846109.068144,
-    "seen": 1792847109.2193193,
+    "mtime": 1792848862.2056355,
+    "seen": 1792852386.5089655,
     "ast_hash": "57f18da4f0834774d4b9ba920bf49e71",
     "semantic_hash": ""
   },
   "frontend/src/screens/UptodateOutlineScreen.tsx": {
-    "mtime": 1792846109.068144,
-    "seen": 1792847109.2193222,
+    "mtime": 1792848862.2056355,
+    "seen": 1792852386.5089686,
     "ast_hash": "d44845eab20237d54803784371657861",
     "semantic_hash": ""
   },
   "frontend/src/screens/UptodateScreen.tsx": {
-    "mtime": 1792846912.113352,
-    "seen": 1792847109.2193255,
-    "ast_hash": "b2721e195ec83b03a49f3a1cda0f100f",
+    "mtime": 1792848862.2056355,
+    "seen": 1792852386.5089726,
+    "ast_hash": "4fd04283c8822bc314356a0e72a1b796",
     "semantic_hash": ""
   },
   "frontend/src/store/auth.ts": {
@@ -2484,8 +2484,8 @@
     "semantic_hash": ""
   },
   "frontend/src/theme/tokens.ts": {
-    "mtime": 1792845518.3756564,
-    "seen": 1792847109.2193487,
+    "mtime": 1792848862.2056355,
+    "seen": 1792852386.5089967,
     "ast_hash": "e3d6ab247fc4a71d372a74e74d00c5b4",
     "semantic_hash": ""
   },
@@ -4409,898 +4409,16 @@
     "ast_hash": "be7df3cfd562bf8ea61787e2732ffc20",
     "semantic_hash": ""
   },
-  ".playwright-mcp/sim/deep.js": {
-    "mtime": 1792846676.4242792,
-    "seen": 1792847109.2176812,
-    "ast_hash": "c910078ad4505e0475a05d2832d5d1a8",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/screens.js": {
-    "mtime": 1792845550.6306276,
-    "seen": 1792847109.2176895,
-    "ast_hash": "575a89d65ddd55434e41cecbfa8abfbb",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/sweep.js": {
-    "mtime": 1792844412.3701236,
-    "seen": 1792847109.2176945,
-    "ast_hash": "046f37052aa138b53c7f4f7a89b17cf1",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/page-2026-10-24T12-13-24-719Z.yml": {
-    "mtime": 1792844004.7219934,
-    "seen": 1792847109.2194037,
-    "ast_hash": "0b5bf3adea60c1fda4fc13945b49dd69",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/auth.png": {
-    "mtime": 1792847039.942939,
-    "seen": 1792847109.2198303,
-    "ast_hash": "d3fdd2103fe54363a7c2e18a009ee59c",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/c1.png": {
-    "mtime": 1792845664.981723,
-    "seen": 1792847109.2198336,
-    "ast_hash": "a19176aabbe3f9527a3f1659b67059e1",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/c2.png": {
-    "mtime": 1792845665.8823688,
-    "seen": 1792847109.219837,
-    "ast_hash": "345ed0fc84963a68daf1b6693402f5f3",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/c3.png": {
-    "mtime": 1792845666.7229612,
-    "seen": 1792847109.21984,
-    "ast_hash": "7782d158e2c65a0eeebeac224a19dcf4",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/contact-home-0.png": {
-    "mtime": 1792844477.3434598,
-    "seen": 1792847109.219843,
-    "ast_hash": "230dc14a807404fb9e352bc523dc0d41",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/contact-home-1.png": {
-    "mtime": 1792844477.6583135,
-    "seen": 1792847109.2198462,
-    "ast_hash": "f5794ab991a0e16dddcb14a241f21ff2",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/d0.png": {
-    "mtime": 1792846495.4881537,
-    "seen": 1792847109.2198505,
-    "ast_hash": "a5d36fd0ca56979c7e5314e6818ef3d9",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/d1.png": {
-    "mtime": 1792846495.5682065,
-    "seen": 1792847109.2198536,
-    "ast_hash": "6225ea9a12a0a2a6e30792a30a7c5b83",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/dark.png": {
-    "mtime": 1792847004.24787,
-    "seen": 1792847109.2198565,
-    "ast_hash": "a5d9c79b342246cd8c9a263f2db2e4ab",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/auth-fold1.png": {
-    "mtime": 1792847027.7419713,
-    "seen": 1792847109.219859,
-    "ast_hash": "5363f5de61ba90cab1baa174cb0e772c",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/auth-ip17.png": {
-    "mtime": 1792847026.113836,
-    "seen": 1792847109.219862,
-    "ast_hash": "afdc54144c6f81e043214d8491550291",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/auth-ip17pm.png": {
-    "mtime": 1792847026.9379046,
-    "seen": 1792847109.219865,
-    "ast_hash": "535f3adddcd2220bd6e115eb09d0497f",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/auth-se3.png": {
-    "mtime": 1792847028.5740397,
-    "seen": 1792847109.2198682,
-    "ast_hash": "44daefc60095149f8d8a11ddd51a0fa3",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/calculators-fold1.png": {
-    "mtime": 1792845614.9695323,
-    "seen": 1792847109.2198708,
-    "ast_hash": "effa79db108c9a6d2982d3dfac6ff01d",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/calculators-ip17.png": {
-    "mtime": 1792845622.5855534,
-    "seen": 1792847109.219874,
-    "ast_hash": "3dee6c86eb11fc2e15a1e290d69a8788",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/calculators-ip17pm.png": {
-    "mtime": 1792845625.1719923,
-    "seen": 1792847109.2198768,
-    "ast_hash": "832deb76af9d5262786597b3db159ea3",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/calculators-s8.png": {
-    "mtime": 1792845620.079354,
-    "seen": 1792847109.21988,
-    "ast_hash": "c0f2c03e2a49f22f9fca2c530f295549",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/calculators-se1.png": {
-    "mtime": 1792845617.464643,
-    "seen": 1792847109.2198837,
-    "ast_hash": "b1f2acbe20593167763b1564d3fe3ac5",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/cards-fold1.png": {
-    "mtime": 1792845557.4936948,
-    "seen": 1792847109.2198868,
-    "ast_hash": "8f02a0bf4a8b3926ec6e6a7de10a93f8",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/cards-ip17.png": {
-    "mtime": 1792845560.3792257,
-    "seen": 1792847109.21989,
-    "ast_hash": "7f1f3074ed16d011d060d93982def03e",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/cards-ip17pm.png": {
-    "mtime": 1792845561.349807,
-    "seen": 1792847109.2198932,
-    "ast_hash": "e17e6b63a6887ea57c723422c34e3caf",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/cards-s8.png": {
-    "mtime": 1792845559.409879,
-    "seen": 1792847109.2198966,
-    "ast_hash": "bf9e46520bbed88b2335288e8f223736",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/cards-se1.png": {
-    "mtime": 1792845558.4784858,
-    "seen": 1792847109.2199006,
-    "ast_hash": "93325f78f7c7d61ee09cdb70598096db",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/dark-home-ip17.png": {
-    "mtime": 1792846983.8417509,
-    "seen": 1792847109.2199037,
-    "ast_hash": "53802971cc620ed697cafa216d432f47",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/dark-lessonList-ip17.png": {
-    "mtime": 1792846994.918938,
-    "seen": 1792847109.2199068,
-    "ast_hash": "780efe1187729b03ef1c8bb2ca46a0ee",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/dark-mds-ip17.png": {
-    "mtime": 1792846990.7024968,
-    "seen": 1792847109.21991,
-    "ast_hash": "6cdc952217c1066791400479618f0c57",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/dark-utd-ip17.png": {
-    "mtime": 1792846985.233905,
-    "seen": 1792847109.219913,
-    "ast_hash": "8050ada3a7208ce374330cf9e15aa074",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-calcDetail-ip17.png": {
-    "mtime": 1792846431.716437,
-    "seen": 1792847109.219916,
-    "ast_hash": "912fef5ecc2ab19e80a1dfb0e6f045b3",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-calcDomain-ip17.png": {
-    "mtime": 1792846421.7415757,
-    "seen": 1792847109.21992,
-    "ast_hash": "e4f3bb386a59a8e723e46061aab1ac6e",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-downloads-ip17.png": {
-    "mtime": 1792846453.666629,
-    "seen": 1792847109.219923,
-    "ast_hash": "12fd7dff09e080c389ff607df45980a5",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-education-ip17.png": {
-    "mtime": 1792846433.8741844,
-    "seen": 1792847109.2199264,
-    "ast_hash": "d54a73a851ad34287571e4d843f8bbb1",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-helpsheet-ip17.png": {
-    "mtime": 1792846455.6893497,
-    "seen": 1792847109.2199297,
-    "ast_hash": "bb837fc083ad48b85d5db0f967be26d4",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-lessonDetail-ip17.png": {
-    "mtime": 1792846376.7079024,
-    "seen": 1792847109.2199326,
-    "ast_hash": "dad1eb083c63f58c854a183cb60f02c5",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-lessonList-ip17.png": {
-    "mtime": 1792846360.9732668,
-    "seen": 1792847109.219936,
-    "ast_hash": "08ef45ab59f84bfe54bda6cc3eed023b",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-lessons-expanded.png": {
-    "mtime": 1792846336.9802444,
-    "seen": 1792847109.2199392,
-    "ast_hash": "f4c39171196f1457f77a5d904a8f8d85",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-mdsArticle-ip17.png": {
-    "mtime": 1792846417.3733556,
-    "seen": 1792847109.2199426,
-    "ast_hash": "8f95411696dc267a84c28e64e9e49379",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-mdsOutline-ip17.png": {
-    "mtime": 1792846406.686311,
-    "seen": 1792847109.2199457,
-    "ast_hash": "65bc573c7bf4cea9314890569198657b",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-mistakes-ip17.png": {
-    "mtime": 1792846450.9683936,
-    "seen": 1792847109.219949,
-    "ast_hash": "095325def1c298147f5e0b8af6fe748a",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-planning-ip17.png": {
-    "mtime": 1792846448.4581082,
-    "seen": 1792847109.219952,
-    "ast_hash": "6487fe8fd61e02cfa11e34a58b0c4937",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-stats-ip17.png": {
-    "mtime": 1792846445.9279153,
-    "seen": 1792847109.2199557,
-    "ast_hash": "83055f0bad7b0e1313e502679966c845",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-utdArticle-ip17.png": {
-    "mtime": 1792846401.1497755,
-    "seen": 1792847109.219959,
-    "ast_hash": "8bad344e573b84a327d1aadd5559d0f2",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-utdOutline-ip17.png": {
-    "mtime": 1792846389.5530279,
-    "seen": 1792847109.2199626,
-    "ast_hash": "e4ebecbe53e8003f84bf8b089bfc89ca",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/deep-utdSearch-ip17.png": {
-    "mtime": 1792846387.3566327,
-    "seen": 1792847109.2199655,
-    "ast_hash": "c199b845c8d5bc7ce727b04f00bba6c8",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/diseases-fold1.png": {
-    "mtime": 1792845627.6438928,
-    "seen": 1792847109.2199688,
-    "ast_hash": "a71063861ec63d7361830001d4f65c31",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/diseases-ip17.png": {
-    "mtime": 1792845635.5031826,
-    "seen": 1792847109.219972,
-    "ast_hash": "4d89c7788170f8df9f8a6d2877fb1d2c",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/diseases-ip17pm.png": {
-    "mtime": 1792845638.1441543,
-    "seen": 1792847109.2199752,
-    "ast_hash": "cad19243463cf8b2550a2d0dd02d0028",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/diseases-s8.png": {
-    "mtime": 1792845632.901639,
-    "seen": 1792847109.219978,
-    "ast_hash": "3f178703bf3b46198cc18e2f4233f676",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/diseases-se1.png": {
-    "mtime": 1792845630.2471678,
-    "seen": 1792847109.2199807,
-    "ast_hash": "942a6d3a5183c0209350465076ee8d9e",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/guidelines-fold1.png": {
-    "mtime": 1792845597.6367216,
-    "seen": 1792847109.219984,
-    "ast_hash": "09df28e88cc01dca46440198512b2142",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/guidelines-ip17.png": {
-    "mtime": 1792845608.5332909,
-    "seen": 1792847109.219987,
-    "ast_hash": "32141a58f16628c7115509b622d98239",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/guidelines-ip17pm.png": {
-    "mtime": 1792845612.0288858,
-    "seen": 1792847109.2199903,
-    "ast_hash": "2d36865caf5d5b436224e4c652ecc925",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/guidelines-s8.png": {
-    "mtime": 1792845605.0904963,
-    "seen": 1792847109.2199936,
-    "ast_hash": "672ddb118d71e7c9df87818310899795",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/guidelines-se1.png": {
-    "mtime": 1792845601.344578,
-    "seen": 1792847109.2199967,
-    "ast_hash": "7d1a2d82872671659cc455a061fa2ef4",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-android-small-zoom-480x1040.png": {
-    "mtime": 1792846954.4661188,
-    "seen": 1792847109.2199996,
-    "ast_hash": "3b3b7375b40a6346f1c6b8ad04bb8a5e",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-fold1-folded-280x653.png": {
-    "mtime": 1792846941.364238,
-    "seen": 1792847109.2200027,
-    "ast_hash": "cd9090a745bb61ddba93d971dab4ae16",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-galaxy-s24u-384x824.png": {
-    "mtime": 1792846946.6330156,
-    "seen": 1792847109.2200058,
-    "ast_hash": "84fb415ed695b1afece0ccde7003f3b8",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-galaxy-s8-360x740.png": {
-    "mtime": 1792846944.0006309,
-    "seen": 1792847109.2200081,
-    "ast_hash": "d2ac534959434eb6efab7bbe4e05f480",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-ipad-mini-744x1133.png": {
-    "mtime": 1792846956.2583625,
-    "seen": 1792847109.2200115,
-    "ast_hash": "a680f3986a4e69f2c277bedd0b181a84",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-iphone-11-414x896.png": {
-    "mtime": 1792846950.9776351,
-    "seen": 1792847109.2200148,
-    "ast_hash": "f262e2618c5634d1a14ae512f9434841",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-iphone-13mini-375x812.png": {
-    "mtime": 1792846945.760889,
-    "seen": 1792847109.220018,
-    "ast_hash": "4397061d989bb8f8edd833275969c9a5",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-iphone-14-390x844.png": {
-    "mtime": 1792846947.529145,
-    "seen": 1792847109.2200208,
-    "ast_hash": "34b686528ffd14ac8bdc2d59dd6b0231",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-iphone-15-393x852.png": {
-    "mtime": 1792846948.4132717,
-    "seen": 1792847109.2200236,
-    "ast_hash": "ce202b863b0d4f1745179e2266f197ad",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-iphone-16plus-430x932.png": {
-    "mtime": 1792846952.7298796,
-    "seen": 1792847109.220027,
-    "ast_hash": "93bc4e55d9df947bd32c8ac289e13fdf",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-iphone-17-402x874.png": {
-    "mtime": 1792846949.269394,
-    "seen": 1792847109.2200296,
-    "ast_hash": "9c5335432f1e64e12b69d62d328a4794",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-iphone-17promax-440x956.png": {
-    "mtime": 1792846953.602,
-    "seen": 1792847109.2200327,
-    "ast_hash": "e464a1148268ac2be179b481e678469e",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-iphone-air-420x912.png": {
-    "mtime": 1792846951.8497572,
-    "seen": 1792847109.2200353,
-    "ast_hash": "dd6bf18f6218960ba87378f0a3cf1599",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-iphone-se1-320x568.png": {
-    "mtime": 1792846942.24437,
-    "seen": 1792847109.2200384,
-    "ast_hash": "ecfe33744d9953e34d53587db983959c",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-iphone-se3-375x667.png": {
-    "mtime": 1792846944.8767598,
-    "seen": 1792847109.2200413,
-    "ast_hash": "d976e05f273182c85dd06aa4bf4b339f",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-pixel-8-412x915.png": {
-    "mtime": 1792846950.1215146,
-    "seen": 1792847109.2200444,
-    "ast_hash": "10e2422bff5c6cc0297b8d995ab50015",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-zfold5-folded-344x882.png": {
-    "mtime": 1792846943.1325023,
-    "seen": 1792847109.220047,
-    "ast_hash": "a93dca0248293b799d839278551e146c",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/home-zfold5-open-690x829.png": {
-    "mtime": 1792846955.362241,
-    "seen": 1792847109.2200499,
-    "ast_hash": "6b65c87377fb2e7ed98346cc924653d8",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/lessons-fold1.png": {
-    "mtime": 1792845552.116467,
-    "seen": 1792847109.2200532,
-    "ast_hash": "53213169c297fe03ea2ea22971c35bc2",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/lessons-ip17.png": {
-    "mtime": 1792845555.3598294,
-    "seen": 1792847109.220056,
-    "ast_hash": "b8e0411f8ad79aad428ada4cff4093b5",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/lessons-ip17pm.png": {
-    "mtime": 1792845556.3807504,
-    "seen": 1792847109.2200596,
-    "ast_hash": "c25a1f71b33490c424f5c46f3e258df5",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/lessons-s8.png": {
-    "mtime": 1792845554.37088,
-    "seen": 1792847109.2200634,
-    "ast_hash": "3c1b8207e9a5fab076b51a3145fb7698",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/lessons-se1.png": {
-    "mtime": 1792845553.377862,
-    "seen": 1792847109.2200665,
-    "ast_hash": "23183b5019913d0172cd6055724c7481",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/lexicomp-fold1.png": {
-    "mtime": 1792845585.6039789,
-    "seen": 1792847109.2200694,
-    "ast_hash": "59146d0fb074191ea317965c151723ca",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/lexicomp-ip17.png": {
-    "mtime": 1792845592.7005033,
-    "seen": 1792847109.2200725,
-    "ast_hash": "564678716aa13096f205a94356fe9a63",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/lexicomp-ip17pm.png": {
-    "mtime": 1792845595.0319912,
-    "seen": 1792847109.220076,
-    "ast_hash": "bef5244098a43b9fc783fa826b973337",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/lexicomp-s8.png": {
-    "mtime": 1792845590.3804066,
-    "seen": 1792847109.2200797,
-    "ast_hash": "041c6d2100217841477ee99a67937a4f",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/lexicomp-se1.png": {
-    "mtime": 1792845588.0100822,
-    "seen": 1792847109.2200832,
-    "ast_hash": "3528580dd4f35e28ef3bfb5b29420b50",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/profile-fold1.png": {
-    "mtime": 1792845567.5026975,
-    "seen": 1792847109.2200863,
-    "ast_hash": "e691a0c64230cdc1d3dcd66c6245af16",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/profile-ip17.png": {
-    "mtime": 1792845570.5517387,
-    "seen": 1792847109.2200894,
-    "ast_hash": "6e22a8ffe02adbe0ad24846191101086",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/profile-ip17pm.png": {
-    "mtime": 1792845571.5808153,
-    "seen": 1792847109.220092,
-    "ast_hash": "af974f3a18a3163046ede43d1415f0d7",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/profile-s8.png": {
-    "mtime": 1792845569.5230165,
-    "seen": 1792847109.220095,
-    "ast_hash": "fdc0c2b3ca3592a980b989c89fc6b80f",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/profile-se1.png": {
-    "mtime": 1792845568.550489,
-    "seen": 1792847109.220098,
-    "ast_hash": "58f575c5fbfe5700c826f1ed9aefc7c6",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/quiz-fold1.png": {
-    "mtime": 1792845562.4841948,
-    "seen": 1792847109.2201014,
-    "ast_hash": "a001519ec85b2c0a571dd0fa3f205236",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/quiz-ip17.png": {
-    "mtime": 1792845565.4327219,
-    "seen": 1792847109.2201042,
-    "ast_hash": "7548429d0f68b1ebee8f021b2356e841",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/quiz-ip17pm.png": {
-    "mtime": 1792845566.3957443,
-    "seen": 1792847109.220107,
-    "ast_hash": "fcea93dc4778b1c6fc40c34d7ed330cb",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/quiz-s8.png": {
-    "mtime": 1792845564.462364,
-    "seen": 1792847109.22011,
-    "ast_hash": "d25a070337d98c1d519b133da5f8a24e",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/quiz-se1.png": {
-    "mtime": 1792845563.460939,
-    "seen": 1792847109.2201126,
-    "ast_hash": "ad8c8afe5fa9b700efaf950b9ba13aff",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/uptodate-fold1.png": {
-    "mtime": 1792845573.9990695,
-    "seen": 1792847109.2201152,
-    "ast_hash": "d702acef2714926f495f2fd4fb435e4c",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/uptodate-ip17.png": {
-    "mtime": 1792845580.9404716,
-    "seen": 1792847109.220118,
-    "ast_hash": "c8fbf0a4ec67fe2cf41c404beffdf360",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/uptodate-ip17pm.png": {
-    "mtime": 1792845583.246085,
-    "seen": 1792847109.220121,
-    "ast_hash": "fbfa1457ee7c81e26dc385a2c659094e",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/uptodate-s8.png": {
-    "mtime": 1792845578.6233342,
-    "seen": 1792847109.2201235,
-    "ast_hash": "9cc794cbe92fb23602992dddd47c1294",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/uptodate-se1.png": {
-    "mtime": 1792845576.2828405,
-    "seen": 1792847109.2201266,
-    "ast_hash": "3869d7b4225ffa8ef9277f62e44e5ff7",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-calcDetail-fold1.png": {
-    "mtime": 1792846811.9738088,
-    "seen": 1792847109.2201295,
-    "ast_hash": "ed1eea858458272b00963bed33ffc001",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-calcDetail-ip17.png": {
-    "mtime": 1792846724.2574396,
-    "seen": 1792847109.2201324,
-    "ast_hash": "cbbf7859173d18712800dd6604d5f4f2",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-calcDetail-se1.png": {
-    "mtime": 1792846768.1097908,
-    "seen": 1792847109.2201355,
-    "ast_hash": "68bf78ccb84aa6a9349058a00dc1a6d6",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-calcs-fold1.png": {
-    "mtime": 1792846807.6058164,
-    "seen": 1792847109.2201383,
-    "ast_hash": "d47a2637aab145c30fae0a5bda768f1a",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-calcs-ip17.png": {
-    "mtime": 1792846719.9493766,
-    "seen": 1792847109.2201414,
-    "ast_hash": "6a6173180a3c1156e9023607dcdfb591",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-calcs-se1.png": {
-    "mtime": 1792846763.8417752,
-    "seen": 1792847109.2201438,
-    "ast_hash": "4d710f82a9d53471ef3b43a0c49f9f9c",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-diseases-fold1.png": {
-    "mtime": 1792846814.7778032,
-    "seen": 1792847109.2201467,
-    "ast_hash": "3569a07c77437a71b5126effcea4dab2",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-diseases-ip17.png": {
-    "mtime": 1792846727.045477,
-    "seen": 1792847109.2201495,
-    "ast_hash": "d895c38831f49396e686d2b9333dc6c9",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-diseases-se1.png": {
-    "mtime": 1792846770.8257995,
-    "seen": 1792847109.220153,
-    "ast_hash": "e5918a538b4794b6d5afa09f72cb7825",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-downloads-fold1.png": {
-    "mtime": 1792846823.0137827,
-    "seen": 1792847109.220156,
-    "ast_hash": "e113d9b444d2de2100c5ed92dac510b3",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-downloads-ip17.png": {
-    "mtime": 1792846735.233573,
-    "seen": 1792847109.2201588,
-    "ast_hash": "12fd7dff09e080c389ff607df45980a5",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-downloads-se1.png": {
-    "mtime": 1792846778.857818,
-    "seen": 1792847109.2201617,
-    "ast_hash": "f91af1f700cee2a23df569b707b92f6a",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-education-fold1.png": {
-    "mtime": 1792846820.4497898,
-    "seen": 1792847109.2201648,
-    "ast_hash": "d1d4ee77ff0196c00c6033ddf7bcd51f",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-education-ip17.png": {
-    "mtime": 1792846732.5695438,
-    "seen": 1792847109.220168,
-    "ast_hash": "87b47ee32c34f439471939aec8105bc6",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-education-se1.png": {
-    "mtime": 1792846776.1898127,
-    "seen": 1792847109.2201717,
-    "ast_hash": "fb1865803b4c41b2284f03023c529a78",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-guidelines-fold1.png": {
-    "mtime": 1792846818.1017954,
-    "seen": 1792847109.2201748,
-    "ast_hash": "12d25932116e435efaf72566999a1d2a",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-guidelines-ip17.png": {
-    "mtime": 1792846730.2375169,
-    "seen": 1792847109.2201777,
-    "ast_hash": "fc8c9e92cae3b884eb164d07a4d16a52",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-guidelines-se1.png": {
-    "mtime": 1792846773.8578074,
-    "seen": 1792847109.2201807,
-    "ast_hash": "508a9c2f2d50ccfd5219547cd3aaf844",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-home-fold1.png": {
-    "mtime": 1792846824.4177787,
-    "seen": 1792847109.2201834,
-    "ast_hash": "cd9090a745bb61ddba93d971dab4ae16",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-home-ip17.png": {
-    "mtime": 1792846736.7015882,
-    "seen": 1792847109.2201865,
-    "ast_hash": "0d0cdcf79bea32d459350b1128b87165",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-home-se1.png": {
-    "mtime": 1792846780.2738202,
-    "seen": 1792847109.220189,
-    "ast_hash": "8eaaf367e8825364d1adc57bf822e994",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-lessonDetail-fold1.png": {
-    "mtime": 1792846786.8058271,
-    "seen": 1792847109.2201917,
-    "ast_hash": "6a59e8448a2cb9b600abaa5079868ed2",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-lessonDetail-ip17.png": {
-    "mtime": 1792846698.728961,
-    "seen": 1792847109.2201948,
-    "ast_hash": "8ec7702a580a95f396b1c5b9da3afa03",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-lessonDetail-se1.png": {
-    "mtime": 1792846743.0856473,
-    "seen": 1792847109.220198,
-    "ast_hash": "8c52e9d426fb0f4cc4a4f5c44c5b28da",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-lessonList-fold1.png": {
-    "mtime": 1792846785.0058258,
-    "seen": 1792847109.2202008,
-    "ast_hash": "e031ff6d36766f62fceba6a18bf83bed",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-lessonList-ip17.png": {
-    "mtime": 1792846696.9169161,
-    "seen": 1792847109.2202036,
-    "ast_hash": "3c533802b54084af10e8b8d7056d8b37",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-lessonList-se1.png": {
-    "mtime": 1792846741.329632,
-    "seen": 1792847109.2202065,
-    "ast_hash": "08b493da5dae3ad2097cf62dc8164ded",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-mdsArticle-fold1.png": {
-    "mtime": 1792846804.8818204,
-    "seen": 1792847109.2202096,
-    "ast_hash": "63a9cef243d18b315f8ec8d96aabbcde",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-mdsArticle-ip17.png": {
-    "mtime": 1792846717.1853328,
-    "seen": 1792847109.2202125,
-    "ast_hash": "3474756537a799d682adb73eea041c33",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-mdsArticle-se1.png": {
-    "mtime": 1792846761.093763,
-    "seen": 1792847109.2202153,
-    "ast_hash": "02736874a69b1a02357b95b1cf9109a4",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-mdsOutline-fold1.png": {
-    "mtime": 1792846801.9938238,
-    "seen": 1792847109.2202184,
-    "ast_hash": "c0e909bd6bd19f089dc5006da74e4610",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-mdsOutline-ip17.png": {
-    "mtime": 1792846714.3252845,
-    "seen": 1792847109.220221,
-    "ast_hash": "5e2e41a98ed0d3e3522eecc21f5cad68",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-mdsOutline-se1.png": {
-    "mtime": 1792846758.2657495,
-    "seen": 1792847109.2202237,
-    "ast_hash": "3c0647595e0448cf0c2dbc4452304792",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-utdArticle-fold1.png": {
-    "mtime": 1792846796.5818279,
-    "seen": 1792847109.2202265,
-    "ast_hash": "583474eaaaa5fd3857071a99402afbef",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-utdArticle-ip17.png": {
-    "mtime": 1792846708.6251786,
-    "seen": 1792847109.2202299,
-    "ast_hash": "b3d45fdd0bdfdd37b11131b1e4c71773",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-utdArticle-se1.png": {
-    "mtime": 1792846752.8577187,
-    "seen": 1792847109.2202325,
-    "ast_hash": "10fdf57f7ca5f2e8ea69e204460942d3",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-utdOutline-fold1.png": {
-    "mtime": 1792846793.3818288,
-    "seen": 1792847109.2202353,
-    "ast_hash": "427fe5843349ad73ade559516a971cf5",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-utdOutline-ip17.png": {
-    "mtime": 1792846705.3771122,
-    "seen": 1792847109.220238,
-    "ast_hash": "3b13333f09b6a7d40e23cf546792c420",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-utdOutline-se1.png": {
-    "mtime": 1792846749.6696978,
-    "seen": 1792847109.2202413,
-    "ast_hash": "ad8c8a05fb628afbb312f5ad62b23f6c",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-utdSearch-fold1.png": {
-    "mtime": 1792846791.1818287,
-    "seen": 1792847109.2202442,
-    "ast_hash": "ef6f540427049e632b8ec26b69a9abf5",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-utdSearch-ip17.png": {
-    "mtime": 1792846703.1850646,
-    "seen": 1792847109.220247,
-    "ast_hash": "3eea9534b08ee833bd51f6b8bd5ca179",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/shots/v2-utdSearch-se1.png": {
-    "mtime": 1792846747.4416819,
-    "seen": 1792847109.2202504,
-    "ast_hash": "1c7d3c82ca9f285ceb28588a32bc54cb",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/v2-fold1-0.png": {
-    "mtime": 1792846865.7816122,
-    "seen": 1792847109.2202537,
-    "ast_hash": "316ee75ebdc87c284c4e0f91151aa77c",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/v2-fold1-1.png": {
-    "mtime": 1792846865.857612,
-    "seen": 1792847109.2202566,
-    "ast_hash": "caeb013b37835779f0734f906db03512",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/v2-ip17-0.png": {
-    "mtime": 1792846865.033616,
-    "seen": 1792847109.2202597,
-    "ast_hash": "8b2d5a4bf9f52c1fe814423af5d1c523",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/v2-ip17-1.png": {
-    "mtime": 1792846865.1576154,
-    "seen": 1792847109.2202628,
-    "ast_hash": "198c120cdb70d7e5276a62e2820ec56a",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/v2-se1-0.png": {
-    "mtime": 1792846865.4056141,
-    "seen": 1792847109.2202652,
-    "ast_hash": "2249d2dc76b34adb1dfc3876847f7fa4",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/v2-se1-1.png": {
-    "mtime": 1792846865.5216136,
-    "seen": 1792847109.220268,
-    "ast_hash": "a205cfc5368adbb1e70f0cc004489a36",
-    "semantic_hash": ""
-  },
-  ".playwright-mcp/sim/wide-after.png": {
-    "mtime": 1792846963.7473485,
-    "seen": 1792847109.220271,
-    "ast_hash": "6abebeca5046c4ad5e2b4f4e1b4e8924",
+  "backend/apps/calculators/migrations/0006_fix_scoring_errata.py": {
+    "mtime": 1792852000.2413208,
+    "seen": 1792852386.5071719,
+    "ast_hash": "7f3b032c8438cc0d6b286ed472176200",
+    "semantic_hash": ""
+  },
+  "frontend/src/utils/calculatorLive.ts": {
+    "mtime": 1792851767.6945612,
+    "seen": 1792852386.5090122,
+    "ast_hash": "dcc8c82427fa7223c531288191990ced",
     "semantic_hash": ""
   }
 }

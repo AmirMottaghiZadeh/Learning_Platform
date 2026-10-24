@@ -24,8 +24,9 @@ export interface FieldProps {
   onChange: (value: number | undefined) => void;
   onChoose: (index: number, value: number | undefined) => void;
   onUnit: (index: number) => void;
-  /** Show each choice's weight (+3) beside it -- for scores. */
-  showWeights?: boolean;
+  /** Each choice's effect on the score (+3, -4), shown beside it -- for
+   * scores; see choiceWeights. Null or absent: no weights. */
+  weights?: (number | null)[] | null;
 }
 
 /** A yes/no style question: two short choices. */
@@ -51,7 +52,7 @@ function Weight({ factor }: { factor: number }) {
   );
 }
 
-function Choices({ question, variant, value, choiceIndex, onChoose, showWeights }: FieldProps) {
+function Choices({ question, variant, value, choiceIndex, onChoose, weights }: FieldProps) {
   const { colors } = useTheme();
   const { isFa, row } = useLang();
   const options = question.choices.map((choice, i) => {
@@ -61,6 +62,7 @@ function Choices({ question, variant, value, choiceIndex, onChoose, showWeights 
       factor,
       text: stripHtml(isFa && choice.title_primary_fa ? choice.title_primary_fa : choice.title_primary),
       selected: choiceIndex === i && value !== undefined,
+      weight: weights?.[i] ?? null,
     };
   });
   const pick = (o: (typeof options)[number]) => onChoose(o.i, Number.isNaN(o.factor) ? undefined : o.factor);
@@ -126,7 +128,7 @@ function Choices({ question, variant, value, choiceIndex, onChoose, showWeights 
             <AppText weight="900" size={17} color={o.selected ? colors.accent : colors.ink}>
               {o.text}
             </AppText>
-            {showWeights ? <Weight factor={o.factor} /> : null}
+            {o.weight !== null ? <Weight factor={o.weight} /> : null}
           </Pressable>
         ))}
       </View>
@@ -167,7 +169,7 @@ function Choices({ question, variant, value, choiceIndex, onChoose, showWeights 
           <AppText weight="700" size={14} color={o.selected ? colors.accent : colors.ink} style={{ flex: 1, lineHeight: 22, writingDirection: isFa ? "rtl" : "ltr" }}>
             {o.text}
           </AppText>
-          {showWeights ? <Weight factor={o.factor} /> : null}
+          {o.weight !== null ? <Weight factor={o.weight} /> : null}
         </Pressable>
       ))}
     </View>

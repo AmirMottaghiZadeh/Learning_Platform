@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { View } from "react-native";
 
 import { AppText } from "@/components/primitives/AppText";
@@ -6,6 +6,7 @@ import { Button } from "@/components/primitives/Button";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
+import { choiceWeights } from "@/utils/calculatorLive";
 
 import { LiveScore } from "./LiveScore";
 import { QuestionField, isBinaryQuestion } from "./QuestionField";
@@ -24,6 +25,7 @@ export function CardsFlow({ live, ...p }: FlowProps & { live: boolean }) {
   const total = data.questions.length;
   const last = step === total - 1;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const weights = useMemo(() => (live ? choiceWeights(data, question, answers) : null), [live, data, question, answers]);
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
   }, []);
@@ -83,7 +85,7 @@ export function CardsFlow({ live, ...p }: FlowProps & { live: boolean }) {
           p.setError(null);
           p.setUnit(question.position, i);
         }}
-        showWeights={live}
+        weights={weights}
       />
 
       {binary && !last ? (
