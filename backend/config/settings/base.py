@@ -271,6 +271,12 @@ OTP_TTL_SECONDS = config("OTP_TTL_SECONDS", default=120, cast=int)
 OTP_MAX_ATTEMPTS = config("OTP_MAX_ATTEMPTS", default=5, cast=int)
 OTP_RESEND_SECONDS = config("OTP_RESEND_SECONDS", default=60, cast=int)
 OTP_MAX_PER_PHONE_PER_DAY = config("OTP_MAX_PER_PHONE_PER_DAY", default=8, cast=int)
+# At most this many codes to one number in any OTP_WINDOW_SECONDS (3 in 10
+# minutes), and a looser cap per address: a carrier puts many phones behind
+# one address (CGNAT), so it only stops one source cycling through numbers.
+OTP_WINDOW_SECONDS = config("OTP_WINDOW_SECONDS", default=600, cast=int)
+OTP_MAX_PER_PHONE_PER_WINDOW = config("OTP_MAX_PER_PHONE_PER_WINDOW", default=3, cast=int)
+OTP_MAX_PER_IP_PER_WINDOW = config("OTP_MAX_PER_IP_PER_WINDOW", default=10, cast=int)
 # New accounts sign up with a mobile number; the old email sign-up endpoint
 # stays off unless switched back on.
 AUTH_EMAIL_REGISTRATION_ENABLED = config("AUTH_EMAIL_REGISTRATION_ENABLED", default=False, cast=bool)
@@ -371,28 +377,15 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Shortest password accepted anywhere (sign-up, reset, choosing one after an
-# SMS sign-up). The common-password and all-digits checks still apply.
+# SMS sign-up) -- and the only rule: any password of this length is fine.
+# The common-password, all-digits and looks-like-your-name checks were
+# dropped on purpose; the sign-in throttles and the SMS limits are what
+# protect an account, not a strict password policy.
 AUTH_PASSWORD_MIN_LENGTH = config("AUTH_PASSWORD_MIN_LENGTH", default=6, cast=int)
 AUTH_PASSWORD_VALIDATORS = [
     {
-        # Django's default threshold (max_similarity=0.7) rejects passwords
-        # that merely share a lot of characters with the username/email/name
-        # -- in practice that caught plenty of genuinely fine passwords.
-        # Raised so only a password that's essentially the same string as one
-        # of those attributes (a near-exact match, not just "similar") is
-        # rejected.
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-        "OPTIONS": {"max_similarity": 0.95},
-    },
-    {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
         "OPTIONS": {"min_length": AUTH_PASSWORD_MIN_LENGTH},
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 REST_FRAMEWORK = {

@@ -137,14 +137,14 @@ class AuthenticationSecurityTests(TestCase):
         self.assertTrue(self.user.check_password("Old-Secure-Password-2026!"))
 
     @override_settings(AUTH_EMAIL_REGISTRATION_ENABLED=True)
-    def test_registration_rejects_common_numeric_password(self):
+    def test_registration_rejects_a_password_under_six_characters(self):
         response = self.client.post(
             reverse("auth-register"),
             {
                 "name": "New Learner",
                 "email": "new-learner@example.com",
-                "password": "123456789012",
-                "password_confirm": "123456789012",
+                "password": "12345",
+                "password_confirm": "12345",
             },
             content_type="application/json",
         )

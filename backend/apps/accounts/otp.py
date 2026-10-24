@@ -10,8 +10,12 @@ The flows they serve:
 Codes are random digits, stored only as an HMAC keyed with SECRET_KEY,
 valid for OTP_TTL_SECONDS, spent by their first correct use, and dead after
 OTP_MAX_ATTEMPTS wrong ones. A number can be sent a new code at most every
-OTP_RESEND_SECONDS and OTP_MAX_PER_PHONE_PER_DAY times a day -- which, with
-the per-address request throttles, is what keeps the SMS credit safe.
+OTP_RESEND_SECONDS, OTP_MAX_PER_PHONE_PER_WINDOW times in any
+OTP_WINDOW_SECONDS (3 in 10 minutes) and OTP_MAX_PER_PHONE_PER_DAY times a
+day; one address can ask for OTP_MAX_PER_IP_PER_WINDOW codes in that window,
+more than a number may, since many phones share a carrier's address. With the
+per-address request throttles, that is what keeps the SMS credit safe and a
+number from being flooded.
 """
 
 import hashlib
@@ -54,6 +58,12 @@ def _new_code():
     return "".join(secrets.choice("0123456789") for _ in range(length))
 
 
+def _minutes(seconds):
+    """«۴ دقیقه»: a wait in whole minutes, rounded up, in Persian digits."""
+    minutes = max(1, -(-int(seconds) // 60))
+    return str(minutes).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")) + " دقیقه"
+
+
 def user_for_phone(phone):
     profile = LearnerProfile.objects.select_related("user").filter(phone=phone).first()
     return profile.user if profile else None
@@ -91,11 +101,33 @@ def request_code(phone, purpose, *, request=None):
                     "کمی صبر کن و بعد کد تازه بخواه.",
                     code="OTP_TOO_SOON", status=429, details={"retry_after": int(wait) + 1},
                 )
+        window = settings.OTP_WINDOW_SECONDS
+        in_window = [r for r in recent if (now - r.created_at).total_seconds() < window]
+        if len(in_window) >= settings.OTP_MAX_PER_PHONE_PER_WINDOW:
+            wait = window - (now - in_window[-1].created_at).total_seconds()
+            raise OtpError(
+                f"برای هر شماره در {_minutes(window)} حداکثر {settings.OTP_MAX_PER_PHONE_PER_WINDOW} کد فرستاده "
+                f"می‌شود؛ {_minutes(wait)} دیگر دوباره امتحان کن.",
+                code="OTP_WINDOW_LIMIT", status=429, details={"retry_after": int(wait) + 1},
+            )
         if len(recent) >= settings.OTP_MAX_PER_PHONE_PER_DAY:
             raise OtpError(
                 "امروز برای این شماره کد زیادی فرستاده شده؛ فردا دوباره امتحان کن.",
                 code="OTP_DAILY_LIMIT", status=429,
             )
+        ip_address = _request_metadata(request)["ip_address"]
+        if ip_address:
+            from_ip = list(
+                OneTimeCode.objects.filter(ip_address=ip_address, created_at__gte=now - timedelta(seconds=window))
+                .order_by("created_at")
+                .values_list("created_at", flat=True)[: settings.OTP_MAX_PER_IP_PER_WINDOW]
+            )
+            if len(from_ip) >= settings.OTP_MAX_PER_IP_PER_WINDOW:
+                wait = window - (now - from_ip[0]).total_seconds()
+                raise OtpError(
+                    f"از این شبکه کد زیادی خواسته شده؛ {_minutes(wait)} دیگر دوباره امتحان کن.",
+                    code="OTP_IP_LIMIT", status=429, details={"retry_after": int(wait) + 1},
+                )
 
         code = _new_code()
         row = OneTimeCode.objects.create(
@@ -103,7 +135,7 @@ def request_code(phone, purpose, *, request=None):
             purpose=purpose,
             code_hash=_hash(phone, purpose, code),
             expires_at=now + timedelta(seconds=settings.OTP_TTL_SECONDS),
-            ip_address=_request_metadata(request)["ip_address"],
+            ip_address=ip_address,
         )
         # Older unused codes for the same purpose stop working: only the
         # newest SMS counts.

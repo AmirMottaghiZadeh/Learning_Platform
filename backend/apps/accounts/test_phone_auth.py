@@ -124,6 +124,9 @@ class SignUpTests(PhoneAuthTestCase):
         self.assertEqual(res.data["code"], "EMAIL_REGISTRATION_CLOSED")
 
 
+OTP_GAP = 61  # just past OTP_RESEND_SECONDS
+
+
 class CodeRuleTests(PhoneAuthTestCase):
     def test_resend_waits_for_the_gap(self):
         self.request_code()
@@ -133,6 +136,25 @@ class CodeRuleTests(PhoneAuthTestCase):
         self.assertGreater(res.data["details"]["retry_after"], 0)
         self.age_codes(61)
         self.assertEqual(self.request_code().status_code, 200)
+
+    def test_at_most_three_codes_in_ten_minutes(self):
+        for _ in range(3):
+            self.assertEqual(self.request_code().status_code, 200)
+            OneTimeCode.objects.update(created_at=timezone.now() - timedelta(seconds=OTP_GAP))
+        res = self.request_code()
+        self.assertEqual(res.status_code, 429)
+        self.assertEqual(res.data["code"], "OTP_WINDOW_LIMIT")
+        self.assertGreater(res.data["details"]["retry_after"], 0)
+        self.age_codes(601)  # the window has passed
+        self.assertEqual(self.request_code().status_code, 200)
+
+    @override_settings(OTP_MAX_PER_IP_PER_WINDOW=2)
+    def test_one_address_cannot_cycle_through_numbers(self):
+        self.assertEqual(self.request_code(phone="09120000001").status_code, 200)
+        self.assertEqual(self.request_code(phone="09120000002").status_code, 200)
+        res = self.request_code(phone="09120000003")
+        self.assertEqual(res.status_code, 429)
+        self.assertEqual(res.data["code"], "OTP_IP_LIMIT")
 
     @override_settings(OTP_MAX_PER_PHONE_PER_DAY=2)
     def test_daily_cap(self):
@@ -232,13 +254,19 @@ class ResetTests(PhoneAuthTestCase):
         )
         self.assertEqual(res.status_code, 200)
 
-    def test_weak_password_is_refused(self):
+    def test_a_short_password_is_refused(self):
         self.request_code()
         token = self.verify().data["access_token"]
-        for weak in ["Ab3x!", "987654321"]:  # too short; only digits
-            res = self.post("auth-password-set", {"new_password": weak, "new_password_confirm": weak}, token)
-            self.assertEqual(res.status_code, 400, weak)
+        res = self.post("auth-password-set", {"new_password": "Ab3x!", "new_password_confirm": "Ab3x!"}, token)
+        self.assertEqual(res.status_code, 400)
         self.assertFalse(get_user_model().objects.get(learner_profile__phone=PHONE).has_usable_password())
+
+    def test_length_is_the_only_rule(self):
+        # all digits, common, or the user's own number: fine once it is 6 long
+        self.request_code()
+        token = self.verify().data["access_token"]
+        res = self.post("auth-password-set", {"new_password": "123456", "new_password_confirm": "123456"}, token)
+        self.assertEqual(res.status_code, 200)
 
     def test_a_six_character_password_is_enough(self):
         self.request_code()

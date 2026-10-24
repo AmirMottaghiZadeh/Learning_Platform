@@ -6,6 +6,7 @@ import { lessonsApi } from "@/api/endpoints";
 import type { AtcGroup, ChapterDrug } from "@/api/types";
 import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
 import { useBleedTop } from "@/components/AppShell";
+import { useNavClearance } from "@/components/BottomNav";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -35,6 +36,7 @@ export function LessonListScreen() {
   const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
   const bleedTop = useBleedTop(true);
+  const navClearance = useNavClearance(24);
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
   const code = String(useNav((s) => s.params.code ?? ""));
@@ -106,7 +108,7 @@ export function LessonListScreen() {
         <ScrollView
           style={{ flex: 1 }}
           stickyHeaderIndices={headerIndices}
-          contentContainerStyle={{ padding: 22, paddingTop: 12, paddingBottom: 40, gap: 10 }}
+          contentContainerStyle={{ padding: 22, paddingTop: 12, paddingBottom: navClearance, gap: 10 }}
           showsVerticalScrollIndicator={false}
         >
           {items.map((item) => {

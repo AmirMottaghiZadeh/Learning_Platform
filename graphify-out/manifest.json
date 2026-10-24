@@ -120,9 +120,9 @@
     "semantic_hash": ""
   },
   "backend/apps/accounts/otp.py": {
-    "mtime": 1792694659.2646015,
-    "seen": 1792713312.5746045,
-    "ast_hash": "43f5a90c7571339fbdb07c3c115d0929",
+    "mtime": 1792882978.2147727,
+    "seen": 1792883817.4986892,
+    "ast_hash": "d33ca5a5f0440b070f7e4304e872976f",
     "semantic_hash": ""
   },
   "backend/apps/accounts/permissions.py": {
@@ -168,15 +168,15 @@
     "semantic_hash": ""
   },
   "backend/apps/accounts/test_phone_auth.py": {
-    "mtime": 1791915493.1720462,
-    "seen": 1792686658.6820061,
-    "ast_hash": "1014c0b7fbdb082782e4471220b9c4ba",
+    "mtime": 1792883251.2372372,
+    "seen": 1792883817.4987085,
+    "ast_hash": "9fcc380322ddd8b696ad8d8e354ccf01",
     "semantic_hash": ""
   },
   "backend/apps/accounts/tests.py": {
-    "mtime": 1791914449.1034586,
-    "seen": 1792686658.682009,
-    "ast_hash": "57cfdbe01e31a6f8c1f7d2599f205607",
+    "mtime": 1792883251.2372372,
+    "seen": 1792883817.4987106,
+    "ast_hash": "0ee15b4bce8528013afcad51b586b764",
     "semantic_hash": ""
   },
   "backend/apps/accounts/urls.py": {
@@ -1866,9 +1866,9 @@
     "semantic_hash": ""
   },
   "backend/config/settings/base.py": {
-    "mtime": 1792792834.3544593,
-    "seen": 1792792913.2646651,
-    "ast_hash": "ff3db3cdaf5b721574f789943c1438aa",
+    "mtime": 1792883094.7664204,
+    "seen": 1792883817.4993048,
+    "ast_hash": "c3736bcd94ca59c8fad94c67af29bd10",
     "semantic_hash": ""
   },
   "backend/config/settings/local.py": {
@@ -2262,9 +2262,9 @@
     "semantic_hash": ""
   },
   "frontend/src/i18n/strings.ts": {
-    "mtime": 1792762197.5020218,
-    "seen": 1792764651.8760865,
-    "ast_hash": "82dce92fb93c8d5e02b62a16f6e3a625",
+    "mtime": 1792883505.194842,
+    "seen": 1792883817.4994354,
+    "ast_hash": "e56d03800c2bf17acf5dccbe56e1f548",
     "semantic_hash": ""
   },
   "frontend/src/navigation/Navigator.tsx": {
@@ -2334,9 +2334,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/LessonListScreen.tsx": {
-    "mtime": 1792848862.201635,
-    "seen": 1792852386.5089014,
-    "ast_hash": "339d1e12aa42d3555e200f5084a92e9d",
+    "mtime": 1792882900.0150533,
+    "seen": 1792883817.4994922,
+    "ast_hash": "e4d2765191eb623f71c4b189abc9cd4e",
     "semantic_hash": ""
   },
   "frontend/src/screens/LessonsScreen.tsx": {
@@ -2352,9 +2352,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeArticleScreen.tsx": {
-    "mtime": 1792848862.2056355,
-    "seen": 1792852386.508916,
-    "ast_hash": "aa3a8d4acf4d22da622ac636c051bf72",
+    "mtime": 1792883537.7561376,
+    "seen": 1792883817.4994986,
+    "ast_hash": "42c137a47bc13967df8fbb56797002d2",
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeBrowseScreen.tsx": {
@@ -4266,15 +4266,15 @@
     "semantic_hash": ""
   },
   "docs/03-backend.md": {
-    "mtime": 1792758799.7605786,
-    "seen": 1792759740.28514,
-    "ast_hash": "889b8b7ebd6ee17962167be39f31822e",
+    "mtime": 1792883346.6699607,
+    "seen": 1792883817.4997323,
+    "ast_hash": "30f27d94d3fed61878335d31ff5dd456",
     "semantic_hash": ""
   },
   "docs/04-frontend.md": {
-    "mtime": 1792856892.1736553,
-    "seen": 1792856913.8481593,
-    "ast_hash": "a699bef4e038aca5f23a6911e20641e9",
+    "mtime": 1792883797.5118551,
+    "seen": 1792883817.4997346,
+    "ast_hash": "3c9998ea661b9e702046c41284d70bea",
     "semantic_hash": ""
   },
   "docs/05-api.md": {
@@ -4284,9 +4284,9 @@
     "semantic_hash": ""
   },
   "docs/06-configuration.md": {
-    "mtime": 1792792900.9747515,
-    "seen": 1792792913.2651038,
-    "ast_hash": "957f0e146a2c10e19fa87277b0b3b6cf",
+    "mtime": 1792883346.6699607,
+    "seen": 1792883817.4997382,
+    "ast_hash": "9dea5f0bde1892e3f01373e369f7f6c1",
     "semantic_hash": ""
   },
   "docs/07-data.md": {
@@ -4485,6 +4485,18 @@
     "mtime": 1792863332.9797297,
     "seen": 1792863515.0834904,
     "ast_hash": "e909661ac070f1f00583777ad8441b50",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/article/MediaViewer.tsx": {
+    "mtime": 1792883505.2108362,
+    "seen": 1792883817.499371,
+    "ast_hash": "676632091ac8a12f7dcccd767e059367",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/article/mediaPage.ts": {
+    "mtime": 1792883671.029185,
+    "seen": 1792883817.4993737,
+    "ast_hash": "fa631acabc9aa5f638a8f8c3b50139e8",
     "semantic_hash": ""
   }
 }

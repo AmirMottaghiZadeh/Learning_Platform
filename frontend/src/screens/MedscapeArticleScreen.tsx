@@ -24,6 +24,8 @@ import {
   highlight,
 } from "@/components/article/ArticleParts";
 import { BackGlyph, BandButton, useBandColors } from "@/components/article/Band";
+import { MediaViewer } from "@/components/article/MediaViewer";
+import { MediaContent } from "@/components/article/mediaPage";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useDebounced } from "@/hooks/useDebounced";
@@ -90,6 +92,8 @@ type ReaderCtx = {
   scale: number;
   registerBlock: (key: string, view: View | null) => void;
   registerSection: (path: string, view: View | null) => void;
+  /** Opens an image or a table full-screen (MediaViewer). */
+  openMedia: (media: MediaContent) => void;
 };
 
 const ReaderContext = React.createContext<ReaderCtx | null>(null);
@@ -123,6 +127,7 @@ export function MedscapeArticleScreen() {
 
   // -- in-article search ----------------------------------------------------
   const [searchOpen, setSearchOpen] = useState(false);
+  const [media, setMedia] = useState<MediaContent | null>(null);
   const [query, setQuery] = useState("");
   const term = useDebounced(query.trim().toLowerCase(), 250);
   const matches = useMemo(() => indexMatches(data?.sections ?? [], term), [data, term]);
@@ -307,7 +312,7 @@ export function MedscapeArticleScreen() {
       ) : null}
 
       <ReaderContext.Provider
-        value={{ numbers: model.numbers, find, starts: matches.starts, scale, registerBlock, registerSection }}
+        value={{ numbers: model.numbers, find, starts: matches.starts, scale, registerBlock, registerSection, openMedia: setMedia }}
       >
         <ScrollView
           ref={scrollRef}
@@ -397,6 +402,8 @@ export function MedscapeArticleScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <MediaViewer media={media} onClose={() => setMedia(null)} />
     </View>
   );
 }
@@ -448,7 +455,7 @@ function SectionView({ section, path, depth }: { section: MedscapeSection; path:
 
 function BlockView({ block, blockKey }: { block: MedscapeBlock; blockKey: string }) {
   const { colors } = useTheme();
-  const { find, starts, scale, registerBlock } = useReaderCtx();
+  const { find, starts, scale, registerBlock, openMedia } = useReaderCtx();
   const mark = (text: string, key: string) =>
     highlight(text, find, starts.get(key) ?? 0, `${colors.accent}33`, colors.accent, colors.onAccent);
   const ref = (view: View | null) => registerBlock(blockKey, view);
@@ -487,14 +494,20 @@ function BlockView({ block, blockKey }: { block: MedscapeBlock; blockKey: string
 
   if (block.type === "table") {
     return (
-      <View ref={ref} style={{ borderWidth: 1, borderColor: colors.trackBg, borderRadius: 12, overflow: "hidden" }}>
+      <Pressable
+        ref={ref}
+        onPress={() => openMedia({ kind: "table", headers: block.headers, rows: block.rows, caption: "" })}
+        accessibilityRole="button"
+        style={{ borderWidth: 1, borderColor: colors.trackBg, borderRadius: 12, overflow: "hidden" }}
+      >
         {block.headers ? (
           <TableRow cells={block.headers.map((cell, c) => mark(cell, `${blockKey}/h/${c}`))} header />
         ) : null}
         {block.rows.map((cells, r) => (
           <TableRow key={r} cells={cells.map((cell, c) => mark(cell, `${blockKey}/${r}/${c}`))} first={r === 0 && !block.headers} />
         ))}
-      </View>
+        <EnlargeBadge />
+      </Pressable>
     );
   }
 
@@ -507,6 +520,32 @@ function BlockView({ block, blockKey }: { block: MedscapeBlock; blockKey: string
   }
 
   return null;
+}
+
+/** «⤢» in the corner of an image or a table: it opens full-screen. */
+function EnlargeBadge() {
+  const { t } = useLang();
+  return (
+    <View
+      pointerEvents="none"
+      accessibilityLabel={t("mediaEnlarge")}
+      style={{
+        position: "absolute",
+        top: 8,
+        right: 8,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(10,20,18,0.55)",
+      }}
+    >
+      <AppText weight="800" size={14} color="#FFFFFF" center style={{ lineHeight: 18, writingDirection: "ltr" }}>
+        ⤢
+      </AppText>
+    </View>
+  );
 }
 
 function TableRow({ cells, header, first }: { cells: React.ReactNode[]; header?: boolean; first?: boolean }) {
@@ -539,14 +578,20 @@ function TableRow({ cells, header, first }: { cells: React.ReactNode[]; header?:
 
 function ImageBlockView({ id, alt, caption }: { id: number; alt: string; caption: string }) {
   const { colors } = useTheme();
+  const { openMedia } = useReaderCtx();
   const { data } = useQuery({
     queryKey: ["medscape-image", id],
     queryFn: () => medscapeApi.image(id),
   });
+  const src = data ? `data:${data.content_type};base64,${data.data_base64}` : null;
 
   return (
     <View style={{ gap: 6 }}>
-      <View
+      <Pressable
+        onPress={() => (src ? openMedia({ kind: "image", src, alt, caption }) : undefined)}
+        disabled={!src}
+        accessibilityRole="imagebutton"
+        accessibilityLabel={alt}
         style={{
           height: 220,
           borderRadius: 12,
@@ -556,15 +601,13 @@ function ImageBlockView({ id, alt, caption }: { id: number; alt: string; caption
           overflow: "hidden",
         }}
       >
-        {data ? (
-          <Image
-            source={{ uri: `data:${data.content_type};base64,${data.data_base64}` }}
-            accessibilityLabel={alt}
-            style={{ width: "100%", height: "100%" }}
-            resizeMode="contain"
-          />
+        {src ? (
+          <>
+            <Image source={{ uri: src }} accessibilityLabel={alt} style={{ width: "100%", height: "100%" }} resizeMode="contain" />
+            <EnlargeBadge />
+          </>
         ) : null}
-      </View>
+      </Pressable>
       {caption ? (
         <AppText muted weight="600" size={11.5} style={LTR}>
           {caption}

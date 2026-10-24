@@ -72,7 +72,7 @@
 | `AUTH_REFRESH_TOKEN_TTL_DAYS` | `30` | — | عمر توکن تمدید |
 | `AUTH_MAX_ACTIVE_SESSIONS` | `10` | — | حداکثر نشست هم‌زمان هر کاربر |
 | `AUTH_STEP_UP_TTL_MINUTES` | `10` | — | اعتبار تأیید دوباره (و انتخاب رمز بعد از کد پیامکی) |
-| `AUTH_PASSWORD_MIN_LENGTH` | `6` | — | |
+| `AUTH_PASSWORD_MIN_LENGTH` | `6` | — | تنها قاعدهٔ رمز عبور |
 | `AUTH_EMAIL_REGISTRATION_ENABLED` | `False` | — | ثبت‌نام قدیمی با ایمیل |
 | `PASSWORD_RESET_TIMEOUT` | `86400` | — | اعتبار لینک بازیابی ایمیلی (ثانیه) |
 | `PASSWORD_RESET_FRONTEND_URL` | `http://localhost:8081` | `https://app.pharmenta.ir/reset-password` | لینک ایمیل بازیابی |
@@ -93,6 +93,9 @@
 | `OTP_MAX_ATTEMPTS` | `5` | — | |
 | `OTP_RESEND_SECONDS` | `60` | — | |
 | `OTP_MAX_PER_PHONE_PER_DAY` | `8` | — | |
+| `OTP_WINDOW_SECONDS` | `600` | — | بازهٔ سقف‌های زیر |
+| `OTP_MAX_PER_PHONE_PER_WINDOW` | `3` | — | کد برای هر شماره در هر بازه |
+| `OTP_MAX_PER_IP_PER_WINDOW` | `10` | — | کد از هر IP در هر بازه |
 
 `manage.py check --deploy` اگر پیامک تنظیم نباشد هشدار `accounts.W001` و اگر قالب نباشد `accounts.W002` می‌دهد. اگر کلید sms.ir در پنل به IP محدود شده باشد، IP خروجی سرور رانفلر باید در پنل sms.ir ثبت شود.
 
