@@ -326,30 +326,43 @@ function DayCell({ day, label }: { day: PlanDay; label: string }) {
 
 function WeekBox({ data }: { data: PlanToday }) {
   const { t, n, lang, row } = useLang();
+  const { colors } = useTheme();
   if (!data.week.length) return null;
   const study = data.week.filter((d) => d.study_day && d.state !== "off");
   const done = study.filter((d) => d.state === "done").length;
   const labels = DAY_LABELS_SHORT[lang];
   return (
-    <Card>
-      <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "baseline" }}>
-        <AppText weight="900" size={14}>
+    <Card padded={false} style={{ overflow: "hidden" }}>
+      {/* head in the accent, like the Today box's */}
+      <View
+        style={{
+          flexDirection: row,
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          backgroundColor: colors.accent,
+          paddingHorizontal: spacing.lg,
+          paddingVertical: 12,
+        }}
+      >
+        <AppText weight="900" size={14} color={colors.onAccent}>
           {t("planWeek")}
         </AppText>
-        <AppText weight="700" size={11.5} muted>
+        <AppText weight="700" size={11.5} color={colors.onAccentSub}>
           {fill(t("planWeekCount"), { d: n(done), t: n(study.length) })}
         </AppText>
       </View>
-      <View style={{ flexDirection: row, marginTop: 12 }}>
-        {data.week.map((day, i) => (
-          <DayCell key={day.date} day={day} label={labels[i]} />
-        ))}
+      <View style={{ padding: spacing.lg, paddingTop: 14 }}>
+        <View style={{ flexDirection: row }}>
+          {data.week.map((day, i) => (
+            <DayCell key={day.date} day={day} label={labels[i]} />
+          ))}
+        </View>
+        {data.mode === "goal" ? (
+          <AppText weight="600" size={12} muted style={{ marginTop: 12, lineHeight: 20 }}>
+            {t("planRescheduleNote")}
+          </AppText>
+        ) : null}
       </View>
-      {data.mode === "goal" ? (
-        <AppText weight="600" size={12} muted style={{ marginTop: 12, lineHeight: 20 }}>
-          {t("planRescheduleNote")}
-        </AppText>
-      ) : null}
     </Card>
   );
 }

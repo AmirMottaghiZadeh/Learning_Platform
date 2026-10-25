@@ -1,17 +1,17 @@
 # Graph Report - Learning Platform  (2026-10-25)
 
 ## Corpus Check
-- 514 files · ~411,558 words
+- 514 files · ~411,593 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 32 file(s) not represented in the graph (top: (none) 11, .ttf 7, .woff2 4)
 
 ## Summary
-- 4950 nodes · 14004 edges · 209 communities (121 shown, 88 thin omitted)
+- 4950 nodes · 14005 edges · 209 communities (121 shown, 88 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1249 edges (avg confidence: 0.94)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e947a30c`
+- Built from commit: `9115ca44`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -179,7 +179,7 @@
 - فارمنتا (Pharmenta)
 
 ## God Nodes (most connected - your core abstractions)
-1. `useTheme()` - 181 edges
+1. `useTheme()` - 182 edges
 2. `AppText()` - 178 edges
 3. `useLang()` - 166 edges
 4. `react` - 83 edges
@@ -700,7 +700,7 @@ Nodes (3): شروع سریع, فارمنتا (Pharmenta), مستندات
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `فاز ۴ — اسکلت فرانت + دیزاین‌سیستم ✅` connect `useTheme` to `accounts/services.py`, `App.tsx`, `CalculatorDetailScreen.tsx`, `PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa`?**
-  _High betweenness centrality (0.164) - this node is a cross-community bridge._
+  _High betweenness centrality (0.165) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `AppText()` (e.g. with `زبان، جهت و تم` and `فاز ۴ — اسکلت فرانت + دیزاین‌سیستم ✅`) actually correct?**
   _`AppText()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `DJANGO_SETTINGS_MODULE`, `@expo/metro-runtime`, `expo-build-properties` to the rest of the system?**
@@ -708,7 +708,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `api/types.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.037025316455696206 - nodes in this community are weakly interconnected._
 - **Why does `UserSession` connect `accounts/services.py` to `WebsiteAuthTests`, `console/views.py`, `useTheme`, `اپ‌ها (`backend/apps/`)`, `UserSerializer`, `PlatformAPIError`, `config.py`, `accounts/views.py`, `test_phone_auth.py`, `PHASES.md — نقشه و پیشرفت بازنویسی Pharmexa`?**
-  _High betweenness centrality (0.162) - this node is a cross-community bridge._
+  _High betweenness centrality (0.163) - this node is a cross-community bridge._
 - **Should `django_db` be split into smaller, more focused modules?**
   _Cohesion score 0.0239880059970015 - nodes in this community are weakly interconnected._
 - **Why does `اپ‌ها (`backend/apps/`)` connect `اپ‌ها (`backend/apps/`)` to `test_panel.py`, `console/views.py`, `Post`, `views_public.py`, `flashcards/views.py`, `UserSerializer`, `progress/services.py`, `billing/services.py`, `views_drugs.py`, `quiz/views.py`, `Calculator`, `SectionEditRequest`, `Ingredient`, `FlashcardApiTests`, `LessonTaxonomyTests`, `planning.py`, `Article`, `۳. بک‌اند (Django)`, `Article`, `panel/views.py`, `SectionEdit`, `views_account.py`, `config.py`, `lessons/selectors.py`, `FlashcardFact`, `Media`, `accounts/services.py`?**
