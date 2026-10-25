@@ -244,10 +244,9 @@ def quote(price, discount=None):
         raise BillingError("ظرفیت استفاده از این کد تمام شده است.", "DISCOUNT_USED_UP")
     if discount.plans.exists() and not discount.plans.filter(pk=price.plan_id).exists():
         raise BillingError("این کد برای این پلن نیست.", "DISCOUNT_NOT_FOR_PLAN")
-    if discount.percent is not None:
-        off = amount * discount.percent // 100
-    else:
-        off = min(discount.amount_toman, amount)
+    off = discount.off_for(amount)
+    if off <= 0:
+        raise BillingError("این کد برای این قیمت تخفیفی ندارد.", "DISCOUNT_NO_EFFECT")
     return amount, off, amount - off
 
 

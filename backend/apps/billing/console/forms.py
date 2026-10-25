@@ -41,7 +41,10 @@ def parse_jalali(value):
 class PlanBasicsForm(forms.ModelForm):
     class Meta:
         model = Plan
-        fields = ["kind", "name_fa", "name_en", "slug", "tagline_fa", "audience", "order"]
+        fields = [
+            "kind", "name_fa", "name_en", "slug", "tagline_fa", "audience", "order",
+            "badge_fa", "cta_label_fa", "description_fa", "extra_lines_fa",
+        ]
         labels = {
             "kind": "نوع",
             "name_fa": "نام فارسی",
@@ -50,6 +53,14 @@ class PlanBasicsForm(forms.ModelForm):
             "tagline_fa": "یک خط توضیح برای کاربر",
             "audience": "مخاطب",
             "order": "ترتیب نمایش",
+            "badge_fa": "برچسب روی کارت (مثلاً «محبوب‌ترین»)",
+            "cta_label_fa": "متن دکمهٔ خرید (خالی = «خرید اشتراک»)",
+            "description_fa": "توضیح کامل‌تر زیر نام",
+            "extra_lines_fa": "مزیت‌های دیگر، هر خط یکی",
+        }
+        widgets = {
+            "description_fa": forms.Textarea(attrs={"rows": 3}),
+            "extra_lines_fa": forms.Textarea(attrs={"rows": 4}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -140,8 +151,8 @@ class FeatureEditForm(forms.ModelForm):
 
 class DiscountForm(forms.Form):
     code = forms.CharField(max_length=40, label="کد")
-    kind = forms.ChoiceField(choices=[("percent", "درصد"), ("amount", "مبلغ ثابت (تومان)")], label="نوع تخفیف")
-    value = forms.CharField(label="مقدار")
+    kind = forms.ChoiceField(choices=DiscountCode.KIND_CHOICES, label="نوع تخفیف")
+    value = forms.CharField(label="مقدار: درصد، یا مبلغ به تومان")
     max_uses = forms.CharField(required=False, label="سقف دفعات استفاده (خالی = بی‌نهایت)")
     starts = forms.CharField(required=False, label="شروع (۱۴۰۵/۰۸/۰۱)")
     ends = forms.CharField(required=False, label="پایان (۱۴۰۵/۰۸/۳۰)")
@@ -186,7 +197,7 @@ class DiscountForm(forms.Form):
 
     def clean(self):
         data = super().clean()
-        if data.get("kind") == "percent" and isinstance(data.get("value"), int) and data["value"] > 100:
+        if data.get("kind") == DiscountCode.KIND_PERCENT and isinstance(data.get("value"), int) and data["value"] > 100:
             self.add_error("value", "درصد تخفیف حداکثر ۱۰۰ است.")
         starts, ends = data.get("starts"), data.get("ends")
         if starts and ends and ends <= starts:

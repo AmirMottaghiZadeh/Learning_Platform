@@ -10,12 +10,15 @@ class PlanPriceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlanPrice
-        fields = ["id", "duration_days", "duration_label", "price_toman"]
+        fields = ["id", "duration_days", "duration_label", "price_toman", "compare_at_toman", "label_fa"]
 
 
 class PlanFeatureItemSerializer(serializers.Serializer):
     key = serializers.CharField()
     name_fa = serializers.CharField()
+    # how the plan words it, and whether its card lists it
+    label_fa = serializers.CharField()
+    is_listed = serializers.BooleanField()
     limit = serializers.IntegerField(allow_null=True)
     period = serializers.CharField()
     unit_fa = serializers.CharField()
@@ -24,10 +27,14 @@ class PlanFeatureItemSerializer(serializers.Serializer):
 class PlanSerializer(serializers.ModelSerializer):
     prices = serializers.SerializerMethodField()
     features = serializers.SerializerMethodField()
+    extra_lines = serializers.ListField(child=serializers.CharField(), read_only=True)
 
     class Meta:
         model = Plan
-        fields = ["id", "kind", "slug", "name_fa", "name_en", "tagline_fa", "audience", "is_free", "prices", "features"]
+        fields = [
+            "id", "kind", "slug", "name_fa", "name_en", "tagline_fa", "description_fa", "badge_fa", "cta_label_fa",
+            "extra_lines", "audience", "is_free", "prices", "features",
+        ]
 
     @extend_schema_field(PlanPriceSerializer(many=True))
     def get_prices(self, plan):
@@ -39,6 +46,8 @@ class PlanSerializer(serializers.ModelSerializer):
             {
                 "key": pf.feature.key,
                 "name_fa": pf.feature.name_fa,
+                "label_fa": pf.label_fa,
+                "is_listed": pf.is_listed,
                 "unit_fa": pf.feature.unit_fa,
                 **pf.snapshot(),
             }

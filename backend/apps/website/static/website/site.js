@@ -38,7 +38,13 @@
     opts.forEach(function(o){o.addEventListener("click",function(e){
       e.preventDefault();
       opts.forEach(function(x){x.classList.toggle("on",x===o)});
-      if(price)price.innerHTML=o.dataset.amount+' <small>تومان / '+o.dataset.label+'</small>';
+      if(price){
+        price.textContent="";
+        if(o.dataset.was){var was=document.createElement("s");was.className="was";was.textContent=o.dataset.was;price.appendChild(was);price.appendChild(document.createTextNode(" "))}
+        price.appendChild(document.createTextNode(o.dataset.amount+" "));
+        var unit=document.createElement("small");unit.textContent="تومان / "+o.dataset.label;price.appendChild(unit);
+        if(o.dataset.tag){var tag=document.createElement("span");tag.className="plabel";tag.textContent=o.dataset.tag;price.appendChild(document.createTextNode(" "));price.appendChild(tag)}
+      }
       if(buy)buy.setAttribute("href",o.getAttribute("href"));
     })});
   });

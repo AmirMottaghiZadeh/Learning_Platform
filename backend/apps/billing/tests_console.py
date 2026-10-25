@@ -159,6 +159,53 @@ class PlanBuilderTests(ConsoleTestCase):
         self.assertEqual(copy.plan_features.count(), 1)
         self.assertEqual(copy.prices.count(), 1)
 
+    def test_everything_about_a_plan_is_editable(self):
+        plan = self.plan
+        lexi = Feature.objects.get(key="lexicomp")
+        lessons = Feature.objects.get(key="lessons")
+        self.client.post(reverse("console:plan_basics", args=[plan.pk]), {
+            "kind": "plan", "name_fa": "بالینی پلاس", "name_en": "Clinical", "slug": "clinical", "tagline_fa": "برای کارورزی",
+            "audience": "all", "order": "3", "badge_fa": "محبوب‌ترین", "cta_label_fa": "شروع اشتراک",
+            "description_fa": "همهٔ مرجع‌های بالینی", "extra_lines_fa": "پشتیبانی در تلگرام\n\nبه‌روزرسانی ماهانه",
+        })
+        self.client.post(reverse("console:plan_features", args=[plan.pk]), {
+            f"f_{lexi.pk}": "on", f"shown_{lexi.pk}": "1", f"listed_{lexi.pk}": "on", f"label_{lexi.pk}": "بررسی تداخل بی‌سقف",
+            f"f_{lessons.pk}": "on", f"shown_{lessons.pk}": "1",
+        })
+        price = plan.prices.get()
+        self.client.post(reverse("console:plan_prices", args=[plan.pk]), {
+            f"price_{price.pk}": "۱۵۰٬۰۰۰", f"compare_{price.pk}": "۲۰۰۰۰۰", f"plabel_{price.pk}": "۲۵٪ کمتر", f"active_{price.pk}": "on",
+        })
+        plan.refresh_from_db()
+        price.refresh_from_db()
+        self.assertEqual((plan.name_fa, plan.badge_fa, plan.cta_label_fa), ("بالینی پلاس", "محبوب‌ترین", "شروع اشتراک"))
+        self.assertEqual(plan.extra_lines, ["پشتیبانی در تلگرام", "به‌روزرسانی ماهانه"])
+        rows = {pf.feature.key: (pf.label_fa, pf.is_listed) for pf in plan.plan_features.select_related("feature")}
+        self.assertEqual(rows, {"lexicomp": ("بررسی تداخل بی‌سقف", True), "lessons": ("", False)})
+        self.assertEqual((price.compare_at_toman, price.label_fa), (200_000, "۲۵٪ کمتر"))
+
+        # the buyer sees it so on the site, and the catalogue says it too
+        page = self.client.get("/plans/", HTTP_HOST="site.localhost").content.decode()
+        for text in ("محبوب‌ترین", "همهٔ مرجع‌های بالینی", "بررسی تداخل بی‌سقف", "پشتیبانی در تلگرام", "شروع اشتراک", "۲۵٪ کمتر", "۲۰۰٬۰۰۰"):
+            self.assertIn(text, page)
+        self.assertNotIn("درسنامه", page.split("بالینی پلاس")[1].split("</article>")[0])
+        from .serializers import PlanSerializer
+
+        card = PlanSerializer(Plan.objects.prefetch_related("prices", "plan_features__feature").get(pk=plan.pk)).data
+        self.assertEqual((card["badge_fa"], card["extra_lines"]), ("محبوب‌ترین", ["پشتیبانی در تلگرام", "به‌روزرسانی ماهانه"]))
+        self.assertEqual(card["prices"][0]["compare_at_toman"], 200_000)
+
+    def test_a_plan_nobody_bought_can_be_deleted(self):
+        spare = Plan.objects.create(slug="spare", name_fa="یدک", status=Plan.STATUS_HIDDEN)
+        self.assertContains(self.client.get(reverse("console:plan_review", args=[spare.pk])), "بله، حذف شود")
+        self.assertRedirects(self.client.post(reverse("console:plan_delete", args=[spare.pk])), reverse("console:plans"),
+                             fetch_redirect_response=False)
+        self.assertFalse(Plan.objects.filter(pk=spare.pk).exists())
+        self.assertTrue(AdminAction.objects.filter(action="plan_delete").exists())
+        Order.objects.create(user=self.learner, plan=self.plan, amount_toman=1, payable_toman=1)
+        self.client.post(reverse("console:plan_delete", args=[self.plan.pk]))
+        self.assertTrue(Plan.objects.filter(pk=self.plan.pk).exists())
+
     def test_price_with_orders_is_retired_not_deleted(self):
         price = self.plan.prices.get()
         Order.objects.create(user=self.learner, plan=self.plan, price=price, amount_toman=1, payable_toman=1)
@@ -209,6 +256,19 @@ class DiscountAndReportTests(ConsoleTestCase):
         self.assertEqual(list(code.plans.all()), [self.plan])
         res = self.client.post(reverse("console:discounts"), {"code": "BAD", "kind": "percent", "value": "150"})
         self.assertContains(res, "حداکثر ۱۰۰")
+
+    def test_final_price_code_and_deleting_a_code(self):
+        self.client.post(reverse("console:discounts"), {"code": "to99", "kind": "final", "value": "۹۹٬۰۰۰"})
+        code = DiscountCode.objects.get(code="TO99")
+        self.assertEqual((code.kind, code.final_price_toman, code.percent, code.amount_toman), ("final", 99_000, None, None))
+        self.assertContains(self.client.get(reverse("console:discounts")), "قیمت می‌شود")
+        order = Order.objects.create(user=self.learner, plan=self.plan, amount_toman=150_000, discount=code,
+                                     discount_toman=51_000, payable_toman=99_000)
+        self.client.post(reverse("console:discount_delete", args=[code.pk]))
+        self.assertFalse(DiscountCode.objects.filter(pk=code.pk).exists())
+        order.refresh_from_db()
+        self.assertEqual((order.discount_id, order.discount_toman), (None, 51_000))
+        self.assertTrue(AdminAction.objects.filter(action="discount_delete").exists())
 
     def test_sales_and_audit_pages(self):
         order = services.create_order(self.learner, self.plan.prices.get())

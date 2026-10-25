@@ -39,15 +39,21 @@
   <aside class="preview" aria-label="پیش‌نمایش پلن در اپ">
     <span class="sub" style="font-weight:800">کاربر در اپ این را می‌بیند</span>
     <div class="pv">
-      {% if plan.audience == 'pharmacy' %}<span class="chip blue" style="align-self:flex-start">ویژه‌ی داروسازی</span>{% elif plan.audience == 'medicine' %}<span class="chip blue" style="align-self:flex-start">ویژه‌ی پزشکی</span>{% endif %}
+      <span class="row" style="gap:6px">
+        {% if plan.badge_fa %}<span class="chip accent">{{ plan.badge_fa }}</span>{% endif %}
+        {% if plan.audience == 'pharmacy' %}<span class="chip blue">ویژه‌ی داروسازی</span>{% elif plan.audience == 'medicine' %}<span class="chip blue">ویژه‌ی پزشکی</span>{% endif %}
+      </span>
       <b style="font-size:24px">{{ plan.name_fa|default:"نام پلن" }}</b>
-      <span class="sub">{% if plan.is_free %}رایگان{% elif cheapest %}از {{ cheapest.price_toman|toman }} · {{ cheapest.duration_label }}{% else %}قیمت هنوز تعیین نشده{% endif %}</span>
+      {% if plan.tagline_fa %}<span class="sub" style="font-weight:700">{{ plan.tagline_fa }}</span>{% endif %}
+      {% if plan.description_fa %}<span class="sub" style="font-weight:500;line-height:1.8">{{ plan.description_fa|linebreaksbr }}</span>{% endif %}
+      <span class="sub">{% if plan.is_free %}رایگان{% elif cheapest %}از {% if cheapest.compare_at_toman and cheapest.compare_at_toman > cheapest.price_toman %}<s style="opacity:.7">{{ cheapest.compare_at_toman|toman }}</s> {% endif %}{{ cheapest.price_toman|toman }} · {{ cheapest.duration_label }}{% if cheapest.label_fa %} · {{ cheapest.label_fa }}{% endif %}{% else %}قیمت هنوز تعیین نشده{% endif %}</span>
       <div style="height:1px;background:var(--line-2)"></div>
       <ul id="pv-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px">
         {% for line in preview %}<li>{{ line }}</li>{% empty %}<li style="color:var(--muted)">هنوز امکانی انتخاب نشده</li>{% endfor %}
       </ul>
-      {% if not plan.is_free %}<span class="btn primary" style="pointer-events:none">{% if plan.kind == 'product' %}خرید{% else %}خرید اشتراک{% endif %}</span>{% endif %}
+      {% if not plan.is_free %}<span class="btn primary" style="pointer-events:none">{% if plan.cta_label_fa %}{{ plan.cta_label_fa }}{% elif plan.kind == 'product' %}خرید{% else %}خرید اشتراک{% endif %}</span>{% endif %}
     </div>
+    {{ plan.extra_lines|default_if_none:""|json_script:"pv-extras" }}
     <div style="padding:14px 16px;border-radius:16px;background:var(--warn-bg);border:1px solid var(--warn-line);font-size:12.5px;font-weight:700;color:#6B4E12;line-height:1.8">
       {% if plan.is_free %}تغییر پلن رایگان فوراً برای همه‌ی کاربرانی که خرید ندارند اعمال می‌شود.{% else %}تغییر امکانات فقط روی خریدهای بعدی اثر دارد؛ مشترک‌های فعلی تا پایان اشتراکشان همان امکانات زمان خرید را دارند.{% endif %}
     </div>

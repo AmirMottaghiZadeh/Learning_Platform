@@ -83,6 +83,12 @@ class Plan(models.Model):
     name_fa = models.CharField(max_length=120)
     name_en = models.CharField(max_length=120, blank=True)
     tagline_fa = models.CharField(max_length=160, blank=True)
+    # How the plan shows on the plans page and in the catalogue.
+    description_fa = models.TextField(max_length=1000, blank=True)
+    badge_fa = models.CharField(max_length=30, blank=True)  # "محبوب‌ترین"
+    cta_label_fa = models.CharField(max_length=40, blank=True)  # the buy button; empty = the default
+    # More selling points under the features, one per line.
+    extra_lines_fa = models.TextField(max_length=1500, blank=True)
     audience = models.CharField(max_length=10, choices=AUDIENCE_CHOICES, default="all")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     is_free = models.BooleanField(default=False)
@@ -100,6 +106,16 @@ class Plan(models.Model):
     def __str__(self):
         return self.name_fa
 
+    @property
+    def extra_lines(self):
+        return [line.strip() for line in self.extra_lines_fa.splitlines() if line.strip()]
+
+    @property
+    def can_be_deleted(self):
+        """Only a plan nobody ever bought or was given: orders and access keep
+        pointing at their plan."""
+        return not self.is_free and not self.orders.exists() and not self.entitlements.exists()
+
 
 class PlanFeature(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name="plan_features")
@@ -107,6 +123,10 @@ class PlanFeature(models.Model):
     # None = unlimited. Only meaningful on a countable feature.
     limit = models.PositiveIntegerField(null=True, blank=True)
     period = models.CharField(max_length=5, choices=PERIOD_CHOICES, default=PERIOD_DAY)
+    # How the plans page words this feature for this plan; empty = its name
+    # and cap. Unlisted features still apply, they just aren't advertised.
+    label_fa = models.CharField(max_length=160, blank=True)
+    is_listed = models.BooleanField(default=True)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["plan", "feature"], name="billing_plan_feature_once")]
@@ -121,6 +141,9 @@ class PlanPrice(models.Model):
     # None = permanent access (products).
     duration_days = models.PositiveIntegerField(null=True, blank=True)
     price_toman = models.PositiveBigIntegerField()
+    # The price before, shown struck through when higher than price_toman.
+    compare_at_toman = models.PositiveBigIntegerField(null=True, blank=True)
+    label_fa = models.CharField(max_length=40, blank=True)  # "به‌صرفه‌ترین"
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
 
@@ -143,10 +166,19 @@ class PlanPrice(models.Model):
 
 
 class DiscountCode(models.Model):
+    KIND_PERCENT, KIND_AMOUNT, KIND_FINAL = "percent", "amount", "final"
+    KIND_CHOICES = [
+        (KIND_PERCENT, "درصدی"),
+        (KIND_FINAL, "رساندن قیمت به مبلغ مشخص"),
+        (KIND_AMOUNT, "کم کردن مبلغ ثابت"),
+    ]
+
     code = models.CharField(max_length=40, unique=True)
-    # Exactly one of the two is set.
+    # Exactly one of the three is set: a percentage off, an amount off, or
+    # the price the buyer pays (a price at or under it has nothing off).
     percent = models.PositiveSmallIntegerField(null=True, blank=True)
     amount_toman = models.PositiveBigIntegerField(null=True, blank=True)
+    final_price_toman = models.PositiveBigIntegerField(null=True, blank=True)
     max_uses = models.PositiveIntegerField(null=True, blank=True)
     used_count = models.PositiveIntegerField(default=0)
     starts_at = models.DateTimeField(null=True, blank=True)
@@ -161,8 +193,9 @@ class DiscountCode(models.Model):
         ordering = ["-created_at"]
         constraints = [
             models.CheckConstraint(
-                condition=(Q(percent__isnull=False) & Q(amount_toman__isnull=True))
-                | (Q(percent__isnull=True) & Q(amount_toman__isnull=False)),
+                condition=(Q(percent__isnull=False) & Q(amount_toman__isnull=True) & Q(final_price_toman__isnull=True))
+                | (Q(percent__isnull=True) & Q(amount_toman__isnull=False) & Q(final_price_toman__isnull=True))
+                | (Q(percent__isnull=True) & Q(amount_toman__isnull=True) & Q(final_price_toman__isnull=False)),
                 name="billing_discount_one_kind",
             ),
             models.CheckConstraint(
@@ -173,6 +206,24 @@ class DiscountCode(models.Model):
 
     def __str__(self):
         return self.code
+
+    @property
+    def kind(self):
+        if self.percent is not None:
+            return self.KIND_PERCENT
+        return self.KIND_FINAL if self.final_price_toman is not None else self.KIND_AMOUNT
+
+    @property
+    def value(self):
+        return {self.KIND_PERCENT: self.percent, self.KIND_AMOUNT: self.amount_toman, self.KIND_FINAL: self.final_price_toman}[self.kind]
+
+    def off_for(self, amount):
+        """How much this code takes off a price of `amount` toman."""
+        if self.kind == self.KIND_PERCENT:
+            return amount * self.percent // 100
+        if self.kind == self.KIND_FINAL:
+            return max(0, amount - self.final_price_toman)
+        return min(self.amount_toman, amount)
 
 
 class Order(models.Model):

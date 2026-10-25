@@ -6,16 +6,18 @@
     <div class="stack" style="gap:4px"><h2>قیمت و مدت</h2><span class="sub">قیمت‌ها به تومان. برای محصول تکی مدت «دائمی» یعنی دسترسی همیشگی.</span></div>
     <div class="scroll-x">
       <table class="list">
-        <thead><tr><th>مدت</th><th>قیمت (تومان)</th><th>قابل خرید</th><th>حذف</th></tr></thead>
+        <thead><tr><th>مدت</th><th>قیمت (تومان)</th><th>قیمت قبل، خط‌خورده</th><th>برچسب</th><th>قابل خرید</th><th>حذف</th></tr></thead>
         <tbody>
           {% for p in prices %}
             <tr>
               <td><b>{{ p.duration_label }}</b></td>
               <td><label for="price-{{ p.pk }}" style="position:absolute;width:1px;height:1px;overflow:hidden">قیمت {{ p.duration_label }}</label><input class="fld" id="price-{{ p.pk }}" name="price_{{ p.pk }}" value="{{ p.price_toman }}" inputmode="numeric" style="max-width:200px"></td>
+              <td><input class="fld" name="compare_{{ p.pk }}" value="{{ p.compare_at_toman|default_if_none:'' }}" inputmode="numeric" placeholder="خالی" aria-label="قیمت قبل {{ p.duration_label }}" style="min-width:110px"></td>
+              <td><input class="fld" name="plabel_{{ p.pk }}" value="{{ p.label_fa }}" maxlength="40" placeholder="مثلاً «به‌صرفه‌ترین»" aria-label="برچسب {{ p.duration_label }}" style="min-width:130px"></td>
               <td><input type="checkbox" name="active_{{ p.pk }}" aria-label="قابل خرید" {% if p.is_active %}checked{% endif %} style="width:20px;height:20px;accent-color:#0F5C52"></td>
               <td><input type="checkbox" name="delete_{{ p.pk }}" aria-label="حذف این قیمت" style="width:20px;height:20px;accent-color:#93331F"></td>
             </tr>
-          {% empty %}<tr><td colspan="4" class="empty">هنوز قیمتی ندارد؛ پایین اضافه کنید.</td></tr>{% endfor %}
+          {% empty %}<tr><td colspan="6" class="empty">هنوز قیمتی ندارد؛ پایین اضافه کنید.</td></tr>{% endfor %}
         </tbody>
       </table>
     </div>
@@ -25,6 +27,8 @@
         <div><label class="lbl" for="new_days">مدت</label><select class="fld" id="new_days" name="new_days">{% for value, label in durations %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
         <div><label class="lbl" for="new_custom_days">یا تعداد روز دلخواه</label><input class="fld" id="new_custom_days" name="new_custom_days" inputmode="numeric" placeholder="مثلاً ۴۵"></div>
         <div><label class="lbl" for="new_price">قیمت (تومان)</label><input class="fld" id="new_price" name="new_price" inputmode="numeric" placeholder="مثلاً ۱۵۰۰۰۰"></div>
+        <div><label class="lbl" for="new_compare">قیمت قبل، خط‌خورده (اختیاری)</label><input class="fld" id="new_compare" name="new_compare" inputmode="numeric" placeholder="مثلاً ۲۰۰۰۰۰"></div>
+        <div><label class="lbl" for="new_label">برچسب (اختیاری)</label><input class="fld" id="new_label" name="new_label" maxlength="40" placeholder="مثلاً «به‌صرفه‌ترین»"></div>
       </div>
     </div>
     <div class="row" style="justify-content:space-between">

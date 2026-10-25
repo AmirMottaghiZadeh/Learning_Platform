@@ -2,28 +2,30 @@
 <div class="plans">
 {% for card in cards %}{% with plan=card.plan %}
 <article class="pl{% if plan.slug == site.featured_plan_slug %} f{% endif %}" data-plan>
-  {% if plan.slug == site.featured_plan_slug %}<span class="badge">پیشنهادی</span>{% endif %}
+  {% if plan.badge_fa %}<span class="badge">{{ plan.badge_fa }}</span>{% elif plan.slug == site.featured_plan_slug %}<span class="badge">پیشنهادی</span>{% endif %}
   <h3>{{ plan.name_fa }}</h3>
   {% if plan.tagline_fa %}<p class="tag">{{ plan.tagline_fa }}</p>{% endif %}
+  {% if plan.description_fa %}<p class="desc">{{ plan.description_fa|linebreaksbr }}</p>{% endif %}
   {% if plan.is_free %}
     <div class="price num">۰ <small>تومان</small></div>
   {% elif card.prices %}
-    {% with first=card.prices.0 %}<div class="price num" data-price>{{ first.price_toman|num }} <small>تومان / {{ first.duration_label }}</small></div>{% endwith %}
+    {% with first=card.prices.0 %}<div class="price num" data-price>{% if first.compare_at_toman and first.compare_at_toman > first.price_toman %}<s class="was">{{ first.compare_at_toman|num }}</s> {% endif %}{{ first.price_toman|num }} <small>تومان / {{ first.duration_label }}</small>{% if first.label_fa %} <span class="plabel">{{ first.label_fa }}</span>{% endif %}</div>{% endwith %}
     {% if card.prices|length > 1 %}
     <div class="chips" role="group" aria-label="مدت اشتراک">
-      {% for pr in card.prices %}<a class="chip{% if forloop.first %} on{% endif %}" href="{% url 'site:checkout' pr.pk %}" data-opt data-amount="{{ pr.price_toman|num }}" data-label="{{ pr.duration_label }}">{{ pr.duration_label }}</a>{% endfor %}
+      {% for pr in card.prices %}<a class="chip{% if forloop.first %} on{% endif %}" href="{% url 'site:checkout' pr.pk %}" data-opt data-amount="{{ pr.price_toman|num }}" data-label="{{ pr.duration_label }}"{% if pr.compare_at_toman and pr.compare_at_toman > pr.price_toman %} data-was="{{ pr.compare_at_toman|num }}"{% endif %}{% if pr.label_fa %} data-tag="{{ pr.label_fa }}"{% endif %}>{{ pr.duration_label }}</a>{% endfor %}
     </div>
     {% endif %}
   {% else %}
     <div class="price"><small>به‌زودی</small></div>
   {% endif %}
   <ul>
-    {% for f in card.features %}<li><span>{{ f.name }}{% if f.limit is not None %} · {{ f.limit|num }} {{ f.unit }} {{ f.period }}{% endif %}</span></li>{% empty %}<li><span>دسترسی به بخش‌های رایگان اپ</span></li>{% endfor %}
+    {% for f in card.features %}<li><span>{% if f.label %}{{ f.label }}{% else %}{{ f.name }}{% if f.limit is not None %} · {{ f.limit|num }} {{ f.unit }} {{ f.period }}{% endif %}{% endif %}</span></li>{% empty %}{% if not card.extra %}<li><span>دسترسی به بخش‌های رایگان اپ</span></li>{% endif %}{% endfor %}
+    {% for line in card.extra %}<li><span>{{ line }}</span></li>{% endfor %}
   </ul>
   {% if plan.is_free %}
     <a class="btn block" href="{{ site.app_url }}">شروع رایگان</a>
   {% elif card.prices %}
-    <a class="btn p block" href="{% url 'site:checkout' card.prices.0.pk %}" data-buy>خرید اشتراک</a>
+    <a class="btn p block" href="{% url 'site:checkout' card.prices.0.pk %}" data-buy>{{ plan.cta_label_fa|default:"خرید اشتراک" }}</a>
   {% endif %}
 </article>
 {% endwith %}{% empty %}

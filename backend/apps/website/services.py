@@ -99,12 +99,14 @@ def plan_cards(*, products=False):
         prices = [p for p in plan.prices.all() if p.is_active]
         features = []
         for pf in plan.plan_features.all():
-            if not pf.feature.is_active:
+            # an unlisted feature still applies; the card just doesn't say so
+            if not pf.feature.is_active or not pf.is_listed:
                 continue
             limit = pf.limit if pf.feature.countable and pf.limit is not None else None
             period = pf.get_period_display() if limit is not None else ""
-            features.append({"name": pf.feature.name_fa, "limit": limit, "period": period, "unit": pf.feature.unit_fa})
-        cards.append({"plan": plan, "prices": prices, "features": features})
+            features.append({"name": pf.feature.name_fa, "limit": limit, "period": period, "unit": pf.feature.unit_fa,
+                             "label": pf.label_fa})
+        cards.append({"plan": plan, "prices": prices, "features": features, "extra": plan.extra_lines})
     return cards
 
 

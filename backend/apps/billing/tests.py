@@ -141,6 +141,15 @@ class DiscountTests(TestCase):
         self.assertEqual(services.quote(self.price, pct), (200_000, 50_000, 150_000))
         self.assertEqual(services.quote(self.price, fixed), (200_000, 200_000, 0))
 
+    def test_final_price(self):
+        final = DiscountCode.objects.create(code="TO150", final_price_toman=150_000)
+        self.assertEqual(final.kind, DiscountCode.KIND_FINAL)
+        self.assertEqual(services.quote(self.price, final), (200_000, 50_000, 150_000))
+        cheap = PlanPrice.objects.create(plan=self.plan, duration_days=7, price_toman=120_000)
+        with self.assertRaises(services.BillingError) as ctx:
+            services.quote(cheap, final)
+        self.assertEqual(ctx.exception.code, "DISCOUNT_NO_EFFECT")
+
     def test_rejections(self):
         cases = {
             "DISCOUNT_INACTIVE": {"percent": 10, "is_active": False},

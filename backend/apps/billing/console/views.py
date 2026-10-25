@@ -487,6 +487,16 @@ def plans(request):
     })
 
 
+def feature_line(pf):
+    """How a feature reads on the plan's card: its own wording, or its name
+    with the cap."""
+    if pf.label_fa:
+        return pf.label_fa
+    if pf.feature.countable and pf.limit is not None:
+        return fa_digits(f"{pf.limit} {pf.feature.unit_fa or 'بار'} {dict(PERIOD_CHOICES)[pf.period]}") + f" · {pf.feature.name_fa}"
+    return pf.feature.name_fa
+
+
 def _wizard(request, plan, step, extra):
     done = {"basics": plan is not None}
     if plan is not None:
@@ -499,10 +509,9 @@ def _wizard(request, plan, step, extra):
     preview = []
     if plan is not None:
         for pf in plan.plan_features.select_related("feature").order_by("feature__order"):
-            text = pf.feature.name_fa
-            if pf.feature.countable and pf.limit is not None:
-                text = fa_digits(f"{pf.limit} {pf.feature.unit_fa or 'بار'} {dict(PERIOD_CHOICES)[pf.period]}") + f" · {pf.feature.name_fa}"
-            preview.append(text)
+            if pf.is_listed:
+                preview.append(feature_line(pf))
+        preview += plan.extra_lines
     cheapest = plan.prices.filter(is_active=True).order_by("price_toman").first() if plan else None
     return render(request, f"billing/console/plan_{step}.html", {
         "active": "plans", "plan": plan, "steps": steps, "step": step, "preview": preview, "cheapest": cheapest, **extra,
@@ -557,11 +566,14 @@ def plan_features(request, pk):
                             errors.append(feature.name_fa)
                             continue
                         limit = int(raw)
+                label = (request.POST.get(f"label_{feature.pk}") or "").strip()[:160]
+                # a card only sends "listed" once its form shows the switch
+                listed = request.POST.get(f"listed_{feature.pk}") == "on" if f"shown_{feature.pk}" in request.POST else True
                 if pf is None:
-                    PlanFeature.objects.create(plan=plan, feature=feature, limit=limit, period=period)
+                    PlanFeature.objects.create(plan=plan, feature=feature, limit=limit, period=period, label_fa=label, is_listed=listed)
                 else:
-                    pf.limit, pf.period = limit, period
-                    pf.save(update_fields=["limit", "period"])
+                    pf.limit, pf.period, pf.label_fa, pf.is_listed = limit, period, label, listed
+                    pf.save(update_fields=["limit", "period", "label_fa", "is_listed"])
         if errors:
             messages.error(request, "سقف این امکانات باید عدد مثبت یا خالی باشد: " + "، ".join(errors))
             return redirect("console:plan_features", pk=plan.pk)
@@ -572,7 +584,8 @@ def plan_features(request, pk):
         return redirect("console:plan_review" if plan.is_free else "console:plan_prices", pk=plan.pk)
     cards = [
         {"f": f, "pf": current.get(f.pk), "on": f.pk in current, "limit": current[f.pk].limit if f.pk in current else None,
-         "period": current[f.pk].period if f.pk in current else "day"}
+         "period": current[f.pk].period if f.pk in current else "day",
+         "label": current[f.pk].label_fa if f.pk in current else "", "listed": current[f.pk].is_listed if f.pk in current else True}
         for f in features
     ]
     return _wizard(request, plan, "features", {
@@ -602,8 +615,10 @@ def plan_prices(request, pk):
                     bad = True
                     continue
                 price.price_toman = amount
+                price.compare_at_toman = parse_amount(request.POST.get(f"compare_{price.pk}", ""))
+                price.label_fa = (request.POST.get(f"plabel_{price.pk}") or "").strip()[:40]
                 price.is_active = request.POST.get(f"active_{price.pk}") == "on"
-                price.save(update_fields=["price_toman", "is_active"])
+                price.save(update_fields=["price_toman", "compare_at_toman", "label_fa", "is_active"])
             new_amount = parse_amount(request.POST.get("new_price", ""))
             if new_amount is not None:
                 try:
@@ -611,7 +626,11 @@ def plan_prices(request, pk):
                 except ValueError:
                     days, bad = None, True
                 if not bad:
-                    PlanPrice.objects.create(plan=plan, duration_days=days, price_toman=new_amount, order=plan.prices.count())
+                    PlanPrice.objects.create(
+                        plan=plan, duration_days=days, price_toman=new_amount, order=plan.prices.count(),
+                        compare_at_toman=parse_amount(request.POST.get("new_compare", "")),
+                        label_fa=(request.POST.get("new_label") or "").strip()[:40],
+                    )
         if bad:
             messages.error(request, "قیمت‌ها و مدت‌ها باید عدد باشند.")
             return redirect("console:plan_prices", pk=plan.pk)
@@ -653,17 +672,35 @@ def plan_copy(request, pk):
         copy = Plan.objects.create(
             kind=source.kind, slug=f"{source.slug}-copy-{timezone.now():%H%M%S}", name_fa=f"{source.name_fa} (کپی)",
             name_en=source.name_en, tagline_fa=source.tagline_fa, audience=source.audience,
-            status=Plan.STATUS_HIDDEN, order=source.order + 1,
+            description_fa=source.description_fa, badge_fa=source.badge_fa, cta_label_fa=source.cta_label_fa,
+            extra_lines_fa=source.extra_lines_fa, status=Plan.STATUS_HIDDEN, order=source.order + 1,
         )
         PlanFeature.objects.bulk_create(
-            PlanFeature(plan=copy, feature_id=pf.feature_id, limit=pf.limit, period=pf.period) for pf in source.plan_features.all()
+            PlanFeature(plan=copy, feature_id=pf.feature_id, limit=pf.limit, period=pf.period, label_fa=pf.label_fa, is_listed=pf.is_listed)
+            for pf in source.plan_features.all()
         )
         PlanPrice.objects.bulk_create(
-            PlanPrice(plan=copy, duration_days=p.duration_days, price_toman=p.price_toman, order=p.order) for p in source.prices.filter(is_active=True)
+            PlanPrice(plan=copy, duration_days=p.duration_days, price_toman=p.price_toman, order=p.order,
+                      compare_at_toman=p.compare_at_toman, label_fa=p.label_fa)
+            for p in source.prices.filter(is_active=True)
         )
     services.record(request, "plan_copy", f"کپی «{source.name_fa}»", details={"plan": copy.pk, "from": source.pk})
     messages.success(request, "کپی ساخته شد؛ نامش را عوض کنید و منتشرش کنید.")
     return redirect("console:plan_basics", pk=copy.pk)
+
+
+@superuser_required
+@require_POST
+def plan_delete(request, pk):
+    plan = get_object_or_404(Plan, pk=pk)
+    if not plan.can_be_deleted:
+        messages.error(request, "این پلن خریدار یا دسترسی داده‌شده دارد و حذف نمی‌شود؛ وضعیتش را «غیرفعال» کنید.")
+        return redirect("console:plan_review", pk=plan.pk)
+    name = plan.name_fa
+    services.record(request, "plan_delete", f"حذف {plan.get_kind_display()} «{name}»", details={"plan": plan.pk})
+    plan.delete()
+    messages.success(request, f"«{name}» حذف شد.")
+    return redirect("console:plans")
 
 
 # -- features -----------------------------------------------------------------
@@ -738,8 +775,9 @@ def discounts(request):
             d = form.cleaned_data
             code = DiscountCode.objects.create(
                 code=d["code"],
-                percent=d["value"] if d["kind"] == "percent" else None,
-                amount_toman=d["value"] if d["kind"] == "amount" else None,
+                percent=d["value"] if d["kind"] == DiscountCode.KIND_PERCENT else None,
+                amount_toman=d["value"] if d["kind"] == DiscountCode.KIND_AMOUNT else None,
+                final_price_toman=d["value"] if d["kind"] == DiscountCode.KIND_FINAL else None,
                 max_uses=d["max_uses"], starts_at=d["starts"], ends_at=d["ends"], note=d["note"],
             )
             code.plans.set(d["plans"])
@@ -760,6 +798,17 @@ def discount_toggle(request, pk):
     code.is_active = not code.is_active
     code.save(update_fields=["is_active"])
     services.record(request, "discount_toggle", f"کد {code.code}: {'فعال' if code.is_active else 'غیرفعال'}")
+    return redirect("console:discounts")
+
+
+@superuser_required
+@require_POST
+def discount_delete(request, pk):
+    """Gone for good; orders paid with it keep what it took off."""
+    code = get_object_or_404(DiscountCode, pk=pk)
+    services.record(request, "discount_delete", f"حذف کد تخفیف {code.code}", details={"used": code.used_count})
+    code.delete()
+    messages.success(request, f"کد {code.code} حذف شد.")
     return redirect("console:discounts")
 
 

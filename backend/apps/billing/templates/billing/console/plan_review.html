@@ -34,4 +34,18 @@
       <button class="btn primary" type="submit">ذخیره و پایان</button>
     </div>
   </form>
+  {% if not plan.is_free %}
+  <section class="card stack" style="gap:10px">
+    <h2>حذف</h2>
+    {% if plan.can_be_deleted %}
+      <p class="sub">هنوز کسی این را نخریده و به کسی داده نشده؛ حذفش همه‌چیزش را پاک می‌کند.</p>
+      <details>
+        <summary class="btn danger" style="display:inline-flex">حذف «{{ plan.name_fa }}»</summary>
+        <form method="post" action="{% url 'console:plan_delete' plan.pk %}" class="row" style="margin-top:10px">{% csrf_token %}<span class="sub">مطمئنید؟ برگشت ندارد.</span><button class="btn danger" type="submit">بله، حذف شود</button></form>
+      </details>
+    {% else %}
+      <p class="sub">این پلن خریدار یا دسترسی داده‌شده دارد، پس حذف نمی‌شود تا سابقهٔ آن‌ها بماند. برای کنار گذاشتنش وضعیت را «غیرفعال» کنید.</p>
+    {% endif %}
+  </section>
+  {% endif %}
 {% endblock %}
