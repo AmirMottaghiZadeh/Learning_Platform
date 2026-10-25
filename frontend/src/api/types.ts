@@ -483,8 +483,12 @@ export interface UptodateTopic {
 }
 
 export interface UptodateSearchResult extends UptodateTopic {
-  /** plain text around the first query hit in the article body */
+  /** always empty now: the search reads titles only */
   snippet: string;
+  /** the title-word starts the query was matched with, to highlight */
+  terms?: string[];
+  /** the query with its misspelt words corrected; "" when none was */
+  corrected?: string;
 }
 
 export interface UptodateArticle extends UptodateTopic {

@@ -24,9 +24,8 @@ const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 // still under "All".
 const MAX_SECTION_CHIPS = 4;
 
-function escapeRegExp(text: string) {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
+// some titles italicise a name: "<i>Chlamydia pneumoniae</i>"
+const TAG_RE = /<[^>]*>/g;
 
 /** UpToDate search (design option 1): a white header with the search field
  * and one chip per clinical section among the results, then a card per
@@ -59,7 +58,8 @@ export function UptodateScreen() {
   }, [rows]);
   const activeSection = section && sections.some(([s]) => s === section) ? section : null;
   const visible = activeSection ? rows.filter((r) => r.section === activeSection) : rows;
-  const words = useMemo(() => (query.match(/[A-Za-z0-9؀-ۿ]+/g) ?? []).slice(0, 8), [query]);
+  // the query as searched, when a misspelt word was corrected
+  const corrected = rows[0]?.corrected ?? "";
   useTour("uptodate", true);
 
   return (
@@ -187,15 +187,26 @@ export function UptodateScreen() {
             </AppText>
           </View>
         ) : (
-          visible.map((r) => (
-            <ResultCard
-              key={r.id}
-              result={r}
-              words={words}
-              onPress={() => navigate("uptodateOutline", { id: r.id, title: r.title })}
-              shadow={shadows.raisedSm}
-            />
-          ))
+          <>
+            {corrected ? (
+              <View style={{ flexDirection: row, flexWrap: "wrap", alignItems: "center", gap: 5 }}>
+                <AppText weight="600" size={12.5} muted>
+                  {t("uptodateCorrected")}
+                </AppText>
+                <AppText weight="800" size={12.5} color={colors.accent} style={LTR}>
+                  {corrected}
+                </AppText>
+              </View>
+            ) : null}
+            {visible.map((r) => (
+              <ResultCard
+                key={r.id}
+                result={r}
+                onPress={() => navigate("uptodateOutline", { id: r.id, title: r.title.replace(TAG_RE, "") })}
+                shadow={shadows.raisedSm}
+              />
+            ))}
+          </>
         )}
       </ScrollView>
     </View>
@@ -240,31 +251,30 @@ function Chip({ label, count, on, onPress }: { label: string; count?: string; on
   );
 }
 
-function ResultCard({
-  result,
-  words,
-  onPress,
-  shadow,
-}: {
-  result: UptodateSearchResult;
-  words: string[];
-  onPress: () => void;
-  shadow: object;
-}) {
+function ResultCard({ result, onPress, shadow }: { result: UptodateSearchResult; onPress: () => void; shadow: object }) {
   const { colors } = useTheme();
-  const snippet = useMemo(() => {
-    if (!result.snippet || words.length === 0) return result.snippet;
-    const re = new RegExp(`(${words.map(escapeRegExp).join("|")})`, "gi");
-    return result.snippet.split(re).map((part, i) =>
-      i % 2 === 1 ? (
-        <Text key={i} style={{ backgroundColor: `${colors.accent}2E`, color: colors.ink, borderRadius: 3 }}>
-          {part}
-        </Text>
-      ) : (
-        part
-      ),
-    );
-  }, [result.snippet, words, colors]);
+  // the start of each title word the query matched, highlighted
+  const title = useMemo(() => {
+    const text = result.title.replace(TAG_RE, "");
+    const terms = result.terms ?? [];
+    if (!terms.length) return text;
+    const parts: React.ReactNode[] = [];
+    let at = 0;
+    for (const word of text.matchAll(/[A-Za-z0-9]+/g)) {
+      const lower = word[0].toLowerCase();
+      const length = Math.max(0, ...terms.filter((t) => lower.startsWith(t)).map((t) => t.length));
+      if (!length) continue;
+      parts.push(text.slice(at, word.index));
+      parts.push(
+        <Text key={word.index} style={{ backgroundColor: `${colors.accent}2E`, color: colors.ink, borderRadius: 3 }}>
+          {word[0].slice(0, length)}
+        </Text>,
+      );
+      at = word.index! + length;
+    }
+    parts.push(text.slice(at));
+    return parts;
+  }, [result.title, result.terms, colors]);
 
   return (
     <Pressable
@@ -277,13 +287,8 @@ function ResultCard({
         </AppText>
       ) : null}
       <AppText weight="800" size={15} style={[LTR, { lineHeight: 21 }]}>
-        {result.title}
+        {title}
       </AppText>
-      {result.snippet ? (
-        <AppText weight="500" size={12.5} muted style={[LTR, { lineHeight: 19 }]}>
-          {snippet}
-        </AppText>
-      ) : null}
       {result.updated ? (
         <AppText weight="600" size={11} muted style={[LTR, { lineHeight: 16, opacity: 0.85 }]}>
           Updated {shortDate(result.updated)}

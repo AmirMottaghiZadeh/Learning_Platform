@@ -27,11 +27,13 @@ SQLite layout (`settings.UPTODATE_DB_DIR`):
 """
 
 import base64
+import bisect
 import json
 import re
 import sqlite3
 import threading
 import zlib
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
@@ -116,6 +118,9 @@ def close_all() -> None:
             _MYSQL_CONN.close()
             _MYSQL_CONN = None
     snapshot_version.cache_clear()
+    _title_index.cache_clear()
+    _term.cache_clear()
+    _section_for.cache_clear()
 
 
 @lru_cache(maxsize=1)
@@ -139,12 +144,11 @@ def _search_words(raw: str) -> list[str]:
     return re.findall(r"[A-Za-z0-9؀-ۿ]+", raw or "")[:8]
 
 
-# How much of each hit's plain-text `content` the search reads to build its
-# snippet. The text opens with the title, contributors and dates; the body
-# starts right after "This topic last updated: <date>.", so a few KB covers
-# the header plus the opening paragraphs.
+# How much of a topic's plain-text `content` holds its header: the title,
+# contributors and dates. The body starts right after "This topic last
+# updated: <date>.", so a few KB covers the header plus the opening
+# paragraphs the offline packages store (`snippet_source`).
 SNIPPET_SOURCE_CHARS = 6000
-SNIPPET_RADIUS = 110
 _UPDATED_RE = re.compile(r"This topic last updated:\s*([A-Z][a-z]{2,8}\.? \d{1,2}, \d{4})\.?")
 # An all-caps run-in heading ("INTRODUCTION — ") wherever it sits.
 _RUN_IN_HEADING_RE = re.compile(r"\s*\b[A-Z][A-Z0-9 ,'()/&-]{2,80}\s+—\s+")
@@ -163,8 +167,8 @@ def _updated_from_text(text: str) -> str:
 
 def snippet_source(content: str, title: str = "") -> str:
     """The article body's opening as clean plain text, without the
-    title/author header -- what `_snippet` cuts its excerpt from. The offline
-    packages store this per topic, so the app cuts the same excerpt."""
+    title/author header. The offline packages store this per topic (app
+    builds before 1.3 cut a search-result excerpt from it)."""
     text = (content or "").replace("\xa0", " ")
     header = _UPDATED_RE.search(text)
     if header:
@@ -178,35 +182,7 @@ def snippet_source(content: str, title: str = "") -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def _snippet(content: str, words: list[str], title: str = "") -> str:
-    """A short plain-text excerpt around the first query hit in the article
-    body (not the title/author header), or the body's opening when the hit
-    sits further in than the text read."""
-    text = snippet_source(content, title)
-    if not text:
-        return ""
-
-    lowered = text.lower()
-    phrase = " ".join(words).lower()
-    hit = lowered.find(phrase) if phrase else -1
-    if hit < 0:
-        hits = [i for i in (lowered.find(w.lower()) for w in words) if i >= 0]
-        hit = min(hits) if hits else -1
-
-    if hit < 0:
-        start, end = 0, SNIPPET_RADIUS * 2
-    else:
-        start, end = max(0, hit - SNIPPET_RADIUS), hit + SNIPPET_RADIUS
-    if start > 0:
-        space = text.find(" ", start)
-        start = space + 1 if 0 <= space < hit else start
-    if end < len(text):
-        space = text.rfind(" ", start, end)
-        end = space if space > start else end
-    excerpt = text[start:end].strip()
-    return ("…" if start > 0 else "") + excerpt + ("…" if end < len(text) else "")
-
-
+@lru_cache(maxsize=8192)
 def _section_for(content_id: str) -> str:
     """Top-level TOC ancestor title for an article, e.g. 'Cardiovascular Medicine'."""
     content_id = str(content_id)
@@ -250,45 +226,267 @@ def _section_for(content_id: str) -> str:
     return ""
 
 
+# ---- Title search ---------------------------------------------------------
+#
+# The search reads topic titles only -- never the article text. Every title
+# is held in memory (one read per snapshot), so SQLite and MySQL answer
+# alike, and the offline package's search (frontend
+# src/offline/uptodateLocal.ts) mirrors this section line for line.
+
+_TITLE_WORD_RE = re.compile(r"[a-z0-9]+")
+_TAG_RE = re.compile(r"<[^>]*>")
+
+
+def _title_words(title: str) -> list[str]:
+    # some titles italicise a name: "<i>Chlamydia pneumoniae</i>"
+    return _TITLE_WORD_RE.findall(_TAG_RE.sub(" ", title or "").lower())
+
+
+@dataclass
+class TitleIndex:
+    rowids: list[int]
+    ids: list[str]
+    titles: list[str]
+    words: list[list[str]]
+    # every distinct title word, sorted, and the titles that have it
+    vocab: list[str]
+    postings: dict[str, list[int]]
+    # each vocab word's letters (`_letters`)
+    letters: list[int] = field(default_factory=list)
+    # each topic's last-updated date, read from its header on first need
+    updated: dict[int, str] = field(default_factory=dict)
+
+
+def build_title_index(rows) -> TitleIndex:
+    """`rows`: (rowid, contentId, title) of every topic article."""
+    rowids, ids, titles, words = [], [], [], []
+    postings: dict[str, list[int]] = {}
+    seen = set()
+    for rowid, content_id, title in rows:
+        # one entry per topic, as in the offline package
+        if str(content_id) in seen:
+            continue
+        seen.add(str(content_id))
+        i = len(ids)
+        rowids.append(rowid)
+        ids.append(str(content_id))
+        titles.append(title or "")
+        title_words = _title_words(title)
+        words.append(title_words)
+        for word in dict.fromkeys(title_words):
+            postings.setdefault(word, []).append(i)
+    vocab = sorted(postings)
+    return TitleIndex(rowids, ids, titles, words, vocab, postings, [_letters(w) for w in vocab])
+
+
+def _letters(word: str) -> int:
+    """The set of characters in `word`, as bits."""
+    bits = 0
+    for ch in word:
+        bits |= 1 << (ord(ch) & 63)
+    return bits
+
+
+@lru_cache(maxsize=1)
+def _title_index(version: str) -> TitleIndex:
+    if _using_mysql():
+        with _mysql_conn().cursor() as cur:
+            cur.execute(
+                "SELECT rowid, contentId, title FROM fts WHERE type = %s ORDER BY rowid",
+                (TOPIC_TYPE,),
+            )
+            rows = [(r["rowid"], r["contentId"], r["title"]) for r in cur.fetchall()]
+    else:
+        rows = _sqlite_conn("fts").execute(
+            "SELECT rowid, contentId, title FROM fts WHERE type = ? ORDER BY rowid",
+            (TOPIC_TYPE,),
+        ).fetchall()
+    return build_title_index(rows)
+
+
+def _prefixed(vocab: list[str], prefix: str) -> list[str]:
+    """The title words that start with `prefix`."""
+    start = bisect.bisect_left(vocab, prefix)
+    end = start
+    while end < len(vocab) and vocab[end].startswith(prefix):
+        end += 1
+    return vocab[start:end]
+
+
+def _max_typos(length: int, prefix: bool) -> int:
+    # a word still being typed gets fewer: its starts are many
+    return 1 if length <= 4 else 2 if length <= 8 or prefix else 3
+
+
+def _typo_distance(word: str, candidate: str, limit: int, prefix: bool) -> tuple[int, int] | None:
+    """Edits (insert, delete, substitute, swap two neighbours) from `word` to
+    `candidate` -- or, with `prefix`, to the closest start of it -- as
+    (distance, length of that start); None past `limit`."""
+    m = len(word)
+    n = min(len(candidate), m + limit) if prefix else len(candidate)
+    if n < m - limit or n > m + limit:
+        return None
+    over = limit + 1
+    # only cells within `limit` of the diagonal can stay within `limit`
+    before: list[int] | None = None
+    row = [j if j <= limit else over for j in range(n + 1)]
+    for i in range(1, m + 1):
+        current = [over] * (n + 1)
+        if i <= limit:
+            current[0] = i
+        low, high = max(1, i - limit), min(n, i + limit)
+        letter = word[i - 1]
+        for j in range(low, high + 1):
+            other = candidate[j - 1]
+            value = row[j - 1] + (letter != other)
+            if row[j] + 1 < value:
+                value = row[j] + 1
+            if current[j - 1] + 1 < value:
+                value = current[j - 1] + 1
+            if (before is not None and j > 1 and letter == candidate[j - 2]
+                    and word[i - 2] == other and before[j - 2] + 1 < value):
+                value = before[j - 2] + 1
+            current[j] = value if value < over else over
+        if min(current[low - 1:high + 1]) > limit:
+            return None
+        before, row = row, current
+    if not prefix:
+        return (row[n], n) if row[n] <= limit else None
+    # the closest start, at least as long as the word less its typos; a tie
+    # goes to the longer start (the whole word, when it fits)
+    best = None
+    for j in range(max(1, m - limit), n + 1):
+        if row[j] <= limit and (best is None or row[j] <= best[0]):
+            best = (row[j], j)
+    return best
+
+
+def _nearest(word: str, index: TitleIndex) -> str | None:
+    """The title word -- or a word's start, for a word still being typed --
+    closest to a misspelt `word`."""
+    # a short word is only compared to whole words: its starts are too many
+    prefix = len(word) >= 5
+    whole_limit, prefix_limit = _max_typos(len(word), False), _max_typos(len(word), prefix)
+    mine = _letters(word)
+    best_key, best = None, None
+    for candidate, theirs in zip(index.vocab, index.letters):
+        # each of the word's letters the candidate lacks costs an edit, and
+        # so does each of the candidate's the word lacks: a quick lower bound
+        lacking = (mine & ~theirs).bit_count()
+        if lacking > whole_limit:
+            continue
+        found = None
+        if max(lacking, (theirs & ~mine).bit_count()) <= whole_limit:
+            found = _typo_distance(word, candidate, whole_limit, False)
+        if prefix and lacking <= prefix_limit:
+            start = _typo_distance(word, candidate, prefix_limit, True)
+            if start and (found is None or start[0] < found[0]):
+                found = start
+        if found is None:
+            continue
+        distance, length = found
+        whole = length == len(candidate)
+        # fewest typos, then a whole word, then the word most titles share
+        key = (distance, not whole, -len(index.postings[candidate]), candidate)
+        if best_key is None or key < best_key:
+            best_key, best = key, candidate[:length]
+    return best
+
+
+@lru_cache(maxsize=4096)
+def _term(word: str, version: str) -> tuple[str, str, bool]:
+    """How one query word is matched: the start of title words it must be,
+    the whole word it stands for, and whether that is a spelling correction."""
+    whole = word.lower()
+    index = _title_index(version)
+    if len(whole) < 3 or _prefixed(index.vocab, whole):
+        # a plural also finds the singular ("infections" -> "infection")
+        singular = whole[:-1]
+        if len(whole) >= 6 and whole.endswith("s") and _is_word(index.vocab, singular):
+            return singular, whole, False
+        return whole, whole, False
+    nearest = _nearest(whole, index)
+    return (nearest, nearest, True) if nearest else (whole, whole, False)
+
+
+def _is_word(vocab: list[str], word: str) -> bool:
+    i = bisect.bisect_left(vocab, word)
+    return i < len(vocab) and vocab[i] == word
+
+
+def _rank(index: TitleIndex, i: int, matched: list[tuple[str, str, bool]]) -> tuple:
+    words = index.words[i]
+    whole = sum(1 for term, word, _ in matched if term in words or word in words)
+    first = min(
+        (p for p, word in enumerate(words) if any(word.startswith(term) for term, _, _ in matched)),
+        default=len(words),
+    )
+    exact = words == [word for _, word, _ in matched]
+    # the title that is the query, then whole words over starts, then the
+    # word early in the title, then shorter titles
+    return (not exact, -whole, first, len(words), index.titles[i].lower(), i)
+
+
+def _updated_dates(index: TitleIndex, positions: list[int]) -> None:
+    """Fill in the topics' last-updated dates, from their header text."""
+    missing = [index.rowids[i] for i in positions if index.rowids[i] not in index.updated]
+    if not missing:
+        return
+    marks = ",".join(["%s" if _using_mysql() else "?"] * len(missing))
+    if _using_mysql():
+        with _mysql_conn().cursor() as cur:
+            cur.execute(
+                f"SELECT rowid, LEFT(content, %s) AS head FROM fts WHERE rowid IN ({marks})",
+                (SNIPPET_SOURCE_CHARS, *missing),
+            )
+            rows = cur.fetchall()
+    else:
+        rows = _sqlite_conn("fts").execute(
+            f"SELECT rowid, substr(content, 1, ?) AS head FROM fts WHERE rowid IN ({marks})",
+            (SNIPPET_SOURCE_CHARS, *missing),
+        ).fetchall()
+    for row in rows:
+        index.updated[row["rowid"]] = _updated_from_text((row["head"] or "").replace("\xa0", " "))
+
+
 def search_topics(query: str, limit: int = 25) -> list[dict]:
-    """Find topic articles by title only; body text is read for hit previews."""
+    """Topic articles whose title has every query word -- as the start of a
+    title word, a misspelt one corrected to the closest title word. Only
+    titles are searched."""
     words = _search_words(query)
     if not words:
         return []
     limit = int(limit)
-
-    if _using_mysql():
-        # Boolean-mode fulltext: "+word*" requires the prefix in every match,
-        # the closest MySQL equivalent to FTS5's implicit-AND prefix query.
-        match = " ".join(f"+{w}*" for w in words)
-        with _mysql_conn().cursor() as cur:
-            cur.execute(
-                "SELECT title, contentId, LEFT(content, %s) AS head, "
-                "MATCH(title) AGAINST (%s IN BOOLEAN MODE) AS relevance "
-                "FROM fts WHERE MATCH(title) AGAINST (%s IN BOOLEAN MODE) "
-                "AND type = %s ORDER BY relevance DESC LIMIT %s",
-                (SNIPPET_SOURCE_CHARS, match, match, TOPIC_TYPE, limit),
-            )
-            rows = cur.fetchall()
-    else:
-        match = " ".join(f'"{w}"*' for w in words)
-        rows = _sqlite_conn("fts").execute(
-            "SELECT title, contentId, substr(content, 1, ?) AS head FROM fts "
-            "WHERE title MATCH ? AND type = ? ORDER BY rank LIMIT ?",
-            (SNIPPET_SOURCE_CHARS, match, TOPIC_TYPE, limit),
-        ).fetchall()
-
     version = snapshot_version()
+    index = _title_index(version)
+
+    matched = [_term(word, version) for word in words]
+    terms = list(dict.fromkeys(term for term, _, _ in matched))
+    corrected = " ".join(word for _, word, _ in matched) if any(fix for _, _, fix in matched) else ""
+
+    found: set[int] | None = None
+    for term in terms:
+        having = set()
+        for word in _prefixed(index.vocab, term):
+            having.update(index.postings[word])
+        found = having if found is None else found & having
+        if not found:
+            return []
+    top = sorted(found, key=lambda i: _rank(index, i, matched))[:limit]
+
+    _updated_dates(index, top)
     return [
         {
-            "id": row["contentId"],
-            "title": row["title"],
-            "section": _section_for(row["contentId"]),
+            "id": index.ids[i],
+            "title": index.titles[i],
+            "section": _section_for(index.ids[i]),
             "version": version,
-            "snippet": _snippet(row["head"], words, row["title"]),
-            "updated": _updated_from_text((row["head"] or "").replace("\xa0", " ")),
+            "snippet": "",
+            "updated": index.updated.get(index.rowids[i], ""),
+            "terms": terms,
+            "corrected": corrected,
         }
-        for row in rows
+        for i in top
     ]
 
 

@@ -12,8 +12,14 @@ class UptodateTopicSerializer(serializers.Serializer):
 
 
 class UptodateSearchResultSerializer(UptodateTopicSerializer):
-    # Plain text around the first query hit in the article body.
+    # Always empty: the search reads titles only. Kept for app builds up to
+    # 0.1.0, which show it under the title when it has text.
     snippet = serializers.CharField(allow_blank=True)
+    # The title-word starts the query was matched with -- what the app
+    # highlights in the title.
+    terms = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+    # The query with its misspelt words corrected; "" when none was.
+    corrected = serializers.CharField(allow_blank=True, required=False, default="")
 
 
 class UptodateArticleSerializer(UptodateTopicSerializer):

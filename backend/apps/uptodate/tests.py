@@ -106,7 +106,9 @@ class UptodateTests(TestCase):
         self.assertEqual(len(res.data), 1)  # the type-2 fragment is excluded
         self.assertEqual(res.data[0]["id"], "3851")
         self.assertEqual(res.data[0]["section"], "Cardiovascular Medicine")
-        self.assertIn("hypertension", res.data[0]["snippet"])
+        self.assertEqual(res.data[0]["snippet"], "")  # titles only: no body excerpt
+        self.assertEqual(res.data[0]["terms"], ["hypertension"])
+        self.assertEqual(res.data[0]["corrected"], "")
 
     def test_search_without_query_is_empty(self):
         with self._with_snapshot():
@@ -137,7 +139,25 @@ class UptodateTests(TestCase):
             res = self.client.get("/api/v1/uptodate/topics/", {"search": "diabetes"})
         self.assertEqual(res.status_code, 200)
         self.assertEqual([row["id"] for row in res.data], ["3853"])
-        self.assertIn("overview of diagnosis", res.data[0]["snippet"])
+
+    def test_misspelt_word_is_corrected_to_the_closest_title_word(self):
+        with self._with_snapshot():
+            res = self.client.get("/api/v1/uptodate/topics/", {"search": "hypertention adlts"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual([row["id"] for row in res.data], ["3851"])
+        self.assertEqual(res.data[0]["corrected"], "hypertension adults")
+        self.assertEqual(res.data[0]["terms"], ["hypertension", "adults"])
+
+    def test_word_being_typed_is_corrected_to_a_word_start(self):
+        with self._with_snapshot():
+            res = self.client.get("/api/v1/uptodate/topics/", {"search": "hipert"})
+        self.assertEqual([row["id"] for row in res.data], ["3851"])
+        self.assertEqual(res.data[0]["terms"], ["hypert"])
+
+    def test_result_carries_the_date_from_the_topic_header(self):
+        with self._with_snapshot():
+            res = self.client.get("/api/v1/uptodate/topics/", {"search": "hypertension"})
+        self.assertEqual(res.data[0]["updated"], "")  # the fixture's text has no header
 
     def test_detail_returns_decompressed_article(self):
         with self._with_snapshot():
@@ -177,7 +197,7 @@ class UptodateTests(TestCase):
         self.assertEqual(res.status_code, 404)
 
 
-class SnippetTests(TestCase):
+class HeaderTextTests(SimpleTestCase):
     HEAD = (
         "Hypertension in adults  Authors:Jane Doe, MD Section Editor:John Roe, MD"
         "Literature review current through:\xa0Jun 2026.\xa0|\xa0This topic last updated:"
@@ -186,16 +206,12 @@ class SnippetTests(TestCase):
     )
 
     def test_skips_header_and_run_in_heading(self):
-        snippet = services._snippet(self.HEAD, ["hypertension"], "Hypertension in adults")
-        self.assertTrue(snippet.startswith("Hypertension is common."))
-        self.assertNotIn("Authors", snippet)
-        self.assertNotIn("INTRODUCTION", snippet)
-        self.assertNotIn("●", snippet)
-
-    def test_centres_on_the_query_hit(self):
-        snippet = services._snippet(self.HEAD, ["blood", "pressure"], "Hypertension in adults")
-        self.assertIn("blood pressure target", snippet)
-        self.assertIn("below.) The rest", snippet)
+        text = services.snippet_source(self.HEAD, "Hypertension in adults")
+        self.assertTrue(text.startswith("Hypertension is common."))
+        self.assertNotIn("Authors", text)
+        self.assertNotIn("INTRODUCTION", text)
+        self.assertNotIn("●", text)
+        self.assertIn("below.) The rest", text)
 
     def test_reads_the_last_updated_date(self):
         self.assertEqual(services._updated_from_text(self.HEAD.replace("\xa0", " ")), "Feb 11, 2026")
@@ -204,29 +220,41 @@ class SnippetTests(TestCase):
 
 
 class MysqlTitleSearchTests(SimpleTestCase):
+    def tearDown(self):
+        services._title_index.cache_clear()
+        services._term.cache_clear()
+
     @override_settings(UPTODATE_MYSQL_URL="mysql://test:test@localhost/uptodate")
-    def test_search_uses_title_index_and_preserves_result_previews(self):
+    def test_titles_are_read_once_and_only_result_headers_after(self):
         connection = MagicMock()
         cursor = connection.cursor.return_value.__enter__.return_value
-        cursor.fetchall.return_value = [{
-            "title": "Hypertension in adults", "contentId": "3851", "head": SnippetTests.HEAD,
-        }]
+        cursor.fetchall.side_effect = [
+            [
+                {"rowid": 1, "contentId": "3851", "title": "Hypertension in adults"},
+                {"rowid": 3, "contentId": "3853", "title": "Diabetes mellitus"},
+            ],
+            [{"rowid": 1, "head": HeaderTextTests.HEAD}],
+            [],  # the second search needs no header: the date is kept
+        ]
         with (
             patch.object(services, "_mysql_conn", return_value=connection),
             patch.object(services, "snapshot_version", return_value="202607"),
             patch.object(services, "_section_for", return_value="Cardiovascular Medicine"),
         ):
             results = services.search_topics("HYPERT adu", limit=3)
+            again = services.search_topics("hypertension", limit=3)
 
-        sql, params = cursor.execute.call_args.args
-        self.assertEqual(sql.count("MATCH(title)"), 2)  # Filtering and ranking.
-        self.assertNotIn("MATCH(title, content)", sql)
-        self.assertEqual(params, (services.SNIPPET_SOURCE_CHARS, "+HYPERT* +adu*", "+HYPERT* +adu*", 1, 3))
+        statements = [call.args[0] for call in cursor.execute.call_args_list]
+        self.assertEqual(len(statements), 2)
+        self.assertIn("SELECT rowid, contentId, title FROM fts WHERE type = %s", statements[0])
+        self.assertIn("LEFT(content, %s) AS head FROM fts WHERE rowid IN (%s)", statements[1])
+        self.assertFalse(any("MATCH" in sql for sql in statements))
         self.assertEqual(results, [{
             "id": "3851", "title": "Hypertension in adults", "section": "Cardiovascular Medicine",
-            "version": "202607", "snippet": services._snippet(SnippetTests.HEAD, ["HYPERT", "adu"], "Hypertension in adults"),
-            "updated": "Feb 11, 2026",
+            "version": "202607", "snippet": "", "updated": "Feb 11, 2026",
+            "terms": ["hypert", "adu"], "corrected": "",
         }])
+        self.assertEqual(again[0]["updated"], "Feb 11, 2026")
 
     @override_settings(UPTODATE_MYSQL_URL="mysql://test:test@localhost/uptodate")
     def test_punctuation_only_search_never_connects_to_mysql(self):
@@ -294,3 +322,96 @@ class MysqlTitleIndexTests(SimpleTestCase):
         Command()._ensure_schema(self.connection)
         self.cursor.execute.assert_any_call("ALTER TABLE fts ADD FULLTEXT INDEX ft_fts_title (title)")
         self.connection.commit.assert_called_once()
+
+
+class TitleSearchTests(SimpleTestCase):
+    """The title search over a made-up set of titles."""
+
+    def search(self, query, titles, limit=10):
+        index = services.build_title_index((i + 1, str(100 + i), t) for i, t in enumerate(titles))
+        index.updated.update({i + 1: "" for i in range(len(titles))})
+        services._term.cache_clear()
+        self.addCleanup(services._term.cache_clear)
+        with (
+            patch.object(services, "_title_index", return_value=index),
+            patch.object(services, "snapshot_version", return_value="test"),
+            patch.object(services, "_section_for", return_value=""),
+        ):
+            return services.search_topics(query, limit=limit)
+
+    def titles(self, query, titles):
+        return [r["title"] for r in self.search(query, titles)]
+
+    def test_words_match_starts_of_title_words_in_any_order(self):
+        titles = ["Asthma in adults", "Adult asthma treatment", "Pneumonia in adults"]
+        self.assertEqual(sorted(self.titles("adu asth", titles)), ["Adult asthma treatment", "Asthma in adults"])
+
+    def test_one_typo_in_a_short_word_and_more_in_a_long_one(self):
+        titles = ["Asthma in adults", "Anaphylaxis: Emergency treatment", "Phenytoin poisoning"]
+        self.assertEqual(self.titles("asthama", titles), ["Asthma in adults"])
+        self.assertEqual(self.titles("anafilaxis", titles), ["Anaphylaxis: Emergency treatment"])
+        self.assertEqual(self.titles("fenytoin", titles), ["Phenytoin poisoning"])
+
+    def test_swapped_letters_count_as_one_typo(self):
+        self.assertEqual(self.titles("ashtma", ["Asthma in adults"]), ["Asthma in adults"])
+
+    def test_the_correction_is_reported(self):
+        results = self.search("pnemonia adults", ["Pneumonia in adults"])
+        self.assertEqual(results[0]["corrected"], "pneumonia adults")
+        self.assertEqual(results[0]["terms"], ["pneumonia", "adults"])
+
+    def test_a_tie_goes_to_the_word_more_titles_share(self):
+        titles = ["Leukemia in children", "Acute leukemia", "Lukemia virus (made up)"]
+        # "lukemi" is one typo from both; "leukemia" is in more titles
+        self.assertEqual(self.search("lukemi", titles)[0]["terms"], ["lukemi"])  # a real start: kept
+        self.assertEqual(self.search("lukemya", titles[:2])[0]["corrected"], "leukemia")
+
+    def test_too_short_or_too_far_words_are_not_corrected(self):
+        titles = ["Asthma in adults"]
+        self.assertEqual(self.search("xq", titles), [])
+        self.assertEqual(self.search("zzzzzz", titles), [])
+
+    def test_a_plural_also_finds_the_singular(self):
+        titles = ["Infection prevention", "Infections of the skin", "Infectious mononucleosis"]
+        found = self.titles("infections", titles)
+        self.assertEqual(sorted(found), ["Infection prevention", "Infections of the skin"])
+        # a word whose singular is no title word stays as typed
+        self.assertEqual(self.titles("diabetes", ["Diabetes mellitus", "Diabetic foot"]), ["Diabetes mellitus"])
+
+    def test_tags_in_a_title_are_not_words(self):
+        titles = ["Infections due to <i>Serratia</i> species"]
+        self.assertEqual(self.titles("serratia", titles), titles)
+        index = services.build_title_index([(1, "1", titles[0])])
+        self.assertEqual(index.words[0], ["infections", "due", "to", "serratia", "species"])
+
+    def test_ranking(self):
+        titles = [
+            "Overview of asthma in adults",
+            "Asthmatic bronchitis",
+            "Asthma",
+            "Asthma in pregnancy and lactation",
+            "Asthma in adults",
+        ]
+        self.assertEqual(self.titles("asthma", titles), [
+            "Asthma",  # the title is the query
+            "Asthma in adults",  # whole word, first, short
+            "Asthma in pregnancy and lactation",
+            "Overview of asthma in adults",  # the word comes later
+            "Asthmatic bronchitis",  # only the start of a word
+        ])
+
+    def test_limit(self):
+        titles = [f"Asthma {n}" for n in range(30)]
+        self.assertEqual(len(self.search("asthma", titles, limit=5)), 5)
+
+
+class TypoDistanceTests(SimpleTestCase):
+    def test_whole_word(self):
+        self.assertEqual(services._typo_distance("pnemonia", "pneumonia", 2, False), (1, 9))
+        self.assertEqual(services._typo_distance("ashtma", "asthma", 1, False), (1, 6))
+        self.assertIsNone(services._typo_distance("asthma", "pneumonia", 2, False))
+
+    def test_start_of_a_word(self):
+        # "pnemo" is one edit from "pneumo", the start of "pneumonia"
+        self.assertEqual(services._typo_distance("pnemo", "pneumonia", 2, True), (1, 6))
+        self.assertEqual(services._typo_distance("pneum", "pneumonia", 2, True), (0, 5))

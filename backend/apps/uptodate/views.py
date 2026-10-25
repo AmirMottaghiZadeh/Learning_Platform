@@ -28,7 +28,14 @@ class TopicSearchView(APIView):
 
     @extend_schema(
         parameters=[
-            OpenApiParameter("search", str, description="Topic title query (all word prefixes must match the title)."),
+            OpenApiParameter(
+                "search",
+                str,
+                description=(
+                    "Topic title query: every word must start a word of the title; a misspelt word "
+                    "is corrected to the closest title word. Article text is never searched."
+                ),
+            ),
             OpenApiParameter("limit", int, description="Max results (default 25)."),
         ],
         responses=UptodateSearchResultSerializer(many=True),

@@ -254,7 +254,7 @@
 
 | روش | مسیر | توضیح |
 |---|---|---|
-| GET | `/uptodate/topics/?search=&limit=` | جست‌وجو فقط در عنوان (پیشوند کلمه‌ها با AND)؛ `limit` پیش‌فرض ۲۵، حداکثر ۵۰. ← `[{id, title, section, version, updated, snippet}]`. باز است و از سهمیه کم نمی‌کند |
+| GET | `/uptodate/topics/?search=&limit=` | جست‌وجو فقط در عنوان مقاله‌ها: هر کلمه باید ابتدای کلمه‌ای از عنوان باشد و کلمهٔ غلط به نزدیک‌ترین کلمهٔ عنوان‌ها تصحیح می‌شود ([03-backend.md](03-backend.md#uptodate-و-lexicomp)). `limit` پیش‌فرض ۲۵ و حداکثر ۵۰ است. ← `[{id, title, section, version, updated, terms[], corrected, snippet}]`: `terms` ابتدای کلمه‌هایی است که جست‌وجو با آن‌ها انجام شد (برای پررنگ کردن در عنوان)؛ `corrected` جست‌وجو پس از تصحیح است، یا `""` اگر چیزی تصحیح نشد؛ `snippet` همیشه خالی است و فقط برای نسخه‌های قدیمی اپ مانده. باز است و از سهمیه کم نمی‌کند |
 | GET | `/uptodate/topics/{id}/` | ← `{id, title, section, version, updated, contributors[], outline_html, body_html}`. یک بار از سهمیه کم می‌کند |
 | GET | `/uptodate/images/{id}/` | تصویر یا جدول مقاله |
 
