@@ -110,16 +110,21 @@ def _lesson_minutes(user):
     return LESSON_MINUTES_BY_LEVEL.get(getattr(profile, "study_level", ""), LESSON_MINUTES_PER_CHAPTER)
 
 
-def _topic_backlog(topic_key, group, lesson_minutes=LESSON_MINUTES_PER_CHAPTER, done=frozenset()):
+def _topic_backlog(topic_key, group, lesson_minutes=LESSON_MINUTES_PER_CHAPTER, done=frozenset(),
+                   done_chapters=frozenset()):
     """Ordered work units for one topic: unread chapters first, then one
     quiz and one flashcard pass over the whole topic -- each pass left out
-    once `done` (pairs of topic key and activity) says it was done."""
+    once `done` (pairs of topic key and activity) says it was done, and a
+    chapter left out once the learner ticked its task off (`done_chapters`),
+    read or not."""
     topic = _topic_by_key(topic_key)
     if not topic:
         return []
     chapters = _with_chapters(group)
     items = []
     for chapter in chapters["unread"]:
+        if chapter["code"] in done_chapters:
+            continue
         items.append({
             "activity_type": StudyPlanItem.LESSON,
             "topic_key": topic_key,
@@ -213,10 +218,13 @@ def _goal_items(user, plan):
             status=StudyPlanItem.DONE, activity_type__in=[StudyPlanItem.QUIZ, StudyPlanItem.FLASHCARDS]
         ).values_list("topic_key", "activity_type")
     )
+    done_chapters = set(
+        plan.items.filter(status=StudyPlanItem.DONE, activity_type=StudyPlanItem.LESSON).values_list("atc_code", flat=True)
+    )
     lesson_minutes = _lesson_minutes(user)
     backlog = []
     for topic_key in plan.topic_keys:
-        backlog.extend(_topic_backlog(topic_key, groups.get(topic_key), lesson_minutes, done))
+        backlog.extend(_topic_backlog(topic_key, groups.get(topic_key), lesson_minutes, done, done_chapters))
 
     today = timezone.localdate()
     end = max(plan.deadline or today, today)

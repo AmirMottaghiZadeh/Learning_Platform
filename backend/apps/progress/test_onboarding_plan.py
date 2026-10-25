@@ -138,6 +138,13 @@ class PlanPaceRolloverAndWeekTests(TestCase):
         planning.regenerate_items(self.user, plan)
         self.assertEqual(plan.items.filter(activity_type=StudyPlanItem.QUIZ).count(), 1)
 
+    def test_a_chapter_ticked_off_by_hand_is_not_planned_again(self):
+        plan = self._plan(minutes=240)
+        lesson = plan.items.filter(activity_type=StudyPlanItem.LESSON).first()
+        planning.complete_item(self.user, lesson.id)  # unread, but the learner says it's done
+        planning.regenerate_items(self.user, plan)
+        self.assertEqual(plan.items.filter(activity_type=StudyPlanItem.LESSON, atc_code=lesson.atc_code).count(), 1)
+
     def test_tasks_carry_their_titles(self):
         plan = self._plan(minutes=240)
         titles = {i.activity_type: i.title_fa for i in planning.today_items(self.user, plan)}

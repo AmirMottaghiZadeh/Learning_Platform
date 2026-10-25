@@ -164,91 +164,103 @@ function TodayBox({ data }: { data: PlanToday }) {
   else if (!next) empty = t("planAllDone");
 
   return (
-    <Card style={{ marginBottom: spacing.md }}>
-      <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "baseline" }}>
-        <AppText weight="900" size={15}>
+    <Card padded={false} style={{ marginBottom: spacing.md, overflow: "hidden" }}>
+      {/* the box's head in the same accent as its start button */}
+      <View
+        style={{
+          flexDirection: row,
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          backgroundColor: colors.accent,
+          paddingHorizontal: spacing.lg,
+          paddingVertical: 12,
+        }}
+      >
+        <AppText weight="900" size={15} color={colors.onAccent}>
           {t("planToday")}
         </AppText>
         {items.length ? (
-          <AppText weight="700" size={12} muted>
+          <AppText weight="700" size={12} color={colors.onAccentSub}>
             {fill(t("planMinutes"), { m: n(data.total_minutes) })}
           </AppText>
         ) : null}
       </View>
 
-      {items.length ? (
-        <View style={{ marginTop: 10 }}>
-          {items.map((item, i) => {
-            const done = item.status !== "pending";
-            const isNext = item.id === next?.id;
-            return (
-              <View
-                key={item.id}
-                style={{
-                  flexDirection: row,
-                  alignItems: "center",
-                  gap: 12,
-                  paddingVertical: 10,
-                  borderBottomWidth: i < items.length - 1 ? 1 : 0,
-                  borderBottomColor: colors.sheetLine,
-                }}
-              >
-                <Pressable
-                  onPress={done ? undefined : () => complete.mutate(item.id)}
-                  disabled={done}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: done }}
-                  accessibilityLabel={title(item)}
-                  hitSlop={9}
+      <View style={{ padding: spacing.lg, paddingTop: items.length ? 4 : spacing.md }}>
+        {items.length ? (
+          <View>
+            {items.map((item, i) => {
+              const done = item.status !== "pending";
+              const isNext = item.id === next?.id;
+              return (
+                <View
+                  key={item.id}
                   style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: 13,
+                    flexDirection: row,
                     alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: done ? colors.accent : "transparent",
-                    borderWidth: done ? 0 : 2,
-                    borderColor: isNext ? colors.accent : colors.trackBg,
+                    gap: 12,
+                    paddingVertical: 10,
+                    borderBottomWidth: i < items.length - 1 ? 1 : 0,
+                    borderBottomColor: colors.sheetLine,
                   }}
                 >
-                  {done ? <Check color={colors.onAccent} size={14} /> : null}
-                </Pressable>
-                <Pressable onPress={() => open(item)} style={{ flex: 1, gap: 2 }} accessibilityRole="button">
-                  <AppText
-                    weight="800"
-                    size={13.5}
-                    color={done ? colors.muted : colors.ink}
-                    style={done ? { textDecorationLine: "line-through" } : undefined}
+                  <Pressable
+                    onPress={done ? undefined : () => complete.mutate(item.id)}
+                    disabled={done}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: done }}
+                    accessibilityLabel={title(item)}
+                    hitSlop={9}
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 13,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: done ? colors.accent : "transparent",
+                      borderWidth: done ? 0 : 2,
+                      borderColor: isNext ? colors.accent : colors.trackBg,
+                    }}
                   >
-                    {title(item)}
-                  </AppText>
-                  <AppText weight="600" size={11.5} muted>
-                    {done
-                      ? `${fill(t("planMinutes"), { m: n(item.estimated_minutes) })}${t("listSeparator")}${t("planningMarkDone")}`
-                      : fill(t("planMinutes"), { m: n(item.estimated_minutes) })}
-                  </AppText>
-                </Pressable>
-                {isNext ? (
-                  <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.leitnerActiveBg }}>
-                    <AppText weight="800" size={11} color={colors.accent}>
-                      {t("planningNextLabel")}
+                    {done ? <Check color={colors.onAccent} size={14} /> : null}
+                  </Pressable>
+                  <Pressable onPress={() => open(item)} style={{ flex: 1, gap: 2 }} accessibilityRole="button">
+                    <AppText
+                      weight="800"
+                      size={13.5}
+                      color={done ? colors.muted : colors.ink}
+                      style={done ? { textDecorationLine: "line-through" } : undefined}
+                    >
+                      {title(item)}
                     </AppText>
-                  </View>
-                ) : null}
-              </View>
-            );
-          })}
-        </View>
-      ) : null}
+                    <AppText weight="600" size={11.5} muted>
+                      {done
+                        ? `${fill(t("planMinutes"), { m: n(item.estimated_minutes) })}${t("listSeparator")}${t("planningMarkDone")}`
+                        : fill(t("planMinutes"), { m: n(item.estimated_minutes) })}
+                    </AppText>
+                  </Pressable>
+                  {isNext ? (
+                    <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.leitnerActiveBg }}>
+                      <AppText weight="800" size={11} color={colors.accent}>
+                        {t("planningNextLabel")}
+                      </AppText>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
 
-      {empty ? (
-        <AppText weight="600" size={13} muted style={{ marginTop: items.length ? 10 : 8 }}>
-          {empty}
-        </AppText>
-      ) : null}
-      {next ? (
-        <Button label={`${t("planningStartActivity")}: ${title(next)}`} onPress={() => open(next)} style={{ marginTop: 12, height: 46 }} />
-      ) : null}
+        {empty ? (
+          <AppText weight="600" size={13} muted style={{ marginTop: items.length ? 10 : 0 }}>
+            {empty}
+          </AppText>
+        ) : null}
+        {next ? (
+          <Button label={`${t("planningStartActivity")}: ${title(next)}`} onPress={() => open(next)} style={{ marginTop: 12, height: 46 }} />
+        ) : null}
+      </View>
     </Card>
   );
 }

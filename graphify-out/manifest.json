@@ -1296,9 +1296,9 @@
     "semantic_hash": ""
   },
   "backend/apps/progress/planning.py": {
-    "mtime": 1792908355.5268643,
-    "seen": 1792910053.3675077,
-    "ast_hash": "688105bc5a4a35f05fb54f622224f9cb",
+    "mtime": 1792910471.2847517,
+    "seen": 1792910513.3548493,
+    "ast_hash": "5843ecbf18c187ace33a3d426c5f849c",
     "semantic_hash": ""
   },
   "backend/apps/progress/selectors.py": {
@@ -4554,9 +4554,9 @@
     "semantic_hash": ""
   },
   "backend/apps/progress/test_onboarding_plan.py": {
-    "mtime": 1792908509.9199574,
-    "seen": 1792910053.367516,
-    "ast_hash": "c64a96e4b912f7966a95eff06a36750f",
+    "mtime": 1792910471.2847517,
+    "seen": 1792910513.354859,
+    "ast_hash": "8cb4528afe3ee3cf7c1c87cec5123337",
     "semantic_hash": ""
   },
   "frontend/src/components/plan/PlanPickers.tsx": {
@@ -4566,9 +4566,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/plan/PlanSection.tsx": {
-    "mtime": 1792909163.9683921,
-    "seen": 1792910053.367828,
-    "ast_hash": "7505ba8557793510cb99aebe28340de0",
+    "mtime": 1792910423.1431634,
+    "seen": 1792910513.3551736,
+    "ast_hash": "4bf2e96424b8710e04caa18a8837ed4e",
     "semantic_hash": ""
   },
   "frontend/src/utils/planDates.ts": {
