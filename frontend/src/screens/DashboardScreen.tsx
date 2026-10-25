@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { Pressable, View } from "react-native";
 
 import { meApi } from "@/api/endpoints";
 import { HeaderMesh } from "@/components/HeaderMesh";
+import { ANNOUNCEMENTS_KEY, AnnouncementBox } from "@/components/announcements/AnnouncementBox";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { PlanSection } from "@/components/plan/PlanSection";
 import { TourTarget, useTour } from "@/tour/TourContext";
@@ -37,6 +38,11 @@ export function DashboardScreen() {
     queryKey: ["dashboard"],
     queryFn: meApi.dashboard,
   });
+  const queryClient = useQueryClient();
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ANNOUNCEMENTS_KEY });
+    return refetch();
+  };
   // the home tour, right after onboarding the first time
   const replayTour = useTour("home", !isLoading);
 
@@ -47,7 +53,7 @@ export function DashboardScreen() {
   const rows = data?.focus_session.rows ?? [];
 
   return (
-    <Screen padded={false} refreshing={isRefetching} onRefresh={refetch}>
+    <Screen padded={false} refreshing={isRefetching} onRefresh={refresh}>
       <HeaderMesh bleedTop>
         <View style={{ padding: 20, paddingBottom: 26 }}>
           <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center" }}>
@@ -106,6 +112,9 @@ export function DashboardScreen() {
       </HeaderMesh>
 
       <View style={{ padding: 20, marginTop: -14 }}>
+        {/* the admin's announcements: a card on top, dimmed around it the first time */}
+        <AnnouncementBox />
+
         {/* uptodate reference card */}
         <TourTarget id="home.uptodate">
         <Pressable onPress={() => navigate("uptodate")}>

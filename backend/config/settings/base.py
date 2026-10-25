@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     # The public site and blog (pharmenta.ir) and its panel (/panel/).
     "apps.website",
     "apps.manage",
+    "apps.announcements",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

@@ -1,0 +1,297 @@
+{% extends "manage/base.html" %}
+{% load billing_extras %}
+{% block title %}اعلانات اپ{% endblock %}
+{% block module_css %}
+<style>
+.an-wrap{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.an-list{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.an-list .mg-seg{flex-wrap:wrap}
+.an-card{text-decoration:none;color:var(--mg-ink);background:var(--mg-card);border:1px solid var(--mg-line);border-radius:18px;padding:13px 14px;display:flex;gap:12px}
+.an-card:hover{border-color:var(--mg-acc)}
+.an-card.on{border:2px solid var(--mg-acc);padding:12px 13px}
+.an-card .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.an-card b{font-size:14px;font-weight:800;overflow-wrap:anywhere}
+.an-card .m{font-size:12.5px;color:var(--mg-mut)}
+.an-card .f{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-size:12px;color:var(--mg-mut)}
+.an-ic{width:36px;height:36px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center}
+.an-ic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.k-news{background:var(--mg-acc-soft);color:var(--mg-acc-text)}.k-update{background:var(--mg-infobg);color:var(--mg-info)}
+.k-warning{background:var(--mg-hibg);color:var(--mg-hi)}.k-offer{background:var(--mg-specbg);color:var(--mg-spec)}
+.s-active{color:var(--mg-ok);background:var(--mg-okbg)}.s-scheduled{color:var(--mg-info);background:var(--mg-infobg)}
+.s-draft{color:var(--mg-mut);border:1px solid var(--mg-line)}.s-ended{color:var(--mg-mut);background:var(--mg-hover)}
+.an-detail{flex:999 1 560px;min-width:0;background:var(--mg-card);border:1px solid var(--mg-line);border-radius:22px;padding:20px;display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
+.an-form{flex:999 1 320px;min-width:0;display:flex;flex-direction:column;gap:20px}
+.an-form h2{margin:0;font-size:18px;font-weight:900}
+.an-figs{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--mg-mut)}
+.an-figs b{color:var(--mg-ink)}
+.an-step{display:flex;flex-direction:column;gap:12px;border:0;margin:0;padding:0;min-width:0}
+.an-step legend{font-size:13px;font-weight:800;display:flex;align-items:center;gap:8px;padding:0;margin-bottom:12px}
+.an-n{width:22px;height:22px;border-radius:50%;background:var(--mg-acc);color:var(--mg-acc-ink);display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.an-row{display:flex;flex-wrap:wrap;gap:10px}
+.an-row > .an-field{flex:1 1 180px}
+.an-field{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700;min-width:0}
+.an-field input[type=text],.an-field input:not([type]),.an-field input[type=url],.an-field textarea,.an-field select{font:inherit;font-size:14px;font-weight:500;color:var(--mg-ink);background:var(--mg-soft);border:1px solid var(--mg-line);border-radius:12px;padding:9px 12px;min-height:42px;width:100%}
+.an-field textarea{resize:vertical;line-height:1.8}
+.an-field .hint{font-size:12px;font-weight:600;color:var(--mg-mut)}
+.an-err{color:var(--mg-bad);font-size:12.5px;font-weight:700}
+.an-pills{display:flex;flex-wrap:wrap;gap:6px}
+.an-pills label{position:relative;cursor:pointer}
+.an-pills input{position:absolute;opacity:0;width:1px;height:1px}
+.an-pills span{display:inline-flex;align-items:center;min-height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--mg-line);background:var(--mg-card);font-size:12.5px;font-weight:700}
+.an-pills input:checked + span{background:var(--mg-ink);color:var(--mg-bg);border-color:var(--mg-ink);font-weight:800}
+.an-pills input:focus-visible + span{outline:3px solid var(--mg-focus);outline-offset:2px}
+.an-ticks{display:flex;flex-wrap:wrap;gap:18px;font-size:13.5px;font-weight:600}
+.an-ticks label{display:flex;align-items:center;gap:8px}
+.an-ticks input{width:18px;height:18px;accent-color:var(--mg-acc)}
+.an-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-top:1px solid var(--mg-line);padding-top:14px}
+.an-acts .grow{flex:1}
+.mg-b.big{min-height:42px;padding:0 18px;font-size:13.5px}
+.an-preview{flex:1 1 290px;display:flex;flex-direction:column;align-items:center;gap:12px;background:var(--mg-soft);border-radius:18px;padding:16px;position:sticky;top:16px}
+.an-phone{width:262px;border-radius:38px;padding:9px;background:#14201D;box-shadow:0 24px 40px -24px rgba(20,32,29,.6)}
+.an-screen{position:relative;height:500px;border-radius:30px;overflow:hidden;background:#EFECE4;color:#14201D}
+.an-head{background:linear-gradient(160deg,#0C4A43,#0F5C52 55%,#14746A);color:#fff;padding:26px 16px 30px}
+.an-head b{display:block;font-size:12.5px;font-weight:800}.an-head strong{display:block;font-size:16px;font-weight:900;margin-top:10px}
+.an-head span{font-size:11px;opacity:.85}
+.an-body{padding:0 12px;margin-top:-16px;display:flex;flex-direction:column;gap:10px;position:relative}
+.an-ghost{background:#fff;border-radius:16px;height:58px;opacity:.75}
+.an-dim{position:absolute;inset:0;z-index:1;background:rgba(4,10,9,.6);opacity:0;transition:opacity .2s;pointer-events:none}
+.an-screen.first .an-dim{opacity:1}
+.pv-card{position:relative;z-index:2;background:#fff;border-radius:18px;padding:13px;box-shadow:0 10px 24px -14px rgba(12,58,52,.45);display:flex;flex-direction:column;gap:6px;color:#14201D}
+.an-screen.first .pv-card{box-shadow:0 26px 50px -18px rgba(0,0,0,.55);transform:translateY(64px)}
+.pv-top{display:flex;align-items:center;gap:6px}
+.pv-chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;border-radius:999px;padding:2px 9px}
+.pv-chip svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.pv-top .x{margin-inline-start:auto;font-size:16px;color:#5F6B68;line-height:1}
+.pv-title{font-size:13px;font-weight:900;line-height:1.5;overflow-wrap:anywhere}
+.pv-text{font-size:11px;color:#5F6B68;line-height:1.7;overflow-wrap:anywhere}
+.pv-acts{display:flex;align-items:center;gap:10px;margin-top:3px}
+.pv-btn{font-size:11px;font-weight:800;color:#fff;background:#0F5C52;border-radius:9px;padding:5px 12px}
+.pv-later{font-size:11px;font-weight:700;color:#5F6B68}
+.pv-news{color:#0F5C52;background:#E1EFEB}.pv-update{color:#1D4F91;background:#E4EDFA}.pv-warning{color:#7A5200;background:#FBEFD6}.pv-offer{color:#6B4C9A;background:#F1EBFA}
+</style>
+{% endblock %}
+{% block module %}
+{% with icon_news='<path d="M4 10v4l11 5V5L4 10z"/><path d="M15 9a3 3 0 0 1 0 6"/>' icon_update='<path d="M12 19V5M6 11l6-6 6 6"/>' icon_warning='<path d="M12 3L2 20h20z"/><path d="M12 10v4M12 17v.5"/>' icon_offer='<path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7"/>' %}
+<div class="mg-head">
+  <div>
+    <p>اپ</p>
+    <h1>اعلانات اپ</h1>
+    <p class="lead">پیام کوتاه به کاربران اپ: خبر، به‌روزرسانی، هشدار یا پیشنهاد. در خانهٔ اپ کارت می‌شود؛ اولین بار پشتش تیره می‌شود تا دیده شود. می‌تواند یک دکمه به یک نشانی وب یا بخشی از اپ داشته باشد.</p>
+  </div>
+  <a class="mg-b big" href="{% url 'app_admin:announcements' %}">+ اعلان تازه</a>
+</div>
+
+<div class="an-wrap">
+  <section class="an-list" aria-label="اعلان‌ها">
+    <div class="mg-seg" role="group" aria-label="وضعیت">
+      {% for key, label, n in states %}<a href="?state={{ key }}"{% if state == key %} aria-current="true"{% endif %}>{{ label }} · {{ n|fa }}</a>{% endfor %}
+    </div>
+    {% for r in rows %}
+    <a class="an-card{% if item and r.pk == item.pk %} on{% endif %}" href="{% url 'app_admin:announcement' r.pk %}{% if state %}?state={{ state }}{% endif %}"{% if item and r.pk == item.pk %} aria-current="true"{% endif %}>
+      <span class="an-ic k-{{ r.kind }}" aria-hidden="true"><svg viewBox="0 0 24 24">{% if r.kind == "update" %}{{ icon_update|safe }}{% elif r.kind == "warning" %}{{ icon_warning|safe }}{% elif r.kind == "offer" %}{{ icon_offer|safe }}{% else %}{{ icon_news|safe }}{% endif %}</svg></span>
+      <span class="t">
+        <b>{{ r.title }}</b>
+        <span class="m">{{ r.get_kind_display }} · {{ r.get_audience_display }}{% if r.ends_at %} · تا {{ r.ends_at|jdate }}{% elif r.starts_at %} · از {{ r.starts_at|jdate }}{% endif %}</span>
+        <span class="f">
+          <span class="mg-chip s-{{ r.state }}">{{ r.state_label }}</span>
+          {% if r.is_pinned %}<span>سنجاق‌شده</span>{% endif %}
+          {% if r.test_user_id %}<span>در گوشی آزمایشی</span>{% endif %}
+          {% if r.n_seen %}<span>{{ r.n_seen|num }} دیدند · {{ r.n_clicked|num }} زدند</span>{% endif %}
+        </span>
+      </span>
+    </a>
+    {% empty %}
+    <p class="mg-calm">{% if state %}اعلانی با این وضعیت نیست.{% else %}هنوز اعلانی ننوشته‌اید. اولین را در فرم کنار بنویسید.{% endif %}</p>
+    {% endfor %}
+  </section>
+
+  <section class="an-detail" aria-labelledby="an-h">
+    <form class="an-form" id="an-form" method="post" action="{% if item %}{% url 'app_admin:announcement' item.pk %}{% else %}{% url 'app_admin:announcement_new' %}{% endif %}" novalidate>
+      {% csrf_token %}
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 id="an-h">{% if item %}{{ item.title }}{% else %}اعلان تازه{% endif %}</h2>
+        {% if item %}
+        <div class="an-figs">
+          <span class="mg-chip s-{{ item.state }}">{{ item.state_label }}</span>
+          <span><b>{{ figures.n_seen|default:0|num }}</b> نفر دیدند</span>
+          <span><b>{{ figures.n_clicked|default:0|num }}</b> نفر دکمه را زدند</span>
+          <span><b>{{ figures.n_dismissed|default:0|num }}</b> نفر بستند</span>
+        </div>
+        {% endif %}
+      </div>
+      {% for e in form.non_field_errors %}<span class="an-err">{{ e }}</span>{% endfor %}
+
+      <fieldset class="an-step">
+        <legend><span class="an-n">۱</span>پیام</legend>
+        <label class="an-field">عنوان
+          <input type="text" name="title" id="f-title" value="{{ form.title.value|default_if_none:'' }}" maxlength="60" required>
+          <span class="hint"><span data-count="f-title">۰</span> از ۶۰ نویسه</span>
+          {% for e in form.title.errors %}<span class="an-err">{{ e }}</span>{% endfor %}
+        </label>
+        <label class="an-field">متن
+          <textarea name="body" id="f-body" rows="3" maxlength="180" required>{{ form.body.value|default_if_none:'' }}</textarea>
+          <span class="hint"><span data-count="f-body">۰</span> از ۱۸۰ نویسه</span>
+          {% for e in form.body.errors %}<span class="an-err">{{ e }}</span>{% endfor %}
+        </label>
+        <div class="an-pills" role="radiogroup" aria-label="نوع">
+          {% for value, label in form.fields.kind.choices %}<label><input type="radio" name="kind" value="{{ value }}"{% if form.kind.value == value or not form.kind.value and value == "news" %} checked{% endif %}><span>{{ label }}</span></label>{% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="an-step">
+        <legend><span class="an-n">۲</span>دکمه <span style="font-weight:600;color:var(--mg-mut)">(اختیاری)</span></legend>
+        <div class="an-pills" role="radiogroup" aria-label="دکمه">
+          {% for value, label in form.fields.link_kind.choices %}<label><input type="radio" name="link_kind" value="{{ value }}"{% if form.link_kind.value|default_if_none:'' == value %} checked{% endif %}><span>{{ label }}</span></label>{% endfor %}
+        </div>
+        <div class="an-row" data-show-link="url app">
+          <label class="an-field">متن دکمه
+            <input type="text" name="cta_label" id="f-cta" value="{{ form.cta_label.value|default_if_none:'' }}" maxlength="30" placeholder="مثلاً «دریافت نسخه»">
+            {% for e in form.cta_label.errors %}<span class="an-err">{{ e }}</span>{% endfor %}
+          </label>
+          <label class="an-field" data-show-link="url" style="flex:2 1 240px">نشانی
+            <input type="url" name="link_url" value="{{ form.link_url.value|default_if_none:'' }}" dir="ltr" placeholder="https://pharmenta.ir/download/" style="text-align:left">
+            {% for e in form.link_url.errors %}<span class="an-err">{{ e }}</span>{% endfor %}
+          </label>
+          <label class="an-field" data-show-link="app">بخش اپ
+            <select name="link_screen" id="f-screen">
+              <option value="">انتخاب کنید…</option>
+              {% for value, label in screens %}<option value="{{ value }}"{% if form.link_screen.value == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            {% for e in form.link_screen.errors %}<span class="an-err">{{ e }}</span>{% endfor %}
+          </label>
+          <label class="an-field" data-show-screen="lesson">کد ATC گروه
+            <input type="text" name="link_param" value="{{ form.link_param.value|default_if_none:'' }}" dir="ltr" maxlength="8" placeholder="B01" style="text-align:left">
+            {% for e in form.link_param.errors %}<span class="an-err">{{ e }}</span>{% endfor %}
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="an-step">
+        <legend><span class="an-n">۳</span>مخاطب و زمان</legend>
+        <div class="an-row">
+          <label class="an-field">مخاطب
+            <select name="audience" id="f-audience">
+              {% for value, label in form.fields.audience.choices %}<option value="{{ value }}"{% if form.audience.value == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="an-field" data-show-audience="old_app">نسخه‌های پایین‌تر از
+            <input type="text" name="below_version" value="{{ form.below_version.value|default_if_none:'' }}" dir="ltr" placeholder="0.2.0" style="text-align:left">
+            {% for e in form.below_version.errors %}<span class="an-err">{{ e }}</span>{% endfor %}
+          </label>
+        </div>
+        <div class="an-row">
+          <label class="an-field">نمایش از
+            {{ form.starts_at }}
+            <span class="hint">خالی = از همین که منتشر شود</span>
+            {% for e in form.starts_at.errors %}<span class="an-err">{{ e }}</span>{% endfor %}
+          </label>
+          <label class="an-field">تا
+            {{ form.ends_at }}
+            <span class="hint">خالی = تا وقتی تمامش کنید</span>
+            {% for e in form.ends_at.errors %}<span class="an-err">{{ e }}</span>{% endfor %}
+          </label>
+        </div>
+        <div class="an-ticks">
+          <label><input type="checkbox" name="is_pinned"{% if form.is_pinned.value %} checked{% endif %}>سنجاق بالای بقیه</label>
+          <label><input type="checkbox" name="dismissible" id="f-dismissible"{% if form.dismissible.value %} checked{% endif %}>کاربر بتواند ببندد</label>
+        </div>
+      </fieldset>
+
+      <div class="an-acts">
+        {% if not item or not item.is_published %}
+        <button class="mg-b big" type="submit" name="action" value="publish">انتشار</button>
+        <button class="mg-b ghost big" type="submit" name="action" value="save">ذخیرهٔ پیش‌نویس</button>
+        <button class="mg-b ghost big" type="submit" name="action" value="test">آزمایش روی گوشی من</button>
+        {% else %}
+        <button class="mg-b big" type="submit" name="action" value="save">ذخیره</button>
+        {% endif %}
+        <span class="grow"></span>
+        {% if item %}
+          {% if item.is_published and item.state != "ended" %}<button class="mg-b ghost" type="submit" form="an-act" name="action" value="end">تمام کن</button>{% endif %}
+          {% if item.is_published %}<button class="mg-b ghost" type="submit" form="an-act" name="action" value="unpublish">برگرداندن به پیش‌نویس</button>{% endif %}
+          {% if item.test_user_id %}<button class="mg-b ghost" type="submit" form="an-act" name="action" value="untest">برداشتن از گوشی آزمایشی</button>{% endif %}
+          <details>
+            <summary class="mg-b bad">حذف</summary>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center"><span style="font-size:12.5px;color:var(--mg-mut)">برگشت ندارد.</span><button class="mg-b bad" type="submit" form="an-act" name="action" value="delete">بله، حذف شود</button></div>
+          </details>
+        {% endif %}
+      </div>
+    </form>
+    {% if item %}<form id="an-act" method="post" action="{% url 'app_admin:announcement_action' item.pk %}">{% csrf_token %}</form>{% endif %}
+
+    <aside class="an-preview" aria-label="پیش‌نمایش در اپ">
+      <div class="mg-seg" role="group" aria-label="حالت پیش‌نمایش">
+        <a href="#" data-mode="first" aria-current="true">اولین بار</a>
+        <a href="#" data-mode="home">در خانه</a>
+      </div>
+      <div class="an-phone" aria-hidden="true">
+        <div class="an-screen first" id="pv-screen">
+          <div class="an-head"><b>فارمنتا</b><strong>عصر بخیر</strong><span>امروز یک قدم کوچک، مسیر تسلطت را جلو می‌برد.</span></div>
+          <div class="an-body">
+            <div class="pv-card">
+              <div class="pv-top"><span class="pv-chip" id="pv-chip"><svg viewBox="0 0 24 24" id="pv-icon"></svg><span id="pv-kind">خبر</span></span><span class="x" id="pv-x">×</span></div>
+              <div class="pv-title" id="pv-title">عنوان اعلان</div>
+              <div class="pv-text" id="pv-text">متن اعلان اینجا دیده می‌شود.</div>
+              <div class="pv-acts"><span class="pv-btn" id="pv-btn">دکمه</span><span class="pv-later">بعداً</span></div>
+            </div>
+            <div class="an-ghost"></div><div class="an-ghost"></div><div class="an-ghost"></div>
+          </div>
+          <div class="an-dim"></div>
+        </div>
+      </div>
+      <p style="margin:0;font-size:12.5px;color:var(--mg-mut);text-align:center;max-width:260px">«اولین بار»: وقتی کاربر اعلان را هنوز ندیده، پشت کارت تیره می‌شود. با «بعداً» سایه می‌رود و کارت بالای خانه می‌ماند.</p>
+    </aside>
+  </section>
+</div>
+{{ icon_news|json_script:"ic-news" }}{{ icon_update|json_script:"ic-update" }}{{ icon_warning|json_script:"ic-warning" }}{{ icon_offer|json_script:"ic-offer" }}
+{% endwith %}
+{% endblock %}
+{% block module_scripts %}
+<script>
+(function () {
+  var form = document.getElementById("an-form");
+  if (!form) return;
+  var $ = function (s) { return form.querySelector(s); };
+  var FA = "۰۱۲۳۴۵۶۷۸۹";
+  var fa = function (n) { return String(n).replace(/\d/g, function (d) { return FA[d]; }); };
+  var icons = {};
+  ["news", "update", "warning", "offer"].forEach(function (k) { icons[k] = JSON.parse(document.getElementById("ic-" + k).textContent); });
+  var labels = {};
+  form.querySelectorAll("input[name=kind]").forEach(function (r) { labels[r.value] = r.nextElementSibling.textContent; });
+  var screen = document.getElementById("pv-screen");
+
+  function val(name) {
+    var el = form.querySelector("[name=" + name + "]:checked") || form.querySelector("[name=" + name + "]");
+    return el ? el.value : "";
+  }
+  function paint() {
+    var kind = val("kind") || "news", link = val("link_kind"), audience = val("audience"), scr = val("link_screen");
+    form.querySelectorAll("[data-show-link]").forEach(function (el) { el.hidden = el.dataset.showLink.split(" ").indexOf(link) < 0; });
+    form.querySelectorAll("[data-show-screen]").forEach(function (el) { el.hidden = link !== "app" || el.dataset.showScreen !== scr; });
+    form.querySelectorAll("[data-show-audience]").forEach(function (el) { el.hidden = el.dataset.showAudience !== audience; });
+    form.querySelectorAll("[data-count]").forEach(function (el) { el.textContent = fa((document.getElementById(el.dataset.count).value || "").length); });
+    document.getElementById("pv-title").textContent = $("#f-title").value || "عنوان اعلان";
+    document.getElementById("pv-text").textContent = $("#f-body").value || "متن اعلان اینجا دیده می‌شود.";
+    var chip = document.getElementById("pv-chip");
+    chip.className = "pv-chip pv-" + kind;
+    document.getElementById("pv-kind").textContent = labels[kind] || "";
+    document.getElementById("pv-icon").innerHTML = icons[kind] || "";
+    var btn = document.getElementById("pv-btn"), label = $("#f-cta").value;
+    btn.hidden = !link || !label;
+    btn.textContent = label;
+    document.getElementById("pv-x").hidden = !$("#f-dismissible").checked;
+  }
+  form.addEventListener("input", paint);
+  form.addEventListener("change", paint);
+  paint();
+
+  document.querySelectorAll("[data-mode]").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      document.querySelectorAll("[data-mode]").forEach(function (b) { b.setAttribute("aria-current", b === a ? "true" : "false"); });
+      screen.classList.toggle("first", a.dataset.mode === "first");
+    });
+  });
+})();
+</script>
+{% endblock %}

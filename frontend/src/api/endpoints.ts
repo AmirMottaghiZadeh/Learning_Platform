@@ -42,6 +42,8 @@ import {
   OtpPurpose,
   OtpRequestResponse,
   ReleaseCheck,
+  AppAnnouncement,
+  AnnouncementEvent,
   User,
 } from "./types";
 
@@ -97,6 +99,14 @@ export const releaseApi = {
         skipAuth: true,
       } as never)
       .then((r) => r.data),
+};
+
+// Messages from the admin (backend apps.announcements), shown on home.
+export const announcementsApi = {
+  list: (versionCode: number) =>
+    apiClient.get<AppAnnouncement[]>("/announcements/", { params: { version_code: versionCode } }).then((r) => r.data),
+  event: (id: number, event: AnnouncementEvent) =>
+    apiClient.post(`/announcements/${id}/event/`, { event }).then(() => undefined),
 };
 
 // --- drug knowledge ---------------------------------------------------

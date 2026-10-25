@@ -35,6 +35,7 @@ else:
 # the sales console, the site's content panel and the data-quality desk.
 urlpatterns += [
     path("manage/site/", include("apps.website.panel.urls")),
+    path("manage/app/", include("apps.announcements.manage_urls")),
     path("manage/", include("apps.manage.urls")),
     # The panel's pictures, served here too so its pages show them.
     path("media/<int:pk>/<str:name>", views_public.media, name="api-media"),

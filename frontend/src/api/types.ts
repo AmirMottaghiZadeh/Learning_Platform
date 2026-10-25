@@ -745,3 +745,35 @@ export type ReleaseCheck = {
   update: "none" | "optional" | "required";
   latest: AppReleaseInfo | null;
 };
+
+// --- announcements from the admin (backend apps.announcements) ------------
+
+export type AnnouncementKind = "news" | "update" | "warning" | "offer";
+
+export type AnnouncementButton = {
+  label: string;
+  /** "url": open `url`; "app": go to `screen` (with `param`) in the app */
+  kind: "url" | "app";
+  url: string;
+  screen: string;
+  param: string;
+};
+
+export type AppAnnouncement = {
+  id: number;
+  title: string;
+  body: string;
+  kind: AnnouncementKind;
+  kind_label: string;
+  button: AnnouncementButton | null;
+  dismissible: boolean;
+  pinned: boolean;
+  /** false until this app reported it shown: an unseen one opens dimmed */
+  seen: boolean;
+  starts_at: string;
+  /** a draft the admin sent to their own phone */
+  is_test: boolean;
+};
+
+export type AnnouncementEvent = "seen" | "click" | "dismiss";
+

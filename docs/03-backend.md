@@ -48,6 +48,7 @@
 | `billing` | ویژگی، پلن و محصول، قیمت، کد تخفیف، سفارش، حق دسترسی، سهمیه، درگاه پرداخت، مهمان، کنسول `/manage/sales/` | `Feature`، `Plan`، `PlanFeature`، `PlanPrice`، `DiscountCode`، `Order`، `Entitlement`، `UsageRecord`، `PaymentGateway`، `BillingSettings`، `GuestAccount`، `AdminAction` | جزئیات در «صورتحساب» پایین‌تر |
 | `website` | سایت و بلاگ، پنل محتوا، آمار بازدید، ریدایرکت، حالت تعمیر، و مسیر API نسخهٔ اپ (`/app/release/`) | ۲۰ مدل، از جمله `SiteSettings`، `Post`، `Page`، `Media`، `StaffRole`، `DailyStat` | [12-website.md](12-website.md) |
 | `data_quality_center` | ویرایش خلاصه‌های بالینی با بازبینی superuser و سابقهٔ تغییرناپذیر | `SectionEditRequest`، `SectionEdit`، `ReviewEvent` | [11-admin-consoles.md](11-admin-consoles.md) |
+| `announcements` | اعلان‌های مدیر به کاربران اپ، با دکمهٔ اختیاری به نشانی وب یا بخشی از اپ، مخاطب و بازهٔ زمانی، و رسید هر کاربر (دیده، زده، بسته) | `AppAnnouncement`، `AnnouncementReceipt` | API در [05-api.md](05-api.md)، مدیریت در [11-admin-consoles.md](11-admin-consoles.md) |
 | `manage` | مدیریت یکپارچه: یک ورود، نوار بخش‌ها و نوار فرمان، خانه با کارهای امروز، گزارش فعالیت یکی‌شده؛ کنسول فروش، پنل سایت و مرکز کیفیت داده زیر آن می‌نشینند | — | نقشهٔ منو در `manage/nav.py`؛ شرح در [11-admin-consoles.md](11-admin-consoles.md) |
 
 ساختار معمول هر اپ: `models.py`، `serializers.py`، `views.py`، `urls.py`، `services.py` (منطق کسب‌وکار)، `tests.py` یا `tests/`، `management/commands/`.

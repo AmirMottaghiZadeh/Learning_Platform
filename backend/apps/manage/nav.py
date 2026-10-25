@@ -91,6 +91,7 @@ MODULES = (
         Page("gateway", "درگاه پرداخت", "console:gateway", access.is_super, ("console:gateway*",)),
     )),
     Module("app", "اپ", ICONS["app"], (
+        Page("announcements", "اعلانات اپ", "app_admin:announcements", access.is_super, ("app_admin:*",)),
         Page("releases", "نسخه‌ها و دانلود", "panel:releases", access.site("download.manage"), ("panel:releases*", "panel:links*")),
         Page("access", "دسترسی مهمان", "console:access", access.is_super, ("console:access",)),
     )),
@@ -130,6 +131,7 @@ MODULES = (
 
 # Things to do, offered on the home column and in the command bar.
 ACTIONS = (
+    ("اعلان تازه در اپ", "app_admin:announcements", access.is_super),
     ("مطلب تازه برای بلاگ", "panel:post_new", access.site("post.create")),
     ("کد تخفیف تازه", "console:discounts", access.is_super),
     ("پلن تازه", "console:plan_new", access.is_super),

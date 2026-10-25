@@ -258,10 +258,15 @@ def _tiles(user, now):
         from apps.website.models import AppRelease
 
         latest = AppRelease.objects.filter(is_published=True).order_by("-released_at", "-id").first()
+        sub = jalali.format_date(latest.released_at, with_month_name=True) if latest else "هنوز نسخه‌ای ثبت نشده"
+        if access.is_super(user):
+            from apps.announcements.models import AppAnnouncement
+
+            live = sum(1 for a in AppAnnouncement.objects.filter(is_published=True) if a.state_at(now) == AppAnnouncement.STATE_ACTIVE)
+            sub = f"{jalali.fa_digits(live)} اعلان فعال · {sub}"
         tiles.append({"label": "اپ", "value": jalali.fa_digits(latest.version) if latest else "—",
-                      "unit": "آخرین نسخه" if latest else "",
-                      "sub": jalali.format_date(latest.released_at, with_month_name=True) if latest else "هنوز نسخه‌ای ثبت نشده",
-                      "url": _url("panel:releases")})
+                      "unit": "آخرین نسخه" if latest else "", "sub": sub,
+                      "url": _url("app_admin:announcements") if access.is_super(user) else _url("panel:releases")})
     if can(user, "dashboard.view"):
         from apps.website.models import DailyStat
 
