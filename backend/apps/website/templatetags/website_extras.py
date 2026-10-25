@@ -5,6 +5,23 @@ from apps.drugs.data.atc_reference import ATC_L1
 register = template.Library()
 
 
+@register.filter
+def on_site(path):
+    """A site path ("/blog/x/") as a full address on the site, for links from
+    the admin, which lives on another domain."""
+    from .. import services
+
+    return services.absolute(path) if isinstance(path, str) and path.startswith("/") else path
+
+
+@register.filter
+def post_link(post):
+    """A post's address on the site; a draft's opens as a preview."""
+    from .. import services
+
+    return services.post_link(post)
+
+
 @register.simple_tag
 def atc_groups():
     """[(code, Persian name)] for the 14 anatomical ATC groups."""

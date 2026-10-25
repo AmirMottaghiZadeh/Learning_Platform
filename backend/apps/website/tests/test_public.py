@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.core import mail
 from .base import SiteTestCase as TestCase
 from django.utils import timezone
@@ -45,7 +46,10 @@ class HostRoutingTests(TestCase):
         row.maintenance_mode = True
         row.save()
         self.assertEqual(self.client.get("/", **HOST).status_code, 503)
-        self.assertEqual(self.client.get("/panel/login/", **HOST).status_code, 200)
+        # the panel moved to the admin; its old address still answers, with a redirect there
+        res = self.client.get("/panel/login/", **HOST)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(res["Location"], f"{settings.MANAGE_PUBLIC_URL}/site/login/")
 
     def test_redirect_rule_on_404(self):
         Redirect.objects.create(from_path="/old/", to_url="/blog/")

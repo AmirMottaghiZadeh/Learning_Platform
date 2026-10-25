@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "apps.billing",
     # The public site and blog (pharmenta.ir) and its panel (/panel/).
     "apps.website",
+    "apps.manage",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -77,7 +78,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
-TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.debug", "django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages", "apps.website.context.site"]}}]
+TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.debug", "django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages", "apps.website.context.site", "apps.manage.context.shell"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 DATABASE_URL = config("DATABASE_URL", default="postgresql://postgres:postgres@127.0.0.1:5432/pharmexa")
@@ -499,6 +500,12 @@ SITE_HOSTS = [h.strip().lower() for h in config("SITE_HOSTS", default="pharmenta
 SITE_APP_URL = config("SITE_APP_URL", default="https://app.pharmenta.ir")
 # The site's own public origin, for canonical links, the sitemap and the feed.
 SITE_PUBLIC_URL = config("SITE_PUBLIC_URL", default="https://pharmenta.ir")
+# Where the admin lives (apps.manage): the site's old /panel/ and /ops/
+# addresses send here.
+MANAGE_PUBLIC_URL = config(
+    "MANAGE_PUBLIC_URL",
+    default="http://127.0.0.1:8000/manage" if ENVIRONMENT == "local" else "https://api.pharmenta.ir/manage",
+)
 # The public drug pages on the site (/drugs/): only drugs with an ATC code
 # under one of these prefixes get a page. Opened one category at a time, so
 # each can be reviewed before Google sees it; everything else stays in the app.

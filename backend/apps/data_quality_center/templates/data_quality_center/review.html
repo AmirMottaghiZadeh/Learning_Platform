@@ -19,7 +19,7 @@
   .ba-tag { width: 48px; flex: none; font-size: 11.5px; font-weight: 800; display: flex; justify-content: center; padding-top: 12px; }
   .ba-text { flex: 1; padding: 10px 14px; font-size: 14px; }
   .ba-row.before .ba-tag { background: var(--danger-bg); color: var(--danger); }
-  .ba-row.before .ba-text { background: #FFFBFA; }
+  .ba-row.before .ba-text { background: var(--soft); }
   .ba-row.before ins { display: none; }
   .ba-row.after .ba-tag { background: var(--ok-bg); color: var(--ok); }
   .ba-row.after .ba-text { background: #FAFDFB; }
@@ -65,8 +65,8 @@
       {% if drifted %}<span style="color: var(--danger); font-weight: 800">متن بخش پس از ارسال تغییر کرده — تأیید ممکن نیست</span>{% else %}نسخهٔ پایهٔ بخش هنوز معتبر است ✓{% endif %}
     </div>
 
-    {% if selected.reverts_id %}<div class="banner caution" style="background: #FFF9EF; border: 1px solid var(--warn-line); border-radius: 12px; padding: 9px 12px; font-size: 13px">این درخواست ویرایش اعمال‌شدهٔ #{{ selected.reverts_id|fa_digits }} را بازمی‌گرداند.</div>{% endif %}
-    <div style="background: #FFF9EF; border: 1px solid var(--warn-line); border-radius: 12px; padding: 9px 12px; font-size: 13px; line-height: 1.9; color: #5C4515"><b>دلیل اپراتور:</b> {{ selected.reason }}</div>
+    {% if selected.reverts_id %}<div class="banner caution" style="background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 12px; padding: 9px 12px; font-size: 13px">این درخواست ویرایش اعمال‌شدهٔ #{{ selected.reverts_id|fa_digits }} را بازمی‌گرداند.</div>{% endif %}
+    <div style="background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 12px; padding: 9px 12px; font-size: 13px; line-height: 1.9; color: #5C4515"><b>دلیل اپراتور:</b> {{ selected.reason }}</div>
 
     <div style="display: flex; align-items: center; gap: 8px">
       <div class="seg" id="lang-seg">

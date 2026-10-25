@@ -1,5 +1,5 @@
-"""Shared plumbing for the panel: navigation, rendering, logging, Jalali
-inputs and the styled form base."""
+"""Shared plumbing for the panel: rendering, logging, Jalali inputs and
+the styled form base. Its navigation is the admin shell's (apps.manage.nav)."""
 
 import re
 from datetime import datetime
@@ -13,77 +13,15 @@ from django.utils.safestring import mark_safe
 
 from apps.billing import jalali
 
-from ..models import ActivityLog, Comment, ContactMessage, SiteSettings, StaffRole
-from ..permissions import can, role_of
+from ..models import ActivityLog, SiteSettings, StaffRole
+from ..permissions import role_of
 
 TEHRAN = ZoneInfo("Asia/Tehran")
 _DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
 
-# (group, [(key, label, url name, icon, permission)])
-NAV = [
-    ("", [("dash", "داشبورد", "panel:dashboard", "home", "dashboard.view")]),
-    ("محتوا", [
-        ("posts", "مطالب", "panel:posts", "file", "post.create"),
-        ("pages", "برگه‌ها", "panel:pages", "layout", "page.manage"),
-        ("taxonomy", "دسته‌ها و برچسب‌ها", "panel:categories", "tag", "taxonomy.manage"),
-        ("media", "رسانه", "panel:media", "image", "media.upload"),
-        ("comments", "نظرات", "panel:comments", "chat", "comment.moderate"),
-    ]),
-    ("صفحهٔ اصلی", [
-        ("home", "متن و بلوک‌های صفحهٔ اصلی", "panel:blocks", "block", "content.manage"),
-    ]),
-    ("فروش", [
-        ("plans", "پلن‌ها و قیمت‌ها", "panel:plans", "card", "orders.view"),
-        ("orders", "سفارش‌ها", "panel:orders", "receipt", "orders.view"),
-        ("subs", "اشتراک‌ها و تخفیف", "panel:subscriptions", "gift", "orders.view"),
-    ]),
-    ("اپ", [
-        ("downloads", "نسخه‌ها و دانلود", "panel:releases", "download", "download.manage"),
-        ("ann", "اطلاعیه‌ها", "panel:announcements", "mega", "announcement.manage"),
-    ]),
-    ("مخاطبان", [
-        ("contact", "پیام‌های تماس", "panel:contact", "mail", "contact.view"),
-        ("subscribers", "خبرنامه", "panel:subscribers", "users", "subscriber.view"),
-    ]),
-    ("سایت", [
-        ("menus", "منوها", "panel:menus", "menu", "menu.manage"),
-        ("seo", "سئو و تغییر مسیر", "panel:seo", "globe", "seo.manage"),
-        ("stats", "آمار", "panel:stats", "chart", "dashboard.view"),
-        ("staff", "کاربران و نقش‌ها", "panel:staff", "users", "*"),
-        ("settings", "تنظیمات", "panel:settings", "gear", "*"),
-        ("activity", "گزارش فعالیت", "panel:activity", "list", "*"),
-    ]),
-]
-
-
-def allowed(user, perm):
-    if perm == "*":
-        return can(user, "*")
-    return can(user, perm)
-
-
-def nav_for(request, active):
-    from django.urls import reverse
-
-    badges = {}
-    if can(request.user, "comment.moderate"):
-        badges["comments"] = Comment.objects.filter(status=Comment.PENDING).count()
-    if can(request.user, "contact.view"):
-        badges["contact"] = ContactMessage.objects.filter(status=ContactMessage.NEW).count()
-    groups = []
-    for title, items in NAV:
-        rows = [
-            {"key": k, "label": label, "url": reverse(url), "icon": icon, "on": k == active, "badge": badges.get(k) or ""}
-            for k, label, url, icon, perm in items if allowed(request.user, perm)
-        ]
-        if rows:
-            groups.append({"title": title, "items": rows})
-    return groups
-
-
 def render_panel(request, template, ctx=None, *, active="", status=200):
+    """A panel page: the admin shell (apps.manage) draws the navigation."""
     ctx = dict(ctx or {})
-    ctx.setdefault("nav_groups", nav_for(request, active))
     ctx["nav_active"] = active
     ctx["role"] = role_of(request.user)
     ctx["role_label"] = dict(StaffRole.ROLE_CHOICES).get(ctx["role"], "")

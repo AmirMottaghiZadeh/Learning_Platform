@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, get_user_model, login, logout
+from django.contrib.auth import get_user_model
 from django.core.cache import caches
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -26,10 +26,9 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from apps.accounts.models import Role, RoleAssignment, SecurityAuditEvent, UserSession
+from apps.accounts.models import Role, RoleAssignment, UserSession
 from apps.accounts.services import (
     assign_platform_role,
-    record_security_event,
     revoke_all_user_sessions,
     revoke_platform_role,
 )
@@ -38,6 +37,9 @@ from apps.billing import guest as guest_tools
 from apps.billing.gateways import GatewayError, SepGateway, ZibalGateway, ZarinpalGateway
 from apps.billing.catalog import SCOPE_TYPES, TOPIC_CATEGORY_CHOICES
 from apps.billing.jalali import fa_digits, month_start
+from apps.manage.views import login_url as manage_login_url
+from apps.manage.views import logout_view as manage_logout
+from apps.manage.views import to_login
 from apps.billing.models import (
     PERIOD_CHOICES,
     AdminAction,
@@ -64,8 +66,6 @@ from .forms import (
 
 User = get_user_model()
 PAGE_SIZE = 25
-LOGIN_MAX_FAILURES = 8
-LOGIN_LOCKOUT = timedelta(minutes=15)
 FIELD_FA = {"pharmacy": "داروسازی", "medicine": "پزشکی", "nursing": "پرستاری"}
 STEPS = [("basics", "اطلاعات پایه"), ("features", "امکانات"), ("prices", "قیمت و مدت"), ("review", "بررسی و انتشار")]
 
@@ -77,51 +77,19 @@ def superuser_required(view):
     def wrapper(request, *args, **kwargs):
         user = request.user
         if not (user.is_authenticated and user.is_active and user.is_superuser):
-            return redirect(f"{reverse('console:login')}?{REDIRECT_FIELD_NAME}={request.get_full_path()}")
+            return redirect(manage_login_url(request.get_full_path()))
         return view(request, *args, **kwargs)
 
     return wrapper
 
 
-def _login_key(request):
-    return f"console-login:{request.META.get('REMOTE_ADDR', '')}"
-
-
-def login_view(request):
-    if request.user.is_authenticated and request.user.is_superuser:
-        return redirect("console:users")
-    throttle = caches["throttle"]
-    key = _login_key(request)
-    next_url = request.POST.get(REDIRECT_FIELD_NAME) or request.GET.get(REDIRECT_FIELD_NAME, "")
-    error, username = "", ""
-    if request.method == "POST":
-        username = request.POST.get("username", "").strip()
-        if throttle.get(key, 0) >= LOGIN_MAX_FAILURES:
-            error = "تلاش‌های ناموفق زیاد بود؛ چند دقیقه‌ی دیگر دوباره امتحان کنید."
-        else:
-            user = authenticate(request, username=username, password=request.POST.get("password", ""))
-            if user is not None and user.is_active and user.is_superuser:
-                throttle.delete(key)
-                login(request, user)
-                record_security_event(
-                    SecurityAuditEvent.LOGIN_SUCCEEDED, user=user, request=request, metadata={"surface": "billing_console"}
-                )
-                if not url_has_allowed_host_and_scheme(next_url, {request.get_host()}, request.is_secure()):
-                    next_url = ""
-                return redirect(next_url or "console:users")
-            throttle.set(key, throttle.get(key, 0) + 1, int(LOGIN_LOCKOUT.total_seconds()))
-            record_security_event(
-                SecurityAuditEvent.LOGIN_FAILED, user=user, request=request,
-                metadata={"surface": "billing_console", "username": username[:150]},
-            )
-            error = "نام کاربری یا رمز درست نیست، یا این حساب سوپریوزر نیست."
-    return render(request, "billing/console/login.html", {"error": error, "username": username, "next": next_url})
+# Signing in and out is the admin's (apps.manage); these old addresses send there.
+login_view = to_login
 
 
 @require_POST
 def logout_view(request):
-    logout(request)
-    return redirect("console:login")
+    return manage_logout(request)
 
 
 # -- helpers ------------------------------------------------------------------

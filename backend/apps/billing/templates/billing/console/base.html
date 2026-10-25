@@ -1,138 +1,15 @@
-{% load static billing_extras %}<!doctype html>
-<html lang="fa" dir="rtl">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow">
-  <title>{% block title %}پنل مدیریت{% endblock %} · فارمنتا</title>
-  <style>
-    @font-face { font-family: "Vazirmatn"; font-weight: 400; font-display: swap; src: url("{% static 'dqc/fonts/Vazirmatn_400Regular.ttf' %}") format("truetype"); }
-    @font-face { font-family: "Vazirmatn"; font-weight: 600; font-display: swap; src: url("{% static 'dqc/fonts/Vazirmatn_600SemiBold.ttf' %}") format("truetype"); }
-    @font-face { font-family: "Vazirmatn"; font-weight: 800; font-display: swap; src: url("{% static 'dqc/fonts/Vazirmatn_800ExtraBold.ttf' %}") format("truetype"); }
-
-    /* Model C: a dark menu, the app's paper ground, white working cards,
-       teal only for action and where you are. */
-    :root {
-      color-scheme: light;
-      --page: #EFECE4; --page-2: #E4E0D6; --card: #FFFFFF; --soft: #F7F5EF;
-      --line: #E0DBD1; --line-2: #EFECE4;
-      --ink: #14201D; --prose: #2A3936; --muted: #5F6B68; --faint: #8A9491;
-      --menu: #14201D; --menu-ink: #DCE7E3; --mint: #9DD4B8; --mint-soft: rgba(157,212,184,0.16);
-      --accent: #0F5C52; --accent-2: #14746A; --accent-soft: #E8F1EE;
-      --warn: #8A6316; --warn-bg: #FFF9EF; --warn-line: #EEDCBB; --gold: #C9A24A;
-      --deny: #93331F; --deny-bg: #FFF1EE; --deny-line: #E8BFB4;
-      --spec: #7B5FA8; --spec-bg: #F7F3FC; --spec-line: #E2D6F2; --spec-ink: #3D2E52;
-      --blue: #1F5A8C; --blue-bg: #E6F0FA;
-      --radius: 18px;
-    }
-    * { box-sizing: border-box; }
-    [hidden] { display: none !important; }
-    html, body { margin: 0; min-height: 100%; }
-    body { background: var(--page); color: var(--ink); font: 400 14px/1.6 "Vazirmatn", Tahoma, sans-serif; }
-    a { color: var(--accent); }
-    a:hover { color: var(--accent-2); }
-    button, input, select, textarea { font: inherit; color: inherit; }
-    :focus-visible { outline: 3px solid var(--mint); outline-offset: 2px; }
-    h1, h2, h3 { margin: 0; line-height: 1.35; text-wrap: balance; }
-    h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.4px; }
-    h2 { font-size: 19px; font-weight: 800; }
-    h3 { font-size: 16px; font-weight: 800; }
-    .shell { min-height: 100vh; display: flex; flex-wrap: wrap; }
-    .menu { flex: 1 1 210px; max-width: 220px; background: var(--menu); color: var(--menu-ink); padding: 24px 14px; display: flex; flex-direction: column; gap: 4px; }
-    .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 24px; color: #FFFFFF; font-weight: 800; font-size: 16px; }
-    .brand i { width: 38px; height: 38px; border-radius: 11px; background: var(--mint); display: flex; align-items: center; justify-content: center; }
-    .menu a { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px; color: var(--menu-ink); font-weight: 800; text-decoration: none; }
-    .menu a:hover { background: rgba(255,255,255,0.06); color: #FFFFFF; }
-    .menu a[aria-current="page"] { background: var(--mint-soft); color: var(--mint); }
-    .menu .grow { flex-grow: 1; }
-    .menu form button { width: 100%; text-align: right; padding: 11px 12px; border-radius: 12px; border: 0; background: transparent; color: var(--menu-ink); font-weight: 800; cursor: pointer; }
-    .menu .who { padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.06); font-size: 12.5px; color: var(--menu-ink); }
-    .main { flex: 999 1 560px; min-width: 0; padding: 30px 30px 48px; display: flex; flex-direction: column; gap: 22px; }
-    .eyebrow { font-size: 13px; font-weight: 800; color: var(--accent-2); }
-    .sub { font-size: 13.5px; font-weight: 600; color: var(--muted); }
-    .card { background: var(--card); border-radius: var(--radius); padding: 20px; }
-    .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-    .stack { display: flex; flex-direction: column; gap: 12px; }
-    .grow { flex-grow: 1; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-weight: 800; text-decoration: none; cursor: pointer; white-space: nowrap; }
-    .btn:hover { border-color: var(--accent); color: var(--accent); }
-    .btn.primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
-    .btn.primary:hover { background: var(--accent-2); color: #FFFFFF; }
-    .btn.outline { border-color: var(--accent); color: var(--accent); }
-    .btn.danger { background: var(--deny-bg); border-color: var(--deny-line); color: var(--deny); }
-    .btn.small { min-height: 36px; padding: 0 12px; border-radius: 10px; font-size: 13px; }
-    .btn.mint { background: var(--mint); border-color: var(--mint); color: var(--ink); }
-    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--soft); color: var(--muted); white-space: nowrap; }
-    .chip.accent { background: var(--accent-soft); color: var(--accent); }
-    .chip.warn { background: var(--warn-bg); color: var(--warn); }
-    .chip.deny { background: var(--deny-bg); color: var(--deny); }
-    .chip.spec { background: var(--spec-bg); color: var(--spec); }
-    .chip.blue { background: var(--blue-bg); color: var(--blue); }
-    label.lbl, .lbl { display: block; font-size: 12.5px; font-weight: 800; color: var(--muted); margin-bottom: 6px; }
-    .fld { width: 100%; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); padding: 8px 12px; font-weight: 600; }
-    .fld:focus { border-color: var(--accent); }
-    .ltr { direction: ltr; text-align: left; unicode-bidi: isolate; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .grid { display: grid; gap: 12px; }
-    .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    @media (max-width: 1100px) { .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { .g2, .g3, .g4 { grid-template-columns: minmax(0, 1fr); } .main { padding: 20px 16px 40px; } .menu { max-width: none; flex-direction: row; flex-wrap: wrap; } .menu .brand { padding-bottom: 8px; width: 100%; } .menu .grow, .menu .who { display: none; } }
-    .kpi { background: var(--card); border-radius: 22px; padding: 18px 20px; display: flex; align-items: flex-end; gap: 14px; }
-    .kpi b { display: block; font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
-    .spark { display: flex; align-items: flex-end; gap: 4px; height: 44px; }
-    .spark span { width: 8px; border-radius: 3px; background: #D7E8E1; }
-    .spark span.on { background: var(--accent); }
-    .spark.warn span.on { background: var(--gold); }
-    .segs { display: inline-flex; flex-wrap: wrap; gap: 6px; padding: 6px; border-radius: 16px; background: var(--page-2); }
-    .segs a { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 14px; border-radius: 11px; color: var(--ink); font-weight: 800; text-decoration: none; }
-    .segs a[aria-current="true"] { background: var(--card); color: var(--accent); }
-    .segs a small { padding: 1px 7px; border-radius: 999px; background: rgba(255,255,255,0.6); font-size: 11.5px; }
-    .segs a[aria-current="true"] small { background: var(--accent-soft); }
-    .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
-    .bar i { display: block; height: 100%; background: var(--accent); }
-    .bar.warn i { background: var(--gold); }
-    .bar.muted i { background: #9AA3A0; }
-    table.list { width: 100%; border-collapse: collapse; }
-    table.list th { text-align: right; font-size: 12.5px; font-weight: 800; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-    table.list td { padding: 12px; border-bottom: 1px solid var(--line-2); vertical-align: middle; }
-    .scroll-x { overflow-x: auto; }
-    .flash { padding: 12px 16px; border-radius: 14px; font-weight: 700; }
-    .flash.success { background: var(--accent-soft); color: var(--accent); }
-    .flash.error { background: var(--deny-bg); color: var(--deny); }
-    .empty { padding: 28px; text-align: center; color: var(--muted); font-weight: 700; }
-    .pager { display: flex; gap: 6px; align-items: center; justify-content: space-between; flex-wrap: wrap; color: var(--muted); font-weight: 700; font-size: 13px; }
-    details > summary { cursor: pointer; list-style: none; }
-    details > summary::-webkit-details-marker { display: none; }
-    .avatar { width: 42px; height: 42px; border-radius: 14px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex: none; }
-    {% block style %}{% endblock %}
-  </style>
-</head>
-<body>
-<div class="shell">
-  <nav class="menu" aria-label="منوی پنل">
-    <div class="brand"><i><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14201D" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M14 11l5-7"/></svg></i>فارمنتا</div>
-    <a href="{% url 'console:users' %}" {% if active == 'users' %}aria-current="page"{% endif %}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/></svg>کاربران</a>
-    <a href="{% url 'console:plans' %}" {% if active == 'plans' %}aria-current="page"{% endif %}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>پلن‌ساز</a>
-    <a href="{% url 'console:features' %}" {% if active == 'features' %}aria-current="page"{% endif %}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>امکانات</a>
-    <a href="{% url 'console:discounts' %}" {% if active == 'discounts' %}aria-current="page"{% endif %}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg>کدهای تخفیف</a>
-    <a href="{% url 'console:gateway' %}" {% if active == 'gateway' %}aria-current="page"{% endif %}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg>درگاه پرداخت</a>
-    <a href="{% url 'console:access' %}" {% if active == 'access' %}aria-current="page"{% endif %}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg>تنظیمات دسترسی</a>
-    <a href="{% url 'console:sales' %}" {% if active == 'sales' %}aria-current="page"{% endif %}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>فروش</a>
-    <a href="{% url 'console:audit' %}" {% if active == 'audit' %}aria-current="page"{% endif %}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>گزارش تغییرات</a>
-    <div class="grow"></div>
-    <div class="who">وارد شده: <span style="color:#FFFFFF;font-weight:800">{{ request.user.get_username }}</span></div>
-    <form method="post" action="{% url 'console:logout' %}">{% csrf_token %}<button type="submit">خروج</button></form>
-  </nav>
-  <main class="main">
-    {% guest_access_on as guest_on %}
-    {% if guest_on %}<div class="flash" role="status" style="background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-line)">ورود بدون نام کاربری و رمز روشن است: هر کس اپ را باز کند بدون ثبت‌نام وارد می‌شود. <a href="{% url 'console:access' %}" style="color:var(--warn)">خاموش کردن</a></div>{% endif %}
-    {% for message in messages %}<div class="flash {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
-    {% block content %}{% endblock %}
-  </main>
+{% extends "manage/base.html" %}
+{% load static %}
+{% comment %}The sales console's pages, inside the admin shell (apps.manage):
+the shell draws the rail, the page column, the command bar and messages.{% endcomment %}
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'billing/console.css' %}">
+<style>{% block style %}{% endblock %}</style>
+{% endblock %}
+{% block module %}
+<div class="mx-sales-wrap">
+  <div class="mx-sales">{% block content %}{% endblock %}</div>
   {% block aside %}{% endblock %}
 </div>
-{% block script %}{% endblock %}
-</body>
-</html>
+{% endblock %}
+{% block module_scripts %}{% block script %}{% endblock %}{% endblock %}

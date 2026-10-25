@@ -6,17 +6,6 @@
   var fa = function (n) { return String(n).replace(/\d/g, function (d) { return FA[d]; }); };
   var csrf = function () { var i = $("input[name=csrfmiddlewaretoken]"); return i ? i.value : ""; };
 
-  /* ---- theme + sidebar ---- */
-  var root = document.documentElement;
-  var themeBtn = $("#theme");
-  if (themeBtn) themeBtn.addEventListener("click", function () {
-    var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    root.setAttribute("data-theme", next);
-    try { localStorage.setItem("panel-theme", next); } catch (e) {}
-  });
-  var sb = $("#sb"), sbBtn = $("#sb-toggle");
-  if (sb && sbBtn) sbBtn.addEventListener("click", function () { sb.classList.toggle("open"); });
-
   /* ---- dialogs ---- */
   document.addEventListener("click", function (e) {
     var close = e.target.closest("[data-close]");
@@ -75,46 +64,6 @@
     drop.addEventListener("drop", function (e) {
       var input = $("input[type=file]", drop);
       if (e.dataTransfer && e.dataTransfer.files.length) { input.files = e.dataTransfer.files; drop.submit(); }
-    });
-  }
-
-  /* ---- command palette ---- */
-  var pal = $("#palette"), palQ = $("#palette-q"), palList = $("#palette-list");
-  var navItems = $$("#sb a.ni").map(function (a) { return { label: a.textContent.replace(/\s+/g, " ").trim(), url: a.getAttribute("href"), type: "صفحه" }; });
-  var results = [], active = 0, timer = null;
-  function paint() {
-    palList.innerHTML = "";
-    results.forEach(function (r, i) {
-      var li = document.createElement("li"), a = document.createElement("a");
-      a.href = r.url; a.className = i === active ? "on" : "";
-      a.innerHTML = "<span></span><small></small>";
-      a.firstChild.textContent = r.label; a.lastChild.textContent = r.type;
-      li.appendChild(a); palList.appendChild(li);
-    });
-    if (!results.length) { var li = document.createElement("li"); li.style.padding = "14px 18px"; li.style.color = "var(--muted)"; li.textContent = "نتیجه‌ای پیدا نشد."; palList.appendChild(li); }
-  }
-  function filterNav(q) { q = q.trim(); return navItems.filter(function (n) { return !q || n.label.indexOf(q) !== -1; }); }
-  function openPalette() { if (!pal) return; results = filterNav(""); active = 0; paint(); pal.showModal(); palQ.value = ""; palQ.focus(); }
-  var palBtn = $("#open-palette");
-  if (palBtn) palBtn.addEventListener("click", openPalette);
-  document.addEventListener("keydown", function (e) {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); }
-  });
-  if (palQ) {
-    palQ.addEventListener("input", function () {
-      var q = palQ.value; results = filterNav(q); active = 0; paint();
-      clearTimeout(timer);
-      if (q.trim().length >= 2) timer = setTimeout(function () {
-        fetch(window.PANEL.search + "?q=" + encodeURIComponent(q), { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (d) {
-          if (palQ.value !== q) return;
-          results = filterNav(q).concat(d.results); paint();
-        }).catch(function () {});
-      }, 200);
-    });
-    palQ.addEventListener("keydown", function (e) {
-      if (e.key === "ArrowDown") { e.preventDefault(); active = Math.min(active + 1, results.length - 1); paint(); }
-      else if (e.key === "ArrowUp") { e.preventDefault(); active = Math.max(active - 1, 0); paint(); }
-      else if (e.key === "Enter" && results[active]) { window.location = results[active].url; }
     });
   }
 

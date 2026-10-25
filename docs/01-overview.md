@@ -70,9 +70,9 @@ flowchart LR
 
 | نشانی | سرویس رانفلر | چه چیزی سرو می‌کند |
 |---|---|---|
-| `https://pharmenta.ir` (و `www.pharmenta.ir` که به آن هدایت می‌شود) | بک‌اند | سایت معرفی، بلاگ، پلن‌ها و خرید، دانلود، پنل محتوا `/panel/`، کنسول فروش `/ops/` |
+| `https://pharmenta.ir` (و `www.pharmenta.ir` که به آن هدایت می‌شود) | بک‌اند | سایت معرفی، بلاگ، پلن‌ها و خرید، دانلود؛ نشانی‌های قدیمی `/panel/` و `/ops/` به مدیریت هدایت می‌شوند |
 | `https://app.pharmenta.ir` | وب‌اپ (از شاخهٔ `deploy-web`) | نسخهٔ وب اپ (PWA) |
-| `https://api.pharmenta.ir` | بک‌اند | API در `/api/v1/`، Swagger در `/api/v1/docs/`، کنسول‌ها در `/ops/` و `/ops/data-quality/`، ادمین Django در `/admin/` |
+| `https://api.pharmenta.ir` | بک‌اند | API در `/api/v1/`، Swagger در `/api/v1/docs/`، مدیریت یکپارچه در `/manage/` (فروش، محتوای سایت، اپ و کیفیت داده)، ادمین Django در `/admin/` |
 | `https://s3-pish.runflare.cloud` | Object Storage، باکت `pharmenta-dl` | بسته‌های آفلاین (خصوصی؛ فقط با لینک امضاشده). سرور با همین نشانی به باکت وصل می‌شود |
 | `https://s3.pharmenta.ir` | دامنهٔ اختصاصی همان Object Storage | دامنهٔ لینک‌های دانلودی که اپ می‌گیرد (`OFFLINE_S3_DOWNLOAD_URL`) |
 

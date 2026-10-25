@@ -5,6 +5,7 @@ import re
 from datetime import timedelta
 
 from django.conf import settings
+from django.core import signing
 from django.core.cache import cache
 from django.db.models import Prefetch, Q
 from django.utils import timezone
@@ -152,6 +153,32 @@ def latest_announcement():
 
 def absolute(path):
     return settings.SITE_PUBLIC_URL.rstrip("/") + path
+
+
+# A draft is previewed from the admin, on another domain than the site, so
+# its preview link carries a signed token instead of relying on a session.
+PREVIEW_SALT = "website.post-preview"
+PREVIEW_MAX_AGE = 24 * 3600
+
+
+def preview_token(post):
+    return signing.dumps(post.pk, salt=PREVIEW_SALT)
+
+
+def preview_ok(request, post):
+    token = request.GET.get("preview") or ""
+    if not token:
+        return False
+    try:
+        return signing.loads(token, salt=PREVIEW_SALT, max_age=PREVIEW_MAX_AGE) == post.pk
+    except signing.BadSignature:
+        return False
+
+
+def post_link(post):
+    """The post's full address on the site; a draft's carries a preview token."""
+    url = absolute(post.get_absolute_url())
+    return url if post.is_live else f"{url}?preview={preview_token(post)}"
 
 
 def compare_rows(cards):

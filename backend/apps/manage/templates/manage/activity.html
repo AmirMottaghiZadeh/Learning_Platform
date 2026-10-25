@@ -1,0 +1,52 @@
+{% extends "manage/base.html" %}
+{% load billing_extras %}
+{% block title %}گزارش فعالیت{% endblock %}
+{% block module %}
+<div class="mg-head">
+  <div>
+    <p>سیستم</p>
+    <h1>گزارش فعالیت</h1>
+    <p class="lead">هر کاری که مدیران در سایت، فروش و حساب کاربران کرده‌اند، تازه‌ترین بالا.</p>
+  </div>
+</div>
+<div class="mg-tools">
+  {% if show_site and show_sales %}
+  <div class="mg-seg" role="group" aria-label="منبع">
+    <a href="?q={{ q|urlencode }}"{% if not source %} aria-current="true"{% endif %}>همه</a>
+    <a href="?source=site&amp;q={{ q|urlencode }}"{% if source == "site" %} aria-current="true"{% endif %}>سایت</a>
+    <a href="?source=sales&amp;q={{ q|urlencode }}"{% if source == "sales" %} aria-current="true"{% endif %}>فروش و کاربران</a>
+  </div>
+  {% endif %}
+  <form method="get" style="display:flex;gap:8px;margin:0">
+    {% if source %}<input type="hidden" name="source" value="{{ source }}">{% endif %}
+    <label class="mg-sr" for="q">جست‌وجو</label>
+    <input class="mg-input" id="q" name="q" value="{{ q }}" placeholder="کاربر، کار یا مورد">
+    <button class="mg-b ghost" type="submit">جست‌وجو</button>
+  </form>
+</div>
+<div class="mg-table-wrap">
+  <table class="mg-table">
+    <thead><tr><th scope="col">زمان</th><th scope="col">مدیر</th><th scope="col">کار</th><th scope="col">جزئیات</th><th scope="col">بخش</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td style="white-space:nowrap">{{ r.date }} · {{ r.when }}</td>
+        <td>{{ r.who }}</td>
+        <td>{{ r.what|default:r.action }}</td>
+        <td style="color:var(--mg-mut)">{{ r.detail }}</td>
+        <td><span class="mg-chip t-{{ r.tone }}">{{ r.source }}</span></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="mg-empty">{% if q %}چیزی با «{{ q }}» پیدا نشد.{% else %}هنوز کاری ثبت نشده است.{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="mg-pager">
+  <span>صفحهٔ {{ page|fa }}</span>
+  <span style="display:flex;gap:8px">
+    {% if page > 1 %}<a class="mg-b ghost" href="?page={{ page|add:'-1' }}{% if source %}&amp;source={{ source }}{% endif %}{% if q %}&amp;q={{ q|urlencode }}{% endif %}">تازه‌تر</a>{% endif %}
+    {% if has_next %}<a class="mg-b ghost" href="?page={{ page|add:'1' }}{% if source %}&amp;source={{ source }}{% endif %}{% if q %}&amp;q={{ q|urlencode }}{% endif %}">قدیمی‌تر</a>{% endif %}
+  </span>
+</div>
+{% endblock %}

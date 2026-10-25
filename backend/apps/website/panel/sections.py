@@ -2,6 +2,7 @@
 
 from django.utils.html import format_html
 
+from .. import services
 from ..models import (
     Announcement, AppRelease, Category, ContentBlock, DownloadLink, MenuItem, Page, Redirect, Tag,
 )
@@ -33,7 +34,7 @@ pages = Section(
     perm="page.manage", active="pages", search=("title", "slug"), ordering=("title",),
     filters=[("status", "وضعیت", Page.STATUS_CHOICES, "status")],
     hint="برگه‌های متنی مثل «دربارهٔ ما» و «قوانین». برگهٔ نوع «تماس» فرم تماس را هم نشان می‌دهد.",
-    columns=[("عنوان", lambda o: o.title), ("نشانی", lambda o: format_html('<a href="/{0}/" target="_blank" dir="ltr">/{0}/</a>', o.slug)),
+    columns=[("عنوان", lambda o: o.title), ("نشانی", lambda o: format_html('<a href="{1}" target="_blank" dir="ltr">/{0}/</a>', o.slug, services.absolute(f"/{o.slug}/"))),
              ("نوع", lambda o: o.get_kind_display()), ("وضعیت", lambda o: chip(o.get_status_display(), "ok" if o.status == "published" else "dr")),
              ("به‌روزرسانی", lambda o: jalali_format(o.updated_at, False))],
 )

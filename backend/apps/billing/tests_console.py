@@ -30,16 +30,17 @@ class AccessTests(ConsoleTestCase):
     def test_only_superusers_get_in(self):
         self.client.logout()
         res = self.client.get(reverse("console:users"))
-        self.assertRedirects(res, f"{reverse('console:login')}?next=/ops/users/", fetch_redirect_response=False)
+        self.assertRedirects(res, f"{reverse('manage:login')}?next={reverse('console:users')}", fetch_redirect_response=False)
+        # staff get into the admin (for the data-quality desk) but not the sales tools
         staff = User.objects.create_user(username="staff", password="pw-123456", is_staff=True)
         self.client.force_login(staff)
         self.assertEqual(self.client.get(reverse("console:users")).status_code, 302)
-        res = self.client.post(reverse("console:login"), {"username": "staff", "password": "pw-123456"})
-        self.assertContains(res, "سوپریوزر نیست")
+        self.assertNotContains(self.client.get(reverse("manage:home")), reverse("console:users"))
 
     def test_login(self):
         self.client.logout()
-        res = self.client.post(reverse("console:login"), {"username": "root", "password": "pw-123456"})
+        self.assertTrue(self.client.get(reverse("console:login"))["Location"].startswith(reverse("manage:login")))
+        res = self.client.post(reverse("manage:login"), {"identifier": "root", "password": "pw-123456", "next": reverse("console:users")})
         self.assertRedirects(res, reverse("console:users"), fetch_redirect_response=False)
 
 

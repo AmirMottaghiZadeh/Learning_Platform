@@ -129,13 +129,13 @@
 |---|---|---|---|
 | `QUIZ_API_ENABLED` | `False` | `True` | بدون آن، `/quiz/*` پاسخ 503 می‌دهد |
 | `FLASHCARDS_API_ENABLED` | `False` | `True` | بدون آن، `/flashcards/*` پاسخ 503 می‌دهد |
-| `DATA_QUALITY_CENTER_ENABLED` | `True` | — | `/ops/data-quality/` |
+| `DATA_QUALITY_CENTER_ENABLED` | `True` | — | `/manage/data/` |
 | `DATA_QUALITY_MIN_REASON_LENGTH` | `12` | — | حداقل طول دلیل هر درخواست ویرایش |
-| `BILLING_CONSOLE_ENABLED` | `True` | — | `/ops/` |
+| `BILLING_CONSOLE_ENABLED` | `True` | — | `/manage/sales/` |
 
 ## صورتحساب و پرداخت
 
-مقدارهایی که در کنسول فروش (`/ops/gateway/`) تنظیم شوند بر این متغیرها مقدم‌اند.
+مقدارهایی که در کنسول فروش (`/manage/sales/gateway/`) تنظیم شوند بر این متغیرها مقدم‌اند.
 
 | متغیر | پیش‌فرض | رانفلر | کار |
 |---|---|---|---|
@@ -176,9 +176,10 @@
 
 | متغیر | پیش‌فرض | رانفلر | کار |
 |---|---|---|---|
-| `SITE_HOSTS` | `pharmenta.ir,site.localhost` | — | هاست‌هایی که سایت و پنل را می‌گیرند |
+| `SITE_HOSTS` | `pharmenta.ir,site.localhost` | — | هاست‌هایی که سایت را می‌گیرند |
 | `SITE_APP_URL` | `https://app.pharmenta.ir` | — | مقصد دکمه‌های «ورود به وب‌اپ» |
-| `SITE_PUBLIC_URL` | `https://pharmenta.ir` | — | نشانی canonical، نقشهٔ سایت و فید |
+| `SITE_PUBLIC_URL` | `https://pharmenta.ir` | — | نشانی canonical، نقشهٔ سایت و فید؛ پیوندهای مدیریت به صفحه‌های سایت هم با آن ساخته می‌شوند |
+| `MANAGE_PUBLIC_URL` | `http://127.0.0.1:8000/manage` در `local`، وگرنه `https://api.pharmenta.ir/manage` | — | نشانی مدیریت؛ `/panel/` و `/ops/` قدیمی روی دامنهٔ سایت به آن هدایت می‌شوند |
 | `SITE_DRUG_ATC_PREFIXES` | `J01` | — | دسته‌هایی که صفحهٔ عمومی دارو روی سایت دارند (`/drugs/`)؛ پیشوند ATC با ویرگول، مثلاً `J01,C09`. خالی = دارونامه خاموش ([12-website.md](12-website.md)) |
 | `SITE_EDITORIAL_NAME` | `تیم علمی فارمنتا` | — | نام نویسندهٔ صفحه‌های دارو و مقاله‌های بی‌نویسنده (روی صفحه و در دادهٔ ساختاریافته) |
 

@@ -4,23 +4,20 @@ reviews every change before it reaches the live data. Server-rendered,
 Persian, right to left; the workflow itself lives in services.py.
 """
 
-from datetime import timedelta
 from functools import wraps
 
 from django.contrib import messages
-from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login, logout
-from django.core.cache import caches
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from apps.accounts.models import SecurityAuditEvent
-from apps.accounts.services import record_security_event
+from apps.manage.views import login_url as manage_login_url
+from apps.manage.views import logout_view as manage_logout
+from apps.manage.views import to_login
 from apps.drugs.models import CLINICAL_FIELD_KEYS, Ingredient, IngredientProfileSection
 
 from . import services
@@ -30,8 +27,6 @@ from .models import ReviewEvent, SectionEdit, SectionEditRequest
 from .services import WorkflowError
 
 PAGE_SIZE = 25
-LOGIN_MAX_FAILURES = 8
-LOGIN_LOCKOUT = timedelta(minutes=15)
 
 
 # -- access -----------------------------------------------------------------
@@ -44,8 +39,7 @@ def operator_required(view):
     def wrapper(request, *args, **kwargs):
         user = request.user
         if not (user.is_authenticated and user.is_active and user.is_staff):
-            login_url = reverse("data_quality_center:login")
-            return redirect(f"{login_url}?{REDIRECT_FIELD_NAME}={request.get_full_path()}")
+            return redirect(manage_login_url(request.get_full_path()))
         return view(request, *args, **kwargs)
 
     return wrapper
@@ -63,53 +57,13 @@ def superuser_required(view):
     return wrapper
 
 
-def _login_key(request):
-    ip = services._client_ip(request) or "unknown"
-    return f"dqc-login-failures:{ip}"
-
-
-def login_view(request):
-    if request.user.is_authenticated and request.user.is_staff:
-        return redirect("data_quality_center:queue")
-
-    throttle = caches["throttle"]
-    key = _login_key(request)
-    next_url = request.POST.get(REDIRECT_FIELD_NAME) or request.GET.get(REDIRECT_FIELD_NAME, "")
-    error = ""
-    username = ""
-
-    if request.method == "POST":
-        username = request.POST.get("username", "").strip()
-        if throttle.get(key, 0) >= LOGIN_MAX_FAILURES:
-            error = "تلاش‌های ناموفق زیاد بود؛ چند دقیقهٔ دیگر دوباره امتحان کنید."
-        else:
-            user = authenticate(request, username=username, password=request.POST.get("password", ""))
-            if user is not None and user.is_active and user.is_staff:
-                throttle.delete(key)
-                login(request, user)
-                record_security_event(
-                    SecurityAuditEvent.LOGIN_SUCCEEDED, user=user, request=request,
-                    metadata={"surface": "data_quality_center"},
-                )
-                if not url_has_allowed_host_and_scheme(next_url, {request.get_host()}, request.is_secure()):
-                    next_url = reverse("data_quality_center:queue")
-                return redirect(next_url or "data_quality_center:queue")
-            throttle.set(key, throttle.get(key, 0) + 1, int(LOGIN_LOCKOUT.total_seconds()))
-            record_security_event(
-                SecurityAuditEvent.LOGIN_FAILED, user=user, request=request,
-                metadata={"surface": "data_quality_center", "username": username[:150]},
-            )
-            error = "نام کاربری یا رمز درست نیست، یا این حساب دسترسی کارمندی ندارد."
-
-    return render(request, "data_quality_center/login.html", {
-        "error": error, "username": username, "next": next_url,
-    })
+# Signing in and out is the admin's (apps.manage); these old addresses send there.
+login_view = to_login
 
 
 @require_POST
 def logout_view(request):
-    logout(request)
-    return redirect("data_quality_center:login")
+    return manage_logout(request)
 
 
 # -- shared page data ---------------------------------------------------------

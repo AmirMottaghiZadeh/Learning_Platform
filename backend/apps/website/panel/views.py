@@ -3,14 +3,12 @@
 from datetime import timedelta
 
 from django.contrib import messages
-from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, get_user_model, login, logout
-from django.core.cache import cache
+from django.contrib.auth import get_user_model
 from django.db.models import Count, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import LearnerProfile
@@ -25,51 +23,22 @@ from . import forms
 from .ui import jalali_format, log, paginate, render_panel
 
 User = get_user_model()
-LOGIN_FAILS, LOGIN_WINDOW = 8, 900
 
 
 # -- sign-in -----------------------------------------------------------------------
 
-def _safe_next(request):
-    target = request.POST.get("next") or request.GET.get("next") or ""
-    if target and url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
-        return target
-    return reverse("panel:dashboard")
-
-
 def login_view(request):
-    if role_of(request.user):
-        return redirect(_safe_next(request))
-    error = ""
-    if request.method == "POST":
-        identifier = (request.POST.get("identifier") or "").strip()[:150]
-        key = f"website:panel-login:{services.ip_hash(request)[:24]}"
-        if (cache.get(key) or 0) >= LOGIN_FAILS:
-            error = "تلاش‌های ناموفق زیاد بود؛ ۱۵ دقیقه بعد دوباره امتحان کنید."
-        else:
-            user = authenticate(request, username=identifier, password=request.POST.get("password") or "")
-            if user and user.is_active and role_of(user):
-                cache.delete(key)
-                login(request, user)
-                log(request, "login")
-                return redirect(_safe_next(request))
-            cache.add(key, 0, LOGIN_WINDOW)
-            try:
-                cache.incr(key)
-            except ValueError:
-                cache.set(key, 1, LOGIN_WINDOW)
-            error = "نام کاربری یا رمز عبور درست نیست، یا به پنل دسترسی ندارید."
-    from django.shortcuts import render
+    """The admin's one sign-in (apps.manage) took this page's place."""
+    from apps.manage.views import to_login
 
-    return render(request, "panel/login.html", {"error": error, "next": _safe_next(request), "site_settings": SiteSettings.get()})
+    return to_login(request)
 
 
 @require_POST
 def logout_view(request):
-    if request.user.is_authenticated:
-        log(request, "logout")
-    logout(request)
-    return redirect("panel:login")
+    from apps.manage.views import logout_view as manage_logout
+
+    return manage_logout(request)
 
 
 # -- dashboard -----------------------------------------------------------------------
@@ -312,17 +281,24 @@ def activity(request):
 
 @panel_required(None)
 def search(request):
-    q = (request.GET.get("q") or "").strip()
+    return JsonResponse({"results": search_items(request.user, (request.GET.get("q") or "").strip())})
+
+
+def search_items(user, q):
+    """Posts, pages, site announcements and media whose title has `q`, as far
+    as `user`'s role may open them -- also what the admin's command bar finds."""
     out = []
-    if len(q) >= 2:
-        posts = Post.objects.filter(title__icontains=q)
-        if not can(request.user, "post.view_all"):
-            posts = posts.filter(author=request.user)
+    if len(q) < 2:
+        return out
+    posts = Post.objects.filter(title__icontains=q)
+    if not can(user, "post.view_all"):
+        posts = posts.filter(author=user)
+    if can(user, "post.create"):
         out += [{"type": "مطلب", "label": p.title, "url": reverse("panel:post_edit", args=[p.pk])} for p in posts[:6]]
-        if can(request.user, "page.manage"):
-            out += [{"type": "برگه", "label": p.title, "url": reverse("panel:pages_edit", args=[p.pk])} for p in Page.objects.filter(title__icontains=q)[:4]]
-        if can(request.user, "announcement.manage"):
-            out += [{"type": "اطلاعیه", "label": a.title, "url": reverse("panel:announcements_edit", args=[a.pk])} for a in Announcement.objects.filter(title__icontains=q)[:4]]
-        if can(request.user, "media.upload"):
-            out += [{"type": "رسانه", "label": m.title or m.filename, "url": reverse("panel:media_edit", args=[m.pk])} for m in Media.objects.filter(Q(title__icontains=q) | Q(filename__icontains=q))[:4]]
-    return JsonResponse({"results": out})
+    if can(user, "page.manage"):
+        out += [{"type": "برگه", "label": p.title, "url": reverse("panel:pages_edit", args=[p.pk])} for p in Page.objects.filter(title__icontains=q)[:4]]
+    if can(user, "announcement.manage"):
+        out += [{"type": "اطلاعیهٔ سایت", "label": a.title, "url": reverse("panel:announcements_edit", args=[a.pk])} for a in Announcement.objects.filter(title__icontains=q)[:4]]
+    if can(user, "media.upload"):
+        out += [{"type": "رسانه", "label": m.title or m.filename, "url": reverse("panel:media_edit", args=[m.pk])} for m in Media.objects.filter(Q(title__icontains=q) | Q(filename__icontains=q))[:4]]
+    return out

@@ -316,9 +316,10 @@
 | مسیر | چیست |
 |---|---|
 | `/admin/` | ادمین Django |
-| `/ops/` | کنسول فروش (superuser) |
-| `/ops/data-quality/` | مرکز کیفیت داده (staff) |
-| `/panel/` (روی `pharmenta.ir`) | پنل محتوای سایت |
+| `/manage/` | مدیریت یکپارچه؛ ورود در `/manage/login/` |
+| `/manage/sales/` | کنسول فروش (superuser) |
+| `/manage/site/` | پنل محتوای سایت (نقش‌های سایت) |
+| `/manage/data/` | مرکز کیفیت داده (staff) |
 
 ## تغییر دادن API
 

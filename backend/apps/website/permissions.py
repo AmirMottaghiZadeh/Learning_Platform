@@ -3,10 +3,8 @@ StaffRole row."""
 
 from functools import wraps
 
-from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
-from django.urls import reverse
 
 from .models import StaffRole
 
@@ -45,7 +43,9 @@ def panel_required(perm=None):
         @wraps(view)
         def wrapper(request, *args, **kwargs):
             if role_of(request.user) is None:
-                return redirect(f"{reverse('panel:login')}?{REDIRECT_FIELD_NAME}={request.get_full_path()}")
+                from apps.manage.views import login_url
+
+                return redirect(login_url(request.get_full_path()))
             if perm and not can(request.user, perm):
                 return render(request, "panel/forbidden.html", status=403)
             return view(request, *args, **kwargs)

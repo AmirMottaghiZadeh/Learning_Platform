@@ -1,5 +1,5 @@
 {% extends "panel/base.html" %}
-{% load billing_extras %}
+{% load website_extras billing_extras %}
 {% block title %}نظرات{% endblock %}
 {% block content %}
 <div class="hd"><div><h1>نظرات</h1><div class="sub">تأیید، پاسخ و مدیریت نظرهای خوانندگان</div></div></div>
@@ -9,7 +9,7 @@
 <div class="card" style="padding:6px 8px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th style="width:34px"><input class="chk" type="checkbox" data-all aria-label="انتخاب همه"></th><th>نظر</th><th>مطلب</th><th>زمان</th><th></th></tr></thead><tbody>
 {% for c in page.object_list %}<tr><td><input class="chk" type="checkbox" name="ids" value="{{ c.pk }}" aria-label="انتخاب"></td>
 <td><b>{{ c.name }}</b>{% if c.is_staff_reply %} <span class="chip ok">تیم سایت</span>{% endif %}{% if c.parent_id %} <span class="chip">پاسخ</span>{% endif %} <span class="sm" dir="ltr">{{ c.email }}</span><div style="max-width:520px;margin-top:2px">{{ c.body|linebreaksbr }}</div></td>
-<td><a href="{{ c.post.get_absolute_url }}#comments" target="_blank" rel="noopener" style="color:var(--accent)">{{ c.post.title|truncatechars:40 }}</a></td><td class="sm">{{ c.created_at|jdate:"time" }}</td>
+<td><a href="{{ c.post.get_absolute_url|on_site }}#comments" target="_blank" rel="noopener" style="color:var(--accent)">{{ c.post.title|truncatechars:40 }}</a></td><td class="sm">{{ c.created_at|jdate:"time" }}</td>
 <td><div class="ac">
   <button class="btn s" type="submit" name="action" value="approve" formaction="{% url 'panel:comment_action' %}?one={{ c.pk }}"><svg class="i"><use href="#i-check"/></svg>تأیید</button>
   <button class="btn s" type="button" data-reply="{{ c.pk }}" data-name="{{ c.name }}">پاسخ</button>

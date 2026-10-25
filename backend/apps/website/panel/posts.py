@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from .. import services
 from ..models import Category, Media, Post, PostRevision, unique_slug
 from ..permissions import can, panel_required
 from . import forms
@@ -117,7 +118,7 @@ def post_edit(request, pk=None):
     return render_panel(request, "panel/post_form.html", {
         "form": form, "post": post, "allow_publish": allow_publish,
         "revision_count": post.revisions.count() if post else 0,
-        "preview_url": post.get_absolute_url() if post else "",
+        "preview_url": services.post_link(post) if post else "",
         "heading": "ویرایش مطلب" if post else "مطلب جدید",
     }, active="posts")
 

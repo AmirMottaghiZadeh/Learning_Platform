@@ -53,10 +53,8 @@ createdb pharmexa_dev                              # یک بار
 | `http://127.0.0.1:8000/api/v1/docs/` | Swagger همهٔ API |
 | `http://127.0.0.1:8000/api/v1/health/` | سلامت سرور |
 | `http://127.0.0.1:8000/admin/` | ادمین Django |
-| `http://127.0.0.1:8000/ops/` | کنسول فروش (superuser) |
-| `http://127.0.0.1:8000/ops/data-quality/` | مرکز کیفیت داده (staff) |
+| `http://127.0.0.1:8000/manage/` | مدیریت یکپارچه: فروش، محتوای سایت، اپ و کیفیت داده، با یک ورود (`/manage/login/`) |
 | `http://site.localhost:8000/` | سایت؛ `site.localhost` در مرورگر به 127.0.0.1 می‌رود و در `SITE_HOSTS` پیش‌فرض هست |
-| `http://site.localhost:8000/panel/` | پنل محتوای سایت |
 
 رفتارهای محیط محلی:
 

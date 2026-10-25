@@ -1,0 +1,87 @@
+{% load static billing_extras %}<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{% block title %}مدیریت{% endblock %} · مدیریت فارمنتا</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230F5C52'/%3E%3Ctext x='32' y='45' font-size='36' font-weight='900' text-anchor='middle' fill='%23ffffff' font-family='Tahoma'%3E%D9%81%3C/text%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("manage-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="{% static 'manage/manage.css' %}">
+{% block module_css %}{% endblock %}
+</head>
+<body class="mg">
+<a class="mg-skip" href="#mg-main">رفتن به محتوا</a>
+<div class="mg-shell">
+  <nav class="mg-rail" aria-label="بخش‌های مدیریت">
+    <a class="mg-logo" href="{% url 'manage:home' %}" aria-label="خانهٔ مدیریت">ف</a>
+    {% for m in mg.modules %}
+    <a class="mg-mod{% if m.on %} on{% endif %}" href="{{ m.url }}"{% if m.on %} aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">{{ m.icon|safe }}</svg>{{ m.label }}
+      {% if m.badge %}<span class="mg-dot"><span class="mg-sr">{{ m.badge|fa }} مورد منتظر</span></span>{% endif %}
+    </a>
+    {% endfor %}
+    <span class="mg-grow"></span>
+    <span class="mg-me" title="{{ request.user.get_username }}" aria-hidden="true">{{ request.user.get_username|slice:":1"|upper }}</span>
+  </nav>
+
+  <nav class="mg-sub" aria-label="صفحه‌های {{ mg.module.label }}">
+    <div class="mg-sub-title">{{ mg.module.label }}</div>
+    {% block sub_extra %}{% endblock %}
+    {% for p in mg.module.pages %}
+    <a class="mg-page{% if p.on %} on{% endif %}" href="{{ p.url }}"{% if p.on %} aria-current="page"{% endif %}{% if p.external %} target="_blank" rel="noopener"{% endif %}>
+      <span>{{ p.label }}</span>{% if p.badge %}<span class="mg-count"><span class="mg-sr">منتظر: </span>{{ p.badge|fa }}</span>{% endif %}
+    </a>
+    {% endfor %}
+    {% if mg.module.key == "home" and mg.actions %}
+    <div class="mg-sub-sec">میان‌برها</div>
+    {% for a in mg.actions %}<a class="mg-page" href="{{ a.url }}"><span class="plus" aria-hidden="true">+</span><span>{{ a.label }}</span></a>{% endfor %}
+    {% endif %}
+    {% block sub_note %}{% endblock %}
+    <div class="mg-sub-foot">
+      <b>{{ request.user.get_full_name|default:request.user.get_username }}</b>
+      <span aria-hidden="true">·</span>
+      <form method="post" action="{% url 'manage:logout' %}">{% csrf_token %}<button class="mg-linkbtn" type="submit">خروج</button></form>
+    </div>
+  </nav>
+
+  <div class="mg-main {% block main_class %}{% endblock %}">
+    <header class="mg-top">
+      <button class="mg-cmd" id="mg-open-cmd" type="button" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <span>چه کار می‌خواهی بکنی؟ نام صفحه، عنوان مطلب، شمارهٔ کاربر یا نام دارو</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+      <span class="mg-env{% if mg_env != 'production' %} local{% endif %}">{{ mg_env }}</span>
+      <a class="mg-ghost" href="{{ mg_site_url }}/" target="_blank" rel="noopener">مشاهدهٔ سایت<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14L20 4M14 4h6v6M20 14v6H4V4h6"/></svg></a>
+      <button class="mg-ghost icon" id="mg-theme" type="button" aria-pressed="false" aria-label="حالت تیره"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+    </header>
+    {% block shell_messages %}
+    {% if messages or request.user.is_superuser %}
+    {% guest_access_on as guest_on %}
+    <div class="mg-flashes">
+      {% if guest_on and mg.guest_url %}<div class="mg-flash warning" role="status">ورود بدون نام کاربری و رمز روشن است: هر کس اپ را باز کند بدون ثبت‌نام وارد می‌شود. <a href="{{ mg.guest_url }}">خاموش کردن</a></div>{% endif %}
+      {% for m in messages %}<div class="mg-flash {{ m.tags }}" role="status">{{ m }}</div>{% endfor %}
+    </div>
+    {% endif %}
+    {% endblock %}
+    <main class="mg-content {% block content_class %}{% endblock %}" id="mg-main" tabindex="-1">
+      {% block module %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<dialog class="mg-pal" id="mg-pal" aria-label="رفتن به هر جا">
+  <div class="mg-pal-in">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input id="mg-pal-q" type="search" placeholder="نام صفحه، عنوان مطلب، شمارهٔ کاربر، نام دارو…" autocomplete="off" role="combobox" aria-expanded="true" aria-controls="mg-pal-list" aria-label="جست‌وجو">
+  </div>
+  <ul id="mg-pal-list" role="listbox" aria-label="نتیجه‌ها"></ul>
+  <div class="mg-pal-foot"><span><span class="mg-kbd">↑↓</span> جابه‌جایی</span><span><span class="mg-kbd">Enter</span> رفتن</span><span><span class="mg-kbd">Esc</span> بستن</span></div>
+</dialog>
+{{ mg.jump|json_script:"mg-jump" }}
+<script>window.MANAGE={search:"{% url 'manage:search' %}"};</script>
+<script src="{% static 'manage/manage.js' %}" defer></script>
+{% block module_scripts %}{% endblock %}
+</body>
+</html>

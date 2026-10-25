@@ -61,13 +61,18 @@ class ConsoleTestCase(TestCase):
 
 
 class AccessTests(ConsoleTestCase):
-    def test_anonymous_is_sent_to_the_console_login(self):
+    # Signing in is the admin's (apps.manage); the desk's own sign-in page
+    # sends there.
+    def test_anonymous_is_sent_to_the_admin_login(self):
         res = Client().get(reverse("data_quality_center:queue"))
         self.assertEqual(res.status_code, 302)
-        self.assertTrue(res["Location"].startswith(reverse("data_quality_center:login")))
+        self.assertTrue(res["Location"].startswith(reverse("manage:login")))
+        res = Client().get(reverse("data_quality_center:login"))
+        self.assertTrue(res["Location"].startswith(reverse("manage:login")))
 
     def test_staff_signs_in_and_it_is_audited(self):
-        res = Client().post(reverse("data_quality_center:login"), {"username": "editor", "password": "pass-123456"})
+        res = Client().post(reverse("manage:login"), {"identifier": "editor", "password": "pass-123456",
+                                                      "next": reverse("data_quality_center:queue")})
         self.assertRedirects(res, reverse("data_quality_center:queue"), fetch_redirect_response=False)
         self.assertTrue(
             SecurityAuditEvent.objects.filter(user=self.staff, event_type=SecurityAuditEvent.LOGIN_SUCCEEDED).exists()
@@ -75,27 +80,29 @@ class AccessTests(ConsoleTestCase):
 
     def test_non_staff_cannot_sign_in(self):
         get_user_model().objects.create_user("learner", "l@e.com", "pass-123456")
-        res = Client().post(reverse("data_quality_center:login"), {"username": "learner", "password": "pass-123456"})
+        res = Client().post(reverse("manage:login"), {"identifier": "learner", "password": "pass-123456"})
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, "دسترسی کارمندی")
+        self.assertContains(res, "دسترسی ندارد")
 
     def test_repeated_failures_lock_the_login(self):
+        self.addCleanup(caches["throttle"].clear)
         client = Client()
         for _ in range(8):
-            client.post(reverse("data_quality_center:login"), {"username": "editor", "password": "wrong"})
-        res = client.post(reverse("data_quality_center:login"), {"username": "editor", "password": "pass-123456"})
+            client.post(reverse("manage:login"), {"identifier": "editor", "password": "wrong"})
+        res = client.post(reverse("manage:login"), {"identifier": "editor", "password": "pass-123456"})
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "تلاش‌های ناموفق زیاد بود")
 
     def test_lockout_ignores_a_forged_forwarded_address(self):
+        self.addCleanup(caches["throttle"].clear)
         client = Client()
         for i in range(8):
             client.post(
-                reverse("data_quality_center:login"), {"username": "editor", "password": "wrong"},
+                reverse("manage:login"), {"identifier": "editor", "password": "wrong"},
                 HTTP_X_FORWARDED_FOR=f"10.0.0.{i}, 203.0.113.9",
             )
         res = client.post(
-            reverse("data_quality_center:login"), {"username": "editor", "password": "pass-123456"},
+            reverse("manage:login"), {"identifier": "editor", "password": "pass-123456"},
             HTTP_X_FORWARDED_FOR="10.9.9.9, 203.0.113.9",
         )
         self.assertContains(res, "تلاش‌های ناموفق زیاد بود")

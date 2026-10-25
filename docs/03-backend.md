@@ -10,9 +10,9 @@
 | `settings/local.py` | `DEBUG=True` و درگاه پرداخت پیش‌فرض `fake`. پیش‌فرض `manage.py` |
 | `settings/production.py` | پیش‌فرض `wsgi.py`. اجبار فروش روشن، کلید قوی، کش مشترک، HTTPS و کوکی امن، لاگ JSON، فقط پاسخ JSON در DRF، رد درگاه `fake` |
 | `security.py` | سه بررسی production: قدرت `SECRET_KEY` (≥۵۰ کاراکتر، ≥۱۲ کاراکتر متمایز، بدون کلمه‌های ضعیف)، کش مشترک (نه `LocMemCache`)، صف واقعی Celery (مگر `CELERY_RUN_TASKS_IN_REQUEST`) |
-| `urls.py` | urlconf هاست API: `/api/v1/`، Swagger، `/admin/`، `/ops/`، `/ops/data-quality/` و نام‌های قدیمی بدون نسخه (`/api/...`) |
+| `urls.py` | urlconf هاست API: `/api/v1/`، Swagger، `/admin/`، مدیریت `/manage/` با ابزارهایش (`/manage/sales/`، `/manage/site/`، `/manage/data/`)، هدایت `/ops/...` قدیمی، و نام‌های قدیمی بدون نسخه (`/api/...`) |
 | `api_urls.py` | مسیرهای `/api/v1/` به تفکیک اپ |
-| `urls_site.py` | urlconf هاست‌های سایت (`SITE_HOSTS`): سایت، `/panel/`، بازگشت درگاه `/pay/...`، `/ops/` |
+| `urls_site.py` | urlconf هاست‌های سایت (`SITE_HOSTS`): سایت، بازگشت درگاه `/pay/...`، و هدایت `/panel/...` و `/ops/...` قدیمی به مدیریت (`MANAGE_PUBLIC_URL`) |
 | `celery.py` | اپ Celery با سه صف `default`، `events`، `maintenance` |
 
 ### زنجیرهٔ middleware
@@ -45,9 +45,10 @@
 | `offline` | ساخت بستهٔ رمزنگاری‌شدهٔ آفلاین، لینک دانلود امضاشده، مجوز ۳۰ روزه | — | جزئیات در «بستهٔ آفلاین» پایین‌تر |
 | `calculators` | ماشین‌حساب‌های بالینی دوزبانه (سؤال، فرمول و نتیجه به‌صورت JSON) | `Calculator`، `CalculatorCategory`، `CalculatorTag` | محاسبه سمت اپ انجام می‌شود (`frontend/src/utils/calculatorEngine.ts`) |
 | `medscape` | مقاله‌های بیماری و گایدلاین با تصویرهای ذخیره‌شده با هش محتوا | `Article`، `ArticleImage` | — |
-| `billing` | ویژگی، پلن و محصول، قیمت، کد تخفیف، سفارش، حق دسترسی، سهمیه، درگاه پرداخت، مهمان، کنسول `/ops/` | `Feature`، `Plan`، `PlanFeature`، `PlanPrice`، `DiscountCode`، `Order`، `Entitlement`، `UsageRecord`، `PaymentGateway`، `BillingSettings`، `GuestAccount`، `AdminAction` | جزئیات در «صورتحساب» پایین‌تر |
+| `billing` | ویژگی، پلن و محصول، قیمت، کد تخفیف، سفارش، حق دسترسی، سهمیه، درگاه پرداخت، مهمان، کنسول `/manage/sales/` | `Feature`، `Plan`، `PlanFeature`، `PlanPrice`، `DiscountCode`، `Order`، `Entitlement`، `UsageRecord`، `PaymentGateway`، `BillingSettings`، `GuestAccount`، `AdminAction` | جزئیات در «صورتحساب» پایین‌تر |
 | `website` | سایت و بلاگ، پنل محتوا، آمار بازدید، ریدایرکت، حالت تعمیر، و مسیر API نسخهٔ اپ (`/app/release/`) | ۲۰ مدل، از جمله `SiteSettings`، `Post`، `Page`، `Media`، `StaffRole`، `DailyStat` | [12-website.md](12-website.md) |
 | `data_quality_center` | ویرایش خلاصه‌های بالینی با بازبینی superuser و سابقهٔ تغییرناپذیر | `SectionEditRequest`، `SectionEdit`، `ReviewEvent` | [11-admin-consoles.md](11-admin-consoles.md) |
+| `manage` | مدیریت یکپارچه: یک ورود، نوار بخش‌ها و نوار فرمان، خانه با کارهای امروز، گزارش فعالیت یکی‌شده؛ کنسول فروش، پنل سایت و مرکز کیفیت داده زیر آن می‌نشینند | — | نقشهٔ منو در `manage/nav.py`؛ شرح در [11-admin-consoles.md](11-admin-consoles.md) |
 
 ساختار معمول هر اپ: `models.py`، `serializers.py`، `views.py`، `urls.py`، `services.py` (منطق کسب‌وکار)، `tests.py` یا `tests/`، `management/commands/`.
 
@@ -108,7 +109,7 @@
   - ذخیرهٔ تنظیمات در کنسول، کش همان پروسه را فوراً پاک می‌کند. بقیهٔ workerها حداکثر بعد از ۳۰ ثانیه مقدار تازه را می‌خوانند.
 - **درگاه‌ها (`billing/gateways.py`):**
   - درگاه‌های پشتیبانی‌شده: `zarinpal`، `sep` (سامان)، `zibal` و `fake` (فقط توسعه).
-  - هر درگاه در کنسول (`/ops/gateway/`) تنظیم می‌شود. اگر کنسول درگاهی نداشته باشد، درگاهی که `BILLING_GATEWAY` نام می‌برد استفاده می‌شود.
+  - هر درگاه در کنسول (`/manage/sales/gateway/`) تنظیم می‌شود. اگر کنسول درگاهی نداشته باشد، درگاهی که `BILLING_GATEWAY` نام می‌برد استفاده می‌شود.
   - بازگشت از درگاه به `/pay/callback/<kind>/` روی سایت (یا `/api/v1/billing/callback/`) است. همان‌جا پرداخت تأیید و دسترسی فقط یک بار داده می‌شود.
 - **مهمان (`billing/guest.py`):** با کلید «تنظیمات دسترسی» کنسول روشن می‌شود.
   - مهمان حساب یک‌بارمصرف می‌گیرد که فقط پلن رایگان دارد و نمی‌تواند خرید کند.

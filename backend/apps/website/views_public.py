@@ -100,7 +100,7 @@ def post_detail(request, slug):
     if not post.is_live:
         from .permissions import can
 
-        if not can(request.user, "post.view_all"):
+        if not (can(request.user, "post.view_all") or services.preview_ok(request, post)):
             raise Http404
         messages.info(request, "این مطلب هنوز منتشر نشده و فقط شما آن را می‌بینید.")
     body, toc = services.add_toc(post.body_html)

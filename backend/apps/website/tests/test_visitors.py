@@ -5,13 +5,13 @@ from django.utils import timezone
 from apps.website.models import DailyStat, StaffRole, VisitorDay
 
 from .base import SiteTestCase
-from .test_panel import HOST, PanelCase, make_user
+from .test_panel import SITE, PanelCase, make_user
 
 User_AGENT = "Mozilla/5.0 (X11; Linux x86_64) Chrome/120"
 
 
 def visit(client, ip, path="/", agent=User_AGENT):
-    return client.get(path, HTTP_X_FORWARDED_FOR=ip, HTTP_USER_AGENT=agent, **HOST)
+    return client.get(path, HTTP_X_FORWARDED_FOR=ip, HTTP_USER_AGENT=agent, **SITE)
 
 
 class UniqueVisitorTests(SiteTestCase):

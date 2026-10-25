@@ -45,7 +45,7 @@
 
 ## ۳. تنظیمات دقیق پنل، قابل اجرا توسط مالک
 
-نشانی تنظیمات: `https://pharmenta.ir/panel/settings/?tab=seo`
+نشانی تنظیمات: `https://api.pharmenta.ir/manage/site/settings/?tab=seo`
 
 | فیلد | مقدار یا اقدام پیشنهادی | روش کنترل |
 |---|---|---|

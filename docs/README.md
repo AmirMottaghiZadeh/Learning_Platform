@@ -18,7 +18,7 @@
 | ۸ | [08-deployment.md](08-deployment.md) | دیپلوی روی رانفلر، شاخهٔ `deploy-web`، Object Storage، بیلد اپ موبایل، CI | مسئول دیپلوی |
 | ۹ | [09-operations.md](09-operations.md) | مانیتورینگ، لاگ، بکاپ، رازها و چیزهایی که باید امن نگه داشته شوند، عیب‌یابی | مسئول نگهداری |
 | ۱۰ | [10-commands.md](10-commands.md) | مرجع سریع همهٔ دستورها | همه |
-| ۱۱ | [11-admin-consoles.md](11-admin-consoles.md) | کنسول فروش (`/ops/`)، مرکز کیفیت داده، ادمین Django | مدیر |
+| ۱۱ | [11-admin-consoles.md](11-admin-consoles.md) | مدیریت یکپارچه (`/manage/`): ورود، دسترسی‌ها، خانه، فروش، کیفیت داده، ادمین Django | مدیر |
 | ۱۲ | [12-website.md](12-website.md) | سایت و بلاگ `pharmenta.ir`، پنل محتوا، نقش‌ها، خرید از سایت | مدیر، توسعه‌دهنده |
 
 ## سندهای دیگر مخزن

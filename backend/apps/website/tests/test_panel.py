@@ -12,13 +12,21 @@ from apps.website.models import (
 
 from .base import SiteTestCase
 
-HOST = {"HTTP_HOST": "site.localhost"}
+# The panel lives in the admin (apps.manage), on the API's host; the public
+# site answers on its own.
+HOST = {}
+SITE = {"HTTP_HOST": "site.localhost"}
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 64
 User = get_user_model()
 
 
 def url(name, *args):
-    return reverse(f"panel:{name}", args=args, urlconf="config.urls_site")
+    return reverse(f"panel:{name}", args=args)
+
+
+def sign_in(client, data):
+    """The admin's one sign-in, which the panel's own sign-in page sends to."""
+    return client.post(reverse("manage:login"), data)
 
 
 def make_user(username, role=None, superuser=False):
@@ -43,33 +51,37 @@ class AuthTests(PanelCase):
     def test_anonymous_redirected_to_login(self):
         res = self.get("dashboard")
         self.assertEqual(res.status_code, 302)
-        self.assertIn("/panel/login/", res["Location"])
+        self.assertIn("/manage/login/", res["Location"])
+        self.assertIn("/manage/login/", self.get("login")["Location"])
 
     def test_login_works_for_staff_with_phone(self):
         user = make_user("u1", StaffRole.EDITOR)
         LearnerProfile.objects.create(user=user, phone="09121234567")
-        res = self.post("login", {"identifier": "09121234567", "password": "pw-12345-x"})
+        res = sign_in(self.client, {"identifier": "09121234567", "password": "pw-12345-x"})
         self.assertEqual(res.status_code, 302)
         self.assertEqual(self.get("dashboard").status_code, 200)
 
     def test_login_refused_without_a_role(self):
         make_user("plain")
-        res = self.post("login", {"identifier": "plain", "password": "pw-12345-x"})
+        res = sign_in(self.client, {"identifier": "plain", "password": "pw-12345-x"})
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, "دسترسی ندارید")
+        self.assertContains(res, "دسترسی ندارد")
         self.assertEqual(self.get("dashboard").status_code, 302)
 
     def test_wrong_password_and_lockout(self):
+        from django.core.cache import caches
+
+        self.addCleanup(caches["throttle"].clear)
         make_user("u1", StaffRole.ADMIN)
         for _ in range(8):
-            self.post("login", {"identifier": "u1", "password": "bad"})
-        res = self.post("login", {"identifier": "u1", "password": "pw-12345-x"})
+            sign_in(self.client, {"identifier": "u1", "password": "bad"})
+        res = sign_in(self.client, {"identifier": "u1", "password": "pw-12345-x"})
         self.assertContains(res, "تلاش‌های ناموفق زیاد")
 
     def test_next_redirect_stays_on_site(self):
         make_user("u1", StaffRole.ADMIN)
-        res = self.post("login", {"identifier": "u1", "password": "pw-12345-x", "next": "https://evil.com/"})
-        self.assertEqual(res["Location"], "/panel/")
+        res = sign_in(self.client, {"identifier": "u1", "password": "pw-12345-x", "next": "https://evil.com/"})
+        self.assertEqual(res["Location"], reverse("manage:home"))
 
     def test_logout_needs_post(self):
         self.login(make_user("u1", StaffRole.ADMIN))
@@ -172,7 +184,7 @@ class PostTests(PanelCase):
         self.post("post_new", self.payload(intent="publish"))
         post = Post.objects.get()
         self.assertEqual(post.status, Post.PUBLISHED)
-        self.assertEqual(self.client.get(post.get_absolute_url(), **HOST).status_code, 200)
+        self.assertEqual(self.client.get(post.get_absolute_url(), **SITE).status_code, 200)
 
     def test_scheduling_needs_a_future_date(self):
         res = self.post("post_new", self.payload(status=Post.SCHEDULED, published_at="1300/01/01 10:00"))
@@ -191,8 +203,14 @@ class PostTests(PanelCase):
         self.assertGreater(post.published_at, timezone.now())
         from django.test import Client
 
-        self.assertEqual(Client().get(post.get_absolute_url(), **HOST).status_code, 404)
-        self.assertEqual(self.client.get(post.get_absolute_url(), **HOST).status_code, 200)  # staff may preview
+        self.assertEqual(Client().get(post.get_absolute_url(), **SITE).status_code, 404)
+        # the admin is on another domain, so its preview link carries a signed token
+        from apps.website import services
+
+        path = post.get_absolute_url()
+        self.assertEqual(Client().get(f"{path}?preview={services.preview_token(post)}", **SITE).status_code, 200)
+        self.assertEqual(Client().get(f"{path}?preview=forged", **SITE).status_code, 404)
+        self.assertTrue(services.post_link(post).startswith(services.absolute(path) + "?preview="))
 
     def test_editing_changes_creates_new_revision_only_when_text_changes(self):
         self.post("post_new", self.payload())
@@ -365,7 +383,7 @@ class AdminTests(PanelCase):
         res = self.client.post(url("settings") + "?tab=general", {"site_name": "نام تازه", "tagline": "شعار", "description": "d", "footer_note": "", "copyright_text": "x"}, **HOST)
         self.assertEqual(res.status_code, 302)
         self.assertEqual(SiteSettings.get().site_name, "نام تازه")
-        self.assertContains(self.client.get("/", **HOST), "نام تازه")
+        self.assertContains(self.client.get("/", **SITE), "نام تازه")
 
     def test_analytics_field_only_for_superuser(self):
         res = self.client.get(url("settings") + "?tab=seo", **HOST)
