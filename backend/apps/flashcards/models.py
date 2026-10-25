@@ -1,10 +1,17 @@
-"""Leitner flashcards.
+"""Flashcards and the Leitner box.
 
-A card is a learner + an ingredient: `box` is the Leitner level (1..5),
-`due_at` when it next comes up. What the card says lives in FlashcardFact --
-each drug's facts in the five card sections (apps.flashcards.sections),
-extracted once by the build_flashcards command rather than re-derived from
-the profile summaries on every request.
+A flashcard is one drug's one card section (indication, common side
+effects, interactions ...; apps.flashcards.sections): its facts live in
+FlashcardFact, loaded from the study_content pipeline. A topic deck shows
+its drugs' cards in order (apps.flashcards.decks).
+
+The Leitner box holds only the cards the learner did not know -- "یادم نبود"
+in a deck or a review, or a wrong quiz answer on that drug and field.
+`LeitnerCard.box` is how often it was missed, 1 to 5: a missed card enters
+drawer 1 and climbs a drawer each time it is missed again; each "یادم بود"
+in a review brings it down a drawer, and out of the box (`box` 0) from
+drawer 1. When a card comes back is the smart scheduler's own interval per
+card (apps.flashcards.leitner), never shown as days.
 """
 
 from datetime import timedelta
@@ -15,9 +22,20 @@ from django.utils import timezone
 
 from .sections import SECTION_CHOICES
 
-# Days a card waits after landing in each box (index 0 unused).
+# Days a legacy card waits after landing in each box (index 0 unused).
 BOX_INTERVAL_DAYS = {1: 0, 2: 3, 3: 7, 4: 16, 5: 35}
 MAX_BOX = 5
+# A card that left the box: `box` 0, kept for its history (a new miss
+# brings it back to drawer 1).
+OUT_OF_BOX = 0
+
+
+class LeitnerCardQuerySet(models.QuerySet):
+    def in_box(self):
+        """The cards in the box now: Phase 5 cards (one per drug and section)
+        still in a drawer. Rows with no section are the per-drug cards of
+        the old box, kept but no longer used."""
+        return self.exclude(section="").filter(box__gte=1)
 
 
 class LeitnerCard(models.Model):
@@ -31,26 +49,37 @@ class LeitnerCard(models.Model):
         on_delete=models.CASCADE,
         related_name="leitner_cards",
     )
+    # The card section; blank on the old per-drug cards.
+    section = models.CharField(max_length=20, choices=SECTION_CHOICES, blank=True, default="")
     box = models.PositiveSmallIntegerField(default=1)
     due_at = models.DateTimeField(default=timezone.now)
+    # The scheduler's state: the last interval and how easily the card is
+    # recalled (it falls with every miss), and how often it was missed.
+    interval_days = models.FloatField(default=0)
+    ease = models.FloatField(default=2.3)
+    lapses = models.PositiveIntegerField(default=0)
     times_seen = models.PositiveIntegerField(default=0)
     last_reviewed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = LeitnerCardQuerySet.as_manager()
 
     class Meta:
         ordering = ["due_at", "id"]
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "ingredient"], name="flashcards_unique_user_ingredient"
+                fields=["user", "ingredient", "section"], name="flashcards_unique_user_ingredient_section"
             ),
         ]
         indexes = [models.Index(fields=["user", "due_at"], name="flashcards_user_due_idx")]
 
     def __str__(self):
-        return f"{self.user_id}:{self.ingredient_id} box{self.box}"
+        return f"{self.user_id}:{self.ingredient_id}:{self.section or '-'} box{self.box}"
 
     def review(self, rating):
-        """Apply an 'easy' / 'hard' review and reschedule."""
+        """Apply an 'easy' / 'hard' review to an old per-drug card and
+        reschedule (the old box, still answering apps installed before it
+        was replaced)."""
         if rating == "easy":
             self.box = min(MAX_BOX, self.box + 1)
         else:

@@ -722,6 +722,12 @@ export function QuizScreen() {
         </AppText>
       ) : null}
 
+      {answered && answerResult.added_to_leitner ? (
+        <AppText weight="700" size={12} color={colors.accent} style={{ marginTop: 12 }}>
+          {isFa ? "فلش‌کارت این نکته به جعبهٔ لایتنر رفت." : "This fact's flashcard went into the Leitner box."}
+        </AppText>
+      ) : null}
+
       {answered && answerResult.extra_context.length > 0 ? (
         <View style={{ backgroundColor: colors.softBg, borderRadius: 16, padding: 14, marginTop: 16 }}>
           <View style={{ flexDirection: row, alignItems: "center", gap: 7, marginBottom: 8 }}>

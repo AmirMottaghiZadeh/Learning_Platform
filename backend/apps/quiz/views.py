@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from apps.core.exceptions import PlatformAPIError
 from apps.billing.enforcement import require_atc_content, require_feature, require_topic_content
+from apps.flashcards import leitner
 from apps.lessons.data.study_topics import STUDY_TOPICS
 from apps.progress.services import (
     XP_PER_CORRECT_ANSWER,
@@ -245,10 +246,15 @@ class QuizAnswerView(APIView):
             is_correct=is_correct,
             client_answered_at=data.get("client_answered_at"),
         )
+        # A fact the learner got wrong: its flashcard goes in the Leitner box.
+        to_box = None
+        if not is_correct and question.subject_slug and question.field:
+            to_box = leitner.add_quiz_miss(request.user, question.subject_slug, question.field)
         return Response({
             "correct": is_correct,
             "correct_index": question.correct_index,
             "extra_context": _extra_context(question),
+            "added_to_leitner": to_box is not None,
         })
 
 

@@ -58,6 +58,8 @@ class QuizAnswerOutSerializer(serializers.Serializer):
     correct = serializers.BooleanField()
     correct_index = serializers.IntegerField()
     extra_context = serializers.ListField(child=serializers.CharField())
+    # The wrong answer's flashcard went in the Leitner box.
+    added_to_leitner = serializers.BooleanField()
 
 
 class FieldBreakdownSerializer(serializers.Serializer):

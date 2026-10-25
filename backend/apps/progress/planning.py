@@ -66,17 +66,19 @@ def _quiz_accuracy_for_slugs(user, slugs):
 
 
 def _flashcard_recall_for_slugs(user, slugs):
+    """How well the topic's flashcards are recalled, from the Leitner box:
+    its drawers count misses, so a topic with only drawer-1 cards scores 80
+    and one whose cards sit in drawer 5 scores 0. None while none of the
+    topic's cards was ever in the box -- no recall signal yet."""
     if not slugs:
         return None
-    boxes = list(
-        LeitnerCard.objects.filter(user=user, ingredient__slug__in=slugs).values_list(
-            "box", flat=True
-        )
-    )
-    if not boxes:
+    cards = LeitnerCard.objects.filter(user=user, ingredient__slug__in=slugs).exclude(section="")
+    if not cards.exists():
         return None
-    avg_box = sum(boxes) / len(boxes)
-    return round(100 * (avg_box - 1) / (MAX_BOX - 1))
+    boxes = list(cards.filter(box__gte=1).values_list("box", flat=True))
+    if not boxes:
+        return 100  # every card that was missed has left the box
+    return round(100 * (1 - (sum(boxes) / len(boxes)) / MAX_BOX))
 
 
 def topic_mastery(user, topic_key):

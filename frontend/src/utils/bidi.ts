@@ -36,7 +36,11 @@ const PERSIAN_LETTER = /[\u0620-\u064A\u066E-\u06D3\u06D5\u06EE\u06EF\u06FA-\u06
 const TOKEN_START = "A-Za-z0-9\u00B5\u0391-\u03A9\u03B1-\u03C9";
 const TOKEN_BODY = `${TOKEN_START}\u00B2\u00B3\u00B9\u2070-\u2079\u00B0%+\\-/.,\u00B7\u00D7^'\u2019_:#&=~`;
 const TOKEN_END = `${TOKEN_START}\u00B2\u00B3\u00B9\u2070-\u2079\u00B0%+'\u2019`;
-const TOKEN = `[${TOKEN_START}](?:[${TOKEN_BODY}]*[${TOKEN_END}])?`;
+// A bracket written onto an English word is part of it: "Rho(D)", "IgG(4)",
+// "Na(+)" -- left out, the brackets fell to the Persian side and came out
+// as "(D)Rho".
+const ATTACHED_BRACKET = `(?:\\([${TOKEN_START}+\\-/., ]{1,16}\\)(?:[${TOKEN_BODY}]*[${TOKEN_END}])?)?`;
+const TOKEN = `[${TOKEN_START}](?:[${TOKEN_BODY}]*[${TOKEN_END}])?${ATTACHED_BRACKET}`;
 // Tokens one space apart are one run ("Pneumocystis jirovecii", "10 mg").
 const ENGLISH_RUN = new RegExp(`${TOKEN}(?:[ \u00A0]+${TOKEN})*`, "g");
 

@@ -342,12 +342,51 @@ export interface DeckOverview {
   categories: DeckCategory[];
 }
 
+/** One flashcard: one drug's one section (indication, common side
+ * effects ...). The front is the drug (Persian name, English name) and the
+ * section; the back that section's facts. */
 export interface DeckCard {
   drug_slug: string;
+  section: string;
+  section_label_fa: string;
+  section_label_en: string;
+  section_tone: SectionTone;
   front_fa: string;
   front_en: string;
   back_fields_fa: LeitnerCardField[];
   back_fields_en: LeitnerCardField[];
+}
+
+export type BoxRating = "forgot" | "hard" | "good";
+
+/** What a review button would do: the drawer the card moves to (0 = it
+ * leaves the box) and the minutes until it is due again. */
+export interface RatingOutcome {
+  box: number;
+  minutes: number;
+}
+
+/** A card in the Leitner box; `box` is how often it was missed (1-5). */
+export interface BoxCard extends DeckCard {
+  id: number;
+  box: number;
+  outcomes: Record<BoxRating, RatingOutcome>;
+}
+
+export interface LeitnerOverview {
+  drawers: { box: number; count: number; due: number }[];
+  total: number;
+  due: number;
+  /** Cards in today's review, within the day's minutes. */
+  today: number;
+  today_minutes: number;
+  daily_minutes: number;
+  reviewed_today: number;
+  /** Cards that have left the box. */
+  left_box: number;
+  exam_days_left: number | null;
+  /** The first cards of today's review. */
+  preview: BoxCard[];
 }
 
 export interface TopicDeck extends DeckProgress {
@@ -358,25 +397,6 @@ export interface TopicDeck extends DeckProgress {
   category_name_fa: string;
   category_name_en: string;
   cards: DeckCard[];
-}
-
-export interface LeitnerCard {
-  id: number;
-  drug_slug: string;
-  box: number;
-  due_at: string;
-  times_seen: number;
-  front_fa: string;
-  front_en: string;
-  back_fields_fa: LeitnerCardField[];
-  back_fields_en: LeitnerCardField[];
-}
-
-export interface BoxSummary {
-  box: number;
-  count: number;
-  due: number;
-  next_due_at: string | null;
 }
 
 export interface QuizQuestion {
@@ -404,6 +424,8 @@ export interface QuizAnswerResult {
   correct: boolean;
   correct_index: number;
   extra_context: string[];
+  /** The wrong answer's flashcard went in the Leitner box. */
+  added_to_leitner?: boolean;
 }
 
 export interface QuizFieldBreakdown {

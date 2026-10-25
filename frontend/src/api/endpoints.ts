@@ -1,7 +1,8 @@
 import { apiClient, unwrapList } from "./client";
 import {
   AuthTokenResponse,
-  BoxSummary,
+  BoxCard,
+  BoxRating,
   CalculatorCategoryRef,
   CalculatorDetail,
   CalculatorListItem,
@@ -9,7 +10,7 @@ import {
   Dashboard,
   DeckOverview,
   DeckProgress,
-  LeitnerCard,
+  LeitnerOverview,
   LessonDrug,
   LessonDrugSearchResult,
   LessonGroup,
@@ -140,17 +141,22 @@ export const meApi = {
 // --- flashcards & quiz (locked -> 503 until enabled server-side) ------
 
 export const flashcardsApi = {
-  due: () => apiClient.get<LeitnerCard[]>("/flashcards/").then((r) => r.data),
-  boxes: () => apiClient.get<BoxSummary[]>("/flashcards/boxes/").then((r) => r.data),
-  seed: () => apiClient.post("/flashcards/seed/").then((r) => r.data),
-  review: (id: number, rating: "easy" | "hard") =>
-    apiClient.post<LeitnerCard>(`/flashcards/${id}/review/`, { rating }).then((r) => r.data),
   decks: () => apiClient.get<DeckOverview>("/flashcards/decks/").then((r) => r.data),
   deck: (topic: string) => apiClient.get<TopicDeck>(`/flashcards/decks/${topic}/`).then((r) => r.data),
-  answer: (topic: string, drugSlug: string, rating: "easy" | "hard") =>
+  // "hard" is "یادم نبود": the card goes in the Leitner box.
+  answer: (topic: string, drugSlug: string, section: string, rating: "easy" | "hard") =>
     apiClient
-      .post<DeckProgress>(`/flashcards/decks/${topic}/answer/`, { drug_slug: drugSlug, rating })
+      .post<DeckProgress>(`/flashcards/decks/${topic}/answer/`, { drug_slug: drugSlug, section, rating })
       .then((r) => r.data),
+  // The Leitner box (backend apps.flashcards.leitner).
+  leitner: () => apiClient.get<LeitnerOverview>("/flashcards/leitner/").then((r) => r.data),
+  /** Today's review, or every card of one drawer. */
+  leitnerCards: (box?: number) =>
+    apiClient
+      .get<BoxCard[]>("/flashcards/leitner/cards/", { params: box ? { box } : {} })
+      .then((r) => r.data),
+  leitnerReview: (id: number, rating: BoxRating) =>
+    apiClient.post<BoxCard>(`/flashcards/leitner/cards/${id}/review/`, { rating }).then((r) => r.data),
   restart: (topic: string) =>
     apiClient.post<DeckProgress>(`/flashcards/decks/${topic}/restart/`).then((r) => r.data),
 };

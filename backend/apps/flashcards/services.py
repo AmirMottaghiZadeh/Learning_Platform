@@ -1,4 +1,6 @@
-"""Deck seeding and due-count helpers (the latter is read by the dashboard)."""
+"""The due count the dashboard and the study plan read, and the old box's
+deck seeding (still answering apps installed before the box was replaced;
+its cards have no section)."""
 
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -12,8 +14,9 @@ DEFAULT_SEED_LIMIT = 40
 
 
 def due_card_count(user, at=None):
+    """Cards in the Leitner box due for review now."""
     at = at or timezone.now()
-    return LeitnerCard.objects.filter(user=user, due_at__lte=at).count()
+    return LeitnerCard.objects.in_box().filter(user=user, due_at__lte=at).count()
 
 
 def _with_enough_content():
@@ -55,9 +58,9 @@ def _seed_candidates(user, limit):
 
 def seed_deck(user, limit=DEFAULT_SEED_LIMIT):
     have = set(
-        LeitnerCard.objects.filter(user=user).values_list("ingredient_id", flat=True)
+        LeitnerCard.objects.filter(user=user, section="").values_list("ingredient_id", flat=True)
     )
     new_ids = [i for i in _seed_candidates(user, limit) if i not in have]
     LeitnerCard.objects.bulk_create([LeitnerCard(user=user, ingredient_id=i) for i in new_ids])
     created = len(new_ids)
-    return {"created": created, "deck_size": LeitnerCard.objects.filter(user=user).count()}
+    return {"created": created, "deck_size": LeitnerCard.objects.filter(user=user, section="").count()}

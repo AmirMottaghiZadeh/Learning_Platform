@@ -190,10 +190,15 @@ class TopicMasteryTests(TestCase):
         self.assertEqual(mastery, round((50 * 0.3 + 100 * 0.4) / 0.7))
 
     def test_mastery_blends_in_flashcard_recall(self):
-        LeitnerCard.objects.create(user=self.user, ingredient=self.beta, box=5)
+        # a card once missed that has since left the Leitner box: recall 100
+        card = LeitnerCard.objects.create(user=self.user, ingredient=self.beta, section="indication", box=0)
         mastery = planning.topic_mastery(self.user, "cv-htn")
-        # completion=0 (w=.3) + recall=100 (max box, w=.3) -> renormalised over .6
+        # completion=0 (w=.3) + recall=100 (w=.3) -> renormalised over .6
         self.assertEqual(mastery, round((0 * 0.3 + 100 * 0.3) / 0.6))
+        # back in drawer 5 (missed five times): recall 0
+        card.box = 5
+        card.save()
+        self.assertEqual(planning.topic_mastery(self.user, "cv-htn"), 0)
 
 
 class GoalPlanGenerationTests(TestCase):
@@ -323,7 +328,7 @@ class MaintenancePlanAndApiTests(TestCase):
 
     def test_maintenance_mode_surfaces_due_flashcards_and_open_mistakes(self):
         LeitnerCard.objects.create(
-            user=self.user, ingredient=self.beta, due_at=timezone.now() - timedelta(hours=1)
+            user=self.user, ingredient=self.beta, section="indication", due_at=timezone.now() - timedelta(hours=1)
         )
         bump_mistake(self.user, topic_key="drug_class", topic_fa="دسته", topic_en="Class")
         self.client.put(

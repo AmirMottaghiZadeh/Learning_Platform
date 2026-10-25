@@ -158,8 +158,8 @@ export const strings = {
 
     cardsTitle: "فلش‌کارت",
     cardsTapHint: "برای دیدن جزئیات لمس کن",
-    cardEasy: "بلد بودم",
-    cardHard: "سخت بود",
+    cardEasy: "یادم بود",
+    cardHard: "یادم نبود",
     cardsDoneTitle: "مرور کامل شد!",
     cardsDoneSub: "همه‌ی کارت‌های امروز را مرور کردی.",
 
@@ -554,7 +554,7 @@ export const strings = {
     cardsTitle: "Flashcards",
     cardsTapHint: "Tap to see details",
     cardEasy: "I knew it",
-    cardHard: "It was hard",
+    cardHard: "I didn't know",
     cardsDoneTitle: "Review complete!",
     cardsDoneSub: "You've reviewed all of today's cards.",
 

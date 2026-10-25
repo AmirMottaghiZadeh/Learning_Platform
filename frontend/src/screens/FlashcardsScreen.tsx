@@ -4,8 +4,10 @@ import { Pressable, View } from "react-native";
 
 import { ApiError } from "@/api/client";
 import { flashcardsApi } from "@/api/endpoints";
-import { DeckCard, DeckCategory, DeckProgress, LeitnerCardField, SectionTone } from "@/api/types";
+import { DeckCard, DeckCategory, DeckProgress } from "@/api/types";
 import { ScreenChrome } from "@/components/ScreenChrome";
+import { CardBackField, SectionChip } from "@/components/flashcards/CardParts";
+import { LeitnerBox } from "@/components/flashcards/LeitnerBox";
 import { AppText } from "@/components/primitives/AppText";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
@@ -14,283 +16,9 @@ import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useBackInterceptor } from "@/navigation/back";
+import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
-import { toneColors } from "@/theme/tone";
-
-const BOX_LABEL_KEYS = ["leitnerL1", "leitnerL2", "leitnerL3", "leitnerL4", "leitnerL5"] as const;
-
-/** Matches QuizScreen's chipColors: toneColors() leaves "info" transparent,
- * meant for a full section block rather than a small tag, so it needs its
- * own visible fill/border here too. */
-function chipColors(tone: SectionTone, colors: ReturnType<typeof useTheme>["colors"]) {
-  if (tone === "info") return { bg: colors.accent + "14", border: colors.accent, label: colors.accent };
-  return toneColors(tone, colors);
-}
-
-/** One card section on the back: a heading in the section's own color
- * (the same tone vocabulary as the lesson screen and quiz tags) over its
- * facts, each its own bulleted line. */
-function CardBackField({ block, row }: { block: LeitnerCardField; row: "row" | "row-reverse" }) {
-  const { colors } = useTheme();
-  const tag = chipColors(block.tone, colors);
-  const items = block.items ?? block.text.split("\n").filter(Boolean);
-  return (
-    <View
-      style={{
-        backgroundColor: tag.bg,
-        borderWidth: 1,
-        borderColor: tag.border,
-        borderRadius: 14,
-        paddingHorizontal: 12,
-        paddingVertical: 9,
-        gap: 4,
-      }}
-    >
-      <View style={{ flexDirection: row, alignItems: "center", gap: 6 }}>
-        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: tag.label }} />
-        <AppText weight="800" size={12.5} color={tag.label}>
-          {block.label}
-        </AppText>
-      </View>
-      {items.map((item, i) => (
-        <View key={i} style={{ flexDirection: row, gap: 6 }}>
-          <AppText weight="700" size={14} color={tag.label}>
-            •
-          </AppText>
-          <AppText weight="500" size={14} style={{ flex: 1, lineHeight: 22 }}>
-            {item}
-          </AppText>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-/** The spaced-repetition review: every Leitner card due today, across all
- * decks, plus the box summary. Reached from the deck browser. */
-function LeitnerReview({ onBack }: { onBack: () => void }) {
-  const { t, isFa, n, row } = useLang();
-  const { colors, shadows } = useTheme();
-  const qc = useQueryClient();
-
-  const [showBoxes, setShowBoxes] = useState(false);
-  const [flipped, setFlipped] = useState(false);
-  const [cursor, setCursor] = useState(0);
-
-  const due = useQuery({ queryKey: ["flashcards-due"], queryFn: flashcardsApi.due, retry: false });
-  const boxes = useQuery({
-    queryKey: ["flashcards-boxes"],
-    queryFn: flashcardsApi.boxes,
-    enabled: showBoxes,
-    retry: false,
-  });
-
-  const locked = due.error instanceof ApiError && due.error.status === 503;
-
-  const seed = useMutation({
-    mutationFn: flashcardsApi.seed,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["flashcards-due"] }),
-  });
-  const review = useMutation({
-    mutationFn: ({ id, rating }: { id: number; rating: "easy" | "hard" }) =>
-      flashcardsApi.review(id, rating),
-    onSuccess: () => {
-      setFlipped(false);
-      setCursor((c) => c + 1);
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
-    },
-  });
-
-  if (due.isLoading) return <LoadingState />;
-
-  if (locked) {
-    return (
-      <Screen>
-        <ScreenChrome title={t("cardsTitle")} help="flashcards" />
-        <Card>
-          <View style={{ alignItems: "center", gap: 12, paddingVertical: 24 }}>
-            <View
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: 18,
-                backgroundColor: colors.softBg,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <IconImage name="edu-flashcards" size={34} />
-            </View>
-            <AppText weight="800" size={15}>
-              {t("comingSoon")}
-            </AppText>
-            <AppText muted weight="600" size={13} center>
-              {t("lockedFeature")}
-            </AppText>
-          </View>
-        </Card>
-      </Screen>
-    );
-  }
-
-  const cards = due.data ?? [];
-  const card = cards[cursor];
-
-  if (showBoxes) {
-    return (
-      <Screen>
-        <ScreenChrome title={t("leitnerShow")} />
-        <AppText muted weight="600" size={12} style={{ marginBottom: 16, lineHeight: 22 }}>
-          {t("leitnerSub")}
-        </AppText>
-        {(boxes.data ?? []).map((b, i) => (
-          <Card key={b.box} style={{ marginBottom: spacing.sm, flexDirection: row, alignItems: "center" }}>
-            <View
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                backgroundColor: colors.accent + "1a",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <AppText weight="900" size={13} color={colors.accent}>
-                {n(b.box)}
-              </AppText>
-            </View>
-            <View style={{ flex: 1, marginHorizontal: 12 }}>
-              <AppText weight="800" size={13}>
-                {t(BOX_LABEL_KEYS[i] ?? "leitnerL1")}
-              </AppText>
-              <AppText muted weight="600" size={12}>
-                {n(b.count)} {t("leitnerCards")}
-              </AppText>
-            </View>
-            {b.due > 0 ? (
-              <View
-                style={{
-                  backgroundColor: colors.leitnerActiveBg,
-                  borderRadius: 999,
-                  paddingHorizontal: 10,
-                  paddingVertical: 4,
-                }}
-              >
-                <AppText weight="800" size={11} color={colors.accent}>
-                  {n(b.due)} {t("leitnerDueToday")}
-                </AppText>
-              </View>
-            ) : null}
-          </Card>
-        ))}
-        <Button
-          label={t("leitnerHide")}
-          variant="secondary"
-          onPress={() => setShowBoxes(false)}
-          style={{ marginTop: spacing.md }}
-        />
-      </Screen>
-    );
-  }
-
-  return (
-    <Screen>
-      <ScreenChrome title={t("leitnerShow")} onBack={onBack} />
-      <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
-        <Pressable
-          onPress={() => setShowBoxes(true)}
-          style={{
-            backgroundColor: colors.softBg,
-            borderRadius: 999,
-            paddingHorizontal: 12,
-            paddingVertical: 7,
-          }}
-        >
-          <AppText weight="800" size={12} color={colors.accent}>
-            {t("leitnerShow")}
-          </AppText>
-        </Pressable>
-        <AppText weight="800" size={12} muted>
-          {cards.length ? `${n(Math.min(cursor + 1, cards.length))}/${n(cards.length)}` : ""}
-        </AppText>
-      </View>
-
-      {cards.length === 0 ? (
-        <Card>
-          <View style={{ alignItems: "center", gap: 12, paddingVertical: 20 }}>
-            <AppText weight="800" size={15}>
-              {t("cardsDoneTitle")}
-            </AppText>
-            <AppText muted weight="600" size={13} center>
-              {t("cardsDoneSub")}
-            </AppText>
-            <Button label={t("leitnerStartBtn")} onPress={() => seed.mutate()} loading={seed.isPending} />
-          </View>
-        </Card>
-      ) : !card ? (
-        <Card>
-          <AppText weight="800" size={15} center>
-            {t("cardsDoneTitle")}
-          </AppText>
-          <AppText muted weight="600" size={13} center style={{ marginTop: 6 }}>
-            {t("cardsDoneSub")}
-          </AppText>
-        </Card>
-      ) : (
-        <>
-          <Pressable onPress={() => setFlipped((f) => !f)}>
-            <View
-              style={[
-                {
-                  minHeight: 260,
-                  borderRadius: 20,
-                  padding: 22,
-                  justifyContent: "center",
-                  backgroundColor: flipped ? colors.cardBg : colors.accent,
-                },
-                shadows.raised,
-              ]}
-            >
-              {flipped ? (
-                <View style={{ gap: 14 }}>
-                  {(isFa ? card.back_fields_fa : card.back_fields_en).map((block) => (
-                    <CardBackField key={block.field} block={block} row={row} />
-                  ))}
-                </View>
-              ) : (
-                <>
-                  <AppText weight="900" size={24} color="#fff" center>
-                    {isFa ? card.front_fa : card.front_en}
-                  </AppText>
-                  <AppText weight="600" size={12} color="rgba(255,255,255,0.75)" center style={{ marginTop: 10 }}>
-                    {t("cardsTapHint")}
-                  </AppText>
-                </>
-              )}
-            </View>
-          </Pressable>
-
-          {flipped ? (
-            <View style={{ flexDirection: row, gap: 10, marginTop: spacing.lg }}>
-              <Button
-                label={t("cardHard")}
-                variant="secondary"
-                onPress={() => review.mutate({ id: card.id, rating: "hard" })}
-                style={{ flex: 1 }}
-              />
-              <Button
-                label={t("cardEasy")}
-                onPress={() => review.mutate({ id: card.id, rating: "easy" })}
-                style={{ flex: 1 }}
-              />
-            </View>
-          ) : null}
-        </>
-      )}
-    </Screen>
-  );
-}
 
 // --- topic decks: category grid -> topic list -> one topic's cards, in order
 
@@ -343,7 +71,8 @@ function LockedCard() {
   );
 }
 
-/** The card itself: drug name on the front, the colored sections on the back. */
+/** The card itself: the drug and which section it asks about on the front,
+ * that section's facts on the back. */
 function FlipCard({ card, flipped, onFlip }: { card: DeckCard; flipped: boolean; onFlip: () => void }) {
   const { t, isFa, row } = useLang();
   const { colors, shadows } = useTheme();
@@ -371,14 +100,22 @@ function FlipCard({ card, flipped, onFlip }: { card: DeckCard; flipped: boolean;
             ))}
           </View>
         ) : (
-          <>
+          <View style={{ gap: 12 }}>
             <AppText weight="900" size={26} color={colors.onAccent} center>
               {isFa ? card.front_fa : card.front_en}
             </AppText>
-            <AppText weight="600" size={12} color={colors.onAccentSub} center style={{ marginTop: 10 }}>
+            {isFa && card.front_en !== card.front_fa ? (
+              <AppText weight="600" size={13} color={colors.onAccentSub} center style={{ marginTop: -6 }}>
+                {card.front_en}
+              </AppText>
+            ) : null}
+            {card.section_label_fa ? (
+              <SectionChip label={isFa ? card.section_label_fa : card.section_label_en} tone={card.section_tone} onAccent />
+            ) : null}
+            <AppText weight="600" size={12} color={colors.onAccentSub} center>
               {t("cardsTapHint")}
             </AppText>
-          </>
+          </View>
         )}
       </View>
     </Pressable>
@@ -541,15 +278,15 @@ function TopicList({
                   <AppText weight="600" size={12} muted>
                     {tp.finished
                       ? isFa
-                        ? `${n(tp.total)} دارو · مرور شد`
-                        : `${tp.total} drugs · reviewed`
+                        ? `${n(tp.total)} کارت · مرور شد`
+                        : `${tp.total} cards · reviewed`
                       : inProgress
                         ? isFa
-                          ? `${n(tp.position)} از ${n(tp.total)} دارو`
-                          : `${tp.position} of ${tp.total} drugs`
+                          ? `${n(tp.position)} از ${n(tp.total)} کارت`
+                          : `${tp.position} of ${tp.total} cards`
                         : isFa
-                          ? `${n(tp.total)} دارو`
-                          : `${tp.total} drugs`}
+                          ? `${n(tp.total)} کارت`
+                          : `${tp.total} cards`}
                   </AppText>
                 </View>
                 {tp.finished ? (
@@ -610,32 +347,36 @@ function TopicDeckView({
   const deck = useQuery({ queryKey: ["flashcard-deck", topicKey], queryFn: () => flashcardsApi.deck(topicKey) });
   const [progress, setProgress] = useState<DeckProgress | null>(null);
   const [flipped, setFlipped] = useState(false);
-  // This visit's hard cards, for "review the hard ones again" at the end.
-  const [hardSlugs, setHardSlugs] = useState<string[]>([]);
+  // This visit's cards not known (drug + section), for "review the hard
+  // ones again" at the end; and whether the last answer boxed a card.
+  const [hardKeys, setHardKeys] = useState<string[]>([]);
+  const [boxed, setBoxed] = useState(false);
   const [reviewHard, setReviewHard] = useState<{ index: number } | null>(null);
 
   const current = progress ?? deck.data ?? null;
 
   const answer = useMutation({
-    mutationFn: ({ slug, rating }: { slug: string; rating: "easy" | "hard" }) =>
-      flashcardsApi.answer(topicKey, slug, rating),
+    mutationFn: ({ card, rating }: { card: DeckCard; rating: "easy" | "hard" }) =>
+      flashcardsApi.answer(topicKey, card.drug_slug, card.section, rating),
     onSuccess: (res, vars) => {
       setFlipped(false);
+      setBoxed(vars.rating === "hard");
       if (reviewHard) {
         setReviewHard({ index: reviewHard.index + 1 });
       } else {
         setProgress(res);
-        if (vars.rating === "hard") setHardSlugs((h) => [...h, vars.slug]);
+        if (vars.rating === "hard") setHardKeys((h) => [...h, `${vars.card.drug_slug}/${vars.card.section}`]);
       }
       qc.invalidateQueries({ queryKey: ["flashcard-decks"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["leitner"] });
     },
   });
   const restart = useMutation({
     mutationFn: () => flashcardsApi.restart(topicKey),
     onSuccess: (res) => {
       setProgress(res);
-      setHardSlugs([]);
+      setHardKeys([]);
       setReviewHard(null);
       setFlipped(false);
       qc.invalidateQueries({ queryKey: ["flashcard-decks"] });
@@ -646,10 +387,10 @@ function TopicDeckView({
 
   const data = deck.data;
   const title = isFa ? data.name_fa : data.name_en;
-  const hardCards = data.cards.filter((c) => hardSlugs.includes(c.drug_slug));
+  const hardCards = data.cards.filter((c) => hardKeys.includes(`${c.drug_slug}/${c.section}`));
   const reviewing = reviewHard && reviewHard.index < hardCards.length;
   const card = reviewing ? hardCards[reviewHard.index] : data.cards[current.position];
-  const rate = (rating: "easy" | "hard") => card && answer.mutate({ slug: card.drug_slug, rating });
+  const rate = (rating: "easy" | "hard") => card && answer.mutate({ card, rating });
 
   if (!card || (current.finished && !reviewing)) {
     const next = current.next_topic;
@@ -663,8 +404,8 @@ function TopicDeckView({
           </AppText>
           <AppText weight="500" size={14} muted center>
             {isFa
-              ? `هر ${n(current.total)} داروی این زیردسته را مرور کردی.`
-              : `You've been through all ${current.total} drugs in this topic.`}
+              ? `هر ${n(current.total)} کارت این زیردسته را مرور کردی.`
+              : `You've been through all ${current.total} cards in this topic.`}
           </AppText>
         </View>
 
@@ -762,6 +503,11 @@ function TopicDeckView({
       <View style={{ marginBottom: spacing.md }}>
         <ProgressBar value={(shown - 1) / total} height={6} />
       </View>
+      {boxed ? (
+        <AppText weight="700" size={12} color={colors.accent} style={{ marginTop: -6, marginBottom: spacing.sm }}>
+          {isFa ? "کارت قبلی به جعبهٔ لایتنر رفت." : "The last card went into the Leitner box."}
+        </AppText>
+      ) : null}
 
       <FlipCard card={card} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
 
@@ -782,7 +528,14 @@ function TopicDeckView({
 }
 
 export function FlashcardsScreen() {
-  const [mode, setMode] = useState<Mode>({ kind: "categories" });
+  const params = useNav((s) => s.params);
+  const [mode, setMode] = useState<Mode>(() =>
+    params.leitner
+      ? { kind: "leitner" }
+      : typeof params.topic === "string"
+        ? { kind: "deck", topic: params.topic, category: String(params.category ?? "") }
+        : { kind: "categories" },
+  );
   // Back steps out through the screen's own levels before leaving the tab.
   useBackInterceptor(mode.kind !== "categories", () =>
     setMode(mode.kind === "deck" ? { kind: "topics", category: mode.category } : { kind: "categories" }),
@@ -791,7 +544,7 @@ export function FlashcardsScreen() {
   const locked = decks.error instanceof ApiError && decks.error.status === 503;
   const { t } = useLang();
 
-  if (mode.kind === "leitner") return <LeitnerReview onBack={() => setMode({ kind: "categories" })} />;
+  if (mode.kind === "leitner") return <LeitnerBox onBack={() => setMode({ kind: "categories" })} />;
   if (decks.isLoading) return <LoadingState />;
   if (locked) {
     return (
@@ -808,7 +561,7 @@ export function FlashcardsScreen() {
       <TopicDeckView
         key={mode.topic}
         topicKey={mode.topic}
-        onBack={() => setMode({ kind: "topics", category: mode.category })}
+        onBack={() => setMode(mode.category ? { kind: "topics", category: mode.category } : { kind: "categories" })}
         onHome={() => setMode({ kind: "categories" })}
         onNext={(topic, category) => setMode({ kind: "deck", topic, category })}
       />

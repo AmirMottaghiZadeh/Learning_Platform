@@ -4,6 +4,9 @@ from .views import (
     BoxesView,
     DeckOverviewView,
     DueCardsView,
+    LeitnerCardsView,
+    LeitnerOverviewView,
+    LeitnerReviewView,
     ReviewView,
     SeedView,
     TopicAnswerView,
@@ -12,6 +15,10 @@ from .views import (
 )
 
 urlpatterns = [
+    path("flashcards/leitner/", LeitnerOverviewView.as_view(), name="leitner-overview"),
+    path("flashcards/leitner/cards/", LeitnerCardsView.as_view(), name="leitner-cards"),
+    path("flashcards/leitner/cards/<int:pk>/review/", LeitnerReviewView.as_view(), name="leitner-review"),
+    # The old per-drug box, for apps installed before the Leitner box above.
     path("flashcards/", DueCardsView.as_view(), name="flashcard-due"),
     path("flashcards/boxes/", BoxesView.as_view(), name="flashcard-boxes"),
     path("flashcards/seed/", SeedView.as_view(), name="flashcard-seed"),

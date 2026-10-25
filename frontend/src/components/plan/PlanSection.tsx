@@ -137,7 +137,9 @@ function useOpenActivity() {
     if (item.activity_type === "lesson" && item.atc_code) navigate("lessonList", { code: item.atc_code });
     else if (item.activity_type === "mistake_review") navigate("mistakes");
     else if (item.activity_type === "quiz") setTab("quiz");
-    else if (item.activity_type === "flashcards") setTab("flashcards");
+    // a topic's flashcard pass opens its deck; a review of due cards, the Leitner box
+    else if (item.activity_type === "flashcards")
+      navigate("flashcards", item.topic_key ? { topic: item.topic_key } : { leitner: true });
   };
 }
 

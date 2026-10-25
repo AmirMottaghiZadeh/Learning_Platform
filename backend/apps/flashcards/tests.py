@@ -132,7 +132,9 @@ class FlashcardApiTests(TestCase):
         card.refresh_from_db()
         self.assertEqual(card.box, 2)
         self.assertGreater(card.due_at, timezone.now())  # pushed into the future
-        self.assertEqual(due_card_count(self.user), 1)   # the other card still due
+        # the other old card is still due; the Leitner box (sections) is empty
+        self.assertEqual(LeitnerCard.objects.filter(user=self.user, section="", due_at__lte=timezone.now()).count(), 1)
+        self.assertEqual(due_card_count(self.user), 0)
 
         self.assertEqual(LearnerProgress.objects.get(user=self.user).total_reviews, 1)
         self.assertGreater(LearnerProgress.objects.get(user=self.user).xp, 0)
@@ -179,45 +181,67 @@ class TopicDeckTests(TestCase):
         bare = Ingredient.objects.create(name="nofacts", rxcui="9", slug="nofacts-9")
         bare.atc_codes.add(AtcCode.objects.create(code="C08CA02", name="x"))
 
-    def _answer(self, topic, slug, rating="easy"):
-        return self.client.post(
-            f"/flashcards/decks/{topic}/answer/", {"drug_slug": slug, "rating": rating}, format="json"
-        )
+    def _answer(self, topic, slug, rating="easy", section=None):
+        body = {"drug_slug": slug, "rating": rating}
+        if section:
+            body["section"] = section
+        return self.client.post(f"/flashcards/decks/{topic}/answer/", body, format="json")
 
     def test_overview_lists_only_topics_with_cards_in_taxonomy_order(self):
         data = self.client.get("/flashcards/decks/").data
         self.assertEqual([c["key"] for c in data["categories"]], ["cardio-blood", "endocrine-metabolic"])
         cardio = data["categories"][0]["topics"]
         self.assertEqual([t["key"] for t in cardio], ["cv-htn", "cv-hf", "cv-angina", "cv-lipid"])
-        self.assertEqual(cardio[0]["total"], 2)  # the drug without facts is no card
+        # two drugs with two card sections each; the drug without facts is no card
+        self.assertEqual(cardio[0]["total"], 4)
         self.assertEqual((cardio[0]["position"], cardio[0]["finished"]), (0, False))
 
-    def test_deck_is_in_chapter_order_and_advances_one_card_at_a_time(self):
+    def test_deck_is_in_chapter_order_one_section_per_card(self):
         deck = self.client.get("/flashcards/decks/cv-htn/").data
-        # chapters in the topic's own order: C08 (amlodipine) before C09
-        self.assertEqual([c["drug_slug"] for c in deck["cards"]], ["amlodipine-17767", "lisinopril-29046"])
+        # chapters in the topic's own order: C08 (amlodipine) before C09;
+        # each drug's sections in card order
+        self.assertEqual(
+            [(c["drug_slug"], c["section"]) for c in deck["cards"]],
+            [("amlodipine-17767", "indication"), ("amlodipine-17767", "dosage_forms"),
+             ("lisinopril-29046", "indication"), ("lisinopril-29046", "dosage_forms")],
+        )
         self.assertEqual(deck["category_key"], "cardio-blood")
-        self.assertTrue(deck["cards"][0]["back_fields_fa"])
+        first_card = deck["cards"][0]
+        self.assertEqual([b["field"] for b in first_card["back_fields_fa"]], ["indication"])
+        self.assertEqual(first_card["section_label_fa"], "اندیکاسیون")
 
-        first = self._answer("cv-htn", "amlodipine-17767", "easy").data
-        self.assertEqual((first["position"], first["finished"], first["next_topic"]), (1, False, None))
-        done = self._answer("cv-htn", "lisinopril-29046", "hard").data
-        self.assertEqual((done["position"], done["known"], done["hard"], done["finished"]), (2, 1, 1, True))
+    def test_deck_advances_one_card_at_a_time_and_only_misses_go_in_the_box(self):
+        for i, (slug, section, rating) in enumerate([
+            ("amlodipine-17767", "indication", "easy"),
+            ("amlodipine-17767", "dosage_forms", "hard"),
+            ("lisinopril-29046", "indication", "easy"),
+        ]):
+            res = self._answer("cv-htn", slug, rating, section).data
+            self.assertEqual(res["position"], i + 1)
+        done = self._answer("cv-htn", "lisinopril-29046", "easy", "dosage_forms").data
+        self.assertEqual((done["position"], done["known"], done["hard"], done["finished"]), (4, 3, 1, True))
         self.assertEqual(done["next_topic"]["key"], "cv-hf")
-        # every answer also feeds spaced repetition
-        self.assertEqual(LeitnerCard.objects.filter(user=self.user).count(), 2)
+        # only the card not known went in the Leitner box, in drawer 1
+        card = LeitnerCard.objects.get(user=self.user)
+        self.assertEqual((card.ingredient.slug, card.section, card.box), ("amlodipine-17767", "dosage_forms", 1))
 
         overview = self.client.get("/flashcards/decks/").data
         self.assertEqual(overview["topics_finished"], 1)
-        self.assertEqual(overview["cards_reviewed"], 2)
+        self.assertEqual(overview["cards_reviewed"], 4)
+
+    def test_an_old_app_answer_without_a_section_rates_the_current_card(self):
+        res = self._answer("cv-htn", "amlodipine-17767", "hard").data
+        self.assertEqual(res["position"], 1)
+        self.assertEqual(LeitnerCard.objects.get(user=self.user).section, "indication")
 
     def test_reviewing_out_of_order_does_not_move_the_deck(self):
-        res = self._answer("cv-htn", "lisinopril-29046")
+        res = self._answer("cv-htn", "lisinopril-29046", section="dosage_forms")
         self.assertEqual(res.data["position"], 0)
-        self.assertEqual(LeitnerCard.objects.filter(user=self.user).count(), 1)
+        self.assertFalse(LeitnerCard.objects.filter(user=self.user).exists())
 
     def test_next_topic_crosses_into_the_next_category(self):
-        done = self._answer("cv-lipid", "atorvastatin-83367").data
+        self._answer("cv-lipid", "atorvastatin-83367", section="indication")
+        done = self._answer("cv-lipid", "atorvastatin-83367", section="dosage_forms").data
         self.assertTrue(done["finished"])
         self.assertEqual(done["next_topic"]["key"], "endo-diabetes")
         self.assertEqual(done["next_topic"]["category_key"], "endocrine-metabolic")

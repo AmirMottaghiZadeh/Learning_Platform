@@ -192,18 +192,53 @@
 
 ## فلش‌کارت — `/flashcards/` (ویژگی `flashcards`؛ پرچم `FLASHCARDS_API_ENABLED`)
 
-کارت برای هر (کاربر، دارو) است. پشت کارت پنج بخش دارد: `indication`، `adr_common`، `adr_serious`، `dosage_forms`، `contra_boxed`. پنج جعبه با فاصلهٔ ۰ / ۳ / ۷ / ۱۶ / ۳۵ روز.
+هر فلش‌کارت یک بخشِ یک دارو است. بخش‌ها این‌ها هستند:
+
+- `indication`
+- `mechanism`
+- `adr_common`
+- `adr_serious`
+- `interaction`
+- `warning`
+- `contra_boxed`
+
+محتوای کارت‌ها از پایپلاین `study_content` می‌آید ([07-data.md](07-data.md)). دستهٔ یک موضوع، داروهایش را به ترتیب می‌آورد و برای هر دارو، کارت بخش‌هایش را به همان ترتیب بالا.
+
+### دسته‌ها
 
 | روش | مسیر | توضیح |
 |---|---|---|
-| POST | `/flashcards/seed/` | ساخت کارت‌های جعبهٔ ۱ (تکرارپذیر) ← `{created, deck_size}` |
-| GET | `/flashcards/` | حداکثر ۲۰ کارت موعدرسیده |
-| GET | `/flashcards/boxes/` | `[{box, count, due, next_due_at}]` |
-| POST | `/flashcards/{id}/review/` | `{rating: "easy"\|"hard"}`؛ easy جعبه را بالا و hard پایین می‌برد |
-| GET | `/flashcards/decks/` | دسته‌ها و موضوع‌ها با پیشرفت |
-| GET | `/flashcards/decks/{topic}/` | کارت‌های یک موضوع به ترتیب ثابت، با `position`، `known`، `hard`، `finished`، `next_topic` |
-| POST | `/flashcards/decks/{topic}/answer/` | `{drug_slug, rating}`؛ 422 `NOT_IN_DECK` |
+| GET | `/flashcards/decks/` | دسته‌ها و موضوع‌ها با پیشرفت (`total` و `position` تعداد کارت است) |
+| GET | `/flashcards/decks/{topic}/` | کارت‌های یک موضوع به ترتیب ثابت: `{drug_slug, section, section_label_fa/en, section_tone, front_fa, front_en, back_fields_fa/en}`، با `position`، `known`، `hard`، `finished`، `next_topic` |
+| POST | `/flashcards/decks/{topic}/answer/` | `{drug_slug, section, rating: "easy"\|"hard"}`. `hard` («یادم نبود») کارت را به جعبهٔ لایتنر می‌برد. بدون `section`، کارت فعلی دسته (برای اپ‌های قدیمی). 422 `NOT_IN_DECK` |
 | POST | `/flashcards/decks/{topic}/restart/` | شروع دوبارهٔ موضوع |
+
+### جعبهٔ لایتنر
+
+کد: `apps/flashcards/leitner.py`.
+
+- **ورود:** فقط کارتی وارد جعبه می‌شود که کاربر بلد نبوده:
+  - «یادم نبود» در دسته
+  - «یادم نبود» در مرور
+  - پاسخ غلط آزمون روی همان دارو و بخش (پاسخ `/quiz/{id}/answer/` در این حالت `added_to_leitner: true` دارد)
+- **شمارهٔ کشو (۱ تا ۵):** یعنی چند بار اشتباه شده. کارت در کشوی ۱ وارد می‌شود و هر اشتباه بعدی یک کشو بالاترش می‌برد.
+- **سه پاسخ مرور:**
+  - `forgot`: یک کشو بالا، ۱۰ دقیقهٔ بعد دوباره.
+  - `hard`: همان کشو، کمی دیرتر از دفعهٔ قبل.
+  - `good`: یک کشو پایین. از کشوی ۱، کارت از جعبه بیرون می‌رود (`box` صفر).
+- **فاصلهٔ برگشت:** برای هر کارت جداست و با «آسانی» خود کارت رشد می‌کند. آسانی با هر اشتباه کم می‌شود، پس کارت پراشتباه زودتر برمی‌گردد.
+- **تاریخ آزمون:** اگر برنامهٔ مطالعه تاریخ آزمون دارد، هر فاصله حداکثر نصف روزهای مانده تا آزمون است.
+- **مرور امروز:** کارت‌های سررسیده را از بالاترین کشو برمی‌دارد، به اندازهٔ دقیقه‌های روزانهٔ برنامه (هر کارت ۲۰ ثانیه؛ بدون برنامه ۱۵ دقیقه).
+
+| روش | مسیر | توضیح |
+|---|---|---|
+| GET | `/flashcards/leitner/` | `{drawers: [{box, count, due}], total, due, today, today_minutes, daily_minutes, reviewed_today, left_box, exam_days_left, preview}` |
+| GET | `/flashcards/leitner/cards/?box=N` | مرور امروز، یا با `box` همهٔ کارت‌های یک کشو، سررسیده یا نه. هر کارت `outcomes` دارد: `{forgot\|hard\|good: {box, minutes}}`. 400 `INVALID_BOX` |
+| POST | `/flashcards/leitner/cards/{id}/review/` | `{rating: "forgot"\|"hard"\|"good"}` ← خود کارت پس از مرور. 404 `NOT_FOUND` برای کارتی که در جعبه نیست |
+
+### جعبهٔ قدیمی
+
+`/flashcards/`، `/flashcards/boxes/`، `/flashcards/seed/` و `/flashcards/{id}/review/` جعبهٔ قبلی‌اند: کارت برای هر دارو و فاصله‌های ثابت. این مسیرها فقط برای اپ‌هایی که پیش از جعبهٔ تازه نصب شده‌اند می‌مانند. فقط کارت‌های بدون بخش (`section` خالی) را می‌بینند و جعبهٔ تازه را لمس نمی‌کنند.
 
 ## آزمون — `/quiz/` (ویژگی `quiz`؛ پرچم `QUIZ_API_ENABLED`)
 
@@ -212,7 +247,7 @@
 | GET | `/quiz/overview/` | آمار و نشان‌های صفحهٔ انتخاب آزمون |
 | GET | `/quiz/preview/?category=&atc_code=&count=` | اینکه آزمون با این انتخاب چه چیزهایی را پوشش می‌دهد. 400 `INVALID_CATEGORY` |
 | POST | `/quiz/start/` | `{category, atc_code?, count}` (count: ۵، ۱۰، ۱۵ یا ۲۰) ← جلسه با سؤال‌ها، بدون کلید پاسخ. 422 `INSUFFICIENT_QUESTIONS` |
-| POST | `/quiz/{id}/answer/` | `{question_id, selected_index, client_answered_at?}` ← `{correct, correct_index}`. 409 `ALREADY_ANSWERED` / `QUIZ_ALREADY_FINISHED`، 400 `INVALID_QUESTION`. با اعمال فروش، هر پاسخ از سهمیه کم می‌کند (402 ممکن است) |
+| POST | `/quiz/{id}/answer/` | `{question_id, selected_index, client_answered_at?}` ← `{correct, correct_index, extra_context, added_to_leitner}`. پاسخ غلط، فلش‌کارت همان نکته را به جعبهٔ لایتنر می‌برد. 409 `ALREADY_ANSWERED` / `QUIZ_ALREADY_FINISHED`، 400 `INVALID_QUESTION`. با اعمال فروش، هر پاسخ از سهمیه کم می‌کند (402 ممکن است) |
 | POST | `/quiz/{id}/finish/` | ← `{score, total, mistakes_added}`؛ فقط یک بار. XP و آمار و اشتباه‌ها را ثبت می‌کند |
 | POST | `/quiz/{id}/review-mistakes/` | آزمون تازه از سؤال‌های غلط همان جلسه. 409 `QUIZ_NOT_FINISHED`، 422 `NOTHING_TO_REVIEW` |
 

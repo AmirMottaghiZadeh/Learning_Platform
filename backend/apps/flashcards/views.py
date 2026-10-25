@@ -1,6 +1,6 @@
-from django.db.models import Count, Min, Q
+from django.db.models import Count, Min, Q, prefetch_related_objects
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,20 +10,28 @@ from apps.billing.enforcement import require_feature, require_topic_content
 from apps.drugs.models import Ingredient
 from apps.progress.services import XP_PER_REVIEW, record_study
 
-from .decks import all_decks, deck_slugs, next_topic, progress_map, topic_meta
+from . import leitner
+from .decks import all_decks, deck_cards, next_topic, progress_map, topic_meta
 from .models import MAX_BOX, LeitnerCard, TopicProgress
 from .serializers import (
+    BoxCardSerializer,
+    BoxReviewSerializer,
     BoxSummarySerializer,
     DeckAnswerSerializer,
     DeckOverviewSerializer,
     DeckProgressSerializer,
     LeitnerCardSerializer,
+    LeitnerOverviewSerializer,
     ReviewSerializer,
     TopicDeckSerializer,
 )
 from .services import seed_deck
 
 DUE_PAGE_SIZE = 20
+
+
+# --- the old box: per-drug cards, kept answering apps installed before the
+# Leitner box below replaced it. They only ever see cards with no section.
 
 
 class DueCardsView(APIView):
@@ -33,7 +41,7 @@ class DueCardsView(APIView):
     def get(self, request):
         require_feature(request, "flashcards")
         cards = (
-            LeitnerCard.objects.filter(user=request.user, due_at__lte=timezone.now())
+            LeitnerCard.objects.filter(user=request.user, section="", due_at__lte=timezone.now())
             .select_related("ingredient")
             .prefetch_related("ingredient__flashcard_facts")[:DUE_PAGE_SIZE]
         )
@@ -48,7 +56,7 @@ class BoxesView(APIView):
         now = timezone.now()
         rows = {
             r["box"]: r
-            for r in LeitnerCard.objects.filter(user=request.user)
+            for r in LeitnerCard.objects.filter(user=request.user, section="")
             .values("box")
             .annotate(
                 count=Count("id"),
@@ -84,7 +92,7 @@ class ReviewView(APIView):
     @extend_schema(request=ReviewSerializer, responses=LeitnerCardSerializer)
     def post(self, request, pk):
         try:
-            card = LeitnerCard.objects.select_related("ingredient").get(pk=pk, user=request.user)
+            card = LeitnerCard.objects.select_related("ingredient").get(pk=pk, user=request.user, section="")
         except LeitnerCard.DoesNotExist:
             raise PlatformAPIError("No such card.", code="NOT_FOUND", status_code=404)
         require_feature(request, "flashcards", item=card.ingredient.slug, consume=True)
@@ -134,7 +142,7 @@ class DeckOverviewView(APIView):
         for deck in all_decks():
             topics = []
             for entry in deck["topics"]:
-                topic, total = entry["topic"], len(entry["slugs"])
+                topic, total = entry["topic"], len(entry["cards"])
                 p = progress.get(topic["key"])
                 position = min(p.position, total) if p else 0
                 finished = position >= total
@@ -170,14 +178,14 @@ class TopicDeckView(APIView):
 
     @extend_schema(responses=TopicDeckSerializer)
     def get(self, request, topic_key):
-        slugs = deck_slugs(topic_key)
-        if slugs is None:
+        cards = deck_cards(topic_key)
+        if cards is None:
             raise _unknown_topic()
         require_feature(request, "flashcards")
         require_topic_content(request, topic_key)
         by_slug = {
             ing.slug: ing
-            for ing in Ingredient.objects.filter(slug__in=slugs).prefetch_related("flashcard_facts")
+            for ing in Ingredient.objects.filter(slug__in={slug for slug, _ in cards}).prefetch_related("flashcard_facts")
         }
         topic, category = topic_meta(topic_key)
         progress = TopicProgress.objects.filter(user=request.user, topic_key=topic_key).first()
@@ -188,66 +196,143 @@ class TopicDeckView(APIView):
             "category_key": category["key"],
             "category_name_fa": category["name_fa"],
             "category_name_en": category["name_en"],
-            "cards": [by_slug[s] for s in slugs if s in by_slug],
-            **_progress_payload(progress, len(slugs), topic_key),
+            "cards": [{"ingredient": by_slug[slug], "section": section} for slug, section in cards if slug in by_slug],
+            **_progress_payload(progress, len(cards), topic_key),
         }).data)
 
 
 class TopicAnswerView(APIView):
-    """Rate one card of a topic deck. Always updates that drug's Leitner card
-    (creating it if needed), so decks feed spaced repetition; the deck itself
-    advances only when the card answered is the next one in order -- going
-    back over the hard cards after the deck is done doesn't move it."""
+    """Rate one card of a topic deck. "hard" -- "یادم نبود" -- puts that card
+    in the Leitner box (or a drawer up), so only what the learner did not
+    know is reviewed there; the deck itself advances only when the card
+    answered is the next one in order -- going back over the hard cards
+    after the deck is done doesn't move it."""
 
     permission_classes = [IsAuthenticated]
 
     @extend_schema(request=DeckAnswerSerializer, responses=DeckProgressSerializer)
     def post(self, request, topic_key):
-        slugs = deck_slugs(topic_key)
-        if slugs is None:
+        cards = deck_cards(topic_key)
+        if cards is None:
             raise _unknown_topic()
         body = DeckAnswerSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         slug, rating = body.validated_data["drug_slug"], body.validated_data["rating"]
-        if slug not in slugs:
+        progress, _ = TopicProgress.objects.get_or_create(user=request.user, topic_key=topic_key)
+        section = body.validated_data.get("section")
+        if not section:
+            # An app from before one-section cards: the deck's current card
+            # when it is this drug's, else the drug's first card.
+            at = cards[progress.position] if progress.position < len(cards) else None
+            section = at[1] if at and at[0] == slug else next((s for d, s in cards if d == slug), "")
+        if (slug, section) not in cards:
             raise PlatformAPIError(
-                "That drug is not in this topic's deck.", code="NOT_IN_DECK", status_code=422
+                "That card is not in this topic's deck.", code="NOT_IN_DECK", status_code=422
             )
         require_topic_content(request, topic_key)
         require_feature(request, "flashcards", item=slug, consume=True)
 
-        ingredient = Ingredient.objects.get(slug=slug)
-        card, _ = LeitnerCard.objects.get_or_create(user=request.user, ingredient=ingredient)
-        card.review(rating)
-        card.save(update_fields=["box", "due_at", "times_seen", "last_reviewed_at"])
+        if rating == "hard":
+            leitner.add_miss(request.user, Ingredient.objects.get(slug=slug), section)
         record_study(request.user, minutes=1, reviews=1, xp=XP_PER_REVIEW)
 
-        progress, _ = TopicProgress.objects.get_or_create(user=request.user, topic_key=topic_key)
-        if progress.position < len(slugs) and slugs.index(slug) == progress.position:
+        if progress.position < len(cards) and cards.index((slug, section)) == progress.position:
             progress.position += 1
             if rating == "easy":
                 progress.known += 1
             else:
                 progress.hard += 1
-            if progress.position >= len(slugs):
+            if progress.position >= len(cards):
                 progress.finished_at = timezone.now()
             progress.save()
-        return Response(DeckProgressSerializer(_progress_payload(progress, len(slugs), topic_key)).data)
+        return Response(DeckProgressSerializer(_progress_payload(progress, len(cards), topic_key)).data)
 
 
 class TopicRestartView(APIView):
-    """Start a topic deck over from its first drug."""
+    """Start a topic deck over from its first card."""
 
     permission_classes = [IsAuthenticated]
 
     @extend_schema(request=None, responses=DeckProgressSerializer)
     def post(self, request, topic_key):
-        slugs = deck_slugs(topic_key)
-        if slugs is None:
+        cards = deck_cards(topic_key)
+        if cards is None:
             raise _unknown_topic()
         TopicProgress.objects.update_or_create(
             user=request.user,
             topic_key=topic_key,
             defaults={"position": 0, "known": 0, "hard": 0, "finished_at": None},
         )
-        return Response(DeckProgressSerializer(_progress_payload(None, len(slugs), topic_key)).data)
+        return Response(DeckProgressSerializer(_progress_payload(None, len(cards), topic_key)).data)
+
+
+# --- the Leitner box: only what the learner did not know (apps.flashcards.leitner)
+
+
+def _box_cards(request, cards):
+    return BoxCardSerializer(cards, many=True, context={"previews": leitner.previews(request.user, cards)}).data
+
+
+def _with_facts(cards):
+    """Prefetch each card's drug facts, for the card backs."""
+    prefetch_related_objects(cards, "ingredient__flashcard_facts")
+    return cards
+
+
+class LeitnerOverviewView(APIView):
+    """The five drawers (cards and how many are due in each) and today's
+    review: its size within the day's minutes, with its first cards."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=LeitnerOverviewSerializer)
+    def get(self, request):
+        require_feature(request, "flashcards")
+        data = leitner.overview(request.user)
+        preview = _with_facts(data["preview"])
+        return Response(
+            LeitnerOverviewSerializer(data, context={"previews": leitner.previews(request.user, preview)}).data
+        )
+
+
+class LeitnerCardsView(APIView):
+    """Today's review -- due cards, highest drawer first, within the day's
+    minutes -- or, with ?box=N, every card in that drawer, due or not. Each
+    card carries what each review button would do to it."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        parameters=[OpenApiParameter("box", int, description="One drawer, 1-5, instead of today's review.")],
+        responses=BoxCardSerializer(many=True),
+    )
+    def get(self, request):
+        require_feature(request, "flashcards")
+        box = request.query_params.get("box")
+        if box is not None:
+            if box not in {str(b) for b in range(1, MAX_BOX + 1)}:
+                raise PlatformAPIError("No such drawer.", code="INVALID_BOX", status_code=400)
+            cards = leitner.drawer_cards(request.user, int(box))
+        else:
+            cards, _due, _budget = leitner.today_queue(request.user)
+        return Response(_box_cards(request, _with_facts(cards)))
+
+
+class LeitnerReviewView(APIView):
+    """Rate a card in the box -- forgot, hard or good -- and reschedule it.
+    The answer is the card as it now is (box 0: it left the box)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=BoxReviewSerializer, responses=BoxCardSerializer)
+    def post(self, request, pk):
+        try:
+            card = LeitnerCard.objects.in_box().select_related("ingredient").get(pk=pk, user=request.user)
+        except LeitnerCard.DoesNotExist:
+            raise PlatformAPIError("No such card in the box.", code="NOT_FOUND", status_code=404)
+        body = BoxReviewSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        require_feature(request, "flashcards", item=card.ingredient.slug, consume=True)
+        leitner.review(request.user, card, body.validated_data["rating"])
+        record_study(request.user, minutes=1, reviews=1, xp=XP_PER_REVIEW)
+        return Response(_box_cards(request, _with_facts([card]))[0])

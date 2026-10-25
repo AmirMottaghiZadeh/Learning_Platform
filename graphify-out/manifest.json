@@ -924,9 +924,9 @@
     "semantic_hash": ""
   },
   "backend/apps/flashcards/decks.py": {
-    "mtime": 1791849792.0276556,
-    "seen": 1792686658.6825213,
-    "ast_hash": "e69a92278f9226b919d51618ce711acb",
+    "mtime": 1792911224.3603122,
+    "seen": 1792912378.104756,
+    "ast_hash": "82fdfde296382b288cc99e6e1c46e29e",
     "semantic_hash": ""
   },
   "backend/apps/flashcards/management/__init__.py": {
@@ -978,9 +978,9 @@
     "semantic_hash": ""
   },
   "backend/apps/flashcards/models.py": {
-    "mtime": 1791849792.031654,
-    "seen": 1792686658.6825607,
-    "ast_hash": "12e6eb4876bd88e5b5f357a1accaee3b",
+    "mtime": 1792911079.7667642,
+    "seen": 1792912378.1047835,
+    "ast_hash": "779961c3edd79634bcc466b16a6cb6cc",
     "semantic_hash": ""
   },
   "backend/apps/flashcards/sections.py": {
@@ -990,33 +990,33 @@
     "semantic_hash": ""
   },
   "backend/apps/flashcards/serializers.py": {
-    "mtime": 1791849792.031654,
-    "seen": 1792686658.68257,
-    "ast_hash": "e6026d00839808d6e12defb56f1253dd",
+    "mtime": 1792911193.0311038,
+    "seen": 1792912378.104788,
+    "ast_hash": "a683e2dcb4b62bf2fc92a7075fbae5c6",
     "semantic_hash": ""
   },
   "backend/apps/flashcards/services.py": {
-    "mtime": 1791849473.1052816,
-    "seen": 1792686658.6825745,
-    "ast_hash": "9971722ed3ea78330e766ab47a77de88",
+    "mtime": 1792911233.7806761,
+    "seen": 1792912378.10479,
+    "ast_hash": "ae4425586efe5e765eb0489a41b0ace6",
     "semantic_hash": ""
   },
   "backend/apps/flashcards/tests.py": {
-    "mtime": 1792189120.0553486,
-    "seen": 1792686658.682579,
-    "ast_hash": "022c90b5039b2041bac405a7effecb8d",
+    "mtime": 1792911447.545441,
+    "seen": 1792912378.1047938,
+    "ast_hash": "763fe70415af44e85da25c4baed52ab0",
     "semantic_hash": ""
   },
   "backend/apps/flashcards/urls.py": {
-    "mtime": 1791849792.031654,
-    "seen": 1792686658.6825836,
-    "ast_hash": "fbae2dd5c53d2d6f0232b0f71038f306",
+    "mtime": 1792911290.3908684,
+    "seen": 1792912378.1047957,
+    "ast_hash": "bef70d6ecc8ab619d07be980e31e5320",
     "semantic_hash": ""
   },
   "backend/apps/flashcards/views.py": {
-    "mtime": 1791975956.713073,
-    "seen": 1792686658.6825879,
-    "ast_hash": "e56cef08db642a329b4e92902786ee8b",
+    "mtime": 1792911300.351255,
+    "seen": 1792912378.1047974,
+    "ast_hash": "fe086180c3864c49fe85c9551b4287c3",
     "semantic_hash": ""
   },
   "backend/apps/lessons/__init__.py": {
@@ -1296,9 +1296,9 @@
     "semantic_hash": ""
   },
   "backend/apps/progress/planning.py": {
-    "mtime": 1792910471.2847517,
-    "seen": 1792910513.3548493,
-    "ast_hash": "5843ecbf18c187ace33a3d426c5f849c",
+    "mtime": 1792911332.2947187,
+    "seen": 1792912378.1049445,
+    "ast_hash": "5ecf9e9fa2006628ff4c34ff8ecc1f01",
     "semantic_hash": ""
   },
   "backend/apps/progress/selectors.py": {
@@ -1320,9 +1320,9 @@
     "semantic_hash": ""
   },
   "backend/apps/progress/tests.py": {
-    "mtime": 1789258063.952878,
-    "seen": 1792686658.6828318,
-    "ast_hash": "8985f8511f60195818bbadd47b342241",
+    "mtime": 1792911447.545441,
+    "seen": 1792912378.1049554,
+    "ast_hash": "cc65e3e19294191b1e39d42e68e9485a",
     "semantic_hash": ""
   },
   "backend/apps/progress/urls.py": {
@@ -1470,15 +1470,15 @@
     "semantic_hash": ""
   },
   "backend/apps/quiz/serializers.py": {
-    "mtime": 1791577049.838154,
-    "seen": 1792686658.6829484,
-    "ast_hash": "a16eb4f4f647c5c414f7232ad4ae2f8e",
+    "mtime": 1792911332.2947187,
+    "seen": 1792912378.1050088,
+    "ast_hash": "ed209683184fee589e8f9ecccd9a36f2",
     "semantic_hash": ""
   },
   "backend/apps/quiz/tests.py": {
-    "mtime": 1792530119.1664665,
-    "seen": 1792686658.6829526,
-    "ast_hash": "35f47147b80384ed6977002acede5a83",
+    "mtime": 1792912032.7334695,
+    "seen": 1792912378.105011,
+    "ast_hash": "3e8833facac5fce39228a6aa260ad675",
     "semantic_hash": ""
   },
   "backend/apps/quiz/urls.py": {
@@ -1488,9 +1488,9 @@
     "semantic_hash": ""
   },
   "backend/apps/quiz/views.py": {
-    "mtime": 1792308487.7099154,
-    "seen": 1792686658.6829624,
-    "ast_hash": "ba44569f1882884be472d69b8a2e3385",
+    "mtime": 1792911332.2867246,
+    "seen": 1792912378.1050155,
+    "ast_hash": "01f05cb7572ecdc735bbf47d12f36344",
     "semantic_hash": ""
   },
   "backend/apps/uptodate/__init__.py": {
@@ -1980,9 +1980,9 @@
     "semantic_hash": ""
   },
   "frontend/src/api/endpoints.ts": {
-    "mtime": 1792908685.4182925,
-    "seen": 1792910053.367745,
-    "ast_hash": "8ac1317152a23f069423cccdcfa654ac",
+    "mtime": 1792911579.561062,
+    "seen": 1792912378.105208,
+    "ast_hash": "f653c8630884c1c67faf6ed4a6ebbce4",
     "semantic_hash": ""
   },
   "frontend/src/api/queryClient.ts": {
@@ -1992,9 +1992,9 @@
     "semantic_hash": ""
   },
   "frontend/src/api/types.ts": {
-    "mtime": 1792908663.4497852,
-    "seen": 1792910053.367749,
-    "ast_hash": "307ca8562be59677247481b89431ff3a",
+    "mtime": 1792911810.9033127,
+    "seen": 1792912378.1052122,
+    "ast_hash": "e33d131aa2a08d37420ae055657bad8f",
     "semantic_hash": ""
   },
   "frontend/src/components/AlphabeticalArticleList.tsx": {
@@ -2262,9 +2262,9 @@
     "semantic_hash": ""
   },
   "frontend/src/i18n/strings.ts": {
-    "mtime": 1792909043.6230755,
-    "seen": 1792910053.3678474,
-    "ast_hash": "98b82ad1c7ea666a976d56f18d3cf9aa",
+    "mtime": 1792911742.7558022,
+    "seen": 1792912378.1053274,
+    "ast_hash": "6f973ceb96ce4519ff2c2ad8659ac679",
     "semantic_hash": ""
   },
   "frontend/src/navigation/Navigator.tsx": {
@@ -2322,9 +2322,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/FlashcardsScreen.tsx": {
-    "mtime": 1791892924.7612338,
-    "seen": 1792686658.6836143,
-    "ast_hash": "5fa0b3bf9378289089ad193cbf0d147f",
+    "mtime": 1792911722.3999753,
+    "seen": 1792912378.105382,
+    "ast_hash": "010530a1a806b690c4b18806a960df6c",
     "semantic_hash": ""
   },
   "frontend/src/screens/LessonDetailScreen.tsx": {
@@ -2394,9 +2394,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/PlanningScreen.tsx": {
-    "mtime": 1789259380.3365476,
-    "seen": 1792686658.683659,
-    "ast_hash": "9eea0eef2884d751b11e22e2fca0e2eb",
+    "mtime": 1792911790.670803,
+    "seen": 1792912378.1054065,
+    "ast_hash": "e5b2151958f29cec74c6e6b4952c684c",
     "semantic_hash": ""
   },
   "frontend/src/screens/PlanningSetupScreen.tsx": {
@@ -2412,9 +2412,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/QuizScreen.tsx": {
-    "mtime": 1792776819.318834,
-    "seen": 1792777078.352999,
-    "ast_hash": "272c3745213d9294920f2915370b1de6",
+    "mtime": 1792911763.0798512,
+    "seen": 1792912378.105412,
+    "ast_hash": "c46b810f9f2b5cb83a10f0fcd4b6e774",
     "semantic_hash": ""
   },
   "frontend/src/screens/SetPasswordScreen.tsx": {
@@ -4266,21 +4266,21 @@
     "semantic_hash": ""
   },
   "docs/03-backend.md": {
-    "mtime": 1792909271.197318,
-    "seen": 1792910053.368145,
-    "ast_hash": "7c97269680005392d9105d6e9fc6cb15",
+    "mtime": 1792912101.5263233,
+    "seen": 1792912378.10565,
+    "ast_hash": "29c7b578a5114ef051948b6ae63e2760",
     "semantic_hash": ""
   },
   "docs/04-frontend.md": {
-    "mtime": 1792909103.1616714,
-    "seen": 1792910053.3681467,
-    "ast_hash": "bc226e3728e7580162dd3efbc0660c27",
+    "mtime": 1792912123.8561425,
+    "seen": 1792912378.1056516,
+    "ast_hash": "f4d0c7f280391a9768d88c8cee3fd861",
     "semantic_hash": ""
   },
   "docs/05-api.md": {
-    "mtime": 1792909086.1889238,
-    "seen": 1792910053.3681486,
-    "ast_hash": "823d041c7de00ed5f409eee39066c653",
+    "mtime": 1792912101.5263233,
+    "seen": 1792912378.1056538,
+    "ast_hash": "1d85fcd2cd7a04f232a5ea4ce21f8de7",
     "semantic_hash": ""
   },
   "docs/06-configuration.md": {
@@ -4458,9 +4458,9 @@
     "semantic_hash": ""
   },
   "frontend/src/utils/bidi.ts": {
-    "mtime": 1792856815.9487872,
-    "seen": 1792856913.847855,
-    "ast_hash": "bc16b1258fc0bc53d371e47d5225313d",
+    "mtime": 1792911920.103002,
+    "seen": 1792912378.1054425,
+    "ast_hash": "7986966ca9a6e7518b6c5f8dec62a698",
     "semantic_hash": ""
   },
   "backend/apps/drugs/null_statements.py": {
@@ -4566,15 +4566,45 @@
     "semantic_hash": ""
   },
   "frontend/src/components/plan/PlanSection.tsx": {
-    "mtime": 1792910815.3248596,
-    "seen": 1792910860.0676095,
-    "ast_hash": "6b41c4ddefe2bcb4cee5143592288352",
+    "mtime": 1792911790.6628046,
+    "seen": 1792912378.105307,
+    "ast_hash": "2ca7b0b3f71b5e0af4edd9e959d32642",
     "semantic_hash": ""
   },
   "frontend/src/utils/planDates.ts": {
     "mtime": 1792908721.2792199,
     "seen": 1792910053.3679686,
     "ast_hash": "bea596cd46c8607fced48a6fd08d1f4f",
+    "semantic_hash": ""
+  },
+  "backend/apps/flashcards/leitner.py": {
+    "mtime": 1792911164.2139955,
+    "seen": 1792912378.1047606,
+    "ast_hash": "1b9dac3f69a61e7ea3899a61a39885e0",
+    "semantic_hash": ""
+  },
+  "backend/apps/flashcards/migrations/0006_leitner_by_section.py": {
+    "mtime": 1792911091.807223,
+    "seen": 1792912378.1047792,
+    "ast_hash": "64c20740275b2994e5e2a85c5a9dadb2",
+    "semantic_hash": ""
+  },
+  "backend/apps/flashcards/test_leitner.py": {
+    "mtime": 1792911519.6340818,
+    "seen": 1792912378.1047919,
+    "ast_hash": "e60af966957a3e60485559269737b489",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/flashcards/CardParts.tsx": {
+    "mtime": 1792911612.0991938,
+    "seen": 1792912378.105296,
+    "ast_hash": "96d6d382b403712b8e51f168bc929640",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/flashcards/LeitnerBox.tsx": {
+    "mtime": 1792911872.9615743,
+    "seen": 1792912378.1052983,
+    "ast_hash": "a1d611150097d82ff89fd1b4a0773089",
     "semantic_hash": ""
   }
 }

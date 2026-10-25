@@ -1,14 +1,17 @@
 """Flashcard decks: one per clinical study topic (the lessons taxonomy's
 topics are the sub-categories, its CATEGORIES the categories), holding the
 topic's drugs that have card facts, in a fixed study order -- a learner
-picks a category, then a topic, and works through its drugs one card at a
-time until the deck is done, rather than getting cards at random.
+picks a category, then a topic, and works through its cards one at a time
+until the deck is done, rather than getting cards at random. A card is one
+drug's one section, so a deck goes drug by drug, each drug's sections in
+card order (apps.flashcards.sections).
 """
 
 from apps.drugs.models import Ingredient
 from apps.lessons.data.study_topics import CATEGORIES, STUDY_TOPICS
 from apps.lessons.selectors import l2_slug_index, ordered_topic_slugs
 
+from .leitner import card_sections
 from .models import TopicProgress
 
 _TOPIC_BY_KEY = {t["key"]: t for t in STUDY_TOPICS}
@@ -24,20 +27,32 @@ def _carded_slugs() -> set[str]:
     )
 
 
+def _sections_by_slug() -> dict[str, list[str]]:
+    """Each carded drug's sections, in card order."""
+    ids = card_sections()
+    slugs = dict(Ingredient.objects.filter(id__in=ids).values_list("id", "slug"))
+    return {slugs[i]: sections for i, sections in ids.items() if i in slugs}
+
+
+def _cards(slugs, sections) -> list[tuple[str, str]]:
+    return [(slug, section) for slug in slugs for section in sections.get(slug, [])]
+
+
 def all_decks() -> list[dict]:
-    """[{category, topics: [{topic, slugs}]}] in taxonomy order, leaving out
-    topics with no carded drug and categories with no such topic."""
+    """[{category, topics: [{topic, slugs, cards}]}] in taxonomy order --
+    `cards` the (drug slug, section) pairs -- leaving out topics with no
+    carded drug and categories with no such topic."""
     index = l2_slug_index()
-    carded = _carded_slugs()
+    sections = _sections_by_slug()
     out = []
     for category in CATEGORIES:
         topics = []
         for topic in STUDY_TOPICS:
             if topic["category"] != category["key"]:
                 continue
-            slugs = [s for s in ordered_topic_slugs(topic["key"], index) if s in carded]
+            slugs = [s for s in ordered_topic_slugs(topic["key"], index) if s in sections]
             if slugs:
-                topics.append({"topic": topic, "slugs": slugs})
+                topics.append({"topic": topic, "slugs": slugs, "cards": _cards(slugs, sections)})
         if topics:
             out.append({"category": category, "topics": topics})
     return out
@@ -49,6 +64,15 @@ def deck_slugs(topic_key: str) -> list[str] | None:
         return None
     carded = _carded_slugs()
     return [s for s in ordered_topic_slugs(topic_key) if s in carded]
+
+
+def deck_cards(topic_key: str) -> list[tuple[str, str]] | None:
+    """This topic's cards in order, as (drug slug, section) pairs, or None
+    for an unknown topic."""
+    slugs = deck_slugs(topic_key)
+    if slugs is None:
+        return None
+    return _cards(slugs, _sections_by_slug())
 
 
 def next_topic(topic_key: str, decks: list[dict] | None = None) -> dict | None:
