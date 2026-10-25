@@ -14,20 +14,35 @@ import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 
 type ListItem =
-  | { kind: "group"; group: AtcGroup }
-  | { kind: "drug"; drug: ChapterDrug; index: number };
+  | { kind: "group"; group: AtcGroup; count: number; first: boolean }
+  | { kind: "drug"; drug: ChapterDrug; index: number; grouped: boolean; firstInGroup: boolean; lastInGroup: boolean };
 
 /** The chapter's drugs (already ordered by ATC level-4 class) with a header
- *  item in front of each class, so the list reads as sections. */
+ *  item in front of each class, so the list reads as sections: each class
+ *  a solid band over one card holding its drugs. The band and the rows stay
+ *  separate items so the band can stick to the top while its drugs scroll. */
 function withGroupHeaders(drugs: ChapterDrug[]): ListItem[] {
   const items: ListItem[] = [];
   let current = "";
+  let header: Extract<ListItem, { kind: "group" }> | null = null;
   drugs.forEach((drug, index) => {
-    if (drug.atc_group && drug.atc_group.code !== current) {
-      current = drug.atc_group.code;
-      items.push({ kind: "group", group: drug.atc_group });
+    const code = drug.atc_group?.code ?? "";
+    if (drug.atc_group && code !== current) {
+      header = { kind: "group", group: drug.atc_group, count: 0, first: items.length === 0 };
+      items.push(header);
     }
-    items.push({ kind: "drug", drug, index });
+    current = code;
+    const grouped = !!drug.atc_group;
+    if (grouped && header) header.count += 1;
+    const next = drugs[index + 1];
+    items.push({
+      kind: "drug",
+      drug,
+      index,
+      grouped,
+      firstInGroup: grouped && items[items.length - 1]?.kind === "group",
+      lastInGroup: grouped && (next?.atc_group?.code ?? "") !== code,
+    });
   });
   return items;
 }
@@ -108,7 +123,7 @@ export function LessonListScreen() {
         <ScrollView
           style={{ flex: 1 }}
           stickyHeaderIndices={headerIndices}
-          contentContainerStyle={{ padding: 22, paddingTop: 12, paddingBottom: navClearance, gap: 10 }}
+          contentContainerStyle={{ padding: 22, paddingTop: 14, paddingBottom: navClearance }}
           showsVerticalScrollIndicator={false}
         >
           {items.map((item) => {
@@ -117,22 +132,27 @@ export function LessonListScreen() {
               const name = isFa && group.name_fa ? group.name_fa : group.name_en;
               const sub = isFa && group.name_fa ? group.name_en : "";
               return (
+                // The class's band: the app's accent, so a class name can
+                // never be mistaken for one of its drugs.
                 <View
                   key={`g-${group.code}`}
                   style={{
                     flexDirection: row,
                     alignItems: "center",
                     gap: 10,
-                    backgroundColor: colors.cardBg,
-                    borderBottomWidth: 1,
-                    borderBottomColor: colors.sheetLine,
-                    paddingTop: 12,
-                    paddingBottom: 8,
+                    marginTop: item.first ? 0 : 14,
+                    backgroundColor: colors.accent,
+                    borderTopLeftRadius: 16,
+                    borderTopRightRadius: 16,
+                    paddingVertical: 11,
+                    paddingHorizontal: 14,
                   }}
                 >
                   <View
                     style={{
-                      backgroundColor: colors.leitnerActiveBg,
+                      backgroundColor: colors.onAccentChip,
+                      borderWidth: 1,
+                      borderColor: colors.onAccentChipBorder,
                       borderRadius: 8,
                       paddingHorizontal: 8,
                       paddingVertical: 2,
@@ -141,39 +161,59 @@ export function LessonListScreen() {
                     <AppText
                       weight="800"
                       size={11.5}
-                      color={colors.accent}
+                      color={colors.onAccent}
                       style={{ writingDirection: "ltr", letterSpacing: 0.3 }}
                     >
                       {group.code}
                     </AppText>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <AppText weight="800" size={13.5}>
+                    <AppText weight="800" size={14.5} color={colors.onAccent} style={{ lineHeight: 22 }}>
                       {name}
                     </AppText>
                     {sub ? (
-                      <AppText muted weight="600" size={11} style={{ writingDirection: "ltr" }}>
+                      <AppText weight="600" size={11} color={colors.onAccentSub} style={{ writingDirection: "ltr" }}>
                         {sub}
                       </AppText>
                     ) : null}
                   </View>
+                  <AppText weight="700" size={11.5} color={colors.onAccentSub}>
+                    {isFa ? `${n(item.count)} دارو` : `${item.count} ${item.count === 1 ? "drug" : "drugs"}`}
+                  </AppText>
                 </View>
               );
             }
-            const { drug, index } = item;
+            const { drug, index, grouped, firstInGroup, lastInGroup } = item;
             const done = data?.progress.read_drug_slugs.includes(drug.slug);
             return (
               <Pressable
                 key={drug.slug}
                 onPress={() => navigate("lessonDetail", { code, slug: drug.slug })}
-                style={{
-                  flexDirection: row,
-                  alignItems: "center",
-                  gap: 12,
-                  backgroundColor: colors.softBg,
-                  borderRadius: 14,
-                  padding: 14,
-                }}
+                style={
+                  grouped
+                    ? {
+                        // one card under the band: rows split by hairlines
+                        flexDirection: row,
+                        alignItems: "center",
+                        gap: 12,
+                        backgroundColor: colors.softBg,
+                        paddingVertical: 13,
+                        paddingHorizontal: 14,
+                        borderTopWidth: firstInGroup ? 0 : 1,
+                        borderTopColor: colors.sheetLine,
+                        borderBottomLeftRadius: lastInGroup ? 16 : 0,
+                        borderBottomRightRadius: lastInGroup ? 16 : 0,
+                      }
+                    : {
+                        flexDirection: row,
+                        alignItems: "center",
+                        gap: 12,
+                        backgroundColor: colors.softBg,
+                        borderRadius: 14,
+                        padding: 14,
+                        marginTop: index === 0 ? 0 : 10,
+                      }
+                }
               >
                 <View
                   style={{

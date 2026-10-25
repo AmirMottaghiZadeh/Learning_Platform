@@ -5,6 +5,7 @@ import { Pressable, View } from "react-native";
 import { meApi } from "@/api/endpoints";
 import { HeaderMesh } from "@/components/HeaderMesh";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+import { PlanSection } from "@/components/plan/PlanSection";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { IconImage, IconName } from "@/components/primitives/IconImage";
@@ -230,62 +231,63 @@ export function DashboardScreen() {
           ))}
         </View>
 
-        {/* next chapter / focus session */}
-        <View
-          style={{
-            flexDirection: row,
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 8,
-          }}
-        >
-          <AppText weight="800" size={13}>
-            {t("nextChapterTitle")}
-          </AppText>
-          <Pressable onPress={() => navigate("planning")}>
-            <AppText weight="800" size={12} color={colors.accent}>
-              {t("editPlan")}
-            </AppText>
-          </Pressable>
-        </View>
+        {/* the study plan: today's tasks and this week; a learner whose
+            plan doesn't include study planning gets the next-chapter card */}
+        <PlanSection
+          fallback={
+            <>
+              <View
+                style={{
+                  flexDirection: row,
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <AppText weight="800" size={13}>
+                  {t("nextChapterTitle")}
+                </AppText>
+              </View>
 
-        <Pressable
-          onPress={() => {
-            const first = rows[0];
-            if (first?.kind === "lesson" && first.atc_code) navigate("lessonList", { code: first.atc_code });
-            else if (first?.kind === "mistake") setTab("profile" as any), navigate("mistakes");
-            else if (rows.length > 0) setTab("flashcards" as any);
-            else navigate("planning");
-          }}
-        >
-          <Card
-            style={[
-              { flexDirection: row, alignItems: "center", gap: 12 },
-              !isError ? { backgroundColor: colors.accent + "12", borderColor: colors.accent + "30" } : null,
-            ]}
-          >
-            {!isError ? <IconImage name="entry-next-chapter" size={40} /> : null}
-            <View style={{ flex: 1 }}>
-              {isError ? (
-                <AppText weight="700" color={colors.denyLabel}>
-                  {t("loadFailed")}
-                </AppText>
-              ) : rows.length === 0 ? (
-                <AppText muted weight="600" size={13}>
-                  {data?.next_chapter
-                    ? (isFa ? data.next_chapter.name_fa : data.next_chapter.name_en)
-                    : t("mistakesEmptySub")}
-                </AppText>
-              ) : (
-                <AppText weight="700" size={13} color={colors.accent}>
-                  {isFa
-                    ? `شروع فصل: ${data?.next_chapter?.name_fa ?? ""} — ${n(data?.focus_session.total_minutes ?? 0)} دقیقه`
-                    : `Start chapter: ${data?.next_chapter?.name_en ?? ""} — ${data?.focus_session.total_minutes ?? 0} min`}
-                </AppText>
-              )}
-            </View>
-          </Card>
-        </Pressable>
+              <Pressable
+                onPress={() => {
+                  const first = rows[0];
+                  if (first?.kind === "lesson" && first.atc_code) navigate("lessonList", { code: first.atc_code });
+                  else if (first?.kind === "mistake") setTab("profile" as any), navigate("mistakes");
+                  else if (rows.length > 0) setTab("flashcards" as any);
+                }}
+              >
+                <Card
+                  style={[
+                    { flexDirection: row, alignItems: "center", gap: 12 },
+                    !isError ? { backgroundColor: colors.accent + "12", borderColor: colors.accent + "30" } : null,
+                  ]}
+                >
+                  {!isError ? <IconImage name="entry-next-chapter" size={40} /> : null}
+                  <View style={{ flex: 1 }}>
+                    {isError ? (
+                      <AppText weight="700" color={colors.denyLabel}>
+                        {t("loadFailed")}
+                      </AppText>
+                    ) : rows.length === 0 ? (
+                      <AppText muted weight="600" size={13}>
+                        {data?.next_chapter
+                          ? (isFa ? data.next_chapter.name_fa : data.next_chapter.name_en)
+                          : t("mistakesEmptySub")}
+                      </AppText>
+                    ) : (
+                      <AppText weight="700" size={13} color={colors.accent}>
+                        {isFa
+                          ? `شروع فصل: ${data?.next_chapter?.name_fa ?? ""} — ${n(data?.focus_session.total_minutes ?? 0)} دقیقه`
+                          : `Start chapter: ${data?.next_chapter?.name_en ?? ""} — ${data?.focus_session.total_minutes ?? 0} min`}
+                      </AppText>
+                    )}
+                  </View>
+                </Card>
+              </Pressable>
+            </>
+          }
+        />
       </View>
     </Screen>
   );

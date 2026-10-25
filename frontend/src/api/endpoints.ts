@@ -70,6 +70,11 @@ export const authApi = {
     study_level: string;
     display_name?: string;
     language?: string;
+    // The study plan the answers make (backend progress.planning.plan_from_onboarding).
+    exam_date?: string | null;
+    daily_minutes?: number;
+    study_days?: boolean[];
+    category_keys?: string[];
   }) => apiClient.post<User>("/auth/onboarding/", body).then((r) => r.data),
 };
 
@@ -123,6 +128,9 @@ export const meApi = {
   savePlan: (body: Omit<StudyPlan, "fits_deadline" | "updated_at">) =>
     apiClient.put<StudyPlan>("/me/plan/", body).then((r) => r.data),
   planToday: () => apiClient.get<PlanToday>("/me/plan/today/").then((r) => r.data),
+  // The home screen's plan box: today and this week, without every topic's progress.
+  planTodayBrief: () =>
+    apiClient.get<PlanToday>("/me/plan/today/", { params: { brief: 1 } }).then((r) => r.data),
   completePlanItem: (id: number) =>
     apiClient.post<StudyPlanItem>(`/me/plan/items/${id}/complete/`).then((r) => r.data),
   skipPlanItem: (id: number) =>

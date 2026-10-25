@@ -5,6 +5,8 @@ import { Pressable, View } from "react-native";
 import { lessonsApi, meApi } from "@/api/endpoints";
 import { PlanMode } from "@/api/types";
 import { ScreenChrome } from "@/components/ScreenChrome";
+import { ExamDatePicker } from "@/components/plan/PlanPickers";
+import { PLAN_BRIEF_KEY } from "@/components/plan/PlanSection";
 import { AppText } from "@/components/primitives/AppText";
 import { Button } from "@/components/primitives/Button";
 import { Input } from "@/components/primitives/Input";
@@ -16,14 +18,13 @@ import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
 import { groupByCategory } from "@/utils/lessonCategories";
+import { daysUntil } from "@/utils/planDates";
 
 const MODES: { key: PlanMode; titleKey: StringKey; descKey: StringKey }[] = [
   { key: "none", titleKey: "planningModeNoneTitle", descKey: "planningModeNoneDesc" },
   { key: "goal", titleKey: "planningModeGoalTitle", descKey: "planningModeGoalDesc" },
   { key: "maintenance", titleKey: "planningModeMaintenanceTitle", descKey: "planningModeMaintenanceDesc" },
 ];
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Mode + topics + deadline + daily time + study days, all one form: the
  * three planning models share enough fields (topics, daily minutes, days,
@@ -45,7 +46,7 @@ export function PlanningSetupScreen() {
   const [mode, setMode] = useState<PlanMode>("none");
   const [topicKeys, setTopicKeys] = useState<string[]>([]);
   const [dailyMinutes, setDailyMinutes] = useState("30");
-  const [deadlineDays, setDeadlineDays] = useState("14");
+  const [deadline, setDeadline] = useState<string | null>(null);
   const [days, setDays] = useState<boolean[]>([false, false, false, false, false, false, false]);
   const [reminders, setReminders] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,10 +59,8 @@ export function PlanningSetupScreen() {
     setDailyMinutes(String(plan.daily_minutes));
     setDays(plan.days);
     setReminders(plan.reminders_enabled);
-    if (plan.deadline) {
-      const diff = Math.round((new Date(plan.deadline).getTime() - Date.now()) / DAY_MS);
-      setDeadlineDays(String(Math.max(1, diff)));
-    }
+    // A deadline already past is no exam date to keep.
+    setDeadline(plan.deadline && daysUntil(plan.deadline) > 0 ? plan.deadline : null);
   }, [plan]);
 
   const toggleTopic = (key: string) =>
@@ -70,17 +69,11 @@ export function PlanningSetupScreen() {
   const save = useMutation({
     mutationFn: () => {
       const minutes = Math.max(5, Math.min(240, parseInt(dailyMinutes, 10) || 30));
-      const deadline =
-        mode === "goal"
-          ? new Date(Date.now() + Math.max(1, parseInt(deadlineDays, 10) || 1) * DAY_MS)
-              .toISOString()
-              .slice(0, 10)
-          : null;
       return meApi.savePlan({
         mode,
         topic_keys: mode === "none" ? [] : topicKeys,
         daily_minutes: minutes,
-        deadline,
+        deadline: mode === "goal" ? deadline : null,
         days,
         reminders_enabled: reminders,
       });
@@ -88,6 +81,7 @@ export function PlanningSetupScreen() {
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["plan"] });
       qc.invalidateQueries({ queryKey: ["plan-today"] });
+      qc.invalidateQueries({ queryKey: PLAN_BRIEF_KEY });
       if (result.fits_deadline === false) {
         setFitsWarning(true);
         return;
@@ -102,6 +96,10 @@ export function PlanningSetupScreen() {
     setFitsWarning(false);
     if (mode === "goal" && topicKeys.length === 0) {
       setError(t("planningNoTopicsSelected"));
+      return;
+    }
+    if (mode === "goal" && !deadline) {
+      setError(t("planningNoDeadline"));
       return;
     }
     save.mutate();
@@ -226,17 +224,13 @@ export function PlanningSetupScreen() {
           />
 
           {mode === "goal" ? (
-            <>
-              <AppText weight="800" size={14} style={{ marginBottom: 6 }}>
-                {t("planningDeadlineDaysLabel")}
+            <View style={{ marginBottom: spacing.lg }}>
+              <AppText weight="800" size={14} style={{ marginBottom: 10 }}>
+                {t("planningDeadlineLabel")}
               </AppText>
-              <Input
-                keyboardType="number-pad"
-                value={deadlineDays}
-                onChangeText={setDeadlineDays}
-                style={{ marginBottom: spacing.lg }}
-              />
-            </>
+              {/* keyed on the loaded plan, so its date fills the fields */}
+              <ExamDatePicker key={plan?.deadline ?? "none"} value={deadline} onChange={setDeadline} />
+            </View>
           ) : null}
         </>
       ) : null}

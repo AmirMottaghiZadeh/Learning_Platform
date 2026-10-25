@@ -1,14 +1,18 @@
-import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
-import { authApi } from "@/api/endpoints";
+import { authApi, lessonsApi } from "@/api/endpoints";
 import { AppShell } from "@/components/AppShell";
+import { CategoryPicker, ExamDatePicker, MinutesPicker, StudyDaysPicker } from "@/components/plan/PlanPickers";
 import { AppText } from "@/components/primitives/AppText";
 import { IconImage, IconName } from "@/components/primitives/IconImage";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/store/auth";
 import { useTheme } from "@/theme/ThemeProvider";
+import { groupByCategory } from "@/utils/lessonCategories";
+import { formatDay, daysUntil } from "@/utils/planDates";
 
 type Option = {
   v: string;
@@ -98,8 +102,8 @@ const QUESTIONS: {
   {
     key: "field",
     options: FIELDS,
-    fa: { title: "رشته‌ی تحصیلی‌ات چیه؟", sub: "خانه، درس‌ها و پیشنهادهای روزانه بر اساس رشته‌ات چیده می‌شن." },
-    en: { title: "What do you study?", sub: "Your home screen, lessons and daily picks are arranged around it." },
+    fa: { title: "رشته‌ی تحصیلی‌ات چیه؟", sub: "بخش‌هایی که برای شروع پیشنهاد می‌شن بر اساس رشته‌ات انتخاب می‌شن." },
+    en: { title: "What do you study?", sub: "The sections suggested to start with follow it." },
   },
   {
     key: "goal",
@@ -110,10 +114,67 @@ const QUESTIONS: {
   {
     key: "level",
     options: LEVELS,
-    fa: { title: "الان در چه سطحی هستی؟", sub: "عمق مطالب و نکته‌ها با سطحت هماهنگ می‌شه." },
-    en: { title: "Where are you right now?", sub: "The depth of the material matches your level." },
+    fa: { title: "الان در چه سطحی هستی؟", sub: "سرعت برنامه‌ی مطالعه‌ات با سطحت تنظیم می‌شه." },
+    en: { title: "Where are you right now?", sub: "Your study plan's pace follows your level." },
   },
 ];
+
+// After the three questions: the study plan step, then the summary.
+const PLAN_STEP = QUESTIONS.length;
+const SUMMARY_STEP = QUESTIONS.length + 1;
+const MINUTES = [15, 30, 45, 60, 90];
+const CLINICAL_MINUTES = [10, 15, 20, 30];
+const WEEKDAYS = [true, true, true, true, true, false, false]; // Saturday to Wednesday
+
+type PlanAnswers = { exam: string | null; minutes: number; days: boolean[]; categories: string[] };
+
+/** The plan step: when the exam is (not for daily clinical review), this
+ * term's subjects (term finals only), minutes a day and study days. The
+ * server turns them into the study plan on the home screen. */
+function PlanStep({ goal, plan, onChange }: { goal: string; plan: PlanAnswers; onChange: (p: PlanAnswers) => void }) {
+  const { isFa } = useLang();
+  const { data: groups } = useQuery({ queryKey: ["lesson-groups"], queryFn: lessonsApi.groups, enabled: goal === "final" });
+  const categories = useMemo(() => groupByCategory(groups ?? []), [groups]);
+  const section = (fa: string, en: string, body: React.ReactNode) => (
+    <View style={{ gap: 10 }}>
+      <AppText weight="800" size={15}>
+        {isFa ? fa : en}
+      </AppText>
+      {body}
+    </View>
+  );
+  return (
+    <View style={{ marginTop: 22, gap: 22 }}>
+      {goal !== "clinical"
+        ? section("آزمونت کی است؟", "When is your exam?", (
+            <ExamDatePicker value={plan.exam} onChange={(exam) => onChange({ ...plan, exam })} />
+          ))
+        : null}
+      {goal === "final"
+        ? section("درس‌های این ترم", "This term's subjects", (
+            <CategoryPicker categories={categories} value={plan.categories} onChange={(categories) => onChange({ ...plan, categories })} />
+          ))
+        : null}
+      {section("روزی چقدر وقت داری؟", "How much time a day?", (
+        <MinutesPicker
+          value={plan.minutes}
+          options={goal === "clinical" ? CLINICAL_MINUTES : MINUTES}
+          onChange={(minutes) => onChange({ ...plan, minutes })}
+        />
+      ))}
+      {section("کدام روزها درس می‌خوانی؟", "Which days do you study?", (
+        <StudyDaysPicker value={plan.days} onChange={(days) => onChange({ ...plan, days })} />
+      ))}
+    </View>
+  );
+}
+
+function planReady(goal: string, plan: PlanAnswers) {
+  if (!plan.days.some(Boolean)) return false;
+  if (goal !== "clinical" && !plan.exam) return false;
+  if (goal === "final" && !plan.categories.length) return false;
+  return true;
+}
 
 // What the home screen puts first for each field -- shown on the last step so
 // the answers visibly change something.
@@ -181,12 +242,24 @@ export function OnboardingScreen() {
 
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({ field: "", goal: "", level: "" });
+  const [plan, setPlan] = useState<PlanAnswers>({ exam: null, minutes: 30, days: WEEKDAYS, categories: [] });
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const isSummary = step === QUESTIONS.length;
+  const isPlanStep = step === PLAN_STEP;
+  const isSummary = step === SUMMARY_STEP;
   const question = QUESTIONS[step];
   const picked = question ? answers[question.key] : "";
+  const clinical = answers.goal === "clinical";
+
+  const pick = (key: keyof Answers, v: string) => {
+    setAnswers({ ...answers, [key]: v });
+    // A daily clinical review runs on shorter days than an exam plan.
+    if (key === "goal") {
+      const options = v === "clinical" ? CLINICAL_MINUTES : MINUTES;
+      if (!options.includes(plan.minutes)) setPlan({ ...plan, minutes: v === "clinical" ? 10 : 30 });
+    }
+  };
 
   const label = (o: Option) => (isFa ? o.fa : o.en);
   const find = (options: Option[], v: string) => options.find((o) => o.v === v);
@@ -201,6 +274,10 @@ export function OnboardingScreen() {
           study_goal: answers.goal,
           study_level: answers.level,
           language: lang,
+          exam_date: clinical ? null : plan.exam,
+          daily_minutes: plan.minutes,
+          study_days: plan.days,
+          category_keys: answers.goal === "final" ? plan.categories : [],
         }),
       );
     } catch {
@@ -209,7 +286,7 @@ export function OnboardingScreen() {
     }
   };
 
-  const ctaDisabled = isSummary ? busy : !picked;
+  const ctaDisabled = isSummary ? busy : isPlanStep ? !planReady(answers.goal, plan) : !picked;
 
   return (
     <AppShell>
@@ -238,7 +315,7 @@ export function OnboardingScreen() {
             </Pressable>
           ) : null}
           <View style={{ flex: 1, flexDirection: row, gap: 6 }}>
-            {QUESTIONS.map((_, i) => (
+            {Array.from({ length: SUMMARY_STEP }, (_, i) => (
               <View
                 key={i}
                 style={{
@@ -257,12 +334,31 @@ export function OnboardingScreen() {
           contentContainerStyle={{ paddingTop: isSummary ? 22 : 30, paddingBottom: 16 }}
           showsVerticalScrollIndicator={false}
         >
-          {question ? (
+          {isPlanStep ? (
+            <>
+              <AppText weight="800" size={12} color={colors.accent2}>
+                {isFa ? `قدم ${n(step + 1)} از ${n(SUMMARY_STEP)}` : `Step ${step + 1} of ${SUMMARY_STEP}`}
+              </AppText>
+              <AppText weight="900" size={26} style={{ marginTop: 6, lineHeight: 38 }}>
+                {isFa ? "برنامه‌ی مطالعه‌ات" : "Your study plan"}
+              </AppText>
+              <AppText weight="500" size={14} muted style={{ marginTop: 6, lineHeight: 26 }}>
+                {clinical
+                  ? isFa
+                    ? "هر روز یک مرور کوتاه برایت چیده می‌شه."
+                    : "A short review is set out for you every day."
+                  : isFa
+                    ? "تا روز آزمون، کارهای هر روز برایت چیده می‌شه."
+                    : "Each day's work is set out for you up to the exam."}
+              </AppText>
+              <PlanStep goal={answers.goal} plan={plan} onChange={setPlan} />
+            </>
+          ) : question ? (
             <>
               <AppText weight="800" size={12} color={colors.accent2}>
                 {isFa
-                  ? `قدم ${n(step + 1)} از ${n(QUESTIONS.length)}`
-                  : `Step ${step + 1} of ${QUESTIONS.length}`}
+                  ? `قدم ${n(step + 1)} از ${n(SUMMARY_STEP)}`
+                  : `Step ${step + 1} of ${SUMMARY_STEP}`}
               </AppText>
               <AppText weight="900" size={26} style={{ marginTop: 6, lineHeight: 38 }}>
                 {question[lang].title}
@@ -277,7 +373,7 @@ export function OnboardingScreen() {
                   return (
                     <Pressable
                       key={o.v}
-                      onPress={() => setAnswers({ ...answers, [question.key]: o.v })}
+                      onPress={() => pick(question.key, o.v)}
                       accessibilityRole="radio"
                       accessibilityState={{ checked: sel }}
                       style={[
@@ -362,8 +458,36 @@ export function OnboardingScreen() {
                 </AppText>
                 <AppText weight="500" size={14} muted center style={{ lineHeight: 26 }}>
                   {isFa
-                    ? "بر اساس پاسخ‌هات، این‌ها اول در خانه‌ات دیده می‌شن."
-                    : "Based on your answers, these come first on your home screen."}
+                    ? "برنامه‌ی مطالعه‌ات در خانه، زیر «برنامهٔ مطالعه» است."
+                    : "Your study plan is on the home screen, under “Study plan”."}
+                </AppText>
+              </View>
+
+              {/* the plan the answers make */}
+              <View
+                style={[
+                  { marginTop: 18, backgroundColor: colors.cardBg, borderRadius: 22, padding: 18, gap: 6 },
+                  shadows.raisedSm,
+                ]}
+              >
+                <AppText weight="800" size={12} color={colors.accent2}>
+                  {isFa ? "برنامه‌ی تو" : "Your plan"}
+                </AppText>
+                {!clinical && plan.exam ? (
+                  <AppText weight="800" size={15}>
+                    {isFa
+                      ? `آزمون: ${formatDay(plan.exam, true, n)}، ${n(daysUntil(plan.exam))} روز دیگر`
+                      : `Exam: ${formatDay(plan.exam, false, n)}, in ${daysUntil(plan.exam)} days`}
+                  </AppText>
+                ) : (
+                  <AppText weight="800" size={15}>
+                    {isFa ? "مرور روزانه" : "Daily review"}
+                  </AppText>
+                )}
+                <AppText weight="600" size={13} muted>
+                  {isFa
+                    ? `${n(plan.minutes)} دقیقه در روز، ${n(plan.days.filter(Boolean).length)} روز در هفته`
+                    : `${plan.minutes} min a day, ${plan.days.filter(Boolean).length} days a week`}
                 </AppText>
               </View>
 

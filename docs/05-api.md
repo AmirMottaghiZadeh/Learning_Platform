@@ -83,7 +83,7 @@
 | POST | `/auth/refresh/` — عمومی | `{refresh_token}` ← `AuthTokenResponse`. 401 `INVALID_REFRESH_TOKEN` |
 | POST | `/auth/logout/` · `/auth/logout-all/` | بستن نشست فعلی / همهٔ نشست‌ها |
 | GET / PATCH | `/auth/me/` | کاربر فعلی با `profile` / ویرایش بخشی از پروفایل (`display_name`، `language`...) |
-| POST | `/auth/onboarding/` | `{study_field, study_goal, study_level, display_name?, language?}` ← `User`؛ `profile.onboarded_at` را می‌گذارد |
+| POST | `/auth/onboarding/` | `{study_field, study_goal, study_level, display_name?, language?}` و فیلدهای برنامه ← `User`؛ `profile.onboarded_at` را می‌گذارد. با `daily_minutes` و `study_days` (۷ مقدار، از شنبه)، برنامهٔ مطالعه هم ساخته می‌شود ([پایین](#برنامهٔ-ساخته‌شده-از-آنبوردینگ)) |
 | GET | `/auth/sessions/` · POST `/auth/sessions/{id}/revoke/` | فهرست دستگاه‌ها / بستن یکی (404 `SESSION_NOT_FOUND`) |
 | POST | `/auth/step-up/` | تأیید دوبارهٔ رمز برای کار حساس. 400 `STEP_UP_FAILED` |
 | POST | `/auth/register/` — عمومی | ثبت‌نام ایمیلی؛ تا `AUTH_EMAIL_REGISTRATION_ENABLED` خاموش است، 403 `EMAIL_REGISTRATION_CLOSED` |
@@ -152,9 +152,43 @@
 | GET | `/me/dashboard/` | نام، استریک، XP، فصل بعدی، و «جلسهٔ تمرکز» (کارت‌های موعد، اشتباه، درس) |
 | GET | `/me/statistics/` | `{week_bars[7], accuracy_pct, quizzes, reviews, minutes, mastery_pct}` (روز ۰ = شنبه) |
 | GET | `/me/mistakes/` · POST `/me/mistakes/{id}/resolve/` · POST `/me/mistakes/restore/` | اشتباهات / حل‌شده کردن یکی / برگرداندن همه |
-| GET / PUT | `/me/plan/` | برنامهٔ مطالعه (ویژگی `stats`). پاسخ PUT `fits_deadline` هم دارد |
-| GET | `/me/plan/today/` | کارهای امروز با مجموع دقیقه و پیشرفت موضوع‌های برنامه |
+| GET / PUT | `/me/plan/` | برنامهٔ مطالعه (ویژگی `stats`). پاسخ PUT `fits_deadline` هم دارد. تغییر حالت، موضوع‌ها یا تاریخ یعنی برنامهٔ تازه: شمارش هفته‌ها از همان روز شروع می‌شود |
+| GET | `/me/plan/today/?brief=1` | کارهای امروز، خلاصهٔ برنامه و این هفته (پایین). بدون `brief`، پیشرفت و تسلط هر موضوع برنامه هم می‌آید (`topics`)؛ خانهٔ اپ `brief=1` می‌فرستد چون برای آزمون پایان دوره همهٔ موضوع‌ها در برنامه‌اند |
 | POST | `/me/plan/items/{id}/complete/` · `/skip/` | انجام‌شده / ردشده کردن یک کار. 404 `NOT_FOUND` |
+
+```jsonc
+// GET /me/plan/today/?brief=1
+{ "mode": "goal",                       // none | goal | maintenance
+  "items": [{ "id": 12, "day": "2026-10-25", "activity_type": "lesson", // lesson | quiz | flashcards | mistake_review
+              "topic_key": "cv-htn", "atc_code": "C02", "estimated_minutes": 10, "status": "pending",
+              "title_fa": "درسنامه: ضدفشارخون‌ها", "title_en": "Lesson: Antihypertensives", "…": "…" }],
+  "total_minutes": 28, "topics": [],
+  "summary": { "daily_minutes": 30, "study_days": 5, "deadline": "2026-12-06",
+               "days_left": 42, "week_index": 2, "week_count": 6, "progress_pct": 18 },  // سه‌تای آخر فقط در حالت goal
+  "week": [{ "date": "2026-10-24", "study_day": true, "state": "done" }, …] }  // ۷ روز از شنبه
+// state: done | missed | today | planned | free | off (پیش از شروع برنامه)
+```
+
+- **خودکار انجام‌شدن:** کار امروز وقتی بیرون از برنامه انجام شده باشد، خودش «انجام‌شده» می‌شود:
+  - درس: وقتی فصلش کامل خوانده شده باشد.
+  - آزمون: وقتی آزمونی روی همان موضوع تمام شده باشد.
+  - فلش‌کارت: وقتی دستهٔ همان موضوع مرور شده باشد، یا در مرور سررسیده‌ها، وقتی کارتی سررسیده نمانده باشد.
+  - مرور اشتباه: وقتی اشتباه بازی نمانده باشد.
+- **روز جامانده:** در حالت goal، اگر از روزهای گذشته کاری مانده باشد، با اولین درخواست هر روز باقی برنامه از امروز دوباره چیده می‌شود. کارهای آن روز در هفته «missed» نشان داده می‌شوند و فقط یک بار در پیشرفت حساب می‌شوند.
+
+### برنامهٔ ساخته‌شده از آنبوردینگ
+
+کد: `apps/progress/planning.py`، تابع `plan_from_onboarding`.
+
+| `study_goal` | برنامه | فیلدهای لازم |
+|---|---|---|
+| `comprehensive` (آزمون پایان دوره) | goal روی همهٔ موضوع‌ها تا `exam_date` | `exam_date`، `daily_minutes`، `study_days` |
+| `final` (امتحانات ترم) | goal روی موضوع‌های دسته‌های انتخاب‌شده تا `exam_date` | به‌اضافهٔ `category_keys` (کلیدهای ۱۲ دستهٔ درسنامه) |
+| `clinical` (مرور بالینی روزانه) | maintenance، بدون تاریخ | `daily_minutes`، `study_days` |
+
+- **تاریخ آزمون:** `exam_date` باید بعد از امروز باشد.
+- **سطح:** سرعت برنامه را تعیین می‌کند؛ هر فصل برای مبتدی ۱۴، متوسط ۱۰ و پیشرفته ۷ دقیقه برنامه‌ریزی می‌شود.
+- **رشته:** پزشکی و داروسازی هر دو همان درسنامهٔ داروها را برنامه‌ریزی می‌کنند.
 
 ## فلش‌کارت — `/flashcards/` (ویژگی `flashcards`؛ پرچم `FLASHCARDS_API_ENABLED`)
 

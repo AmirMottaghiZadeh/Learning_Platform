@@ -1,4 +1,5 @@
-from drf_spectacular.utils import extend_schema
+from django.utils import timezone
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -86,9 +87,15 @@ class StudyPlanView(APIView):
     def put(self, request):
         require_feature(request, "stats")
         plan = get_plan(request.user)
+        before = (plan.mode, list(plan.topic_keys), plan.deadline)
         serializer = StudyPlanSerializer(plan, data=request.data)
         serializer.is_valid(raise_exception=True)
         plan = serializer.save()
+        # A new mode, topics or deadline is a new plan: "week 1" starts today.
+        if plan.started_on is None or before != (plan.mode, list(plan.topic_keys), plan.deadline):
+            plan.started_on = timezone.localdate()
+        plan.rolled_over_on = None
+        plan.save(update_fields=["started_on", "rolled_over_on"])
         fits = planning.regenerate_items(request.user, plan)
         return Response({**serializer.data, "fits_deadline": fits})
 
@@ -96,12 +103,18 @@ class StudyPlanView(APIView):
 class PlanTodayView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=PlanTodaySerializer)
+    @extend_schema(
+        parameters=[OpenApiParameter("brief", bool, description="Leave out the per-topic progress (the home screen's box).")],
+        responses=PlanTodaySerializer,
+    )
     def get(self, request):
         require_feature(request, "stats")
         plan = get_plan(request.user)
         items = planning.today_items(request.user, plan)
-        topics = [
+        # Every topic's progress and mastery is a few queries each, and an
+        # end-of-course plan covers all of them: only the planner screen asks.
+        brief = request.query_params.get("brief") in {"1", "true"}
+        topics = [] if brief else [
             {
                 "key": topic["key"],
                 "name_fa": topic["name_fa"],
@@ -118,6 +131,8 @@ class PlanTodayView(APIView):
                 "items": items,
                 "total_minutes": sum(item.estimated_minutes for item in items),
                 "topics": topics,
+                "summary": planning.plan_summary(plan),
+                "week": planning.week_overview(request.user, plan) if plan.mode != "none" else [],
             }).data
         )
 

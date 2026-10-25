@@ -244,6 +244,30 @@ export interface StudyPlanItem {
   reason_fa: string;
   reason_en: string;
   completed_at: string | null;
+  /** What the task is ("درسنامه: ضدفشارخون‌ها"). */
+  title_fa: string;
+  title_en: string;
+}
+
+/** The line above the Today box. The day and week counts are null outside
+ * a goal plan with an exam date. */
+export interface PlanSummary {
+  daily_minutes: number;
+  study_days: number;
+  deadline: string | null;
+  days_left: number | null;
+  week_index: number | null;
+  week_count: number | null;
+  progress_pct: number | null;
+}
+
+export type PlanDayState = "done" | "missed" | "today" | "planned" | "free" | "off";
+
+/** One day of this week, Saturday first. */
+export interface PlanDay {
+  date: string;
+  study_day: boolean;
+  state: PlanDayState;
 }
 
 export interface PlanTopicStatus {
@@ -258,7 +282,10 @@ export interface PlanToday {
   mode: PlanMode;
   items: StudyPlanItem[];
   total_minutes: number;
+  /** Empty when asked for briefly (the home screen). */
   topics: PlanTopicStatus[];
+  summary: PlanSummary;
+  week: PlanDay[];
 }
 
 /** One card section (indication, common / serious side effects, dosage

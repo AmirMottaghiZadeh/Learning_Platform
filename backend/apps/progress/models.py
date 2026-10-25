@@ -125,6 +125,12 @@ class StudyPlan(models.Model):
     topic_keys = models.JSONField(default=list, blank=True)
     daily_minutes = models.PositiveSmallIntegerField(default=30)
     deadline = models.DateField(null=True, blank=True)
+    # The day this plan (its mode, topics or deadline) was set up -- what
+    # "week 2 of 6" counts from.
+    started_on = models.DateField(null=True, blank=True)
+    # The last day planning.rollover() laid a goal plan's remaining work out
+    # again after a missed study day.
+    rolled_over_on = models.DateField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

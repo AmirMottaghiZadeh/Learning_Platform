@@ -11,20 +11,28 @@ underlying signals (`ReadDrug`, quiz answers, Leitner boxes) -- see
 `models.StudyPlan` for what distinguishes "goal" from "maintenance".
 """
 
+from collections import defaultdict
 from datetime import timedelta
 
 from django.utils import timezone
 
-from apps.flashcards.models import MAX_BOX, LeitnerCard
+from apps.flashcards.models import MAX_BOX, LeitnerCard, TopicProgress
 from apps.flashcards.services import due_card_count
-from apps.lessons.data.study_topics import STUDY_TOPICS
+from apps.lessons.data.study_topics import CATEGORIES, STUDY_TOPICS
 from apps.lessons.models import ChapterProgress
-from apps.lessons.selectors import lesson_groups, slugs_for_topic, topic_chapters, topic_progress
-from apps.quiz.models import QuizAnswer
+from apps.lessons.selectors import lesson_groups, slugs_for_topic, topic_progress
+from apps.quiz.models import QuizAnswer, QuizSession
 
-from .models import Mistake, StudyPlan, StudyPlanItem
+from .models import DailyStudy, Mistake, StudyPlan, StudyPlanItem
+from .services import get_plan
 
 LESSON_MINUTES_PER_CHAPTER = 10
+# The learner's onboarding level sets the pace: the minutes a chapter is
+# planned at, so a beginner gets fewer new chapters a day than an advanced
+# learner with the same daily time.
+LESSON_MINUTES_BY_LEVEL = {"beginner": 14, "intermediate": 10, "advanced": 7}
+# An open-ended daily review (the "clinical" onboarding goal) by default.
+MAINTENANCE_DEFAULT_MINUTES = 10
 QUIZ_MINUTES = 10
 FLASHCARD_MINUTES = 8
 MISTAKE_REVIEW_MINUTES = 10
@@ -97,9 +105,15 @@ def _groups_by_topic(user):
     return {g["code"]: g for g in lesson_groups(user)}
 
 
-def _topic_backlog(topic_key, group):
+def _lesson_minutes(user):
+    profile = getattr(user, "learner_profile", None)
+    return LESSON_MINUTES_BY_LEVEL.get(getattr(profile, "study_level", ""), LESSON_MINUTES_PER_CHAPTER)
+
+
+def _topic_backlog(topic_key, group, lesson_minutes=LESSON_MINUTES_PER_CHAPTER, done=frozenset()):
     """Ordered work units for one topic: unread chapters first, then one
-    quiz and one flashcard pass over the whole topic."""
+    quiz and one flashcard pass over the whole topic -- each pass left out
+    once `done` (pairs of topic key and activity) says it was done."""
     topic = _topic_by_key(topic_key)
     if not topic:
         return []
@@ -110,11 +124,11 @@ def _topic_backlog(topic_key, group):
             "activity_type": StudyPlanItem.LESSON,
             "topic_key": topic_key,
             "atc_code": chapter["code"],
-            "estimated_minutes": LESSON_MINUTES_PER_CHAPTER,
+            "estimated_minutes": lesson_minutes,
             "reason_fa": f"هنوز فصل «{chapter['name_fa']}» را نخوانده‌ای.",
             "reason_en": f"You haven't read the {chapter['name_en']} chapter yet.",
         })
-    if chapters["all"]:
+    if chapters["all"] and (topic_key, StudyPlanItem.QUIZ) not in done:
         items.append({
             "activity_type": StudyPlanItem.QUIZ,
             "topic_key": topic_key,
@@ -123,6 +137,7 @@ def _topic_backlog(topic_key, group):
             "reason_fa": f"یک آزمون کوتاه برای سنجش تسلطت روی «{topic['name_fa']}».",
             "reason_en": f"A short quiz to check your grasp of {topic['name_en']}.",
         })
+    if chapters["all"] and (topic_key, StudyPlanItem.FLASHCARDS) not in done:
         items.append({
             "activity_type": StudyPlanItem.FLASHCARDS,
             "topic_key": topic_key,
@@ -150,13 +165,15 @@ def _study_days(days, start, end):
     return out
 
 
-def _pack_into_days(backlog, study_days, daily_minutes):
+def _pack_into_days(backlog, study_days, daily_minutes, used=None):
     """Greedily fills each study day up to `daily_minutes` before spilling
     into the next one. A single item longer than the daily budget still
     gets placed (as the only thing that day) rather than blocking forever.
-    `study_days` is never empty -- callers always fall back to [today]."""
+    `used` holds minutes a day already has (today's finished tasks, when
+    replanning). `study_days` is never empty -- callers always fall back
+    to [today]."""
     buckets = {d: [] for d in study_days}
-    minutes_used = dict.fromkeys(study_days, 0)
+    minutes_used = {d: (used or {}).get(d, 0) for d in study_days}
     days_left = list(study_days)
     for item in backlog:
         while (
@@ -191,14 +208,23 @@ def _with_chapters(group):
 
 def _goal_items(user, plan):
     groups = _groups_by_topic(user)
+    done = set(
+        plan.items.filter(
+            status=StudyPlanItem.DONE, activity_type__in=[StudyPlanItem.QUIZ, StudyPlanItem.FLASHCARDS]
+        ).values_list("topic_key", "activity_type")
+    )
+    lesson_minutes = _lesson_minutes(user)
     backlog = []
     for topic_key in plan.topic_keys:
-        backlog.extend(_topic_backlog(topic_key, groups.get(topic_key)))
+        backlog.extend(_topic_backlog(topic_key, groups.get(topic_key), lesson_minutes, done))
 
     today = timezone.localdate()
     end = max(plan.deadline or today, today)
     study_days = _study_days(plan.days, today, end) or [today]
-    buckets, fits = _pack_into_days(backlog, study_days, plan.daily_minutes)
+    # What today already holds (finished or skipped tasks survive replanning)
+    # counts against today's time.
+    used_today = sum(plan.items.filter(day=today).values_list("estimated_minutes", flat=True))
+    buckets, fits = _pack_into_days(backlog, study_days, plan.daily_minutes, used={today: used_today})
     return _flatten(buckets), fits
 
 
@@ -284,8 +310,54 @@ def regenerate_items(user, plan):
     else:
         return True
 
+    # Today's new tasks follow the ones already finished there.
+    kept_today = StudyPlanItem.objects.filter(plan=plan, day=today).count()
+    for row in rows:
+        if row["day"] == today:
+            row["order"] += kept_today
     StudyPlanItem.objects.bulk_create(StudyPlanItem(plan=plan, **row) for row in rows)
     return fits
+
+
+def rollover(user, plan):
+    """A goal plan whose study day passed with tasks left: the remaining work
+    is laid out again from today, at most once a day, so it moves onto the
+    coming study days instead of piling up behind. The missed day's tasks
+    stay as they were -- the week shows that day as missed."""
+    if plan.mode != StudyPlan.MODE_GOAL or not plan.deadline:
+        return
+    today = timezone.localdate()
+    if plan.rolled_over_on == today or plan.deadline < today:
+        return
+    if plan.items.filter(day__lt=today, status=StudyPlanItem.PENDING).exists():
+        regenerate_items(user, plan)
+    plan.rolled_over_on = today
+    plan.save(update_fields=["rolled_over_on"])
+
+
+def plan_from_onboarding(user, goal, *, exam_date, daily_minutes, days, category_keys):
+    """The study plan the onboarding answers make (accounts' OnboardingSerializer):
+    an end-of-course exam plans every topic up to the exam, term finals only
+    the topics of the chosen categories, and daily clinical review is an
+    open-ended maintenance plan."""
+    plan = get_plan(user)
+    if goal == "clinical":
+        plan.mode = StudyPlan.MODE_MAINTENANCE
+        plan.topic_keys = []
+        plan.deadline = None
+        plan.daily_minutes = daily_minutes or MAINTENANCE_DEFAULT_MINUTES
+    else:
+        plan.mode = StudyPlan.MODE_GOAL
+        categories = set(category_keys) if goal == "final" else {c["key"] for c in CATEGORIES}
+        plan.topic_keys = [t["key"] for t in STUDY_TOPICS if t["category"] in categories]
+        plan.deadline = exam_date
+        plan.daily_minutes = daily_minutes
+    plan.days = days
+    plan.started_on = timezone.localdate()
+    plan.rolled_over_on = None
+    plan.save()
+    regenerate_items(user, plan)
+    return plan
 
 
 def ensure_today_items(user, plan):
@@ -301,30 +373,137 @@ def ensure_today_items(user, plan):
         regenerate_items(user, plan)
 
 
-def _sync_lesson_item(item):
-    """A lesson item completes itself once its chapter is actually fully
-    read, however the learner got there -- studying outside the planner
-    must count (see the planning spec's "manual activity affects the smart
-    plan" requirement)."""
-    if item.status != StudyPlanItem.PENDING or not item.atc_code:
-        return item
-    chapters = {c["code"]: c for c in topic_chapters(item.plan.user, item.topic_key)}
-    chapter = chapters.get(item.atc_code)
-    if chapter and chapter["total"] and chapter["done"] >= chapter["total"]:
-        item.status = StudyPlanItem.DONE
-        item.completed_at = timezone.now()
-        item.save(update_fields=["status", "completed_at"])
-    return item
+def _chapter(groups, item):
+    group = groups.get(item.topic_key)
+    return next((c for c in (group["subgroups"] if group else []) if c["code"] == item.atc_code), None)
+
+
+def _is_done_elsewhere(user, item, groups):
+    """Whether the learner already did this task outside the planner --
+    studying the normal way must count (the planning spec's "manual
+    activity affects the smart plan" requirement):
+    - a lesson: its chapter is fully read;
+    - a quiz: a quiz on its topic was finished that day or later;
+    - flashcards: its topic's deck was worked on that day or later, or, for
+      a review of due cards, none are due any more;
+    - a mistake review: no mistake is left open."""
+    if item.activity_type == StudyPlanItem.LESSON:
+        chapter = _chapter(groups, item) if item.atc_code else None
+        return bool(chapter and chapter["total"] and chapter["done"] >= chapter["total"])
+    if item.activity_type == StudyPlanItem.QUIZ:
+        return bool(item.topic_key) and QuizSession.objects.filter(
+            user=user, category=item.topic_key, finished_at__date__gte=item.day
+        ).exists()
+    if item.activity_type == StudyPlanItem.FLASHCARDS:
+        if item.topic_key:
+            return TopicProgress.objects.filter(
+                user=user, topic_key=item.topic_key, position__gt=0, updated_at__date__gte=item.day
+            ).exists()
+        return due_card_count(user) == 0
+    if item.activity_type == StudyPlanItem.MISTAKE_REVIEW:
+        return not Mistake.objects.filter(user=user, resolved=False).exists()
+    return False
+
+
+def _title(item, groups):
+    """What the task is, for the Today box: "Lesson: Antihypertensives"."""
+    topic = _topic_by_key(item.topic_key)
+    topic_fa, topic_en = (topic["name_fa"], topic["name_en"]) if topic else ("", "")
+    if item.activity_type == StudyPlanItem.LESSON:
+        chapter = _chapter(groups, item)
+        return (f"درسنامه: {chapter['name_fa'] if chapter else topic_fa}",
+                f"Lesson: {chapter['name_en'] if chapter else topic_en}")
+    if item.activity_type == StudyPlanItem.QUIZ:
+        return f"آزمون: {topic_fa}", f"Quiz: {topic_en}"
+    if item.activity_type == StudyPlanItem.FLASHCARDS:
+        if topic:
+            return f"فلش‌کارت: {topic_fa}", f"Flashcards: {topic_en}"
+        return "مرور فلش‌کارت‌های امروز", "Today's flashcard review"
+    return "مرور اشتباه‌ها", "Review your mistakes"
 
 
 def today_items(user, plan):
-    """Today's items for the Today screen, with lesson items that turned out
-    to already be fully read (studied outside the planner) synced to "done"
-    first."""
+    """Today's items for the Today box, each with its title and with tasks
+    already done outside the planner synced to "done" first."""
+    rollover(user, plan)
     ensure_today_items(user, plan)
     today = timezone.localdate()
     items = list(plan.items.filter(day=today).order_by("order"))
-    return [_sync_lesson_item(item) for item in items]
+    groups = _groups_by_topic(user) if items else {}
+    for item in items:
+        if item.status == StudyPlanItem.PENDING and _is_done_elsewhere(user, item, groups):
+            item.status = StudyPlanItem.DONE
+            item.completed_at = timezone.now()
+            item.save(update_fields=["status", "completed_at"])
+        item.title_fa, item.title_en = _title(item, groups)
+    return items
+
+
+def week_overview(user, plan):
+    """This week, Saturday to Friday, one entry a day: "done" (every task
+    finished, or -- with no tasks laid out -- some study recorded), "missed"
+    (a study day gone by with tasks left), "today", "planned" (a study day
+    to come), "free" (not a study day) or "off" (before the plan began)."""
+    today = timezone.localdate()
+    start = today - timedelta(days=_weekday_index(today))
+    days = [start + timedelta(days=i) for i in range(7)]
+    tasks = defaultdict(lambda: {"total": 0, "pending": 0})
+    for day, status in plan.items.filter(day__gte=days[0], day__lte=days[-1]).values_list("day", "status"):
+        tasks[day]["total"] += 1
+        tasks[day]["pending"] += status == StudyPlanItem.PENDING
+    studied = set(
+        DailyStudy.objects.filter(user=user, day__in=days, minutes__gt=0).values_list("day", flat=True)
+    )
+    began = plan.started_on or (plan.updated_at.date() if plan.updated_at else today)
+    week = []
+    for i, day in enumerate(days):
+        study_day = bool(plan.days[i])
+        task = tasks.get(day)
+        if task and task["total"] and not task["pending"]:
+            state = "done"
+        elif day == today:
+            state = "today" if study_day or task else "free"
+        elif day > today:
+            state = "planned" if study_day else "free"
+        elif not study_day:
+            state = "free"
+        elif day < began:
+            state = "off"
+        elif not task and day in studied:
+            state = "done"
+        else:
+            state = "missed"
+        week.append({"date": day, "study_day": study_day, "state": state})
+    return week
+
+
+def plan_summary(plan):
+    """The line above the Today box: days to the exam, "week 2 of 6" and how
+    much of the plan is done. A missed task that was laid out again counts
+    once, by its new copy."""
+    today = timezone.localdate()
+    summary = {
+        "daily_minutes": plan.daily_minutes,
+        "study_days": sum(1 for d in plan.days if d),
+        "deadline": plan.deadline,
+        "days_left": None,
+        "week_index": None,
+        "week_count": None,
+        "progress_pct": None,
+    }
+    if plan.mode != StudyPlan.MODE_GOAL or not plan.deadline:
+        return summary
+    began = plan.started_on or (plan.updated_at.date() if plan.updated_at else today)
+    week_count = max(1, (plan.deadline - began).days // 7 + 1)
+    done = plan.items.filter(status=StudyPlanItem.DONE).count()
+    left = plan.items.filter(status=StudyPlanItem.PENDING, day__gte=today).count()
+    summary.update({
+        "days_left": max(0, (plan.deadline - today).days),
+        "week_index": min(week_count, max(1, (today - began).days // 7 + 1)),
+        "week_count": week_count,
+        "progress_pct": round(100 * done / (done + left)) if done + left else 0,
+    })
+    return summary
 
 
 def complete_item(user, item_id):

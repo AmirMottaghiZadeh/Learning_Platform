@@ -6,6 +6,9 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.lessons.data.study_topics import CATEGORIES
+from apps.progress.planning import plan_from_onboarding
+
 from .models import (
     LearnerProfile,
     OneTimeCode,
@@ -143,11 +146,47 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class OnboardingSerializer(serializers.Serializer):
+    """The onboarding answers, and the study plan they make (progress'
+    planning.plan_from_onboarding): `daily_minutes` and `study_days` always,
+    `exam_date` unless the goal is daily clinical review, and for term
+    finals the `category_keys` of this term's subjects. An app that sends no
+    plan fields (before this step existed) just saves the answers."""
+
     display_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
     study_field = serializers.ChoiceField(choices=LearnerProfile.FIELD_CHOICES)
     study_goal = serializers.ChoiceField(choices=LearnerProfile.GOAL_CHOICES)
     study_level = serializers.ChoiceField(choices=LearnerProfile.LEVEL_CHOICES)
     language = serializers.ChoiceField(choices=["fa", "en"], required=False)
+    exam_date = serializers.DateField(required=False, allow_null=True)
+    daily_minutes = serializers.IntegerField(required=False, min_value=5, max_value=240)
+    study_days = serializers.ListField(child=serializers.BooleanField(), min_length=7, max_length=7, required=False)
+    category_keys = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+
+    def validate(self, attrs):
+        if "daily_minutes" not in attrs and "study_days" not in attrs:
+            return attrs
+        errors = {}
+        if "daily_minutes" not in attrs:
+            errors["daily_minutes"] = "زمان روزانه لازم است."
+        if not any(attrs.get("study_days") or []):
+            errors["study_days"] = "دست‌کم یک روز مطالعه انتخاب کن."
+        goal = attrs["study_goal"]
+        if goal != "clinical":
+            exam = attrs.get("exam_date")
+            if not exam:
+                errors["exam_date"] = "تاریخ آزمون لازم است."
+            elif exam <= timezone.localdate():
+                errors["exam_date"] = "تاریخ آزمون باید بعد از امروز باشد."
+        if goal == "final":
+            known = {c["key"] for c in CATEGORIES}
+            keys = attrs.get("category_keys") or []
+            if not keys:
+                errors["category_keys"] = "دست‌کم یک دسته از درس‌های این ترم را انتخاب کن."
+            elif any(k not in known for k in keys):
+                errors["category_keys"] = "دستهٔ نامعتبر."
+        if errors:
+            raise serializers.ValidationError(errors)
+        return attrs
 
     def save(self, **kwargs):
         user = self.context["request"].user
@@ -165,6 +204,14 @@ class OnboardingSerializer(serializers.Serializer):
         if profile.onboarded_at is None:
             profile.onboarded_at = timezone.now()
         profile.save()
+        if "daily_minutes" in data:
+            plan_from_onboarding(
+                user, data["study_goal"],
+                exam_date=data.get("exam_date"),
+                daily_minutes=data["daily_minutes"],
+                days=data["study_days"],
+                category_keys=data.get("category_keys") or [],
+            )
         return profile
 
 

@@ -101,13 +101,25 @@ class StudyPlanSerializer(serializers.ModelSerializer):
 
 
 class StudyPlanItemSerializer(serializers.ModelSerializer):
+    # Set by planning.today_items; an item serialized elsewhere falls back
+    # to its reason.
+    title_fa = serializers.SerializerMethodField()
+    title_en = serializers.SerializerMethodField()
+
     class Meta:
         model = StudyPlanItem
         fields = [
             "id", "day", "order", "activity_type", "topic_key", "atc_code",
             "estimated_minutes", "status", "reason_fa", "reason_en", "completed_at",
+            "title_fa", "title_en",
         ]
         read_only_fields = fields
+
+    def get_title_fa(self, item):
+        return getattr(item, "title_fa", "") or item.reason_fa
+
+    def get_title_en(self, item):
+        return getattr(item, "title_en", "") or item.reason_en
 
 
 class PlanTopicSerializer(serializers.Serializer):
@@ -118,11 +130,29 @@ class PlanTopicSerializer(serializers.Serializer):
     mastery_pct = serializers.IntegerField()
 
 
+class PlanSummarySerializer(serializers.Serializer):
+    daily_minutes = serializers.IntegerField()
+    study_days = serializers.IntegerField()
+    deadline = serializers.DateField(allow_null=True)
+    days_left = serializers.IntegerField(allow_null=True)
+    week_index = serializers.IntegerField(allow_null=True)
+    week_count = serializers.IntegerField(allow_null=True)
+    progress_pct = serializers.IntegerField(allow_null=True)
+
+
+class PlanDaySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    study_day = serializers.BooleanField()
+    state = serializers.ChoiceField(choices=["done", "missed", "today", "planned", "free", "off"])
+
+
 class PlanTodaySerializer(serializers.Serializer):
     mode = serializers.CharField()
     items = StudyPlanItemSerializer(many=True)
     total_minutes = serializers.IntegerField()
     topics = PlanTopicSerializer(many=True)
+    summary = PlanSummarySerializer()
+    week = PlanDaySerializer(many=True)
 
 
 class StudyPlanSaveResponseSerializer(serializers.Serializer):
