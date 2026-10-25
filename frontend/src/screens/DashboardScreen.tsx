@@ -6,6 +6,7 @@ import { meApi } from "@/api/endpoints";
 import { HeaderMesh } from "@/components/HeaderMesh";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { PlanSection } from "@/components/plan/PlanSection";
+import { TourTarget, useTour } from "@/tour/TourContext";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { IconImage, IconName } from "@/components/primitives/IconImage";
@@ -36,6 +37,8 @@ export function DashboardScreen() {
     queryKey: ["dashboard"],
     queryFn: meApi.dashboard,
   });
+  // the home tour, right after onboarding the first time
+  const replayTour = useTour("home", !isLoading);
 
   if (isLoading) return <LoadingState />;
 
@@ -55,6 +58,25 @@ export function DashboardScreen() {
               </AppText>
             </View>
             <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
+              <Pressable
+                onPress={replayTour}
+                accessibilityRole="button"
+                accessibilityLabel={isFa ? "راهنمای خانه" : "Home tour"}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 15,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(255,255,255,0.16)",
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.3)",
+                }}
+              >
+                <AppText weight="800" size={13} color="#fff">
+                  ?
+                </AppText>
+              </Pressable>
               <ThemeToggleButton />
               <Pressable
                 onPress={toggleLang}
@@ -85,6 +107,7 @@ export function DashboardScreen() {
 
       <View style={{ padding: 20, marginTop: -14 }}>
         {/* uptodate reference card */}
+        <TourTarget id="home.uptodate">
         <Pressable onPress={() => navigate("uptodate")}>
           <Card style={{ marginBottom: spacing.lg }}>
             <View style={{ flexDirection: row, alignItems: "center", gap: 12 }}>
@@ -144,7 +167,10 @@ export function DashboardScreen() {
           </Card>
         </Pressable>
 
+        </TourTarget>
+
         {/* lexicomp drug-interaction check card -- same width as UpToDate */}
+        <TourTarget id="home.lexicomp">
         <Pressable onPress={() => navigate("lexicomp")}>
           <Card style={{ marginBottom: spacing.lg }}>
             <View style={{ flexDirection: row, alignItems: "center", gap: 12 }}>
@@ -190,12 +216,15 @@ export function DashboardScreen() {
           </Card>
         </Pressable>
 
+        </TourTarget>
+
         {/* quick-access grid: Education + the Medscape reference sections,
             as four compact tiles (2x2) */}
         <AppText weight="800" size={13} style={{ marginBottom: 10 }}>
           {t("pathsTitle")}
         </AppText>
-        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 10, marginBottom: spacing.xl }}>
+        <TourTarget id="home.paths" style={{ marginBottom: spacing.xl }}>
+        <View style={{ flexDirection: row, flexWrap: "wrap", gap: 10 }}>
           {QUICK_ACCESS.map((p) => (
             <Pressable
               key={p.screen}
@@ -231,8 +260,11 @@ export function DashboardScreen() {
           ))}
         </View>
 
+        </TourTarget>
+
         {/* the study plan: today's tasks and this week; a learner whose
             plan doesn't include study planning gets the next-chapter card */}
+        <TourTarget id="home.plan">
         <PlanSection
           fallback={
             <>
@@ -288,6 +320,7 @@ export function DashboardScreen() {
             </>
           }
         />
+        </TourTarget>
       </View>
     </Screen>
   );

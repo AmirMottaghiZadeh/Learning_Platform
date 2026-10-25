@@ -13,6 +13,7 @@ import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget, useTour } from "@/tour/TourContext";
 import { fontFamily } from "@/theme/fonts";
 import { layout, spacing } from "@/theme/tokens";
 
@@ -82,6 +83,7 @@ export function MedscapeGuidelinesScreen() {
   const filtered = query.length > 0 ? all.filter((a) => a.title.toLowerCase().includes(query)) : all;
 
   const openArticle = (slug: string) => navigate("medscapeOutline", { slug });
+  useTour("guidelines", !itemsLoading && all.length > 0);
 
   if (treeLoading) return <LoadingState />;
   // Loaded but nothing to browse: say so, instead of spinning forever
@@ -99,16 +101,16 @@ export function MedscapeGuidelinesScreen() {
   return (
     <Screen scroll={false} padded={false}>
       <View style={{ flex: 1, padding: layout.screenPadding, paddingBottom: 0 }}>
-        <ScreenChrome title={t("guidelinesLabel")} onBack={goBack} />
+        <ScreenChrome title={t("guidelinesLabel")} onBack={goBack} tour="guidelines" />
 
         {specialties.length > 1 ? (
+          <TourTarget id="guide.specialties" style={{ marginBottom: spacing.md }}>
           <View
             style={{
               flexDirection: row,
               backgroundColor: colors.pageBg,
               borderRadius: 12,
               padding: 3,
-              marginBottom: spacing.md,
             }}
           >
             {specialties.map((sp) => {
@@ -134,8 +136,10 @@ export function MedscapeGuidelinesScreen() {
               );
             })}
           </View>
+          </TourTarget>
         ) : null}
 
+        <TourTarget id="guide.search" style={{ marginBottom: spacing.md }}>
         <View
           style={{
             flexDirection: row,
@@ -147,7 +151,6 @@ export function MedscapeGuidelinesScreen() {
             borderRadius: 14,
             paddingHorizontal: 14,
             paddingVertical: 12,
-            marginBottom: spacing.md,
           }}
         >
           <AppText muted>⌕</AppText>
@@ -167,6 +170,7 @@ export function MedscapeGuidelinesScreen() {
             }}
           />
         </View>
+        </TourTarget>
 
         {itemsLoading ? (
           <LoadingState />
@@ -200,7 +204,9 @@ export function MedscapeGuidelinesScreen() {
               {query.length === 0 ? t("medscapeAllArticlesAZ") : `${filtered.length} ${t("medscapeArticleCount")}`}
             </AppText>
 
-            <AlphabeticalArticleList items={filtered} onPressItem={openArticle} emptyText={t("medscapeNoLocalResults")} />
+            <TourTarget id="guide.list" style={{ flex: 1, minHeight: 0 }}>
+              <AlphabeticalArticleList items={filtered} onPressItem={openArticle} emptyText={t("medscapeNoLocalResults")} />
+            </TourTarget>
           </View>
         )}
       </View>

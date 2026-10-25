@@ -13,6 +13,8 @@ import { registerServiceWorker } from "@/offline/serviceWorker";
 import { useAuth } from "@/store/auth";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { useAppFonts } from "@/theme/fonts";
+import { TourProvider } from "@/tour/TourContext";
+import { TourOverlay } from "@/tour/TourOverlay";
 
 registerServiceWorker();
 
@@ -37,11 +39,13 @@ function Gate() {
 
   if (!fontsLoaded || !themeReady || !langReady) return <LoadingState />;
   return (
-    <>
+    <TourProvider>
       <Navigator />
+      {/* The section's guided tour, over everything but system dialogs. */}
+      <TourOverlay />
       {/* A newer published version: offered, or required, on opening. */}
       <UpdatePrompt />
-    </>
+    </TourProvider>
   );
 }
 

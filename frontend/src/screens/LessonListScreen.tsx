@@ -4,7 +4,7 @@ import { Pressable, ScrollView, View } from "react-native";
 
 import { lessonsApi } from "@/api/endpoints";
 import type { AtcGroup, ChapterDrug } from "@/api/types";
-import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
+import { ChromeButton, LangToggleButton, TourButton } from "@/components/ScreenChrome";
 import { useBleedTop } from "@/components/AppShell";
 import { useNavClearance } from "@/components/BottomNav";
 import { AppText } from "@/components/primitives/AppText";
@@ -12,6 +12,7 @@ import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget, useTour } from "@/tour/TourContext";
 
 type ListItem =
   | { kind: "group"; group: AtcGroup; count: number; first: boolean }
@@ -62,6 +63,8 @@ export function LessonListScreen() {
     enabled: !!code,
   });
 
+  useTour("lessonList", !isLoading && !!data);
+
   const items = withGroupHeaders(data?.drugs ?? []);
   const headerIndices = items.flatMap((item, i) => (item.kind === "group" ? [i] : []));
 
@@ -74,7 +77,10 @@ export function LessonListScreen() {
               {isFa ? "›" : "‹"}
             </AppText>
           </ChromeButton>
-          <LangToggleButton />
+          <View style={{ flexDirection: row, gap: 8 }}>
+            <TourButton tour="lessonList" />
+            <LangToggleButton />
+          </View>
         </View>
 
         {isLoading ? null : isError || !data ? (
@@ -131,7 +137,7 @@ export function LessonListScreen() {
               const { group } = item;
               const name = isFa && group.name_fa ? group.name_fa : group.name_en;
               const sub = isFa && group.name_fa ? group.name_en : "";
-              return (
+              const band = (
                 // The class's band: the app's accent, so a class name can
                 // never be mistaken for one of its drugs.
                 <View
@@ -182,10 +188,17 @@ export function LessonListScreen() {
                   </AppText>
                 </View>
               );
+              return item.first ? (
+                <TourTarget key={`g-${group.code}`} id="lessonList.band">
+                  {band}
+                </TourTarget>
+              ) : (
+                band
+              );
             }
             const { drug, index, grouped, firstInGroup, lastInGroup } = item;
             const done = data?.progress.read_drug_slugs.includes(drug.slug);
-            return (
+            const rowEl = (
               <Pressable
                 key={drug.slug}
                 onPress={() => navigate("lessonDetail", { code, slug: drug.slug })}
@@ -245,6 +258,13 @@ export function LessonListScreen() {
                   {isFa ? "‹" : "›"}
                 </AppText>
               </Pressable>
+            );
+            return index === 0 ? (
+              <TourTarget key={drug.slug} id="lessonList.drug">
+                {rowEl}
+              </TourTarget>
+            ) : (
+              rowEl
             );
           })}
         </ScrollView>

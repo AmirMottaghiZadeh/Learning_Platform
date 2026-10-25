@@ -15,6 +15,7 @@ import { lexicompSource } from "@/offline/sources";
 import { StringKey } from "@/i18n/strings";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget, useTour } from "@/tour/TourContext";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
@@ -54,6 +55,7 @@ export function LexicompScreen() {
 
   const locked = error instanceof ApiError && error.status === 503;
   const rows = useMemo(() => data ?? [], [data]);
+  useTour("lexicomp", true);
   const selectedGenericIds = useMemo(
     () => Array.from(new Set(selected.map((d) => d.generic_id))),
     [selected],
@@ -81,12 +83,14 @@ export function LexicompScreen() {
       <ScreenChrome
         title={t("lexicompScreenTitle")}
         onBack={goBack}
-        actions={<OfflineDownloadButton dataset="lexicomp" size={30} />}
+        tour="lexicomp"
+        actions={<OfflineDownloadButton dataset="lexicomp" size={30} tourId="lexi.offline" />}
       />
       <AppText muted weight="600" size={12} style={{ marginBottom: 14 }}>
         {t("lexicompSourceNote")}
       </AppText>
 
+      <TourTarget id="lexi.search" style={{ marginBottom: spacing.md }}>
       <View
         style={{
           flexDirection: row,
@@ -98,7 +102,6 @@ export function LexicompScreen() {
           borderRadius: 14,
           paddingHorizontal: 14,
           paddingVertical: 12,
-          marginBottom: spacing.md,
         }}
       >
         <AppText muted>⌕</AppText>
@@ -119,6 +122,7 @@ export function LexicompScreen() {
         />
         {isFetching ? <AppText muted size={12}>…</AppText> : null}
       </View>
+      </TourTarget>
 
       {query.length >= 2 && !locked ? (
         <View style={{ gap: 8, marginBottom: spacing.lg }}>

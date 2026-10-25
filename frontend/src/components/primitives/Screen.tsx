@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   Animated,
   RefreshControl,
@@ -11,6 +11,7 @@ import {
 import { useTheme } from "@/theme/ThemeProvider";
 import { layout, motion } from "@/theme/tokens";
 import { useNavClearance } from "@/components/BottomNav";
+import { TourScrollContext, TourScroller } from "@/tour/TourContext";
 
 type Props = {
   children: React.ReactNode;
@@ -33,6 +34,20 @@ export function Screen({
   const navClearance = useNavClearance();
   const { colors } = useTheme();
   const anim = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<ScrollView>(null);
+  const offset = useRef(0);
+  // A guided tour's step whose element is off screen scrolls it to about a
+  // third of the way down.
+  const scroller = useMemo<TourScroller>(
+    () => ({
+      reveal: (rect) =>
+        new Promise((resolve) => {
+          scrollRef.current?.scrollTo({ y: Math.max(0, offset.current + rect.y - 220), animated: true });
+          setTimeout(resolve, 420);
+        }),
+    }),
+    [],
+  );
 
   useEffect(() => {
     Animated.timing(anim, {
@@ -67,6 +82,9 @@ export function Screen({
 
   return (
     <ScrollView
+      ref={scrollRef}
+      onScroll={(e) => (offset.current = e.nativeEvent.contentOffset.y)}
+      scrollEventThrottle={32}
       style={{ flex: 1, backgroundColor: colors.appBg }}
       contentContainerStyle={{ paddingBottom: navClearance + 24 }}
       showsVerticalScrollIndicator={false}
@@ -80,7 +98,7 @@ export function Screen({
         ) : undefined
       }
     >
-      {inner}
+      <TourScrollContext.Provider value={scroller}>{inner}</TourScrollContext.Provider>
     </ScrollView>
   );
 }

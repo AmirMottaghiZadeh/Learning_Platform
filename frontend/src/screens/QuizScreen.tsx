@@ -17,6 +17,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget, useTour } from "@/tour/TourContext";
 import { fontFamily } from "@/theme/fonts";
 import { layout, spacing } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
@@ -190,12 +191,14 @@ export function QuizScreen() {
   // nav history, back to the lesson page it was opened from.
   const backFromRun = ingredientSlug ? goBack : exitToSetup;
   useBackInterceptor(stage !== "setup" && !ingredientSlug, exitToSetup);
+  // the tour belongs to the topic picker, not a drug's own self-test
+  useTour("quiz", stage === "setup" && !ingredientSlug && !locked && !groupsLoading);
   const goHome = () => setTab("dashboard");
 
   if (locked) {
     return (
       <Screen>
-        <ScreenChrome title={t("quizSetupTitle")} help="quiz" />
+        <ScreenChrome title={t("quizSetupTitle")} tour="quiz" />
         <Card>
           <View style={{ alignItems: "center", gap: 12, paddingVertical: 24 }}>
             <View
@@ -264,16 +267,17 @@ export function QuizScreen() {
     return (
       <Screen scroll={false} padded={false}>
         <View style={{ flex: 1, padding: layout.screenPadding, paddingBottom: 0 }}>
-          <ScreenChrome title={t("quizSetupTitle")} help="quiz" />
+          <ScreenChrome title={t("quizSetupTitle")} tour="quiz" />
 
           {overview ? (
-            <View style={{ flexDirection: row, gap: 8, marginBottom: 12 }}>
+            <TourTarget id="quiz.stats" style={{ flexDirection: row, gap: 8, marginBottom: 12 }}>
               <StatTile value={`${n(overview.avg_score_pct)}٪`} label={t("quizStatAvgScore")} color={colors.accent} />
               <StatTile value={n(overview.total_quizzes)} label={t("quizStatTotalQuizzes")} />
               <StatTile value={n(overview.weak_topics_count)} label={t("quizStatWeakTopics")} color={colors.cautLabel} />
-            </View>
+            </TourTarget>
           ) : null}
 
+          <TourTarget id="quiz.search" style={{ marginBottom: 12 }}>
           <View
             style={{
               flexDirection: row,
@@ -285,7 +289,6 @@ export function QuizScreen() {
               borderRadius: 13,
               paddingHorizontal: 13,
               paddingVertical: 10,
-              marginBottom: 12,
             }}
           >
             <AppText muted size={12}>⌕</AppText>
@@ -305,6 +308,7 @@ export function QuizScreen() {
               }}
             />
           </View>
+          </TourTarget>
 
           <AppText weight="800" size={11.5} muted style={{ marginBottom: 8 }}>
             {t("quizCategoryLabel")}
@@ -313,6 +317,7 @@ export function QuizScreen() {
           {groupsLoading ? (
             <LoadingState />
           ) : (
+            <TourTarget id="quiz.topics" style={{ flex: 1 }}>
             <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 12 }}>
               <View style={{ gap: 14 }}>
                 {filteredCategories.map((category) => (
@@ -489,6 +494,7 @@ export function QuizScreen() {
                 ))}
               </View>
             </ScrollView>
+            </TourTarget>
           )}
         </View>
 

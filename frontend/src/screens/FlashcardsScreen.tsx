@@ -18,6 +18,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useBackInterceptor } from "@/navigation/back";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget, useTour } from "@/tour/TourContext";
 import { spacing } from "@/theme/tokens";
 
 // --- topic decks: category grid -> topic list -> one topic's cards, in order
@@ -137,9 +138,11 @@ function CategoryGrid({
 }) {
   const { t, isFa, n, row } = useLang();
   const { colors, shadows } = useTheme();
+  useTour("flashcards", categories.length > 0);
   return (
     <Screen>
-      <ScreenChrome title={t("cardsTitle")} help="flashcards" />
+      <ScreenChrome title={t("cardsTitle")} tour="flashcards" />
+      <TourTarget id="flash.stats">
       <View style={[{ backgroundColor: colors.accent, borderRadius: 22, padding: 16, gap: 10 }, shadows.raisedSm]}>
         <AppText weight="600" size={13} color={colors.onAccentSub}>
           {isFa ? "یک دسته را باز کن و زیردسته‌ات را انتخاب کن." : "Open a category, then pick a topic."}
@@ -165,23 +168,24 @@ function CategoryGrid({
           ))}
         </View>
       </View>
+      </TourTarget>
 
+      <TourTarget id="flash.leitner" style={{ alignSelf: row === "row" ? "flex-start" : "flex-end", marginVertical: spacing.md }}>
       <Pressable
         onPress={onLeitner}
         accessibilityRole="button"
         style={{
-          alignSelf: row === "row" ? "flex-start" : "flex-end",
           backgroundColor: colors.softBg,
           borderRadius: 999,
           paddingHorizontal: 14,
           paddingVertical: 8,
-          marginVertical: spacing.md,
         }}
       >
         <AppText weight="800" size={12} color={colors.accent}>
           {t("leitnerShow")}
         </AppText>
       </Pressable>
+      </TourTarget>
 
       {categories.length === 0 ? (
         <Card>
@@ -190,6 +194,7 @@ function CategoryGrid({
           </AppText>
         </Card>
       ) : (
+        <TourTarget id="flash.categories">
         <View style={{ flexDirection: row, flexWrap: "wrap", gap: 12 }}>
           {categories.map((c) => {
             const started = c.topics.some((tp) => tp.position > 0 && !tp.finished);
@@ -229,6 +234,7 @@ function CategoryGrid({
             );
           })}
         </View>
+        </TourTarget>
       )}
     </Screen>
   );

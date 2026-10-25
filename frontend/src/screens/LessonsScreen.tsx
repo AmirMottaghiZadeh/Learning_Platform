@@ -13,6 +13,7 @@ import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget, useTour } from "@/tour/TourContext";
 import { LessonDrugSearchResult, LessonGroup } from "@/api/types";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
@@ -37,6 +38,7 @@ export function LessonsScreen() {
     enabled: searching,
     staleTime: 5 * 60_000,
   });
+  useTour("lessons", !isLoading && !isError);
 
   const categories = useMemo(() => groupByCategory(data ?? []), [data]);
 
@@ -44,7 +46,8 @@ export function LessonsScreen() {
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
-      <ScreenChrome title={t("lessonsTitle")} help="lessons" />
+      <ScreenChrome title={t("lessonsTitle")} tour="lessons" />
+      <TourTarget id="lessons.search" style={{ marginBottom: spacing.md }}>
       <View
         style={{
           flexDirection: row,
@@ -56,7 +59,6 @@ export function LessonsScreen() {
           borderRadius: 14,
           paddingHorizontal: 14,
           paddingVertical: 11,
-          marginBottom: spacing.md,
         }}
       >
         <AppText weight="800" size={16} color={q ? colors.accent : colors.muted} style={{ lineHeight: 20 }}>
@@ -91,6 +93,7 @@ export function LessonsScreen() {
           </Pressable>
         ) : null}
       </View>
+      </TourTarget>
 
       {searching ? (
         <DrugSearchResults hits={hits} loading={hitsLoading && !hits} failed={hitsError} />
@@ -101,16 +104,26 @@ export function LessonsScreen() {
           </AppText>
         </Card>
       ) : (
-        categories.map((category) => (
-          <CategoryCard
-            key={category.code}
-            category={category}
-            isOpen={openCategory === category.code}
-            onToggle={() => setOpenCategory(openCategory === category.code ? null : category.code)}
-            openTopic={openTopic}
-            onToggleTopic={(code) => setOpenTopic((cur) => (cur === code ? null : code))}
-          />
-        ))
+        categories.map((category, i) => {
+          const card = (
+            <CategoryCard
+              key={category.code}
+              category={category}
+              isOpen={openCategory === category.code}
+              onToggle={() => setOpenCategory(openCategory === category.code ? null : category.code)}
+              openTopic={openTopic}
+              onToggleTopic={(code) => setOpenTopic((cur) => (cur === code ? null : code))}
+            />
+          );
+          // the tour points at the first category
+          return i === 0 ? (
+            <TourTarget key={category.code} id="lessons.category">
+              {card}
+            </TourTarget>
+          ) : (
+            card
+          );
+        })
       )}
     </Screen>
   );

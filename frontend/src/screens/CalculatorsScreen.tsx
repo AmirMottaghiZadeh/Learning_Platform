@@ -13,6 +13,7 @@ import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget, useTour } from "@/tour/TourContext";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
 import { groupByMainCategory } from "@/utils/calculatorCategories";
@@ -72,17 +73,19 @@ export function CalculatorsScreen() {
   }, [items, query]);
 
   const mainGroups = useMemo(() => groupByMainCategory(items, allCategories), [items, allCategories]);
+  useTour("calculator", mainGroups.length > 0);
 
   if (isLoading) return <LoadingState />;
 
   return (
     <Screen>
-      <ScreenChrome title={t("calculatorScreenTitle")} onBack={goBack} />
+      <ScreenChrome title={t("calculatorScreenTitle")} onBack={goBack} tour="calculator" />
       <AppText muted weight="600" size={12} style={{ marginBottom: 14 }}>
         {items.length} {t("calculatorCountSuffix")} {t("calculatorInLabel")} {mainGroups.length}{" "}
         {t("calculatorDomainCountSuffix")}
       </AppText>
 
+      <TourTarget id="calc.search" style={{ marginBottom: spacing.lg }}>
       <View
         style={{
           flexDirection: row,
@@ -94,7 +97,6 @@ export function CalculatorsScreen() {
           borderRadius: 14,
           paddingHorizontal: 14,
           paddingVertical: 12,
-          marginBottom: spacing.lg,
         }}
       >
         <AppText muted>⌕</AppText>
@@ -114,6 +116,7 @@ export function CalculatorsScreen() {
           }}
         />
       </View>
+      </TourTarget>
 
       {searchResults ? (
         searchResults.length === 0 ? (
@@ -128,6 +131,7 @@ export function CalculatorsScreen() {
           </View>
         )
       ) : (
+        <TourTarget id="calc.domains">
         <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 10, marginHorizontal: -5 }}>
           {/* Half-width cells with the gutter as padding: two always share a row.
               A 48% width plus a fixed gap no longer fits below ~290px (a folded
@@ -185,6 +189,7 @@ export function CalculatorsScreen() {
             );
           })}
         </View>
+        </TourTarget>
       )}
     </Screen>
   );

@@ -14,6 +14,7 @@ import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget, useTour } from "@/tour/TourContext";
 import { spacing } from "@/theme/tokens";
 
 export const LEITNER_KEY = ["leitner"];
@@ -45,16 +46,18 @@ function Drawers({ onBack, onReview }: { onBack: () => void; onReview: (box: num
   const { isFa, n, row } = useLang();
   const { colors } = useTheme();
   const { data, isLoading } = useQuery({ queryKey: LEITNER_KEY, queryFn: flashcardsApi.leitner, staleTime: 0, refetchOnMount: "always" });
+  useTour("leitner", !!data);
 
   if (isLoading || !data) return <LoadingState />;
   const title = isFa ? "جعبهٔ لایتنر" : "Leitner box";
   return (
     <Screen>
-      <ScreenChrome title={title} onBack={onBack} />
+      <ScreenChrome title={title} onBack={onBack} tour="leitner" />
       <AppText weight="700" size={12.5} muted style={{ marginTop: -6, marginBottom: spacing.md }}>
         {isFa ? `${n(data.total)} کارت در ۵ کشو` : `${data.total} cards in 5 drawers`}
       </AppText>
 
+      <TourTarget id="leitner.drawers">
       <View style={{ borderRadius: 20, backgroundColor: colors.trackBg, padding: 10 }}>
         <View style={{ flexDirection: row, gap: 6 }}>
           {data.drawers.map((d, i) => (
@@ -120,6 +123,7 @@ function Drawers({ onBack, onReview }: { onBack: () => void; onReview: (box: num
           ))}
         </View>
       </View>
+      </TourTarget>
 
       <View style={{ gap: 6, marginTop: spacing.md, marginBottom: spacing.lg }}>
         <View style={{ flexDirection: row, alignItems: "center", gap: 6 }}>
@@ -135,7 +139,9 @@ function Drawers({ onBack, onReview }: { onBack: () => void; onReview: (box: num
         </AppText>
       </View>
 
-      <TodayCard data={data} onStart={() => onReview(0)} />
+      <TourTarget id="leitner.today">
+        <TodayCard data={data} onStart={() => onReview(0)} />
+      </TourTarget>
       {data.exam_days_left != null ? (
         <AppText weight="700" size={12} color={colors.accent} style={{ marginTop: spacing.md }}>
           {isFa

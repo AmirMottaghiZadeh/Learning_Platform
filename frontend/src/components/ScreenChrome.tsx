@@ -6,6 +6,8 @@ import { HelpKey, HelpSheet } from "@/components/HelpSheet";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
+import { useTourContext } from "@/tour/TourContext";
+import type { TourKey } from "@/tour/tours";
 
 /** Round soft button used across the in-app screen headers. */
 export function ChromeButton({
@@ -61,15 +63,32 @@ export function LangToggleButton() {
 }
 
 /** Title row + theme / language toggles, matching the design's screen headers. */
+/** The "?" that replays a section's guided tour. */
+export function TourButton({ tour, size = 30 }: { tour: TourKey; size?: number }) {
+  const { colors } = useTheme();
+  const tours = useTourContext();
+  return (
+    <ChromeButton onPress={() => tours?.start(tour)} size={size}>
+      <AppText weight="800" size={13} color={colors.accent}>
+        ?
+      </AppText>
+    </ChromeButton>
+  );
+}
+
 export function ScreenChrome({
   title,
   onBack,
   help,
+  tour,
   actions,
 }: {
   title: string;
   onBack?: () => void;
+  /** the old text help sheet, for a screen without a tour */
   help?: HelpKey;
+  /** the section's guided tour: "?" replays it */
+  tour?: TourKey;
   /** extra buttons at the start of the header's button group */
   actions?: React.ReactNode;
 }) {
@@ -100,7 +119,7 @@ export function ScreenChrome({
       </View>
       <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
         {actions}
-        {help ? (
+        {tour ? <TourButton tour={tour} /> : help ? (
           <ChromeButton onPress={() => setHelpOpen(true)}>
             <AppText weight="800" size={13} color={colors.accent}>
               ?
@@ -110,7 +129,7 @@ export function ScreenChrome({
         <ThemeToggleButton variant="soft" size={30} />
         <LangToggleButton />
       </View>
-      {help ? (
+      {help && !tour ? (
         <HelpSheet helpKey={helpOpen ? help : null} onClose={() => setHelpOpen(false)} />
       ) : null}
     </View>

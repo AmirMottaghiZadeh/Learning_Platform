@@ -1932,9 +1932,9 @@
     "semantic_hash": ""
   },
   "frontend/App.tsx": {
-    "mtime": 1792885578.0266128,
-    "seen": 1792886575.539641,
-    "ast_hash": "ef5437eaa95cf7006c96509037ce57a7",
+    "mtime": 1792929876.0756397,
+    "seen": 1792931284.8424323,
+    "ast_hash": "25f65e77951b8bb277f18a7844cc9c13",
     "semantic_hash": ""
   },
   "frontend/app.config.js": {
@@ -2016,9 +2016,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/BottomNav.tsx": {
-    "mtime": 1792776780.0832136,
-    "seen": 1792777078.352684,
-    "ast_hash": "8155af67ef512b6d5ce0fccedcf35cbb",
+    "mtime": 1792929920.6594713,
+    "seen": 1792931284.8424942,
+    "ast_hash": "51835a0ac3f6d14dbb98dbefeae8f075",
     "semantic_hash": ""
   },
   "frontend/src/components/GlassToggles.tsx": {
@@ -2052,9 +2052,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/ScreenChrome.tsx": {
-    "mtime": 1792712218.9803805,
-    "seen": 1792713312.5756,
-    "ast_hash": "79f7ac2a1db90447ea0efbe435803091",
+    "mtime": 1792929876.0796463,
+    "seen": 1792931284.842516,
+    "ast_hash": "a2e119bd2bb6c9fa64072fce5998322a",
     "semantic_hash": ""
   },
   "frontend/src/components/ThemeToggleButton.tsx": {
@@ -2244,9 +2244,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/primitives/Screen.tsx": {
-    "mtime": 1792776819.3028457,
-    "seen": 1792777078.352831,
-    "ast_hash": "8fba559abba93282e6e78b7e6de70382",
+    "mtime": 1792929876.0756397,
+    "seen": 1792931284.8426723,
+    "ast_hash": "3e52efeab98b62d123dc5680b195d227",
     "semantic_hash": ""
   },
   "frontend/src/hooks/useDebounced.ts": {
@@ -2304,15 +2304,15 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/CalculatorsScreen.tsx": {
-    "mtime": 1792848862.201635,
-    "seen": 1792852386.5088732,
-    "ast_hash": "5b5487d5e275dac93055044738d5e41c",
+    "mtime": 1792930343.5733225,
+    "seen": 1792931284.842772,
+    "ast_hash": "bd6e185de0338d1d347fc0ea82ab4f05",
     "semantic_hash": ""
   },
   "frontend/src/screens/DashboardScreen.tsx": {
-    "mtime": 1792908919.869979,
-    "seen": 1792910053.3678925,
-    "ast_hash": "f80efa157ab7e4a6d970f89abf9e924f",
+    "mtime": 1792929939.7457411,
+    "seen": 1792931284.8427758,
+    "ast_hash": "9c425d2008ecc6b3bceed645b1d7e252",
     "semantic_hash": ""
   },
   "frontend/src/screens/EducationScreen.tsx": {
@@ -2322,9 +2322,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/FlashcardsScreen.tsx": {
-    "mtime": 1792911722.3999753,
-    "seen": 1792912378.105382,
-    "ast_hash": "010530a1a806b690c4b18806a960df6c",
+    "mtime": 1792930152.9260688,
+    "seen": 1792931284.8427866,
+    "ast_hash": "1483288efb2db39642a6975c1a256ef6",
     "semantic_hash": ""
   },
   "frontend/src/screens/LessonDetailScreen.tsx": {
@@ -2334,21 +2334,21 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/LessonListScreen.tsx": {
-    "mtime": 1792908570.5722644,
-    "seen": 1792910053.367902,
-    "ast_hash": "e433dbfd788104c8099638d7bb7718e0",
+    "mtime": 1792930118.2649286,
+    "seen": 1792931284.8427937,
+    "ast_hash": "61e8b3f485d35334cbb46b712e203d57",
     "semantic_hash": ""
   },
   "frontend/src/screens/LessonsScreen.tsx": {
-    "mtime": 1792074269.9018776,
-    "seen": 1792686658.6836257,
-    "ast_hash": "70d9ba58f4f675859fe27f53ae73b0c4",
+    "mtime": 1792930102.1198733,
+    "seen": 1792931284.8427968,
+    "ast_hash": "a78b7a4856da58062084af111d26241d",
     "semantic_hash": ""
   },
   "frontend/src/screens/LexicompScreen.tsx": {
-    "mtime": 1792712870.3900826,
-    "seen": 1792713312.5757997,
-    "ast_hash": "092dd1d3e0d6360252717977079a37b8",
+    "mtime": 1792930475.3146234,
+    "seen": 1792931284.8428006,
+    "ast_hash": "736aaf0019f554edb7b766fac0de06ac",
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeArticleScreen.tsx": {
@@ -2358,15 +2358,15 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeBrowseScreen.tsx": {
-    "mtime": 1792848862.2056355,
-    "seen": 1792852386.5089197,
-    "ast_hash": "19836658e84666659db4f0abbdddfafb",
+    "mtime": 1792930354.788096,
+    "seen": 1792931284.8428073,
+    "ast_hash": "3425efe1e019cf7ad8aba62f38071fd8",
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeGuidelinesScreen.tsx": {
-    "mtime": 1792848862.2056355,
-    "seen": 1792852386.5089233,
-    "ast_hash": "dfd9e7f30a365a2cd65e0341a1371f74",
+    "mtime": 1792930380.9434173,
+    "seen": 1792931284.8428106,
+    "ast_hash": "c6362283cb9458a84f0360da5ea850bb",
     "semantic_hash": ""
   },
   "frontend/src/screens/MedscapeOutlineScreen.tsx": {
@@ -2412,9 +2412,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/QuizScreen.tsx": {
-    "mtime": 1792911763.0798512,
-    "seen": 1792912378.105412,
-    "ast_hash": "c46b810f9f2b5cb83a10f0fcd4b6e774",
+    "mtime": 1792930414.358812,
+    "seen": 1792931284.8428397,
+    "ast_hash": "479d485a7ad1cf5693a9790c103b9cf9",
     "semantic_hash": ""
   },
   "frontend/src/screens/SetPasswordScreen.tsx": {
@@ -2442,9 +2442,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/UptodateScreen.tsx": {
-    "mtime": 1792848862.2056355,
-    "seen": 1792852386.5089726,
-    "ast_hash": "4fd04283c8822bc314356a0e72a1b796",
+    "mtime": 1792930464.09912,
+    "seen": 1792931284.8428574,
+    "ast_hash": "57b34ac870510ae758cf167683be981b",
     "semantic_hash": ""
   },
   "frontend/src/store/auth.ts": {
@@ -4128,9 +4128,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/offline/OfflineDownloadButton.tsx": {
-    "mtime": 1792713088.9085693,
-    "seen": 1792713312.575666,
-    "ast_hash": "0c050c458fa67587c0c004757865eba2",
+    "mtime": 1792930464.09912,
+    "seen": 1792931284.8426363,
+    "ast_hash": "49acf0930c959f98f495d0fa19acacc6",
     "semantic_hash": ""
   },
   "frontend/src/components/offline/OfflinePackageCard.tsx": {
@@ -4272,9 +4272,9 @@
     "semantic_hash": ""
   },
   "docs/04-frontend.md": {
-    "mtime": 1792912998.5613847,
-    "seen": 1792913011.3100836,
-    "ast_hash": "448e32a69dc9d4a36e1ae5f0169abab1",
+    "mtime": 1792931253.5518909,
+    "seen": 1792931284.8432894,
+    "ast_hash": "c1824bb976b00f90298a5ff481bf379f",
     "semantic_hash": ""
   },
   "docs/05-api.md": {
@@ -4602,9 +4602,33 @@
     "semantic_hash": ""
   },
   "frontend/src/components/flashcards/LeitnerBox.tsx": {
-    "mtime": 1792912949.406546,
-    "seen": 1792913011.3096473,
-    "ast_hash": "328d8a464ca30a37d3c656f0bf1841a5",
+    "mtime": 1792930152.9260688,
+    "seen": 1792931284.8426328,
+    "ast_hash": "c382f4166a454beadd847956d3670619",
+    "semantic_hash": ""
+  },
+  "frontend/src/tour/TourContext.tsx": {
+    "mtime": 1792913382.59273,
+    "seen": 1792931284.8428907,
+    "ast_hash": "657eb3952e5c91e0672a5c9c80405d7d",
+    "semantic_hash": ""
+  },
+  "frontend/src/tour/TourOverlay.tsx": {
+    "mtime": 1792930337.0817642,
+    "seen": 1792931284.8428955,
+    "ast_hash": "a51748d17092a02da67b4c4439c0014e",
+    "semantic_hash": ""
+  },
+  "frontend/src/tour/previews.tsx": {
+    "mtime": 1792930903.3177629,
+    "seen": 1792931284.8428998,
+    "ast_hash": "8b3bdf575f9de3badbe4bc8f3d103746",
+    "semantic_hash": ""
+  },
+  "frontend/src/tour/tours.ts": {
+    "mtime": 1792930903.3177629,
+    "seen": 1792931284.8429024,
+    "ast_hash": "ee924645bf4606f48781e6124706c097",
     "semantic_hash": ""
   }
 }

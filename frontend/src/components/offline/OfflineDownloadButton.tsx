@@ -11,13 +11,23 @@ import { useOffline } from "@/offline/store";
 import { usePackageView } from "@/offline/view";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget } from "@/tour/TourContext";
 
 import { OfflinePackageCard } from "./OfflinePackageCard";
 
 /** The small round button in the UpToDate / Lexicomp header: shows whether
  * the package is on the device (or how far its download is), and opens a
  * sheet to download or manage it. */
-export function OfflineDownloadButton({ dataset, size = 34 }: { dataset: OfflineDataset; size?: number }) {
+export function OfflineDownloadButton({
+  dataset,
+  size = 34,
+  tourId,
+}: {
+  dataset: OfflineDataset;
+  size?: number;
+  /** the guided tour's id for this button; it hides itself when unpublished */
+  tourId?: string;
+}) {
   const { colors, shadows } = useTheme();
   const { t } = useLang();
   const view = usePackageView(dataset);
@@ -33,8 +43,7 @@ export function OfflineDownloadButton({ dataset, size = 34 }: { dataset: Offline
   const warn = view.phase === "locked" || view.phase === "expired" || view.phase === "error";
   const ready = view.phase === "ready";
 
-  return (
-    <>
+  const button = (
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
@@ -101,6 +110,10 @@ export function OfflineDownloadButton({ dataset, size = 34 }: { dataset: Offline
           />
         ) : null}
       </Pressable>
+  );
+  return (
+    <>
+      {tourId ? <TourTarget id={tourId}>{button}</TourTarget> : button}
       {open ? <OfflineSheet dataset={dataset} onClose={() => setOpen(false)} /> : null}
     </>
   );

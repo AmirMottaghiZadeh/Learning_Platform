@@ -16,6 +16,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { StringKey } from "@/i18n/strings";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget, useTour } from "@/tour/TourContext";
 import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
 import { specialtyIcon } from "@/utils/specialtyIcons";
@@ -72,6 +73,8 @@ export function MedscapeBrowseScreen() {
     }
   }, [tree, activeCategory]);
 
+  useTour("diseases", (tree ?? []).length > 0);
+
   const openArticle = (slug: string) => navigate("medscapeOutline", { slug });
   const openSpecialty = (category: string, specialty: string) =>
     navigate("medscapeSpecialty", { kind, category, specialty });
@@ -83,8 +86,9 @@ export function MedscapeBrowseScreen() {
 
   return (
     <Screen>
-      <ScreenChrome title={t(titleKey)} onBack={goBack} />
+      <ScreenChrome title={t(titleKey)} onBack={goBack} tour="diseases" />
 
+      <TourTarget id="dis.search" style={{ marginBottom: spacing.lg }}>
       <View
         style={{
           flexDirection: row,
@@ -96,7 +100,6 @@ export function MedscapeBrowseScreen() {
           borderRadius: 14,
           paddingHorizontal: 14,
           paddingVertical: 12,
-          marginBottom: spacing.lg,
         }}
       >
         <AppText muted>⌕</AppText>
@@ -117,6 +120,7 @@ export function MedscapeBrowseScreen() {
         />
         {searching ? <AppText muted size={12}>…</AppText> : null}
       </View>
+      </TourTarget>
 
       {query.length >= 2 ? (
         !searching && (searchResults?.length ?? 0) === 0 ? (
@@ -133,7 +137,7 @@ export function MedscapeBrowseScreen() {
       ) : isError || (tree ?? []).length === 0 ? (
         <LoadFailed message={t("medscapeTreeUnavailable")} onRetry={() => refetchTree()} busy={treeFetching} />
       ) : (
-        <View style={{ gap: 14 }}>
+        <TourTarget id="dis.specialties" style={{ gap: 14 }}>
           {(tree ?? []).length > 1 ? (
             <View style={{ flexDirection: row, backgroundColor: colors.pageBg, borderRadius: 12, padding: 3 }}>
               {(tree ?? []).map((n) => {
@@ -211,7 +215,7 @@ export function MedscapeBrowseScreen() {
               </Pressable>
             ))}
           </View>
-        </View>
+        </TourTarget>
       )}
     </Screen>
   );

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget } from "@/tour/TourContext";
 import { layout } from "@/theme/tokens";
 import { LOCKED_TABS, TAB_ORDER, TabKey } from "@/navigation/types";
 import { AppText } from "./primitives/AppText";
@@ -88,8 +89,9 @@ export function BottomNav() {
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
-    <View
-      onLayout={onLayout}
+    // The guided tours point at the bar as "nav".
+    <TourTarget
+      id="nav"
       style={{
         position: "absolute",
         left: 0,
@@ -98,6 +100,12 @@ export function BottomNav() {
         // Grows down over the home indicator (iPhone) / gesture bar so the
         // bar runs to the bottom edge with its tabs clear of it.
         height: layout.bottomNavHeight + insets.bottom,
+      }}
+    >
+    <View
+      onLayout={onLayout}
+      style={{
+        flex: 1,
         backgroundColor: colors.navBg,
         borderTopWidth: 1,
         borderTopColor: colors.border,
@@ -158,5 +166,6 @@ export function BottomNav() {
         );
       })}
     </View>
+    </TourTarget>
   );
 }

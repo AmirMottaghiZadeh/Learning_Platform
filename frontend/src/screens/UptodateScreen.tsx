@@ -4,7 +4,7 @@ import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-na
 
 import { ApiError } from "@/api/client";
 import { UptodateSearchResult } from "@/api/types";
-import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
+import { ChromeButton, LangToggleButton, TourButton } from "@/components/ScreenChrome";
 import { OfflineDownloadButton } from "@/components/offline/OfflineDownloadButton";
 import { AppText } from "@/components/primitives/AppText";
 import { IconImage } from "@/components/primitives/IconImage";
@@ -13,6 +13,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { uptodateSource } from "@/offline/sources";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget, useTour } from "@/tour/TourContext";
 import { fontFamily } from "@/theme/fonts";
 import { shortDate } from "@/utils/uptodateOutline";
 import { useNavClearance } from "@/components/BottomNav";
@@ -59,6 +60,7 @@ export function UptodateScreen() {
   const activeSection = section && sections.some(([s]) => s === section) ? section : null;
   const visible = activeSection ? rows.filter((r) => r.section === activeSection) : rows;
   const words = useMemo(() => (query.match(/[A-Za-z0-9؀-ۿ]+/g) ?? []).slice(0, 8), [query]);
+  useTour("uptodate", true);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.softBg }}>
@@ -82,10 +84,12 @@ export function UptodateScreen() {
           <AppText weight="900" size={18} style={{ flex: 1 }}>
             {t("uptodateScreenTitle")}
           </AppText>
-          <OfflineDownloadButton dataset="uptodate" />
+          <TourButton tour="uptodate" size={34} />
+          <OfflineDownloadButton dataset="uptodate" tourId="utd.offline" />
           <LangToggleButton />
         </View>
 
+        <TourTarget id="utd.search">
         <View
           style={{
             flexDirection: row,
@@ -136,6 +140,7 @@ export function UptodateScreen() {
             </Pressable>
           ) : null}
         </View>
+        </TourTarget>
 
         {sections.length > 1 ? (
           <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8 }}>
