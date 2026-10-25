@@ -427,7 +427,27 @@ class Announcement(models.Model):
         return plain_text(self.body_html)[:180]
 
 
+def version_code(version):
+    """1.4.2 -> 10402: the number Android installs by. frontend/app.config.js
+    derives the build's versionCode from app.json's version the same way, so
+    the two always agree. ValueError for anything but MAJOR.MINOR.PATCH in
+    Latin digits with MINOR and PATCH under 100."""
+    parts = version.strip().split(".")
+    if len(parts) != 3 or not all(p.isascii() and p.isdigit() for p in parts):
+        raise ValueError(version)
+    major, minor, patch = (int(p) for p in parts)
+    if minor > 99 or patch > 99:
+        raise ValueError(version)
+    return major * 10000 + minor * 100 + patch
+
+
 class AppRelease(models.Model):
+    """A version on the download page -- and, with `notify_in_app`, the one
+    installed apps offer to update to on opening (GET /api/v1/app/release/,
+    apps.website.api). Below a notified release's `min_supported_version`
+    the update is required; the strictest such minimum counts, so a later
+    release that leaves it empty never lets a version forced off back in."""
+
     ANDROID, IOS, WEB = "android", "ios", "web"
     PLATFORM_CHOICES = [(ANDROID, "اندروید"), (IOS, "iOS"), (WEB, "وب")]
     STABLE, BETA = "stable", "beta"
@@ -442,6 +462,17 @@ class AppRelease(models.Model):
     min_os = models.CharField("حداقل سیستم‌عامل", max_length=40, blank=True)
     is_published = models.BooleanField("منتشر شود", default=True)
     is_latest = models.BooleanField("آخرین نسخهٔ این پلتفرم", default=False)
+    # The in-app update prompt. Off by default, so neither an older row nor
+    # the sample release seed_website makes reaches the installed apps.
+    notify_in_app = models.BooleanField(
+        "پیشنهاد به‌روزرسانی در اپ", default=False,
+        help_text="اپ‌های نصب‌شدهٔ قدیمی‌تر هنگام باز شدن به‌روزرسانی به این نسخه را پیشنهاد می‌دهند. "
+                  "فقط وقتی بزنید که بیلد این نسخه در فروشگاه‌ها و صفحهٔ دانلود در دسترس است.",
+    )
+    min_supported_version = models.CharField(
+        "کمترین نسخهٔ قابل استفاده", max_length=20, blank=True,
+        help_text="نسخه‌های قدیمی‌تر از این تا به‌روز نشوند باز نمی‌شوند، مثلاً 1.2.0. خالی: به‌روزرسانی اختیاری است.",
+    )
 
     class Meta:
         ordering = ["-released_at", "-id"]

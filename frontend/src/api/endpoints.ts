@@ -40,6 +40,7 @@ import {
   UptodateSearchResult,
   OtpPurpose,
   OtpRequestResponse,
+  ReleaseCheck,
   User,
 } from "./types";
 
@@ -79,6 +80,17 @@ export const guestApi = {
     apiClient.get<{ enabled: boolean }>("/guest/status/", { skipAuth: true } as never).then((r) => r.data),
   start: () =>
     apiClient.post<AuthTokenResponse>("/guest/session/", null, { skipAuth: true } as never).then((r) => r.data),
+};
+
+// The app's published versions (backend apps.releases), checked on opening.
+export const releaseApi = {
+  check: (platform: "android" | "ios", versionCode: number) =>
+    apiClient
+      .get<ReleaseCheck>("/app/release/", {
+        params: { platform, version_code: versionCode },
+        skipAuth: true,
+      } as never)
+      .then((r) => r.data),
 };
 
 // --- drug knowledge ---------------------------------------------------

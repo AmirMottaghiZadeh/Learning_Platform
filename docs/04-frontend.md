@@ -32,6 +32,11 @@
    - `SetPasswordScreen` (ورود با کد پیامکی و هنوز بدون رمز)
    - `OnboardingScreen` (پروفایل تکمیل‌نشده)
    - اپ اصلی با نوار پایین
+5. `UpdatePrompt` روی همه‌چیز می‌نشیند:
+   - **روی گوشی** (`components/UpdatePrompt.tsx`): اگر نسخهٔ تازه‌تری اعلام شده باشد، پیشنهاد به‌روزرسانی یا صفحهٔ به‌روزرسانی اجباری را نشان می‌دهد.
+   - **در وب** (`UpdatePrompt.web.tsx`): بعد از هر دیپلوی، نوار «بارگذاری دوباره» را نشان می‌دهد.
+
+   شرح کامل در [08-deployment.md](08-deployment.md#پیام-به‌روزرسانی-داخل-اپ).
 
 ## ناوبری
 
@@ -131,11 +136,20 @@
 
 ## پیکربندی اپ بومی
 
-| فایل | چه چیزی |
-|---|---|
-| `app.json` | نام «Pharmenta»، `slug` = `pharmexa-learning`، شناسهٔ بستهٔ اندروید و iOS `com.pharmexa.learning`، `versionCode` اندروید، آیکون و splash، پلاگین‌ها (`expo-secure-store`، `expo-font`، `expo-splash-screen`، دانلودر پس‌زمینه)، شناسهٔ پروژهٔ EAS |
-| `app.config.js` | `app.json` را می‌خواند و `EXPO_BASE_URL` را اعمال می‌کند |
-| `eas.json` | پروفایل‌های بیلد `development`، `preview` (APK داخلی) و `production` (APK، افزایش خودکار نسخه)؛ `EXPO_PUBLIC_API_BASE_URL` برای دو پروفایل آخر |
+- **`app.json`:**
+  - نام «Pharmenta» و `slug` = `pharmexa-learning`
+  - **`version`، تنها منبع شمارهٔ نسخه**
+  - شناسهٔ بستهٔ اندروید و iOS: `com.pharmexa.learning`
+  - `allowBackup: false` و `blockedPermissions`
+  - آیکون و splash
+  - پلاگین‌ها: `expo-secure-store`، `expo-font`، `expo-splash-screen` و دانلودر پس‌زمینه
+  - شناسهٔ پروژهٔ EAS
+- **`app.config.js`:** `app.json` را می‌خواند و این‌ها را اضافه می‌کند:
+  - versionCode اندروید و buildNumber iOS، ساخته‌شده از `version`
+  - تنظیم‌های بیلد اندروید (`expo-build-properties`): معماری‌ها، R8، فشرده‌سازی و منع `http`
+  - `EXPO_BASE_URL`
+- **`eas.json`:** پروفایل‌های بیلد `development`، `preview`، `production`، `production-arm64` و `play`، و `env` هر کدام.
+- **`scripts/release.mjs`:** با `npm run release -- patch|minor|major` نسخه را بالا می‌برد، CHANGELOG را می‌نویسد و کامیت و تگ می‌سازد.
 
 بیلد و انتشار در [08-deployment.md](08-deployment.md#اپ-اندروید-و-ios).
 

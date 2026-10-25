@@ -369,6 +369,15 @@ export const strings = {
     lockedFeature: "این بخش به‌زودی فعال می‌شود",
     retry: "تلاش دوباره",
     loadFailed: "بارگذاری با خطا مواجه شد.",
+
+    updateTitle: "نسخهٔ تازهٔ فارمنتا",
+    updateOptional: "نسخهٔ {v} آماده است.",
+    updateRequired: "این نسخه دیگر پشتیبانی نمی‌شود. برای ادامه، فارمنتا را به نسخهٔ {v} به‌روز کن.",
+    updateNow: "به‌روزرسانی",
+    updateLater: "بعداً",
+    webUpdateReady: "نسخهٔ تازهٔ فارمنتا آماده است.",
+    webUpdateReload: "بارگذاری دوباره",
+    dismiss: "بستن",
   },
   en: {
     appName: "Pharmenta",
@@ -734,6 +743,15 @@ export const strings = {
     lockedFeature: "This section is coming soon",
     retry: "Try again",
     loadFailed: "Something went wrong while loading.",
+
+    updateTitle: "A new Pharmenta version",
+    updateOptional: "Version {v} is ready.",
+    updateRequired: "This version is no longer supported. Update Pharmenta to version {v} to continue.",
+    updateNow: "Update",
+    updateLater: "Later",
+    webUpdateReady: "A new version of Pharmenta is ready.",
+    webUpdateReload: "Reload",
+    dismiss: "Close",
   },
 } as const;
 

@@ -50,8 +50,12 @@ releases = Section(
     key="releases", route="releases", model=AppRelease, form=forms.ReleaseForm, title="نسخه‌های اپ", singular="نسخه",
     perm="download.manage", active="downloads", ordering=("-released_at", "-id"), tabs=DL_TABS,
     filters=[("platform", "پلتفرم", AppRelease.PLATFORM_CHOICES, "platform")],
+    hint="با «پیشنهاد به‌روزرسانی در اپ»، اپ‌های نصب‌شدهٔ قدیمی‌تر هنگام باز شدن این نسخه و تغییراتش را نشان می‌دهند و "
+         "دکمهٔ به‌روزرسانی به صفحهٔ دانلود می‌رود. با «کمترین نسخهٔ قابل استفاده»، نسخه‌های قدیمی‌تر تا به‌روز نشوند باز نمی‌شوند.",
     columns=[("پلتفرم", lambda o: o.get_platform_display()), ("نسخه", lambda o: format_html('<span dir="ltr">{}</span>', o.version)),
              ("کانال", lambda o: o.get_channel_display()), ("آخرین", lambda o: chip("آخرین", "ok") if o.is_latest else ""),
+             ("در اپ", lambda o: chip(f"اجباری زیر {o.min_supported_version}" if o.min_supported_version else "پیشنهاد", "ok")
+              if o.notify_in_app else ""),
              ("وضعیت", lambda o: _state(o.is_published, "منتشرشده", "پنهان")), ("تاریخ", lambda o: jalali_format(o.released_at, False))],
 )
 links = Section(

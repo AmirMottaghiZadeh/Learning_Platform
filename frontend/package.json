@@ -9,7 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build:web": "expo export --platform web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/vazirmatn": "^0.4.1",
@@ -21,6 +22,8 @@
     "@tanstack/react-query-persist-client": "^5.104.2",
     "axios": "^1.18.1",
     "expo": "~57.0.27",
+    "expo-build-properties": "~57.0.22",
+    "expo-constants": "~57.0.22",
     "expo-crypto": "~57.0.3",
     "expo-file-system": "~57.0.7",
     "expo-font": "~57.0.1",

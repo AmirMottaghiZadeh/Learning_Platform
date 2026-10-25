@@ -203,6 +203,8 @@
 | `EXPO_PUBLIC_API_BASE_URL` | محلی: `frontend/.env`؛ وب‌اپ: `ARG` در `Dockerfile.frontend`؛ موبایل: `env` در `eas.json` | `https://api.pharmenta.ir/api/v1` | نشانی API |
 | `EXPO_BASE_URL` | `ARG` در `Dockerfile.frontend` | خالی | زیرمسیر سرو وب (مثلاً `/Learning_Platform` برای GitHub Pages) |
 | `NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE` | `Dockerfile.frontend` | `1` | تعداد worker nginx بر اساس سهم CPU کانتینر |
+| `ANDROID_ARCHS` | `env` در `eas.json` | `arm64-v8a,armeabi-v7a` (در `production-arm64` فقط `arm64-v8a`) | معماری‌هایی که بیلد اندروید برایشان ساخته می‌شود (`app.config.js`) |
+| `ANDROID_COMPRESS_NATIVE_LIBS` | `env` در `eas.json` | `1` در پروفایل‌های APK | کتابخانه‌های بومی فشرده داخل APK؛ برای `play` خاموش است |
 
 ## متغیرهای منسوخ
 

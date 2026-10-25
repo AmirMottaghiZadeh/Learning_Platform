@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from ..models import (
     Announcement, AppRelease, Category, ContentBlock, DownloadLink, Media, MenuItem, Page, Post, Redirect, SiteSettings, Tag,
-    make_slug, unique_slug,
+    make_slug, unique_slug, version_code,
 )
 from ..sanitize import clean_html
 from .ui import JalaliDateTimeField, PanelForm, RichTextWidget, StyledFormMixin
@@ -133,11 +133,34 @@ class ReleaseForm(PanelForm):
 
     class Meta:
         model = AppRelease
-        fields = ["platform", "version", "channel", "released_at", "size_mb", "min_os", "notes_html", "is_published", "is_latest"]
+        fields = ["platform", "version", "channel", "released_at", "size_mb", "min_os", "notes_html", "is_published", "is_latest",
+                  "notify_in_app", "min_supported_version"]
         widgets = {"notes_html": RichTextWidget()}
 
     def clean_released_at(self):
         return self.cleaned_data.get("released_at") or timezone.localdate()
+
+    def clean(self):
+        data = super().clean()
+        if not data.get("notify_in_app"):
+            return data
+        # The app compares versions as numbers (models.version_code).
+        if data.get("platform") == AppRelease.WEB:
+            self.add_error("notify_in_app", "وب‌اپ با هر دیپلوی خودش به‌روز می‌شود.")
+        if data.get("channel") != AppRelease.STABLE or not data.get("is_published"):
+            self.add_error("notify_in_app", "فقط نسخهٔ پایدار و منتشرشده را می‌شود در اپ اعلام کرد.")
+        codes = {}
+        for field in ("version", "min_supported_version"):
+            value = (data.get(field) or "").strip()
+            if not value:
+                continue
+            try:
+                codes[field] = version_code(value)
+            except ValueError:
+                self.add_error(field, "به شکل 1.4.2 و با رقم‌های لاتین بنویسید (عدد دوم و سوم کمتر از ۱۰۰)، همان version در frontend/app.json.")
+        if codes.get("min_supported_version", 0) > codes.get("version", 10**9):
+            self.add_error("min_supported_version", "از خود این نسخه بالاتر است.")
+        return data
 
     def clean_notes_html(self):
         return clean_html(self.cleaned_data.get("notes_html"))

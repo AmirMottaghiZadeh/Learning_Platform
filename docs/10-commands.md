@@ -87,7 +87,10 @@
 | دستور | کار |
 |---|---|
 | `npm i -g eas-cli && eas login` | نصب و ورود (یک بار) |
-| `eas build --platform android --profile production` | APK انتشار |
+| `npm run release -- patch\|minor\|major [--dry-run]` | بالا بردن نسخه، CHANGELOG، کامیت و تگ `app-vX.Y.Z` (در `frontend/`) |
+| `eas build --platform android --profile production` | APK انتشار (arm64 و armv7) |
+| `eas build --platform android --profile production-arm64` | APK کوچک‌تر، فقط arm64 |
+| `eas build --platform android --profile play` | app bundle برای Google Play |
 | `eas build --platform android --profile preview` | APK آزمایشی |
 | `eas build --platform android --profile development` | development build |
 | `eas build --platform ios --profile production` | بیلد iOS |

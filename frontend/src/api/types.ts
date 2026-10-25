@@ -677,3 +677,17 @@ export interface OfflineLicense {
   /** base64 key wrapped with RSA-OAEP to the browser's key (web) */
   wrapped_key?: string;
 }
+
+// GET /app/release/: whether this install should update (backend
+// apps.website.api, from the releases entered in the site panel).
+export type AppReleaseInfo = {
+  version: string;
+  version_code: number;
+  notes: string[];
+  released_at: string;
+  download_url: string;
+};
+export type ReleaseCheck = {
+  update: "none" | "optional" | "required";
+  latest: AppReleaseInfo | null;
+};

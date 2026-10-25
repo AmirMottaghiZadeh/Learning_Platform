@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { CACHE_BUSTER, CACHE_MAX_AGE, queryClient, queryPersister } from "@/api/queryClient";
+import { UpdatePrompt } from "@/components/UpdatePrompt";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { LanguageProvider, useLang } from "@/i18n/LanguageProvider";
 import { Navigator } from "@/navigation/Navigator";
@@ -35,7 +36,13 @@ function Gate() {
   useOfflineBoot();
 
   if (!fontsLoaded || !themeReady || !langReady) return <LoadingState />;
-  return <Navigator />;
+  return (
+    <>
+      <Navigator />
+      {/* A newer published version: offered, or required, on opening. */}
+      <UpdatePrompt />
+    </>
+  );
 }
 
 export default function App() {

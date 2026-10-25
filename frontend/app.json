@@ -16,11 +16,20 @@
     },
     "android": {
       "package": "com.pharmexa.learning",
-      "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/app-icon-foreground.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.DUMP"
+      ]
     },
     "web": {
       "bundler": "metro",

@@ -46,7 +46,7 @@
 | `calculators` | ماشین‌حساب‌های بالینی دوزبانه (سؤال، فرمول و نتیجه به‌صورت JSON) | `Calculator`، `CalculatorCategory`، `CalculatorTag` | محاسبه سمت اپ انجام می‌شود (`frontend/src/utils/calculatorEngine.ts`) |
 | `medscape` | مقاله‌های بیماری و گایدلاین با تصویرهای ذخیره‌شده با هش محتوا | `Article`، `ArticleImage` | — |
 | `billing` | ویژگی، پلن و محصول، قیمت، کد تخفیف، سفارش، حق دسترسی، سهمیه، درگاه پرداخت، مهمان، کنسول `/ops/` | `Feature`، `Plan`، `PlanFeature`، `PlanPrice`، `DiscountCode`، `Order`، `Entitlement`، `UsageRecord`، `PaymentGateway`، `BillingSettings`، `GuestAccount`، `AdminAction` | جزئیات در «صورتحساب» پایین‌تر |
-| `website` | سایت و بلاگ، پنل محتوا، آمار بازدید، ریدایرکت، حالت تعمیر | ۲۰ مدل، از جمله `SiteSettings`، `Post`، `Page`، `Media`، `StaffRole`، `DailyStat` | [12-website.md](12-website.md) |
+| `website` | سایت و بلاگ، پنل محتوا، آمار بازدید، ریدایرکت، حالت تعمیر، و مسیر API نسخهٔ اپ (`/app/release/`) | ۲۰ مدل، از جمله `SiteSettings`، `Post`، `Page`، `Media`، `StaffRole`، `DailyStat` | [12-website.md](12-website.md) |
 | `data_quality_center` | ویرایش خلاصه‌های بالینی با بازبینی superuser و سابقهٔ تغییرناپذیر | `SectionEditRequest`، `SectionEdit`، `ReviewEvent` | [11-admin-consoles.md](11-admin-consoles.md) |
 
 ساختار معمول هر اپ: `models.py`، `serializers.py`، `views.py`، `urls.py`، `services.py` (منطق کسب‌وکار)، `tests.py` یا `tests/`، `management/commands/`.

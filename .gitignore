@@ -5,6 +5,13 @@
 *.pem
 *.key
 *.crt
+# App signing and store credentials: the Android keystore (a backup copy
+# downloaded with `eas credentials`), EAS's local credentials file, and the
+# Google Play service-account key -- never in git (docs/08-deployment.md).
+*.jks
+*.keystore
+credentials.json
+play-service-account*.json
 
 # Python / Django
 __pycache__/

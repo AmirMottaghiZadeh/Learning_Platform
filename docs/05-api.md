@@ -56,6 +56,22 @@
   "release_sha": "…", "time": "…", "checks": { "database": "ok", "database_latency_ms": 2.1 } }
 ```
 
+## نسخهٔ اپ — `/app/`
+
+| روش | مسیر | دسترسی | پاسخ |
+|---|---|---|---|
+| GET | `/app/release/?platform=android&version_code=100` | عمومی | آیا این نسخهٔ نصب‌شده باید به‌روز شود |
+
+`platform` یکی از `android` و `ios` است. `version_code` همان عددی است که اپ از نسخه‌اش می‌سازد (`major×10000 + minor×100 + patch`). پاسخ از نسخه‌هایی ساخته می‌شود که در پنل سایت «پیشنهاد به‌روزرسانی در اپ» دارند ([08-deployment.md](08-deployment.md#پیام-به‌روزرسانی-داخل-اپ)). کد: `apps/website/api.py`.
+
+```jsonc
+{ "update": "optional",            // "none" | "optional" | "required"
+  "latest": { "version": "0.2.0", "version_code": 200, "notes": ["…", "…"],
+              "released_at": "2026-10-25", "download_url": "https://pharmenta.ir/download/" } }
+```
+
+وقتی هیچ نسخه‌ای اعلام نشده، `latest` برابر `null` و `update` برابر `"none"` است.
+
 ## حساب و احراز هویت — `/auth/`
 
 | روش | مسیر | توضیح |
