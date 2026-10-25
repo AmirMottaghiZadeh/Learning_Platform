@@ -22,17 +22,12 @@ export const LEITNER_KEY = ["leitner"];
 const DRAWER_FLEX = [1, 1.08, 1.16, 1.24, 1.32];
 const STACK_LINES_MAX = 22;
 
-/** "۱۰ دقیقهٔ دیگر", "۲ روز دیگر", or that it leaves the box. */
+/** Where the button sends the card: "به کشوی ۴", or out of the box. When it
+ * comes back is the scheduler's business, never shown as days. */
 function outcomeLabel(o: RatingOutcome | undefined, isFa: boolean, n: (v: number) => string) {
   if (!o) return "";
   if (o.box === 0) return isFa ? "خروج از جعبه" : "Leaves the box";
-  if (o.minutes < 60) return isFa ? `${n(o.minutes)} دقیقهٔ دیگر` : `in ${o.minutes} min`;
-  if (o.minutes < 24 * 60) {
-    const h = Math.round(o.minutes / 60);
-    return isFa ? `${n(h)} ساعت دیگر` : `in ${h} h`;
-  }
-  const d = Math.round(o.minutes / (24 * 60));
-  return isFa ? `${n(d)} روز دیگر` : `in ${d} day${d === 1 ? "" : "s"}`;
+  return isFa ? `به کشوی ${n(o.box)}` : `To drawer ${o.box}`;
 }
 
 /** The Leitner box: the cards the learner did not know, in five drawers by
@@ -212,13 +207,13 @@ function TodayCard({ data, onStart }: { data: LeitnerOverview; onStart: () => vo
 }
 
 const RATING_BUTTONS: { rating: BoxRating; fa: string; en: string }[] = [
-  { rating: "forgot", fa: "یادم نبود", en: "Forgot" },
-  { rating: "hard", fa: "سخت بود", en: "Hard" },
-  { rating: "good", fa: "یادم بود", en: "Knew it" },
+  { rating: "forgot", fa: "یادم نبود", en: "I didn't know" },
+  { rating: "good", fa: "یادم بود", en: "I knew it" },
 ];
 
 /** A review: today's cards, or one drawer's (`box`). A card answered
- * "forgot" comes round again at the end of the same session. */
+ * "یادم نبود" climbs a drawer and comes round again at the end of the same
+ * session. */
 function ReviewSession({ box, onDone }: { box?: number; onDone: () => void }) {
   const { isFa, n, row } = useLang();
   const { colors, shadows } = useTheme();
@@ -335,7 +330,6 @@ function ReviewSession({ box, onDone }: { box?: number; onDone: () => void }) {
         <View style={{ flexDirection: row, gap: 8, marginTop: spacing.lg }}>
           {RATING_BUTTONS.map(({ rating, fa, en }) => {
             const primary = rating === "good";
-            const danger = rating === "forgot";
             return (
               <Pressable
                 key={rating}
@@ -349,16 +343,16 @@ function ReviewSession({ box, onDone }: { box?: number; onDone: () => void }) {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 2,
-                  backgroundColor: primary ? colors.accent : danger ? colors.denyBg : colors.cardBg,
+                  backgroundColor: primary ? colors.accent : colors.denyBg,
                   borderWidth: primary ? 0 : 1.5,
-                  borderColor: danger ? colors.denyBorder : colors.trackBg,
+                  borderColor: colors.denyBorder,
                   opacity: pressed || review.isPending ? 0.7 : 1,
                 })}
               >
-                <AppText weight="900" size={14} color={primary ? colors.onAccent : danger ? colors.denyInk : colors.ink}>
+                <AppText weight="900" size={15} color={primary ? colors.onAccent : colors.denyInk}>
                   {isFa ? fa : en}
                 </AppText>
-                <AppText weight="700" size={11} color={primary ? colors.onAccentSub : danger ? colors.denyLabel : colors.muted}>
+                <AppText weight="700" size={11.5} color={primary ? colors.onAccentSub : colors.denyLabel}>
                   {outcomeLabel(card.outcomes[rating], isFa, n)}
                 </AppText>
               </Pressable>

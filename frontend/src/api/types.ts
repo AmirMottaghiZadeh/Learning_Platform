@@ -357,7 +357,8 @@ export interface DeckCard {
   back_fields_en: LeitnerCardField[];
 }
 
-export type BoxRating = "forgot" | "hard" | "good";
+/** "یادم نبود": a drawer up, toward 5; "یادم بود": a drawer down, out from 1. */
+export type BoxRating = "forgot" | "good";
 
 /** What a review button would do: the drawer the card moves to (0 = it
  * leaves the box) and the minutes until it is due again. */

@@ -2,10 +2,11 @@
 
 Only what the learner did not know goes in: a deck's "یادم نبود" or a wrong
 quiz answer puts that drug's card section in drawer 1, and every further
-miss moves it a drawer up, to 5. A review rates the card three ways:
+miss moves it a drawer up, to 5. A review rates the card two ways:
 
-- "forgot" (یادم نبود): a drawer up; back in RELEARN_MINUTES, the same session;
-- "hard" (سخت بود): stays in its drawer, back a little later than last time;
+- "forgot" (یادم نبود): a drawer up, closer to 5; it comes round once more
+  at the end of the same review (the app re-queues it) and is due again
+  tomorrow;
 - "good" (یادم بود): a drawer down, and out of the box from drawer 1.
 
 When a card comes back is its own interval, grown by its own ease -- which
@@ -31,10 +32,9 @@ from apps.progress.models import StudyPlan
 from .models import MAX_BOX, OUT_OF_BOX, FlashcardFact, LeitnerCard
 from .sections import SECTION_KEYS
 
-FORGOT, HARD, GOOD = "forgot", "hard", "good"
-RATINGS = [FORGOT, HARD, GOOD]
+FORGOT, GOOD = "forgot", "good"
+RATINGS = [FORGOT, GOOD]
 
-RELEARN_MINUTES = 10
 SECONDS_PER_CARD = 20
 DEFAULT_DAILY_MINUTES = 15
 START_EASE, MIN_EASE = 2.3, 1.3
@@ -117,22 +117,18 @@ def outcome(card, rating, cap=None):
     """What a rating would do to the card: its new drawer (OUT_OF_BOX when
     it leaves), interval, ease, and the minutes until it is due again."""
     if rating == FORGOT:
-        box, ease, interval = min(MAX_BOX, card.box + 1), max(MIN_EASE, card.ease - 0.2), 0.0
-    elif rating == HARD:
-        box, ease = card.box, max(MIN_EASE, card.ease - 0.15)
-        interval = max(1.0, card.interval_days * 1.2)
+        box, ease, interval = min(MAX_BOX, card.box + 1), max(MIN_EASE, card.ease - 0.2), 1.0
     else:
         box, ease = card.box - 1, card.ease
         interval = max(1.0, card.interval_days) * card.ease
-    if interval and cap:
+    if cap:
         interval = min(interval, cap)
-    minutes = RELEARN_MINUTES if not interval else round(interval * 24 * 60)
-    return {"box": max(OUT_OF_BOX, box), "interval_days": interval, "ease": ease, "minutes": minutes}
+    return {"box": max(OUT_OF_BOX, box), "interval_days": interval, "ease": ease, "minutes": round(interval * 24 * 60)}
 
 
 def previews(user, cards):
     """{card id: {rating: {"box", "minutes"}}} -- what each button would do,
-    for its label ("۲ روز دیگر", "خروج از جعبه")."""
+    for its label ("به کشوی ۴", "خروج از جعبه")."""
     cap = _exam_cap_days(user)
     out = {}
     for card in cards:

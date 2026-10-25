@@ -47,14 +47,13 @@ class LeitnerRulesTests(TestCase):
         # missed again later: back in drawer 1
         self.assertEqual(leitner.add_miss(self.user, self.drug, "indication").box, 1)
 
-    def test_forgot_climbs_and_returns_within_the_session_hard_stays(self):
+    def test_forgot_climbs_a_drawer_toward_five_and_is_due_tomorrow(self):
         card = leitner.add_miss(self.user, self.drug, "indication")
-        leitner.review(self.user, card, leitner.FORGOT)
-        self.assertEqual(card.box, 2)
-        self.assertLess(card.due_at, timezone.now() + timedelta(minutes=leitner.RELEARN_MINUTES + 1))
-        leitner.review(self.user, card, leitner.HARD)
-        self.assertEqual(card.box, 2)
+        for expected in (2, 3, 4, 5, 5):
+            leitner.review(self.user, card, leitner.FORGOT)
+            self.assertEqual(card.box, expected)
         self.assertGreaterEqual(card.due_at, timezone.now() + timedelta(hours=23))
+        self.assertLess(card.due_at, timezone.now() + timedelta(hours=25))
 
     def test_each_card_keeps_its_own_interval_and_misses_shorten_it(self):
         easy = leitner.add_miss(self.user, self.drug, "indication")
@@ -62,10 +61,8 @@ class LeitnerRulesTests(TestCase):
         for _ in range(3):
             leitner.add_miss(self.user, self.drug, "adr_common")
         hard.refresh_from_db()
-        easy_next = leitner.outcome(easy, leitner.HARD)["interval_days"] * easy.ease
-        hard_next = leitner.outcome(hard, leitner.HARD)["interval_days"] * hard.ease
         self.assertLess(hard.ease, easy.ease)
-        self.assertLess(hard_next, easy_next)
+        self.assertLess(leitner.outcome(hard, leitner.GOOD)["interval_days"], leitner.outcome(easy, leitner.GOOD)["interval_days"])
 
     def test_an_exam_date_caps_every_interval_at_half_the_days_left(self):
         plan = get_plan(self.user)
@@ -74,8 +71,7 @@ class LeitnerRulesTests(TestCase):
         card = leitner.add_miss(self.user, self.drug, "indication")
         card.interval_days = 20
         card.box = 3
-        for rating in (leitner.HARD, leitner.GOOD):
-            self.assertLessEqual(leitner.outcome(card, rating, leitner._exam_cap_days(self.user))["interval_days"], 3)
+        self.assertLessEqual(leitner.outcome(card, leitner.GOOD, leitner._exam_cap_days(self.user))["interval_days"], 3)
 
     def test_todays_review_is_highest_drawer_first_within_the_daily_minutes(self):
         drugs = [_drug(f"d{i}") for i in range(10)]
