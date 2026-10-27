@@ -101,6 +101,34 @@ class FeedTests(TestCase):
     def test_needs_sign_in(self):
         self.assertEqual(APIClient().get(reverse("announcements")).status_code, 401)
 
+    def test_install_only_reaches_uninstalled_web_clients_including_drafts(self):
+        make("نصب", link_kind="pwa", audience="web_new")
+        make("آزمایش نصب", link_kind="pwa", is_published=False, test_user=self.user)
+        make("خبر عادی")
+        self.assertEqual(self.titles(), ["خبر عادی"])
+        for state in ("native", "standalone", "unknown"):
+            self.assertEqual(self.titles(pwa_state=state), ["خبر عادی"])
+        self.assertCountEqual(self.titles(pwa_state="browser"), ["نصب", "آزمایش نصب", "خبر عادی"])
+        install = next(r for r in self.feed(pwa_state="browser") if r["title"] == "نصب")
+        self.assertEqual(install["button"]["kind"], "pwa")
+        self.assertEqual(install["button"]["label"], "نصب")
+
+    def test_install_dismissal_is_per_account_and_survives_editing_and_login(self):
+        item = make(link_kind="pwa", dismissible=False)
+        url = reverse("announcement-event", args=[item.pk])
+        self.assertEqual(self.client.post(url, {"event": "click"}).status_code, 204)
+        self.assertEqual(len(self.feed(pwa_state="browser")), 1)  # cancelling install must not hide it
+        self.assertEqual(self.client.post(url, {"event": "dismiss"}).status_code, 204)
+        item.body = "متن ویرایش‌شده"
+        item.save()
+        fresh_client = APIClient()
+        fresh_client.force_authenticate(self.user)
+        self.assertEqual(fresh_client.get(reverse("announcements"), {"pwa_state": "browser"}).json(), [])
+        other = User.objects.create_user("another", password="x")
+        fresh_client.force_authenticate(other)
+        self.assertEqual(len(fresh_client.get(reverse("announcements"), {"pwa_state": "browser"}).json()), 1)
+        self.assertTrue(AnnouncementReceipt.objects.get(user=self.user, announcement=item).dismissed_at)
+
 
 class AdminTests(TestCase):
     def setUp(self):
@@ -158,3 +186,15 @@ class AdminTests(TestCase):
         staff = User.objects.create_user("staff", password="x", is_staff=True)
         self.client.force_login(staff)
         self.assertEqual(self.client.get(reverse("app_admin:announcements")).status_code, 302)
+
+    def test_install_action_sets_audience_and_permanent_dismissal_without_custom_url(self):
+        self.client.post(reverse("app_admin:announcement_new"), self.payload(
+            action="publish", link_kind="pwa", cta_label="", audience="all", dismissible="",
+            link_url="https://example.com", link_screen="quiz", link_param="anything",
+        ))
+        item = AppAnnouncement.objects.get()
+        self.assertEqual((item.link_kind, item.cta_label, item.audience, item.dismissible), ("pwa", "نصب", "web_new", True))
+        self.assertEqual((item.link_url, item.link_screen, item.link_param), ("", "", ""))
+        page = self.client.get(reverse("app_admin:announcement", args=[item.pk]))
+        self.assertContains(page, "نصب وب‌اپ (PWA)")
+        self.assertContains(page, "دیگر نشان نده")

@@ -12,6 +12,7 @@ import { toneColors } from "@/theme/tone";
 import { ModelInfo, resultText, valueKind } from "@/utils/calculatorModel";
 import { Severity, severityLevels, severityOfText } from "@/utils/severity";
 import { ltrNumbers } from "@/utils/html";
+import { choiceLabels } from "@/utils/calculatorLabels";
 
 /** What every result layout receives. `results` are the ones that have an
  * answer to show, in the calculator's own order. */
@@ -452,7 +453,7 @@ export function describeInputs(
     const label = strip(isFa && q.title_fa ? q.title_fa : q.title).replace(/[?؟]\s*$/, "");
     if (q.type === "multiple_choice") {
       const c = q.choices[choiceIndexes[q.position] ?? -1];
-      if (c) out.push({ label, value: strip(isFa && c.title_primary_fa ? c.title_primary_fa : c.title_primary) });
+      if (c) out.push({ label, value: choiceLabels(c, isFa).join("\n") });
     } else if (q.type === "numeric_input") {
       const unit = q.units[unitIndexes[q.position] ?? 0] ?? q.units[0];
       const typed = Number((v / factorOf(unit)).toPrecision(8));

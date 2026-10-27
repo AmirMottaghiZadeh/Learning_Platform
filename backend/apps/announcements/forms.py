@@ -40,6 +40,8 @@ class AnnouncementForm(forms.ModelForm):
         kind = data.get("link_kind") or ""
         if kind == AppAnnouncement.LINK_NONE:
             data["cta_label"], data["link_url"], data["link_screen"], data["link_param"] = "", "", "", ""
+        elif kind == AppAnnouncement.LINK_PWA:
+            data.update(cta_label="نصب", link_url="", link_screen="", link_param="", audience=AppAnnouncement.AUDIENCE_WEB_NEW, dismissible=True)
         else:
             if not (data.get("cta_label") or "").strip():
                 self.add_error("cta_label", "دکمه متن لازم دارد؛ مثلاً «دریافت نسخه».")

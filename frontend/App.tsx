@@ -10,6 +10,7 @@ import { LanguageProvider, useLang } from "@/i18n/LanguageProvider";
 import { Navigator } from "@/navigation/Navigator";
 import { useOfflineBoot } from "@/offline/boot";
 import { registerServiceWorker } from "@/offline/serviceWorker";
+import { initializeInstall } from "@/pwa/install";
 import { useAuth } from "@/store/auth";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { useAppFonts } from "@/theme/fonts";
@@ -17,6 +18,7 @@ import { TourProvider } from "@/tour/TourContext";
 import { TourOverlay } from "@/tour/TourOverlay";
 
 registerServiceWorker();
+initializeInstall();
 
 /** Status bar text dark on the light theme, light on the dark one -- "auto"
  * would follow the phone's dark mode, not the app's theme. */

@@ -17,15 +17,17 @@ class AppAnnouncement(models.Model):
     KIND_CHOICES = [(KIND_NEWS, "خبر"), (KIND_UPDATE, "به‌روزرسانی"), (KIND_WARNING, "هشدار"), (KIND_OFFER, "پیشنهاد")]
 
     AUDIENCE_ALL, AUDIENCE_FREE, AUDIENCE_SUBSCRIBERS, AUDIENCE_OLD_APP = "all", "free", "subscribers", "old_app"
+    AUDIENCE_WEB_NEW = "web_new"
     AUDIENCE_CHOICES = [
         (AUDIENCE_ALL, "همهٔ کاربران"),
         (AUDIENCE_FREE, "فقط کاربران رایگان"),
         (AUDIENCE_SUBSCRIBERS, "فقط مشترک‌ها"),
         (AUDIENCE_OLD_APP, "نسخهٔ اپ قدیمی‌تر از…"),
+        (AUDIENCE_WEB_NEW, "کاربران وب که وب‌اپ را نصب نکرده‌اند"),
     ]
 
-    LINK_NONE, LINK_URL, LINK_APP = "", "url", "app"
-    LINK_CHOICES = [(LINK_NONE, "بدون دکمه"), (LINK_URL, "نشانی وب"), (LINK_APP, "بخشی از اپ")]
+    LINK_NONE, LINK_URL, LINK_APP, LINK_PWA = "", "url", "app", "pwa"
+    LINK_CHOICES = [(LINK_NONE, "بدون دکمه"), (LINK_URL, "نشانی وب"), (LINK_APP, "بخشی از اپ"), (LINK_PWA, "نصب وب‌اپ (PWA)")]
     # Where an in-app button can go (frontend components/announcements/links.ts).
     SCREEN_CHOICES = [
         ("lessons", "درسنامه"),
@@ -96,7 +98,7 @@ class AppAnnouncement(models.Model):
 
     @property
     def has_button(self):
-        return bool(self.cta_label) and self.link_kind in (self.LINK_URL, self.LINK_APP)
+        return self.link_kind == self.LINK_PWA or (bool(self.cta_label) and self.link_kind in (self.LINK_URL, self.LINK_APP))
 
 
 class AnnouncementReceipt(models.Model):

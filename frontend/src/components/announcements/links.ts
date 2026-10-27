@@ -30,6 +30,7 @@ const SCREENS: Record<string, (nav: Nav, param: string) => void> = {
 /** Follow an announcement's button: a web page in the browser, or a part
  * of the app. An unknown screen (a newer backend) does nothing. */
 export function openButton(button: AnnouncementButton, nav: Nav) {
+  if (button.kind === "pwa") return;
   if (button.kind === "url") {
     if (/^https?:\/\//.test(button.url)) Linking.openURL(button.url).catch(() => undefined);
     return;

@@ -52,7 +52,7 @@ function decodeEntities(text: string): string {
 /** Strips a fragment of inline HTML down to one line of plain text --
  * for short strings (titles, labels) where structure doesn't matter. */
 export function stripHtml(fragment: string): string {
-  return decodeEntities(fragment.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+  return decodeEntities(fragment.replace(/<br\s*\/?>/gi, " ").replace(/<\/?[a-z][^>]*>/gi, "")).replace(/\s+/g, " ").trim();
 }
 
 /** Like `stripHtml`, but keeps paragraph/list-item breaks as newlines --
@@ -61,7 +61,7 @@ export function stripHtml(fragment: string): string {
 export function htmlToParagraphs(html: string): string {
   if (!html) return "";
   const withBreaks = html.replace(/<\/(p|li|div)>|<br\s*\/?>/gi, "\n");
-  return decodeEntities(withBreaks.replace(/<[^>]+>/g, ""))
+  return decodeEntities(withBreaks.replace(/<\/?[a-z][^>]*>/gi, ""))
     .split("\n")
     .map((line) => line.replace(/\s+/g, " ").trim())
     .filter(Boolean)

@@ -103,8 +103,8 @@ export const releaseApi = {
 
 // Messages from the admin (backend apps.announcements), shown on home.
 export const announcementsApi = {
-  list: (versionCode: number) =>
-    apiClient.get<AppAnnouncement[]>("/announcements/", { params: { version_code: versionCode } }).then((r) => r.data),
+  list: (versionCode: number, pwaState: "browser" | "standalone" | "native") =>
+    apiClient.get<AppAnnouncement[]>("/announcements/", { params: { version_code: versionCode, pwa_state: pwaState } }).then((r) => r.data),
   event: (id: number, event: AnnouncementEvent) =>
     apiClient.post(`/announcements/${id}/event/`, { event }).then(() => undefined),
 };

@@ -8,6 +8,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { unitFactorOf } from "@/utils/calculatorEngine";
 import { stripHtml } from "@/utils/html";
+import { calculatorLabel, choiceLabels } from "@/utils/calculatorLabels";
 
 import { DateInput, DaysInput } from "../DateInput";
 
@@ -34,12 +35,15 @@ export function isBinaryQuestion(question: CalculatorQuestion, isFa: boolean) {
   return (
     question.type === "multiple_choice" &&
     question.choices.length === 2 &&
-    question.choices.every((c) => stripHtml(isFa && c.title_primary_fa ? c.title_primary_fa : c.title_primary).length <= 22)
+    question.choices.every((c) => {
+      const labels = choiceLabels(c, isFa);
+      return labels.length === 1 && labels[0].length <= 22;
+    })
   );
 }
 
 function label(question: CalculatorQuestion, isFa: boolean) {
-  return stripHtml(isFa && question.title_fa ? question.title_fa : question.title);
+  return calculatorLabel(isFa && question.title_fa ? question.title_fa : question.title, isFa);
 }
 
 function Weight({ factor }: { factor: number }) {
@@ -57,10 +61,12 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights }: F
   const { isFa, row } = useLang();
   const options = question.choices.map((choice, i) => {
     const factor = choice.answer_factor !== null ? parseFloat(choice.answer_factor) : NaN;
+    const labels = choiceLabels(choice, isFa);
     return {
       i,
       factor,
-      text: stripHtml(isFa && choice.title_primary_fa ? choice.title_primary_fa : choice.title_primary),
+      text: labels.join("\n"),
+      hasSecondary: labels.length > 1,
       selected: choiceIndex === i && value !== undefined,
       weight: weights?.[i] ?? null,
     };
@@ -91,7 +97,9 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights }: F
             style={{
               paddingHorizontal: 12,
               paddingVertical: 6,
-              borderRadius: 999,
+              maxWidth: "100%",
+              width: o.hasSecondary ? "100%" : undefined,
+              borderRadius: o.hasSecondary ? 12 : 999,
               borderWidth: 1,
               borderColor: o.selected ? colors.accent : colors.trackBg,
               backgroundColor: o.selected ? `${colors.accent}1a` : colors.softBg,
@@ -242,8 +250,8 @@ function Numeric({ question, variant, value, unitIndex, onChange, onUnit }: Fiel
       {big && (unit?.min_value || unit?.max_value) ? (
         <AppText muted weight="600" size={11.5} style={{ writingDirection: isFa ? "rtl" : "ltr", textAlign: isFa ? "right" : "left" }}>
           {t("calcAllowed")}:{" "}
-          <AppText weight="700" size={11.5} muted style={{ writingDirection: "ltr" }}>
-            {[unit?.min_value ? Number(unit.min_value) : "", unit?.max_value ? Number(unit.max_value) : ""].join(" – ").replace(/^ – (.+)$/, "≤ $1").replace(/^(.+) – $/, "≥ $1")}
+          <AppText weight="700" size={11.5} muted>
+            {calculatorLabel([unit?.min_value ? Number(unit.min_value) : "", unit?.max_value ? Number(unit.max_value) : ""].join(" – ").replace(/^ – (.+)$/, "≤ $1").replace(/^(.+) – $/, "≥ $1"), isFa)}
             {unit ? ` ${stripHtml(isFa && unit.title_fa ? unit.title_fa : unit.title)}` : ""}
           </AppText>
         </AppText>
@@ -297,7 +305,7 @@ export function QuestionField(props: FieldProps) {
   if (question.type === "days_input") {
     return <DaysInput question={question} value={props.value} onChange={props.onChange} />;
   }
-  const help = stripHtml(isFa && question.more_information_fa ? question.more_information_fa : question.more_information ?? "");
+  const help = calculatorLabel(isFa && question.more_information_fa ? question.more_information_fa : question.more_information ?? "", isFa);
   const card = variant === "card";
   const title = (
     <View style={{ gap: 3, flex: 1 }}>

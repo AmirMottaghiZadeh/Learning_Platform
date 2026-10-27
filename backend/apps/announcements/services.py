@@ -25,7 +25,7 @@ def _for_audience(item, *, subscriber, app_code):
     return True
 
 
-def for_user(user, app_code=None, when=None):
+def for_user(user, app_code=None, when=None, *, pwa_state=None):
     """What `user`'s app shows now: published ones in their time window and
     audience, and drafts sent to them to test; none they closed. Pinned
     first, then the newest. Each comes with its receipt (or None)."""
@@ -42,8 +42,12 @@ def for_user(user, app_code=None, when=None):
     subscriber = _is_subscriber(user, now)
     out = []
     for item in items:
+        # Older clients never receive a button action they cannot handle.
+        # A test draft must respect this too: native/standalone cannot install.
+        if (item.link_kind == AppAnnouncement.LINK_PWA or item.audience == AppAnnouncement.AUDIENCE_WEB_NEW) and pwa_state != "browser":
+            continue
         receipt = receipts.get(item.pk)
-        if receipt and receipt.dismissed_at and item.dismissible:
+        if receipt and receipt.dismissed_at and (item.dismissible or item.link_kind == AppAnnouncement.LINK_PWA):
             continue
         if item.test_user_id != user.pk and not _for_audience(item, subscriber=subscriber, app_code=app_code):
             continue
@@ -65,7 +69,7 @@ def record(user, item, event):
     if event == "click" and receipt.clicked_at is None:
         receipt.clicked_at = now
         fields.append("clicked_at")
-    if event == "dismiss" and item.dismissible and receipt.dismissed_at is None:
+    if event == "dismiss" and (item.dismissible or item.link_kind == AppAnnouncement.LINK_PWA) and receipt.dismissed_at is None:
         receipt.dismissed_at = now
         fields.append("dismissed_at")
     if fields:

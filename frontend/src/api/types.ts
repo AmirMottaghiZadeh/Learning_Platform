@@ -752,8 +752,8 @@ export type AnnouncementKind = "news" | "update" | "warning" | "offer";
 
 export type AnnouncementButton = {
   label: string;
-  /** "url": open `url`; "app": go to `screen` (with `param`) in the app */
-  kind: "url" | "app";
+  /** "url": open `url`; "app": navigate; "pwa": request browser installation */
+  kind: "url" | "app" | "pwa";
   url: string;
   screen: string;
   param: string;
@@ -776,4 +776,3 @@ export type AppAnnouncement = {
 };
 
 export type AnnouncementEvent = "seen" | "click" | "dismiss";
-

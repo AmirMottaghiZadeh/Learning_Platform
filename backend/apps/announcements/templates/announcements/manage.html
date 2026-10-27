@@ -143,6 +143,7 @@
         <div class="an-pills" role="radiogroup" aria-label="دکمه">
           {% for value, label in form.fields.link_kind.choices %}<label><input type="radio" name="link_kind" value="{{ value }}"{% if form.link_kind.value|default_if_none:'' == value %} checked{% endif %}><span>{{ label }}</span></label>{% endfor %}
         </div>
+        <p class="mg-calm" data-show-link="pwa">دو دکمهٔ «نصب» و «دیگر نشان نده» نمایش داده می‌شود؛ فقط در مرورگر کاربرانی که وب‌اپ را نصب نکرده‌اند. بستن برای حساب کاربر ذخیره می‌شود. نصب با تأیید مرورگر انجام می‌شود؛ در آیفون راهنمای افزودن به صفحهٔ اصلی نمایش داده می‌شود.</p>
         <div class="an-row" data-show-link="url app">
           <label class="an-field">متن دکمه
             <input type="text" name="cta_label" id="f-cta" value="{{ form.cta_label.value|default_if_none:'' }}" maxlength="30" placeholder="مثلاً «دریافت نسخه»">
@@ -232,7 +233,7 @@
               <div class="pv-top"><span class="pv-chip" id="pv-chip"><svg viewBox="0 0 24 24" id="pv-icon"></svg><span id="pv-kind">خبر</span></span><span class="x" id="pv-x">×</span></div>
               <div class="pv-title" id="pv-title">عنوان اعلان</div>
               <div class="pv-text" id="pv-text">متن اعلان اینجا دیده می‌شود.</div>
-              <div class="pv-acts"><span class="pv-btn" id="pv-btn">دکمه</span><span class="pv-later">بعداً</span></div>
+              <div class="pv-acts"><span class="pv-btn" id="pv-btn">دکمه</span><span class="pv-later" id="pv-later">بعداً</span></div>
             </div>
             <div class="an-ghost"></div><div class="an-ghost"></div><div class="an-ghost"></div>
           </div>
@@ -266,6 +267,11 @@
   }
   function paint() {
     var kind = val("kind") || "news", link = val("link_kind"), audience = val("audience"), scr = val("link_screen");
+    if (link === "pwa") {
+      $("#f-audience").value = audience = "web_new";
+      $("#f-dismissible").checked = true;
+    }
+    Array.from($("#f-audience").options).forEach(function (o) { o.disabled = link === "pwa" && o.value !== "web_new"; });
     form.querySelectorAll("[data-show-link]").forEach(function (el) { el.hidden = el.dataset.showLink.split(" ").indexOf(link) < 0; });
     form.querySelectorAll("[data-show-screen]").forEach(function (el) { el.hidden = link !== "app" || el.dataset.showScreen !== scr; });
     form.querySelectorAll("[data-show-audience]").forEach(function (el) { el.hidden = el.dataset.showAudience !== audience; });
@@ -276,10 +282,11 @@
     chip.className = "pv-chip pv-" + kind;
     document.getElementById("pv-kind").textContent = labels[kind] || "";
     document.getElementById("pv-icon").innerHTML = icons[kind] || "";
-    var btn = document.getElementById("pv-btn"), label = $("#f-cta").value;
+    var btn = document.getElementById("pv-btn"), label = link === "pwa" ? "نصب" : $("#f-cta").value;
     btn.hidden = !link || !label;
     btn.textContent = label;
-    document.getElementById("pv-x").hidden = !$("#f-dismissible").checked;
+    document.getElementById("pv-x").hidden = link === "pwa" || !$("#f-dismissible").checked;
+    document.getElementById("pv-later").textContent = link === "pwa" ? "دیگر نشان نده" : "بعداً";
   }
   form.addEventListener("input", paint);
   form.addEventListener("change", paint);
