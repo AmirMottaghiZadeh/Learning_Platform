@@ -197,12 +197,14 @@
 
 ## دانلود آفلاین (`src/offline/`)
 
+مسیر دقیق فایل‌ها در هر پلتفرم، شرایط حفظ دانلودها پس از آپدیت اپ و روش جایگزینی بستهٔ دیتابیس در [13-offline-storage.md](13-offline-storage.md) مستند شده است.
+
 هر بخش نسخهٔ بومی (`.ts`) و نسخهٔ وب (`.web.ts`) دارد:
 
 | فایل | اندروید و iOS | وب |
 |---|---|---|
 | `crypto` | رمزگشایی AES-GCM با `expo-crypto`؛ کلید در SecureStore | Web Crypto؛ کلید غیرقابل‌استخراج در IndexedDB (`pharmenta-offline`) |
-| `files` | `expo-file-system` در `Documents/offline/<dataset>/<build>`؛ بررسی MD5 | OPFS (فضای خصوصی مرورگر)؛ بررسی حجم |
+| `files` | `expo-file-system` در `Paths.document/offline/<dataset>/<build>`؛ بررسی MD5 | OPFS (فضای خصوصی مرورگر)؛ بررسی حجم |
 | `downloader` | دانلود واقعی پس‌زمینه (`react-native-background-downloader`)، تنظیم «فقط Wi‑Fi» | Web Worker با ادامه از همان نقطه (Range)؛ فقط تا وقتی صفحه باز است |
 | `serviceWorker` | بی‌کار | ثبت `public/sw.js` |
 
