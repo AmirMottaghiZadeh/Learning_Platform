@@ -1,0 +1,81 @@
+{% load static billing_extras website_extras %}<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{ meta_title }}</title>
+<meta name="description" content="{{ meta_description|oneline }}">
+{% if meta_noindex %}<meta name="robots" content="noindex, follow">{% endif %}
+{% if meta_canonical %}<link rel="canonical" href="{{ meta_canonical }}">{% endif %}
+<meta property="og:site_name" content="{{ site.site_name }}">
+<meta property="og:locale" content="fa_IR">
+<meta property="og:type" content="{{ meta_type|default:'website' }}">
+<meta property="og:title" content="{{ meta_title }}">
+<meta property="og:description" content="{{ meta_description|oneline }}">
+{% if meta_canonical %}<meta property="og:url" content="{{ meta_canonical }}">{% endif %}
+<meta property="og:image" content="{{ meta_image|default:og_default }}"><meta property="og:image:alt" content="{{ site.site_name }}">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{{ meta_title }}"><meta name="twitter:description" content="{{ meta_description|oneline }}"><meta name="twitter:image" content="{{ meta_image|default:og_default }}">
+{% if site.google_verification %}<meta name="google-site-verification" content="{{ site.google_verification }}">{% endif %}
+<meta name="theme-color" content="#EDF5F0">
+<link rel="alternate" type="application/rss+xml" title="{{ site.site_name }}" href="{% url 'site:feed' %}">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="{% static 'website/fonts/Vazirmatn_500Medium.woff2' %}" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{% static 'website/fonts/Vazirmatn_900Black.woff2' %}" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{% static 'website/site.css' %}">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+{% block head %}{% endblock %}
+{{ structured_data }}
+{{ site.analytics_head|safe }}
+</head>
+<body>
+<a class="skip" href="#main">رفتن به محتوا</a>
+{% if site.bar_enabled and site.bar_text %}
+<div class="ab"><div class="wrap"><span>{{ site.bar_text }}</span>{% if site.bar_url %}<a href="{{ site.bar_url }}">{{ site.bar_link_text|default:"بیشتر بخوانید" }}</a>{% endif %}</div></div>
+{% endif %}
+<header class="hdr" id="hdr">
+  <div class="wrap">
+    <a class="logo" href="{% url 'site:home' %}" aria-label="{{ site.site_name }}"><img src="{% static 'website/img/app-logo.png' %}" width="40" height="40" alt="">{{ site.site_name }}</a>
+    <nav class="nav" id="nav" aria-label="منوی اصلی">
+      {% for item in menus.header %}{% nav_on request.path item.url as active %}<a href="{{ item.url }}" class="{% if active %}on{% endif %}"{% if item.new_tab %} target="_blank" rel="noopener"{% endif %}>{{ item.label }}</a>{% endfor %}
+    </nav>
+    <div class="grow"></div>
+    <div class="acts">
+      <button class="icon-btn" id="theme" type="button" aria-label="تغییر تم روشن و تیره"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 13a8 8 0 11-10-10 6.5 6.5 0 0010 10z"/></svg></button>
+      {% if request.user.is_authenticated %}<a class="btn s" href="{% url 'site:account' %}">حساب من</a>{% else %}<a class="btn s" href="{% url 'site:login' %}">ثبت‌نام / ورود</a>{% endif %}
+      <a class="btn p s hide-s" href="{% url 'site:download' %}">دانلود اپ</a>
+      <button class="icon-btn menu-btn" id="menu" type="button" aria-label="باز کردن منو" aria-expanded="false" aria-controls="nav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+{% if messages %}<div class="flash" role="status">{% for m in messages %}<div class="{{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+<main id="main"{% if nav != "home" %} class="inner"{% endif %}>{% block content %}{% endblock %}</main>
+<footer class="ft">
+  <div class="wrap">
+    <div>
+      <a class="logo" href="{% url 'site:home' %}"><img src="{% static 'website/img/app-logo.png' %}" width="40" height="40" alt="" loading="lazy">{{ site.site_name }}</a>
+      <p class="about">{{ site.tagline }}</p>
+      {% if site.socials %}<div class="social">{% for key, label, url in site.socials %}<a href="{{ url }}" rel="noopener" target="_blank">{{ label }}</a>{% endfor %}</div>{% endif %}
+      {% if site.contact_email %}<p class="about" dir="ltr" style="text-align:right">{{ site.contact_email }}</p>{% endif %}
+    </div>
+    <div><h4>محصول</h4>{% for item in menus.foot_product %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
+    <div><h4>منابع</h4>{% for item in menus.foot_resources %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
+    <div><h4>شرکت</h4>{% for item in menus.foot_company %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
+    {% if nav == "home" %}
+      <div class="trustbar">
+        <div><b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z"/><path d="M8.8 12.2l2.2 2.2 4.4-4.6"/></svg>نماد اعتماد الکترونیکی</b><span>{{ site.site_name }} نماد اعتماد الکترونیکی (اینماد) دارد. برای دیدن اطلاعات آن روی نماد بزنید.</span></div>
+        {% comment %}eNamad's code, kept as issued: the referrerpolicy attributes let its
+        server see which site shows the seal despite our same-origin policy{% endcomment %}
+        <div class="seal"><a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8214551&Code=bPdud0H5Uf2XbmxNnJXDamdKRmBiNbQ4'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8214551&Code=bPdud0H5Uf2XbmxNnJXDamdKRmBiNbQ4' alt='' style='cursor:pointer' code='bPdud0H5Uf2XbmxNnJXDamdKRmBiNbQ4'></a></div>
+      </div>
+    {% endif %}
+    <div class="dis"><span>{{ site.footer_note }}</span><span>© {{ site.copyright_text }}</span></div>
+  </div>
+  <div class="ft-name" aria-hidden="true">{{ site.site_name }}</div>
+</footer>
+<script src="{% static 'website/site.js' %}" defer></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Git
+.git
+.gitignore
+
+# Backend
+backend/
+
+# Frontend outputs
+frontend/node_modules
+frontend/dist
+frontend/coverage
+frontend/.expo
+
+# Python
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store

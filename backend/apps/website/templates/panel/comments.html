@@ -1,0 +1,25 @@
+{% extends "panel/base.html" %}
+{% load website_extras billing_extras %}
+{% block title %}نظرات{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>نظرات</h1><div class="sub">تأیید، پاسخ و مدیریت نظرهای خوانندگان</div></div></div>
+<div class="tabs">{% for key, label, n in tabs %}<a class="{% if key == status %}on{% endif %}" href="?status={{ key }}">{{ label }} <span class="num">{{ n|fa }}</span></a>{% endfor %}</div>
+<div class="toolbar"><form method="get"><input type="hidden" name="status" value="{{ status }}"><label class="sr" for="q">جستجو</label><input class="inp" id="q" name="q" value="{{ q }}" placeholder="جستجو در نام، ایمیل یا متن" style="width:260px"><button class="btn" type="submit">جستجو</button></form></div>
+<form method="post" action="{% url 'panel:comment_action' %}">{% csrf_token %}
+<div class="card" style="padding:6px 8px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th style="width:34px"><input class="chk" type="checkbox" data-all aria-label="انتخاب همه"></th><th>نظر</th><th>مطلب</th><th>زمان</th><th></th></tr></thead><tbody>
+{% for c in page.object_list %}<tr><td><input class="chk" type="checkbox" name="ids" value="{{ c.pk }}" aria-label="انتخاب"></td>
+<td><b>{{ c.name }}</b>{% if c.is_staff_reply %} <span class="chip ok">تیم سایت</span>{% endif %}{% if c.parent_id %} <span class="chip">پاسخ</span>{% endif %} <span class="sm" dir="ltr">{{ c.email }}</span><div style="max-width:520px;margin-top:2px">{{ c.body|linebreaksbr }}</div></td>
+<td><a href="{{ c.post.get_absolute_url|on_site }}#comments" target="_blank" rel="noopener" style="color:var(--accent)">{{ c.post.title|truncatechars:40 }}</a></td><td class="sm">{{ c.created_at|jdate:"time" }}</td>
+<td><div class="ac">
+  <button class="btn s" type="submit" name="action" value="approve" formaction="{% url 'panel:comment_action' %}?one={{ c.pk }}"><svg class="i"><use href="#i-check"/></svg>تأیید</button>
+  <button class="btn s" type="button" data-reply="{{ c.pk }}" data-name="{{ c.name }}">پاسخ</button>
+  <button class="btn s danger" type="submit" name="action" value="trash" formaction="{% url 'panel:comment_action' %}?one={{ c.pk }}" aria-label="زباله‌دان"><svg class="i"><use href="#i-trash"/></svg></button>
+</div></td></tr>
+{% empty %}<tr><td colspan="5" class="empty">نظری در این بخش نیست.</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="toolbar" style="margin-top:4px"><span class="sm" style="color:var(--muted)">برای موارد انتخاب‌شده:</span>
+  <button class="btn s" type="submit" name="action" value="approve">تأیید</button><button class="btn s" type="submit" name="action" value="spam">هرزنامه</button><button class="btn s" type="submit" name="action" value="trash">زباله‌دان</button><button class="btn s" type="submit" name="action" value="pending">بازگرداندن به انتظار</button><button class="btn s danger" type="submit" name="action" value="delete" data-confirm-bulk>حذف دائمی</button></div>
+</form>
+{% include "panel/_pagination.html" %}
+<dialog id="reply-dialog"><form method="post" action="{% url 'panel:comment_action' %}">{% csrf_token %}<div class="dh"><span id="reply-title">پاسخ</span></div><input type="hidden" name="action" value="reply"><input type="hidden" name="ids" id="reply-id">
+<div class="db"><label class="sr" for="reply-text">پاسخ</label><textarea class="inp ta" id="reply-text" name="reply" required maxlength="2000" placeholder="پاسخ شما به نام تیم سایت نمایش داده می‌شود"></textarea></div><div class="df"><button class="btn p" type="submit">ثبت پاسخ</button><button class="btn" type="button" data-close>انصراف</button></div></form></dialog>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "website/base.html" %}
+{% load billing_extras %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumbs" aria-label="مسیر"><a href="{% url 'site:home' %}">خانه</a> ‹ دارونامه</nav>
+  <header class="dn-head">
+    <h1>دارونامهٔ فارمنتا</h1>
+    <p class="lead">دارونامهٔ فارسی برای دانشجویان داروسازی، پزشکی و داروسازان: <b>مکانیسم اثر</b>، <b>موارد مصرف</b> و <b>عوارض جانبی</b> هر دارو به زبان ساده، بر پایهٔ برچسب رسمی دارو. در این صفحه {{ total|fa }} دارو از {% for g in groups %}{% if not forloop.first %}، {% endif %}دستهٔ {{ g.name }}{% endfor %} آمده است؛ درس‌نامهٔ کامل همهٔ داروها با فلش‌کارت و آزمون در اپ {{ site.site_name }} است.</p>
+    <form class="search dn-search" role="search" onsubmit="return false"><label class="sr" for="dn-q">جست‌وجوی دارو</label><input class="input" id="dn-q" type="search" placeholder="نام دارو را بنویسید (فارسی یا انگلیسی)" autocomplete="off" data-drug-filter></form>
+  </header>
+
+  {% for g in groups %}
+  <section class="dn-cat" id="{{ g.code|lower }}">
+    <h2>{{ g.name }} <small>{{ g.count|fa }} دارو · ATC {{ g.code }}</small></h2>
+    {% for s in g.subgroups %}
+    <div class="dn-sub" data-drug-group>
+      <h3>{{ s.name }} <span dir="ltr">{{ s.code }}</span></h3>
+      <ul class="dn-list">{% for d in s.drugs %}<li data-drug-name="{{ d.name_fa }} {{ d.name }}"><a href="{% url 'site:drug' d.slug %}"><b>{{ d.name_fa }}</b>{% if d.name_fa|lower != d.name|lower %}<span dir="ltr">{{ d.name }}</span>{% endif %}</a></li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </section>
+  {% endfor %}
+  <p class="dn-empty" data-drug-empty hidden>دارویی با این نام در این بخش نیست. درس‌نامهٔ همهٔ داروها در اپ {{ site.site_name }} است.</p>
+
+  <aside class="dn-cta">
+    <div><b>همهٔ داروها، کامل، در اپ {{ site.site_name }}</b><p>دوز، منع مصرف، تداخلات، بارداری و هشدارهای هر دارو، به‌همراه فلش‌کارت لایتنر و آزمون؛ برای بیش از ۱۷۰۰ دارو.</p></div>
+    <div class="row"><a class="btn p" href="{{ site.app_url }}">ورود به وب‌اپ</a><a class="btn" href="{% url 'site:download' %}">دانلود اپ</a></div>
+  </aside>
+  <p class="dn-note">این دارونامه برای آموزش تهیه شده و جایگزین تجویز پزشک یا مشورت با داروساز نیست.</p>
+</div>
+<script>
+(function(){var q=document.querySelector("[data-drug-filter]");if(!q)return;
+var fold=function(s){return s.toLowerCase().replace(/ي/g,"ی").replace(/ك/g,"ک").replace(/[‌\s]/g,"")};
+q.addEventListener("input",function(){var v=fold(q.value),any=false;
+document.querySelectorAll("[data-drug-group]").forEach(function(g){var shown=0;
+g.querySelectorAll("[data-drug-name]").forEach(function(li){var hit=!v||fold(li.getAttribute("data-drug-name")).indexOf(v)>-1;li.hidden=!hit;if(hit)shown++});
+g.hidden=!shown;if(shown)any=true});
+document.querySelectorAll(".dn-cat").forEach(function(c){c.hidden=!c.querySelector("[data-drug-group]:not([hidden])")});
+document.querySelector("[data-drug-empty]").hidden=any})})();
+</script>
+{% endblock %}

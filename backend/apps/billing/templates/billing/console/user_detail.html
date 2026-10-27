@@ -1,0 +1,159 @@
+{% extends "billing/console/base.html" %}
+{% load billing_extras %}
+{% block title %}{{ label }}{% endblock %}
+{% block style %}
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tabs a { min-height: 40px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 12px; background: var(--card); color: var(--ink); font-weight: 800; text-decoration: none; }
+  .tabs a:hover { background: var(--ink); color: #FFFFFF; }
+  .ent { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line-2); }
+  .ent:first-of-type { border-top: 0; }
+{% endblock %}
+{% block content %}
+  <a href="{% url 'console:users' %}?u={{ u.pk }}" class="sub" style="text-decoration:none">‹ بازگشت به کاربران</a>
+  <div class="card row" style="gap:18px">
+    <span class="avatar" style="width:72px;height:72px;border-radius:22px;font-size:30px;background:var(--accent);color:#FFFFFF">{{ label|initial }}</span>
+    <div class="stack grow" style="gap:4px;flex:1 1 260px">
+      <div class="row" style="gap:10px"><h1 style="font-size:26px">{{ label }}</h1>{% if not u.is_active %}<span class="chip deny">مسدود</span>{% endif %}{% if u.is_superuser %}<span class="chip spec">سوپریوزر</span>{% elif u.is_staff %}<span class="chip spec">کارمند</span>{% endif %}</div>
+      <span class="sub">{{ field }}{% if contact %} · <span class="ltr">{{ contact }}</span>{% endif %} · عضو از {{ u.date_joined|jdate }} · آخرین ورود {{ u.last_login|ago|default:"—" }}</span>
+    </div>
+    <div class="row" style="gap:8px">
+      <a class="btn primary" href="#grant">دادن پلن یا محصول</a>
+      <form method="post" action="{% url 'console:user_logout_all' u.pk %}" onsubmit="return confirm('کاربر از همه‌ی دستگاه‌ها خارج شود؟')">{% csrf_token %}<button class="btn" type="submit">خروج از همه‌ی دستگاه‌ها</button></form>
+      {% if u.is_active %}
+        <form method="post" action="{% url 'console:user_block' u.pk %}" onsubmit="return confirm('این حساب مسدود و از همه‌ی دستگاه‌ها خارج شود؟')">{% csrf_token %}<input type="hidden" name="block" value="1"><button class="btn danger" type="submit">مسدود کردن</button></form>
+      {% else %}
+        <form method="post" action="{% url 'console:user_block' u.pk %}">{% csrf_token %}<input type="hidden" name="block" value="0"><button class="btn" type="submit">رفع مسدودی</button></form>
+      {% endif %}
+    </div>
+  </div>
+
+  <nav class="tabs" aria-label="بخش‌های پرونده">
+    <a href="#access">اشتراک و دسترسی‌ها</a><a href="#usage">مصرف</a><a href="#payments">پرداخت‌ها</a><a href="#devices">دستگاه‌ها</a><a href="#roles">نقش‌ها</a><a href="#log">گزارش تغییرات</a><a href="#delete" style="color:var(--deny)">حذف حساب</a>
+  </nav>
+
+  <div class="grid g2" style="align-items:start">
+    <section class="card" id="access" aria-labelledby="h-access">
+      <h2 id="h-access">اشتراک‌ها و محصولات</h2>
+      <div style="margin-top:8px">
+      {% for row in entitlements %}{% with e=row.e %}
+        <div class="ent">
+          <div class="stack grow" style="gap:2px;flex:1 1 200px">
+            <b>{{ e.plan.name_fa }} <span class="chip {% if row.active %}accent{% elif e.revoked_at %}deny{% endif %}">{% if row.active %}فعال{% elif e.revoked_at %}لغوشده{% elif e.starts_at > now %}در صف{% else %}تمام‌شده{% endif %}</span></b>
+            <span class="sub" style="font-size:12.5px">{{ e.starts_at|jdate }} تا {% if e.ends_at %}{{ e.ends_at|jdate }}{% else %}همیشه{% endif %} · {{ e.get_source_display }}{% if e.granted_by %} توسط {{ e.granted_by.get_username }}{% endif %}{% if e.note %} · {{ e.note }}{% endif %}</span>
+          </div>
+          {% if not e.revoked_at %}
+            {% if e.ends_at %}
+            <form method="post" action="{% url 'console:entitlement_extend' u.pk e.pk %}" class="row" style="gap:6px">
+              {% csrf_token %}
+              <label for="ext-{{ e.pk }}" style="position:absolute;width:1px;height:1px;overflow:hidden">تعداد روز تمدید</label>
+              <input class="fld" id="ext-{{ e.pk }}" name="days" inputmode="numeric" placeholder="روز" style="width:80px;min-height:36px">
+              <button class="btn small primary" type="submit">تمدید</button>
+            </form>
+            {% endif %}
+            <form method="post" action="{% url 'console:entitlement_revoke' u.pk e.pk %}" onsubmit="return confirm('این دسترسی لغو شود؟')">{% csrf_token %}<button class="btn small danger" type="submit">لغو</button></form>
+          {% endif %}
+        </div>
+      {% endwith %}{% empty %}
+        <p class="sub">هنوز خرید یا دسترسی‌ای ندارد؛ فقط پلن رایگان.</p>
+      {% endfor %}
+      </div>
+    </section>
+
+    <section class="card" id="grant" aria-labelledby="h-grant">
+      <h2 id="h-grant" style="margin-bottom:12px">دادن پلن یا محصول</h2>
+      {% with target=u %}{% include "billing/console/_grant_form.html" %}{% endwith %}
+    </section>
+  </div>
+
+  <section class="card" id="usage" aria-labelledby="h-usage">
+    <h2 id="h-usage">دسترسی‌ها و مصرف امروز و این ماه</h2>
+    <div class="stack" style="gap:0;margin-top:8px">
+      {% for f in features %}
+        <div class="row" style="padding:10px 0;border-top:1px solid var(--line-2)">
+          <b class="grow" style="flex:1 1 200px">{{ f.name }}</b>
+          <span class="sub" style="flex:0 1 220px;font-size:12.5px">از: {{ f.sources }}</span>
+          <span class="stack" style="flex:0 1 220px;gap:4px">
+            {% if f.limit %}
+              <span class="sub" style="font-size:12.5px">{{ f.used|num }} از {{ f.limit|num }} {{ f.unit }} {{ f.period }}</span>
+              <span class="bar"><i style="width:{{ f.pct }}%"></i></span>
+            {% else %}<span class="sub" style="font-size:12.5px">نامحدود</span>{% endif %}
+          </span>
+        </div>
+      {% empty %}<p class="sub">هیچ امکانی ندارد.</p>{% endfor %}
+    </div>
+  </section>
+
+  <section class="card" id="payments" aria-labelledby="h-pay">
+    <h2 id="h-pay">پرداخت‌ها</h2>
+    <div class="scroll-x" style="margin-top:8px">
+      <table class="list">
+        <thead><tr><th>تاریخ</th><th>پلن</th><th>مبلغ</th><th>تخفیف</th><th>وضعیت</th><th>کد پیگیری</th></tr></thead>
+        <tbody>
+          {% for o in orders %}
+            <tr><td>{{ o.created_at|jdate:"time" }}</td><td>{{ o.plan.name_fa }}</td><td>{{ o.payable_toman|toman }}</td><td>{% if o.discount %}{{ o.discount.code }} ({{ o.discount_toman|num }}){% else %}—{% endif %}</td>
+            <td><span class="chip {% if o.status == 'paid' %}accent{% elif o.status == 'failed' %}deny{% elif o.status == 'pending' %}warn{% endif %}">{{ o.get_status_display }}</span></td><td class="ltr mono">{{ o.ref_id|default:"—" }}</td></tr>
+          {% empty %}<tr><td colspan="6" class="empty">پرداختی ثبت نشده.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="grid g2" style="align-items:start">
+    <section class="card" id="devices" aria-labelledby="h-dev">
+      <h2 id="h-dev">دستگاه‌های واردشده</h2>
+      <div class="stack" style="gap:0;margin-top:8px">
+        {% for s in sessions %}
+          <div class="row" style="padding:10px 0;border-top:1px solid var(--line-2)"><b class="grow">{{ s.device_name|default:"دستگاه بی‌نام" }}</b><span class="sub" style="font-size:12.5px">آخرین استفاده {{ s.last_used_at|ago }}</span></div>
+        {% empty %}<p class="sub">در هیچ دستگاهی وارد نیست.</p>{% endfor %}
+      </div>
+    </section>
+
+    <section class="card" id="roles" aria-labelledby="h-roles">
+      <h2 id="h-roles">نقش‌ها</h2>
+      <div class="row" style="gap:8px;margin:10px 0">
+        {% for a in roles_active %}
+          <form method="post" action="{% url 'console:user_role' u.pk %}" class="row" style="gap:4px">{% csrf_token %}<input type="hidden" name="role" value="{{ a.role.key }}"><input type="hidden" name="op" value="revoke"><span class="chip accent">{{ a.role.name }}</span><button class="btn small" type="submit" aria-label="گرفتن نقش {{ a.role.name }}">✕</button></form>
+        {% empty %}<span class="sub">نقشی ندارد.</span>{% endfor %}
+      </div>
+      <form method="post" action="{% url 'console:user_role' u.pk %}" class="row" style="gap:8px">
+        {% csrf_token %}<input type="hidden" name="op" value="assign">
+        <label for="role" style="position:absolute;width:1px;height:1px;overflow:hidden">نقش</label>
+        <select class="fld grow" id="role" name="role" style="flex:1 1 160px">{% for r in roles %}<option value="{{ r.key }}">{{ r.name }}</option>{% endfor %}</select>
+        <button class="btn" type="submit">دادن نقش</button>
+      </form>
+    </section>
+  </div>
+
+  <section class="card" id="log" aria-labelledby="h-log">
+    <h2 id="h-log">گزارش تغییرات این کاربر</h2>
+    <div class="stack" style="gap:0;margin-top:8px">
+      {% for a in actions %}
+        <div class="row" style="padding:10px 0;border-top:1px solid var(--line-2)"><b class="grow">{{ a.summary }}</b><span class="sub" style="font-size:12.5px">{{ a.actor.get_username|default:"سیستم" }} · {{ a.created_at|jdate:"time" }}</span></div>
+      {% empty %}<p class="sub">هنوز تغییری از پنل روی این کاربر ثبت نشده.</p>{% endfor %}
+    </div>
+  </section>
+
+  <section class="card stack" id="delete" aria-labelledby="h-delete" style="border:2px solid var(--deny-line);background:var(--deny-bg)">
+    <h2 id="h-delete" style="color:var(--deny)">حذف حساب</h2>
+    {% if u.is_superuser or u == request.user %}
+      <p class="sub">حساب خودتان و حساب‌های سوپریوزر از پنل حذف نمی‌شوند.</p>
+    {% else %}
+      <p style="margin:0;line-height:1.9;font-weight:600;color:#5B2418">
+        حساب، پروفایل، شماره‌ی موبایل، پیشرفت، فلش‌کارت‌ها، آزمون‌ها، اشتراک‌ها و نشست‌های این کاربر برای همیشه پاک می‌شود و برگشت‌پذیر نیست.
+        پرداخت‌های موفقش در گزارش فروش با برچسب «کاربر حذف‌شده» می‌ماند. اگر فقط نمی‌خواهید وارد شود، «مسدود کردن» کافی است.
+      </p>
+      <form method="post" action="{% url 'console:user_delete' u.pk %}" class="grid g3" style="align-items:end" onsubmit="return confirm('{{ label|escapejs }} برای همیشه حذف شود؟')">
+        {% csrf_token %}
+        <div>
+          <label class="lbl" for="confirm">برای تأیید، {% if u.learner_profile.phone %}شماره‌ی موبایل{% else %}ایمیل یا نام کاربری{% endif %} این کاربر را بنویسید</label>
+          <input class="fld ltr" id="confirm" name="confirm" autocomplete="off" required placeholder="{% if u.learner_profile.phone %}{{ u.learner_profile.phone }}{% elif u.email %}{{ u.email }}{% else %}{{ u.username }}{% endif %}">
+        </div>
+        <div>
+          <label class="lbl" for="del-password">رمز حساب خودتان</label>
+          <input class="fld ltr" id="del-password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn danger" type="submit" style="background:var(--deny);color:#FFFFFF;border-color:var(--deny)">حذف همیشگی کاربر</button>
+      </form>
+    {% endif %}
+  </section>
+{% endblock %}

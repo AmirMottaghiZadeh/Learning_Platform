@@ -1,0 +1,344 @@
+"""Read-side logic for the lessons taxonomy.
+
+A *chapter* is an ATC L2 subgroup and its ingredients — unchanged, still keyed
+and progress-tracked by the real ATC code. A *group* used to be the chapter's
+raw ATC L1 anatomical parent; it is now a curated clinical **study topic**
+(see `data/study_topics.py`) that groups chapters by indication/organ system
+instead of by chemistry, so e.g. every antihypertensive class shows up under
+one "Hypertension" topic instead of being scattered across unrelated-looking
+ATC codes. A chapter can appear under more than one topic.
+"""
+
+import re
+from collections import defaultdict
+
+from django.db.models import Prefetch
+
+from apps.drugs.models import AtcCategory, Ingredient, IngredientProfileSection
+
+from .data.study_topics import CATEGORIES, STUDY_TOPICS
+from .models import ChapterProgress, ReadDrug
+
+_CATEGORY_BY_KEY = {c["key"]: c for c in CATEGORIES}
+
+def _l2_slug_index():
+    """{ 'N02': [ingredient slugs...], ... } for every L2 that has ingredients."""
+    index = defaultdict(list)
+    rows = (
+        Ingredient.objects.filter(atc_codes__isnull=False)
+        .prefetch_related("atc_codes")
+        .order_by("name")
+        .distinct()
+    )
+    for ingredient in rows:
+        l2_codes = {c.code[:3] for c in ingredient.atc_codes.all()}
+        for code in l2_codes:
+            index[code].append(ingredient.slug)
+    return index
+
+
+def read_slugs_for_user(user):
+    """The set of every ingredient slug this learner has read to completion,
+    across all chapters — see `models.ReadDrug` for why this is global rather
+    than per chapter."""
+    return set(ReadDrug.objects.filter(user=user).values_list("ingredient_slug", flat=True))
+
+
+def mark_drug_read(user, slug):
+    if slug:
+        ReadDrug.objects.get_or_create(user=user, ingredient_slug=slug)
+
+
+def _subgroup(code, category, slugs, read_slugs):
+    return {
+        "code": code,
+        "name_fa": category.name_fa if category else code,
+        "name_en": category.name_en if category else code,
+        "total": len(slugs),
+        "done": len(read_slugs & set(slugs)),
+    }
+
+
+def lesson_groups(user):
+    slug_index = _l2_slug_index()
+    read_slugs = read_slugs_for_user(user)
+    l2_categories = {c.code: c for c in AtcCategory.objects.filter(level=2)}
+    l1_categories = {c.code: c for c in AtcCategory.objects.filter(level=1)}
+
+    groups = []
+    seen_codes = set()
+    for topic in STUDY_TOPICS:
+        subgroups = []
+        for code in topic["l2"]:
+            slugs = slug_index.get(code, [])
+            if not slugs:
+                continue
+            seen_codes.add(code)
+            subgroups.append(_subgroup(code, l2_categories.get(code), slugs, read_slugs))
+        if subgroups:
+            category = _CATEGORY_BY_KEY[topic["category"]]
+            groups.append({
+                "code": topic["key"],
+                "name_fa": topic["name_fa"],
+                "name_en": topic["name_en"],
+                "category_code": category["key"],
+                "category_name_fa": category["name_fa"],
+                "category_name_en": category["name_en"],
+                "subgroups": subgroups,
+            })
+
+    # Safety net: a populated L2 code the curated topics don't cover yet (e.g.
+    # a newly-imported ATC class) still gets a home — grouped by its ATC
+    # anatomical section — so a chapter never silently disappears while the
+    # topic table waits to be updated. The coverage test keeps this branch
+    # unreachable for the current bundled data. Filed under the "misc"
+    # top-level category until someone gives it a proper topic.
+    leftover_by_l1 = defaultdict(list)
+    for code, slugs in slug_index.items():
+        if code not in seen_codes and slugs:
+            leftover_by_l1[code[0]].append(code)
+    misc = _CATEGORY_BY_KEY["misc"]
+    for l1_code in sorted(leftover_by_l1):
+        l1 = l1_categories.get(l1_code)
+        subgroups = [
+            _subgroup(code, l2_categories.get(code), slug_index[code], read_slugs)
+            for code in sorted(leftover_by_l1[l1_code])
+        ]
+        groups.append({
+            "code": f"other-{l1_code}",
+            "name_fa": l1.name_fa if l1 else l1_code,
+            "name_en": l1.name_en if l1 else l1_code,
+            "category_code": misc["key"],
+            "category_name_fa": misc["name_fa"],
+            "category_name_en": misc["name_en"],
+            "subgroups": subgroups,
+        })
+    return groups
+
+
+def slugs_for_topic(topic_key):
+    """Every ingredient slug reachable from any chapter under this study
+    topic -- used by the study-plan generator and `progress.topic_mastery`."""
+    topic = next((t for t in STUDY_TOPICS if t["key"] == topic_key), None)
+    if not topic:
+        return set()
+    index = _l2_slug_index()
+    slugs = set()
+    for code in topic["l2"]:
+        slugs.update(index.get(code, []))
+    return slugs
+
+
+def l2_slug_index():
+    """{ L2 code: [ingredient slugs, by name] } -- built once and passed to
+    `ordered_topic_slugs` when walking many topics."""
+    return _l2_slug_index()
+
+
+def ordered_topic_slugs(topic_key, index=None):
+    """This topic's ingredient slugs in study order -- chapter by chapter in
+    the topic's own L2 order, each chapter's drugs by name, each drug once
+    (a drug in two of the topic's chapters shows up under the first)."""
+    topic = next((t for t in STUDY_TOPICS if t["key"] == topic_key), None)
+    if not topic:
+        return []
+    index = index if index is not None else _l2_slug_index()
+    ordered = []
+    for code in topic["l2"]:
+        ordered.extend(index.get(code, []))
+    return list(dict.fromkeys(ordered))
+
+
+def topic_chapters(user, topic_key):
+    """This topic's chapters (subgroups) with this learner's read progress,
+    unread/partial ones first -- the order the study-plan generator works
+    through a topic in."""
+    for group in lesson_groups(user):
+        if group["code"] == topic_key:
+            return sorted(group["subgroups"], key=lambda s: s["done"] >= s["total"])
+    return []
+
+
+def topic_progress(user, topic_key):
+    chapters = topic_chapters(user, topic_key)
+    total = sum(c["total"] for c in chapters)
+    done = sum(c["done"] for c in chapters)
+    return {"done": done, "total": total, "pct": round(100 * done / total) if total else 0}
+
+
+def _topic_lookup():
+    """{ L2 code -> [topic dict, ...] } in `STUDY_TOPICS` order; first entry
+    is the chapter's primary topic."""
+    lookup = defaultdict(list)
+    for topic in STUDY_TOPICS:
+        for code in topic["l2"]:
+            lookup[code].append(topic)
+    return lookup
+
+
+def topics_for_chapter(atc_code, l1_category=None):
+    """All study topics a chapter belongs to, or a one-item fallback built
+    from its ATC L1 anatomical parent if the topic table doesn't cover it yet
+    (see the `lesson_groups` safety net above for why that can happen)."""
+    matches = _topic_lookup().get(atc_code)
+    if matches:
+        return [{"code": t["key"], "name_fa": t["name_fa"], "name_en": t["name_en"]} for t in matches]
+    if l1_category:
+        return [{
+            "code": f"other-{l1_category.code}",
+            "name_fa": l1_category.name_fa,
+            "name_en": l1_category.name_en,
+        }]
+    return []
+
+
+def get_chapter(user, atc_code):
+    """(category, ingredients_qs, progress, read_slugs_in_chapter) or None if
+    the code is not a chapter. `read_slugs_in_chapter` is this learner's
+    globally-read drugs (see `read_slugs_for_user`), filtered to this
+    chapter's ingredients."""
+    atc_code = (atc_code or "").upper()
+    try:
+        category = AtcCategory.objects.select_related("parent").get(code=atc_code, level=2)
+    except AtcCategory.DoesNotExist:
+        return None
+
+    # Just the drug list -- each drug's lesson text is fetched on its own
+    # (get_lesson_drug) when the learner opens it.
+    ingredients = (
+        Ingredient.objects.filter(atc_codes__code__startswith=atc_code)
+        .prefetch_related("atc_codes")
+        .distinct()
+    )
+    if not ingredients:
+        return None
+
+    # Sorted by this chapter's own ATC code (not drug name) -- within a class,
+    # the ATC code already clusters drugs by sub-mechanism (e.g. every "-olol"
+    # beta-blocker sits together under C07AB), which an alphabetical name list
+    # scatters. `atc_codes` is a many-to-many, so an ingredient can carry
+    # several codes; the one that matters here is whichever of its codes
+    # actually falls under this chapter (already prefetched, so no extra
+    # query), and the lowest one if more than one does.
+    def chapter_code(ingredient):
+        codes = [c.code for c in ingredient.atc_codes.all() if c.code.startswith(atc_code)]
+        return min(codes) if codes else ingredient.name
+
+    ingredients = sorted(ingredients, key=chapter_code)
+
+    # The ATC level-4 class (N04BC "Dopamine agonists") each drug sits under
+    # in this chapter -- the lowest of its codes here, the same one it is
+    # sorted by, so a chapter's drugs come out already grouped by class.
+    for ingredient in ingredients:
+        own = [c for c in ingredient.atc_codes.all() if c.code.startswith(atc_code)]
+        group = min(own, key=lambda c: c.code) if own else None
+        ingredient.atc_group = (
+            {"code": group.code, "name_fa": group.name_fa, "name_en": group.name}
+            if group
+            else None
+        )
+
+    progress, _ = ChapterProgress.objects.get_or_create(user=user, atc_code=atc_code)
+    read_slugs = read_slugs_for_user(user) & {i.slug for i in ingredients}
+    return category, ingredients, progress, read_slugs
+
+
+def get_lesson_drug(slug):
+    """One drug with what its lesson needs, or None. raw_text (the full label
+    text, most of each section row) is never part of a lesson -- not read."""
+    return (
+        Ingredient.objects.filter(slug=slug)
+        .prefetch_related(
+            "atc_codes",
+            Prefetch("sections", queryset=IngredientProfileSection.objects.defer("raw_text")),
+        )
+        .first()
+    )
+
+
+# -- drug search --------------------------------------------------------------
+
+# Persian text arrives in more than one spelling: Arabic yeh/kaf from some
+# keyboards, alef with madda or hamza, a zero-width non-joiner (or a space,
+# or nothing) inside a compound name, the odd diacritic. Both the query and
+# the names are folded to one form before comparing, so "سفتوبی‌پرول",
+# "سفتوبی پرول" and "سفتوبيپرول" all find the same drug.
+_FOLD = str.maketrans({
+    "ي": "ی", "ى": "ی", "ئ": "ی", "ك": "ک", "ة": "ه", "ۀ": "ه",
+    "آ": "ا", "أ": "ا", "إ": "ا", "ؤ": "و",
+    "‌": None, "‍": None, " ": None, "-": None, " ": None,
+})
+_DIACRITICS = re.compile("[ً-ْٰ]")
+
+SEARCH_MIN_CHARS = 2
+SEARCH_LIMIT = 20
+
+
+def fold(text):
+    return _DIACRITICS.sub("", (text or "").lower()).translate(_FOLD)
+
+
+def _rank(query, name, name_fa):
+    """0 exact, 1 prefix, 2 a later word starts with it, 3 anywhere, None no
+    match -- the better of the English and Persian names."""
+    best = None
+    for raw in (name, name_fa):
+        folded = fold(raw)
+        if not folded or query not in folded:
+            continue
+        if folded == query:
+            rank = 0
+        elif folded.startswith(query):
+            rank = 1
+        elif any(fold(word).startswith(query) for word in re.split(r"[\s\-‌/,()]+", raw or "")[1:]):
+            rank = 2
+        else:
+            rank = 3
+        best = rank if best is None else min(best, rank)
+    return best
+
+
+def search_drugs(query, limit=SEARCH_LIMIT):
+    """Lesson drugs whose English or Persian name matches `query`, best
+    first, each with the lesson chapters (ATC L2) it can be opened in. Drugs
+    in no chapter aren't part of the lessons and are left out."""
+    query = fold(query)
+    if len(query) < SEARCH_MIN_CHARS:
+        return []
+    candidates = (
+        Ingredient.objects.filter(atc_codes__isnull=False)
+        .values_list("pk", "slug", "name", "name_fa")
+        .distinct()
+    )
+    ranked = []
+    for pk, slug, name, name_fa in candidates:
+        rank = _rank(query, name, name_fa)
+        if rank is not None:
+            ranked.append((rank, len(name), name.lower(), pk, slug, name, name_fa))
+    ranked.sort()
+    top = ranked[:limit]
+    if not top:
+        return []
+
+    codes_by_pk = defaultdict(set)
+    for pk, code in Ingredient.atc_codes.through.objects.filter(
+        ingredient_id__in=[r[3] for r in top]
+    ).values_list("ingredient_id", "atccode__code"):
+        codes_by_pk[pk].add(code[:3])
+    chapters = {
+        c.code: c
+        for c in AtcCategory.objects.filter(level=2, code__in={c for codes in codes_by_pk.values() for c in codes})
+    }
+
+    results = []
+    for *_order, pk, slug, name, name_fa in top:
+        drug_chapters = [chapters[c] for c in sorted(codes_by_pk[pk]) if c in chapters]
+        if not drug_chapters:
+            continue
+        results.append({
+            "slug": slug,
+            "name": name,
+            "name_fa": name_fa,
+            "chapters": [{"code": c.code, "name_fa": c.name_fa, "name_en": c.name_en} for c in drug_chapters],
+        })
+    return results

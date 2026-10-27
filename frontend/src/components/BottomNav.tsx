@@ -1,0 +1,171 @@
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, LayoutChangeEvent, Pressable, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useLang } from "@/i18n/LanguageProvider";
+import { useNav } from "@/store/nav";
+import { useTheme } from "@/theme/ThemeProvider";
+import { TourTarget } from "@/tour/TourContext";
+import { layout } from "@/theme/tokens";
+import { LOCKED_TABS, TAB_ORDER, TabKey } from "@/navigation/types";
+import { AppText } from "./primitives/AppText";
+import { IconImage, IconName } from "./primitives/IconImage";
+
+const PILL_W = 56;
+
+/** How much room to leave under a screen's content so its end isn't hidden
+ * behind the tab bar -- which grows by the home-indicator strip (see
+ * BottomNav) -- plus `extra` breathing space. */
+export function useNavClearance(extra = 0) {
+  return layout.bottomNavHeight + useSafeAreaInsets().bottom + extra;
+}
+
+const TAB_META: Record<
+  TabKey,
+  { icon: IconName; labelKey: "navHome" | "lessonsLabel" | "cardsLabel" | "quizLabel" | "profileLabel" }
+> = {
+  dashboard: { icon: "nav-home", labelKey: "navHome" },
+  lessons: { icon: "nav-lessons", labelKey: "lessonsLabel" },
+  flashcards: { icon: "nav-flashcards", labelKey: "cardsLabel" },
+  quiz: { icon: "nav-quiz", labelKey: "quizLabel" },
+  profile: { icon: "nav-profile", labelKey: "profileLabel" },
+};
+
+// Which top-level screens count as "inside" which tab.
+const SCREEN_TO_TAB: Record<string, TabKey> = {
+  dashboard: "dashboard",
+  lessons: "lessons",
+  lessonList: "lessons",
+  lessonDetail: "lessons",
+  flashcards: "flashcards",
+  quiz: "quiz",
+  profile: "profile",
+  mistakes: "profile",
+  statistics: "profile",
+  planning: "profile",
+  planningSetup: "profile",
+  uptodate: "dashboard",
+  uptodateOutline: "dashboard",
+  uptodateArticle: "dashboard",
+  lexicomp: "dashboard",
+  education: "lessons",
+  guidelines: "dashboard",
+  diseasesConditions: "dashboard",
+  medscapeOutline: "dashboard",
+  medscapeArticle: "dashboard",
+  calculator: "dashboard",
+  calculatorDomain: "dashboard",
+  calculatorDetail: "dashboard",
+};
+
+export function BottomNav() {
+  const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const { t, isFa } = useLang();
+  const screen = useNav((s) => s.screen);
+  const setTab = useNav((s) => s.setTab);
+  const activeTab = SCREEN_TO_TAB[screen] ?? "dashboard";
+  const activeIndex = TAB_ORDER.indexOf(activeTab);
+  // The pill is positioned from the physical left edge with translateX, so it
+  // must track the *visual* slot. In fa the row is `row-reverse`, so tab i of
+  // TAB_ORDER sits in slot (n-1-i) from the left. Relying on an inherited
+  // `direction` here is what put the pill on the wrong tab in the APK.
+  const visualIndex = isFa ? TAB_ORDER.length - 1 - activeIndex : activeIndex;
+
+  const [width, setWidth] = useState(0);
+  const x = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!width) return;
+    const center = ((visualIndex + 0.5) / TAB_ORDER.length) * width;
+    Animated.spring(x, {
+      toValue: center - PILL_W / 2,
+      useNativeDriver: true,
+      speed: 16,
+      bounciness: 6,
+    }).start();
+  }, [visualIndex, width, x]);
+
+  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+
+  return (
+    // The guided tours point at the bar as "nav".
+    <TourTarget
+      id="nav"
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        // Grows down over the home indicator (iPhone) / gesture bar so the
+        // bar runs to the bottom edge with its tabs clear of it.
+        height: layout.bottomNavHeight + insets.bottom,
+      }}
+    >
+    <View
+      onLayout={onLayout}
+      style={{
+        flex: 1,
+        backgroundColor: colors.navBg,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        flexDirection: isFa ? "row-reverse" : "row",
+        alignItems: "center",
+        paddingBottom: 6 + insets.bottom,
+      }}
+    >
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 8,
+          left: 0,
+          width: PILL_W,
+          height: 44,
+          borderRadius: 14,
+          backgroundColor: isDark ? "rgba(157,212,184,0.10)" : "rgba(15,92,82,0.08)",
+          transform: [{ translateX: x }],
+        }}
+      />
+      {TAB_ORDER.map((tab) => {
+        const meta = TAB_META[tab];
+        const isActive = tab === activeTab;
+        const locked = LOCKED_TABS.includes(tab);
+        return (
+          <Pressable
+            key={tab}
+            onPress={() => setTab(tab)}
+            style={{ flex: 1, alignItems: "center", gap: 3 }}
+          >
+            <View style={{ opacity: isActive ? 1 : 0.45 }}>
+              <IconImage name={meta.icon} size={24} />
+              {locked ? (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -3,
+                    ...(isFa ? { left: -5 } : { right: -5 }),
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: colors.cautLabel,
+                    borderWidth: 1.5,
+                    borderColor: colors.navBg,
+                  }}
+                />
+              ) : null}
+            </View>
+            <AppText
+              size={11}
+              weight={isActive ? "800" : "600"}
+              color={isActive ? colors.accent : colors.muted}
+            >
+              {t(meta.labelKey)}
+            </AppText>
+          </Pressable>
+        );
+      })}
+    </View>
+    </TourTarget>
+  );
+}

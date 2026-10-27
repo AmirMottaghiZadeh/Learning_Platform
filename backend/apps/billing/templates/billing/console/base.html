@@ -1,0 +1,15 @@
+{% extends "manage/base.html" %}
+{% load static %}
+{% comment %}The sales console's pages, inside the admin shell (apps.manage):
+the shell draws the rail, the page column, the command bar and messages.{% endcomment %}
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'billing/console.css' %}">
+<style>{% block style %}{% endblock %}</style>
+{% endblock %}
+{% block module %}
+<div class="mx-sales-wrap">
+  <div class="mx-sales">{% block content %}{% endblock %}</div>
+  {% block aside %}{% endblock %}
+</div>
+{% endblock %}
+{% block module_scripts %}{% block script %}{% endblock %}{% endblock %}

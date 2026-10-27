@@ -1,0 +1,351 @@
+{% extends "data_quality_center/base.html" %}
+{% load dqc_extras %}
+{% block title %}{{ ingredient.name }}{% endblock %}
+{% block content_class %}flush{% endblock %}
+{% block messages %}{% endblock %}
+{% block head %}
+<style>
+  .sections-col { width: 288px; flex: none; border-left: 1px solid var(--line); background: var(--surface); padding: 18px 14px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+  .ing-name { font-size: 20px; font-weight: 800; direction: ltr; text-align: right; line-height: 1.4; }
+  .sec-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; color: var(--ink); }
+  .sec-row:hover { background: var(--surface-2); color: var(--ink); }
+  .sec-row.on { background: var(--accent-soft); box-shadow: inset -3px 0 0 var(--accent); }
+  .sec-row .t { flex: 1; display: flex; flex-direction: column; line-height: 1.5; }
+  .sec-row .fa { font-size: 13.5px; font-weight: 700; }
+  .sec-row.on .fa { color: var(--accent); font-weight: 800; }
+  .sec-row .en { font-size: 11px; color: var(--faint); direction: ltr; text-align: right; }
+  .nav-pn { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; color: var(--muted); padding: 0 4px; margin-top: auto; }
+
+  .main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .main-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 22px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .stepper { display: flex; align-items: center; background: var(--side); border-radius: 12px; padding: 10px 14px; }
+  .step { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--faint); white-space: nowrap; }
+  .step .n { width: 22px; height: 22px; border-radius: 11px; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+  .step.done { color: var(--accent); } .step.done .n { background: var(--accent); border-color: var(--accent); color: var(--mg-acc-ink); }
+  .step.now { color: var(--accent); font-weight: 800; } .step.now .n { background: var(--accent); border-color: var(--accent); color: var(--mg-acc-ink); box-shadow: 0 0 0 4px rgba(15,92,82,.14); }
+  .step.warn { color: var(--warn); } .step.warn .n { border-color: var(--gold); }
+  .step-line { flex: 1; height: 2px; background: var(--track); margin: 0 10px; min-width: 16px; }
+  .step-line.done { background: var(--accent); opacity: .4; }
+
+  .panes { display: flex; gap: 14px; height: clamp(300px, 48vh, 560px); }
+  .pane { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; }
+  .pane-head { height: 42px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 14px; background: var(--side); border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 800; }
+  .pane-foot { height: 32px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 14px; border-top: 1px solid var(--line-2); font-size: 11.5px; color: var(--faint); }
+  .pane textarea { flex: 1; border: 0; outline: none; resize: none; padding: 14px 16px; font-size: 14.5px; line-height: 2; color: var(--prose); background: var(--surface); }
+  .pane textarea[readonly] { background: var(--surface-2); }
+  .pane .view { flex: 1; overflow-y: auto; padding: 14px 16px; font-size: 14px; }
+  .source { background: #FCFBF8; }
+  .source .view { direction: ltr; text-align: left; font-size: 13px; line-height: 1.8; color: var(--prose); white-space: pre-wrap; }
+  .source mark { background: var(--ok-bg); color: var(--ok); border-radius: 3px; padding: 0 1px; }
+  .diff-lang { font-size: 11px; font-weight: 800; color: var(--faint); margin: 2px 0 4px; letter-spacing: .02em; }
+  .stats-add { color: var(--ok); font-size: 11.5px; font-weight: 700; }
+  .stats-del { color: var(--danger); font-size: 11.5px; font-weight: 700; }
+  .banner { border-radius: 12px; padding: 10px 14px; font-size: 13px; line-height: 1.9; }
+  .banner.caution { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn); }
+  .banner.orange { background: var(--orange-bg); color: #8A4A2F; }
+  .banner.info { background: var(--accent-soft); color: var(--accent); }
+  .actionbar { height: 64px; flex: none; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; padding: 0 22px; background: var(--surface-2); }
+  .save-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--ok); }
+  .save-dot.busy { background: var(--gold); } .save-dot.err { background: var(--danger); }
+  #save-status { font-size: 12.5px; color: var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not sections %}
+  <div class="main-col"><div class="main-scroll"><div class="empty"><b class="ltr">{{ ingredient.name }}</b>این ماده هنوز بخش بالینی ندارد.</div></div></div>
+{% else %}
+<div class="sections-col">
+  <div style="padding: 0 4px">
+    <div class="ing-name">{{ ingredient.name }}</div>
+    <div class="muted" style="font-size: 12.5px">{{ total|fa_digits }} بخش بالینی · <span class="ltr">RxCUI {{ ingredient.rxcui }}</span></div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 8px; padding: 0 4px">
+    <div class="bar" style="flex: 1"><i class="ok" style="width: {{ done|percent:total }}%"></i><i class="warn" style="width: {{ waiting|percent:total }}%"></i></div>
+    <span class="muted" style="font-size: 11.5px; font-weight: 700; white-space: nowrap">{{ done|fa_digits }} کامل</span>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 2px">
+    {% for row in sections %}
+      <a class="sec-row {% if row.selected %}on{% endif %}" href="?field={{ row.section.field }}">
+        <span class="t"><span class="fa">{{ row.label }}</span><span class="en">{{ row.section.get_field_display }}</span></span>
+        <span class="chip tone-{{ row.state.tone }}">{% if row.selected and mode == 'edit' and row.state.key != 'changes' %}در حال ویرایش{% else %}{{ row.state.label }}{% endif %}</span>
+      </a>
+    {% endfor %}
+  </div>
+  <div class="nav-pn">
+    {% if previous_slug %}<a href="{% url 'data_quality_center:workspace' previous_slug %}" id="prev-link">→ مادهٔ قبلی</a>{% else %}<span></span>{% endif %}
+    <span class="kbd">J / K</span>
+    {% if next_slug %}<a href="{% url 'data_quality_center:workspace' next_slug %}" id="next-link">مادهٔ بعدی ←</a>{% else %}<span></span>{% endif %}
+  </div>
+</div>
+
+<div class="main-col">
+  <form id="edit-form" class="main-col" method="post" action="{% url 'data_quality_center:submit' ingredient.slug section.field %}" style="min-height: 0">
+    {% csrf_token %}
+    <div class="main-scroll">
+      {% if messages %}<div class="msgs" style="margin: 0">{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+
+      <div style="display: flex; align-items: flex-end; gap: 12px">
+        <div style="flex: 1">
+          <div class="crumbs"><a href="{% url 'data_quality_center:queue' %}" class="faint">داروها</a> ‹ <span class="ltr">{{ ingredient.name }}</span> ‹ {{ section_label }}</div>
+          <div style="display: flex; align-items: baseline; gap: 10px"><span class="page-title">{{ section_label }}</span><span class="ltr muted" style="font-size: 14px; font-weight: 600">{{ section.get_field_display }}</span></div>
+        </div>
+        <span class="muted" style="font-size: 12px">
+          {% if last_edit %}آخرین تغییر: {{ last_edit.created_at|ago }} · {% endif %}<a href="{% url 'data_quality_center:history' %}?section={{ section.pk }}" style="font-weight: 800">تاریخچهٔ این بخش</a>
+        </span>
+      </div>
+
+      <div class="stepper">
+        {% if mode == 'pending' %}
+          <span class="step done"><span class="n">✓</span>ویرایش</span><span class="step-line done"></span>
+          <span class="step done"><span class="n">✓</span>بررسی خودکار</span><span class="step-line done"></span>
+          <span class="step now"><span class="n">۳</span>تأیید سوپریوزر</span><span class="step-line"></span>
+          <span class="step"><span class="n">۴</span>اعمال در دیتابیس</span>
+        {% else %}
+          <span class="step now"><span class="n">۱</span>ویرایش</span><span class="step-line"></span>
+          <span class="step {% if warnings %}warn{% endif %}" id="step-checks"><span class="n">۲</span>بررسی خودکار</span><span class="step-line"></span>
+          <span class="step"><span class="n">۳</span>تأیید سوپریوزر</span><span class="step-line"></span>
+          <span class="step"><span class="n">۴</span>اعمال در دیتابیس</span>
+        {% endif %}
+      </div>
+
+      {% if mode == 'locked' %}
+        <div class="banner caution">این بخش در دست درخواست #{{ current.pk|fa_digits }} از <b class="ltr">{{ current.requested_by_username }}</b> است ({% if current.status == 'pending' %}در انتظار تأیید{% else %}برگشته برای اصلاح{% endif %}). تا بسته شدن آن فقط می‌توانید پیشنهادش را ببینید.</div>
+      {% elif mode == 'pending' %}
+        <div class="banner info">درخواست #{{ current.pk|fa_digits }} {{ current.submitted_at|ago }} برای تأیید نهایی فرستاده شد. برای تغییر دادنش، اول آن را پس بگیرید.</div>
+      {% elif current and current.status == 'changes_requested' %}
+        <div class="banner orange"><b>سوپریوزر ({{ current.reviewed_by_username }}) اصلاح خواسته:</b> {{ current.review_note }}</div>
+      {% endif %}
+
+      <div class="panes">
+        <div class="pane">
+          <div class="pane-head">
+            <span>خلاصه</span>
+            <div class="seg" role="tablist">
+              <button type="button" data-tab="fa" class="{% if mode == 'edit' %}on{% endif %}">فارسی</button>
+              <button type="button" data-tab="en">English</button>
+              <button type="button" data-tab="diff" class="{% if mode != 'edit' %}on{% endif %}">تغییرات</button>
+            </div>
+            <span style="flex: 1"></span>
+            <span class="stats-add" id="stat-add">+{{ diff.added|fa_digits }} واژه</span>
+            <span class="stats-del" id="stat-del">−{{ diff.removed|fa_digits }} واژه</span>
+          </div>
+          <textarea name="summary_fa" dir="rtl" data-pane="fa" {% if mode != 'edit' %}readonly hidden{% endif %} placeholder="خلاصهٔ فارسی این بخش…">{{ draft_fa }}</textarea>
+          <textarea name="summary_en" dir="ltr" data-pane="en" hidden {% if mode != 'edit' %}readonly{% endif %} placeholder="English summary of this section…">{{ draft_en }}</textarea>
+          <div class="view diff" data-pane="diff" {% if mode == 'edit' %}hidden{% endif %}>
+            <div class="diff-lang">فارسی</div><div id="diff-fa" dir="rtl">{{ diff.fa|safe|default:"—" }}</div>
+            <div class="diff-lang" style="margin-top: 14px">ENGLISH</div><div id="diff-en" dir="ltr" style="text-align: left">{{ diff.en|safe|default:"—" }}</div>
+          </div>
+          <div class="pane-foot"><span id="word-count"></span><span>اعداد خلاصه در متن منبع سبز شده‌اند</span></div>
+        </div>
+
+        <div class="pane source">
+          <div class="pane-head">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted)"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+            <span>متن منبع برچسب</span><span class="faint" style="font-size: 11.5px; font-weight: 600">فقط‌خواندنی · OpenFDA</span>
+          </div>
+          <div class="view" id="source-view">{{ section.raw_text|default:"—" }}</div>
+        </div>
+      </div>
+
+      <div class="checks" id="checks">
+        <span style="font-size: 12.5px; font-weight: 800; color: var(--muted); margin-left: 4px">بررسی خودکار:</span>
+        {% for c in checks %}<span class="check {{ c.level }}">{% if c.level == 'ok' %}✓ {% else %}! {% endif %}{{ c.label }}</span>{% empty %}<span class="faint" style="font-size: 12px">چیزی برای بررسی نیست</span>{% endfor %}
+      </div>
+
+      {% if mode == 'edit' %}
+      <div>
+        <label class="field-label" for="reason">دلیل تغییر <span class="req">*</span> <span class="faint" style="font-weight: 600">(دست‌کم {{ min_reason|fa_digits }} نویسه؛ سوپریوزر این را می‌بیند)</span></label>
+        <input class="input" id="reason" name="reason" value="{{ current.reason|default:'' }}" placeholder="مثلاً: هشدار قطع فوری دارو طبق بخش 6.1 برچسب اضافه شد" autocomplete="off">
+      </div>
+      {% else %}
+      <div class="banner caution"><b>دلیل اپراتور:</b> {{ current.reason }}</div>
+      {% endif %}
+
+      {% if events %}
+      <div>
+        <div class="field-label">سابقهٔ این درخواست</div>
+        <div class="timeline">
+          {% for e in events %}
+          <div class="tl-row">
+            <div class="tl-rail"><span class="tl-dot"></span>{% if not forloop.last %}<span class="tl-line"></span>{% endif %}</div>
+            <div class="tl-body"><b class="ltr">{{ e.actor_username }}</b> · <span class="chip tone-{{ e.action|action_tone }}">{{ e.action|action_label }}</span> <span class="faint">· {{ e.created_at|tehran }}</span>{% if e.note and e.action != 'submitted' and e.action != 'resubmitted' %}<div class="tl-note">{{ e.note }}</div>{% endif %}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="actionbar">
+      {% if mode == 'edit' %}
+        <span class="save-dot" id="save-dot"></span>
+        <span id="save-status">{% if current %}پیش‌نویس ذخیره‌شده · {{ current.updated_at|tehran:"%H:%M" }}{% else %}با شروع تایپ، پیش‌نویس خودکار ذخیره می‌شود{% endif %}</span>
+        <span style="flex: 1"></span>
+        {% if current %}<button class="btn ghost" type="submit" form="discard-form">انصراف از تغییرات</button>{% endif %}
+        <button class="btn outline" type="button" id="save-now">ذخیرهٔ پیش‌نویس</button>
+        <button class="btn" type="submit" id="submit-btn">{% if current.status == 'changes_requested' %}ارسال دوباره برای تأیید{% else %}ارسال برای تأیید نهایی{% endif %}<span class="kbd">Ctrl ↵</span></button>
+      {% elif mode == 'pending' %}
+        <span class="muted" style="font-size: 12.5px">در انتظار تأیید سوپریوزر</span>
+        <span style="flex: 1"></span>
+        <button class="btn outline" type="submit" form="withdraw-form">پس گرفتن برای ویرایش</button>
+      {% else %}
+        <span class="muted" style="font-size: 12.5px">فقط مشاهده</span>
+      {% endif %}
+    </div>
+  </form>
+  <form id="discard-form" method="post" action="{% url 'data_quality_center:discard' ingredient.slug section.field %}" onsubmit="return confirm('تغییرات این پیش‌نویس کنار گذاشته شود؟')">{% csrf_token %}</form>
+  <form id="withdraw-form" method="post" action="{% url 'data_quality_center:withdraw' ingredient.slug section.field %}">{% csrf_token %}</form>
+</div>
+{{ section.raw_text|json_script:"raw-text" }}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if sections %}
+<script>
+(function () {
+  var form = document.getElementById("edit-form");
+  var editable = "{{ mode }}" === "edit";
+  var draftUrl = "{% url 'data_quality_center:save_draft' ingredient.slug section.field %}";
+  var csrf = form.querySelector("input[name=csrfmiddlewaretoken]").value;
+  var faBox = form.querySelector("textarea[name=summary_fa]");
+  var enBox = form.querySelector("textarea[name=summary_en]");
+  var reason = document.getElementById("reason");
+  var rawText = JSON.parse(document.getElementById("raw-text").textContent || '""');
+  var faDigits = function (s) { return String(s).replace(/[0-9]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹"[d]; }); };
+  var toLatin = function (s) { return String(s).replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); }).replace(/٫/g, "."); };
+  var escapeHtml = function (s) { return s.replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+
+  // -- tabs ----------------------------------------------------------------
+  var tabs = form.querySelectorAll(".seg button");
+  var panes = form.querySelectorAll("[data-pane]");
+  function show(name) {
+    tabs.forEach(function (b) { b.classList.toggle("on", b.dataset.tab === name); });
+    panes.forEach(function (p) { p.hidden = p.dataset.pane !== name; });
+    updateCount();
+  }
+  tabs.forEach(function (b) { b.addEventListener("click", function () { show(b.dataset.tab); }); });
+
+  // -- source: numbers used by the summary are marked green ------------------
+  function markSource() {
+    var nums = (toLatin(faBox.value + " " + enBox.value).match(/\d+(?:\.\d+)?/g) || []);
+    var unique = Array.from(new Set(nums)).sort(function (a, b) { return b.length - a.length; });
+    var html = escapeHtml(rawText || "—");
+    if (unique.length) {
+      var re = new RegExp("(^|[^\\d.])(" + unique.map(function (n) { return n.replace(".", "\\."); }).join("|") + ")(?![\\d])", "g");
+      html = html.replace(re, function (_m, pre, n) { return pre + "<mark>" + n + "</mark>"; });
+    }
+    document.getElementById("source-view").innerHTML = html;
+  }
+
+  function updateCount() {
+    var active = form.querySelector(".seg button.on");
+    var box = active && active.dataset.tab === "en" ? enBox : faBox;
+    var words = (box.value.match(/\S+/g) || []).length;
+    var ratio = rawText ? Math.round(100 * enBox.value.length / Math.max(1, rawText.length)) : 0;
+    document.getElementById("word-count").textContent = faDigits(words) + " واژه · " + faDigits(ratio) + "٪ طول منبع";
+  }
+
+  function renderChecks(checks) {
+    var box = document.getElementById("checks");
+    var head = box.firstElementChild;
+    box.innerHTML = "";
+    box.appendChild(head);
+    if (!checks.length) {
+      var none = document.createElement("span");
+      none.className = "faint"; none.style.fontSize = "12px"; none.textContent = "چیزی برای بررسی نیست";
+      box.appendChild(none);
+    }
+    var warned = false;
+    checks.forEach(function (c) {
+      var el = document.createElement("span");
+      el.className = "check " + c.level;
+      el.textContent = (c.level === "ok" ? "✓ " : "! ") + c.label;
+      if (c.level === "warn") warned = true;
+      box.appendChild(el);
+    });
+    var step = document.getElementById("step-checks");
+    if (step) step.classList.toggle("warn", warned);
+  }
+
+  function renderDiff(diff) {
+    document.getElementById("diff-fa").innerHTML = diff.fa || "—";
+    document.getElementById("diff-en").innerHTML = diff.en || "—";
+    document.getElementById("stat-add").textContent = "+" + faDigits(diff.added) + " واژه";
+    document.getElementById("stat-del").textContent = "−" + faDigits(diff.removed) + " واژه";
+  }
+
+  markSource();
+  updateCount();
+
+  // J / K: next / previous ingredient, whenever the cursor isn't in a field.
+  document.addEventListener("keydown", function (e) {
+    var typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+    if (typing || e.ctrlKey || e.metaKey || e.altKey || (e.key !== "j" && e.key !== "k")) return;
+    var link = document.getElementById(e.key === "j" ? "next-link" : "prev-link");
+    if (link) link.click();
+  });
+  if (!editable) return;
+
+  // -- autosave --------------------------------------------------------------
+  var dot = document.getElementById("save-dot");
+  var status = document.getElementById("save-status");
+  var timer = null, saving = false, dirty = false;
+  function setStatus(text, state) {
+    status.textContent = text;
+    dot.className = "save-dot" + (state ? " " + state : "");
+  }
+  function schedule() {
+    dirty = true;
+    setStatus("در حال ذخیره…", "busy");
+    clearTimeout(timer);
+    timer = setTimeout(save, 1200);
+    markSource();
+    updateCount();
+  }
+  function save() {
+    if (saving) { schedule(); return Promise.resolve(); }
+    saving = true;
+    clearTimeout(timer);
+    return fetch(draftUrl, {
+      method: "POST",
+      body: new FormData(form),
+      headers: { "X-CSRFToken": csrf, "X-Requested-With": "fetch" },
+      credentials: "same-origin",
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      saving = false;
+      if (!data.ok) { setStatus(data.error || "ذخیره نشد", "err"); return; }
+      dirty = false;
+      setStatus("پیش‌نویس خودکار ذخیره شد · " + faDigits(data.saved_at));
+      renderChecks(data.checks);
+      renderDiff(data.diff);
+    }).catch(function () {
+      saving = false;
+      setStatus("اتصال برقرار نیست؛ پیش‌نویس ذخیره نشد", "err");
+    });
+  }
+  [faBox, enBox, reason].forEach(function (el) { el.addEventListener("input", schedule); });
+  document.getElementById("save-now").addEventListener("click", save);
+
+  form.addEventListener("submit", function (e) {
+    if (e.submitter && e.submitter.getAttribute("form")) return;
+    if (reason.value.trim().length < {{ min_reason }}) {
+      e.preventDefault();
+      reason.focus();
+      setStatus("دلیل تغییر را بنویسید (دست‌کم {{ min_reason|fa_digits }} نویسه)", "err");
+      return;
+    }
+    dirty = false;
+  });
+  window.addEventListener("beforeunload", function (e) { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+  // -- keyboard ----------------------------------------------------------------
+  document.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); document.getElementById("submit-btn").click(); }
+    else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); }
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

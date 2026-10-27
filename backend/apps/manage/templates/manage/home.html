@@ -1,0 +1,69 @@
+{% extends "manage/base.html" %}
+{% load billing_extras %}
+{% block title %}امروز{% endblock %}
+{% block module %}
+<div class="mg-head">
+  <div>
+    <p>{{ today }}</p>
+    {% if waiting %}
+    <h1>{{ waiting|fa }} کار منتظر توست{% if urgent %}؛ {{ urgent|fa }} تا امروز{% endif %}</h1>
+    {% else %}
+    <h1>کاری منتظر نیست</h1>
+    {% endif %}
+  </div>
+</div>
+
+{% if columns %}
+<div class="mg-board">
+  {% for col in columns %}
+  <section class="mg-col" aria-labelledby="col-{{ col.key }}">
+    <div class="mg-col-h"><span class="mg-sq t-{{ col.tone }}" aria-hidden="true"></span><h2 id="col-{{ col.key }}">{{ col.title }}</h2>{% if col.count %}<span class="mg-pill t-{{ col.tone }}">{{ col.count|fa }}</span>{% endif %}</div>
+    {% for item in col.items %}
+    <div class="mg-item">
+      {% if item.comment %}
+      <span class="meta">{{ item.meta }}</span>
+      <span class="q">«{{ item.title }}»</span>
+      <div class="mg-acts">
+        <form method="post" action="{% url 'panel:comment_action' %}?one={{ item.comment }}">{% csrf_token %}<input type="hidden" name="action" value="approve"><button class="mg-b" type="submit">انتشار</button></form>
+        <form method="post" action="{% url 'panel:comment_action' %}?one={{ item.comment }}">{% csrf_token %}<input type="hidden" name="action" value="trash"><button class="mg-b bad" type="submit">رد</button></form>
+      </div>
+      {% else %}
+      <b>{{ item.title }}</b>
+      <span class="meta">{{ item.meta }}</span>
+      {% if item.url %}<div class="mg-acts"><a class="mg-b" href="{{ item.url }}">{{ item.go|default:"باز کردن" }}</a></div>{% endif %}
+      {% endif %}
+    </div>
+    {% empty %}
+    <p class="mg-calm">{% if col.key == "sales" %}امروز پرداخت ناموفق یا اشتراکِ رو به پایانی نیست.{% else %}چیزی منتظر نیست.{% endif %}</p>
+    {% endfor %}
+    {% if col.more > 0 %}<a class="mg-more" href="{{ col.more_url }}">{{ col.more|fa }} مورد دیگر در {{ col.more_label }}</a>{% endif %}
+    {% if col.guest %}<div class="mg-dash">دسترسی مهمان روشن است. <a href="{{ col.guest_url }}">خاموش کن</a></div>{% endif %}
+  </section>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if tiles %}
+<section aria-labelledby="mods">
+  <h2 class="mg-h2" id="mods">بخش‌ها در یک نگاه</h2>
+  <div class="mg-tiles">
+    {% for t in tiles %}
+    <a class="mg-tile" href="{{ t.url }}">
+      <span class="l">{{ t.label }}</span>
+      <span class="v"><span class="n">{{ t.value }}{% if t.unit %} <small>{{ t.unit }}</small>{% endif %}</span>{% if t.spark %}<svg width="96" height="28" viewBox="0 0 96 28" aria-hidden="true"><polyline points="{{ t.spark }}" fill="none" stroke="var(--mg-acc)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{% endif %}</span>
+      <span class="s">{{ t.sub }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if events %}
+<section class="mg-panel" aria-labelledby="day">
+  <div class="mg-panel-h"><h2 id="day">۲۴ ساعت گذشته</h2><a href="{% url 'manage:activity' %}">گزارش کامل</a></div>
+  <div class="mg-day">
+    {% for e in events %}<span>{{ e.when }}</span><span>{{ e.what|default:e.action }}{% if e.who != "—" %} · {{ e.who }}{% endif %}</span>{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

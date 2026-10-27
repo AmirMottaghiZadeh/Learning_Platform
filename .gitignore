@@ -1,0 +1,101 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+# App signing and store credentials: the Android keystore (a backup copy
+# downloaded with `eas credentials`), EAS's local credentials file, and the
+# Google Play service-account key -- never in git (docs/08-deployment.md).
+*.jks
+*.keystore
+credentials.json
+play-service-account*.json
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+*.sqlite3
+*.sqlite3-*
+db.sqlite3
+media/
+staticfiles/
+
+# Backend generated artifacts
+backend/db.sqlite3
+backend/db.sqlite3-*
+# Large source-data snapshots imported by management commands -- not source
+# code, too big for git; see each importer's --source default for where the
+# real copy lives.
+backend/data/*.sqlite
+backend/data/*.sqlite3
+# export_reference_db output (calculators.db, guidelines.db, diseases.db)
+reference-data/
+*.db.partial
+backend/data/*.json
+backend/exports/
+backend/backups/
+backend/staticfiles/
+backend/media/
+backend/data_backup.json
+backend/*.json
+# Node / Expo / React Native
+node_modules/
+frontend/node_modules/
+frontend/.expo/
+frontend/.expo-shared/
+frontend/.thumbnail
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+web-build/
+dist/
+build/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.kate-swp
+*~
+.idea/
+.vscode/
+
+# Codex/local agent workspace metadata
+.codex/
+.agents/
+**/.codex/
+**/.agents/
+
+# Logs and runtime files
+*.log
+logs/
+.run.txt*
+run.txt
+resume.txt
+
+# GitHub helper output
+*.bak
+*.tmp
+
+
+# Celery beat runtime state
+celerybeat-schedule
+celerybeat-schedule.*
+celerybeat.pid
+
+# Playwright MCP browser output (screenshots, snapshots, console logs)
+.playwright-mcp/
