@@ -1,0 +1,1 @@
+<li><a href="{% url 'site:drug' d.slug %}"><b>{{ d.name_fa }}{% if d.name_fa|lower != d.name|lower %} <span dir="ltr">{{ d.name }}</span>{% endif %}</b>{% if d.uses %}<span>{{ d.uses }}</span>{% endif %}</a></li>

@@ -17,12 +17,16 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_safe
 
+from apps.billing.templatetags.billing_extras import fa
+
 from . import seo, services
 from .models import (
     Announcement, AppRelease, Category, Comment, ContactMessage, ContentBlock, DailyStat, DownloadLink, Media, Page, Post,
     SiteSettings, Subscriber, Tag,
 )
 from .sanitize import plain_text
+
+TAG_INDEX_MIN_POSTS = 3
 
 
 def _page_meta(request, *, title="", description="", image=None, noindex=False, canonical=None, kind="website"):
@@ -37,6 +41,20 @@ def _page_meta(request, *, title="", description="", image=None, noindex=False, 
         "meta_noindex": noindex or site.noindex_site,
         "meta_canonical": path if path.startswith("http") else services.absolute(path),
         "meta_type": kind,
+    }
+
+
+def _listing(path, page, title):
+    """Canonical, title and prev/next links for page N of a list: page 2
+    onwards is its own page (Google indexes each and follows the links
+    between them), not a copy of page 1."""
+    number = page.number
+    url = lambda n: path if n == 1 else f"{path}?page={n}"
+    return {
+        "title": title if number == 1 else f"{title} - صفحهٔ {fa(number)}",
+        "canonical": url(number),
+        "prev": services.absolute(url(number - 1)) if page.has_previous() else "",
+        "next": services.absolute(url(number + 1)) if page.has_next() else "",
     }
 
 
@@ -70,9 +88,13 @@ def blog_index(request):
         "page": page, "query": query, "categories": Category.objects.all(), "nav": "blog",
         "featured": None if query or page.number > 1 else services.live_posts().filter(featured=True).first(),
     }
-    ctx.update(_page_meta(request, title="مقالات" if not query else f"جست‌وجوی «{query}»",
-                          description="مقاله‌های آموزش داروشناسی، طبقه‌بندی ATC و روش‌های یادگیری.",
-                          noindex=bool(query) or page.number > 1, canonical="/blog/"))
+    description = "مقاله‌های آموزش داروشناسی، طبقه‌بندی ATC و روش‌های یادگیری."
+    if query:
+        ctx.update(_page_meta(request, title=f"جست‌وجوی «{query}»", description=description, noindex=True, canonical="/blog/"))
+    else:
+        listing = _listing("/blog/", page, "مقالات")
+        ctx.update(_page_meta(request, title=listing["title"], description=description, canonical=listing["canonical"]))
+        ctx.update(meta_prev=listing["prev"], meta_next=listing["next"])
     return render(request, "website/blog_list.html", ctx)
 
 
@@ -81,7 +103,11 @@ def category(request, slug):
     page = Paginator(services.live_posts().filter(category=cat), SiteSettings.get().posts_per_page or 9).get_page(request.GET.get("page"))
     services.record_view(request, request.path)
     ctx = {"page": page, "heading": cat.name, "subheading": cat.description, "categories": Category.objects.all(), "active_category": cat, "nav": "blog"}
-    ctx.update(_page_meta(request, title=cat.seo_title or cat.name, description=cat.seo_description or cat.description))
+    listing = _listing(request.path, page, cat.seo_title or cat.name)
+    # A category with nothing published yet is no page to send searchers to.
+    ctx.update(_page_meta(request, title=listing["title"], description=cat.seo_description or cat.description,
+                          noindex=not page.paginator.count, canonical=listing["canonical"]))
+    ctx.update(meta_prev=listing["prev"], meta_next=listing["next"])
     return render(request, "website/blog_list.html", ctx)
 
 
@@ -90,7 +116,12 @@ def tag(request, slug):
     page = Paginator(services.live_posts().filter(tags=t), SiteSettings.get().posts_per_page or 9).get_page(request.GET.get("page"))
     services.record_view(request, request.path)
     ctx = {"page": page, "heading": f"برچسب: {t.name}", "categories": Category.objects.all(), "nav": "blog"}
-    ctx.update(_page_meta(request, title=f"برچسب {t.name}", noindex=page.number > 1))
+    listing = _listing(request.path, page, f"برچسب {t.name}")
+    # A tag with a post or two only repeats those posts; it is indexed once
+    # it gathers enough of them to be a page of its own.
+    ctx.update(_page_meta(request, title=listing["title"], noindex=page.paginator.count < TAG_INDEX_MIN_POSTS,
+                          canonical=listing["canonical"]))
+    ctx.update(meta_prev=listing["prev"], meta_next=listing["next"])
     return render(request, "website/blog_list.html", ctx)
 
 
@@ -369,22 +400,45 @@ def verification_file(request):
     return HttpResponse("", content_type="text/plain; charset=utf-8")
 
 
-@require_GET
-def sitemap(request):
-    entries = [("/", None, "1.0"), ("/blog/", None, "0.8"), ("/plans/", None, "0.8"), ("/download/", None, "0.7"), ("/announcements/", None, "0.5")]
+def sitemap_entries():
+    """Every page the site wants found: [(path, last modified or None, priority)].
+    Shared by the sitemap and the IndexNow submission."""
+    latest_post = services.live_posts().order_by("-updated_at").values_list("updated_at", flat=True).first()
+    entries = [("/", latest_post, "1.0"), ("/blog/", latest_post, "0.8"), ("/plans/", None, "0.8"), ("/download/", None, "0.7"), ("/announcements/", None, "0.5")]
     if settings.SITE_DRUG_ATC_PREFIXES:
-        from .views_drugs import catalog
+        from .views_drugs import catalog, group_pages
 
         drugs = catalog()
         if drugs:
             entries.append(("/drugs/", max(d["updated"] for d in drugs), "0.9"))
+            entries += [
+                (f"/drugs/group/{code.lower()}/", max(d["updated"] for d in members), "0.8")
+                for code, members in sorted(group_pages(drugs).items())
+            ]
             entries += [(f"/drugs/{d['slug']}/", d["updated"], "0.8") for d in drugs]
     posts = Post.objects.live().filter(noindex=False).only("slug", "updated_at", "canonical_url")
     entries += [(p.get_absolute_url(), p.updated_at, "0.7") for p in posts if not p.canonical_url or p.canonical_url.rstrip("/") == services.absolute(p.get_absolute_url()).rstrip("/")]
     entries += [(p.get_absolute_url(), p.updated_at, "0.4") for p in Page.objects.filter(status=Page.PUBLISHED, noindex=False).exclude(kind=Page.KIND_CONTACT).only("slug", "updated_at")]
     entries += [("/contact/", None, "0.3")]
     entries += [(c.get_absolute_url(), None, "0.5") for c in Category.objects.filter(posts__in=Post.objects.live()).distinct()]
-    entries += [(a.get_absolute_url(), None, "0.4") for a in Announcement.objects.filter(is_published=True, published_at__lte=timezone.now())]
+    entries += [(a.get_absolute_url(), a.published_at, "0.4") for a in Announcement.objects.filter(is_published=True, published_at__lte=timezone.now())]
+    return entries
+
+
+@require_safe
+def indexnow_key(request, key):
+    """The IndexNow key, at /<key>.txt, where the search engines check it."""
+    if not settings.INDEXNOW_KEY or key != settings.INDEXNOW_KEY:
+        raise Http404
+    return HttpResponse(key, content_type="text/plain; charset=utf-8")
+
+
+@require_GET
+def sitemap(request):
+    if SiteSettings.get().noindex_site:
+        entries = []
+    else:
+        entries = sitemap_entries()
     rows = []
     for path, modified, priority in entries:
         lastmod = f"<lastmod>{modified.date().isoformat()}</lastmod>" if modified else ""

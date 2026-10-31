@@ -557,3 +557,11 @@ a.rel:hover{transform:translateY(-3px);box-shadow:0 calc(var(--lift) + 3px) 0 va
 .dn-chips a{display:inline-flex;align-items:center;min-height:42px;padding:0 18px;border-radius:999px;background:var(--surface);border:2px solid var(--line);font-weight:800;color:var(--ink);text-decoration:none}
 .dn-chips a:hover{border-color:var(--p2)}
 
+.dn-uses{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:12px}
+.dn-uses a{display:flex;flex-direction:column;gap:6px;height:100%;padding:14px 16px;border-radius:var(--rb);background:var(--surface);border:2px solid var(--line);text-decoration:none;color:var(--ink);transition:border-color .2s var(--ease),transform .2s var(--ease)}
+.dn-uses a:hover{border-color:var(--p2);transform:translateY(-2px)}
+.dn-uses b{font-size:16px;font-weight:800}
+.dn-uses b span{font-size:13px;font-weight:700;color:var(--muted)}
+.dn-uses a>span{font-size:13.5px;line-height:1.9;color:var(--ink2)}
+.dn-cat h2 a{color:inherit;text-decoration-color:var(--line)}
+.dn-cat h2 a:hover{color:var(--p2)}

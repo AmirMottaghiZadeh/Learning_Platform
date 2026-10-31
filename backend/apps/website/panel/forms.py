@@ -212,7 +212,7 @@ SETTINGS_TABS = [
     ("bar", "نوار اطلاعیه", ["bar_enabled", "bar_text", "bar_link_text", "bar_url"]),
     ("contact", "تماس و شبکه‌ها", ["contact_email", "contact_phone", "address", "telegram_url", "instagram_url", "linkedin_url", "youtube_url", "x_url"]),
     ("features", "امکانات", ["comments_enabled", "comments_moderated", "newsletter_enabled", "posts_per_page"]),
-    ("seo", "سئو", ["title_suffix", "google_verification", "robots_extra", "noindex_site", "analytics_head"]),
+    ("seo", "سئو", ["title_suffix", "google_verification", "bing_verification", "robots_extra", "noindex_site", "analytics_head"]),
     ("maintenance", "تعمیر", ["maintenance_mode", "maintenance_text"]),
 ]
 

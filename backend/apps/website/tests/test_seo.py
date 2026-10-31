@@ -188,3 +188,153 @@ class SeedSeoContentTests(TestCase):
         self.assertEqual(Post.objects.count(), 6)
         self.assertEqual(Post.objects.get(pk=post.pk).title, "ویرایش‌شده")
         self.assertEqual(MenuItem.objects.filter(url="/drugs/").count(), 2)
+
+
+@override_settings(SITE_DRUG_ATC_PREFIXES=["J01"])
+class DrugGroupTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        sections = {"clinical_pharmacology": MECHANISM, "indications_and_usage": USES, "adverse_reactions": SIDE}
+        self.amox = make_drug("amoxicillin", "آموکسی‌سیلین", "J01CA", sections)
+        make_drug("ampicillin", "آمپی‌سیلین", "J01CA", sections)
+        make_drug("cefixime", "سفیکسیم", "J01DD", sections)
+
+    def test_subgroup_page_lists_its_drugs_with_their_uses(self):
+        res = self.client.get("/drugs/group/j01ca/", **HOST)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "<h1>داروهای گروه J01CA</h1>")
+        self.assertContains(res, "/drugs/amoxicillin-1/")
+        self.assertContains(res, "/drugs/ampicillin-1/")
+        self.assertNotContains(res, "/drugs/cefixime-1/")
+        self.assertContains(res, "عفونت‌های گوش، حلق و بینی، عفونت‌های ادراری")
+        self.assertContains(res, '<link rel="canonical" href="https://pharmenta.ir/drugs/group/j01ca/">')
+        nodes = structured(res)
+        page = next(n for n in nodes if n["@type"] == "CollectionPage")
+        self.assertEqual(page["mainEntity"]["numberOfItems"], 2)
+
+    def test_category_page_and_thin_groups(self):
+        res = self.client.get("/drugs/group/j01/", **HOST)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'href="/drugs/group/j01ca/"')
+        self.assertContains(res, "/drugs/cefixime-1/")
+        # One drug is no group page: it would only repeat the drug's own.
+        self.assertEqual(self.client.get("/drugs/group/j01dd/", **HOST).status_code, 404)
+        self.assertEqual(self.client.get("/drugs/group/c09/", **HOST).status_code, 404)
+        res = self.client.get("/drugs/group/J01CA/", **HOST)
+        self.assertEqual((res.status_code, res["Location"]), (301, "/drugs/group/j01ca/"))
+
+    def test_drug_page_names_the_drug_in_headings_and_links_its_group(self):
+        res = self.client.get("/drugs/amoxicillin-1/", **HOST)
+        self.assertContains(res, "<h2>عوارض جانبی آموکسی‌سیلین</h2>")
+        self.assertContains(res, "<h2>موارد مصرف آموکسی‌سیلین</h2>")
+        self.assertContains(res, "<title>آموکسی‌سیلین (Amoxicillin): موارد مصرف، عوارض جانبی و مکانیسم اثر | فارمنتا</title>")
+        self.assertContains(res, 'href="/drugs/group/j01ca/"')
+        nodes = structured(res)
+        trail = next(n for n in nodes if n["@type"] == "BreadcrumbList")["itemListElement"]
+        self.assertEqual([i.get("item") for i in trail], [
+            "https://pharmenta.ir/", "https://pharmenta.ir/drugs/", "https://pharmenta.ir/drugs/group/j01/",
+            "https://pharmenta.ir/drugs/group/j01ca/", None,
+        ])
+        about = next(n for n in nodes if n["@type"] == "MedicalWebPage")["about"]
+        self.assertEqual(about["alternateName"], ["آموکسی‌سیلین", "آموکسی سیلین", "آموکسیسیلین"])
+
+    def test_sitemap_lists_group_pages(self):
+        body = self.client.get("/sitemap.xml", **HOST).content.decode()
+        self.assertIn("/drugs/group/j01/</loc>", body)
+        self.assertIn("/drugs/group/j01ca/</loc>", body)
+        self.assertNotIn("/drugs/group/j01dd/", body)
+
+
+class ListingPaginationTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        from apps.website.models import SiteSettings
+
+        site = SiteSettings.get()
+        site.posts_per_page = 1
+        site.save()
+        when = timezone.now() - timedelta(hours=1)
+        for i in range(3):
+            Post.objects.create(title=f"مطلب {i}", slug=f"p-{i}", status=Post.PUBLISHED, published_at=when)
+
+    def test_later_pages_are_their_own_indexable_pages(self):
+        res = self.client.get("/blog/?page=2", **HOST)
+        self.assertContains(res, '<link rel="canonical" href="https://pharmenta.ir/blog/?page=2">')
+        self.assertContains(res, '<link rel="prev" href="https://pharmenta.ir/blog/">')
+        self.assertContains(res, '<link rel="next" href="https://pharmenta.ir/blog/?page=3">')
+        self.assertContains(res, "<title>مقالات - صفحهٔ ۲ | فارمنتا</title>")
+        self.assertNotContains(res, 'name="robots"')
+        first = self.client.get("/blog/", **HOST)
+        self.assertContains(first, '<link rel="canonical" href="https://pharmenta.ir/blog/">')
+        self.assertNotContains(first, 'rel="prev"')
+
+    def test_search_results_stay_out_of_the_index(self):
+        self.assertContains(self.client.get("/blog/?q=مطلب", **HOST), '<meta name="robots" content="noindex, follow">')
+
+    def test_empty_category_and_thin_tag_are_noindex(self):
+        from apps.website.models import Category, Tag
+
+        empty = Category.objects.create(name="خالی", slug="empty")
+        self.assertContains(self.client.get(empty.get_absolute_url(), **HOST), 'content="noindex, follow"')
+        tag = Tag.objects.create(name="کم", slug="few")
+        Post.objects.get(slug="p-0").tags.add(tag)
+        self.assertContains(self.client.get("/blog/tag/few/", **HOST), 'content="noindex, follow"')
+
+
+class SearchEngineTests(TestCase):
+    def test_bing_verification_meta(self):
+        from apps.website.models import SiteSettings
+
+        site = SiteSettings.get()
+        site.bing_verification = "ABC123"
+        site.save()
+        self.assertContains(self.client.get("/", **HOST), '<meta name="msvalidate.01" content="ABC123">')
+
+    @override_settings(INDEXNOW_KEY="0123456789abcdef")
+    def test_indexnow_key_file(self):
+        res = self.client.get("/0123456789abcdef.txt", **HOST)
+        self.assertEqual((res.status_code, res.content), (200, b"0123456789abcdef"))
+        self.assertEqual(self.client.get("/wrongkey1.txt", **HOST).status_code, 404)
+
+    def test_indexnow_key_file_off_without_a_key(self):
+        self.assertEqual(self.client.get("/0123456789abcdef.txt", **HOST).status_code, 404)
+
+    @override_settings(INDEXNOW_KEY="0123456789abcdef")
+    def test_indexnow_submit_posts_the_urls(self):
+        from unittest import mock
+
+        from apps.website import indexnow
+
+        response = mock.MagicMock(status=200)
+        response.__enter__.return_value = response
+        with mock.patch("urllib.request.urlopen", return_value=response) as urlopen:
+            self.assertEqual(indexnow.submit(["/drugs/", "/blog/x/", "/drugs/"]), 2)
+        body = json.loads(urlopen.call_args[0][0].data)
+        self.assertEqual(body["host"], "pharmenta.ir")
+        self.assertEqual(body["keyLocation"], "https://pharmenta.ir/0123456789abcdef.txt")
+        self.assertEqual(body["urlList"], ["https://pharmenta.ir/blog/x/", "https://pharmenta.ir/drugs/"])
+
+    @override_settings(INDEXNOW_KEY="0123456789abcdef")
+    def test_publishing_a_post_notifies_after_commit(self):
+        from unittest import mock
+
+        with mock.patch("apps.website.indexnow.submit") as submit, mock.patch("threading.Thread.start", lambda t: t.run()):
+            with self.captureOnCommitCallbacks(execute=True):
+                Post.objects.create(title="تازه", slug="fresh", status=Post.PUBLISHED, published_at=timezone.now() - timedelta(minutes=1))
+            with self.captureOnCommitCallbacks(execute=True):
+                Post.objects.create(title="پیش‌نویس", slug="draft", status=Post.DRAFT)
+        submit.assert_called_once_with(["/blog/fresh/", "/blog/"])
+
+    @override_settings(INDEXNOW_KEY="0123456789abcdef")
+    def test_indexnow_is_silent_when_the_site_is_noindex(self):
+        from unittest import mock
+
+        from apps.website import indexnow
+        from apps.website.models import SiteSettings
+
+        site = SiteSettings.get()
+        site.noindex_site = True
+        site.save()
+        with mock.patch("urllib.request.urlopen") as urlopen:
+            self.assertEqual(indexnow.submit(["/"]), 0)
+        urlopen.assert_not_called()

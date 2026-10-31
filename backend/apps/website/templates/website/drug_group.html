@@ -1,0 +1,38 @@
+{% extends "website/base.html" %}
+{% load billing_extras website_extras %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumbs" aria-label="مسیر">{% for label, url in trail %}{% if not forloop.first %} ‹ {% endif %}{% if url %}<a href="{{ url }}">{{ label }}</a>{% else %}{{ label }}{% endif %}{% endfor %}</nav>
+  <header class="dn-head">
+    {% if not is_category %}<a class="pill" href="{{ category.url }}">{{ category.name }}</a>{% endif %}
+    <h1>داروهای {{ name }}</h1>
+    <p class="lead">{{ name }} (کد <span dir="ltr">ATC {{ code }}</span>){% if not is_category %} از دستهٔ {{ category.name }}{% endif %}: {{ drugs|length|fa }} دارو در دارونامهٔ {{ site.site_name }}. برای هر دارو <b>موارد مصرف</b>، <b>عوارض جانبی</b> و <b>مکانیسم اثر</b> به زبان ساده و بر پایهٔ برچسب رسمی دارو آمده است.</p>
+    <div class="meta"><span>{{ site.site_name }}</span><span>به‌روزرسانی {{ updated|jdate:"long" }}</span></div>
+  </header>
+
+  {% if is_category %}
+    {% for s in subgroups %}
+    <section class="dn-cat" id="{{ s.code|lower }}">
+      <h2>{% if s.url %}<a href="{{ s.url }}">{{ s.name }}</a>{% else %}{{ s.name }}{% endif %} <small>{{ s.drugs|length|fa }} دارو · ATC {{ s.code }}</small></h2>
+      <ul class="dn-uses">{% for d in s.drugs %}{% include "website/_drug_use.html" %}{% endfor %}</ul>
+    </section>
+    {% endfor %}
+  {% else %}
+    <section class="dn-cat">
+      <ul class="dn-uses">{% for d in drugs %}{% include "website/_drug_use.html" %}{% endfor %}</ul>
+    </section>
+    {% if siblings %}
+    <section class="dn-cat">
+      <h2>گروه‌های دیگر {{ category.name }}</h2>
+      <ul class="dn-chips" style="justify-content:flex-start">{% for g in siblings %}<li><a href="{{ g.url }}">{{ g.name }}</a></li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+  {% endif %}
+
+  <aside class="dn-cta">
+    <div><b>درس‌نامهٔ کامل {{ name }} در اپ {{ site.site_name }}</b><p>دوز، منع مصرف، تداخلات، بارداری و هشدارهای هر دارو، به‌همراه فلش‌کارت لایتنر و آزمون.</p></div>
+    <div class="row"><a class="btn p" href="{{ site.app_url }}">ورود به وب‌اپ</a><a class="btn" href="{% url 'site:download' %}">دانلود اپ</a></div>
+  </aside>
+  <p class="dn-note">این صفحه برای آموزش تهیه شده و جایگزین تجویز پزشک یا مشورت با داروساز نیست.</p>
+</div>
+{% endblock %}

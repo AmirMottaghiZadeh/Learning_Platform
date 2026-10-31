@@ -13,7 +13,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Prefetch, Q
 from django.http import Http404
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
@@ -33,6 +33,13 @@ PUBLIC_SECTIONS = [
     ("adverse_reactions", "side", "عوارض جانبی"),
 ]
 PUBLIC_FIELDS = [field for field, _key, _title in PUBLIC_SECTIONS]
+# A section's heading on a drug's page, with the drug's name in it.
+HEADINGS = {
+    "boxed": "هشدار جعبه‌ای {name} (Boxed Warning)",
+    "mechanism": "مکانیسم اثر {name}",
+    "indication": "موارد مصرف {name}",
+    "side": "عوارض جانبی {name}",
+}
 # What the app adds for a drug: its other lesson sections, by their app titles.
 APP_SECTIONS = [(field, title_fa) for _key, field, title_fa, _en, _tone in LESSON_SECTION_MAP if field not in PUBLIC_FIELDS]
 
@@ -44,7 +51,11 @@ GROUP_TITLES = {"J01": "آنتی‌بیوتیک‌ها"}
 NOT_CONTENT = re.compile(r"متن ورودی|ورودی ارائه")
 NO_BOXED = re.compile(r"(هشدار جعبه‌ای|جعبه[ ‌]?سیاه)[^.\n]{0,30}(نیست|ندارد|وجود ندارد|نشده)")
 MIN_SECTIONS = 2
+# A group (an ATC category or subgroup) gets its own page from this many drugs;
+# below that the page would only repeat the drug's own.
+MIN_GROUP_DRUGS = 2
 CATALOG_SECONDS = 600
+ZWNJ = "\u200c"
 
 # Shown first among a category's drugs on the homepage, where present.
 POPULAR = [
@@ -144,7 +155,7 @@ def catalog():
     """Every drug that has a page: [{slug, name, name_fa, code, updated}],
     cached -- the index, the related links, the homepage and the sitemap all
     read it."""
-    key = "website:drugs:catalog:v1:" + ",".join(settings.SITE_DRUG_ATC_PREFIXES)
+    key = "website:drugs:catalog:v2:" + ",".join(settings.SITE_DRUG_ATC_PREFIXES)
     data = cache.get(key)
     if data is None:
         data = _build_catalog()
@@ -172,9 +183,44 @@ def _build_catalog():
             "name_fa": ingredient.name_fa or english_name(ingredient.name),
             "code": _group_code(ingredient),
             "updated": max(s["updated"] for s in shown),
+            "uses": uses_line(next((s["text"] for s in shown if s["key"] == "indication"), "")),
         })
     entries.sort(key=lambda e: fa_key(e["name_fa"]))
     return entries
+
+
+def uses_line(indication, limit=150):
+    """An indication summary as one short line ("عفونت گوش، عفونت ادراری"),
+    for a drug's description and for the lists on the group pages."""
+    items = [line.lstrip("-• ").split(":")[-1].strip() for line in indication.splitlines() if line.strip()]
+    text = "، ".join(item for item in items if item)
+    return (text[:limit].rsplit(" ", 1)[0] + "…") if len(text) > limit + 5 else text
+
+
+def spellings(name):
+    """A Persian name as people type it: with the half-space and without
+    ("آموکسی‌سیلین", "آموکسی سیلین", "آموکسیسیلین")."""
+    out = [name]
+    for variant in (name.replace(ZWNJ, " "), name.replace(ZWNJ, "")):
+        if variant not in out:
+            out.append(variant)
+    return out
+
+
+def group_pages(entries):
+    """{code: [drug entries]} for the groups that have a page: each category
+    (ATC level 2) and subgroup (level 4) with at least MIN_GROUP_DRUGS drugs."""
+    pages = {}
+    for entry in entries:
+        for code in {entry["code"][:3], entry["code"][:5]}:
+            if len(code) in (3, 5):
+                pages.setdefault(code, []).append(entry)
+    return {code: drugs for code, drugs in pages.items() if len(drugs) >= MIN_GROUP_DRUGS}
+
+
+def group_url(code, pages):
+    """A group's own page, or its place on the index when it has none."""
+    return f"/drugs/group/{code.lower()}/" if code in pages else f"/drugs/#{code[:3].lower()}"
 
 
 def _group_titles(codes):
@@ -191,15 +237,17 @@ def grouped(entries):
     l2 = sorted({e["code"][:3] for e in entries})
     l4 = sorted({e["code"][:5] for e in entries})
     names = _group_titles(l2 + l4)
+    pages = group_pages(catalog())
     out = []
     for category in l2:
         subgroups = []
         for code in [c for c in l4 if c.startswith(category)]:
             drugs = [e for e in entries if e["code"][:5] == code]
-            subgroups.append({"code": code, "name": names.get(code, code), "drugs": drugs})
+            subgroups.append({"code": code, "name": names.get(code, code), "drugs": drugs, "url": pages.get(code) and group_url(code, pages)})
         out.append({
             "code": category,
             "name": names.get(category, category),
+            "url": pages.get(category) and group_url(category, pages),
             "subgroups": subgroups,
             "count": sum(len(s["drugs"]) for s in subgroups),
         })
@@ -271,9 +319,10 @@ def drug_detail(request, slug):
     in_app = [title for field, title in APP_SECTIONS if field in has_summary]
     code = _group_code(ingredient)
     names = _group_titles([code[:3], code[:5]])
-    category = {"code": code[:3], "name": names.get(code[:3], code[:3])}
-    subgroup = {"code": code[:5], "name": names.get(code[:5], code[:5])}
     entries = catalog()
+    pages = group_pages(entries)
+    category = {"code": code[:3], "name": names.get(code[:3], code[:3]), "url": group_url(code[:3], pages)}
+    subgroup = {"code": code[:5], "name": names.get(code[:5], code[:5]), "url": group_url(code[:5], pages), "has_page": code[:5] in pages}
     related = [e for e in entries if e["code"][:5] == code[:5] and e["slug"] != ingredient.slug]
     if len(related) < 4:
         related += [e for e in entries if e["code"][:3] == code[:3] and e["code"][:5] != code[:5]][: 6 - len(related)]
@@ -282,25 +331,33 @@ def drug_detail(request, slug):
     name_fa = ingredient.name_fa or name_en
     both = f"{name_fa} ({name_en})" if ingredient.name_fa else name_en
     updated = max(s["updated"] for s in sections)
+    # Headings name the drug ("عوارض جانبی آموکسی‌سیلین"): that is how the
+    # question is searched, and each section then stands on its own.
+    for section in sections:
+        section["heading"] = HEADINGS[section["key"]].format(name=name_fa)
 
-    title = f"{both}: مکانیسم اثر، موارد مصرف و عوارض"
-    indication = next((s["text"] for s in sections if s["key"] == "indication"), "")
-    first_uses = "، ".join(
-        line.lstrip("-• ").split(":")[-1].strip() for line in indication.splitlines() if line.strip()
-    )
-    description = f"{both}، از {subgroup['name']}. موارد مصرف: {first_uses}"
+    # The order searches ask in: uses and side effects first.
+    title = f"{both}: موارد مصرف، عوارض جانبی و مکانیسم اثر"
+    uses = uses_line(next((s["text"] for s in sections if s["key"] == "indication"), ""), limit=400)
+    description = f"{both} از گروه {subgroup['name']}؛ موارد مصرف، عوارض و مکانیسم اثر به فارسی. کاربرد: {uses}"
     description = (description[:150].rsplit(" ", 1)[0] + "…") if len(description) > 155 else description
 
+    trail = [("خانه", "/"), ("دارونامه", "/drugs/")]
+    if category["code"] in pages:
+        trail.append((category["name"], category["url"]))
+    if subgroup["has_page"]:
+        trail.append((subgroup["name"], subgroup["url"]))
+    trail.append((name_fa, None))
     ctx = {
         "drug": ingredient, "name_fa": name_fa, "name_en": name_en, "has_fa": bool(ingredient.name_fa), "both": both,
-        "sections": sections, "in_app": in_app,
+        "sections": sections, "in_app": in_app, "trail": trail,
         "category": category, "subgroup": subgroup, "atc_codes": sorted(a.code for a in ingredient.atc_codes.all()),
         "related": related[:8], "updated": updated, "editorial": settings.SITE_EDITORIAL_NAME, "nav": "drugs",
     }
     ctx.update(_page_meta(request, title=title, description=description, image=seo.OG_IMAGE_PATH, canonical=f"/drugs/{ingredient.slug}/", kind="article"))
     ctx["structured_data"] = seo.page_graph(
         site,
-        seo.breadcrumbs([("خانه", "/"), ("دارونامه", "/drugs/"), (category["name"], "/drugs/"), (name_fa, None)]),
+        seo.breadcrumbs(trail),
         {
             "@type": "MedicalWebPage",
             "url": ctx["meta_canonical"],
@@ -312,16 +369,98 @@ def drug_detail(request, slug):
             "author": seo.editorial_team(),
             "publisher": {"@id": services.absolute("/#organization")},
             "audience": {"@type": "MedicalAudience", "audienceType": "Clinician"},
-            # A MedicalEntity, not a Drug: schema.org makes Drug a kind of
-            # Product too, and Google then checks the page as a product
-            # listing ("offers, review or aggregateRating should be
-            # specified") and reports every drug page as invalid.
-            "about": {
-                "@type": "MedicalEntity",
-                "name": name_en,
-                "alternateName": name_fa,
-                "code": [{"@type": "MedicalCode", "codeValue": c, "codingSystem": "ATC"} for c in ctx["atc_codes"]],
-            },
+            "about": drug_entity(name_en, ingredient.name_fa, ctx["atc_codes"]),
         },
     )
     return render(request, "website/drug_detail.html", ctx)
+
+
+def drug_entity(name_en, name_fa, atc_codes):
+    """What a drug's page is about, with every name it is searched by.
+
+    A MedicalEntity, not a Drug: schema.org makes Drug a kind of Product too,
+    and Google then checks the page as a product listing ("offers, review or
+    aggregateRating should be specified") and reports every drug page as
+    invalid."""
+    entity = {
+        "@type": "MedicalEntity",
+        "name": name_en,
+        "code": [{"@type": "MedicalCode", "codeValue": c, "codingSystem": "ATC"} for c in atc_codes],
+    }
+    if name_fa:
+        entity["alternateName"] = spellings(name_fa)
+    return entity
+
+
+def drug_group(request, code):
+    """A category (J01, "آنتی‌بیوتیک‌ها") or subgroup (J01CA) of the
+    دارونامه: its drugs, each with what it is used for, so a search for a
+    class of drugs ("داروهای سفالوسپورین") has a page that answers it."""
+    if not settings.SITE_DRUG_ATC_PREFIXES:
+        raise Http404
+    if code != code.lower():
+        return redirect("site:drug_group", code=code.lower(), permanent=True)
+    code = code.upper()
+    entries = catalog()
+    pages = group_pages(entries)
+    drugs = pages.get(code)
+    if not drugs:
+        raise Http404
+    site = SiteSettings.get()
+    services.record_view(request, request.path)
+
+    is_category = len(code) == 3
+    category_code = code[:3]
+    names = _group_titles([category_code, code])
+    name = names.get(code, code)
+    category = {"code": category_code, "name": names.get(category_code, category_code), "url": group_url(category_code, pages)}
+    if is_category:
+        subgroups = grouped(drugs)[0]["subgroups"]
+        siblings = []
+    else:
+        subgroups = []
+        in_category = [e for e in entries if e["code"][:3] == category_code]
+        siblings = [g for g in grouped(in_category)[0]["subgroups"] if g["code"] != code and g["url"]]
+
+    examples = "، ".join(d["name_fa"] for d in drugs[:4])
+    title = f"داروهای {name}: فهرست، موارد مصرف و عوارض"
+    description = (
+        f"فهرست {fa(len(drugs))} داروی {name} (ATC {code})، مانند {examples}؛ "
+        f"مکانیسم اثر، موارد مصرف و عوارض جانبی هر دارو به فارسی در دارونامهٔ {site.site_name}."
+    )
+    description = (description[:150].rsplit(" ", 1)[0] + "…") if len(description) > 155 else description
+    canonical = f"/drugs/group/{code.lower()}/"
+    trail = [("خانه", "/"), ("دارونامه", "/drugs/")]
+    if not is_category and category_code in pages:
+        trail.append((category["name"], category["url"]))
+    trail.append((name, None))
+
+    ctx = {
+        "code": code, "name": name, "drugs": drugs, "is_category": is_category, "category": category,
+        "subgroups": subgroups, "siblings": siblings, "trail": trail, "nav": "drugs",
+        "updated": max(d["updated"] for d in drugs),
+    }
+    ctx.update(_page_meta(request, title=title, description=description, image=seo.OG_IMAGE_PATH, canonical=canonical))
+    ctx["structured_data"] = seo.page_graph(
+        site,
+        seo.breadcrumbs(trail),
+        {
+            "@type": "CollectionPage",
+            "url": ctx["meta_canonical"],
+            "name": title,
+            "description": description,
+            "inLanguage": "fa-IR",
+            "dateModified": ctx["updated"].isoformat(),
+            "isPartOf": {"@id": services.absolute("/#website")},
+            "about": {"@type": "MedicalEntity", "name": name, "code": {"@type": "MedicalCode", "codeValue": code, "codingSystem": "ATC"}},
+            "mainEntity": {
+                "@type": "ItemList",
+                "numberOfItems": len(drugs),
+                "itemListElement": [
+                    {"@type": "ListItem", "position": i, "url": services.absolute(f"/drugs/{d['slug']}/"), "name": d["name_fa"]}
+                    for i, d in enumerate(drugs, start=1)
+                ],
+            },
+        },
+    )
+    return render(request, "website/drug_group.html", ctx)

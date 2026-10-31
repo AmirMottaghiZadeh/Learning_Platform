@@ -145,4 +145,7 @@ def article(post, site, *, canonical, image):
     }
     if post.category_id:
         node["articleSection"] = post.category.name
+    tags = [t.name for t in post.tags.all()]
+    if tags:
+        node["keywords"] = tags
     return {k: v for k, v in node.items() if v is not None}

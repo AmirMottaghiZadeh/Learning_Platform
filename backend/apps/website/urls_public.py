@@ -17,6 +17,7 @@ urlpatterns = [
     path("announcements/", v.announcements, name="announcements"),
     path("announcements/<str:slug>/", v.announcement_detail, name="announcement"),
     path("drugs/", views_drugs.drug_index, name="drugs"),
+    path("drugs/group/<str:code>/", views_drugs.drug_group, name="drug_group"),
     path("drugs/<str:slug>/", views_drugs.drug_detail, name="drug"),
     path("contact/", v.contact, name="contact"),
     path("search/", v.search, name="search"),
@@ -43,6 +44,8 @@ urlpatterns = [
     path("account/password/", views_account.set_password, name="set_password"),
     path("account/logout/", views_account.logout_view, name="logout"),
     path("checkout/<int:price_id>/", views_account.checkout, name="checkout"),
+    # IndexNow's ownership check (see indexnow.py)
+    path("<str:key>.txt", v.indexnow_key, name="indexnow_key"),
     # last: an editor-made page by its slug
     path("<str:slug>/", v.page_detail, name="page"),
 ]

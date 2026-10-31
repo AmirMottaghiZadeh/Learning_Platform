@@ -45,6 +45,10 @@ run python manage.py seed_website
 # has no manifest -> admin / browsable API / Swagger UI 500 without this).
 run python manage.py collectstatic --no-input
 
+# Tells Bing/Yandex (IndexNow) about pages changed in the last days, e.g. drug
+# pages refreshed by an import. A no-op without INDEXNOW_KEY; never blocks boot.
+python manage.py indexnow_submit --days 3 || echo "[docker-start] indexnow_submit failed; continuing"
+
 echo "[docker-start] starting gunicorn on 0.0.0.0:${PORT:-8000}"
 exec gunicorn config.wsgi:application \
     --config gunicorn.conf.py \

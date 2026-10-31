@@ -101,6 +101,8 @@ class SiteSettings(models.Model):
                                        help_text="برای محیط آزمایشی؛ سایت در موتورهای جست‌وجو ظاهر نمی‌شود.")
     robots_extra = models.TextField("خطوط اضافه robots.txt", blank=True)
     google_verification = models.CharField("کد تأیید گوگل (Search Console)", max_length=120, blank=True)
+    bing_verification = models.CharField("کد تأیید بینگ (Webmaster Tools)", max_length=120, blank=True,
+                                         help_text="فقط مقدار content متای msvalidate.01. بینگ جست‌وجوی ChatGPT، Copilot و DuckDuckGo را هم تغذیه می‌کند.")
     title_suffix = models.CharField("پسوند عنوان صفحه‌ها", max_length=60, blank=True, default="| فارمنتا")
     analytics_head = models.TextField("کد تحلیل‌گر (head)", blank=True,
                                       help_text="مثلاً کد گوگل آنالیتیکس یا متریکا؛ فقط مدیر اصلی می‌تواند تغییر دهد.")

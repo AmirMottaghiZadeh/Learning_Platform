@@ -1,7 +1,9 @@
+import re
 import sys
 from pathlib import Path
 from corsheaders.defaults import default_headers
 from decouple import config
+from django.core.exceptions import ImproperlyConfigured
 import dj_database_url
 
 RUNNING_TESTS = "test" in sys.argv
@@ -513,6 +515,11 @@ MANAGE_PUBLIC_URL = config(
 SITE_DRUG_ATC_PREFIXES = [
     p.strip().upper() for p in config("SITE_DRUG_ATC_PREFIXES", default="J01").split(",") if p.strip()
 ]
+# IndexNow (apps.website.indexnow): a key of 8-128 letters, digits or dashes,
+# published at https://pharmenta.ir/<key>.txt. Empty = off.
+INDEXNOW_KEY = config("INDEXNOW_KEY", default="").strip()
+if INDEXNOW_KEY and not re.fullmatch(r"[A-Za-z0-9-]{8,128}", INDEXNOW_KEY):
+    raise ImproperlyConfigured("INDEXNOW_KEY must be 8-128 letters, digits or dashes.")
 # Who the site names as the author of its drug pages and of articles that
 # have no named author.
 SITE_EDITORIAL_NAME = config("SITE_EDITORIAL_NAME", default="تیم علمی فارمنتا")

@@ -6,3 +6,6 @@ class WebsiteConfig(AppConfig):
     name = "apps.website"
     label = "website"
     verbose_name = "سایت و بلاگ"
+
+    def ready(self):
+        from . import signals  # noqa: F401
