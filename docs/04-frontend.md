@@ -241,6 +241,10 @@
 
 برای ساخت اعلان نصب، در `/manage/` ← «اپ» ← «اعلانات اپ»، عنوان و متن را بنویسید و نوع دکمه را «نصب وب‌اپ (PWA)» انتخاب کنید. مخاطب به‌صورت خودکار «کاربران وب که وب‌اپ را نصب نکرده‌اند» می‌شود. پیش‌نمایش هر دو دکمه را نشان می‌دهد. می‌توان ابتدا «آزمایش روی گوشی من» را زد و بعد منتشر کرد. هنگام استقرار، migration جدید برنامهٔ `announcements` را با `python manage.py migrate` اعمال کنید.
 
+- **آیکون وب‌اپ نصب‌شده (PWA):** از `frontend/assets/icons/Mortar.png` (انتخاب مالک پروژه، ۲۰۲۶-۱۱-۰۱).
+  - `python3 frontend/scripts/brand_icons.py` همهٔ اندازه‌ها را می‌سازد: `favicon.png`، `icon-192.png`، `icon-512.png`، `icon-maskable-512.png` و `apple-touch-icon.png` در `frontend/public/`، به‌علاوهٔ آیکون‌های سایت.
+  - آیکون iOS و آیکون maskable گوشه‌های سفید دارند. iOS شفافیت را سیاه می‌کند، و آیکون maskable باید کل مربع را پر کند (لوگو داخل ۸۰٪ امن است).
+  - بعد از عوض کردن آیکون، `?v=` را در `manifest.webmanifest` و `index.html` یکی بالا ببرید تا وب‌اپ‌های نصب‌شده آیکون تازه را بگیرند. الان `?v=2` است.
 - **خروجی:** `npx expo export --platform web` یک بستهٔ تک‌صفحه‌ای در `frontend/dist/` می‌سازد (`app.json`: `"output": "single"`).
 - **سرو (`frontend/nginx.conf`):**
   - مسیر ناشناخته به `index.html` برمی‌گردد.

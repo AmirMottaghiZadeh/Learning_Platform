@@ -2,7 +2,7 @@
 
 Two views of the same `IngredientProfileSection` rows:
 
-* `sections` — the raw field-keyed shape (all 12 clinical fields), used by any
+* `sections` — the raw field-keyed shape (all 13 clinical fields), used by any
   client that wants the whole profile.
 * `lesson_sections` — the design's lesson-card shape: a curated, ordered subset
   with bilingual titles, `tone` for colour, and `text_{fa,en}` taken from the
@@ -30,6 +30,7 @@ LESSON_SECTION_MAP = [
     ("mechanism", "clinical_pharmacology", "مکانیسم", "Mechanism", "info"),
     ("indication", "indications_and_usage", "اندیکاسیون", "Indication", "info"),
     ("dose", "dosage_and_administration", "دوز", "Dose", "info"),
+    ("food", "food_interactions", "تداخلات غذایی", "Food interactions", "caution"),
     ("forms", "dosage_forms_and_strengths", "اشکال دارویی", "Dosage forms", "info"),
     ("contraindications", "contraindications", "منع مطلق", "Contraindications", "deny"),
     ("do_not_use", "do_not_use", "چه‌وقت مصرف نکنیم", "Do not use", "deny"),

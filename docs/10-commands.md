@@ -51,6 +51,7 @@
 | `seed_seo_content` | `--dry-run` | مقاله‌های اصلی سئو و صفحهٔ «روش تهیه و بازبینی محتوا» به‌صورت پیش‌نویس، و پیوند «دارونامه» در منوها (یک بار) | [12](12-website.md) |
 | `import_openfda` | `--source --only-summaries --only-names --limit --dry-run` | داروها از پایپلاین openFDA | [07](07-data.md) |
 | `apply_atc_supplement` | `--dry-run` | کد ATC برای ماده‌های بی‌کد | [07](07-data.md) |
+| `fix_profile_text` | `--dry-run --show --pipeline` | گروه‌های عوارض در خط جدا، حذف توضیح دربارهٔ متن منبع | [07](07-data.md) |
 | `clean_profile_boilerplate` | `--dry-run --pipeline` | پاک‌سازی خلاصه‌ها | [07](07-data.md) |
 | `standardize_pipeline_units` | `--source --dry-run` | واحدهای فارسی فایل پایپلاین به نماد انگلیسی | [07](07-data.md) |
 | `export_openfda_db` | `--out --max-mb` | خروجی داروها در بخش‌های حداکثر ۲۰۰ مگی | [07](07-data.md) |

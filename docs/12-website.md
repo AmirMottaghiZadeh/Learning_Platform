@@ -140,7 +140,7 @@
 
 | موضوع | پیاده‌سازی |
 |---|---|
-| آیکون در نتایج گوگل | `/favicon.ico` (۱۶، ۳۲ و ۴۸ پیکسل) و `favicon-96x96.png`، `icon-192.png`، `apple-touch-icon.png` با **نشانی ثابت** در ریشهٔ سایت (`seo.BRAND_FILES`)؛ فایل‌ها در `static/website/brand/` |
+| آیکون در نتایج گوگل | `/favicon.ico` (۱۶، ۳۲ و ۴۸ پیکسل) و `favicon-96x96.png`، `icon-192.png`، `apple-touch-icon.png` با **نشانی ثابت** در ریشهٔ سایت (`seo.BRAND_FILES`)؛ فایل‌ها در `static/website/brand/`، ساخته‌شده از همان `frontend/assets/icons/Mortar.png` وب‌اپ با `python3 frontend/scripts/brand_icons.py` (۲۰۲۶-۱۱-۰۱). `og-image.png` جداست و دست نخورده |
 | نام سایت در نتایج | دادهٔ ساختاریافتهٔ `WebSite` در صفحهٔ اصلی با `name` «فارمنتا» و `alternateName` «Pharmenta» |
 | لوگوی سازمان | `Organization` با `logo` = `/icon-512.png` در همهٔ صفحه‌ها |
 | مسیر صفحه | `BreadcrumbList` در مقاله‌ها، برگه‌ها و صفحه‌های دارو |

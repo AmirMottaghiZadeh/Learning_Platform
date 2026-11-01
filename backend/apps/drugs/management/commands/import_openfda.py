@@ -8,7 +8,9 @@ row per ingredient, carrying every clinical field plus its fa/en summary) and
 The command is idempotent — every ingredient is matched on its RXCUI — so it is
 safe to re-run as upstream summaries get filled in. ``--only-summaries`` limits
 the write to the ``summary_fa`` / ``summary_en`` columns of sections that
-already exist, which is the common case once the raw text is stable;
+already exist, which is the common case once the raw text is stable -- and
+adds the section of a clinical field the pipeline gained later
+(``food_interactions``, 2026-11) where that field has text;
 ``--only-names`` likewise writes just each ingredient's Persian name
 (``ingredient_name_fa`` -> ``Ingredient.name_fa``).
 """
@@ -275,6 +277,17 @@ class Command(BaseCommand):
 
         keys = row.keys()
         existing = {s.field: s for s in ingredient.sections.all()}
+        for field in CLINICAL_FIELD_KEYS:
+            if field in existing or field not in keys:
+                continue
+            raw = (row[field] or "").strip()
+            fa = standardize_units((row[f"{field}_summary_fa"] or "").strip()) if f"{field}_summary_fa" in keys else ""
+            en = (row[f"{field}_summary_en"] or "").strip() if f"{field}_summary_en" in keys else ""
+            if raw or fa or en:
+                IngredientProfileSection.objects.create(
+                    ingredient=ingredient, field=field, raw_text=raw, summary_fa=fa, summary_en=en
+                )
+                stats["sections_written"] += 1
         for field, section in existing.items():
             fa_col, en_col = f"{field}_summary_fa", f"{field}_summary_en"
             fa = standardize_units((row[fa_col] or "").strip()) if fa_col in keys else section.summary_fa

@@ -10,6 +10,8 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from apps.drugs.data.atc_reference import ATC_L1, ATC_L2
+from apps.drugs.profile_text import fix_summary
+from apps.drugs.serializers import IngredientDetailSerializer
 from apps.drugs.models import (
     CLINICAL_FIELD_KEYS,
     AtcCategory,
@@ -180,8 +182,8 @@ class ImportOpenfdaTests(TestCase):
         call_command("import_openfda", source=self._source())
 
         self.assertEqual(Ingredient.objects.count(), 2)
-        # Twelve sections per ingredient, one per clinical field.
-        self.assertEqual(IngredientProfileSection.objects.count(), 24)
+        # Thirteen sections per ingredient, one per clinical field.
+        self.assertEqual(IngredientProfileSection.objects.count(), 26)
 
         losartan = Ingredient.objects.get(rxcui="52175")
         self.assertEqual(losartan.slug, "losartan-52175")
@@ -211,7 +213,7 @@ class ImportOpenfdaTests(TestCase):
         call_command("import_openfda", source=source)
 
         self.assertEqual(Ingredient.objects.count(), 2)
-        self.assertEqual(IngredientProfileSection.objects.count(), 24)
+        self.assertEqual(IngredientProfileSection.objects.count(), 26)
         self.assertEqual(AtcCode.objects.count(), 2)
 
     def test_only_summaries_updates_summaries_without_touching_raw_text(self):
@@ -224,6 +226,31 @@ class ImportOpenfdaTests(TestCase):
         ind = Ingredient.objects.get(rxcui="52175").sections.get(field="indications_and_usage")
         self.assertEqual(ind.summary_fa, "خلاصهٔ به‌روزشده.")
         self.assertEqual(ind.raw_text, "Lowers blood pressure.")
+
+    def test_only_summaries_adds_a_field_the_pipeline_gained_later(self):
+        call_command("import_openfda", source=self._source())
+        # As before food_interactions existed: no section for it.
+        IngredientProfileSection.objects.filter(field="food_interactions").delete()
+        self.profiles[0]["food_interactions"] = "Avoid potassium supplements."
+        self.profiles[0]["food_interactions_summary_fa"] = "- از مکمل‌های پتاسیم خودداری شود."
+        self.profiles[0]["food_interactions_summary_en"] = "- Avoid potassium supplements."
+        call_command("import_openfda", source=self._source(), only_summaries=True)
+
+        food = Ingredient.objects.get(rxcui="52175").sections.get(field="food_interactions")
+        self.assertEqual(food.summary_fa, "- از مکمل‌های پتاسیم خودداری شود.")
+        self.assertEqual(food.raw_text, "Avoid potassium supplements.")
+        # No text upstream, no empty section.
+        self.assertFalse(Ingredient.objects.get(rxcui="5487").sections.filter(field="food_interactions").exists())
+
+    def test_food_interactions_come_right_after_the_dose_in_the_lesson(self):
+        self.profiles[0]["dosage_and_administration_summary_fa"] = "- ۵۰ mg یک‌بار در روز"
+        self.profiles[0]["food_interactions_summary_fa"] = "- از مکمل‌های پتاسیم خودداری شود."
+        call_command("import_openfda", source=self._source())
+        sections = IngredientDetailSerializer(Ingredient.objects.get(rxcui="52175")).data["lesson_sections"]
+        keys = [s["key"] for s in sections]
+        self.assertEqual(keys[keys.index("dose") + 1], "food")
+        food = sections[keys.index("food")]
+        self.assertEqual((food["title_fa"], food["text_fa"]), ("تداخلات غذایی", "- از مکمل‌های پتاسیم خودداری شود."))
 
     def test_dry_run_writes_nothing(self):
         call_command("import_openfda", source=self._source(), dry_run=True)
@@ -407,6 +434,72 @@ class CleanBoilerplateInPipelineTests(TestCase):
             text = conn.execute("SELECT contraindications_summary_fa FROM ingredient_clinical_profiles").fetchone()[0]
             conn.close()
         self.assertEqual(text, "- مصرف همزمان با MAOI")
+
+
+class ProfileTextTests(TestCase):
+    def test_a_side_effect_category_after_a_semicolon_gets_its_own_bullet(self):
+        text = "- شایع: سرگیجه\n- مهم و جدی: سندرم سروتونین؛ نادر: تشنج، میگرن"
+        self.assertEqual(
+            fix_summary(text, "adverse_reactions"),
+            "- شایع: سرگیجه\n- مهم و جدی: سندرم سروتونین\n- نادر: تشنج، میگرن",
+        )
+        self.assertEqual(fix_summary("- Important/Serious: seizures; Rare: tinnitus", "adverse_reactions"),
+                         "- Important/Serious: seizures\n- Rare: tinnitus")
+
+    def test_rare_as_an_adjective_is_left_alone(self):
+        text = "- نارسایی کبدی کلستاتیک نادر: در زردی قطع شود"
+        self.assertEqual(fix_summary(text, "warnings"), text)
+        self.assertEqual(fix_summary("- نادر: آنمی همولیتیک", "adverse_reactions"), "- نادر: آنمی همولیتیک")
+
+    def test_lines_that_only_comment_on_the_source_are_dropped(self):
+        self.assertEqual(fix_summary("- فقط به محتوای 600 mg بطری اشاره دارد", "boxed_warning"), "")
+        self.assertEqual(
+            fix_summary("- No clinical boxed warning present\n- only mentions 600 mg content per bottle", "boxed_warning"), ""
+        )
+        self.assertEqual(fix_summary("- بسته‌بندی انبوه داروخانه‌ای", "boxed_warning"), "")
+        self.assertEqual(
+            fix_summary("- این بخش داده‌ای درباره‌ی پتانسیل سوءمصرف ندارد؛ فقط سمیت حاد را توصیف می‌کند", "abuse"), ""
+        )
+
+    def test_a_commentary_sentence_is_cut_and_the_line_kept(self):
+        self.assertEqual(
+            fix_summary("- SOLIQUA: یک‌بار در روز. متن موجود دوز شروع را در این بخش حفظ نکرده است — به اطلاعات کامل تجویز مراجعه شود. "
+                        "تیتراسیون بر اساس قند خون.", "dosage_and_administration"),
+            "- SOLIQUA: یک‌بار در روز. تیتراسیون بر اساس قند خون.",
+        )
+        self.assertEqual(
+            fix_summary("- Injection, a reduced weight-based dose (the available text does not preserve the specific mg/kg "
+                        "figures for this excerpt). Hepatic: none.", "dosage_and_administration"),
+            "- Injection, a reduced weight-based dose. Hepatic: none.",
+        )
+        self.assertEqual(
+            fix_summary("- 0.1 to 0.2 mL/kg — the available text does not preserve the product this refers to.",
+                        "dosage_and_administration"),
+            "- 0.1 to 0.2 mL/kg",
+        )
+
+    def test_real_content_with_similar_words_stays(self):
+        for text, field in [
+            ("- Pharmacy bulk package: 10 grams of ampicillin", "dosage_forms_and_strengths"),
+            ("- بطری را دور از دسترس کودکان نگه دارید", "boxed_warning"),
+            ("- The pharmacy bulk package is not for direct infusion", "boxed_warning"),
+        ]:
+            self.assertEqual(fix_summary(text, field), text)
+
+    def test_the_pipeline_file_gets_the_same_fix_and_keeps_the_old_text(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = _make_source_db(tmp, [{
+                "ingredient_rxcui": "18631",
+                "ingredient_name": "azithromycin",
+                "boxed_warning_summary_fa": "- فقط به محتوای 600 mg بطری اشاره دارد",
+            }])
+            call_command("fix_profile_text", pipeline=source, stdout=StringIO())
+            conn = sqlite3.connect(source)
+            text = conn.execute("SELECT boxed_warning_summary_fa FROM ingredient_clinical_profiles").fetchone()[0]
+            backup = conn.execute("SELECT name FROM sqlite_master WHERE name LIKE 'textfix_backup_%'").fetchone()
+            conn.close()
+        self.assertEqual(text, "")
+        self.assertIsNotNone(backup)
 
 
 class NullStatementTests(TestCase):

@@ -23,6 +23,8 @@ from django.utils.text import slugify
 CLINICAL_FIELDS = [
     ("indications_and_usage", "Indications and usage"),
     ("dosage_and_administration", "Dosage and administration"),
+    # Added upstream in 2026-11 for about 900 ingredients; right under the dose.
+    ("food_interactions", "Food interactions"),
     ("dosage_forms_and_strengths", "Dosage forms and strengths"),
     ("contraindications", "Contraindications"),
     ("do_not_use", "Do not use"),
