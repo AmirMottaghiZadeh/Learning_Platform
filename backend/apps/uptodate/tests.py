@@ -15,6 +15,8 @@ from rest_framework.test import APIClient
 
 from . import services
 from .mysql_schema import ensure_title_search_index
+from .search_extraction import extract_article
+from apps.core.exceptions import PlatformAPIError
 
 
 def _make_snapshot(directory: str):
@@ -166,6 +168,35 @@ class UptodateTests(TestCase):
         self.assertEqual(res.data["title"], "Hypertension in adults")
         self.assertIn("<p>Body.</p>", res.data["body_html"])
         self.assertEqual(res.data["contributors"], ["Jane Doe, MD"])
+
+    def test_search_anchor_requires_exact_revision_and_existing_block(self):
+        result = extract_article("3851", "<html><body><p>Body.</p></body></html>")
+        anchor = result.blocks[0].paragraph_id
+        with self._with_snapshot():
+            url = "/api/v1/uptodate/topics/3851/"
+            matched = self.client.get(url, {"search_content_hash": result.content_hash, "search_anchor": anchor})
+            missing = self.client.get(url, {"search_content_hash": result.content_hash, "search_anchor": "utd-" + "0" * 32})
+            stale = self.client.get(url, {"search_content_hash": "0" * 64, "search_anchor": anchor})
+            invalid = self.client.get(url, {"search_anchor": anchor})
+        self.assertEqual(matched.status_code, 200)
+        self.assertEqual(matched.data["search_anchor_status"], "matched")
+        self.assertIn(anchor, matched.data["body_html"])
+        self.assertEqual(missing.data["search_anchor_status"], "missing")
+        self.assertNotIn("data-pharmenta-search-anchor", missing.data["body_html"])
+        self.assertEqual(stale.data["search_anchor_status"], "stale")
+        self.assertNotIn("data-pharmenta-search-anchor", stale.data["body_html"])
+        self.assertEqual(invalid.status_code, 400)
+
+    def test_search_anchor_respects_existing_access_control(self):
+        result = extract_article("3851", "<html><body><p>Body.</p></body></html>")
+        params = {"search_content_hash": result.content_hash, "search_anchor": result.blocks[0].paragraph_id}
+        with self._with_snapshot(), patch("apps.uptodate.views.require_feature", side_effect=PlatformAPIError(
+            "Access denied", code="PREMIUM_REQUIRED", status_code=402
+        )) as check:
+            response = self.client.get("/api/v1/uptodate/topics/3851/", params)
+        self.assertEqual(response.status_code, 402)
+        self.assertNotIn("body_html", response.data)
+        self.assertEqual(check.call_args.kwargs, {"item": "3851", "consume": True})
 
     def test_missing_topic_is_404(self):
         with self._with_snapshot():

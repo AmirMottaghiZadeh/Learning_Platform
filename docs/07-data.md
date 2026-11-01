@@ -66,6 +66,7 @@ python manage.py <دستور> [گزینه‌ها]                # کنسول س
 | `export_study_content_db` | quiz | فایل قابل‌حمل سؤال و فلش‌کارت | دستی، روی لپ‌تاپ |
 | `import_study_content_db` | quiz | ایمپورت آن فایل | دستی |
 | `migrate_uptodate_to_mysql` | uptodate | کپی UpToDate به MySQL | دستی، روی لپ‌تاپ |
+| `build_search_lexicon` | uptodate | نگاشت نام فارسی داروهای پایپلاین به مفاهیم UpToDate در `search_lexicon/drugs_fa.csv`، برای [جست‌وجوی هوشمند](search/README.md) | دستی، روی لپ‌تاپ |
 | `build_offline_package` | offline | ساخت بستهٔ آفلاین | دستی، روی لپ‌تاپ |
 | `offline_bucket_cors` | offline | تنظیم و بررسی CORS باکت | دستی، یک بار |
 | `backup_database` | core | بکاپ Postgres | دستی |

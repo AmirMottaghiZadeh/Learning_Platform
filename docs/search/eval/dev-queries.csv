@@ -1,0 +1,105 @@
+query_id,query,language,category,expected_level,pool_concepts,pool_drug,population,section_keys,detail
+d001,سفتریاکسون,fa,drug_only,article,ceftriaxone,Ceftriaxone,a,,
+d002,آموکسی سیلین,fa,drug_only,article,amoxicillin,Amoxicillin,a,,
+d003,پنتوپرازول,fa,drug_only,article,pantoprazole,Pantoprazole,a,,
+d004,لووتیروکسین,fa,drug_only,article,levothyroxine,Levothyroxine,a,,
+d005,آتورواستاتین,fa,drug_only,article,atorvastatin,Atorvastatin,a,,
+d006,هپارین,fa,drug_only,article,heparin (unfractionated heparin),Heparin (unfractionated),a,,
+d007,مترونیدازول,fa,drug_only,article,metronidazole,Metronidazole (systemic),a,,
+d008,والپروات سدیم,fa,drug_only,article,valproate,Valproate (valproic acid),a,,
+d009,لیتیوم,fa,drug_only,article,lithium,Lithium,a,,
+d010,دیگوکسین,fa,drug_only,article,digoxin,Digoxin,a,,
+d011,آمیودارون,fa,drug_only,article,amiodarone,Amiodarone,a,,
+d012,کلوپیدوگرل,fa,drug_only,article,clopidogrel,Clopidogrel,a,,
+d013,آسم,fa,disease_only,article,asthma,,a,,
+d014,سل,fa,disease_only,article,tuberculosis,,a,,
+d015,میگرن,fa,disease_only,article,migraine,,a,,
+d016,پنومونی,fa,disease_only,article,pneumonia,,a,,
+d017,نقرس,fa,disease_only,article,gout,,a,,
+d018,پرکاری تیروئید,fa,disease_only,article,hyperthyroidism,,a,,
+d019,صرع,fa,disease_only,article,epilepsy,,a,,
+d020,کم خونی فقر آهن,fa,disease_only,article,iron deficiency anemia,,a,,
+d021,فیبریلاسیون دهلیزی,fa,disease_only,article,atrial fibrillation,,a,,
+d022,سنگ کلیه,fa,disease_only,article,kidney stones,,a,,
+d023,عوارض متفورمین,fa,drug_topic,section,metformin,Metformin,a,Adverse Reactions,
+d024,دوز سفتریاکسون در نارسایی کلیه,fa,drug_topic,section,ceftriaxone,Ceftriaxone,a,Kidney Impairment,
+d025,تداخلات دارویی وارفارین,fa,drug_topic,section,warfarin,Warfarin,a,Drug Interactions,
+d026,مصرف آموکسی سیلین در بارداری,fa,drug_topic,section,amoxicillin,Amoxicillin,a,Pregnancy,
+d027,لووتیروکسین در شیردهی,fa,drug_topic,section,levothyroxine,Levothyroxine,a,Breastfeeding,
+d028,مکانیسم اثر متفورمین,fa,drug_topic,section,metformin,Metformin,a,Mechanism of Action,
+d029,نحوه مصرف لووتیروکسین,fa,drug_topic,section,levothyroxine,Levothyroxine,a,Administration,
+d030,موارد منع مصرف وارفارین,fa,drug_topic,section,warfarin,Warfarin,a,Contraindications,
+d031,عوارض جانبی آملودیپین,fa,drug_topic,section,amlodipine,Amlodipine,a,Adverse Reactions,
+d032,دوز آتورواستاتین,fa,drug_topic,section,atorvastatin,Atorvastatin,a,Dosing: Adult,
+d033,پایش بیمار در مصرف لیتیوم,fa,drug_topic,section,lithium,Lithium,a,Monitoring,
+d034,اشکال دارویی پنتوپرازول,fa,drug_topic,section,pantoprazole,Pantoprazole,a,Dosage Forms,
+d035,فارماکوکینتیک دیگوکسین,fa,drug_topic,section,digoxin,Digoxin,a,Pharmacokinetics,
+d036,دوز وانکومایسین در بیماران دیالیزی,fa,drug_topic,section,vancomycin,Vancomycin,a,Kidney Impairment;dialysis,
+d037,تنظیم دوز گاباپنتین در نارسایی کلیه,fa,drug_topic,section,gabapentin,Gabapentin,a,Kidney Impairment,
+d038,دوز استامینوفن در بیماری کبدی,fa,drug_topic,section,acetaminophen,Acetaminophen (paracetamol),a,Liver Impairment,
+d039,هشدارهای مصرف سیپروفلوکساسین,fa,drug_topic,section,ciprofloxacin,Ciprofloxacin (systemic),a,Warnings,
+d040,عوارض اسپیرونولاکتون,fa,drug_topic,section,spironolactone,Spironolactone,a,Adverse Reactions,
+d041,دوز ایبوپروفن برای بچه ها,fa,drug_topic,section,ibuprofen,Ibuprofen,p,Dosing: Pediatric,
+d042,موارد مصرف آمیودارون,fa,drug_topic,section,amiodarone,Amiodarone,a,Use:,
+d043,مصرف سرترالین در بارداری,fa,drug_topic,section,sertraline,Sertraline,a,Pregnancy,
+d044,عوارض آلوپورینول,fa,drug_topic,section,allopurinol,Allopurinol,a,Adverse Reactions,
+d045,درمان آسم,fa,disease_goal,article,asthma,,a,,
+d046,درمان سل,fa,disease_goal,article,tuberculosis,,a,,
+d047,تشخیص سل ریوی,fa,disease_goal,article,pulmonary tuberculosis,,a,,
+d048,درمان حمله حاد میگرن,fa,disease_goal,article,migraine,,a,,
+d049,پیشگیری از میگرن,fa,disease_goal,article,migraine,,a,,
+d050,درمان پنومونی اکتسابی از جامعه,fa,disease_goal,article,community acquired pneumonia,,a,,
+d051,درمان فشار خون بالا,fa,disease_goal,article,hypertension,,a,,
+d052,تشخیص کم خونی فقر آهن,fa,disease_goal,article,iron deficiency anemia,,a,,
+d053,درمان حمله حاد نقرس,fa,disease_goal,article,gout,,a,,
+d054,درمان مسمومیت با استامینوفن,fa,disease_goal,article,acetaminophen poisoning,,a,,
+d055,درمان مسمومیت با مواد افیونی,fa,disease_goal,article,opioid overdose,,a,,
+d056,درمان خونریزی گوارشی فوقانی,fa,disease_goal,article,upper gastrointestinal bleeding,,a,,
+d057,پیشگیری از ترومبوز وریدی عمقی در بیماران بستری,fa,disease_goal,article,venous thromboembolism,,a,,
+d058,درمان کتواسیدوز دیابتی,fa,disease_goal,article,diabetic ketoacidosis,,a,,
+d059,درمان هیپوکالمی,fa,disease_goal,article,hypokalemia,,a,,
+d060,درمان کم کاری تیروئید,fa,disease_goal,article,hypothyroidism,,a,,
+d061,درمان سلولیت,fa,disease_goal,article,cellulitis,,a,,
+d062,کنترل ضربان قلب در فیبریلاسیون دهلیزی,fa,disease_goal,article,atrial fibrillation,,a,,
+d063,درمان زخم معده ناشی از هلیکوباکتر پیلوری,fa,disease_goal,article,helicobacter pylori,,a,,
+d064,درمان آنافیلاکسی,fa,disease_goal,article,anaphylaxis,,a,,
+d065,درمان آسم در بارداری,fa,disease_context,article,asthma;pregnancy,,a,,
+d066,درمان فشار خون در بارداری,fa,disease_context,article,hypertension;preeclampsia,,a,,
+d067,درمان پنومونی در کودکان,fa,disease_context,article,community acquired pneumonia,,p,,
+d068,تشخیص آسم در کودکان,fa,disease_context,article,asthma,,p,,
+d069,آنتی بیوتیک مناسب عفونت ادراری در بارداری,fa,disease_context,article,urinary tract infection;asymptomatic bacteriuria,,a,,
+d070,درمان مننژیت باکتریایی در بزرگسالان,fa,disease_context,article,bacterial meningitis,,a,,
+d071,دیابت بارداری,fa,disease_context,article,gestational diabetes (gestational diabetes mellitus),,a,,
+d072,درمان افسردگی در سالمندان,fa,disease_context,article,depression,,a,,
+d073,دوز وانکومایسین وریدی وقتی کلیرانس کراتینین کمتر از ۳۰ است,fa,detail,paragraph,vancomycin,Vancomycin,a,Kidney Impairment,CrCl <30; IV
+d074,آپیکسابان ۲٫۵ میلی گرم در نارسایی کلیه,fa,detail,paragraph,apixaban,Apixaban,a,Kidney Impairment,2.5 mg
+d075,دوز انوکساپارین در کلیرانس کمتر از ۳۰,fa,detail,paragraph,enoxaparin,Enoxaparin (including biosimilars available in Canada),a,Kidney Impairment,CrCl <30
+d076,روش تزریق عضلانی سفتریاکسون,fa,detail,paragraph,ceftriaxone,Ceftriaxone,a,Administration,IM
+d077,متفورمین با eGFR کمتر از ۴۵,mixed,detail,paragraph,metformin,Metformin,a,Kidney Impairment,eGFR <45
+d078,دوز استامینوفن وریدی در بزرگسالان,fa,detail,paragraph,acetaminophen,Acetaminophen (paracetamol),a,Dosing: Adult,IV
+d079,بولوس وریدی هپارین در آمبولی ریه,fa,detail,paragraph,heparin (unfractionated heparin),Heparin (unfractionated),a,Dosing: Adult,IV bolus; pulmonary embolism
+d080,دوز خوراکی لووفلوکساسین در نارسایی کلیه,fa,detail,paragraph,levofloxacin,Levofloxacin (systemic),a,Kidney Impairment,oral
+d081,تداخل وارفارین و آمیودارون,fa,interaction,lexicomp,,,,,warfarin + amiodarone
+d082,تداخل کلاریترومایسین با سیمواستاتین,fa,interaction,lexicomp,,,,,clarithromycin + simvastatin
+d083,تداخل سیلدنافیل و نیترات,fa,interaction,lexicomp,,,,,sildenafil + nitrates
+d084,ترامادول با فلوکستین تداخل دارد؟,fa,interaction,lexicomp,,,,,tramadol + fluoxetine
+d085,داروی فشار برای خانم باردار,fa,colloquial,article,hypertension;preeclampsia,,a,,
+d086,سفتریاکسن,fa,colloquial,article,ceftriaxone,Ceftriaxone,a,,misspelling
+d087,متفورمن,fa,colloquial,article,metformin,Metformin,a,,misspelling
+d088,عوارض قرص پلاویکس,fa,colloquial,section,clopidogrel,Clopidogrel,a,Adverse Reactions,brand name
+d089,کوآموکسی کلاو دوز بچه,fa,colloquial,section,amoxicillin clavulanate,Amoxicillin and clavulanate,p,Dosing: Pediatric,
+d090,درمان HTN,mixed,colloquial,article,htn,,a,,abbreviation
+d091,درمان سرپایی CAP,mixed,colloquial,article,community acquired pneumonia,,a,,abbreviation
+d092,دوز شروع انسولین گلارژین,fa,colloquial,section,insulin glargine,Insulin glargine (including biosimilars),a,Dosing: Adult,
+d093,عوارض استاتین ها,fa,colloquial,article,statin,,a,,drug class
+d094,سرماخوردگی بچه چی بدم,fa,colloquial,article,common cold,,p,,
+d095,درمان دیابت,fa,ambiguous,ambiguous,diabetes mellitus,,a,,type and population not given
+d096,دوز انسولین,fa,ambiguous,ambiguous,insulin (insulin formulations),,a,,type and indication not given
+d097,پیشگیری از ترومبوز,fa,ambiguous,ambiguous,venous thromboembolism,,a,,setting not given
+d098,عفونت ادراری,fa,ambiguous,ambiguous,urinary tract infection,,a,,
+d099,سرفه,fa,ambiguous,ambiguous,cough,,a,,
+d100,ceftriaxone renal dose,en,english,section,ceftriaxone,Ceftriaxone,a,Kidney Impairment,
+d101,metformin adverse effects,en,english,section,metformin,Metformin,a,Adverse Reactions,
+d102,treatment of tuberculosis,en,english,article,tuberculosis,,a,,
+d103,apixaban dose in ESRD,en,english,section,apixaban,Apixaban,a,Kidney Impairment,
+d104,دوز vancomycin در کودکان,mixed,english,section,vancomycin,Vancomycin,p,Dosing: Pediatric,

@@ -97,6 +97,29 @@ function __utdGoto(sectionId) {
   var el = document.getElementById(sectionId);
   if (el) el.scrollIntoView({ block: "start" });
 }
+function __utdGotoSearchSection(sectionId) {
+  if (!sectionId) return false;
+  var nodes = document.querySelectorAll('[id]');
+  var found = null;
+  for (var i = 0; i < nodes.length; i++) {
+    if (nodes[i].id !== sectionId) continue;
+    if (found) return false;
+    found = nodes[i];
+  }
+  if (!found) return false;
+  found.scrollIntoView({ block: "start" });
+  return true;
+}
+function __utdGotoSearch(anchor) {
+  if (!/^utd-[a-f0-9]{32}$/.test(anchor || "")) return false;
+  var matches = document.querySelectorAll('[data-pharmenta-search-anchor="' + anchor + '"]');
+  if (matches.length !== 1) return false;
+  var el = matches[0];
+  el.scrollIntoView({ block: "center" });
+  el.classList.add("utd-search-flash");
+  setTimeout(function () { el.classList.remove("utd-search-flash"); }, 2500);
+  return true;
+}
 function __utdEmitOp(payload) {
   var msg = JSON.stringify(Object.assign({ __utdOp: true }, payload));
   if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(msg);
@@ -289,6 +312,7 @@ function wrap(bodyHtml: string, c: WrapColors, levels: HeadingLevels = {}, tops:
                 background:${accent}; font-size:0; line-height:0; overflow:hidden; }
   .bulletIndent2 > .utd-bullet { left:20px; opacity:.55; }
   .bulletIndent3 > .utd-bullet { left:38px; opacity:.4; }
+.utd-search-flash { outline: 3px solid ${accent}; background: ${accentSoft}; }
 </style></head><body>${bodyHtml}<script>${FIND_SCRIPT}
 __utdMarkHeadings(${levelsJson}, ${topsJson});
 __utdMarkBullets();</script></body></html>`;
@@ -301,7 +325,9 @@ __utdMarkBullets();</script></body></html>`;
 export function UptodateArticleScreen() {
   const id = String(useNav((s) => s.params.id ?? ""));
   const sectionId = useNav((s) => s.params.sectionId) as string | undefined;
-  return <UptodateArticle key={`${id}|${sectionId ?? ""}`} />;
+  const searchAnchor = useNav((s) => s.params.searchAnchor) as string | undefined;
+  const searchContentHash = useNav((s) => s.params.searchContentHash) as string | undefined;
+  return <UptodateArticle key={`${id}|${sectionId ?? ""}|${searchAnchor ?? ""}|${searchContentHash ?? ""}`} />;
 }
 
 function UptodateArticle() {
@@ -313,6 +339,12 @@ function UptodateArticle() {
   const id = String(useNav((s) => s.params.id ?? ""));
   const titleParam = String(useNav((s) => s.params.title ?? ""));
   const sectionId = useNav((s) => s.params.sectionId) as string | undefined;
+  const rawAnchor = useNav((s) => s.params.searchAnchor) as string | undefined;
+  const rawHash = useNav((s) => s.params.searchContentHash) as string | undefined;
+  const searchAnchor = typeof rawAnchor === "string" && /^utd-[a-f0-9]{32}$/.test(rawAnchor) ? rawAnchor : undefined;
+  const searchContentHash = typeof rawHash === "string" && /^[a-f0-9]{64}$/.test(rawHash) ? rawHash : undefined;
+  const searchRequested = rawAnchor !== undefined || rawHash !== undefined;
+  const searchTarget = !!(searchAnchor && searchContentHash);
   const openSearch = !!useNav((s) => s.params.openSearch);
   const rememberSection = useReader((s) => s.rememberSection);
 
@@ -331,8 +363,10 @@ function UptodateArticle() {
   const loadedOnce = useRef(false);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["uptodate-topic", id],
-    queryFn: () => uptodateSource.topic(id),
+    queryKey: ["uptodate-topic", id, searchAnchor, searchContentHash],
+    queryFn: () => searchTarget
+      ? uptodateSource.topicAtAnchor(id, searchContentHash!, searchAnchor!)
+      : uptodateSource.topic(id),
     enabled: !!id,
   });
 
@@ -436,6 +470,12 @@ function UptodateArticle() {
     }
   };
 
+  const searchJump = data?.search_anchor_status === "matched" && searchAnchor
+    ? `if (!window.__utdGotoSearch(${JSON.stringify(searchAnchor)})) window.__utdGotoSearchSection(${JSON.stringify(sectionId ?? "")}); true;`
+    : data?.search_anchor_status === "missing" && sectionId
+      ? `window.__utdGotoSearchSection(${JSON.stringify(sectionId)}); true;`
+      : undefined;
+
   React.useEffect(() => {
     search(debouncedQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -444,7 +484,16 @@ function UptodateArticle() {
   const handleWebLoad = () => {
     if (!loadedOnce.current) {
       loadedOnce.current = true;
-      gotoSection();
+      if (searchRequested) {
+        if (data?.search_anchor_status === "matched" && searchAnchor) {
+          const found = callWeb((win) => (win.__utdGotoSearch as (s: string) => boolean)(searchAnchor));
+          if (!found && sectionId) callWeb((win) => (win.__utdGotoSearchSection as (s: string) => boolean)(sectionId));
+        } else if (data?.search_anchor_status === "missing") {
+          if (sectionId) callWeb((win) => (win.__utdGotoSearchSection as (s: string) => boolean)(sectionId));
+        }
+      } else {
+        gotoSection();
+      }
     }
   };
 
@@ -607,7 +656,7 @@ function UptodateArticle() {
           source={{ html }}
           onMessage={handleNativeMessage}
           injectedJavaScript={
-            sectionId ? `window.__utdGoto(${JSON.stringify(sectionId)}); true;` : undefined
+            searchRequested ? searchJump : sectionId ? `window.__utdGoto(${JSON.stringify(sectionId)}); true;` : undefined
           }
           style={{ flex: 1, backgroundColor: colors.cardBg }}
         />

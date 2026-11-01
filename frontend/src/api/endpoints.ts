@@ -178,6 +178,10 @@ export const uptodateApi = {
       .then((r) => r.data),
   topic: (id: string) =>
     apiClient.get<UptodateArticle>(`/uptodate/topics/${id}/`).then((r) => r.data),
+  topicAtAnchor: (id: string, contentHash: string, anchor: string) =>
+    apiClient.get<UptodateArticle>(`/uptodate/topics/${id}/`, {
+      params: { search_content_hash: contentHash, search_anchor: anchor },
+    }).then((r) => r.data),
   image: (id: string) =>
     apiClient.get<UptodateImage>(`/uptodate/images/${id}/`).then((r) => r.data),
 };

@@ -21,6 +21,8 @@
 | ۱۱ | [11-admin-consoles.md](11-admin-consoles.md) | مدیریت یکپارچه (`/manage/`): ورود، دسترسی‌ها، خانه، فروش، کیفیت داده، ادمین Django | مدیر |
 | ۱۲ | [12-website.md](12-website.md) | سایت و بلاگ `pharmenta.ir`، پنل محتوا، نقش‌ها، خرید از سایت | مدیر، توسعه‌دهنده |
 | ۱۳ | [13-offline-storage.md](13-offline-storage.md) | مسیر دانلودهای UpToDate و Lexicomp، حفظ داده پس از آپدیت، مجوز و جایگزینی بسته‌ها | توسعه‌دهنده، مسئول دیپلوی |
+| ۱۴ | [14-search-architecture-proposal.fa.md](14-search-architecture-proposal.fa.md) | معماری جست‌وجوی هوشمند آفلاین UpToDate: بدون مدل زبانی و Elasticsearch، بر پایهٔ فرهنگ مفاهیم UpToDate و واژه‌نامهٔ فارسی؛ مقاله ← بخش ← پاراگراف | مالک محصول، توسعه‌دهنده |
+| ۱۵ | [search/README.md](search/README.md) | فازهای جست‌وجوی هوشمند، وظایف مالک پروژه، مجموعهٔ ارزیابی، [برنامهٔ دقت و جست‌وجوی برداری](search/plan-precision-and-vector-search-2026-11-01.fa.md) و [بازبینی پایلوت قبلی](search/phase-11-review-and-redesign-2026-10-31.fa.md) | مالک محصول، توسعه‌دهنده، مسئول داده |
 
 ## سندهای دیگر مخزن
 

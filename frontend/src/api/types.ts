@@ -495,6 +495,7 @@ export interface UptodateArticle extends UptodateTopic {
   contributors: string[];
   outline_html: string;
   body_html: string;
+  search_anchor_status?: "matched" | "missing" | "stale";
 }
 
 export interface UptodateImage {

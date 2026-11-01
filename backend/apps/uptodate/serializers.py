@@ -26,6 +26,7 @@ class UptodateArticleSerializer(UptodateTopicSerializer):
     contributors = serializers.ListField(child=serializers.CharField())
     outline_html = serializers.CharField(allow_blank=True)
     body_html = serializers.CharField(allow_blank=True)
+    search_anchor_status = serializers.ChoiceField(choices=("matched", "missing", "stale"), required=False)
 
 
 class UptodateImageSerializer(serializers.Serializer):

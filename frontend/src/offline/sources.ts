@@ -1,4 +1,5 @@
 import { lexicompApi, uptodateApi } from "@/api/endpoints";
+import { ApiError } from "@/api/client";
 import { LexicompDrug, LexicompInteraction, OfflineDataset, UptodateArticle, UptodateImage, UptodateSearchResult } from "@/api/types";
 
 import { checkInteractions, searchDrugs } from "./lexicompLocal";
@@ -50,6 +51,16 @@ export const uptodateSource = {
     localFirst("uptodate", (r) => searchTopics(r, search, limit), () => uptodateApi.search(search, limit)),
   topic: (id: string): Promise<UptodateArticle> =>
     localFirst("uptodate", (r) => getTopic(r, id), () => uptodateApi.topic(id)),
+  topicAtAnchor: async (id: string, contentHash: string, anchor: string): Promise<UptodateArticle> => {
+    try {
+      return await uptodateApi.topicAtAnchor(id, contentHash, anchor);
+    } catch (error) {
+      if (error instanceof ApiError && error.status !== 503) throw error;
+      // The downloaded article may be an older revision. Without the server's
+      // hash check, omit anchor status so the reader starts at the top.
+      return uptodateSource.topic(id);
+    }
+  },
   image: (id: string): Promise<UptodateImage> =>
     localFirst("uptodate", (r) => getImage(r, id), () => uptodateApi.image(id)),
 };
