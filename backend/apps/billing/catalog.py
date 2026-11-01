@@ -9,7 +9,7 @@ from apps.lessons.data.study_topics import CATEGORIES
 # key, Persian name, English name, countable, unit (what one use counts)
 BUILTIN_FEATURES = [
     ("lessons", "درس‌نامه‌های دارویی", "Drug lessons", False, ""),
-    ("uptodate", "مقالات UpToDate فارسی", "UpToDate articles", True, "مقاله"),
+    ("uptodate", "UpToDate", "UpToDate articles", True, "مقاله"),
     ("lexicomp", "اطلاعات و تداخل‌های Lexicomp", "Lexicomp interactions", True, "بررسی تداخل"),
     ("medscape", "بیماری‌ها و گایدلاین‌های Medscape", "Medscape diseases and guidelines", True, "مقاله"),
     ("calculators", "ماشین‌حساب‌های بالینی", "Clinical calculators", True, "ماشین‌حساب"),
