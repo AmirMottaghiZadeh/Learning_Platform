@@ -25,7 +25,12 @@ logger = logging.getLogger(__name__)
 
 
 class GatewayError(Exception):
-    pass
+    """A gateway refused or could not be reached. `code`: the gateway's own
+    error code, where it gave one."""
+
+    def __init__(self, message, code=""):
+        super().__init__(message)
+        self.code = str(code)
 
 
 @dataclass
@@ -161,6 +166,20 @@ class SepGateway:
         5: "این پرداخت برگشت خورده است.",
     }
     STATUSES = {"1": "پرداخت را لغو کردید.", "3": "پرداخت انجام نشد.", "4": "زمان پرداخت تمام شد."}
+    # A refused token request, from SEP's own table (IPG guide v3.6, «جدول
+    # وضعیت تراکنش»). 8 is about the calling server's IP, not the return
+    # address: SEP only gives tokens to the server IPs registered for the
+    # terminal.
+    TOKEN_ERRORS = {
+        "5": "پارامترهای ارسالی نامعتبر است (مبلغ، شمارهٔ ترمینال یا آدرس بازگشت).",
+        "8": "IP خروجی این سرور برای ترمینال نزد سپ ثبت نشده است؛ آدرس بازگشت علت این خطا نیست.",
+        "10": "توکن پیدا نشد.",
+        "11": "این ترمینال فقط پرداخت توکنی می‌پذیرد.",
+        "12": "شمارهٔ ترمینال در سپ پیدا نشد.",
+        "21": "محدودیت‌های مدل چندحسابی رعایت نشده است.",
+    }
+    # The answers that mean "this server's IP is not on SEP's list".
+    IP_ERRORS = {"8", "-106"}
 
     def __init__(self, terminal_id=None):
         if terminal_id is None:
@@ -182,8 +201,12 @@ class SepGateway:
             payload["CellNumber"] = mobile
         body = _post_json(self.TOKEN_URL, payload, "SEP")
         if body.get("status") != 1 or not body.get("token"):
+            code = str(body.get("errorCode", "")).strip()
+            said = str(body.get("errorDesc", "")).strip()
+            why = self.TOKEN_ERRORS.get(code, "")
             raise GatewayError(
-                f"SEP refused the token request: {body.get('errorCode', '')} {body.get('errorDesc', '')}".strip()
+                " ".join(part for part in (f"سپ درخواست توکن را رد کرد (کد {code}).", why, f"«{said}»" if said else "") if part),
+                code=code,
             )
         return body["token"]
 

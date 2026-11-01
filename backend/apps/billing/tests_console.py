@@ -437,6 +437,26 @@ class GatewayPageTests(ConsoleTestCase):
             res = self.client.post(reverse("console:gateway_test", args=[gw.pk]), follow=True)
         self.assertContains(res, "IP سرور درست است")
 
+    def test_sep_error_8_shows_the_outbound_ip_to_register(self):
+        import io
+
+        self.add("sep", merchant_id="21009876")
+        gw = PaymentGateway.objects.get()
+        with mock.patch.object(gateways, "_post_json", return_value={"status": -1, "errorCode": "8", "errorDesc": "x"}), \
+                mock.patch("urllib.request.urlopen", side_effect=lambda *a, **k: io.BytesIO(b'{"ip": "185.9.8.7"}')):
+            res = self.client.post(reverse("console:gateway_test", args=[gw.pk]), follow=True)
+        self.assertContains(res, "IP خروجی فعلی سرور: 185.9.8.7")
+        gw.refresh_from_db()
+        self.assertIn("185.9.8.7", gw.last_test_message)
+
+    def test_an_outbound_ip_that_changes_is_reported(self):
+        import io
+
+        answers = iter([b'{"ip": "185.1.1.1"}', b'{"ip": "185.2.2.2"}', b'{"ip": "185.1.1.1"}'])
+        with mock.patch("urllib.request.urlopen", side_effect=lambda *a, **k: io.BytesIO(next(answers))):
+            res = self.client.post(reverse("console:gateway_outbound_ip"), follow=True)
+        self.assertContains(res, "ثابت نیست: 185.1.1.1، 185.2.2.2")
+
     def test_outbound_ip_is_looked_up_and_remembered(self):
         import io
 

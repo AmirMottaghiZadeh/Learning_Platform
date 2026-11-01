@@ -386,6 +386,15 @@ class SepTests(TestCase):
         with mock.patch("urllib.request.urlopen", urlopen), self.assertRaises(GatewayError):
             SepGateway().start(self.order, "https://x/cb", description="x")
 
+    def test_error_8_names_the_server_ip_not_the_return_address(self):
+        urlopen, _ = _fake_urlopen([{"status": -1, "errorCode": 8, "errorDesc": "آدرس سرور پذیرنده نامعتبر است"}])
+        with mock.patch("urllib.request.urlopen", urlopen), self.assertRaises(GatewayError) as caught:
+            SepGateway().start(self.order, "https://pharmenta.ir/pay/callback/sep/", description="x")
+        self.assertEqual(caught.exception.code, "8")
+        self.assertIn("IP خروجی این سرور", str(caught.exception))
+        self.assertIn("آدرس بازگشت علت این خطا نیست", str(caught.exception))
+        self.assertIn("«آدرس سرور پذیرنده نامعتبر است»", str(caught.exception))
+
     def test_the_order_is_found_only_with_its_own_token(self):
         orders = Order.objects.all()
         self.assertEqual(SepGateway.find_order(orders, self.back), self.order)

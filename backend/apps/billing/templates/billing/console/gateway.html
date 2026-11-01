@@ -74,7 +74,7 @@
         <span class="sub">IP خروجی سرور</span><code class="ltr mono">{% if outbound_ip %}{{ outbound_ip.ip }}{% else %}هنوز بررسی نشده{% endif %}</code>
       </div>
       <form method="post" action="{% url 'console:gateway_outbound_ip' %}">{% csrf_token %}<button class="btn outline" type="submit" style="width:100%">بررسی IP خروجی سرور</button></form>
-      <span class="sub" style="font-size:12.5px">سپ فقط به درخواست‌هایی جواب می‌دهد که از IP ثبت‌شده بیایند؛ آن IP، «IP خروجی سرور» است، نه لزوماً IP دامنه. اگر ران‌فلر IP خروجی ثابت نمی‌دهد، از پشتیبانی آن بپرسید.</span>
+      <span class="sub" style="font-size:12.5px">سپ فقط به درخواست‌هایی جواب می‌دهد که از IP ثبت‌شده بیایند؛ آن IP، «IP خروجی سرور» است، نه لزوماً IP دامنه. خطای «۸ — آدرس سرور پذیرنده نامعتبر است» یعنی همین IP نزد سپ ثبت نیست، نه اینکه آدرس بازگشت اشتباه باشد. بررسی سه بار انجام می‌شود؛ اگر بیش از یک IP آمد، ران‌فلر از چند IP می‌فرستد و همه باید ثبت شوند، یا از پشتیبانی ران‌فلر IP خروجی ثابت بخواهید.</span>
     </section>
 
     <form method="post" class="card stack" style="gap:16px">

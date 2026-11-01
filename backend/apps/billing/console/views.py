@@ -985,7 +985,14 @@ def gateway_test(request, pk):
             message = SepGateway(gw.merchant_id).test(callback)
         ok = True
     except GatewayError as exc:
-        message, ok = f"اتصال ناموفق: {exc}"[:255], False
+        message, ok = f"اتصال ناموفق: {exc}", False
+        if gw.kind == PaymentGateway.KIND_SEP and exc.code in SepGateway.IP_ERRORS:
+            # Name the address SEP must register, looked up now.
+            ips = _outbound_ips()
+            if ips:
+                caches["default"].set("billing:outbound-ip", {"ip": "، ".join(ips), "at": timezone.now()}, 7 * 24 * 3600)
+                message += f" IP خروجی فعلی سرور: {'، '.join(ips)}؛ همین را برای ترمینال به سپ بدهید."
+        message = message[:255]
     gw.last_test_at, gw.last_test_ok, gw.last_test_message = timezone.now(), ok, message
     gw.save(update_fields=["last_test_at", "last_test_ok", "last_test_message", "updated_at"])
     services.record(request, "gateway_test", f"آزمایش اتصال {gw.display_name}: " + ("موفق" if ok else "ناموفق"))
@@ -996,20 +1003,39 @@ def gateway_test(request, pk):
 OUTBOUND_IP_URL = "https://api.ipify.org?format=json"
 
 
+def _outbound_ips(samples=3):
+    """The addresses this server's outgoing calls came from, asked a few
+    times: a host that sends from a pool of addresses shows more than one,
+    and SEP must have every one of them."""
+    found = []
+    for _ in range(samples):
+        try:
+            with urllib.request.urlopen(OUTBOUND_IP_URL, timeout=8) as response:
+                ip = json.loads(response.read().decode()).get("ip", "")
+        except (OSError, ValueError):
+            continue
+        if ip and ip not in found:
+            found.append(ip)
+    return found
+
+
 @superuser_required
 @require_POST
 def gateway_outbound_ip(request):
     """The address this server's calls to a gateway come from -- the one SEP
     must have on its list. It can differ from the address the domain points
     at, so it is asked of an outside service rather than guessed."""
-    try:
-        with urllib.request.urlopen(OUTBOUND_IP_URL, timeout=8) as response:
-            ip = json.loads(response.read().decode()).get("ip", "")
-    except (OSError, ValueError):
-        ip = ""
-    if ip:
-        caches["default"].set("billing:outbound-ip", {"ip": ip, "at": timezone.now()}, 7 * 24 * 3600)
-        messages.success(request, f"IP خروجی این سرور: {ip}")
+    ips = _outbound_ips()
+    if ips:
+        caches["default"].set("billing:outbound-ip", {"ip": "، ".join(ips), "at": timezone.now()}, 7 * 24 * 3600)
+        if len(ips) == 1:
+            messages.success(request, f"IP خروجی این سرور: {ips[0]}")
+        else:
+            messages.warning(
+                request,
+                f"IP خروجی این سرور ثابت نیست: {'، '.join(ips)}. همه را برای ترمینال به سپ بدهید، "
+                "یا از پشتیبانی ران‌فلر IP خروجی ثابت بخواهید.",
+            )
     else:
         messages.error(request, "IP خروجی پیدا نشد؛ سرور به سرویس بررسی IP دسترسی ندارد. آن را از پشتیبانی ران‌فلر بپرسید.")
     return redirect("console:gateway")
