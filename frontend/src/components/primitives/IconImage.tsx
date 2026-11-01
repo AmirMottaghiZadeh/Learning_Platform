@@ -39,6 +39,7 @@ export const ICONS = {
   "profile-logout": require("../../../assets/icons/profile-logout.png"),
   "profile-notifications": require("../../../assets/icons/profile-notifications.png"),
   "profile-planning": require("../../../assets/icons/profile-planning.png"),
+  "profile-subscription": require("../../../assets/icons/profile-subscription.png"),
   "spec-addiction": require("../../../assets/icons/spec-addiction.png"),
   "spec-admin": require("../../../assets/icons/spec-admin.png"),
   "spec-anatomy": require("../../../assets/icons/spec-anatomy.png"),

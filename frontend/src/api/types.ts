@@ -184,6 +184,31 @@ export interface NextChapter {
   group_name_en: string;
 }
 
+/** The terms or the privacy page of the site (GET /app/legal/<slug>/). */
+export interface LegalPage {
+  title: string;
+  body_html: string;
+  updated_at: string;
+}
+
+/** One of the learner's active plans or products (GET /billing/me/). */
+export interface MyEntitlement {
+  id: number;
+  plan_name_fa: string;
+  plan_kind: "plan" | "product";
+  /** "purchase", "admin", or "trial" (the month given at sign-up). */
+  source: string;
+  starts_at: string;
+  /** Null: permanent. */
+  ends_at: string | null;
+  days_left: number | null;
+}
+
+export interface MyAccess {
+  enforced: boolean;
+  entitlements: MyEntitlement[];
+}
+
 export interface Dashboard {
   greeting_name: string;
   streak_days: number;

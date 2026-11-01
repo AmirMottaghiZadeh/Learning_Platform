@@ -8,6 +8,8 @@ import {
   CalculatorListItem,
   Chapter,
   Dashboard,
+  LegalPage,
+  MyAccess,
   DeckOverview,
   DeckProgress,
   LeitnerOverview,
@@ -123,6 +125,18 @@ export const lessonsApi = {
   // Drugs by English or Persian name, best match first.
   search: (q: string) =>
     apiClient.get<LessonDrugSearchResult[]>("/lessons/search/", { params: { q } }).then((r) => r.data),
+};
+
+// --- the site's pages -----------------------------------------------------
+
+export const siteApi = {
+  legal: (slug: "terms" | "privacy") => apiClient.get<LegalPage>(`/app/legal/${slug}/`).then((r) => r.data),
+};
+
+// --- billing ------------------------------------------------------------
+
+export const billingApi = {
+  me: () => apiClient.get<MyAccess>("/billing/me/").then((r) => r.data),
 };
 
 // --- me ---------------------------------------------------------------

@@ -320,3 +320,49 @@ class ProfileTests(PhoneAuthTestCase):
         self.assertTrue(me["has_password"])
         self.assertEqual(UserSession.objects.filter(revoked_at__isnull=True).count(), 1)
         self.assertEqual(LearnerProfile.objects.get().phone, PHONE)
+
+
+class SignUpGiftTests(PhoneAuthTestCase):
+    """A new account gets the plan the console names as the sign-up gift."""
+
+    def setUp(self):
+        super().setUp()
+        from apps.billing import config
+        from apps.billing.models import BillingSettings, Plan
+
+        # The settings row is kept in memory a while; a rolled-back test must
+        # not leave its gift plan there for the next one.
+        config.clear_cache()
+        self.addCleanup(config.clear_cache)
+        self.pro = Plan.objects.create(slug="pro", name_fa="پرو")
+        BillingSettings.objects.create(signup_gift_plan=self.pro, signup_gift_days=30)
+
+    def entitlements(self):
+        return get_user_model().objects.get(learner_profile__phone=PHONE).entitlements.all()
+
+    def test_a_new_account_gets_a_month_of_pro(self):
+        self.request_code()
+        res = self.verify()
+        self.assertEqual(res.status_code, 201)
+        gift = self.entitlements().get()
+        self.assertEqual((gift.plan, gift.source), (self.pro, "trial"))
+        self.assertEqual((gift.ends_at - gift.starts_at).days, 30)
+        me = self.client.get(reverse("billing-me"), HTTP_AUTHORIZATION=f"Bearer {res.data['access_token']}")
+        self.assertEqual(me.data["entitlements"][0]["source"], "trial")
+        self.assertIn(me.data["entitlements"][0]["days_left"], (29, 30))
+
+    def test_signing_in_again_does_not_give_it_twice(self):
+        self.request_code()
+        self.verify()  # account made, password never chosen
+        self.age_codes(120)
+        self.request_code()
+        self.assertEqual(self.verify().status_code, 200)
+        self.assertEqual(self.entitlements().count(), 1)
+
+    def test_no_gift_when_none_is_set(self):
+        from apps.billing.models import BillingSettings
+
+        BillingSettings.objects.update(signup_gift_plan=None)
+        self.request_code()
+        self.verify()
+        self.assertFalse(self.entitlements().exists())

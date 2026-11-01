@@ -444,3 +444,31 @@ class GatewayPageTests(ConsoleTestCase):
             res = self.client.post(reverse("console:gateway_outbound_ip"), follow=True)
         self.assertContains(res, "185.1.2.3", count=2)
 
+
+
+class SignupGiftSettingTests(ConsoleTestCase):
+    def setUp(self):
+        super().setUp()
+        config.clear_cache()
+        self.addCleanup(config.clear_cache)
+        self.pro = Plan.objects.create(slug="pro", name_fa="پرو")
+
+    def save(self, plan, days, password="pw-123456"):
+        return self.client.post(reverse("console:access"), {
+            "op": "signup_gift", "gift_plan": plan.pk if plan else "", "gift_days": days, "password": password,
+        }, follow=True)
+
+    def test_the_gift_plan_and_days_are_saved_and_shown(self):
+        res = self.save(self.pro, "۳۰")
+        self.assertContains(res, "از ثبت‌نام بعدی اعمال می‌شود")
+        row = BillingSettings.objects.get()
+        self.assertEqual((row.signup_gift_plan, row.signup_gift_days), (self.pro, 30))
+        self.assertContains(self.client.get(reverse("console:access")), f'value="{self.pro.pk}" selected')
+
+    def test_turning_it_off_and_bad_input(self):
+        self.save(self.pro, "30")
+        self.save(None, "")
+        self.assertIsNone(BillingSettings.objects.get().signup_gift_plan)
+        self.assertContains(self.save(self.pro, "0"), "بین ۱ و ۳۶۵")
+        self.assertContains(self.save(self.pro, "30", password="nope"), "رمز حساب درست نیست")
+        self.assertIsNone(BillingSettings.objects.get().signup_gift_plan)

@@ -61,6 +61,7 @@
 | روش | مسیر | دسترسی | پاسخ |
 |---|---|---|---|
 | GET | `/app/release/?platform=android&version_code=100` | عمومی | آیا این نسخهٔ نصب‌شده باید به‌روز شود |
+| GET | `/app/legal/{slug}/` | عمومی | `{title, body_html, updated_at}` صفحهٔ منتشرشدهٔ `terms` یا `privacy` سایت، برای صفحهٔ ثبت‌نام اپ؛ هر نشانی دیگر 404 |
 
 `platform` یکی از `android` و `ios` است. `version_code` همان عددی است که اپ از نسخه‌اش می‌سازد (`major×10000 + minor×100 + patch`). پاسخ از نسخه‌هایی ساخته می‌شود که در پنل سایت «پیشنهاد به‌روزرسانی در اپ» دارند ([08-deployment.md](08-deployment.md#پیام-به‌روزرسانی-داخل-اپ)). کد: `apps/website/api.py`.
 
@@ -330,7 +331,7 @@ endpoint جست‌وجوی هوشمند هنوز وجود ندارد و در ف�
 | روش | مسیر | توضیح |
 |---|---|---|
 | GET | `/billing/catalog/` | `{free, plans[], products[]}` (فقط پلن‌های `active`)؛ هر کدام با `badge_fa`، `description_fa`، `cta_label_fa`، `extra_lines[]`، `prices[]` (با `compare_at_toman` و `label_fa`) و `features[]` (با `label_fa` و `is_listed`) |
-| GET | `/billing/me/` | `{enforced, features[{key, name_fa, limit, period, used}], entitlements[...]}` |
+| GET | `/billing/me/` | `{enforced, features[{key, name_fa, limit, period, used}], entitlements[{id, plan_name_fa, plan_kind, source, starts_at, ends_at, days_left}]}`؛ `source` یکی از `purchase`، `admin` و `trial` (هدیهٔ ثبت‌نام). کارت اشتراک پروفایل اپ از همین ساخته می‌شود |
 | POST | `/billing/quote/` | `{price_id, discount_code?}` ← `{amount_toman, discount_toman, payable_toman}`. 400 `PRICE_NOT_AVAILABLE` یا `DISCOUNT_NOT_FOUND` / `DISCOUNT_INACTIVE` / `DISCOUNT_NOT_STARTED` / `DISCOUNT_EXPIRED` / `DISCOUNT_USED_UP` / `DISCOUNT_NOT_FOR_PLAN`. 403 `GUEST_CANNOT_BUY` |
 | POST | `/billing/checkout/` | همان بدنه ← 201 `{order_id, status, payment_url}`؛ سفارش ۱۰۰٪ تخفیف بی‌درنگ `paid` می‌شود. 502 `GATEWAY_ERROR`، 503 `SALES_PAUSED` |
 | GET | `/billing/orders/` | ۵۰ سفارش آخر کاربر |

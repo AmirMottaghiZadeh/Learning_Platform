@@ -228,4 +228,9 @@ def account_for_signup(phone):
     except IntegrityError:
         # The same number finished signing up in a parallel request.
         raise OtpError("این شماره همین حالا ثبت‌نام شد؛ دوباره وارد شو.", code="PHONE_REGISTERED", status=409)
+    # A new account, and only a new one, gets the sign-up gift (one month of
+    # Pro). Imported here: billing depends on accounts, not the other way.
+    from apps.billing.services import grant_signup_gift
+
+    grant_signup_gift(user)
     return user, True

@@ -8,6 +8,7 @@ import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { IconImage, IconName } from "@/components/primitives/IconImage";
+import { SubscriptionCard, openPlans } from "@/components/profile/SubscriptionCard";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
@@ -156,7 +157,14 @@ export function ProfileScreen() {
         </Card>
       </View>
 
+      {user?.is_guest ? null : (
+        <View style={{ marginHorizontal: 20, marginTop: 14 }}>
+          <SubscriptionCard />
+        </View>
+      )}
+
       <View style={{ paddingHorizontal: 20, paddingTop: 18, gap: 8 }}>
+        {user?.is_guest ? null : <Row label={t("profileBuySubscription")} icon="profile-subscription" onPress={openPlans} />}
         <Row label={t("profileFullStats")} icon="profile-full-stats" onPress={() => navigate("statistics")} />
         <Row label={t("profilePlanning")} icon="profile-planning" onPress={() => navigate("planning")} />
         <Row label={t("mistakesTitle")} icon="edu-mistakes" onPress={() => navigate("mistakes")} />

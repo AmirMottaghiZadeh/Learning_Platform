@@ -16,7 +16,7 @@ export const CACHE_MAX_AGE = 7 * DAY;
  * build is then discarded on start instead of being fed to newer code. Also
  * when data the app caches for a day was corrected on the server (calculator
  * formulas, lesson text) and should not wait out that day. */
-export const CACHE_BUSTER = "2026-10-24";
+export const CACHE_BUSTER = "2026-11-01";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,7 +42,11 @@ export const queryClient = new QueryClient({
 // is never trusted as fresh -- otherwise a list fetched before the import
 // would keep showing as empty for a day after it.
 const isEmptyList = (data: unknown) => Array.isArray(data) && data.length === 0;
-const REFERENCE_KEYS = ["calculators", "calculator-categories", "calculator", "medscape-tree", "lesson-drug"];
+// Not "lesson-drug": a drug's lesson is corrected in the data-quality desk,
+// and the phone app, which keeps its cache across restarts, showed the old
+// text for up to a day. A lesson now shows from the cache at once and is
+// refetched quietly whenever it is opened (the default staleTime).
+const REFERENCE_KEYS = ["calculators", "calculator-categories", "calculator", "medscape-tree"];
 for (const key of REFERENCE_KEYS) {
   queryClient.setQueryDefaults([key], { staleTime: (query) => (isEmptyList(query.state.data) ? 0 : DAY) });
 }

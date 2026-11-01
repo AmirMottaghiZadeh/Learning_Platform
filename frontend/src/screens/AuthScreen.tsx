@@ -5,6 +5,7 @@ import { ApiError } from "@/api/client";
 import { authApi } from "@/api/endpoints";
 import { OtpPurpose } from "@/api/types";
 import { AuthLayout } from "@/components/AuthLayout";
+import { LegalSheet, LegalSlug } from "@/components/LegalSheet";
 import { AppText } from "@/components/primitives/AppText";
 import { Button } from "@/components/primitives/Button";
 import { Input } from "@/components/primitives/Input";
@@ -38,6 +39,7 @@ export function AuthScreen() {
   const [countdown, setCountdown] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [legal, setLegal] = useState<LegalSlug | null>(null);
 
   const purpose: OtpPurpose = mode === "reset" ? "reset" : "signup";
 
@@ -269,10 +271,30 @@ export function AuthScreen() {
       )}
 
       {mode === "signup" && step === "phone" ? (
+        // «قوانین» and «حریم خصوصی» open the pages' text; signing up accepts them.
         <AppText muted weight="600" size={12} center style={{ marginTop: 12, lineHeight: 20 }}>
-          {t("signupTerms")}
+          {t("signupTerms")
+            .split(/(\{terms\}|\{privacy\})/)
+            .map((part, i) =>
+              part === "{terms}" || part === "{privacy}" ? (
+                <AppText
+                  key={i}
+                  weight="800"
+                  size={12}
+                  color={colors.accent}
+                  style={{ textDecorationLine: "underline" }}
+                  onPress={() => setLegal(part === "{terms}" ? "terms" : "privacy")}
+                  accessibilityRole="link"
+                >
+                  {t(part === "{terms}" ? "termsLink" : "privacyLink")}
+                </AppText>
+              ) : (
+                part
+              ),
+            )}
         </AppText>
       ) : null}
+      <LegalSheet slug={legal} onClose={() => setLegal(null)} />
 
       {/* Large, so someone who already has an account sees the way in. */}
       <Pressable

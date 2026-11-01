@@ -1,10 +1,13 @@
-"""The one API endpoint the site's data serves to the app: whether an
-installed app should update (frontend UpdatePrompt), from the releases
-entered in the panel (/panel/releases/) with «پیشنهاد به‌روزرسانی در اپ»."""
+"""What the site's data serves to the app: whether an installed app should
+update (frontend UpdatePrompt), from the releases entered in the panel
+(/panel/releases/) with «پیشنهاد به‌روزرسانی در اپ»; and the terms and the
+privacy page, shown in the app's sign-up screen."""
 
 import re
 
 from django.conf import settings
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
@@ -12,7 +15,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import SITE_URLCONF, AppRelease, version_code
+from .models import SITE_URLCONF, AppRelease, Page, version_code
 from .sanitize import plain_text
 
 _BLOCK_END = re.compile(r"<br\s*/?>|</(?:p|li|h[1-6]|div|blockquote)>", re.I)
@@ -95,3 +98,29 @@ class ReleaseCheckView(APIView):
                 "download_url": settings.SITE_PUBLIC_URL.rstrip("/") + reverse("site:download", urlconf=SITE_URLCONF),
             },
         })
+
+
+# The pages a sign-up accepts. Their text is the site's (edited in the panel),
+# so the app and the site never show two versions.
+LEGAL_PAGES = ("terms", "privacy")
+
+
+class LegalPageSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    body_html = serializers.CharField()
+    updated_at = serializers.DateTimeField()
+
+
+class LegalPageView(APIView):
+    """The terms or the privacy page, published, for the sign-up screen.
+    Public: it is read before anyone has an account."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses=LegalPageSerializer)
+    def get(self, request, slug):
+        if slug not in LEGAL_PAGES:
+            raise Http404
+        page = get_object_or_404(Page, slug=slug, status=Page.PUBLISHED)
+        return Response(LegalPageSerializer(page).data)

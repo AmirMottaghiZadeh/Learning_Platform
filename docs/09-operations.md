@@ -150,7 +150,7 @@ pg_restore --clean --if-exists --no-owner -d "<DATABASE_URL مقصد>" ~/pharmen
 | Endpoint و باکت Object Storage | `https://s3-pish.runflare.cloud`، `pharmenta-dl`؛ دامنهٔ دانلود `https://s3.pharmenta.ir` |
 | مسیر Lexicomp روی دیسک سرویس | مقدار `LEXICOMP_DB_DIR` در env رانفلر |
 | شناسه و متن قالب پیامک sms.ir | پنل sms.ir؛ آخرین خط باید `@app.pharmenta.ir ##CODE#` باشد |
-| شناسهٔ بستهٔ اپ | `com.pharmexa.learning`. **هرگز عوض نشود**؛ فروشگاه‌ها اپ با شناسهٔ دیگر را اپ جدا می‌دانند |
+| شناسهٔ بستهٔ اپ | `com.pharmenta.learning` (۲۰۲۶-۱۱-۰۱، پیش از اولین انتشار، از `com.pharmexa.learning` عوض شد). **از این به بعد هرگز عوض نشود**؛ فروشگاه‌ها اپ با شناسهٔ دیگر را اپ جدا می‌دانند و نصب‌های قبلی به‌روز نمی‌شوند |
 | شناسهٔ پروژهٔ EAS | `app.json` ← `extra.eas.projectId` |
 | فهرست کامل متغیرهای env رانفلر (بدون مقدار رازها) | [06-configuration.md](06-configuration.md) |
 

@@ -41,6 +41,30 @@
     </form>
 
     <div class="stack" style="gap:16px">
+      <form method="post" class="card stack" style="gap:14px">
+        {% csrf_token %}<input type="hidden" name="op" value="signup_gift">
+        <h2>هدیه‌ی ثبت‌نام</h2>
+        <span class="sub">هر حساب تازه، همان لحظه‌ی ثبت‌نام، این پلن را برای این تعداد روز می‌گیرد و روزهای باقی‌مانده را در پروفایل اپ می‌بیند. حساب‌های قبلی و مهمان‌ها هدیه نمی‌گیرند.</span>
+        <div class="grid g2">
+          <div class="stack" style="gap:6px">
+            <label class="lbl" for="gift_plan">پلن</label>
+            <select class="fld" id="gift_plan" name="gift_plan">
+              <option value="">بدون هدیه</option>
+              {% for p in gift_choices %}<option value="{{ p.pk }}" {% if gift_plan and gift_plan.pk == p.pk %}selected{% endif %}>{{ p.name_fa }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="stack" style="gap:6px">
+            <label class="lbl" for="gift_days">تعداد روز</label>
+            <input class="fld ltr" id="gift_days" name="gift_days" inputmode="numeric" value="{{ gift_days }}">
+          </div>
+        </div>
+        <div style="padding:14px;border-radius:14px;background:var(--warn-bg);border:1px solid var(--warn-line)">
+          <label class="lbl" for="gift_password" style="color:var(--warn)">برای ذخیره، رمز حساب خودتان را دوباره وارد کنید</label>
+          <input class="fld ltr" id="gift_password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn primary" type="submit">ذخیره</button>
+        <span class="sub" style="font-size:12.5px">تا امروز {{ gift_count|num }} حساب هدیه گرفته‌اند.{% if gift_change %} آخرین تغییر: {{ gift_change.summary }} · {{ gift_change.actor.get_username|default:"—" }} · {{ gift_change.created_at|jdate:"time" }}{% endif %}</span>
+      </form>
       <section class="card stack">
         <h2>وقتی روشن است</h2>
         <ul style="margin:0;padding-inline-start:18px;line-height:2;font-weight:600;color:var(--prose)">

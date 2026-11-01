@@ -14,6 +14,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import F, Q
 from django.utils import timezone
 
+from . import config
 from .jalali import month_start
 from .models import (
     PERIOD_DAY,
@@ -196,6 +197,16 @@ def grant(user, plan, *, days, source, order=None, actor=None, note=""):
         granted_by=actor,
         note=note[:255],
     )
+
+
+def grant_signup_gift(user):
+    """The console's sign-up gift (a plan for some days) to an account just
+    created. None when no gift is set, or its plan was switched off."""
+    row = config.row()
+    plan = row.signup_gift_plan if row is not None else None
+    if plan is None or plan.status == Plan.STATUS_INACTIVE or not row.signup_gift_days:
+        return None
+    return grant(user, plan, days=row.signup_gift_days, source=Entitlement.SOURCE_TRIAL, note="هدیهٔ ثبت‌نام")
 
 
 def extend(entitlement, days):

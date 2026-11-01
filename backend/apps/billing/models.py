@@ -278,7 +278,12 @@ class Order(models.Model):
 class Entitlement(models.Model):
     SOURCE_PURCHASE = "purchase"
     SOURCE_ADMIN = "admin"
-    SOURCE_CHOICES = [(SOURCE_PURCHASE, "خرید"), (SOURCE_ADMIN, "داده‌شده توسط ادمین")]
+    SOURCE_TRIAL = "trial"
+    SOURCE_CHOICES = [
+        (SOURCE_PURCHASE, "خرید"),
+        (SOURCE_ADMIN, "داده‌شده توسط ادمین"),
+        (SOURCE_TRIAL, "هدیهٔ ثبت‌نام"),
+    ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="entitlements")
     plan = models.ForeignKey(Plan, on_delete=models.PROTECT, related_name="entitlements")
@@ -409,6 +414,10 @@ class BillingSettings(models.Model):
     # Anyone opening the app gets a throwaway guest account, no sign-in --
     # for showing the content to a reviewer (sms.ir's site check).
     guest_access_enabled = models.BooleanField(default=False)
+    # Every newly created account gets this plan for this many days (the
+    # owner's one month of Pro, 2026-11-01). No plan: no gift.
+    signup_gift_plan = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    signup_gift_days = models.PositiveSmallIntegerField(default=30)
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )

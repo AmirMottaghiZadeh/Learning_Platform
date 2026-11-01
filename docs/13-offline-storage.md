@@ -17,8 +17,8 @@
 کد از `Paths.document` در `expo-file-system` استفاده می‌کند. در نسخهٔ نصب‌شدهٔ این وابستگی، مسیر اندروید از `Context.filesDir` می‌آید. مسیر معمول در اپ مستقل و برای کاربر اصلی گوشی:
 
 ```text
-/data/user/0/com.pharmexa.learning/files/offline/uptodate/<build>/part-000.bin
-/data/user/0/com.pharmexa.learning/files/offline/lexicomp/<build>/part-000.bin
+/data/user/0/com.pharmenta.learning/files/offline/uptodate/<build>/part-000.bin
+/data/user/0/com.pharmenta.learning/files/offline/lexicomp/<build>/part-000.bin
 ```
 
 این فایل‌ها داخل فضای خصوصی اپ هستند و معمولاً در فایل‌منیجر عادی گوشی دیده نمی‌شوند. پیشوند مسیر ممکن است با پروفایل کاربر یا محیط اجرا متفاوت باشد؛ مرجع واقعی مسیر، `Paths.document` است. مسیر Expo Go یا محیط توسعه را با اپ مستقل یکسان فرض نکنید.
@@ -32,7 +32,7 @@
 /var/mobile/Containers/Data/Application/<UUID>/Documents/offline/lexicomp/<build>/part-000.bin
 ```
 
-`<UUID>` شناسهٔ محفظهٔ اپ است و مقدار ثابتی نیست. مسیر کامل را در کد ذخیره یا ثابت نکنید؛ مسیر باید همیشه با `Paths.document` ساخته شود. شناسهٔ فعلی اپ iOS و پکیج اندروید هر دو `com.pharmexa.learning` هستند.
+`<UUID>` شناسهٔ محفظهٔ اپ است و مقدار ثابتی نیست. مسیر کامل را در کد ذخیره یا ثابت نکنید؛ مسیر باید همیشه با `Paths.document` ساخته شود. شناسهٔ فعلی اپ iOS و پکیج اندروید هر دو `com.pharmenta.learning` هستند (تا ۲۰۲۶-۱۱-۰۱، پیش از اولین انتشار، `com.pharmexa.learning` بود).
 
 ### وب‌اپ و PWA
 

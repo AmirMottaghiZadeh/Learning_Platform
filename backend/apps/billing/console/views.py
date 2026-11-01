@@ -1035,6 +1035,8 @@ def access(request):
         if not request.user.check_password(request.POST.get("password", "")):
             messages.error(request, "رمز حساب درست نیست؛ چیزی تغییر نکرد.")
             return redirect("console:access")
+        if op == "signup_gift":
+            return _save_signup_gift(request)
         enable = request.POST.get("guest_access") == "on"
         row = BillingSettings.objects.first() or BillingSettings()
         row.guest_access_enabled = enable
@@ -1052,14 +1054,47 @@ def access(request):
         return redirect("console:access")
 
     guests = guest_tools.guests()
+    row = BillingSettings.objects.first()
     return render(request, "billing/console/access.html", {
         "active": "access",
         "cfg": current,
+        "gift_plan": row.signup_gift_plan if row else None,
+        "gift_days": row.signup_gift_days if row else 30,
+        "gift_choices": Plan.objects.filter(kind=Plan.KIND_PLAN, is_free=False).exclude(status=Plan.STATUS_INACTIVE),
+        "gift_count": Entitlement.objects.filter(source=Entitlement.SOURCE_TRIAL).count(),
+        "gift_change": AdminAction.objects.filter(action="signup_gift").select_related("actor").first(),
         "guest_count": guests.count(),
         "guest_today": guests.filter(date_joined__gte=timezone.now() - timedelta(days=1)).count(),
         "guest_sessions": UserSession.objects.filter(user__guest_account__isnull=False, revoked_at__isnull=True, refresh_expires_at__gt=timezone.now()).count(),
         "last_change": AdminAction.objects.filter(action="guest_access").select_related("actor").first(),
     })
+
+
+def _save_signup_gift(request):
+    """The plan every new account gets, and for how many days; no plan, no gift."""
+    plan_id = request.POST.get("gift_plan", "")
+    plan = None
+    if plan_id:
+        plan = Plan.objects.filter(pk=plan_id, kind=Plan.KIND_PLAN, is_free=False).exclude(status=Plan.STATUS_INACTIVE).first()
+        if plan is None:
+            messages.error(request, "این پلن پیدا نشد یا غیرفعال است.")
+            return redirect("console:access")
+    try:
+        days = _days(request.POST.get("gift_days", ""))
+    except ValueError:
+        days = 0
+    if plan is not None and not days or (days or 0) > 365:
+        messages.error(request, "تعداد روز باید بین ۱ و ۳۶۵ باشد.")
+        return redirect("console:access")
+    row = BillingSettings.objects.first() or BillingSettings()
+    row.signup_gift_plan = plan
+    row.signup_gift_days = days or row.signup_gift_days
+    row.updated_by = request.user
+    row.save()
+    summary = fa_digits(f"هدیه‌ی ثبت‌نام: {plan.name_fa}، {days} روز") if plan else "خاموش کردن هدیه‌ی ثبت‌نام"
+    services.record(request, "signup_gift", summary)
+    messages.success(request, "ذخیره شد. از ثبت‌نام بعدی اعمال می‌شود؛ حساب‌های قبلی هدیه نمی‌گیرند.")
+    return redirect("console:access")
 
 
 @superuser_required
