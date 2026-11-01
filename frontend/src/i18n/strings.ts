@@ -102,7 +102,7 @@ export const strings = {
     uptodateEmptySub: "عبارت دیگری را امتحان کن؛ فقط عنوان مقاله‌ها جست‌وجو می‌شود.",
     uptodateCorrected: "نتیجه‌ها برای",
     uptodateTitle: "UpToDate",
-    uptodateSub: "ورود مستقیم به پایگاه داده‌ی آپ‌تودیت برای جست‌وجوی مقالات بالینی.",
+    uptodateSub: "ورود مستقیم به پایگاه داده‌ی UpToDate برای جست‌وجوی مقالات بالینی.",
     uptodateOutlineEmpty: "فهرست مطالبی برای این مقاله موجود نیست.",
     uptodateSearchInArticleHint: "جست‌وجو در متن این مقاله…",
     uptodateNoMatches: "یافت نشد",

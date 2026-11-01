@@ -189,7 +189,7 @@ const START_HERE: Record<string, { icon: IconName; fa: string; en: string; descF
     },
     {
       icon: "uptodate-logo",
-      fa: "مرجع بالینی آپتودیت",
+      fa: "مرجع بالینی UpToDate",
       en: "UpToDate clinical reference",
       descFa: "جست‌وجو در مقاله‌های مرجع",
       descEn: "Search the reference articles",
