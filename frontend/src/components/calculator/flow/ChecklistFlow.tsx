@@ -30,10 +30,13 @@ export function ChecklistFlow(p: FlowProps) {
       </AppText>
 
       <Card padded={false} style={{ overflow: "hidden" }}>
-        {data.questions.map((q, i) => (
+        {data.questions.map((q, i) => {
+          const value = answers[q.position];
+          const problem = value !== undefined ? p.validate(q, value) : null;
+          return (
           <View
             key={q.position}
-            style={{ padding: spacing.md, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.border }}
+            style={{ padding: spacing.md, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.border, gap: 6 }}
           >
             <QuestionField
               question={q}
@@ -53,9 +56,16 @@ export function ChecklistFlow(p: FlowProps) {
                 p.setError(null);
                 p.setUnit(q.position, index);
               }}
+              unitSystem={p.unitSystem}
             />
+            {problem ? (
+              <AppText size={12} weight="700" color={colors.denyLabel} style={{ writingDirection: isFa ? "rtl" : "ltr" }}>
+                {problem}
+              </AppText>
+            ) : null}
           </View>
-        ))}
+          );
+        })}
       </Card>
 
       {p.error ? (

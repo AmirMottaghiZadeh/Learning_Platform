@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useMemo } from "react";
 import { View } from "react-native";
 
 import { AppText } from "@/components/primitives/AppText";
@@ -9,14 +9,13 @@ import { spacing } from "@/theme/tokens";
 import { choiceWeights } from "@/utils/calculatorLive";
 
 import { LiveScore } from "./LiveScore";
-import { QuestionField, isBinaryQuestion } from "./QuestionField";
+import { QuestionField } from "./QuestionField";
 import { FlowProps } from "./types";
 
-const AUTO_NEXT_MS = 260;
-
 /** One question per screen, large, under a bar with a segment per question.
- * A yes/no answer moves on by itself. With `live` the score so far, its tier
- * and the tier bar sit on top and each choice shows its weight. */
+ * Only the Next button moves on, never a choice by itself. With `live` the
+ * score so far, its tier and the tier bar sit on top and each choice shows
+ * its weight. */
 export function CardsFlow({ live, ...p }: FlowProps & { live: boolean }) {
   const { colors } = useTheme();
   const { t, n, isFa, row } = useLang();
@@ -24,20 +23,15 @@ export function CardsFlow({ live, ...p }: FlowProps & { live: boolean }) {
   const question = data.questions[step];
   const total = data.questions.length;
   const last = step === total - 1;
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const weights = useMemo(() => (live ? choiceWeights(data, question, answers) : null), [live, data, question, answers]);
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  const answer = answers[question.position];
+  // An answer the button refuses (out of range) says why right away; the
+  // button is off, so pressing it could not show the message.
+  const problem = answer !== undefined ? p.validate(question, answer) : null;
 
-  const binary = isBinaryQuestion(question, isFa);
   const onChoose = (index: number, value: number | undefined) => {
     p.setError(null);
     p.choose(question.position, index, value);
-    if (binary && value !== undefined && !last) {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => p.setStep((s) => (s === step ? s + 1 : s)), AUTO_NEXT_MS);
-    }
   };
 
   const next = () => {
@@ -86,17 +80,12 @@ export function CardsFlow({ live, ...p }: FlowProps & { live: boolean }) {
           p.setUnit(question.position, i);
         }}
         weights={weights}
+        unitSystem={p.unitSystem}
       />
 
-      {binary && !last ? (
-        <AppText muted weight="600" size={11.5} style={{ writingDirection: isFa ? "rtl" : "ltr" }}>
-          {t("calcAutoNext")}
-        </AppText>
-      ) : null}
-
-      {p.error ? (
-        <AppText size={12} weight="700" color={colors.denyLabel}>
-          {p.error}
+      {p.error || problem ? (
+        <AppText size={12} weight="700" color={colors.denyLabel} style={{ writingDirection: isFa ? "rtl" : "ltr" }}>
+          {p.error ?? problem}
         </AppText>
       ) : null}
 
@@ -115,7 +104,7 @@ export function CardsFlow({ live, ...p }: FlowProps & { live: boolean }) {
         <Button
           label={last ? t("calculatorComputeBtn") : t("calculatorNext")}
           onPress={next}
-          disabled={p.validate(question, answers[question.position]) !== null}
+          disabled={answer === undefined || problem !== null}
           style={{ flex: 1 }}
         />
       </View>

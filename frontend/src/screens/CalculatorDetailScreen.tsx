@@ -6,6 +6,7 @@ import { calculatorsApi } from "@/api/endpoints";
 import { CalculatorQuestion } from "@/api/types";
 import { ResultsView } from "@/components/calculator/ResultsView";
 import { QuestionFlow } from "@/components/calculator/flow/QuestionFlow";
+import { UnitSystemSwitch } from "@/components/calculator/flow/UnitSystemSwitch";
 import { describeInputs } from "@/components/calculator/common";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
@@ -27,6 +28,7 @@ import {
   hasUnsupportedQuestions,
   unitFactorOf,
 } from "@/utils/calculatorEngine";
+import { UnitSystem, choiceUnitSystems } from "@/utils/calculatorLabels";
 import { classifyCalculator, isDisplayedResult } from "@/utils/calculatorModel";
 import { AboutBlock, parseAboutHtml, stripHtml } from "@/utils/html";
 
@@ -55,6 +57,9 @@ export function CalculatorDetailScreen() {
   const [choiceIndexes, setChoiceIndexes] = useState<Record<number, number>>({});
   // Which of a numeric question's units the learner picked (default: the first).
   const [unitIndexes, setUnitIndexes] = useState<Record<number, number>>({});
+  // SI or US for choices written in both; null until the learner switches,
+  // which means the calculator's own default.
+  const [unitSystemPick, setUnitSystemPick] = useState<UnitSystem | null>(null);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<ComputedResult[] | null>(null);
@@ -88,6 +93,8 @@ export function CalculatorDetailScreen() {
   const unsupported = hasUnsupportedQuestions(data.questions);
   const modelInfo = classifyCalculator(data);
   const shownPositions = new Set(data.results.filter(isDisplayedResult).map((r) => r.position));
+  const choiceUnits = choiceUnitSystems(data.questions);
+  const unitSystem = choiceUnits ? (unitSystemPick ?? choiceUnits.default) : null;
 
   const setAnswer = (position: number, value: number | undefined) => {
     setAnswers((cur) => {
@@ -180,12 +187,17 @@ export function CalculatorDetailScreen() {
           </AppText>
         </Card>
       ) : results === null ? (
+        <>
+        {choiceUnits && unitSystem ? (
+          <UnitSystemSwitch units={choiceUnits.units} value={unitSystem} onChange={setUnitSystemPick} />
+        ) : null}
         <QuestionFlow
           data={data}
           info={modelInfo}
           answers={answers}
           choiceIndexes={choiceIndexes}
           unitIndexes={unitIndexes}
+          unitSystem={unitSystem}
           step={step}
           setStep={setStep}
           setAnswer={setAnswer}
@@ -199,6 +211,7 @@ export function CalculatorDetailScreen() {
           setError={setError}
           compute={compute}
         />
+        </>
       ) : (
         <View style={{ gap: 10, marginBottom: spacing.lg }}>
           <ResultsView
@@ -208,7 +221,7 @@ export function CalculatorDetailScreen() {
             ranges={ranges}
             answers={answers}
             altResults={altResults}
-            inputs={describeInputs(data, answers, choiceIndexes, unitIndexes, isFa, stripHtml, unitFactorOf)}
+            inputs={describeInputs(data, answers, choiceIndexes, unitIndexes, isFa, stripHtml, unitFactorOf, unitSystem)}
           />
 
           {data.about || data.about_fa ? (

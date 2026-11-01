@@ -17,6 +17,7 @@ import {
   toGregorian,
   toJalali,
 } from "@/utils/jalali";
+import { latinDigits } from "@/utils/typedNumber";
 
 const DAY_MS = 86_400_000;
 
@@ -110,9 +111,10 @@ export function DateInput({
 
   const apply = (next: { y: string; m: string; d: string }) => {
     setParts(next);
-    const y = Number(next.y);
-    const m = Number(next.m);
-    const d = Number(next.d);
+    // A Persian keyboard types «۱۴۰۵»; Number() alone reads that as NaN.
+    const y = Number(latinDigits(next.y));
+    const m = Number(latinDigits(next.m));
+    const d = Number(latinDigits(next.d));
     if (!next.y || !next.m || !next.d || next.y.length < 4) return onChange(undefined);
     if (isFa) {
       if (!isValidJalali(y, m, d)) return onChange(undefined);
@@ -140,7 +142,7 @@ export function DateInput({
   const filled = !!parts.y && !!parts.m && !!parts.d && parts.y.length >= 4;
   const invalid = filled && value === undefined;
   const monthName = (() => {
-    const m = Number(parts.m);
+    const m = Number(latinDigits(parts.m));
     if (!m || m < 1 || m > 12) return "";
     return isFa ? JALALI_MONTHS_FA[m - 1] : GREGORIAN_MONTHS_EN[m - 1];
   })();
@@ -206,7 +208,7 @@ export function DaysInput({
   const apply = (next: { w: string; d: string }) => {
     setParts(next);
     if (!next.w && !next.d) return onChange(undefined);
-    onChange(((Number(next.w) || 0) * 7 + (Number(next.d) || 0)) * DAY_MS);
+    onChange(((Number(latinDigits(next.w)) || 0) * 7 + (Number(latinDigits(next.d)) || 0)) * DAY_MS);
   };
   return (
     <View>

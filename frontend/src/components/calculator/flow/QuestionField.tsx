@@ -8,7 +8,8 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { unitFactorOf } from "@/utils/calculatorEngine";
 import { stripHtml } from "@/utils/html";
-import { calculatorLabel, choiceLabels } from "@/utils/calculatorLabels";
+import { UnitSystem, calculatorLabel, choiceDisplay, choiceLabels } from "@/utils/calculatorLabels";
+import { parseTypedNumber } from "@/utils/typedNumber";
 
 import { DateInput, DaysInput } from "../DateInput";
 
@@ -28,6 +29,9 @@ export interface FieldProps {
   /** Each choice's effect on the score (+3, -4), shown beside it -- for
    * scores; see choiceWeights. Null or absent: no weights. */
   weights?: (number | null)[] | null;
+  /** The calculator's SI/US switch: a choice written in both shows only
+   * this one. Null or absent: both, the second under the first. */
+  unitSystem?: UnitSystem | null;
 }
 
 /** A yes/no style question: two short choices. */
@@ -56,17 +60,42 @@ function Weight({ factor }: { factor: number }) {
   );
 }
 
-function Choices({ question, variant, value, choiceIndex, onChoose, weights }: FieldProps) {
+/** A choice's label, and under it the second label (another unit or an
+ * explanation) a little smaller and lighter, so the first one leads. */
+function ChoiceText({ main, sub, size, weight, color, style }: {
+  main: string;
+  sub: string | null;
+  size: number;
+  weight: "700" | "800" | "900";
+  color: string;
+  style?: object;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={[{ gap: 2 }, style]}>
+      <AppText weight={weight} size={size} color={color} style={{ lineHeight: Math.round(size * 1.55) }}>
+        {main}
+      </AppText>
+      {sub ? (
+        <AppText weight="600" size={size - 2} color={colors.muted} style={{ lineHeight: Math.round((size - 2) * 1.55) }}>
+          {sub}
+        </AppText>
+      ) : null}
+    </View>
+  );
+}
+
+function Choices({ question, variant, value, choiceIndex, onChoose, weights, unitSystem }: FieldProps) {
   const { colors } = useTheme();
   const { isFa, row } = useLang();
   const options = question.choices.map((choice, i) => {
     const factor = choice.answer_factor !== null ? parseFloat(choice.answer_factor) : NaN;
-    const labels = choiceLabels(choice, isFa);
+    const { main, sub } = choiceDisplay(choice, isFa, unitSystem ?? null);
     return {
       i,
       factor,
-      text: labels.join("\n"),
-      hasSecondary: labels.length > 1,
+      main,
+      sub,
       selected: choiceIndex === i && value !== undefined,
       weight: weights?.[i] ?? null,
     };
@@ -81,7 +110,7 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights }: F
           {options.map((o) => (
             <Pressable key={o.i} onPress={() => pick(o)} style={{ paddingHorizontal: 14, paddingVertical: 6, backgroundColor: o.selected ? colors.accent : "transparent" }}>
               <AppText weight="800" size={12} color={o.selected ? colors.onAccent : colors.muted}>
-                {o.text}
+                {o.main}
               </AppText>
             </Pressable>
           ))}
@@ -98,16 +127,14 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights }: F
               paddingHorizontal: 12,
               paddingVertical: 6,
               maxWidth: "100%",
-              width: o.hasSecondary ? "100%" : undefined,
-              borderRadius: o.hasSecondary ? 12 : 999,
+              width: o.sub ? "100%" : undefined,
+              borderRadius: o.sub ? 12 : 999,
               borderWidth: 1,
               borderColor: o.selected ? colors.accent : colors.trackBg,
               backgroundColor: o.selected ? `${colors.accent}1a` : colors.softBg,
             }}
           >
-            <AppText weight="700" size={12} color={o.selected ? colors.accent : colors.ink}>
-              {o.text}
-            </AppText>
+            <ChoiceText main={o.main} sub={o.sub} size={12} weight="700" color={o.selected ? colors.accent : colors.ink} />
           </Pressable>
         ))}
       </View>
@@ -133,9 +160,14 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights }: F
               gap: 2,
             }}
           >
-            <AppText weight="900" size={17} color={o.selected ? colors.accent : colors.ink}>
-              {o.text}
-            </AppText>
+            <ChoiceText
+              main={o.main}
+              sub={o.sub}
+              size={17}
+              weight="900"
+              color={o.selected ? colors.accent : colors.ink}
+              style={{ alignItems: "center" }}
+            />
             {o.weight !== null ? <Weight factor={o.weight} /> : null}
           </Pressable>
         ))}
@@ -174,9 +206,14 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights }: F
           >
             {o.selected ? <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent }} /> : null}
           </View>
-          <AppText weight="700" size={14} color={o.selected ? colors.accent : colors.ink} style={{ flex: 1, lineHeight: 22, writingDirection: isFa ? "rtl" : "ltr" }}>
-            {o.text}
-          </AppText>
+          <ChoiceText
+            main={o.main}
+            sub={o.sub}
+            size={14}
+            weight="700"
+            color={o.selected ? colors.accent : colors.ink}
+            style={{ flex: 1, writingDirection: isFa ? "rtl" : "ltr" }}
+          />
           {o.weight !== null ? <Weight factor={o.weight} /> : null}
         </Pressable>
       ))}
@@ -194,6 +231,8 @@ function Numeric({ question, variant, value, unitIndex, onChange, onUnit }: Fiel
   // from it (it is only the starting text, for a question revisited).
   const [text, setText] = useState(() => (value === undefined ? "" : String(Number((value / factor()).toFixed(6)))));
   const big = variant === "card";
+  // Typed but not a number: say so, instead of a Next button that stays off.
+  const invalid = text.trim() !== "" && Number.isNaN(parseTypedNumber(text));
 
   return (
     <View style={{ gap: 10 }}>
@@ -216,8 +255,8 @@ function Numeric({ question, variant, value, unitIndex, onChange, onUnit }: Fiel
           value={text}
           onChangeText={(next) => {
             setText(next);
-            const num = parseFloat(next);
-            if (next.trim() === "" || Number.isNaN(num)) return onChange(undefined);
+            const num = parseTypedNumber(next);
+            if (Number.isNaN(num)) return onChange(undefined);
             onChange(num * factor());
           }}
           keyboardType="decimal-pad"
@@ -247,6 +286,11 @@ function Numeric({ question, variant, value, unitIndex, onChange, onUnit }: Fiel
           </AppText>
         ) : null}
       </View>
+      {invalid ? (
+        <AppText weight="700" size={12} color={colors.denyLabel} style={{ writingDirection: isFa ? "rtl" : "ltr", textAlign: isFa ? "right" : "left" }}>
+          {t("calcInvalidNumber")}
+        </AppText>
+      ) : null}
       {big && (unit?.min_value || unit?.max_value) ? (
         <AppText muted weight="600" size={11.5} style={{ writingDirection: isFa ? "rtl" : "ltr", textAlign: isFa ? "right" : "left" }}>
           {t("calcAllowed")}:{" "}

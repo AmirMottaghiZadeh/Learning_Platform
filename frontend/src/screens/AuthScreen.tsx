@@ -16,7 +16,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 type Mode = "login" | "signup" | "reset";
 type Step = "phone" | "code";
 
-/** Signed-out entry. Three paths:
+/** Signed-out entry; it opens on signup. Three paths:
  * - login: mobile number (or an old account's email) + password, no SMS;
  * - signup: mobile number -> SMS code -> signed in; the app then asks for a
  *   password (SetPasswordScreen) before anything else;
@@ -27,7 +27,7 @@ export function AuthScreen() {
   const { colors } = useTheme();
   const applyAuth = useAuth((s) => s.applyAuth);
 
-  const [mode, setMode] = useState<Mode>("login");
+  const [mode, setMode] = useState<Mode>("signup");
   const [step, setStep] = useState<Step>("phone");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -47,7 +47,11 @@ export function AuthScreen() {
     setCode("");
     setError(null);
   };
-  useBackInterceptor(mode !== "login", () => (step === "code" ? setStep("phone") : switchTo("login")));
+  // Back walks toward the signup page the screen opens on: from the code to
+  // the number, from a forgotten password to login, from login to signup.
+  useBackInterceptor(mode !== "signup" || step === "code", () =>
+    step === "code" ? setStep("phone") : switchTo(mode === "reset" ? "login" : "signup"),
+  );
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -270,13 +274,15 @@ export function AuthScreen() {
         </AppText>
       ) : null}
 
+      {/* Large, so someone who already has an account sees the way in. */}
       <Pressable
         onPress={() => switchTo(mode === "login" ? "signup" : "login")}
-        style={{ marginTop: 14, alignSelf: "center" }}
+        hitSlop={8}
+        style={{ marginTop: 22, alignSelf: "center", paddingVertical: 6 }}
       >
-        <AppText muted weight="600" size={13}>
+        <AppText muted weight="700" size={16} center style={{ lineHeight: 28 }}>
           {mode === "login" ? t("noAccount") : t("haveAccount")}{" "}
-          <AppText weight="800" size={13} color={colors.accent}>
+          <AppText weight="900" size={19} color={colors.accent}>
             {mode === "login" ? t("signupLink") : t("loginLink")}
           </AppText>
         </AppText>

@@ -1,5 +1,6 @@
 import { CalculatorDetail, CalculatorQuestion } from "@/api/types";
 import { CalculatorAnswers } from "@/utils/calculatorEngine";
+import { UnitSystem } from "@/utils/calculatorLabels";
 import { ModelInfo } from "@/utils/calculatorModel";
 
 /** What every way of asking the questions is given by the calculator screen. */
@@ -9,6 +10,8 @@ export interface FlowProps {
   answers: CalculatorAnswers;
   choiceIndexes: Record<number, number>;
   unitIndexes: Record<number, number>;
+  /** SI or US labels for choices written in both; null: both shown. */
+  unitSystem: UnitSystem | null;
   step: number;
   setStep: (update: (step: number) => number) => void;
   setAnswer: (position: number, value: number | undefined) => void;

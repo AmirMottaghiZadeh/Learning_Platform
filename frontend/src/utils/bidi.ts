@@ -40,13 +40,15 @@ const TOKEN_END = `${TOKEN_START}\u00B2\u00B3\u00B9\u2070-\u2079\u00B0%+'\u2019`
 // "Na(+)" -- left out, the brackets fell to the Persian side and came out
 // as "(D)Rho".
 const ATTACHED_BRACKET = `(?:\\([${TOKEN_START}+\\-/., ]{1,16}\\)(?:[${TOKEN_BODY}]*[${TOKEN_END}])?)?`;
-const TOKEN = `[${TOKEN_START}](?:[${TOKEN_BODY}]*[${TOKEN_END}])?${ATTACHED_BRACKET}`;
+// A degree sign opens a token before a letter: «°C», «°F» -- left out, the
+// «°» stayed between the number and the letter and came out as «F° 105.8».
+const TOKEN = `(?:\u00B0(?=[A-Za-z])|[${TOKEN_START}])(?:[${TOKEN_BODY}]*[${TOKEN_END}])?${ATTACHED_BRACKET}`;
 // Tokens one space apart are one run ("Pneumocystis jirovecii", "10 mg").
 const ENGLISH_RUN = new RegExp(`${TOKEN}(?:[ \u00A0]+${TOKEN})*`, "g");
 
 // A number and the unit after it stay on one line («87.5 mg», never «87.5»
 // at the end of one line and «mg» at the start of the next).
-const NUMBER_THEN_UNIT = /([0-9]) (?=[A-Za-z\u00B5])/g;
+const NUMBER_THEN_UNIT = /([0-9]) (?=[A-Za-z\u00B5\u00B0])/g;
 
 export function hasPersianLetters(text: string): boolean {
   return PERSIAN_LETTER.test(text);

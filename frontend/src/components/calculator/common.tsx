@@ -12,7 +12,7 @@ import { toneColors } from "@/theme/tone";
 import { ModelInfo, resultText, valueKind } from "@/utils/calculatorModel";
 import { Severity, severityLevels, severityOfText } from "@/utils/severity";
 import { ltrNumbers } from "@/utils/html";
-import { choiceLabels } from "@/utils/calculatorLabels";
+import { UnitSystem, choiceDisplay } from "@/utils/calculatorLabels";
 
 /** What every result layout receives. `results` are the ones that have an
  * answer to show, in the calculator's own order. */
@@ -445,6 +445,7 @@ export function describeInputs(
   isFa: boolean,
   strip: (s: string) => string,
   factorOf: (u: CalculatorDetail["questions"][number]["units"][number] | undefined) => number,
+  unitSystem: UnitSystem | null = null,
 ): { label: string; value: string }[] {
   const out: { label: string; value: string }[] = [];
   for (const q of data.questions) {
@@ -453,7 +454,10 @@ export function describeInputs(
     const label = strip(isFa && q.title_fa ? q.title_fa : q.title).replace(/[?؟]\s*$/, "");
     if (q.type === "multiple_choice") {
       const c = q.choices[choiceIndexes[q.position] ?? -1];
-      if (c) out.push({ label, value: choiceLabels(c, isFa).join("\n") });
+      if (c) {
+        const { main, sub } = choiceDisplay(c, isFa, unitSystem);
+        out.push({ label, value: sub ? `${main}\n${sub}` : main });
+      }
     } else if (q.type === "numeric_input") {
       const unit = q.units[unitIndexes[q.position] ?? 0] ?? q.units[0];
       const typed = Number((v / factorOf(unit)).toPrecision(8));

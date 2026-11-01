@@ -23,7 +23,8 @@ function load(file, mocks = {}, globals = {}) {
   }, { filename });
   return exports;
 }
-const { calculatorLabel, choiceLabels } = load("utils/calculatorLabels.ts");
+const { calculatorLabel, choiceLabels, choiceUnitPair, choiceDisplay, choiceUnitSystems } = load("utils/calculatorLabels.ts");
+const { parseTypedNumber, latinDigits } = load("utils/typedNumber.ts");
 const choice = (primary, secondary, fa = primary, secondaryFa = secondary) => ({
   title_primary: primary, title_secondary: secondary,
   title_primary_fa: fa, title_secondary_fa: secondaryFa, answer_factor: "3",
@@ -55,6 +56,52 @@ test("fallbacks retain secondary explanations and avoid duplicate labels", () =>
   assert.equal(choiceLabels(choice("Yes", "Hgb &lt;130 g/L", "بله", null), true).join("; "), "بله; Hgb کمتر از 130 g/L");
   assert.equal(choiceLabels(choice("None", "", "هیچ", null), true).join(""), "هیچ");
   assert.equal(choiceLabels(choice("2 mg/dL", "2 mg/dL "), false).length, 1);
+});
+
+test("numbers typed on a Persian keyboard are read, not left empty", () => {
+  assert.equal(parseTypedNumber("۲۵"), 25);
+  assert.equal(parseTypedNumber("٢٥"), 25);
+  assert.equal(parseTypedNumber(" ۷۰ "), 70);
+  assert.equal(parseTypedNumber("۲٫۵"), 2.5);
+  assert.equal(parseTypedNumber("۲/۵"), 2.5);
+  assert.equal(parseTypedNumber("2,5"), 2.5);
+  assert.equal(parseTypedNumber("1,000"), 1000);
+  assert.equal(parseTypedNumber("۱٬۲۰۰"), 1200);
+  assert.equal(parseTypedNumber("-3.5"), -3.5);
+  assert.equal(parseTypedNumber("2."), 2);
+  assert.ok(Number.isNaN(parseTypedNumber("")));
+  assert.ok(Number.isNaN(parseTypedNumber("abc")));
+  assert.ok(Number.isNaN(parseTypedNumber("25 kg")));
+  assert.equal(latinDigits("۱۴۰۵"), "1405");
+});
+test("a choice in SI and US units shows only the picked system", () => {
+  const bilirubin = choice("&lt;34 µmol/L", "&lt;2.0 mg/dL");
+  assert.deepEqual({ ...choiceUnitPair(bilirubin) }, { primary: "si", secondary: "us" });
+  assert.deepEqual({ ...choiceDisplay(bilirubin, false, "us") }, { main: "less than 2.0 mg/dL", sub: null });
+  assert.deepEqual({ ...choiceDisplay(bilirubin, false, "si") }, { main: "less than 34 µmol/L", sub: null });
+  assert.deepEqual({ ...choiceDisplay(bilirubin, false, null) }, { main: "less than 34 µmol/L", sub: "less than 2.0 mg/dL" });
+  // The US label first works too, and a unit both labels share is ignored.
+  assert.deepEqual({ ...choiceUnitPair(choice("&gt;120 g/dL", "&gt;12 g/L")) }, { primary: "us", secondary: "si" });
+  assert.deepEqual({ ...choiceUnitPair(choice("37 °C and 60 in", "98.6 °F and 60 in")) }, { primary: "si", secondary: "us" });
+});
+test("labels that are not an SI/US pair keep both lines", () => {
+  assert.equal(choiceUnitPair(choice("Positive &ge;500 ng/ml", "Positive &ge;0.5 µg/mL")), null);
+  assert.equal(choiceUnitPair(choice("Low energy", "stab; simple fracture")), null);
+  assert.equal(choiceUnitPair(choice("&lt;100", "&lt;10")), null);
+  assert.equal(choiceUnitPair(choice("Increase in creatinine", "Rise in mg dose")), null); // "in" is not inches
+  assert.deepEqual({ ...choiceDisplay(choice("Low energy", "stab; simple fracture"), false, "us") }, { main: "Low energy", sub: "stab; simple fracture" });
+});
+test("the unit switch appears only with SI/US choices and starts on the source's default", () => {
+  const question = (choices) => ({ type: "multiple_choice", choices });
+  assert.equal(choiceUnitSystems([question([choice("Yes", ""), choice("No", "")])]), null);
+  const found = choiceUnitSystems([
+    question([choice("&lt;34 µmol/L", "&lt;2.0 mg/dL"), choice("34-50 µmol/L", "2.0-3.0 mg/dL")]),
+    question([choice("&ge;41 °C", "&ge;105.8 °F")]),
+    { type: "numeric_input", choices: [] },
+  ]);
+  assert.equal(found.default, "si");
+  assert.deepEqual([...found.units.si], ["µmol/L", "°C"]);
+  assert.deepEqual([...found.units.us], ["mg/dL", "°F"]);
 });
 
 function browser({ ios = false, standalone = false, stored = false } = {}) {
