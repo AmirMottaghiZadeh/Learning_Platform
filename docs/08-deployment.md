@@ -141,6 +141,22 @@ Google Play Protect اپی را که از Google Play نصب نشده و نام 
   - HTTP ساده بسته است.
 - **کار مالک پروژه:** فرم Play Protect Appeals گوگل را با ایمیل، نام توسعه‌دهنده، نام بسته (`com.pharmenta.learning`) و فایل APK پر کند تا گوگل اپ را بررسی و تأیید کند. این کار با هویت توسعه‌دهنده انجام می‌شود.
 - **کلید امضا:** بستهٔ جدید در اولین بیلد EAS کلید تازه‌ای می‌گیرد. همان کلید باید برای همیشه بماند، و از آن در EAS پشتیبان بگیرید (`npx eas-cli credentials`). هر به‌روزرسانی با کلید دیگر نصب نمی‌شود و دوباره هشدار Play Protect می‌آورد.
+- **بررسی APK ۲۰۲۶-۱۱-۰۱:** `Pharmenta.apk` (0.1.0، پیش از تغییر نام بسته) از نظر فنی سالم بود:
+  - targetSdk ۳۶
+  - بدون دسترسی پیامک، دسترس‌پذیری (accessibility) یا خواندن اعلان‌ها
+  - debuggable نیست و HTTP ساده بسته است
+  - امضا با کلید انتشار EAS است، نه کلید debug (v2، اثرانگشت SHA-256 `E3:32:67:06:A7:9E:B3:DF:F6:29:D1:99:AC:1B:ED:27:12:D8:E3:8B:2F:51:7A:D1:0D:A3:18:8E:41:AC:8C:9D`)
+
+  پس هشدار از ناشناخته بودن اپ و کلید برای گوگل است، نه از ایراد فنی.
+- **راه رفع، بسته به متن پنجره** ([راهنمای گوگل](https://developers.google.com/android/play-protect/warning-dev-guidance)):
+
+  | متن پنجره | معنی | کار |
+  |---|---|---|
+  | «Play Protect hasn't seen this app before» / «Send app for a security check» | اپ برای گوگل ناشناخته است | در همان پنجره «Scan app» یا «Send» را بزنید. پس از بررسی گوگل، این هشدار برای کاربران دیگر هم نمی‌آید. فرم اعتراض برای این حالت کاری نمی‌کند |
+  | «Harmful app blocked» | گوگل اپ را مضر طبقه‌بندی کرده | فرم [Play Protect Appeals](https://support.google.com/googleplay/android-developer/contact/protectappeals) با نام بسته، اثرانگشت کلید و فایل APK |
+  | «App blocked to protect your device» | دسترسی پیامک، دسترس‌پذیری یا خواندن اعلان | اپ ما این دسترسی‌ها را ندارد؛ اگر آمد، همان فرم اعتراض |
+  | «built for an older version of Android» | targetSdk پایین | اپ ما ۳۶ دارد |
+- **بعد از تغییر نام بسته:** بستهٔ `com.pharmenta.learning` برای گوگل اپ تازه‌ای است. اولین APK آن را روی یک گوشی نصب کنید و در پنجرهٔ Play Protect «Scan app» را بزنید.
 
 ### حجم APK
 
