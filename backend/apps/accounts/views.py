@@ -8,6 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core import ratelimit
 from apps.core.exceptions import PlatformAPIError
 
 from . import otp
@@ -166,7 +167,7 @@ class OtpRequestView(APIView):
             "phone": phone,
             "code_length": settings.OTP_CODE_LENGTH,
             "expires_in": settings.OTP_TTL_SECONDS,
-            "resend_in": settings.OTP_RESEND_SECONDS,
+            "resend_in": ratelimit.otp_limit("resend_seconds"),
         })
 
 

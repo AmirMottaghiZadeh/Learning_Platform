@@ -16,6 +16,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
+from apps.core import ratelimit
 from apps.accounts import otp
 from apps.accounts.models import LearnerProfile, OneTimeCode, SecurityAuditEvent
 from apps.accounts.services import record_security_event, revoke_all_user_sessions
@@ -92,7 +93,7 @@ def login_phone(request):
                     _pending_login(request, phone, purpose, exc.details.get("retry_after", 0))
                     return redirect("site:login_code")
             else:
-                _pending_login(request, phone, purpose, settings.OTP_RESEND_SECONDS)
+                _pending_login(request, phone, purpose, ratelimit.otp_limit("resend_seconds"))
                 return redirect("site:login_code")
     ctx = {"next": _next(request), "nav": "", "mode": mode, "form": form}
     ctx.update(_meta("بازیابی رمز عبور" if mode == "reset" else "ثبت‌نام / ورود"))
@@ -129,7 +130,7 @@ def login_code(request):
                     pending["resend_at"] = timezone.now().timestamp() + exc.details.get("retry_after", 0)
                     request.session[SESSION_KEY] = pending
             else:
-                pending["resend_at"] = timezone.now().timestamp() + settings.OTP_RESEND_SECONDS
+                pending["resend_at"] = timezone.now().timestamp() + ratelimit.otp_limit("resend_seconds")
                 request.session[SESSION_KEY] = pending
                 messages.success(request, "کد تأیید تازه ارسال شد.")
                 return redirect("site:login_code")

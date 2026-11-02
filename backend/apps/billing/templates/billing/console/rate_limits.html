@@ -1,0 +1,146 @@
+{% extends "billing/console/base.html" %}
+{% load billing_extras %}
+{% block title %}محدودیت درخواست‌ها{% endblock %}
+{% block style %}
+  .opt { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--line); cursor: pointer; background: var(--card); }
+  .opt:has(input:checked) { border-color: var(--accent); }
+  .opt input { accent-color: #0F5C52; margin-top: 5px; width: 18px; height: 18px; }
+  .rl td { vertical-align: middle; }
+  .rl .who { display: block; font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .rl .rate { display: flex; gap: 6px; align-items: center; }
+  .rl .rate .fld { width: 96px; }
+  .rl .rate select.fld { width: 108px; }
+  .rl tr.is-off .rate, .rl tr.is-default .rate { opacity: .45; }
+  .rl select.mode { min-width: 140px; }
+  .rl td.nowrap { white-space: nowrap; }
+  fieldset.off { opacity: .5; }
+  fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  .rl-warn { padding: 12px 14px; border-radius: 14px; background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn); font-weight: 700; font-size: 13px; line-height: 1.9; }
+  /* a phone: each limit is a small card instead of a table row */
+  @media (max-width: 760px) {
+    .rl thead { display: none; }
+    .rl, .rl tbody { display: block; }
+    .rl tr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+    table.list.rl tbody td { display: block; border: 0; padding: 0; background: none; }
+    .rl td:first-child, .rl td.cell-mode, .rl td.cell-rate { grid-column: 1 / -1; }
+    .rl td.cell-mode select.mode { width: 100%; min-width: 0; }
+    .rl td.cell-default::before, .rl td.cell-now::before { content: attr(data-label) " "; color: var(--muted); font-weight: 600; font-size: 12px; }
+    .rl .rate .fld { width: auto; flex: 1; min-width: 0; }
+  }
+{% endblock %}
+{% block content %}
+  <div class="row" style="align-items:flex-end">
+    <div class="grow stack" style="gap:4px">
+      <span class="eyebrow">اپ</span>
+      <h1>محدودیت درخواست‌ها (Rate limit)</h1>
+      <span class="sub">چند درخواست در چه مدتی از هر نشانی IP یا هر کاربر پذیرفته می‌شود. درخواستِ بیشتر از سقف، پاسخ ۴۲۹ («کمی بعد دوباره امتحان کن») می‌گیرد.</span>
+    </div>
+    <span class="chip {% if limits.enabled %}accent{% else %}warn{% endif %}">محدودیت‌ها {% if limits.enabled %}روشن{% else %}خاموش{% endif %}</span>
+    <span class="chip {% if limits.otp_enabled %}accent{% else %}warn{% endif %}">سقف پیامک {% if limits.otp_enabled %}روشن{% else %}خاموش{% endif %}</span>
+  </div>
+
+  <form method="post" class="stack" style="gap:16px">
+    {% csrf_token %}
+
+    <section class="card stack" style="gap:14px">
+      <h2>همهٔ محدودیت‌های درخواست</h2>
+      <div class="grid g2">
+        <label class="opt"><input type="radio" name="enabled" value="on" {% if limits.enabled %}checked{% endif %}>
+          <span class="stack" style="gap:2px"><b>روشن</b><span class="sub" style="font-size:12.5px">هر بخش با سقفی که پایین‌تر برایش تعیین شده</span></span></label>
+        <label class="opt"><input type="radio" name="enabled" value="off" {% if not limits.enabled %}checked{% endif %}>
+          <span class="stack" style="gap:2px"><b>خاموش</b><span class="sub" style="font-size:12.5px">هیچ درخواستی به‌خاطر تعداد رد نمی‌شود</span></span></label>
+      </div>
+      <div class="rl-warn" id="off-warning" {% if limits.enabled %}hidden{% endif %}>با خاموش بودن، ورود با رمز و کد پیامکی در برابر حدس زدن پشت سر هم محافظت ندارند. فقط برای مدت کوتاه و برای رفع مشکل خاموش کنید.</div>
+
+      <fieldset id="scopes" {% if not limits.enabled %}class="off"{% endif %}>
+        <div>
+          <table class="list rl">
+            <thead><tr><th>بخش</th><th>حالت</th><th>سقف</th><th>پیش‌فرض</th><th>الان</th></tr></thead>
+            <tbody>
+              {% for r in rows %}
+              <tr class="is-{{ r.mode }}" data-row>
+                <td><b>{{ r.label }}</b><span class="who">{{ r.who }} · <span class="ltr mono">{{ r.scope }}</span></span></td>
+                <td class="cell-mode">
+                  <select class="fld mode" name="mode_{{ r.scope }}" data-mode>
+                    <option value="default" {% if r.mode == "default" %}selected{% endif %}>پیش‌فرض</option>
+                    <option value="custom" {% if r.mode == "custom" %}selected{% endif %}>دلخواه</option>
+                    <option value="off" {% if r.mode == "off" %}selected{% endif %}>بدون سقف</option>
+                  </select>
+                </td>
+                <td class="cell-rate">
+                  <div class="rate">
+                    <input class="fld ltr" name="count_{{ r.scope }}" value="{{ r.count }}" inputmode="numeric" aria-label="تعداد درخواست" {% if r.mode != "custom" %}disabled{% endif %}>
+                    <span class="sub">در</span>
+                    <select class="fld" name="unit_{{ r.scope }}" aria-label="واحد زمان" {% if r.mode != "custom" %}disabled{% endif %}>
+                      {% for key, name in units %}<option value="{{ key }}" {% if r.unit == key %}selected{% endif %}>{{ name }}</option>{% endfor %}
+                    </select>
+                  </div>
+                </td>
+                <td class="sub nowrap cell-default" data-label="پیش‌فرض:">{{ r.default }}</td>
+                <td class="nowrap cell-now" data-label="الان:"><b>{% if limits.enabled %}{{ r.in_force }}{% else %}خاموش{% endif %}</b></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+    </section>
+
+    <section class="card stack" style="gap:14px">
+      <h2>سقف‌های کد پیامکی (هر شماره و هر IP)</h2>
+      <span class="sub">جدا از بالا، و همان چیزی که جلوی خالی شدن اعتبار پیامک را می‌گیرد. خانهٔ خالی یعنی مقدار پیش‌فرض.</span>
+      <div class="grid g2">
+        <label class="opt"><input type="radio" name="otp_enabled" value="on" {% if limits.otp_enabled %}checked{% endif %}>
+          <span class="stack" style="gap:2px"><b>روشن</b><span class="sub" style="font-size:12.5px">با مقدارهای زیر</span></span></label>
+        <label class="opt"><input type="radio" name="otp_enabled" value="off" {% if not limits.otp_enabled %}checked{% endif %}>
+          <span class="stack" style="gap:2px"><b>خاموش</b><span class="sub" style="font-size:12.5px">هر شماره هر چند بار که بخواهد کد می‌گیرد</span></span></label>
+      </div>
+      <div class="rl-warn" id="otp-warning" {% if limits.otp_enabled %}hidden{% endif %}>با خاموش بودن، هر کسی می‌تواند برای هر شماره‌ای پشت سر هم پیامک بفرستد و هزینهٔ هر پیامک از اعتبار sms.ir کم می‌شود.</div>
+      <fieldset id="otp" {% if not limits.otp_enabled %}class="off"{% endif %}>
+        <div class="grid g2">
+          {% for o in otp_rows %}
+          <div class="stack" style="gap:6px">
+            <label class="lbl" for="otp_{{ o.key }}">{{ o.label }}</label>
+            <input class="fld ltr" id="otp_{{ o.key }}" name="otp_{{ o.key }}" value="{{ o.value }}" inputmode="numeric" placeholder="{{ o.default }}">
+            <span class="sub" style="font-size:12px">پیش‌فرض {{ o.default|num }} · بین {{ o.low|num }} و {{ o.high|num }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+    </section>
+
+    <section class="card stack" style="gap:12px">
+      <div style="padding:14px;border-radius:14px;background:var(--warn-bg);border:1px solid var(--warn-line)">
+        <label class="lbl" for="password" style="color:var(--warn)">برای ذخیره، رمز حساب خودتان را دوباره وارد کنید</label>
+        <input class="fld ltr" id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn primary" type="submit">ذخیره</button>
+      <span class="sub" style="font-size:12.5px">تغییر روی همین سرور فوراً و روی سرورهای دیگر تا نیم دقیقه بعد اثر می‌کند. پیش‌فرض‌ها از متغیرهای محیطی سرور می‌آیند (<span class="ltr mono">DRF_*_THROTTLE_RATE</span> و <span class="ltr mono">OTP_*</span>).{% if last_change %} آخرین تغییر: {{ last_change.summary }} · {{ last_change.actor.get_username|default:"—" }} · {{ last_change.created_at|jdate:"time" }}{% endif %}</span>
+    </section>
+  </form>
+
+  <script>
+    (function () {
+      // a row's rate fields only count in "custom"
+      document.querySelectorAll("[data-row]").forEach(function (row) {
+        var mode = row.querySelector("[data-mode]");
+        var fields = row.querySelectorAll(".rate .fld");
+        mode.addEventListener("change", function () {
+          row.className = "is-" + mode.value;
+          fields.forEach(function (f) { f.disabled = mode.value !== "custom"; });
+        });
+      });
+      function follow(name, box, warning) {
+        document.querySelectorAll('input[name="' + name + '"]').forEach(function (radio) {
+          radio.addEventListener("change", function () {
+            var off = radio.value === "off" && radio.checked;
+            document.getElementById(box).classList.toggle("off", off);
+            document.getElementById(warning).hidden = !off;
+          });
+        });
+      }
+      follow("enabled", "scopes", "off-warning");
+      follow("otp_enabled", "otp", "otp-warning");
+    })();
+  </script>
+{% endblock %}

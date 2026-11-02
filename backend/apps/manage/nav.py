@@ -94,6 +94,7 @@ MODULES = (
         Page("announcements", "اعلانات اپ", "app_admin:announcements", access.is_super, ("app_admin:*",)),
         Page("releases", "نسخه‌ها و دانلود", "panel:releases", access.site("download.manage"), ("panel:releases*", "panel:links*")),
         Page("access", "دسترسی مهمان", "console:access", access.is_super, ("console:access",)),
+        Page("rate_limits", "محدودیت درخواست‌ها", "console:rate_limits", access.is_super, ("console:rate_limits",)),
     )),
     Module("site", "سایت", ICONS["site"], (
         Page("overview", "نمای کلی", "panel:dashboard", access.site("dashboard.view"), ("panel:dashboard",)),

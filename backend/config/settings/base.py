@@ -401,12 +401,17 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "apps.core.exceptions.platform_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Each rate can be changed, or every limit switched off, in /manage/
+    # (App -> request limits: apps.core.ratelimit); these are the defaults.
     "DEFAULT_THROTTLE_CLASSES": [
         "apps.core.throttling.DistributedAnonRateThrottle",
+        "apps.core.throttling.DistributedUserRateThrottle",
         "apps.core.throttling.DistributedScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": config("DRF_ANON_THROTTLE_RATE", default="1000/hour"),
+        # every request of one signed-in user; none by default
+        "user": config("DRF_USER_THROTTLE_RATE", default="") or None,
         "burst": config("DRF_BURST_THROTTLE_RATE", default="120/min"),
         "sustained": config("DRF_SUSTAINED_THROTTLE_RATE", default="5000/day"),
         "auth_login": config("DRF_AUTH_LOGIN_THROTTLE_RATE", default="5/min"),

@@ -12,7 +12,9 @@ valid for OTP_TTL_SECONDS, spent by their first correct use, and dead after
 OTP_MAX_ATTEMPTS wrong ones. A number can be sent a new code at most every
 OTP_RESEND_SECONDS, OTP_MAX_PER_PHONE_PER_WINDOW times in any
 OTP_WINDOW_SECONDS (3 in 10 minutes) and OTP_MAX_PER_PHONE_PER_DAY times a
-day; one address can ask for OTP_MAX_PER_IP_PER_WINDOW codes in that window,
+day; one address can ask for OTP_MAX_PER_IP_PER_WINDOW codes in that window
+(each of these can be changed, or all switched off, in /manage/:
+apps.core.ratelimit),
 more than a number may, since many phones share a carrier's address. With the
 per-address request throttles, that is what keeps the SMS credit safe and a
 number from being flooded.
@@ -28,6 +30,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+
+from apps.core import ratelimit
 
 from .models import LearnerProfile, OneTimeCode, SecurityAuditEvent
 from .services import _request_metadata, ensure_default_learner_role, record_security_event
@@ -86,6 +90,8 @@ def request_code(phone, purpose, *, request=None):
         raise OtpError("حسابی با این شماره پیدا نشد.", code="PHONE_NOT_REGISTERED", status=404)
 
     now = timezone.now()
+    # set in /manage/ over the environment's (apps.core.ratelimit)
+    limits = ratelimit.current().otp
     with transaction.atomic():
         # One request at a time per number, so two quick taps can't both
         # pass the resend check.
@@ -95,22 +101,22 @@ def request_code(phone, purpose, *, request=None):
             .order_by("-created_at")
         )
         if recent:
-            wait = settings.OTP_RESEND_SECONDS - (now - recent[0].created_at).total_seconds()
+            wait = limits["resend_seconds"] - (now - recent[0].created_at).total_seconds()
             if wait > 0:
                 raise OtpError(
                     "کمی صبر کن و بعد کد تازه بخواه.",
                     code="OTP_TOO_SOON", status=429, details={"retry_after": int(wait) + 1},
                 )
-        window = settings.OTP_WINDOW_SECONDS
+        window = limits["window_seconds"]
         in_window = [r for r in recent if (now - r.created_at).total_seconds() < window]
-        if len(in_window) >= settings.OTP_MAX_PER_PHONE_PER_WINDOW:
+        if len(in_window) >= limits["max_per_phone_per_window"]:
             wait = window - (now - in_window[-1].created_at).total_seconds()
             raise OtpError(
-                f"برای هر شماره در {_minutes(window)} حداکثر {settings.OTP_MAX_PER_PHONE_PER_WINDOW} کد فرستاده "
+                f"برای هر شماره در {_minutes(window)} حداکثر {limits['max_per_phone_per_window']} کد فرستاده "
                 f"می‌شود؛ {_minutes(wait)} دیگر دوباره امتحان کن.",
                 code="OTP_WINDOW_LIMIT", status=429, details={"retry_after": int(wait) + 1},
             )
-        if len(recent) >= settings.OTP_MAX_PER_PHONE_PER_DAY:
+        if len(recent) >= limits["max_per_phone_per_day"]:
             raise OtpError(
                 "امروز برای این شماره کد زیادی فرستاده شده؛ فردا دوباره امتحان کن.",
                 code="OTP_DAILY_LIMIT", status=429,
@@ -120,9 +126,9 @@ def request_code(phone, purpose, *, request=None):
             from_ip = list(
                 OneTimeCode.objects.filter(ip_address=ip_address, created_at__gte=now - timedelta(seconds=window))
                 .order_by("created_at")
-                .values_list("created_at", flat=True)[: settings.OTP_MAX_PER_IP_PER_WINDOW]
+                .values_list("created_at", flat=True)[: limits["max_per_ip_per_window"]]
             )
-            if len(from_ip) >= settings.OTP_MAX_PER_IP_PER_WINDOW:
+            if len(from_ip) >= limits["max_per_ip_per_window"]:
                 wait = window - (now - from_ip[0]).total_seconds()
                 raise OtpError(
                     f"از این شبکه کد زیادی خواسته شده؛ {_minutes(wait)} دیگر دوباره امتحان کن.",

@@ -113,6 +113,7 @@
 | متغیر | پیش‌فرض | کار |
 |---|---|---|
 | `DRF_ANON_THROTTLE_RATE` | `1000/hour` | درخواست بدون ورود، هر IP |
+| `DRF_USER_THROTTLE_RATE` | خالی (بدون سقف) | همهٔ درخواست‌های هر کاربر واردشده |
 | `DRF_BURST_THROTTLE_RATE` / `DRF_SUSTAINED_THROTTLE_RATE` | `120/min` / `5000/day` | |
 | `DRF_AUTH_LOGIN_THROTTLE_RATE` | `5/min` | ورود |
 | `DRF_AUTH_REGISTER_THROTTLE_RATE` | `5/hour` | ثبت‌نام ایمیلی |
@@ -122,6 +123,8 @@
 | `DRF_AUTH_PASSWORD_SET_THROTTLE_RATE` | `10/hour` | انتخاب رمز |
 | `DRF_GUEST_SESSION_THROTTLE_RATE` | `20/hour` | ساخت حساب مهمان |
 | `THROTTLE_FAIL_CLOSED_SCOPES` | ورود، ثبت‌نام، بازیابی، کد پیامکی، انتخاب رمز | این scopeها اگر کش در دسترس نباشد درخواست را رد می‌کنند |
+
+این متغیرها و `OTP_*` بالا فقط **پیش‌فرض** هستند. در مدیریت (اپ ← محدودیت درخواست‌ها، [11-admin-consoles.md](11-admin-consoles.md#محدودیت-درخواستها)) می‌شود همه را خاموش کرد یا برای هر کدام عدد دیگری گذاشت. مقدار مدیریت بر env مقدم است.
 
 ## پرچم‌های قابلیت
 

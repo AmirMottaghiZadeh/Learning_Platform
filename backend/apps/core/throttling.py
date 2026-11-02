@@ -11,6 +11,7 @@ abuse-sensitive endpoints when that shared store is unreachable.
 import logging
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.core.cache import caches
 from rest_framework.throttling import (
     AnonRateThrottle,
@@ -18,6 +19,8 @@ from rest_framework.throttling import (
     SimpleRateThrottle,
     UserRateThrottle,
 )
+
+from . import ratelimit
 
 
 logger = logging.getLogger(__name__)
@@ -49,7 +52,19 @@ class SharedCacheThrottleMixin:
     def _fails_closed(self, scope):
         return bool(scope) and scope in _fail_closed_scopes()
 
+    def get_rate(self):
+        """The rate set in /manage/ (apps.core.ratelimit) over the
+        environment's; None (no limit) when limits are switched off."""
+        scope = getattr(self, "scope", None)
+        try:
+            fallback = super().get_rate()
+        except ImproperlyConfigured:
+            fallback = None
+        return ratelimit.rate_for(scope, fallback)
+
     def allow_request(self, request, view):
+        if not ratelimit.current().enabled:
+            return True
         try:
             return super().allow_request(request, view)
         except ThrottleBackendUnavailable:
@@ -83,7 +98,12 @@ class DistributedAnonRateThrottle(SharedCacheThrottleMixin, AnonRateThrottle):
 
 
 class DistributedUserRateThrottle(SharedCacheThrottleMixin, UserRateThrottle):
-    pass
+    """Signed-in users only: an anonymous request is the "anon" scope's."""
+
+    def get_cache_key(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return None
+        return super().get_cache_key(request, view)
 
 
 class DistributedScopedRateThrottle(SharedCacheThrottleMixin, ScopedRateThrottle):

@@ -33,6 +33,8 @@ from apps.accounts.services import (
     revoke_platform_role,
 )
 from apps.billing import config, services
+from apps.core import ratelimit
+from apps.core.models import RateLimitSettings
 from apps.billing import guest as guest_tools
 from apps.billing.gateways import GatewayError, SepGateway, ZibalGateway, ZarinpalGateway
 from apps.billing.catalog import SCOPE_TYPES, TOPIC_CATEGORY_CHOICES
@@ -1093,6 +1095,105 @@ def access(request):
         "guest_today": guests.filter(date_joined__gte=timezone.now() - timedelta(days=1)).count(),
         "guest_sessions": UserSession.objects.filter(user__guest_account__isnull=False, revoked_at__isnull=True, refresh_expires_at__gt=timezone.now()).count(),
         "last_change": AdminAction.objects.filter(action="guest_access").select_related("actor").first(),
+    })
+
+
+# -- request limits (App) -----------------------------------------------------
+
+def _rate_rows(limits):
+    """One row per throttle scope for the form: as set, and the default."""
+    rows = []
+    for scope, label, who in ratelimit.SCOPES:
+        rate = limits.rates[scope]
+        parsed = ratelimit.parse_rate(rate) if limits.modes[scope] == "custom" else None
+        default = ratelimit.default_rate(scope)
+        default_parsed = ratelimit.parse_rate(default) if default else None
+        rows.append({
+            "scope": scope, "label": label, "who": who, "mode": limits.modes[scope],
+            "count": parsed[0] if parsed else (default_parsed[0] if default_parsed else ""),
+            "unit": parsed[1] if parsed else (default_parsed[1] if default_parsed else "minute"),
+            "default": ratelimit.describe_rate(default), "in_force": ratelimit.describe_rate(rate),
+        })
+    return rows
+
+
+def _read_rate_form(post):
+    """scope -> override ("off" or a rate); a scope at its default is left out.
+    Raises ValueError with what is wrong."""
+    rates = {}
+    for scope, label, _ in ratelimit.SCOPES:
+        mode = post.get(f"mode_{scope}", "default")
+        if mode == "off":
+            rates[scope] = "off"
+        elif mode == "custom":
+            unit = post.get(f"unit_{scope}", "")
+            raw = (post.get(f"count_{scope}") or "").strip().translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"))
+            if unit not in ratelimit.UNIT_NAMES or not raw.isdigit() or not 1 <= int(raw) <= ratelimit.MAX_COUNT:
+                raise ValueError(f"برای «{label}» یک عدد درست (۱ یا بیشتر) و یک واحد زمان بنویسید.")
+            rates[scope] = ratelimit.format_rate(int(raw), unit)
+    return rates
+
+
+def _read_otp_form(post):
+    """name -> number; a field left empty keeps the environment's value."""
+    values = {}
+    for key, label, low, high in ratelimit.OTP_FIELDS:
+        raw = (post.get(f"otp_{key}") or "").strip().translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"))
+        if not raw:
+            continue
+        if not raw.isdigit() or not low <= int(raw) <= high:
+            raise ValueError(fa_digits(f"«{label}» باید عددی بین {low} و {high} باشد."))
+        values[key] = int(raw)
+    return values
+
+
+@superuser_required
+def rate_limits(request):
+    """The app's request limits: one switch for all of them, a rate (or none)
+    per scope, and the SMS code's own limits with a switch of their own."""
+    limits = ratelimit.current()
+    if request.method == "POST":
+        if not request.user.check_password(request.POST.get("password", "")):
+            messages.error(request, "رمز حساب درست نیست؛ چیزی تغییر نکرد.")
+            return redirect("console:rate_limits")
+        try:
+            rates = _read_rate_form(request.POST)
+            otp_values = _read_otp_form(request.POST)
+        except ValueError as exc:
+            messages.error(request, str(exc))
+            return redirect("console:rate_limits")
+        row = RateLimitSettings.objects.first() or RateLimitSettings()
+        before = {"enabled": row.enabled, "rates": row.rates, "otp_enabled": row.otp_enabled, "otp": row.otp}
+        row.enabled = request.POST.get("enabled") != "off"
+        row.otp_enabled = request.POST.get("otp_enabled") != "off"
+        row.rates = rates
+        row.otp = otp_values
+        row.updated_by = request.user
+        row.save()
+        after = {"enabled": row.enabled, "rates": row.rates, "otp_enabled": row.otp_enabled, "otp": row.otp}
+        parts = [
+            "محدودیت درخواست‌ها " + ("روشن" if row.enabled else "خاموش"),
+            "سقف‌های پیامک " + ("روشن" if row.otp_enabled else "خاموش"),
+        ]
+        if rates:
+            parts.append(fa_digits(f"{len(rates)} محدودیت دلخواه"))
+        services.record(request, "rate_limits", "؛ ".join(parts), details={"before": before, "after": after})
+        messages.success(request, "ذخیره شد. سرورهای دیگر تا نیم دقیقهٔ دیگر آن را می‌خوانند.")
+        return redirect("console:rate_limits")
+
+    defaults = ratelimit.default_otp()
+    row = RateLimitSettings.objects.first()
+    return render(request, "billing/console/rate_limits.html", {
+        "active": "rate_limits",
+        "limits": limits,
+        "rows": _rate_rows(limits),
+        "units": ratelimit.UNITS,
+        "otp_rows": [
+            {"key": key, "label": label, "low": low, "high": high, "default": defaults[key],
+             "value": (row.otp or {}).get(key, "") if row else ""}
+            for key, label, low, high in ratelimit.OTP_FIELDS
+        ],
+        "last_change": AdminAction.objects.filter(action="rate_limits").select_related("actor").first(),
     })
 
 

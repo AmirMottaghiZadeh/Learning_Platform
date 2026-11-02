@@ -39,6 +39,7 @@ urlpatterns = [
     path("gateway/<int:pk>/toggle/", views.gateway_toggle, name="gateway_toggle"),
     path("gateway/<int:pk>/test/", views.gateway_test, name="gateway_test"),
     path("access/", views.access, name="access"),
+    path("rate-limits/", views.rate_limits, name="rate_limits"),
     path("sales/", views.sales, name="sales"),
     path("audit/", views.audit, name="audit"),
 ]
