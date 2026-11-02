@@ -276,7 +276,7 @@
 
 | روش | مسیر | توضیح |
 |---|---|---|
-| GET | `/uptodate/topics/?search=&limit=` | جست‌وجو فقط در عنوان مقاله‌ها: هر کلمه باید ابتدای کلمه‌ای از عنوان باشد و کلمهٔ غلط به نزدیک‌ترین کلمهٔ عنوان‌ها تصحیح می‌شود ([03-backend.md](03-backend.md#uptodate-و-lexicomp)). `limit` پیش‌فرض ۲۵ و حداکثر ۵۰ است. ← `[{id, title, section, version, updated, terms[], corrected, snippet}]`: `terms` ابتدای کلمه‌هایی است که جست‌وجو با آن‌ها انجام شد (برای پررنگ کردن در عنوان)؛ `corrected` جست‌وجو پس از تصحیح است، یا `""` اگر چیزی تصحیح نشد؛ `snippet` همیشه خالی است و فقط برای نسخه‌های قدیمی اپ مانده. باز است و از سهمیه کم نمی‌کند |
+| GET | `/uptodate/topics/?search=&limit=` | جست‌وجو فقط در عنوان مقاله‌ها: هر کلمه باید ابتدای کلمه‌ای از عنوان باشد (یا از ۴ حرف به بالا داخل آن) و کلمهٔ غلط به نزدیک‌ترین کلمهٔ عنوان‌ها تصحیح می‌شود ([03-backend.md](03-backend.md#uptodate-و-lexicomp)). بدون `paged`: فقط صفحهٔ اول، به شکل فهرست (برای نسخه‌های تا 0.1.x)؛ `limit` پیش‌فرض ۲۵ و حداکثر ۵۰. با `paged=1&offset=&limit=&section=`: ← `{total, all, sections[{name, count}], terms[], corrected, results[]}`؛ `total` همهٔ نتیجه‌ها (در `section` اگر داده شده)، `all` همهٔ نتیجه‌ها بدون فیلتر بخش، `sections` همهٔ نتیجه‌ها به تفکیک بخش؛ `limit` تا ۱۰۰. هر ردیف (در فهرست یا در `results`): `{id, title, section, version, updated, terms[], corrected, snippet}`. `terms` ابتدا (یا تکهٔ) کلمه‌هایی است که جست‌وجو با آن‌ها انجام شد (برای پررنگ کردن در عنوان)؛ `corrected` جست‌وجو پس از تصحیح است، یا `""` اگر چیزی تصحیح نشد؛ `snippet` همیشه خالی است و فقط برای نسخه‌های قدیمی اپ مانده. باز است و از سهمیه کم نمی‌کند |
 | GET | `/uptodate/topics/{id}/` | ← `{id, title, section, version, updated, contributors[], outline_html, body_html}`. یک بار از سهمیه کم می‌کند |
 | GET | `/uptodate/images/{id}/` | تصویر یا جدول مقاله |
 
@@ -330,15 +330,24 @@ endpoint جست‌وجوی هوشمند هنوز وجود ندارد و در ف�
 
 | روش | مسیر | توضیح |
 |---|---|---|
-| GET | `/billing/catalog/` | `{free, plans[], products[]}` (فقط پلن‌های `active`)؛ هر کدام با `badge_fa`، `description_fa`، `cta_label_fa`، `extra_lines[]`، `prices[]` (با `compare_at_toman` و `label_fa`) و `features[]` (با `label_fa` و `is_listed`) |
+| GET | `/billing/catalog/` | `{free, plans[], products[], gateways[{kind, name}], sales_enabled}` (فقط پلن‌های `active`)؛ هر کدام با `badge_fa`، `description_fa`، `cta_label_fa`، `extra_lines[]`، `prices[]` (با `compare_at_toman` و `label_fa`) و `features[]` (با `label_fa`، `is_listed` و `period_fa` مثل «در ماه»). `gateways` درگاه‌های روشن به ترتیب نمایش است |
 | GET | `/billing/me/` | `{enforced, features[{key, name_fa, limit, period, used}], entitlements[{id, plan_name_fa, plan_kind, source, starts_at, ends_at, days_left}]}`؛ `source` یکی از `purchase`، `admin` و `trial` (هدیهٔ ثبت‌نام). کارت اشتراک پروفایل اپ از همین ساخته می‌شود |
 | POST | `/billing/quote/` | `{price_id, discount_code?}` ← `{amount_toman, discount_toman, payable_toman}`. 400 `PRICE_NOT_AVAILABLE` یا `DISCOUNT_NOT_FOUND` / `DISCOUNT_INACTIVE` / `DISCOUNT_NOT_STARTED` / `DISCOUNT_EXPIRED` / `DISCOUNT_USED_UP` / `DISCOUNT_NOT_FOR_PLAN`. 403 `GUEST_CANNOT_BUY` |
-| POST | `/billing/checkout/` | همان بدنه ← 201 `{order_id, status, payment_url}`؛ سفارش ۱۰۰٪ تخفیف بی‌درنگ `paid` می‌شود. 502 `GATEWAY_ERROR`، 503 `SALES_PAUSED` |
-| GET | `/billing/orders/` | ۵۰ سفارش آخر کاربر |
+| POST | `/billing/checkout/` | خرید از داخل اپ: `{price_id, discount_code?, gateway?, client: "web" \| "android"}` ← 201 `{order_id, status, payment_url}`. `payment_url` صفحهٔ `/pay/start/<token>/` سایت است، نه خود درگاه (پایین‌تر). سفارش ۱۰۰٪ تخفیف بی‌درنگ `paid` می‌شود و `payment_url` خالی است. 400 `GATEWAY_UNKNOWN`، 503 `SALES_PAUSED` یا `NO_GATEWAY` |
+| GET | `/billing/orders/` | ۵۰ سفارش آخر کاربر (`status`، `ref_id`، `error`، ...). اپ بعد از برگشتن از درگاه وضعیت سفارش را از همین می‌خواند |
 | GET | `/billing/callback/` · `/billing/callback/{kind}/` — عمومی | بازگشت از درگاه؛ تأیید پرداخت، دادن دسترسی (فقط یک بار) و نمایش صفحهٔ HTML نتیجه |
 | GET | `/billing/result/{token}/` — عمومی | صفحهٔ HTML نتیجهٔ پرداخت |
 
 روی سایت همین بازگشت‌ها در `/pay/callback/...` و `/pay/result/...` هم هستند ([12-website.md](12-website.md)).
+
+**خرید از داخل اپ (از ۲۰۲۶-۱۱-۰۲):**
+1. اپ با `POST /billing/checkout/` سفارش می‌سازد. `channel` سفارش `android` یا `web` می‌شود.
+2. اپ `payment_url` را باز می‌کند: روی اندروید در مرورگر، روی وب‌اپ در همان زبانه. این صفحهٔ `https://pharmenta.ir/pay/start/<token>/` است. توکن امضاشده است، یک ساعت اعتبار دارد و فقط به همان سفارش می‌خورد.
+3. همین صفحه پرداخت را روی دامنهٔ سایت شروع می‌کند و با اسکریپت (نه redirect) خریدار را به درگاه می‌برد. دلیلش دو چیز است: آدرس بازگشتی که درگاه‌ها می‌شناسند `https://pharmenta.ir/pay/callback/<kind>/` است، و زیبال دامنه را از Referer بررسی می‌کند (`Referrer-Policy: origin`).
+4. درگاه به `/pay/callback/<kind>/` سایت برمی‌گردد. صفحهٔ نتیجه برای سفارش `android` دکمهٔ «بازگشت به اپ فارمنتا» دارد: لینک `intent://payment#Intent;scheme=pharmenta;package=com.pharmenta.learning;...`. اگر اپ نصب نباشد، وب‌اپ باز می‌شود.
+5. اپ با برگشتن به جلو (AppState) و هر ۵ ثانیه، تا وقتی سفارش `pending` است، `/billing/orders/` را می‌خواند و نتیجه را نشان می‌دهد.
+- **لینک کهنه یا دستکاری‌شده:** `/pay/start/` صفحهٔ خطا با ۴۰۴ نشان می‌دهد.
+- **سفارش پرداخت‌شده:** همان لینک به صفحهٔ رسید می‌رود و دوباره پرداخت نمی‌شود.
 
 ## مسیرهای غیر API
 

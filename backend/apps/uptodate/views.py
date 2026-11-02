@@ -15,6 +15,7 @@ from .search_extraction import extract_article
 from .serializers import (
     UptodateArticleSerializer,
     UptodateImageSerializer,
+    UptodateSearchPageSerializer,
     UptodateSearchResultSerializer,
 )
 
@@ -28,6 +29,13 @@ def _require_available():
         )
 
 
+def _int_param(request, name, default, low, high):
+    try:
+        return min(high, max(low, int(request.query_params.get(name, default))))
+    except ValueError:
+        return default
+
+
 class TopicSearchView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -37,23 +45,38 @@ class TopicSearchView(APIView):
                 "search",
                 str,
                 description=(
-                    "Topic title query: every word must start a word of the title; a misspelt word "
-                    "is corrected to the closest title word. Article text is never searched."
+                    "Topic title query: every word must start a word of the title, or from four letters "
+                    "sit inside one; a misspelt word is corrected to the closest title word. Article text "
+                    "is never searched."
                 ),
             ),
-            OpenApiParameter("limit", int, description="Max results (default 25)."),
+            OpenApiParameter("limit", int, description="Max results (default 25, at most 100)."),
+            OpenApiParameter("offset", int, description="Results to skip (paged=1 only)."),
+            OpenApiParameter("section", str, description="Only this section's topics (paged=1 only)."),
+            OpenApiParameter(
+                "paged",
+                int,
+                description=(
+                    "1: answer {total, sections, terms, corrected, results}, results being one page; "
+                    "otherwise the first page alone, as a list (app builds up to 0.1.x)."
+                ),
+            ),
         ],
         responses=UptodateSearchResultSerializer(many=True),
     )
     def get(self, request):
         _require_available()
         query = request.query_params.get("search", "").strip()
-        try:
-            limit = min(50, max(1, int(request.query_params.get("limit", 25))))
-        except ValueError:
-            limit = 25
-        results = services.search_topics(query, limit=limit) if query else []
-        return Response(UptodateSearchResultSerializer(results, many=True).data)
+        limit = _int_param(request, "limit", 25, 1, 100)
+        if request.query_params.get("paged") != "1":
+            results = services.search_topics(query, limit=min(limit, 50)) if query else []
+            return Response(UptodateSearchResultSerializer(results, many=True).data)
+        offset = _int_param(request, "offset", 0, 0, 100_000)
+        section = request.query_params.get("section", "").strip()[:200]
+        page = services.search_page(query, limit=limit, offset=offset, section=section) if query else {
+            "total": 0, "all": 0, "sections": [], "terms": [], "corrected": "", "results": [],
+        }
+        return Response(UptodateSearchPageSerializer(page).data)
 
 
 class TopicDetailView(APIView):

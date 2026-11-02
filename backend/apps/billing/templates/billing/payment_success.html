@@ -13,7 +13,7 @@
     {% if order.paid_at %}<dt>زمان</dt><dd>{{ order.paid_at|jdate:"time" }}</dd>{% endif %}
   </dl>
   <div class="acts">
-    <a class="btn p" href="{{ return_url }}">رفتن به فارمنتا</a>
+    <a class="btn p" href="{{ return_url }}">{% if in_app %}بازگشت به اپ فارمنتا{% else %}رفتن به فارمنتا{% endif %}</a>
   </div>
   <p class="note">کد پیگیری را نگه دارید؛ برای هر پرسش دربارهٔ این خرید لازم است.</p>
 {% endblock %}

@@ -1,11 +1,11 @@
-import { lexicompApi, uptodateApi } from "@/api/endpoints";
+import { SearchPageArgs, lexicompApi, uptodateApi } from "@/api/endpoints";
 import { ApiError } from "@/api/client";
-import { LexicompDrug, LexicompInteraction, OfflineDataset, UptodateArticle, UptodateImage, UptodateSearchResult } from "@/api/types";
+import { LexicompDrug, LexicompInteraction, OfflineDataset, UptodateArticle, UptodateImage, UptodateSearchPage, UptodateSearchResult } from "@/api/types";
 
 import { checkInteractions, searchDrugs } from "./lexicompLocal";
 import { PackageReader, openReader } from "./reader";
 import { isUsable, renewLicense, touch, useOffline } from "./store";
-import { getImage, getTopic, searchTopics } from "./uptodateLocal";
+import { getImage, getTopic, searchTopics, searchTopicsPage } from "./uptodateLocal";
 
 /** Where the UpToDate and Lexicomp screens get their data: the package on
  * this device first, when one is installed and its license is good; the
@@ -49,6 +49,8 @@ async function localFirst<T>(
 export const uptodateSource = {
   search: (search: string, limit = 25): Promise<UptodateSearchResult[]> =>
     localFirst("uptodate", (r) => searchTopics(r, search, limit), () => uptodateApi.search(search, limit)),
+  searchPage: (search: string, args: SearchPageArgs = {}): Promise<UptodateSearchPage> =>
+    localFirst("uptodate", (r) => searchTopicsPage(r, search, args), () => uptodateApi.searchPage(search, args)),
   topic: (id: string): Promise<UptodateArticle> =>
     localFirst("uptodate", (r) => getTopic(r, id), () => uptodateApi.topic(id)),
   topicAtAnchor: async (id: string, contentHash: string, anchor: string): Promise<UptodateArticle> => {

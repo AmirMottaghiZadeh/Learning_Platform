@@ -136,6 +136,44 @@ export const THEME: Record<ThemeMode, ThemeColors> = {
   },
 };
 
+/** The background tones the learner can pick in Settings: four per theme,
+ * lightest first. Each sets the surfaces behind the cards (and, in the dark
+ * theme, the cards themselves, so they stay a step lighter than what is
+ * behind them). Index DEFAULT_TONE is the theme as designed. */
+export type ToneColors = Pick<
+  ThemeColors,
+  "pageBg" | "appBg" | "softBg" | "sheetLine" | "meshBg" | "navBg"
+> & Partial<Pick<ThemeColors, "cardBg" | "inputBg" | "optBg" | "flipBackBg" | "trackBg">>;
+
+export const DEFAULT_TONE = 1;
+
+export const BG_TONES: Record<ThemeMode, ToneColors[]> = {
+  light: [
+    { pageBg: "#F1EFE9", appBg: "#F8F7F3", softBg: "#FBFAF7", sheetLine: "#F1EFE9", meshBg: "#F1EFE9", navBg: "rgba(255,255,255,0.94)" },
+    { pageBg: "#E7E4DC", appBg: "#EFECE4", softBg: "#F7F5EF", sheetLine: "#EFECE4", meshBg: "#E7E4DC", navBg: "rgba(255,255,255,0.94)" },
+    { pageBg: "#DCD6C8", appBg: "#E5E0D4", softBg: "#F2EFE7", sheetLine: "#E8E4DA", meshBg: "#DCD6C8", navBg: "rgba(255,255,255,0.94)" },
+    { pageBg: "#CCC4B1", appBg: "#D8D0BF", softBg: "#ECE8DE", sheetLine: "#E1DCD0", meshBg: "#CCC4B1", navBg: "rgba(255,255,255,0.95)" },
+  ],
+  dark: [
+    {
+      pageBg: "#151D1B", appBg: "#1A2321", softBg: "#1E2826", sheetLine: "#2A3431", meshBg: "#151D1B",
+      navBg: "rgba(26,35,33,0.94)", cardBg: "#232D2A", inputBg: "#232D2A", optBg: "#232D2A", flipBackBg: "#283330", trackBg: "#313C38",
+    },
+    {
+      pageBg: "#0B100F", appBg: "#0F1413", softBg: "#141B19", sheetLine: "#202927", meshBg: "#0B100F",
+      navBg: "rgba(15,20,19,0.94)", cardBg: "#171F1D", inputBg: "#171F1D", optBg: "#171F1D", flipBackBg: "#1B2422", trackBg: "#26302D",
+    },
+    {
+      pageBg: "#060908", appBg: "#090D0C", softBg: "#0E1412", sheetLine: "#1A2220", meshBg: "#060908",
+      navBg: "rgba(9,13,12,0.94)", cardBg: "#121917", inputBg: "#121917", optBg: "#121917", flipBackBg: "#161E1C", trackBg: "#212A27",
+    },
+    {
+      pageBg: "#000000", appBg: "#000000", softBg: "#0A0E0D", sheetLine: "#161D1B", meshBg: "#000000",
+      navBg: "rgba(0,0,0,0.94)", cardBg: "#0E1312", inputBg: "#0E1312", optBg: "#0E1312", flipBackBg: "#121917", trackBg: "#1E2624",
+    },
+  ],
+};
+
 export const spacing = {
   xs: 4,
   sm: 8,

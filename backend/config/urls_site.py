@@ -2,7 +2,7 @@
 
 from django.urls import include, path, re_path
 
-from apps.billing.views import payment_callback, payment_result
+from apps.billing.views import pay_start, payment_callback, payment_result
 from apps.manage.views import moved
 
 handler404 = "apps.website.views_public.not_found"
@@ -14,5 +14,7 @@ urlpatterns = [
     path("pay/callback/", payment_callback, name="billing-callback"),
     path("pay/callback/<slug:kind>/", payment_callback, name="billing-callback-gateway"),
     path("pay/result/<str:token>/", payment_result, name="billing-result"),
+    # the app's purchases go to the gateway from here (see billing.views.pay_start)
+    path("pay/start/<str:token>/", pay_start, name="billing-pay-start"),
     path("", include("apps.website.urls_public")),
 ]

@@ -28,6 +28,7 @@
 | `/newsletter/` | عضویت خبرنامه |
 | `/account/`، `/account/login/`، `/account/code/`، `/account/password/`، `/account/logout/` | حساب کاربری سایت |
 | `/pay/callback/`، `/pay/callback/<kind>/`، `/pay/result/<token>/` | بازگشت از درگاه پرداخت و صفحهٔ نتیجه |
+| `/pay/start/<token>/` | شروع پرداخت سفارشی که در اپ ساخته شده و رفتن به درگاه ([05-api.md](05-api.md)) |
 | `/media/<id>/<name>` | فایل رسانه (از دیتابیس) |
 | `/robots.txt`، `/sitemap.xml`، `/rss.xml` | سئو و فید |
 | `/11601693.txt` | فایل تأیید اینماد |

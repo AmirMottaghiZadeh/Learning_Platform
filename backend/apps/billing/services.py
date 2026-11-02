@@ -272,10 +272,11 @@ def purchasable_price(price_id):
     return price
 
 
-def create_order(user, price, discount=None):
+def create_order(user, price, discount=None, *, channel=Order.CHANNEL_SITE):
     amount, off, payable = quote(price, discount)
     return Order.objects.create(
         user=user,
+        channel=channel,
         plan=price.plan,
         price=price,
         duration_days=price.duration_days,

@@ -22,6 +22,23 @@ class UptodateSearchResultSerializer(UptodateTopicSerializer):
     corrected = serializers.CharField(allow_blank=True, required=False, default="")
 
 
+class UptodateSectionCountSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    count = serializers.IntegerField()
+
+
+class UptodateSearchPageSerializer(serializers.Serializer):
+    # every match (in `section`, when one is asked for), not just this page
+    total = serializers.IntegerField()
+    # every match, whatever `section` is
+    all = serializers.IntegerField()
+    # every match per section, busiest first, whatever `section` is
+    sections = UptodateSectionCountSerializer(many=True)
+    terms = serializers.ListField(child=serializers.CharField())
+    corrected = serializers.CharField(allow_blank=True)
+    results = UptodateSearchResultSerializer(many=True)
+
+
 class UptodateArticleSerializer(UptodateTopicSerializer):
     contributors = serializers.ListField(child=serializers.CharField())
     outline_html = serializers.CharField(allow_blank=True)

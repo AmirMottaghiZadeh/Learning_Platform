@@ -23,7 +23,7 @@
   {% endif %}
   <div class="acts">
     {% if retry_url and order.status == "failed" %}<a class="btn p" href="{{ retry_url }}">دوباره امتحان کنید</a>{% endif %}
-    <a class="btn{% if not retry_url or order.status != "failed" %} p{% endif %}" href="{{ return_url }}">بازگشت به فارمنتا</a>
+    <a class="btn{% if not retry_url or order.status != "failed" %} p{% endif %}" href="{{ return_url }}">{% if in_app %}بازگشت به اپ فارمنتا{% else %}بازگشت به فارمنتا{% endif %}</a>
   </div>
   <p class="note">مشکل حل نشد؟ با شمارهٔ سفارش از <a href="{{ site_url }}/contact/">تماس با ما</a> پیام بدهید.</p>
 {% endblock %}

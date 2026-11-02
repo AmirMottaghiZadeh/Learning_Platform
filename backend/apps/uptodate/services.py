@@ -120,7 +120,8 @@ def close_all() -> None:
     snapshot_version.cache_clear()
     _title_index.cache_clear()
     _term.cache_clear()
-    _section_for.cache_clear()
+    _infixed.cache_clear()
+    _SECTIONS.clear()
 
 
 @lru_cache(maxsize=1)
@@ -182,48 +183,81 @@ def snippet_source(content: str, title: str = "") -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-@lru_cache(maxsize=8192)
-def _section_for(content_id: str) -> str:
-    """Top-level TOC ancestor title for an article, e.g. 'Cardiovascular Medicine'."""
-    content_id = str(content_id)
-    if _using_mysql():
-        conn = _mysql_conn()
-        with conn.cursor() as cur:
-            cur.execute("SELECT parentId FROM toc WHERE contentId = %s LIMIT 1", (content_id,))
-            row = cur.fetchone()
-            pid, seen = (row["parentId"] if row else None), set()
-            while pid and pid not in seen:
-                seen.add(pid)
-                cur.execute("SELECT title, parentId FROM toc WHERE id = %s", (pid,))
-                node = cur.fetchone()
-                if not node:
-                    break
-                if not node["parentId"]:
-                    return node["title"]
-                pid = node["parentId"]
+# contentId -> title of its top-level TOC ancestor ("Cardiovascular Medicine"),
+# filled in as topics are looked up; emptied with the connections.
+_SECTIONS: dict[str, str] = {}
+# ids per IN (...) query
+_SECTION_BATCH = 500
+
+
+def _toc_rows(sql_sqlite: str, sql_mysql: str, ids: list) -> list[dict]:
+    """`sql_*` with "{marks}" filled in for `ids`, in batches."""
+    rows = []
+    for at in range(0, len(ids), _SECTION_BATCH):
+        part = ids[at:at + _SECTION_BATCH]
+        if _using_mysql():
+            with _mysql_conn().cursor() as cur:
+                cur.execute(sql_mysql.format(marks=",".join(["%s"] * len(part))), part)
+                rows.extend(cur.fetchall())
+        else:
+            rows.extend(dict(r) for r in _sqlite_conn("toc").execute(
+                sql_sqlite.format(marks=",".join(["?"] * len(part))), part
+            ))
+    return rows
+
+
+def _lookup_sections(content_ids: list[str]) -> dict[str, str]:
+    """Each topic's section, a level of the tree per query: a handful of
+    queries for any number of topics."""
+    parent: dict[str, object] = {}
+    for row in _toc_rows(
+        "SELECT contentId, parentId FROM toc WHERE contentId IN ({marks})",
+        "SELECT contentId, parentId FROM toc WHERE contentId IN ({marks})",
+        content_ids,
+    ):
+        # the first place a topic sits in the tree, as one lookup reads it
+        parent.setdefault(str(row["contentId"]), row["parentId"])
+    nodes: dict = {}
+    wanted = {pid for pid in parent.values() if pid}
+    while wanted:
+        rows = _toc_rows(
+            "SELECT id, title, parentId FROM toc WHERE id IN ({marks})",
+            "SELECT id, title, parentId FROM toc WHERE id IN ({marks})",
+            sorted(wanted, key=str),
+        )
+        for row in rows:
+            nodes[row["id"]] = (row["title"], row["parentId"])
+        wanted = {row["parentId"] for row in rows if row["parentId"] and row["parentId"] not in nodes}
+
+    def top(pid):
+        seen = set()
+        while pid and pid not in seen:
+            seen.add(pid)
+            node = nodes.get(pid)
+            if node is None:
+                break
+            if not node[1]:
+                return node[0] or ""
+            pid = node[1]
         return ""
 
-    try:
-        toc = _sqlite_conn("toc")
-    except sqlite3.OperationalError:
-        return ""
-    row = toc.execute(
-        "SELECT parentId FROM toc WHERE contentId = ? LIMIT 1", (content_id,)
-    ).fetchone()
-    if not row:
-        return ""
-    pid, seen = row["parentId"], set()
-    while pid and pid not in seen:
-        seen.add(pid)
-        node = toc.execute(
-            "SELECT title, parentId FROM toc WHERE id = ?", (pid,)
-        ).fetchone()
-        if not node:
-            break
-        if not node["parentId"]:
-            return node["title"]
-        pid = node["parentId"]
-    return ""
+    return {cid: top(parent.get(cid)) for cid in content_ids}
+
+
+def _sections_for(content_ids) -> dict[str, str]:
+    """Top-level TOC ancestor title per article, e.g. 'Cardiovascular Medicine'."""
+    content_ids = [str(c) for c in content_ids]
+    missing = [c for c in dict.fromkeys(content_ids) if c not in _SECTIONS]
+    if missing:
+        try:
+            _SECTIONS.update(_lookup_sections(missing))
+        except sqlite3.OperationalError:
+            return {c: _SECTIONS.get(c, "") for c in content_ids}
+    return {c: _SECTIONS.get(c, "") for c in content_ids}
+
+
+def _section_for(content_id: str) -> str:
+    return _sections_for([content_id])[str(content_id)]
 
 
 # ---- Title search ---------------------------------------------------------
@@ -393,13 +427,27 @@ def _nearest(word: str, index: TitleIndex) -> str | None:
     return best
 
 
+# A word this long is also found inside title words: "kalemia" finds
+# "hyperkalemia", "tension" "hypertension". Shorter ones would find too much.
+MIN_INFIX = 4
+
+
+@lru_cache(maxsize=4096)
+def _infixed(term: str, version: str) -> tuple[str, ...]:
+    """The title words that have `term` inside them, not at their start."""
+    if len(term) < MIN_INFIX:
+        return ()
+    return tuple(w for w in _title_index(version).vocab if term in w and not w.startswith(term))
+
+
 @lru_cache(maxsize=4096)
 def _term(word: str, version: str) -> tuple[str, str, bool]:
-    """How one query word is matched: the start of title words it must be,
-    the whole word it stands for, and whether that is a spelling correction."""
+    """How one query word is matched: the start (or, from MIN_INFIX letters,
+    a part) of title words it must be, the whole word it stands for, and
+    whether that is a spelling correction."""
     whole = word.lower()
     index = _title_index(version)
-    if len(whole) < 3 or _prefixed(index.vocab, whole):
+    if len(whole) < 3 or _prefixed(index.vocab, whole) or _infixed(whole, version):
         # a plural also finds the singular ("infections" -> "infection")
         singular = whole[:-1]
         if len(whole) >= 6 and whole.endswith("s") and _is_word(index.vocab, singular):
@@ -414,17 +462,34 @@ def _is_word(vocab: list[str], word: str) -> bool:
     return i < len(vocab) and vocab[i] == word
 
 
+# Words that say little about what a topic is about: a title made of the
+# query and these is the general topic ("Overview of hypertension in
+# adults"), ahead of the narrower ones ("Hypertension in athletes").
+_GENERAL_WORDS = frozenset(
+    "a an and the of in on for to with by or at from its "
+    "overview introduction adult adults child children".split()
+)
+# Topics that serve another reader or only list links: after the reviews.
+_SECONDARY_STARTS = (["patient", "education"], ["society", "guideline"])
+
+
 def _rank(index: TitleIndex, i: int, matched: list[tuple[str, str, bool]]) -> tuple:
     words = index.words[i]
+    terms = [term for term, _, _ in matched]
+    starts = [p for p, word in enumerate(words) if any(word.startswith(t) for t in terms)]
+    # a term found only inside words ("tension" in "hypertension")
+    inside = sum(1 for t in terms if not any(word.startswith(t) for word in words))
     whole = sum(1 for term, word, _ in matched if term in words or word in words)
-    first = min(
-        (p for p, word in enumerate(words) if any(word.startswith(term) for term, _, _ in matched)),
-        default=len(words),
-    )
+    secondary = words[:2] in _SECONDARY_STARTS
+    overview = "overview" in words
+    extra = sum(1 for word in words if word not in _GENERAL_WORDS and not any(t in word for t in terms))
     exact = words == [word for _, word, _ in matched]
-    # the title that is the query, then whole words over starts, then the
-    # word early in the title, then shorter titles
-    return (not exact, -whole, first, len(words), index.titles[i].lower(), i)
+    # the title that is the query; then every word at a word's start, whole
+    # words over starts; reviews before patient pages and link lists; an
+    # overview first; the general topic (fewest other words) before the
+    # narrow; the word early in the title; shorter titles
+    return (not exact, inside, -whole, secondary, not overview, extra, min(starts, default=len(words)),
+            len(words), index.titles[i].lower(), i)
 
 
 def _updated_dates(index: TitleIndex, positions: list[int]) -> None:
@@ -449,14 +514,18 @@ def _updated_dates(index: TitleIndex, positions: list[int]) -> None:
         index.updated[row["rowid"]] = _updated_from_text((row["head"] or "").replace("\xa0", " "))
 
 
-def search_topics(query: str, limit: int = 25) -> list[dict]:
-    """Topic articles whose title has every query word -- as the start of a
-    title word, a misspelt one corrected to the closest title word. Only
-    titles are searched."""
+def search_page(query: str, limit: int = 25, offset: int = 0, section: str = "") -> dict:
+    """Every topic article whose title has every query word -- at the start
+    of a title word, or inside one (from MIN_INFIX letters), a misspelt word
+    corrected to the closest title word -- best first, one page of them.
+    Only titles are searched. `section` keeps only that section's topics
+    (`total` counts those); `all` and `sections` count every match, and per
+    section, whatever `section` is."""
+    empty = {"total": 0, "all": 0, "sections": [], "terms": [], "corrected": "", "results": []}
     words = _search_words(query)
     if not words:
-        return []
-    limit = int(limit)
+        return empty
+    limit, offset = max(0, int(limit)), max(0, int(offset))
     version = snapshot_version()
     index = _title_index(version)
 
@@ -469,25 +538,51 @@ def search_topics(query: str, limit: int = 25) -> list[dict]:
         having = set()
         for word in _prefixed(index.vocab, term):
             having.update(index.postings[word])
+        for word in _infixed(term, version):
+            having.update(index.postings[word])
         found = having if found is None else found & having
         if not found:
-            return []
-    top = sorted(found, key=lambda i: _rank(index, i, matched))[:limit]
+            return {**empty, "terms": terms, "corrected": corrected}
+    ranked = sorted(found, key=lambda i: _rank(index, i, matched))
 
-    _updated_dates(index, top)
-    return [
-        {
-            "id": index.ids[i],
-            "title": index.titles[i],
-            "section": _section_for(index.ids[i]),
-            "version": version,
-            "snippet": "",
-            "updated": index.updated.get(index.rowids[i], ""),
-            "terms": terms,
-            "corrected": corrected,
-        }
-        for i in top
-    ]
+    sections = _sections_for(index.ids[i] for i in ranked)
+    counts: dict[str, int] = {}
+    for i in ranked:
+        name = sections[index.ids[i]]
+        if name:
+            counts[name] = counts.get(name, 0) + 1
+    every = len(ranked)
+    if section:
+        ranked = [i for i in ranked if sections[index.ids[i]] == section]
+    page = ranked[offset:offset + limit]
+
+    _updated_dates(index, page)
+    return {
+        "total": len(ranked),
+        "all": every,
+        "sections": [{"name": name, "count": count} for name, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))],
+        "terms": terms,
+        "corrected": corrected,
+        "results": [
+            {
+                "id": index.ids[i],
+                "title": index.titles[i],
+                "section": sections[index.ids[i]],
+                "version": version,
+                "snippet": "",
+                "updated": index.updated.get(index.rowids[i], ""),
+                "terms": terms,
+                "corrected": corrected,
+            }
+            for i in page
+        ],
+    }
+
+
+def search_topics(query: str, limit: int = 25) -> list[dict]:
+    """The first `limit` results of `search_page`: what app builds up to
+    0.1.x read."""
+    return search_page(query, limit=limit)["results"]
 
 
 def get_topic(content_id: str) -> dict | None:

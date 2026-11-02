@@ -136,6 +136,21 @@ class UptodateTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual([row["id"] for row in res.data], ["3851"])
 
+    def test_paged_search_counts_every_match_and_its_sections(self):
+        with self._with_snapshot():
+            res = self.client.get("/api/v1/uptodate/topics/", {"search": "hypertension", "paged": 1, "limit": 1})
+            filtered = self.client.get(
+                "/api/v1/uptodate/topics/", {"search": "hypertension", "paged": 1, "section": "Neurology"}
+            )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["total"], 1)
+        self.assertEqual(res.data["sections"], [{"name": "Cardiovascular Medicine", "count": 1}])
+        self.assertEqual([row["id"] for row in res.data["results"]], ["3851"])
+        self.assertEqual(filtered.data["total"], 0)
+        self.assertEqual(filtered.data["all"], 1)
+        self.assertEqual(filtered.data["results"], [])
+        self.assertEqual(filtered.data["sections"], res.data["sections"])
+
     def test_title_match_does_not_require_a_body_match(self):
         with self._with_snapshot():
             res = self.client.get("/api/v1/uptodate/topics/", {"search": "diabetes"})
@@ -270,7 +285,7 @@ class MysqlTitleSearchTests(SimpleTestCase):
         with (
             patch.object(services, "_mysql_conn", return_value=connection),
             patch.object(services, "snapshot_version", return_value="202607"),
-            patch.object(services, "_section_for", return_value="Cardiovascular Medicine"),
+            patch.object(services, "_sections_for", side_effect=lambda ids: {i: "Cardiovascular Medicine" for i in ids}),
         ):
             results = services.search_topics("HYPERT adu", limit=3)
             again = services.search_topics("hypertension", limit=3)
@@ -358,7 +373,7 @@ class MysqlTitleIndexTests(SimpleTestCase):
 class TitleSearchTests(SimpleTestCase):
     """The title search over a made-up set of titles."""
 
-    def search(self, query, titles, limit=10):
+    def page(self, query, titles, limit=10, offset=0, section=""):
         index = services.build_title_index((i + 1, str(100 + i), t) for i, t in enumerate(titles))
         index.updated.update({i + 1: "" for i in range(len(titles))})
         services._term.cache_clear()
@@ -366,9 +381,14 @@ class TitleSearchTests(SimpleTestCase):
         with (
             patch.object(services, "_title_index", return_value=index),
             patch.object(services, "snapshot_version", return_value="test"),
-            patch.object(services, "_section_for", return_value=""),
+            patch.object(services, "_sections_for", side_effect=lambda ids: {i: self.sections.get(i, "") for i in ids}),
         ):
-            return services.search_topics(query, limit=limit)
+            return services.search_page(query, limit=limit, offset=offset, section=section)
+
+    sections: dict = {}
+
+    def search(self, query, titles, limit=10, offset=0, section=""):
+        return self.page(query, titles, limit, offset, section)["results"]
 
     def titles(self, query, titles):
         return [r["title"] for r in self.search(query, titles)]
@@ -417,23 +437,90 @@ class TitleSearchTests(SimpleTestCase):
 
     def test_ranking(self):
         titles = [
-            "Overview of asthma in adults",
-            "Asthmatic bronchitis",
-            "Asthma",
             "Asthma in pregnancy and lactation",
+            "Asthmatic bronchitis",
+            "Patient education: Asthma in adults (The Basics)",
+            "Asthma",
             "Asthma in adults",
+            "Overview of asthma in adults",
+            "Genetics of asthma",
         ]
         self.assertEqual(self.titles("asthma", titles), [
             "Asthma",  # the title is the query
-            "Asthma in adults",  # whole word, first, short
-            "Asthma in pregnancy and lactation",
-            "Overview of asthma in adults",  # the word comes later
+            "Overview of asthma in adults",  # the overview
+            "Asthma in adults",  # no other word that narrows it
+            "Genetics of asthma",  # one
+            "Asthma in pregnancy and lactation",  # two
+            "Patient education: Asthma in adults (The Basics)",  # for patients
             "Asthmatic bronchitis",  # only the start of a word
         ])
+
+    def test_every_title_with_the_word_is_found_wherever_it_sits(self):
+        titles = [f"Hypertension topic {n}" for n in range(40)] + ["Overview of hypertension in adults"]
+        page = self.page("hypertension", titles, limit=25)
+        self.assertEqual(page["total"], 41)
+        self.assertEqual(page["results"][0]["title"], "Overview of hypertension in adults")
+        rest = self.page("hypertension", titles, limit=25, offset=25)["results"]
+        found = {r["title"] for r in page["results"]} | {r["title"] for r in rest}
+        self.assertEqual(found, set(titles))
+
+    def test_a_longer_word_is_also_found_inside_title_words(self):
+        titles = ["Hyperkalemia in adults", "Hypokalemia in children", "Kale (made up)", "Malaria"]
+        found = self.titles("kalemia", titles)
+        self.assertEqual(sorted(found), ["Hyperkalemia in adults", "Hypokalemia in children"])
+        # at a word's start ranks first
+        self.assertEqual(self.titles("kale", titles)[0], "Kale (made up)")
+        # three letters only ever match a word's start
+        self.assertEqual(self.titles("lem", titles), [])
+        # found inside a word is no misspelling: nothing is corrected
+        self.assertEqual(self.page("kalemia", titles)["corrected"], "")
+
+    def test_sections_are_counted_over_every_match_and_one_can_be_picked(self):
+        titles = ["Asthma in adults", "Asthma in children", "Asthma and pregnancy"]
+        self.sections = {"100": "Pulmonary", "101": "Pediatrics", "102": "Pulmonary"}
+        self.addCleanup(setattr, self, "sections", {})
+        page = self.page("asthma", titles, limit=1)
+        self.assertEqual(page["total"], 3)
+        self.assertEqual(page["sections"], [{"name": "Pulmonary", "count": 2}, {"name": "Pediatrics", "count": 1}])
+        picked = self.page("asthma", titles, section="Pediatrics")
+        self.assertEqual(picked["total"], 1)
+        self.assertEqual(picked["all"], 3)
+        self.assertEqual([r["title"] for r in picked["results"]], ["Asthma in children"])
+        self.assertEqual(picked["sections"], page["sections"])
 
     def test_limit(self):
         titles = [f"Asthma {n}" for n in range(30)]
         self.assertEqual(len(self.search("asthma", titles, limit=5)), 5)
+
+
+class SectionLookupTests(SimpleTestCase):
+    def test_sections_of_many_topics_take_one_query_per_tree_level(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.addCleanup(services.close_all)
+        toc = sqlite3.connect(Path(tmp.name) / "toc.db")
+        toc.execute("CREATE TABLE toc (id INTEGER, title TEXT, parentId INTEGER, section TEXT, contentId TEXT)")
+        toc.executemany("INSERT INTO toc VALUES (?,?,?,?,?)", [
+            (1, "Cardiovascular Medicine", 0, "", None),
+            (2, "Neurology", None, "", None),
+            (10, "Hypertension", 1, "", None),
+            (100, "Topic A", 10, "", "1"),
+            (101, "Topic B", 2, "", "2"),
+            (102, "Topic C", 1, "", "3"),
+            (103, "Orphan", 999, "", "4"),
+        ])
+        toc.commit()
+        toc.close()
+        with override_settings(UPTODATE_DB_DIR=tmp.name, UPTODATE_MYSQL_URL=""):
+            services.close_all()
+            with patch.object(services, "_SECTION_BATCH", 2):
+                found = services._sections_for(["1", "2", "3", "4", "5"])
+            self.assertEqual(found, {
+                "1": "Cardiovascular Medicine", "2": "Neurology", "3": "Cardiovascular Medicine", "4": "", "5": "",
+            })
+            # kept: asked again, nothing is read
+            with patch.object(services, "_toc_rows", side_effect=AssertionError("read again")):
+                self.assertEqual(services._section_for("2"), "Neurology")
 
 
 class TypoDistanceTests(SimpleTestCase):

@@ -9,10 +9,11 @@ import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
 import { uptodateSource } from "@/offline/sources";
 import { useNav } from "@/store/nav";
+import { useIsFavorite, useLibrary } from "@/store/library";
 import { useReader } from "@/store/reader";
 import { useTheme } from "@/theme/ThemeProvider";
 import { stripHtml } from "@/utils/html";
-import { numberedOutline, outlineTops, shortDate } from "@/utils/uptodateOutline";
+import { numberedOutline, outlineTops, parseRelated, relatedCount, shortDate } from "@/utils/uptodateOutline";
 import { useNavClearance } from "@/components/BottomNav";
 import { useBleedTop } from "@/components/AppShell";
 
@@ -37,6 +38,9 @@ export function UptodateOutlineScreen() {
   const id = String(useNav((s) => s.params.id ?? ""));
   const titleParam = String(useNav((s) => s.params.title ?? ""));
   const lastIndex = useReader((s) => s.lastSection[`utd:${id}`]);
+  const favorite = useIsFavorite("utd", id);
+  const toggleFavorite = useLibrary((s) => s.toggleFavorite);
+  const highlightCount = useLibrary((s) => s.highlights[`utd:${id}`]?.length ?? 0);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["uptodate-topic", id],
@@ -45,6 +49,7 @@ export function UptodateOutlineScreen() {
   });
 
   const tops = useMemo(() => outlineTops(numberedOutline(data?.outline_html ?? "")), [data]);
+  const related = useMemo(() => parseRelated(data?.outline_html ?? ""), [data]);
   const minutes = useMemo(() => (data ? readingMinutes(countWords(stripHtml(data.body_html))) : 0), [data]);
   const lastTop = lastIndex !== undefined && lastIndex > 0 ? tops[lastIndex] : undefined;
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -66,7 +71,18 @@ export function UptodateOutlineScreen() {
               {isFa ? "›" : "‹"}
             </AppText>
           </ChromeButton>
-          <LangToggleButton />
+          <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>
+            <ChromeButton
+              onPress={() => toggleFavorite({ source: "utd", id, title: title.replace(/<[^>]*>/g, ""), section: data?.section ?? "" })}
+              size={34}
+              accessibilityLabel={t(favorite ? "favoriteRemove" : "favoriteAdd")}
+            >
+              <AppText weight="800" size={16} color={favorite ? "#E0A526" : colors.ink}>
+                {favorite ? "★" : "☆"}
+              </AppText>
+            </ChromeButton>
+            <LangToggleButton />
+          </View>
         </View>
 
         <View style={{ gap: 8 }}>
@@ -133,6 +149,34 @@ export function UptodateOutlineScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: navClearance + 24 }}>
+          {related.length ? (
+            <Pressable
+              onPress={() => read("utdRelated")}
+              style={{ flexDirection: row, alignItems: "center", gap: 12, backgroundColor: colors.cardBg, borderRadius: 16, padding: 14, marginBottom: 6 }}
+            >
+              <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: `${colors.accent}1A`, alignItems: "center", justifyContent: "center" }}>
+                <AppText weight="800" size={13} color={colors.accent}>
+                  {n(relatedCount(related))}
+                </AppText>
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <AppText weight="800" size={14}>
+                  {t("articleRelated")}
+                </AppText>
+                <AppText weight="600" size={11.5} muted numberOfLines={1} style={LTR}>
+                  {related.map((g) => g.heading || (g.kind === "calculators" ? "Calculators" : "Related topics")).join(" · ")}
+                </AppText>
+              </View>
+              <AppText weight="800" size={16} muted>
+                {isFa ? "‹" : "›"}
+              </AppText>
+            </Pressable>
+          ) : null}
+          {highlightCount ? (
+            <AppText weight="700" size={12} color={colors.accent}>
+              {t("highlightCount").replace("{n}", n(highlightCount))}
+            </AppText>
+          ) : null}
           <AppText weight="800" size={13} muted>
             {t("articleContents")}
           </AppText>

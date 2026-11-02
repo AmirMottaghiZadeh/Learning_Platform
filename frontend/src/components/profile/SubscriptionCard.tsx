@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import { Linking, View } from "react-native";
+import { View } from "react-native";
 
 import { billingApi } from "@/api/endpoints";
 import { MyEntitlement } from "@/api/types";
@@ -10,13 +10,6 @@ import { IconImage } from "@/components/primitives/IconImage";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { JALALI_MONTHS_FA, GREGORIAN_MONTHS_EN, msToGregorian, toJalali } from "@/utils/jalali";
-
-/** The plans page of the site: buying happens there, not in the app. */
-export const PLANS_URL = "https://pharmenta.ir/plans/";
-
-export function openPlans() {
-  Linking.openURL(PLANS_URL).catch(() => undefined);
-}
 
 const ENDING_SOON_DAYS = 5;
 

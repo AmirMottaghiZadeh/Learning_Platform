@@ -8,7 +8,7 @@ import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { IconImage, IconName } from "@/components/primitives/IconImage";
-import { SubscriptionCard, openPlans } from "@/components/profile/SubscriptionCard";
+import { SubscriptionCard } from "@/components/profile/SubscriptionCard";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
@@ -41,11 +41,14 @@ export function ProfileScreen() {
     onPress,
     danger,
     icon,
+    glyph,
   }: {
     label: string;
     onPress?: () => void;
     danger?: boolean;
-    icon: IconName;
+    icon?: IconName;
+    /** a character in place of an icon, for a row with no icon of its own */
+    glyph?: string;
   }) => (
     <Pressable
       onPress={onPress}
@@ -64,7 +67,15 @@ export function ProfileScreen() {
         !danger && shadows.raisedSm,
       ]}
     >
-      <IconImage name={icon} size={26} />
+      {icon ? (
+        <IconImage name={icon} size={26} />
+      ) : (
+        <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: `${colors.accent}1A`, alignItems: "center", justifyContent: "center" }}>
+          <AppText weight="800" size={15} color={colors.accent} style={{ lineHeight: 20 }}>
+            {glyph}
+          </AppText>
+        </View>
+      )}
       <AppText weight="700" size={14} color={danger ? "#D65858" : colors.ink}>
         {label}
       </AppText>
@@ -164,11 +175,12 @@ export function ProfileScreen() {
       )}
 
       <View style={{ paddingHorizontal: 20, paddingTop: 18, gap: 8 }}>
-        {user?.is_guest ? null : <Row label={t("profileBuySubscription")} icon="profile-subscription" onPress={openPlans} />}
+        {user?.is_guest ? null : <Row label={t("profileBuySubscription")} icon="profile-subscription" onPress={() => navigate("plans")} />}
         <Row label={t("profileFullStats")} icon="profile-full-stats" onPress={() => navigate("statistics")} />
         <Row label={t("profilePlanning")} icon="profile-planning" onPress={() => navigate("planning")} />
         <Row label={t("mistakesTitle")} icon="edu-mistakes" onPress={() => navigate("mistakes")} />
         <Row label={t("offlineTitle")} icon="profile-downloads" onPress={() => navigate("downloads")} />
+        <Row label={t("settingsTitle")} glyph="⚙" onPress={() => navigate("settings")} />
         <Row label={t("profileNotifications")} icon="profile-notifications" />
         {user?.is_guest ? (
           // A guest has no account to log out of: this leads to the sign-in screen.

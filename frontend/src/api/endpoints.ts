@@ -10,6 +10,10 @@ import {
   Dashboard,
   LegalPage,
   MyAccess,
+  Catalog,
+  PriceQuote,
+  CheckoutResult,
+  BillingOrder,
   DeckOverview,
   DeckProgress,
   LeitnerOverview,
@@ -40,6 +44,7 @@ import {
   TopicDeck,
   UptodateArticle,
   UptodateImage,
+  UptodateSearchPage,
   UptodateSearchResult,
   OtpPurpose,
   OtpRequestResponse,
@@ -137,6 +142,12 @@ export const siteApi = {
 
 export const billingApi = {
   me: () => apiClient.get<MyAccess>("/billing/me/").then((r) => r.data),
+  catalog: () => apiClient.get<Catalog>("/billing/catalog/").then((r) => r.data),
+  quote: (price_id: number, discount_code = "") =>
+    apiClient.post<PriceQuote>("/billing/quote/", { price_id, discount_code }).then((r) => r.data),
+  checkout: (body: { price_id: number; discount_code?: string; gateway?: string; client: "web" | "android" }) =>
+    apiClient.post<CheckoutResult>("/billing/checkout/", body).then((r) => r.data),
+  orders: () => apiClient.get<BillingOrder[]>("/billing/orders/").then((r) => r.data),
 };
 
 // --- me ---------------------------------------------------------------
@@ -185,10 +196,16 @@ export const flashcardsApi = {
     apiClient.post<DeckProgress>(`/flashcards/decks/${topic}/restart/`).then((r) => r.data),
 };
 
+export type SearchPageArgs = { limit?: number; offset?: number; section?: string };
+
 export const uptodateApi = {
   search: (search: string, limit = 25) =>
     apiClient
       .get<UptodateSearchResult[]>("/uptodate/topics/", { params: { search, limit } })
+      .then((r) => r.data),
+  searchPage: (search: string, { limit = 30, offset = 0, section = "" }: SearchPageArgs = {}) =>
+    apiClient
+      .get<UptodateSearchPage>("/uptodate/topics/", { params: { search, limit, offset, section, paged: 1 } })
       .then((r) => r.data),
   topic: (id: string) =>
     apiClient.get<UptodateArticle>(`/uptodate/topics/${id}/`).then((r) => r.data),

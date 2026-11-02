@@ -15,6 +15,8 @@ import { LessonDetailScreen } from "@/screens/LessonDetailScreen";
 import { LessonListScreen } from "@/screens/LessonListScreen";
 import { LessonsScreen } from "@/screens/LessonsScreen";
 import { DownloadsScreen } from "@/screens/DownloadsScreen";
+import { SettingsScreen } from "@/screens/SettingsScreen";
+import { PlansScreen } from "@/screens/PlansScreen";
 import { LexicompScreen } from "@/screens/LexicompScreen";
 import { FlashcardsScreen } from "@/screens/FlashcardsScreen";
 import { MedscapeArticleScreen } from "@/screens/MedscapeArticleScreen";
@@ -180,6 +182,10 @@ function CurrentScreen() {
       return <LexicompScreen />;
     case "downloads":
       return <DownloadsScreen />;
+    case "settings":
+      return <SettingsScreen />;
+    case "plans":
+      return <PlansScreen />;
     case "education":
       return <EducationScreen />;
     case "guidelines":

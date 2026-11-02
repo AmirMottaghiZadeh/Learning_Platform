@@ -209,6 +209,85 @@ export interface MyAccess {
   entitlements: MyEntitlement[];
 }
 
+// --- buying (GET /billing/catalog/, POST /billing/quote/ and /checkout/) ---
+
+export interface PlanPrice {
+  id: number;
+  /** null: permanent */
+  duration_days: number | null;
+  /** "۳ ماه", "دائمی" */
+  duration_label: string;
+  price_toman: number;
+  /** the price before the offer, shown struck through */
+  compare_at_toman: number | null;
+  label_fa: string;
+}
+
+export interface PlanFeatureItem {
+  key: string;
+  name_fa: string;
+  /** how the plan words it ("" = name_fa, with the limit) */
+  label_fa: string;
+  /** whether the plan's card lists it */
+  is_listed: boolean;
+  limit: number | null;
+  period: string;
+  /** "در ماه"; "" without a limit */
+  period_fa?: string;
+  unit_fa: string;
+}
+
+export interface CatalogPlan {
+  id: number;
+  kind: "plan" | "product";
+  slug: string;
+  name_fa: string;
+  name_en: string;
+  tagline_fa: string;
+  description_fa: string;
+  badge_fa: string;
+  cta_label_fa: string;
+  extra_lines: string[];
+  is_free: boolean;
+  prices: PlanPrice[];
+  features: PlanFeatureItem[];
+}
+
+export interface Catalog {
+  free: CatalogPlan | null;
+  plans: CatalogPlan[];
+  products: CatalogPlan[];
+  gateways?: { kind: string; name: string }[];
+  sales_enabled?: boolean;
+}
+
+export interface PriceQuote {
+  amount_toman: number;
+  discount_toman: number;
+  payable_toman: number;
+}
+
+export interface CheckoutResult {
+  order_id: number;
+  status: "pending" | "paid" | "failed" | "canceled";
+  /** the site's page that takes the buyer to the gateway; "" when nothing was left to pay */
+  payment_url: string;
+}
+
+export interface BillingOrder {
+  id: number;
+  plan_name_fa: string;
+  duration_days: number | null;
+  amount_toman: number;
+  discount_toman: number;
+  payable_toman: number;
+  status: "pending" | "paid" | "failed" | "canceled";
+  ref_id: string;
+  created_at: string;
+  paid_at: string | null;
+  error?: string;
+}
+
 export interface Dashboard {
   greeting_name: string;
   streak_days: number;
@@ -514,6 +593,19 @@ export interface UptodateSearchResult extends UptodateTopic {
   terms?: string[];
   /** the query with its misspelt words corrected; "" when none was */
   corrected?: string;
+}
+
+/** One page of the title search (`paged=1`). */
+export interface UptodateSearchPage {
+  /** every match (in the section asked for, if one was), not just this page */
+  total: number;
+  /** every match, whatever section was asked for */
+  all: number;
+  /** every match per section, busiest first, whatever section was asked for */
+  sections: { name: string; count: number }[];
+  terms: string[];
+  corrected: string;
+  results: UptodateSearchResult[];
 }
 
 export interface UptodateArticle extends UptodateTopic {

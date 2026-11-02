@@ -238,6 +238,12 @@ class Order(models.Model):
         (STATUS_CANCELED, "لغوشده"),
     ]
 
+    # Where the purchase started: the result page sends the buyer back there.
+    CHANNEL_SITE = "site"
+    CHANNEL_WEB = "web"
+    CHANNEL_ANDROID = "android"
+    CHANNEL_CHOICES = [(CHANNEL_SITE, "سایت"), (CHANNEL_WEB, "وب‌اپ"), (CHANNEL_ANDROID, "اپ اندروید")]
+
     # Null once the buyer's account is deleted: a paid order stays for the
     # sales figures and the books, labelled with who it was.
     user = models.ForeignKey(
@@ -253,6 +259,7 @@ class Order(models.Model):
     payable_toman = models.PositiveBigIntegerField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
     gateway = models.CharField(max_length=20, blank=True)
+    channel = models.CharField(max_length=10, choices=CHANNEL_CHOICES, default=CHANNEL_SITE)
     authority = models.CharField(max_length=64, null=True, blank=True, unique=True)
     ref_id = models.CharField(max_length=64, blank=True)
     # The gateway's own id for the settled payment when it differs from the

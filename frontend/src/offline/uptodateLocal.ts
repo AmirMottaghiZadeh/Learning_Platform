@@ -1,4 +1,5 @@
-import type { UptodateArticle, UptodateImage, UptodateSearchResult } from "@/api/types";
+import type { SearchPageArgs } from "@/api/endpoints";
+import type { UptodateArticle, UptodateImage, UptodateSearchPage, UptodateSearchResult } from "@/api/types";
 
 import type { Locator, PackageReader } from "./reader";
 
@@ -35,6 +36,7 @@ type Prepared = {
   index: UptodateIndex;
   titles: TitleIndex;
   terms: Map<string, Term>;
+  infixes: Map<string, string[]>;
   articleAt: Map<string, number>;
   imageAt: Map<string, number>;
 };
@@ -49,6 +51,7 @@ function prepared(reader: PackageReader): Promise<Prepared> {
       index,
       titles: buildTitleIndex(index.topics.titles),
       terms: new Map(),
+      infixes: new Map(),
       articleAt: new Map(index.articles.ids.map((id, i) => [id, i])),
       imageAt: new Map(index.images.ids.map((id, i) => [id, i])),
     }));
@@ -219,11 +222,28 @@ function nearest(word: string, index: TitleIndex): string | null {
   return best;
 }
 
-/** How one query word is matched: the start of title words it must be, the
- * whole word it stands for, and whether that is a spelling correction. */
-function term(word: string, index: TitleIndex): Term {
+/** A word this long is also found inside title words: "kalemia" finds
+ * "hyperkalemia", "tension" "hypertension". Shorter ones would find too much. */
+const MIN_INFIX = 4;
+
+/** The title words that have `term` inside them, not at their start. */
+function infixed(prep: Prepared, term: string): string[] {
+  if (term.length < MIN_INFIX) return [];
+  let found = prep.infixes.get(term);
+  if (!found) {
+    found = prep.titles.vocab.filter((w) => w.includes(term) && !w.startsWith(term));
+    prep.infixes.set(term, found);
+  }
+  return found;
+}
+
+/** How one query word is matched: the start (or, from MIN_INFIX letters, a
+ * part) of title words it must be, the whole word it stands for, and
+ * whether that is a spelling correction. */
+function term(word: string, prep: Prepared): Term {
+  const index = prep.titles;
   const whole = word.toLowerCase();
-  if (whole.length < 3 || prefixed(index.vocab, whole).length) {
+  if (whole.length < 3 || prefixed(index.vocab, whole).length || infixed(prep, whole).length) {
     // a plural also finds the singular ("infections" -> "infection")
     const singular = whole.slice(0, -1);
     if (whole.length >= 6 && whole.endsWith("s") && isWord(index.vocab, singular)) return [singular, whole, false];
@@ -233,20 +253,44 @@ function term(word: string, index: TitleIndex): Term {
   return near ? [near, near, true] : [whole, whole, false];
 }
 
+/** Words that say little about what a topic is about: a title made of the
+ * query and these is the general topic ("Overview of hypertension in
+ * adults"), ahead of the narrower ones ("Hypertension in athletes"). */
+const GENERAL_WORDS = new Set(
+  "a an and the of in on for to with by or at from its overview introduction adult adults child children".split(" "),
+);
+/** Topics that serve another reader or only list links: after the reviews. */
+const SECONDARY_STARTS = ["patient education", "society guideline"];
+
 function rank(index: TitleIndex, titles: string[], i: number, matched: Term[]): (number | string | boolean)[] {
   const words = index.words[i];
-  const whole = matched.filter(([t, w]) => words.includes(t) || words.includes(w)).length;
-  let first = words.findIndex((word) => matched.some(([t]) => word.startsWith(t)));
+  const terms = matched.map(([t]) => t);
+  let first = words.findIndex((word) => terms.some((t) => word.startsWith(t)));
   if (first < 0) first = words.length;
+  // a term found only inside words ("tension" in "hypertension")
+  const inside = terms.filter((t) => !words.some((word) => word.startsWith(t))).length;
+  const whole = matched.filter(([t, w]) => words.includes(t) || words.includes(w)).length;
+  const secondary = SECONDARY_STARTS.includes(words.slice(0, 2).join(" "));
+  const overview = words.includes("overview");
+  const extra = words.filter((word) => !GENERAL_WORDS.has(word) && !terms.some((t) => word.includes(t))).length;
   const exact = words.join(" ") === matched.map(([, w]) => w).join(" ") && words.length === matched.length;
-  // the title that is the query, then whole words over starts, then the
-  // word early in the title, then shorter titles
-  return [!exact, -whole, first, words.length, titles[i].toLowerCase(), i];
+  // the title that is the query; then every word at a word's start, whole
+  // words over starts; reviews before patient pages and link lists; an
+  // overview first; the general topic (fewest other words) before the
+  // narrow; the word early in the title; shorter titles
+  return [!exact, inside, -whole, secondary, !overview, extra, first, words.length, titles[i].toLowerCase(), i];
 }
 
-export async function searchTopics(reader: PackageReader, query: string, limit = 25): Promise<UptodateSearchResult[]> {
+/** services.search_page: every topic whose title has every query word, best
+ * first, one page of them, with every match counted per section. */
+export async function searchTopicsPage(
+  reader: PackageReader,
+  query: string,
+  { limit = 30, offset = 0, section = "" }: SearchPageArgs = {},
+): Promise<UptodateSearchPage> {
+  const empty: UptodateSearchPage = { total: 0, all: 0, sections: [], terms: [], corrected: "", results: [] };
   const words = searchWords(query);
-  if (!words.length) return [];
+  if (!words.length) return empty;
   const prep = await prepared(reader);
   const { index, titles: titleIndex } = prep;
 
@@ -254,7 +298,7 @@ export async function searchTopics(reader: PackageReader, query: string, limit =
     const key = word.toLowerCase();
     let found = prep.terms.get(key);
     if (!found) {
-      found = term(word, titleIndex);
+      found = term(word, prep);
       prep.terms.set(key, found);
     }
     return found;
@@ -266,24 +310,49 @@ export async function searchTopics(reader: PackageReader, query: string, limit =
   let found: number[] = [];
   terms.forEach((t, k) => {
     const having = new Set<number>();
-    for (const word of prefixed(titleIndex.vocab, t)) for (const i of titleIndex.postings.get(word)!) having.add(i);
+    for (const word of [...prefixed(titleIndex.vocab, t), ...infixed(prep, t)]) {
+      for (const i of titleIndex.postings.get(word)!) having.add(i);
+    }
     found = k === 0 ? [...having] : found.filter((i) => having.has(i));
   });
-  if (!found.length) return [];
+  if (!found.length) return { ...empty, terms, corrected };
   const { topics, sections } = index;
   const keys = new Map(found.map((i) => [i, rank(titleIndex, topics.titles, i, matched)]));
-  const top = found.sort((a, b) => compareKeys(keys.get(a)!, keys.get(b)!)).slice(0, limit);
+  let ranked = found.sort((a, b) => compareKeys(keys.get(a)!, keys.get(b)!));
+  const sectionOf = (i: number) => sections[topics.sections[i]] ?? "";
 
-  return top.map((i) => ({
-    id: topics.ids[i],
-    title: topics.titles[i],
-    section: sections[topics.sections[i]] ?? "",
-    version: index.version,
-    snippet: "",
-    updated: topics.updated[i] ?? "",
+  const counts = new Map<string, number>();
+  for (const i of ranked) {
+    const name = sectionOf(i);
+    if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  const all = ranked.length;
+  if (section) ranked = ranked.filter((i) => sectionOf(i) === section);
+  const page = ranked.slice(Math.max(0, offset), Math.max(0, offset) + Math.max(0, limit));
+
+  return {
+    total: ranked.length,
+    all,
+    sections: [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+      .map(([name, count]) => ({ name, count })),
     terms,
     corrected,
-  }));
+    results: page.map((i) => ({
+      id: topics.ids[i],
+      title: topics.titles[i],
+      section: sectionOf(i),
+      version: index.version,
+      snippet: "",
+      updated: topics.updated[i] ?? "",
+      terms,
+      corrected,
+    })),
+  };
+}
+
+export async function searchTopics(reader: PackageReader, query: string, limit = 25): Promise<UptodateSearchResult[]> {
+  return (await searchTopicsPage(reader, query, { limit })).results;
 }
 
 /** null when the package has no such article. */

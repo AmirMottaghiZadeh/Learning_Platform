@@ -14,15 +14,19 @@ export function ChromeButton({
   onPress,
   children,
   size = 30,
+  accessibilityLabel,
 }: {
   onPress: () => void;
   children: React.ReactNode;
   size?: number;
+  accessibilityLabel?: string;
 }) {
   const { colors, shadows } = useTheme();
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       style={[
         {
           width: size,

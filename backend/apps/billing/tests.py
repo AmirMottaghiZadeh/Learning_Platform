@@ -171,8 +171,27 @@ class DiscountTests(TestCase):
             services.find_discount("nope")
 
 
-@override_settings(BILLING_GATEWAY="fake", BILLING_RETURN_URL="https://app.example.com")
+SITE = {"HTTP_HOST": "site.localhost"}
+
+
+@override_settings(
+    BILLING_GATEWAY="fake", BILLING_RETURN_URL="https://app.example.com",
+    SITE_HOSTS=["site.localhost"], SITE_PUBLIC_URL="http://site.localhost",
+)
 class PurchaseApiTests(TestCase):
+    def checkout(self, **body):
+        """The app's checkout, then the site's page that starts the payment:
+        the order, and where that page sends the buyer (the gateway)."""
+        res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk, **body}, format="json")
+        self.assertEqual(res.status_code, 201, res.content)
+        start = res.json()["payment_url"]
+        self.assertTrue(start.startswith("http://site.localhost/pay/start/"), start)
+        page = self.client.get(start.removeprefix("http://site.localhost"), **SITE)
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page["Referrer-Policy"], "origin")
+        order = Order.objects.get(pk=res.json()["order_id"])
+        return order, page.context["gateway_url"]
+
     def setUp(self):
         self.user = User.objects.create_user(username="b@example.com", email="b@example.com", password="x")
         self.client = APIClient()
@@ -191,23 +210,26 @@ class PurchaseApiTests(TestCase):
         self.assertEqual(body["free"]["slug"], "free")
         uptodate = next(f for f in body["plans"][0]["features"] if f["key"] == "uptodate")
         self.assertEqual((uptodate["limit"], uptodate["period"]), (30, "month"))
+        self.assertTrue(uptodate["period_fa"])
+        self.assertEqual([g["kind"] for g in body["gateways"]], ["fake"])
+        self.assertTrue(body["sales_enabled"])
 
     def test_checkout_then_callback_grants_once(self):
-        res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk}, format="json")
-        self.assertEqual(res.status_code, 201)
-        order = Order.objects.get(pk=res.json()["order_id"])
+        order, gateway_url = self.checkout()
         self.assertEqual(order.status, Order.STATUS_PENDING)
-        self.assertIn("/api/v1/billing/callback/fake/?Authority=FAKE-", res.json()["payment_url"])
+        self.assertEqual(order.channel, Order.CHANNEL_WEB)
+        # the payment started on the site: the gateway returns there
+        self.assertIn("http://site.localhost/pay/callback/fake/?Authority=FAKE-", gateway_url)
 
-        callback = f"/api/v1/billing/callback/fake/?Authority={order.authority}&Status=OK"
-        back = self.client.get(callback)
+        callback = f"/pay/callback/fake/?Authority={order.authority}&Status=OK"
+        back = self.client.get(callback, **SITE)
         self.assertEqual(back.status_code, 302)
-        self.assertIn("/api/v1/billing/result/", back["Location"])
-        page = self.client.get(back["Location"])
+        self.assertIn("/pay/result/", back["Location"])
+        page = self.client.get(back["Location"], **SITE)
         self.assertContains(page, "پرداخت موفق بود")
         self.assertContains(page, "https://app.example.com")
         self.assertContains(page, f"FAKE{order.pk}")
-        self.client.get(callback)  # a retried callback
+        self.client.get(callback, **SITE)  # a retried callback
         order.refresh_from_db()
         self.assertEqual(order.status, Order.STATUS_PAID)
         ent = Entitlement.objects.get(user=self.user)
@@ -217,11 +239,43 @@ class PurchaseApiTests(TestCase):
         me = self.client.get("/api/v1/billing/me/").json()
         self.assertEqual(me["entitlements"][0]["plan_name_fa"], "clinical")
         self.assertIn("lexicomp", [f["key"] for f in me["features"]])
+        orders = self.client.get("/api/v1/billing/orders/").json()
+        self.assertEqual((orders[0]["id"], orders[0]["status"]), (order.pk, "paid"))
 
-    def test_cancelled_payment_grants_nothing(self):
+    def test_a_purchase_from_the_android_app_returns_to_the_app(self):
+        order, _ = self.checkout(client="android")
+        self.assertEqual(order.channel, Order.CHANNEL_ANDROID)
+        page = self.client.get(f"/pay/callback/fake/?Authority={order.authority}&Status=OK", follow=True, **SITE)
+        self.assertContains(page, "بازگشت به اپ فارمنتا")
+        self.assertContains(page, "intent://payment#Intent;scheme=pharmenta;package=com.pharmenta.learning;")
+        failed, _ = self.checkout(client="android")
+        page = self.client.get(f"/pay/callback/fake/?Authority={failed.authority}&Status=NOK", follow=True, **SITE)
+        self.assertContains(page, "بازگشت به اپ فارمنتا")
+        # tried again in the app, not on the site's checkout
+        self.assertNotContains(page, "دوباره امتحان کنید")
+
+    def test_the_start_link_is_signed_and_used_once(self):
         res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk}, format="json")
         order = Order.objects.get(pk=res.json()["order_id"])
-        page = self.client.get(f"/api/v1/billing/callback/fake/?Authority={order.authority}&Status=NOK", follow=True)
+        self.assertEqual(self.client.get(f"/pay/start/{order.pk}/", **SITE).status_code, 404)
+        path = res.json()["payment_url"].removeprefix("http://site.localhost")
+        self.client.get(path, **SITE)
+        order.refresh_from_db()
+        self.client.get(f"/pay/callback/fake/?Authority={order.authority}&Status=OK", **SITE)
+        # paid: the link now shows the receipt instead of paying again
+        again = self.client.get(path, **SITE)
+        self.assertEqual(again.status_code, 302)
+        self.assertIn("/pay/result/", again["Location"])
+
+    def test_a_gateway_that_is_not_on_is_refused(self):
+        res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk, "gateway": "sep"}, format="json")
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json()["code"], "GATEWAY_UNKNOWN")
+        self.assertFalse(Order.objects.exists())
+
+    def test_cancelled_payment_grants_nothing(self):
+        order, _ = self.checkout()
+        page = self.client.get(f"/pay/callback/fake/?Authority={order.authority}&Status=NOK", follow=True, **SITE)
         self.assertContains(page, "پرداخت انجام نشد")
         self.assertContains(page, "لغو شد")
         order.refresh_from_db()
@@ -229,20 +283,25 @@ class PurchaseApiTests(TestCase):
         self.assertFalse(Entitlement.objects.exists())
 
     def test_the_callback_from_before_per_gateway_paths_still_works(self):
-        res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk}, format="json")
-        order = Order.objects.get(pk=res.json()["order_id"])
-        page = self.client.get(f"/api/v1/billing/callback/?Authority={order.authority}&Status=OK", follow=True)
+        order, _ = self.checkout()
+        page = self.client.get(f"/pay/callback/?Authority={order.authority}&Status=OK", follow=True, **SITE)
         self.assertContains(page, "پرداخت موفق بود")
+        # and the API host's callback, for payments started before the site's
+        api = Order.objects.create(user=self.user, plan=self.plan, price=self.price, amount_toman=1, payable_toman=1,
+                                   gateway="fake", authority="FAKE-API")
+        page = self.client.get("/api/v1/billing/callback/fake/?Authority=FAKE-API&Status=OK", follow=True)
+        self.assertContains(page, "پرداخت موفق بود")
+        api.refresh_from_db()
+        self.assertEqual(api.status, Order.STATUS_PAID)
 
     def test_a_result_link_cannot_be_forged(self):
         res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk}, format="json")
         self.assertEqual(self.client.get(f"/api/v1/billing/result/{res.json()['order_id']}/").status_code, 404)
 
     def test_a_payment_whose_verify_did_not_answer_is_shown_as_unknown(self):
-        res = self.client.post("/api/v1/billing/checkout/", {"price_id": self.price.pk}, format="json")
-        order = Order.objects.get(pk=res.json()["order_id"])
+        order, _ = self.checkout()
         with mock.patch("apps.billing.gateways.FakeGateway.verify", side_effect=GatewayError("down")):
-            page = self.client.get(f"/api/v1/billing/callback/fake/?Authority={order.authority}&Status=OK", follow=True)
+            page = self.client.get(f"/pay/callback/fake/?Authority={order.authority}&Status=OK", follow=True, **SITE)
         self.assertContains(page, "وضعیت پرداخت هنوز روشن نیست")
         order.refresh_from_db()
         self.assertEqual(order.status, Order.STATUS_PENDING)

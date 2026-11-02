@@ -85,3 +85,69 @@ export function outlineTops(nodes: NumberedOutlineNode[]): OutlineTop[] {
 export function shortDate(updated: string): string {
   return updated.replace(/\s+\d{1,2},/, "");
 }
+
+// ---- "Related": the outline's graphics, calculators and related topics ----
+
+export type RelatedItem = {
+  title: string;
+  /** a graphic (table, figure, algorithm...) opens in the viewer; a topic
+   * (or calculator) opens its own page */
+  target: { graphic: string } | { topic: string };
+};
+
+export type RelatedGroup = {
+  /** "graphics" | "calculators" | "topics" */
+  kind: "graphics" | "calculators" | "topics";
+  /** UpToDate's own heading: "Tables", "Figures", "Algorithms"...; "" for
+   * calculators and related topics */
+  heading: string;
+  items: RelatedItem[];
+};
+
+const RELATED_SECTIONS: [RelatedGroup["kind"], string][] = [
+  ["graphics", "outlineRelatedGraphicsLinks"],
+  ["calculators", "outlineRelatedCalculatorsLinks"],
+  ["topics", "outlineRelatedTopicsLinks"],
+];
+const RELATED_TOKEN_RE =
+  /<div class="relatedGraphicsHeading"[^>]*>([\s\S]*?)<\/div>|<a\b[^>]*onclick="doOperation\(\{(contentIds?):(?:\[)?&quot;(\d+)&quot;[^"]*\}\)"[^>]*>([\s\S]*?)<\/a>/gi;
+
+/** What an article's outline lists beside its sections: its graphics
+ * grouped as UpToDate groups them (Algorithms, Tables, Figures...), its
+ * calculators and its related topics. The article body links some of them
+ * inline; the outline lists them all. */
+export function parseRelated(outlineHtml: string): RelatedGroup[] {
+  if (!outlineHtml) return [];
+  const groups: RelatedGroup[] = [];
+  for (const [kind, id] of RELATED_SECTIONS) {
+    const start = outlineHtml.indexOf(`id="${id}"`);
+    if (start < 0) continue;
+    const end = outlineHtml.indexOf("</section>", start);
+    const part = outlineHtml.slice(start, end < 0 ? undefined : end);
+    let group: RelatedGroup | null = kind === "graphics" ? null : { kind, heading: "", items: [] };
+    if (group) groups.push(group);
+    RELATED_TOKEN_RE.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = RELATED_TOKEN_RE.exec(part))) {
+      const [, heading, op, contentId, rawTitle] = match;
+      if (heading !== undefined) {
+        group = { kind, heading: stripHtml(heading), items: [] };
+        groups.push(group);
+        continue;
+      }
+      // the legacy "- " before each graphic's title
+      const title = stripHtml(rawTitle ?? "").replace(/^[-–—•]\s+/, "");
+      if (!title || !contentId) continue;
+      if (!group) {
+        group = { kind, heading: "", items: [] };
+        groups.push(group);
+      }
+      group.items.push({ title, target: op === "contentIds" ? { graphic: contentId } : { topic: contentId } });
+    }
+  }
+  return groups.filter((g) => g.items.length > 0);
+}
+
+export function relatedCount(groups: RelatedGroup[]): number {
+  return groups.reduce((sum, g) => sum + g.items.length, 0);
+}

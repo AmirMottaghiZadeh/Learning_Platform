@@ -21,6 +21,7 @@ from .guest import is_guest
 from .models import Feature, Order, Plan, PlanFeature
 from .serializers import (
     CatalogSerializer,
+    CheckoutRequestSerializer,
     CheckoutSerializer,
     MyAccessSerializer,
     OrderSerializer,
@@ -39,10 +40,10 @@ def _billing_error(exc):
     return PlatformAPIError(exc.message, code=exc.code, status_code=400)
 
 
-def _priced(request):
+def _priced(request, serializer=PurchaseRequestSerializer):
     if is_guest(request.user):
         raise PlatformAPIError("Sign in to buy.", code="GUEST_CANNOT_BUY", status_code=403)
-    body = PurchaseRequestSerializer(data=request.data)
+    body = serializer(data=request.data)
     body.is_valid(raise_exception=True)
     try:
         price = services.purchasable_price(body.validated_data["price_id"])
@@ -50,6 +51,8 @@ def _priced(request):
         services.quote(price, discount)
     except services.BillingError as exc:
         raise _billing_error(exc) from exc
+    if serializer is not PurchaseRequestSerializer:
+        return price, discount, body.validated_data
     return price, discount
 
 
@@ -59,10 +62,13 @@ class CatalogView(APIView):
     @extend_schema(responses=CatalogSerializer)
     def get(self, request):
         on_sale = _plans().filter(status=Plan.STATUS_ACTIVE, is_free=False)
+        cfg = config.current()
         return Response(CatalogSerializer({
             "free": _plans().filter(is_free=True).exclude(status=Plan.STATUS_INACTIVE).first(),
             "plans": [p for p in on_sale if p.kind == Plan.KIND_PLAN],
             "products": [p for p in on_sale if p.kind == Plan.KIND_PRODUCT],
+            "gateways": [{"kind": g.kind, "name": g.name} for g in config.enabled_gateways()],
+            "sales_enabled": cfg.sales_enabled,
         }).data)
 
 
@@ -102,33 +108,33 @@ class QuoteView(APIView):
 
 
 class CheckoutView(APIView):
+    """An order for the app. The payment itself starts on the site (the
+    `payment_url` it answers with): the gateways know the site's domain --
+    the callback registered with them, the Referer Zibal checks -- and the
+    result page is the site's either way."""
+
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=PurchaseRequestSerializer, responses=CheckoutSerializer)
+    @extend_schema(request=CheckoutRequestSerializer, responses=CheckoutSerializer)
     def post(self, request):
         if not config.current().sales_enabled:
             raise PlatformAPIError("Sales are paused for now.", code="SALES_PAUSED", status_code=503)
-        price, discount = _priced(request)
-        order = services.create_order(request.user, price, discount)
+        price, discount, body = _priced(request, CheckoutRequestSerializer)
+        kinds = [g.kind for g in config.enabled_gateways()]
+        gateway = body["gateway"]
+        if gateway and gateway not in kinds:
+            raise PlatformAPIError("That payment gateway is not on.", code="GATEWAY_UNKNOWN", status_code=400)
+        channel = Order.CHANNEL_ANDROID if body["client"] == "android" else Order.CHANNEL_WEB
+        if services.quote(price, discount)[2] and not kinds:
+            raise PlatformAPIError("No payment gateway is on.", code="NO_GATEWAY", status_code=503)
+        order = services.create_order(request.user, price, discount, channel=channel)
         if order.payable_toman == 0:
             services.mark_paid(order.pk, gateway="free")
             return Response(CheckoutSerializer({"order_id": order.pk, "status": Order.STATUS_PAID, "payment_url": ""}).data, status=201)
-
-        profile = getattr(request.user, "learner_profile", None)
-        try:
-            url = start_payment(
-                order,
-                lambda kind: callback_url(request, kind),
-                description=f"خرید {price.plan.name_fa} · {price.duration_label}",
-                mobile=getattr(profile, "phone", None) or "",
-                email=request.user.email or "",
-            )
-        except GatewayError as exc:
-            services.mark_failed(order, str(exc))
-            raise PlatformAPIError(
-                "The payment gateway is not available right now.", code="GATEWAY_ERROR", status_code=502
-            ) from exc
-        return Response(CheckoutSerializer({"order_id": order.pk, "status": order.status, "payment_url": url}).data, status=201)
+        return Response(
+            CheckoutSerializer({"order_id": order.pk, "status": order.status, "payment_url": pay_start_url(order, gateway)}).data,
+            status=201,
+        )
 
 
 class MyOrdersView(APIView):
@@ -146,6 +152,52 @@ def callback_url(request, kind):
     return request.build_absolute_uri(reverse("billing-callback-gateway", args=[kind]))
 
 
+PAY_START_SALT = "billing.pay-start"
+# How long the app's link to the gateway keeps working.
+PAY_START_MAX_AGE = 3600
+
+
+def pay_start_url(order, gateway=""):
+    """The site's page that starts `order`'s payment and hands the buyer to
+    the gateway (`pay_start`)."""
+    token = signing.dumps({"o": order.pk, "g": gateway}, salt=PAY_START_SALT, compress=True)
+    return settings.SITE_PUBLIC_URL.rstrip("/") + reverse("billing-pay-start", args=[token], urlconf="config.urls_site")
+
+
+def pay_start(request, token):
+    """On the site: start the payment of an order the app made, then go on to
+    the gateway from this page -- by a script, not a redirect, so the gateway
+    sees the site as the referrer (Zibal checks it). The link is signed and
+    lasts an hour; whoever has it can only pay for that order."""
+    try:
+        data = signing.loads(token, salt=PAY_START_SALT, max_age=PAY_START_MAX_AGE)
+        pk, chosen = int(data["o"]), str(data.get("g") or "")
+    except (signing.BadSignature, KeyError, TypeError, ValueError):
+        return _failed(request, None, "این لینک پرداخت معتبر نیست یا منقضی شده است؛ از اپ دوباره خرید را شروع کنید.", status=404)
+    order = Order.objects.select_related("plan", "price").filter(pk=pk).first()
+    if order is None:
+        return _failed(request, None, "سفارشی برای این پرداخت پیدا نشد.", status=404)
+    if order.status != Order.STATUS_PENDING:
+        return redirect(result_url(order))
+    if not config.current().sales_enabled:
+        return _failed(request, order, "فروش موقتاً متوقف است؛ کمی بعد از اپ دوباره امتحان کنید.")
+    kinds = [g.kind for g in config.enabled_gateways()]
+    profile = getattr(order.user, "learner_profile", None) if order.user else None
+    try:
+        url = start_payment(
+            order, lambda kind: callback_url(request, kind), kind=chosen if chosen in kinds else None,
+            description=f"خرید {order.plan.name_fa}" + (f" · {order.price.duration_label}" if order.price else ""),
+            mobile=getattr(profile, "phone", None) or "", email=(order.user.email if order.user else "") or "",
+        )
+    except GatewayError as exc:
+        services.mark_failed(order, str(exc))
+        return _failed(request, order, "درگاه پرداخت الان در دسترس نیست؛ کمی بعد از اپ دوباره امتحان کنید.")
+    response = render(request, "billing/payment_redirect.html", {"gateway_url": url, "order": order})
+    response["Referrer-Policy"] = "origin"
+    response["Cache-Control"] = "no-store"
+    return response
+
+
 RESULT_SALT = "billing.payment-result"
 # How long a result link keeps working: long enough for the buyer to come
 # back to the tab, short enough that an old shared link goes dead.
@@ -156,13 +208,24 @@ def result_url(order):
     return reverse("billing-result", args=[signing.dumps(order.pk, salt=RESULT_SALT, compress=True)])
 
 
+# The Android app, opened from the browser (Chrome's intent link: it falls
+# back to the web app when the app is not installed).
+ANDROID_RETURN_URL = (
+    "intent://payment#Intent;scheme=pharmenta;package=com.pharmenta.learning;"
+    "S.browser_fallback_url=https%3A%2F%2Fapp.pharmenta.ir%2F;end"
+)
+
+
 def _result_context(request, order, message=""):
+    in_app = bool(order and order.channel == Order.CHANNEL_ANDROID)
     try:
-        retry_url = reverse("site:checkout", args=[order.price_id]) if order and order.price_id else ""
+        # an order from the app is tried again in the app
+        retry_url = reverse("site:checkout", args=[order.price_id]) if order and order.price_id and order.channel == Order.CHANNEL_SITE else ""
     except NoReverseMatch:  # the API host has no checkout page
         retry_url = ""
     return {
-        "order": order, "return_url": config.current().return_url, "message": message, "retry_url": retry_url,
+        "order": order, "message": message, "retry_url": retry_url, "in_app": in_app,
+        "return_url": ANDROID_RETURN_URL if in_app else config.current().return_url,
         # Links to the site stay relative on the site's own domain.
         "site_url": "" if getattr(request, "is_site", False) else settings.SITE_PUBLIC_URL.rstrip("/"),
     }

@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { ApiError } from "@/api/client";
 import { UptodateSearchResult } from "@/api/types";
@@ -11,6 +11,7 @@ import { IconImage } from "@/components/primitives/IconImage";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
 import { uptodateSource } from "@/offline/sources";
+import { FavoriteArticle, useLibrary } from "@/store/library";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { TourTarget, useTour } from "@/tour/TourContext";
@@ -23,6 +24,8 @@ const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 // The busiest sections among the results get a filter chip; the rest are
 // still under "All".
 const MAX_SECTION_CHIPS = 4;
+// Results per page; the next page loads as the list nears its end.
+const PAGE = 30;
 
 // some titles italicise a name: "<i>Chlamydia pneumoniae</i>"
 const TAG_RE = /<[^>]*>/g;
@@ -41,25 +44,39 @@ export function UptodateScreen() {
   const [q, setQ] = useState("");
   const query = useDebounced(q.trim());
   const [section, setSection] = useState<string | null>(null);
+  const favorites = useLibrary((s) => s.favorites);
+  // a new query starts on "All"
+  React.useEffect(() => setSection(null), [query]);
 
-  const { data, isFetching, error } = useQuery({
-    queryKey: ["uptodate-search", query],
-    queryFn: () => uptodateSource.search(query),
+  // Every title with the words is a result: one page at a time, the next
+  // as the list nears its end. Counts and section chips cover all of them.
+  const { data, isFetching, error, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ["uptodate-search-page", query, section ?? ""],
+    queryFn: ({ pageParam }) => uptodateSource.searchPage(query, { limit: PAGE, offset: pageParam, section: section ?? "" }),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const loaded = pages.reduce((sum, page) => sum + page.results.length, 0);
+      return last.results.length && loaded < last.total ? loaded : undefined;
+    },
     enabled: query.length >= 2,
     retry: false,
   });
 
   const locked = error instanceof ApiError && error.status === 503;
-  const rows = useMemo(() => data ?? [], [data]);
-  const sections = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const r of rows) if (r.section) counts.set(r.section, (counts.get(r.section) ?? 0) + 1);
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-  }, [rows]);
+  const first = data?.pages[0];
+  const rows = useMemo(() => data?.pages.flatMap((page) => page.results) ?? [], [data]);
+  const sections = useMemo(() => (first?.sections ?? []).map((s) => [s.name, s.count] as const), [first]);
   const activeSection = section && sections.some(([s]) => s === section) ? section : null;
-  const visible = activeSection ? rows.filter((r) => r.section === activeSection) : rows;
+  const total = first?.total ?? 0;
   // the query as searched, when a misspelt word was corrected
-  const corrected = rows[0]?.corrected ?? "";
+  const corrected = first?.corrected ?? "";
+  const loadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  };
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 600) loadMore();
+  };
   useTour("uptodate", true);
 
   return (
@@ -144,7 +161,7 @@ export function UptodateScreen() {
 
         {sections.length > 1 ? (
           <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8 }}>
-            <Chip label={`${t("articleSearchAll")} · ${n(rows.length)}`} on={!activeSection} onPress={() => setSection(null)} />
+            <Chip label={`${t("articleSearchAll")} · ${n(first?.all ?? total)}`} on={!activeSection} onPress={() => setSection(null)} />
             {sections.slice(0, MAX_SECTION_CHIPS).map(([name, count]) => (
               <Chip key={name} label={name} count={n(count)} on={activeSection === name} onPress={() => setSection(name)} />
             ))}
@@ -152,7 +169,12 @@ export function UptodateScreen() {
         ) : null}
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: navClearance + 24 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: navClearance + 24 }}
+        onScroll={onScroll}
+        scrollEventThrottle={200}
+        keyboardShouldPersistTaps="handled"
+      >
         {locked ? (
           <View style={{ backgroundColor: colors.cardBg, borderRadius: 16, padding: 16 }}>
             <AppText weight="800" size={15} color={colors.accent}>
@@ -186,6 +208,8 @@ export function UptodateScreen() {
               {t("uptodateEmptySub")}
             </AppText>
           </View>
+        ) : query.length < 2 ? (
+          <Favorites items={favorites} onOpen={(f) => navigate("uptodateOutline", { id: f.id, title: f.title })} />
         ) : (
           <>
             {corrected ? (
@@ -198,7 +222,12 @@ export function UptodateScreen() {
                 </AppText>
               </View>
             ) : null}
-            {visible.map((r) => (
+            {query.length >= 2 && total > 0 ? (
+              <AppText weight="700" size={12} muted>
+                {t("uptodateResultCount").replace("{n}", n(total))}
+              </AppText>
+            ) : null}
+            {rows.map((r) => (
               <ResultCard
                 key={r.id}
                 result={r}
@@ -206,6 +235,19 @@ export function UptodateScreen() {
                 shadow={shadows.raisedSm}
               />
             ))}
+            {hasNextPage ? (
+              <Pressable
+                onPress={loadMore}
+                disabled={isFetchingNextPage}
+                style={{ alignSelf: "center", paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999, backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.trackBg }}
+              >
+                <AppText weight="800" size={13} color={colors.accent}>
+                  {isFetchingNextPage
+                    ? "…"
+                    : t("uptodateMoreResults").replace("{n}", n(Math.max(0, total - rows.length)))}
+                </AppText>
+              </Pressable>
+            ) : null}
           </>
         )}
       </ScrollView>
@@ -262,15 +304,20 @@ function ResultCard({ result, onPress, shadow }: { result: UptodateSearchResult;
     let at = 0;
     for (const word of text.matchAll(/[A-Za-z0-9]+/g)) {
       const lower = word[0].toLowerCase();
-      const length = Math.max(0, ...terms.filter((t) => lower.startsWith(t)).map((t) => t.length));
-      if (!length) continue;
-      parts.push(text.slice(at, word.index));
+      // the longest term at the word's start, else the first one inside it
+      const start = Math.max(0, ...terms.filter((t) => lower.startsWith(t)).map((t) => t.length));
+      const inner = start ? null : terms.find((t) => t.length >= 4 && lower.includes(t));
+      const from = start ? 0 : inner ? lower.indexOf(inner) : -1;
+      const length = start || inner?.length || 0;
+      if (from < 0 || !length) continue;
+      const begin = word.index! + from;
+      parts.push(text.slice(at, begin));
       parts.push(
-        <Text key={word.index} style={{ backgroundColor: `${colors.accent}2E`, color: colors.ink, borderRadius: 3 }}>
-          {word[0].slice(0, length)}
+        <Text key={begin} style={{ backgroundColor: `${colors.accent}2E`, color: colors.ink, borderRadius: 3 }}>
+          {text.slice(begin, begin + length)}
         </Text>,
       );
-      at = word.index! + length;
+      at = begin + length;
     }
     parts.push(text.slice(at));
     return parts;
@@ -295,5 +342,62 @@ function ResultCard({ result, onPress, shadow }: { result: UptodateSearchResult;
         </AppText>
       ) : null}
     </Pressable>
+  );
+}
+
+/** The articles the learner starred, newest first: what the screen shows
+ * before anything is searched. */
+function Favorites({ items, onOpen }: { items: FavoriteArticle[]; onOpen: (f: FavoriteArticle) => void }) {
+  const { t, row } = useLang();
+  const { colors, shadows } = useTheme();
+  const toggleFavorite = useLibrary((s) => s.toggleFavorite);
+  const mine = items.filter((f) => f.source === "utd");
+  return (
+    <View style={{ gap: 10 }}>
+      <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>
+        <AppText weight="900" size={15} color="#E0A526">
+          ★
+        </AppText>
+        <AppText weight="800" size={14}>
+          {t("favoritesTitle")}
+        </AppText>
+      </View>
+      {mine.length === 0 ? (
+        <View style={{ backgroundColor: colors.cardBg, borderRadius: 16, padding: 16 }}>
+          <AppText weight="600" size={13} muted style={{ lineHeight: 22 }}>
+            {t("favoritesEmpty")}
+          </AppText>
+        </View>
+      ) : (
+        mine.map((f) => (
+          <Pressable
+            key={f.id}
+            onPress={() => onOpen(f)}
+            style={[{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.cardBg, borderRadius: 16, paddingVertical: 12, paddingLeft: 16, paddingRight: 8 }, shadows.raisedSm]}
+          >
+            <View style={{ flex: 1, gap: 4 }}>
+              {f.section ? (
+                <AppText weight="800" size={10.5} color={colors.accent} style={[LTR, { letterSpacing: 1, lineHeight: 15 }]}>
+                  {f.section.toUpperCase()}
+                </AppText>
+              ) : null}
+              <AppText weight="800" size={14.5} style={[LTR, { lineHeight: 20 }]}>
+                {f.title}
+              </AppText>
+            </View>
+            <Pressable
+              onPress={() => toggleFavorite(f)}
+              hitSlop={8}
+              accessibilityLabel={t("favoriteRemove")}
+              style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
+            >
+              <AppText weight="800" size={18} color="#E0A526">
+                ★
+              </AppText>
+            </Pressable>
+          </Pressable>
+        ))
+      )}
+    </View>
   );
 }
