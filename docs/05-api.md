@@ -276,7 +276,7 @@
 
 | روش | مسیر | توضیح |
 |---|---|---|
-| GET | `/uptodate/topics/?search=&limit=` | مفهوم‌ها، نام‌های جایگزین و ارتباط مقاله‌ها از نگاشت snapshot؛ تطبیق عنوان و تصحیح غلط املایی مسیر پشتیبان است ([03-backend.md](03-backend.md#uptodate-و-lexicomp)). بدون `paged`: صفحهٔ اول به شکل فهرست سازگار با کلاینت قبلی؛ `limit` پیش‌فرض ۲۵ و حداکثر ۵۰. با `paged=1&offset=&limit=&section=`: ← `{total, all, sections[{name,count}], terms[], corrected, suggestions[{query,label}], results[]}`؛ `limit` تا ۱۰۰. هر نتیجه: `{id,title,section,sections[],version,updated,terms[],corrected,snippet}`. فیلتر `section` با هر تخصص مقاله تطبیق می‌دهد؛ مقاله در هر تخصص یک بار شمرده می‌شود و جمع شمارنده‌ها می‌تواند بیشتر از `all` باشد. `title` متن ساده و `snippet` خالی است. از سهمیه کم نمی‌کند |
+| GET | `/uptodate/topics/?search=&limit=` | مفهوم‌ها، نام‌های جایگزین و ارتباط مقاله‌ها از نگاشت snapshot؛ تطبیق عنوان و تصحیح غلط املایی مسیر پشتیبان است ([03-backend.md](03-backend.md#uptodate-و-lexicomp)). بدون `paged`: صفحهٔ اول به شکل فهرست سازگار با کلاینت قبلی؛ `limit` پیش‌فرض ۲۵ و حداکثر ۵۰. با `paged=1&offset=&limit=&section=`: ← `{total, all, sections[{name,count}], terms[], corrected, suggestions[{query,label,kind,count}], results[]}`؛ `limit` تا ۱۰۰. هر نتیجه: `{id,title,section,sections[],version,updated,terms[],corrected,snippet}`. فیلتر `section` با هر تخصص مقاله تطبیق می‌دهد؛ مقاله در هر تخصص یک بار شمرده می‌شود و جمع شمارنده‌ها می‌تواند بیشتر از `all` باشد. `title` متن ساده و `snippet` خالی است. از سهمیه کم نمی‌کند |
 | GET | `/uptodate/topics/{id}/` | ← `{id, title, section, sections[], version, updated, contributors[], outline_html, body_html}`. `title` متن ساده است و HTML بدنه و outline حفظ می‌شود. یک بار از سهمیه کم می‌کند |
 | GET | `/uptodate/images/{id}/` | تصویر یا جدول مقاله |
 | GET | `/uptodate/search-metadata/?build=&version=` | مکمل جست‌وجوی بستهٔ قدیمی، پاسخ باینری `application/octet-stream`: JSON فشرده با zlib در رکورد AES-GCM با کلید همان build. شامل `{schema:1,version,memberships,search}`؛ `search.queries` ردیف‌های `[word,conceptId,weight]` و `search.topics` نگاشت مفهوم به چهار CSV شناسه‌های عمومی/بزرگسال/کودک/آموزش بیمار است. فقط حساب دارای دسترسی پولی آفلاین؛ بدون مصرف سهمیه. نسخهٔ متفاوت → 409، کاتالوگ یا راز بستهٔ ناموجود → 503. مجوز آفلاین را صادر یا تمدید نمی‌کند |
@@ -291,6 +291,8 @@ endpoint جست‌وجوی هوشمند هنوز وجود ندارد و در ف�
 
 - `result_level` و `items[].kind`: یکی از `article`، `section` یا `paragraph`.
 - مقصد مقاله فقط `article_id` دارد. مقصد بخش `section_id` هم دارد. مقصد پاراگراف علاوه بر این‌ها `paragraph_id` دارد.
+
+پیشنهادها حداکثر ۱۲ مفهوم متمایز و قابل انتخاب هستند، به ترتیب اولویت snapshot. `kind` یکی از `general`، `treatment`، `diagnosis` و `followup` است و از واژه‌های عبارت برای گروه‌بندی نمایشی تعیین می‌شود؛ برچسب تشخیص پزشکی نیست. `count` عدد صحیحِ تعداد مقاله‌های معتبر و یکتای مرتبط با مفهوم و مخاطب همان عبارت است، پیش از فیلتر تخصص؛ با تعداد تمام نتایج جست‌وجو یکی فرض نشود. بستهٔ آفلاین با همان کاتالوگ همین فیلدها را محلی محاسبه می‌کند.
 
 ## Lexicomp — `/lexicomp/` (ویژگی `lexicomp`)
 

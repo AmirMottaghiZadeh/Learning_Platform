@@ -596,6 +596,17 @@ export interface UptodateSearchResult extends UptodateTopic {
   corrected?: string;
 }
 
+export type UptodateSuggestionKind = "general" | "treatment" | "diagnosis" | "followup";
+
+export interface UptodateSearchSuggestion {
+  query: string;
+  label: string;
+  /** Optional while older API responses remain in caches. */
+  kind?: UptodateSuggestionKind;
+  /** Distinct valid articles associated with this concept, before section filtering. */
+  count?: number;
+}
+
 /** One page of the topic search (`paged=1`). */
 export interface UptodateSearchPage {
   /** every match (in the section asked for, if one was), not just this page */
@@ -606,7 +617,7 @@ export interface UptodateSearchPage {
   sections: { name: string; count: number }[];
   terms: string[];
   corrected: string;
-  suggestions?: { query: string; label: string }[];
+  suggestions?: UptodateSearchSuggestion[];
   results: UptodateSearchResult[];
 }
 

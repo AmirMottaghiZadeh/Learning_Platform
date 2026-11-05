@@ -1,9 +1,11 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
-import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
+import Svg, { Circle, Path } from "react-native-svg";
 
 import { ApiError } from "@/api/client";
-import { UptodateSearchResult } from "@/api/types";
+import { UptodateSearchResult, UptodateSearchSuggestion } from "@/api/types";
+import { SuggestionFilter, UptodateSuggestionMenu } from "@/components/UptodateSuggestionMenu";
 import { ChromeButton, LangToggleButton, TourButton } from "@/components/ScreenChrome";
 import { OfflineDownloadButton } from "@/components/offline/OfflineDownloadButton";
 import { AppText } from "@/components/primitives/AppText";
@@ -11,6 +13,8 @@ import { IconImage } from "@/components/primitives/IconImage";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
 import { uptodateSource } from "@/offline/sources";
+import { suggestionKind } from "@/offline/uptodateSearchCatalog";
+import { useBackInterceptor } from "@/navigation/back";
 import { FavoriteArticle, useLibrary } from "@/store/library";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -26,9 +30,7 @@ const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 const PAGE = 30;
 
 
-/** UpToDate search (design option 1): a white header with the search field
- * and one chip per clinical section among the results, then a card per
- * topic with its section, title, a snippet around the hit and its date. */
+/** UpToDate search with the selected guided dropdown and specialty filters. */
 export function UptodateScreen() {
   const navClearance = useNavClearance();
   const { t, n, row, isFa } = useLang();
@@ -38,17 +40,51 @@ export function UptodateScreen() {
   const navigate = useNav((s) => s.navigate);
 
   const [q, setQ] = useState("");
-  const query = useDebounced(q.trim());
+  const query = useDebounced(q.trim(), 200);
   const [section, setSection] = useState<string | null>(null);
   const sectionScroll = React.useRef<ScrollView>(null);
-  const suggestionScroll = React.useRef<ScrollView>(null);
+  const rootRef = React.useRef<View>(null);
+  const fieldRef = React.useRef<View>(null);
+  const inputRef = React.useRef<TextInput>(null);
+  const keyboardTop = React.useRef(Infinity);
+  const blurTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const dimensions = useWindowDimensions();
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [suggestionFilter, setSuggestionFilter] = useState<SuggestionFilter>("all");
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 20, width: 0, maxHeight: 380 });
+  const menuVisible = suggestionsOpen && q.trim().length > 0;
+  const dismissSuggestions = () => { setSuggestionsOpen(false); setActiveSuggestion(-1); Keyboard.dismiss(); };
+  useBackInterceptor(menuVisible, dismissSuggestions);
+  const measureMenu = React.useCallback(() => {
+    if (!rootRef.current) return;
+    // Measure relative to one ancestor, so an in-flight screen transition
+    // cannot shift the two window measurements between callbacks.
+    fieldRef.current?.measureLayout(rootRef.current, (left, top, width, height) => {
+      rootRef.current?.measureInWindow((_rootX, rootY, _rootWidth, rootHeight) => {
+        const visibleBottom = Platform.OS === "web" && window.visualViewport
+          ? window.visualViewport.height + window.visualViewport.offsetTop : Infinity;
+        setMenuPosition({ top: top + height + 8, left, width,
+          maxHeight: Math.max(120, Math.min(400, Math.min(rootY + rootHeight - navClearance, keyboardTop.current, visibleBottom) - rootY - top - height - 16)) });
+      });
+    });
+  }, [navClearance]);
+  React.useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", (event) => { keyboardTop.current = event.endCoordinates.screenY; measureMenu(); });
+    const hide = Keyboard.addListener("keyboardDidHide", () => { keyboardTop.current = Infinity; setSuggestionsOpen(false); measureMenu(); });
+    if (Platform.OS === "web") window.visualViewport?.addEventListener("resize", measureMenu);
+    return () => {
+      show.remove(); hide.remove(); clearTimeout(blurTimer.current);
+      if (Platform.OS === "web") window.visualViewport?.removeEventListener("resize", measureMenu);
+    };
+  }, [measureMenu]);
+  React.useEffect(() => { if (menuVisible) requestAnimationFrame(measureMenu); }, [menuVisible, dimensions.width, dimensions.height, measureMenu]);
   const favorites = useLibrary((s) => s.favorites);
   // a new query starts on "All"
   React.useEffect(() => setSection(null), [query]);
   React.useEffect(() => {
     if (isFa) {
       sectionScroll.current?.scrollToEnd({ animated: false });
-      suggestionScroll.current?.scrollToEnd({ animated: false });
     }
   }, [query, isFa]);
 
@@ -68,6 +104,17 @@ export function UptodateScreen() {
 
   const locked = error instanceof ApiError && error.status === 503;
   const first = data?.pages[0];
+  const suggestions = useMemo(() => q.trim() === query ? (first?.suggestions ?? []).filter((suggestion) =>
+    suggestionFilter === "all" || (suggestion.kind ?? suggestionKind(suggestion.query)) === suggestionFilter) : [], [first, q, query, suggestionFilter]);
+  React.useEffect(() => setActiveSuggestion(-1), [query, suggestionFilter]);
+  const changeQuery = (value: string) => {
+    clearTimeout(blurTimer.current);
+    setQ(value); setSection(null); setSuggestionFilter("all"); setActiveSuggestion(-1); setSuggestionsOpen(true);
+  };
+  const selectSuggestion = (suggestion?: UptodateSearchSuggestion) => {
+    if (suggestion) changeQuery(suggestion.query);
+    dismissSuggestions();
+  };
   const rows = useMemo(() => data?.pages.flatMap((page) => page.results) ?? [], [data]);
   const sections = useMemo(() => (first?.sections ?? []).map((s) => [s.name, s.count] as const), [first]);
   const activeSection = section && sections.some(([s]) => s === section) ? section : null;
@@ -84,7 +131,7 @@ export function UptodateScreen() {
   useTour("uptodate", true);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.softBg }}>
+    <View ref={rootRef} onLayout={measureMenu} style={{ flex: 1, backgroundColor: colors.softBg }}>
       <View
         style={{
           backgroundColor: colors.cardBg,
@@ -94,10 +141,11 @@ export function UptodateScreen() {
           borderBottomWidth: 1,
           borderBottomColor: colors.trackBg,
           gap: 14,
+          zIndex: 20,
         }}
       >
         <View style={{ flexDirection: row, alignItems: "center", gap: 10 }}>
-          <ChromeButton onPress={goBack} size={34}>
+          <ChromeButton onPress={menuVisible ? dismissSuggestions : goBack} size={34}>
             <AppText weight="800" size={16} color={colors.ink}>
               {isFa ? "›" : "‹"}
             </AppText>
@@ -112,6 +160,7 @@ export function UptodateScreen() {
 
         <TourTarget id="utd.search">
         <View
+          ref={fieldRef} onLayout={measureMenu}
           style={{
             flexDirection: row,
             alignItems: "center",
@@ -120,17 +169,42 @@ export function UptodateScreen() {
             borderWidth: 2,
             borderColor: colors.accent,
             borderRadius: 14,
-            paddingHorizontal: 14,
-            paddingVertical: 9,
+            paddingHorizontal: 8,
+            minHeight: 54,
           }}
         >
-          <AppText weight="800" size={17} color={colors.accent} style={{ lineHeight: 22 }}>
-            ⌕
-          </AppText>
+          <Pressable accessibilityRole="button" accessibilityLabel={isFa ? "جست‌وجوی عبارت" : "Search query"}
+            onPress={() => selectSuggestion()} style={{ width: 32, minHeight: 44, alignItems: "center", justifyContent: "center" }}>
+            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.accent} strokeWidth={1.8} aria-hidden>
+              <Circle cx={10.5} cy={10.5} r={6.5} /><Path d="m16 16 5 5" />
+            </Svg>
+          </Pressable>
           <TextInput
+            ref={inputRef} nativeID="uptodate-query"
             accessibilityLabel={t("uptodateSearchPlaceholder")}
+            role="combobox" aria-autocomplete="list" aria-expanded={menuVisible}
+            aria-controls="uptodate-suggestions"
+            aria-activedescendant={menuVisible && activeSuggestion >= 0 ? `utd-suggestion-${activeSuggestion}` : undefined}
             value={q}
-            onChangeText={setQ}
+            onChangeText={changeQuery}
+            onFocus={() => { clearTimeout(blurTimer.current); setSuggestionsOpen(true); measureMenu(); }}
+            onBlur={() => {
+              clearTimeout(blurTimer.current);
+              blurTimer.current = setTimeout(() => {
+                if (Platform.OS === "web" && document.getElementById("uptodate-suggestions")?.contains(document.activeElement)) return;
+                setSuggestionsOpen(false);
+              }, 160);
+            }}
+            onKeyPress={(event) => {
+              const key = event.nativeEvent.key;
+              if (key === "Escape") { event.preventDefault(); dismissSuggestions(); }
+              else if (key === "ArrowDown" || key === "ArrowUp") {
+                event.preventDefault(); setSuggestionsOpen(true);
+                if (suggestions.length) setActiveSuggestion((i) => key === "ArrowDown" ? (i + 1) % suggestions.length : (i < 1 ? suggestions.length - 1 : i - 1));
+              }
+            }}
+            onSubmitEditing={() => selectSuggestion(menuVisible && activeSuggestion >= 0 ? suggestions[activeSuggestion] : undefined)}
+            returnKeyType="search"
             placeholder={t("uptodateSearchPlaceholder")}
             placeholderTextColor={colors.muted}
             autoCorrect={false}
@@ -150,15 +224,13 @@ export function UptodateScreen() {
               ...(Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : null),
             }}
           />
-          {isFetching ? (
-            <AppText muted size={12}>
-              …
-            </AppText>
-          ) : q ? (
-            <Pressable onPress={() => setQ("")} hitSlop={10} accessibilityLabel="clear">
-              <AppText muted weight="700" size={18} style={{ lineHeight: 22 }}>
-                ×
-              </AppText>
+          {q ? (
+            <Pressable onPress={() => { changeQuery(""); inputRef.current?.focus(); }}
+              accessibilityRole="button" accessibilityLabel={isFa ? "پاک کردن عبارت" : "Clear query"}
+              style={{ width: 36, minHeight: 44, alignItems: "center", justifyContent: "center" }}>
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={colors.muted} strokeWidth={1.8} aria-hidden>
+                <Path d="m6 6 12 12M18 6 6 18" />
+              </Svg>
             </Pressable>
           ) : null}
         </View>
@@ -182,19 +254,6 @@ export function UptodateScreen() {
         scrollEventThrottle={200}
         keyboardShouldPersistTaps="handled"
       >
-        {query.length >= 2 && !!first?.suggestions?.length ? (
-          <View style={{ gap: 6 }}>
-            <AppText muted weight="600" size={12}>{isFa ? "جست‌وجوهای مرتبط" : "Related searches"}</AppText>
-            <ScrollView ref={suggestionScroll} horizontal showsHorizontalScrollIndicator keyboardShouldPersistTaps="handled"
-              onContentSizeChange={() => { if (isFa) suggestionScroll.current?.scrollToEnd({ animated: false }); }}
-              contentContainerStyle={{ gap: 8, flexDirection: row }}>
-              {first.suggestions.map((suggestion) => (
-                <Chip key={suggestion.query} label={stripHtml(suggestion.label)} on={false}
-                  onPress={() => { setSection(null); setQ(suggestion.query); }} />
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
         {locked ? (
           <View style={{ backgroundColor: colors.cardBg, borderRadius: 16, padding: 16 }}>
             <AppText weight="800" size={15} color={colors.accent}>
@@ -271,6 +330,19 @@ export function UptodateScreen() {
           </>
         )}
       </ScrollView>
+      {menuVisible ? (
+        <>
+          <Pressable accessible={false} focusable={false} onPress={dismissSuggestions}
+            style={{ position: "absolute", inset: 0, zIndex: 10 }} />
+          <View style={{ position: "absolute", top: menuPosition.top, left: menuPosition.left, width: menuPosition.width, zIndex: 30 }}>
+            <UptodateSuggestionMenu query={q} suggestions={suggestions} filter={suggestionFilter}
+              onFilter={(filter) => { setSuggestionFilter(filter); setActiveSuggestion(-1); }}
+              active={activeSuggestion} onActive={setActiveSuggestion} onSelect={selectSuggestion}
+              loading={q.trim() !== query || (isFetching && !first)} failed={!!error}
+              maxHeight={menuPosition.maxHeight} />
+          </View>
+        </>
+      ) : null}
     </View>
   );
 }

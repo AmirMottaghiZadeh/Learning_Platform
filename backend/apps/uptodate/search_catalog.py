@@ -15,6 +15,17 @@ def normalize(value):
     return " ".join(re.findall(r"[a-z0-9؀-ۿ]+", plain_title(value).lower()))
 
 
+def suggestion_kind(query):
+    for kind, pattern in (
+        ("treatment", r"treat|therap|management|regimen"),
+        ("followup", r"follow|cure|monitor"),
+        ("diagnosis", r"diagnos|test|screen|symptom"),
+    ):
+        if re.search(pattern, normalize(query)):
+            return kind
+    return "general"
+
+
 @dataclass
 class SearchCatalog:
     queries: list
@@ -72,7 +83,7 @@ class SearchCatalog:
         hits = preferred or (lists[0] if lists else "")
         return list(dict.fromkeys(t.strip() for t in hits.split(",") if t.strip()))
 
-    def suggest(self, query, valid_ids, limit=6):
+    def suggest(self, query, valid_ids, limit=12):
         prefix = normalize(query)
         if len(prefix) < 2:
             return []
@@ -87,4 +98,7 @@ class SearchCatalog:
                 if cid not in candidates or key < candidates[cid][0]:
                     candidates[cid] = (key, word)
             at += 1
-        return [{"query": word, "label": word} for _, word in sorted(candidates.values())[:limit]]
+        return [{
+            "query": word, "label": word, "kind": suggestion_kind(word),
+            "count": sum(t in valid_ids for t in self.hits(self.aliases[word][0], word)),
+        } for _, word in sorted(candidates.values())[:limit]]

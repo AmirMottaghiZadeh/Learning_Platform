@@ -222,6 +222,9 @@ class UptodateTests(TestCase):
         self.assertEqual(response.data["results"][0]["id"], "140619")
         self.assertEqual(response.data["results"][0]["sections"], ["Family Medicine", "Gastroenterology"])
         self.assertEqual(response.data["suggestions"][0]["query"], "h pylori treatment")
+        self.assertEqual(response.data["suggestions"][0]["kind"], "treatment")
+        self.assertEqual(response.data["suggestions"][0]["count"], 3)
+        self.assertIsInstance(response.data["suggestions"][0]["count"], int)
 
     def test_search_anchor_requires_exact_revision_and_existing_block(self):
         result = extract_article("3851", "<html><body><p>Body.</p></body></html>")
@@ -375,6 +378,20 @@ class SnapshotSearchRegressionTests(SimpleTestCase):
         suggestions = services.search_page("h pylori")["suggestions"]
         self.assertEqual([s["query"] for s in suggestions], ["h pylori treatment", "h pylori testing"])
         self.assertEqual(services.search_page(suggestions[0]["query"])["results"][0]["id"], "140619")
+        self.assertEqual([(s["kind"], s["count"]) for s in suggestions], [("treatment", 3), ("diagnosis", 2)])
+
+    def test_partial_suggestions_keep_priority_deduplicate_hits_and_classify_test_of_cure(self):
+        from .search_catalog import SearchCatalog
+        catalog = SearchCatalog(
+            [["h pylori test of cure", "cure", 20], ["h pylori treatment", "tx", 100],
+             ["h pylori diagnosis", "dx", 50], ["h pylori treatment adult", "tx", 30]],
+            {"cure": ["18,18,missing", "", "", ""], "tx": ["140619,18", "140619", "", ""],
+             "dx": ["18,missing", "", "", ""]},
+        )
+        suggestions = catalog.suggest("h py", {"18", "140619"})
+        self.assertEqual([(s["kind"], s["count"]) for s in suggestions], [("treatment", 2), ("diagnosis", 1), ("followup", 1)])
+        self.assertEqual(suggestions[0]["query"], "h pylori treatment")
+        self.assertEqual(catalog.suggest("h", {"18", "140619"}), [])
 
     def test_unknown_qualifier_is_not_dropped_and_pediatric_audience_is_used(self):
         self.assertEqual(services.search_page("h pylori zzzzzz")["total"], 0)

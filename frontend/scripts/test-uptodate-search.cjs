@@ -68,6 +68,14 @@ async function main() {
   assert.equal(filtered.results[0].section, "Gastroenterology");
   assert.equal(filtered.sections.find((s) => s.name === "Gastroenterology").count, 3);
   assert.equal(filtered.suggestions[0].query, "h pylori treatment");
+  assert.equal(filtered.suggestions[0].kind, "treatment");
+  assert.equal(filtered.suggestions[0].count, 2);
+  const { SearchCatalog } = load("src/offline/uptodateSearchCatalog.ts");
+  const guided = new SearchCatalog({ queries: [["h pylori test of cure", "c", 20], ["h pylori treatment", "t", 100],
+    ["h pylori diagnosis", "d", 50], ["h pylori treatment adult", "t", 30]],
+    topics: { c: ["18,18,missing", "", "", ""], t: ["140619,18", "140619", "", ""], d: ["18,missing", "", "", ""] } });
+  assert.deepEqual(guided.suggest("h py", new Map([["18", 0], ["140619", 1]])).map(s => [s.kind, s.count]),
+    [["treatment", 2], ["diagnosis", 1], ["followup", 1]]);
   assert.equal((await search.searchTopicsPage(current, "h pylori zzzzzz")).total, 0);
   assert.deepEqual((await search.searchTopicsPage(current, "h pylori children")).results.map((r) => r.id), ["p"]);
   const pages = await Promise.all([0, 1, 2].map((offset) => search.searchTopicsPage(current, "h pylori", { limit: 1, offset })));

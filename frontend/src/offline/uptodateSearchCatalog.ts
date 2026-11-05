@@ -1,4 +1,5 @@
 import { stripHtml } from "@/utils/html";
+import type { UptodateSearchSuggestion, UptodateSuggestionKind } from "@/api/types";
 
 export type SearchCatalogData = {
   queries: [string, string, number][];
@@ -7,6 +8,13 @@ export type SearchCatalogData = {
 
 export const normalizeSearch = (value: string) =>
   (stripHtml(value).toLowerCase().match(/[a-z0-9\u0600-\u06FF]+/g) ?? []).join(" ");
+
+export function suggestionKind(query: string): UptodateSuggestionKind {
+  const word = normalizeSearch(query);
+  return /treat|therap|management|regimen/.test(word) ? "treatment"
+    : /follow|cure|monitor/.test(word) ? "followup"
+      : /diagnos|test|screen|symptom/.test(word) ? "diagnosis" : "general";
+}
 
 /** Mirrors backend/apps/uptodate/search_catalog.py, including tie ordering. */
 export class SearchCatalog {
@@ -49,7 +57,7 @@ export class SearchCatalog {
     return [...new Set(hits.split(",").map((id) => id.trim()).filter(Boolean))];
   }
 
-  suggest(query: string, validIds: Map<string, number>, limit = 6): { query: string; label: string }[] {
+  suggest(query: string, validIds: Map<string, number>, limit = 12): UptodateSearchSuggestion[] {
     const prefix = normalizeSearch(query);
     if (prefix.length < 2) return [];
     const current = this.aliases.get(prefix)?.[0];
@@ -71,6 +79,9 @@ export class SearchCatalog {
     }
     return [...candidates.values()]
       .sort((a, b) => b.weight - a.weight || a.word.length - b.word.length || (a.word < b.word ? -1 : a.word > b.word ? 1 : 0))
-      .slice(0, limit).map(({ word }) => ({ query: word, label: word }));
+      .slice(0, limit).map(({ word }) => ({
+        query: word, label: word, kind: suggestionKind(word),
+        count: this.hits(this.aliases.get(word)![0], word).filter((id) => validIds.has(id)).length,
+      }));
   }
 }

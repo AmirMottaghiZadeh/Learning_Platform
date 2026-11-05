@@ -28,6 +28,13 @@ class UptodateSectionCountSerializer(serializers.Serializer):
     count = serializers.IntegerField()
 
 
+class UptodateSearchSuggestionSerializer(serializers.Serializer):
+    query = serializers.CharField()
+    label = serializers.CharField()
+    kind = serializers.ChoiceField(choices=("general", "treatment", "diagnosis", "followup"))
+    count = serializers.IntegerField(min_value=0)
+
+
 class UptodateSearchPageSerializer(serializers.Serializer):
     # every match (in `section`, when one is asked for), not just this page
     total = serializers.IntegerField()
@@ -37,7 +44,7 @@ class UptodateSearchPageSerializer(serializers.Serializer):
     sections = UptodateSectionCountSerializer(many=True)
     terms = serializers.ListField(child=serializers.CharField())
     corrected = serializers.CharField(allow_blank=True)
-    suggestions = serializers.ListField(child=serializers.DictField(child=serializers.CharField()), default=list)
+    suggestions = UptodateSearchSuggestionSerializer(many=True, default=list)
     results = UptodateSearchResultSerializer(many=True)
 
 
