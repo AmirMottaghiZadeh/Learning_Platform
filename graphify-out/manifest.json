@@ -2430,9 +2430,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/UptodateArticleScreen.tsx": {
-    "mtime": 1793857057.1792605,
-    "seen": 1793859048.8527436,
-    "ast_hash": "33eeafc997ac98a1966118e5dce37af5",
+    "mtime": 1793885839.3714132,
+    "seen": 1793886080.1774275,
+    "ast_hash": "9d59f465bd2cec00833b8c6d17e81103",
     "semantic_hash": ""
   },
   "frontend/src/screens/UptodateOutlineScreen.tsx": {
@@ -4248,9 +4248,9 @@
     "semantic_hash": ""
   },
   "docs/04-frontend.md": {
-    "mtime": 1793858129.2154393,
-    "seen": 1793859048.8530111,
-    "ast_hash": "550e667e0379e0fdcad5c15d3cb53f0f",
+    "mtime": 1793861311.294639,
+    "seen": 1793886080.177918,
+    "ast_hash": "7a97639bdf292711aff5b55bbf9fd6f7",
     "semantic_hash": ""
   },
   "docs/05-api.md": {
@@ -4854,9 +4854,9 @@
     "semantic_hash": ""
   },
   "frontend/scripts/test-uptodate-search-navigation.cjs": {
-    "mtime": 1793858782.3331006,
-    "seen": 1793859048.8524926,
-    "ast_hash": "3375ab83dba75bde626290ec7d63176e",
+    "mtime": 1793861311.286639,
+    "seen": 1793886080.17707,
+    "ast_hash": "d3fbb48fae87616aa61d4ab54db8feff",
     "semantic_hash": ""
   },
   "frontend/src/components/announcements/dismissals.ts": {
@@ -5298,9 +5298,9 @@
     "semantic_hash": ""
   },
   "docs/prototypes/uptodate-tables/render_legacy.cjs": {
-    "mtime": 1793859768.6721804,
-    "seen": 1793860189.5962307,
-    "ast_hash": "907312ade4677292b2b5576854ecffd5",
+    "mtime": 1793861164.5980241,
+    "seen": 1793886080.1769965,
+    "ast_hash": "448d5e399a73d51f9f8eb41b42fa4e8a",
     "semantic_hash": ""
   },
   "docs/prototypes/uptodate-tables/README.fa.md": {
@@ -5343,6 +5343,18 @@
     "mtime": 1793860165.276687,
     "seen": 1793860189.5968542,
     "ast_hash": "66312678c80341cba91b15e21942551c",
+    "semantic_hash": ""
+  },
+  "frontend/src/utils/uptodateTables.ts": {
+    "mtime": 1793886009.3227363,
+    "seen": 1793886080.1775386,
+    "ast_hash": "eda58c45093a381e76a3380b279418e8",
+    "semantic_hash": ""
+  },
+  "docs/prototypes/uptodate-tables/preview-mobile.png": {
+    "mtime": 1793860229.9921186,
+    "seen": 1793886080.1781461,
+    "ast_hash": "0475f358ae18bd19e4c08991bf703522",
     "semantic_hash": ""
   }
 }

@@ -102,4 +102,11 @@ assert.equal(scriptNode.textContent, "var value = '<b>script text</b>';");
 assert.equal(unsafe.textContent, '<img src=x onerror="alert(1)">');
 assert.ok(!descendants(unsafe).some((n) => n.tagName === "IMG"));
 assert.ok(document.body.children.includes(table));
+// Table controls must not move saved highlight offsets or become search hits.
+const beforeControls = context.__utdFullText(context.__utdTexts());
+const tools = paragraph(document.body, "DIV", "View table full screen");
+tools.hasAttribute = (name) => name === "data-utd-ui";
+assert.equal(context.__utdSkipped(tools.children[0]), true);
+assert.equal(context.__utdFullText(context.__utdTexts()), beforeControls);
+assert.equal(context.__utdSearch("View table full screen").count, 0);
 console.log("UpToDate search navigation and reader HTML checks passed");

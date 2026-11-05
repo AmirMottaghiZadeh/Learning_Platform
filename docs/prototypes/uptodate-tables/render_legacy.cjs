@@ -12,8 +12,14 @@ const output = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.React },
 }).outputText;
 const wrappedModule = { exports: {} };
+const tablesModule = { exports: {} };
+const tablesCode = ts.transpileModule(fs.readFileSync(path.join(root, "frontend/src/utils/uptodateTables.ts"), "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+}).outputText;
+new Function("exports", tablesCode)(tablesModule.exports);
 new Function("require", "exports", "module", output + "\nmodule.exports.wrap = wrap;")(
-  (name) => name === "@/store/library" ? { HIGHLIGHT_COLORS: [], HIGHLIGHT_PAINT: {} } : {},
+  (name) => name === "@/store/library" ? { HIGHLIGHT_COLORS: [], HIGHLIGHT_PAINT: {} }
+    : name === "@/utils/uptodateTables" ? tablesModule.exports : {},
   wrappedModule.exports, wrappedModule,
 );
 const colors = { ink:"#192a24", prose:"#24362f", muted:"#52665d", bg:"#ffffff", accent:"#126b51",

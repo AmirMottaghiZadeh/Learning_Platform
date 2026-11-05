@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useMemo, useRef, useState } from "react";
 import { Modal, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
 import { WebView } from "react-native-webview";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ChromeButton } from "@/components/ScreenChrome";
 import { useBleedTop } from "@/components/AppShell";
@@ -17,6 +18,7 @@ import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { stripHtml } from "@/utils/html";
+import { TABLE_SCRIPT, tableLabels, tableStyles } from "@/utils/uptodateTables";
 import {
   NumberedOutlineNode,
   RelatedGroup,
@@ -106,7 +108,7 @@ function __utdSearch(term) {
   var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
   var nodes = [];
   var n;
-  while ((n = walker.nextNode())) nodes.push(n);
+  while ((n = walker.nextNode())) if (!__utdSkipped(n)) nodes.push(n);
   var esc = term.replace(/[.*+?^\${}()|[\\]\\\\]/g, "\\\\$&");
   var re = new RegExp(esc, "gi");
   nodes.forEach(function (node) {
@@ -323,6 +325,7 @@ function __utdSkipped(node) {
   for (var el = node.parentNode; el && el.nodeType === 1; el = el.parentNode) {
     if (el.id === "utdRelated" || el.id === "utdHlBar") return true;
     if (el.tagName === "SCRIPT" || el.tagName === "STYLE") return true;
+    if (el.hasAttribute && el.hasAttribute("data-utd-ui")) return true;
     if (el.classList && el.classList.contains("utd-num")) return true;
   }
   return false;
@@ -604,6 +607,9 @@ type WrapOptions = {
   /** the article's saved highlights; null when the page takes none (a graphic) */
   highlights?: Highlight[] | null;
   dark?: boolean;
+  isFa?: boolean;
+  tableContext?: "article" | "graphic";
+  tableViewer?: { index: number; title: string };
 };
 
 function wrap(bodyHtml: string, c: WrapColors, opts: WrapOptions = {}) {
@@ -692,8 +698,11 @@ function wrap(bodyHtml: string, c: WrapColors, opts: WrapOptions = {}) {
   a.utd-rel-item::before { content:""; flex:none; width:8px; height:8px; border-radius:2px; background:${accent}; }
   a.utd-rel-t::before { border-radius:50%; background:transparent; border:2px solid ${accent}; }
   a.utd-rel-item::after { content:"›"; margin-left:auto; padding-left:8px; color:${muted}; font-size:1.1rem; }
+  ${tableStyles(c, dark)}
 </style></head><body>${bodyHtml}${relatedHtml(related)}<script>${FIND_SCRIPT}
+${TABLE_SCRIPT}
 __utdRepairInlineMarkup();
+__utdTablesInit(${json({ labels: tableLabels(!!opts.isFa), context: opts.tableContext ?? "article", viewer: opts.tableViewer })});
 __utdMarkHeadings(${json(levels)}, ${json(tops)});
 __utdMarkBullets();
 __utdRelatedInit();
@@ -745,16 +754,19 @@ function UptodateArticle() {
   const [query, setQuery] = useState("");
   const [find, setFind] = useState<FindResult>({ count: 0, current: 0 });
   const [graphicId, setGraphicId] = useState<string | null>(null);
+  const [tableView, setTableView] = useState<{ html: string; index: number; title: string } | null>(null);
+  const closeAuxiliary = () => tableView ? setTableView(null) : setGraphicId(null);
   const [tocOpen, setTocOpen] = useState(false);
   const [textOpen, setTextOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTop, setCurrentTop] = useState(-1);
-  useBackInterceptor(graphicId !== null, () => setGraphicId(null));
+  useBackInterceptor(graphicId !== null || tableView !== null, closeAuxiliary);
   useBackInterceptor(tocOpen, () => setTocOpen(false));
   useBackInterceptor(textOpen, () => setTextOpen(false));
   const debouncedQuery = useDebounced(query.trim(), 300);
   const webviewRef = useRef<WebView>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const auxiliaryIframeRef = useRef<HTMLIFrameElement | null>(null);
   const loadedOnce = useRef(false);
 
   const { data, isLoading, isError } = useQuery({
@@ -789,10 +801,11 @@ function UptodateArticle() {
             related,
             highlights: highlightsRef.current,
             dark: isDark,
+            isFa,
           })
         : "",
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data, outline, tops, related, colors],
+    [data, outline, tops, related, colors, isFa],
   );
 
   // -- a table/figure/algorithm graphic opened from a reference link -------
@@ -830,7 +843,10 @@ function UptodateArticle() {
     enabled: !!graphicTopic,
   });
 
-  const graphicWrappedHtml = wrap(graphicHtml ?? "", wrapColors, { scale: textScale, dark: isDark });
+  const auxiliaryHtml = useMemo(() => wrap(tableView?.html ?? graphicHtml ?? "", wrapColors, {
+    scale: textScale, dark: isDark, isFa, tableContext: "graphic",
+    tableViewer: tableView ? { index: tableView.index, title: tableView.title } : undefined,
+  }), [tableView, graphicHtml, colors, textScale, isDark, isFa]);
 
   // -- cross-platform bridge to the injected find/goto script --------------
   // Web: a srcDoc iframe is same-origin, so the parent can call functions
@@ -926,8 +942,19 @@ function UptodateArticle() {
     progress?: number;
     section?: number;
     items?: Highlight[];
+    index?: number;
+    context?: string;
+    title?: string;
   }) => {
-    if (op.type === "highlights" && Array.isArray(op.items)) {
+    if (op.type === "table" && Number.isInteger(op.index) && op.index! >= 0) {
+      const source = op.context === "article" ? data?.body_html : op.context === "graphic" ? graphicHtml : undefined;
+      const title = stripHtml((typeof op.title === "string" && op.title.trim()
+        ? op.title.slice(0, 500)
+        : (op.context === "graphic" ? graphicTopic?.title : data?.title)) || titleParam);
+      if (source) setTableView({ html: source, index: op.index!, title });
+    } else if (op.type === "table-close") {
+      setTableView(null);
+    } else if (op.type === "highlights" && Array.isArray(op.items)) {
       const items = op.items.filter(
         (h) => h && typeof h.id === "string" && Number.isFinite(h.start) && Number.isFinite(h.end)
           && (HIGHLIGHT_COLORS as readonly string[]).includes(h.color),
@@ -966,13 +993,22 @@ function UptodateArticle() {
   const handleOpRef = useRef(handleOp);
   handleOpRef.current = handleOp;
 
+  const handleAuxiliaryMessage = (event: { nativeEvent: { data: string } }) => {
+    try {
+      const msg = JSON.parse(event.nativeEvent.data);
+      if (msg?.__utdOp && (msg.type === "table" || msg.type === "table-close")) handleOpRef.current(msg);
+    } catch { /* Ignore messages outside the table controls. */ }
+  };
+
   React.useEffect(() => {
     if (Platform.OS !== "web") return;
     const onMessage = (event: MessageEvent) => {
-      if (event.source !== iframeRef.current?.contentWindow) return;
+      const main = event.source === iframeRef.current?.contentWindow;
+      const auxiliary = event.source === auxiliaryIframeRef.current?.contentWindow;
+      if (!main && !auxiliary) return;
       try {
         const msg = JSON.parse(event.data as string);
-        if (msg && msg.__utdOp) handleOpRef.current(msg);
+        if (msg?.__utdOp && (main || msg.type === "table" || msg.type === "table-close")) handleOpRef.current(msg);
       } catch {
         /* ignore */
       }
@@ -1257,37 +1293,38 @@ function UptodateArticle() {
       </Modal>
 
       <Modal
-        visible={!!graphicId}
+        visible={!!graphicId || !!tableView}
         transparent
         animationType="fade"
-        onRequestClose={() => setGraphicId(null)}
+        onRequestClose={closeAuxiliary}
+        supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(4,10,9,0.55)", padding: 16 }}>
-          <View style={{ flex: 1, backgroundColor: colors.cardBg, borderRadius: 18, overflow: "hidden" }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: tableView ? colors.cardBg : "rgba(4,10,9,0.55)", padding: tableView ? 0 : 16 }}>
+          <View style={{ flex: 1, backgroundColor: colors.cardBg, borderRadius: tableView ? 0 : 18, overflow: "hidden" }}>
             <View
               style={{
                 flexDirection: row,
                 alignItems: "center",
                 gap: 10,
                 paddingHorizontal: 16,
-                paddingVertical: 12,
+                paddingVertical: tableView ? 4 : 12,
                 borderBottomWidth: 1,
                 borderBottomColor: colors.sheetLine,
               }}
             >
-              <AppText weight="800" size={13} numberOfLines={2} style={{ flex: 1 }}>
-                {stripHtml(graphicTopic?.title ?? "")}
+              <AppText accessibilityRole="header" weight="800" size={13} numberOfLines={2} style={{ flex: 1, writingDirection: "ltr", textAlign: "left" }}>
+                {tableView?.title ?? stripHtml(graphicTopic?.title ?? "")}
               </AppText>
-              <ChromeButton onPress={() => setGraphicId(null)} size={28}>
+              <ChromeButton onPress={closeAuxiliary} size={44} accessibilityLabel={isFa ? "بستن جدول یا تصویر" : "Close table or graphic"}>
                 <AppText weight="800" size={14} color={colors.ink}>
                   ×
                 </AppText>
               </ChromeButton>
             </View>
 
-            {graphicLoading || (!!graphicTopic && graphicHtml === undefined) ? (
+            {!tableView && (graphicLoading || (!!graphicTopic && graphicHtml === undefined)) ? (
               <LoadingState />
-            ) : graphicTopicError || graphicHtmlError || !graphicTopic ? (
+            ) : !tableView && (graphicTopicError || graphicHtmlError || !graphicTopic) ? (
               <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
                 <AppText muted weight="600">
                   {t("uptodateGraphicLoadError")}
@@ -1295,19 +1332,23 @@ function UptodateArticle() {
               </View>
             ) : Platform.OS === "web" ? (
               <iframe
-                srcDoc={graphicWrappedHtml}
+                key={tableView ? "table" : "graphic"}
+                ref={(node) => { auxiliaryIframeRef.current = node; }}
+                srcDoc={auxiliaryHtml}
                 style={{ flexGrow: 1, border: "none", width: "100%", height: "100%" }}
-                title={graphicTopic.title}
+                title={tableView?.title ?? stripHtml(graphicTopic?.title ?? "")}
               />
             ) : (
               <WebView
+                key={tableView ? "table" : "graphic"}
                 originWhitelist={["*"]}
-                source={{ html: graphicWrappedHtml }}
+                source={{ html: auxiliaryHtml }}
+                onMessage={handleAuxiliaryMessage}
                 style={{ flex: 1, backgroundColor: colors.cardBg }}
               />
             )}
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </View>
   );
