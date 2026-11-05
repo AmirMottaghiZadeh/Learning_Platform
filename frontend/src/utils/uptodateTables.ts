@@ -30,6 +30,7 @@ export function tableStyles(c: TableColors, dark: boolean) {
   .utd-table-button:disabled { opacity:.5; cursor:default; }
   .utd-table-scroll { overflow:auto; max-width:100%; max-height:620px; overscroll-behavior:contain;
     border:1px solid var(--utd-table-line); border-radius:6px; }
+  .utd-table-scroll > table { cursor:zoom-in; }
   table.utd-reference-table { display:table; border-collapse:separate; border-spacing:0; width:100%;
     min-width:var(--utd-table-min,0px); overflow:visible; table-layout:fixed; direction:ltr; text-align:left;
     font-size:1rem; line-height:1.6; color:${c.prose}; }
@@ -140,6 +141,15 @@ function __utdTablesInit(options) {
     tools.appendChild(open);
     var scroll = document.createElement("div"); scroll.className = "utd-table-scroll"; scroll.tabIndex = 0;
     scroll.setAttribute("role", "region"); scroll.setAttribute("aria-label", labels.open);
+    if (!options.viewer) {
+      table.addEventListener("click", function (e) {
+        if (e.defaultPrevented || e.target.closest("a,button,input,select,textarea") || String(window.getSelection() || "").trim()) return;
+        open.click();
+      });
+      scroll.addEventListener("keydown", function (e) {
+        if (e.target === scroll && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open.click(); }
+      });
+    }
     table.parentNode.insertBefore(box, table); box.appendChild(tools); box.appendChild(scroll); scroll.appendChild(table);
     function offsets() { var top = 0; heads.forEach(function (row) { row.style.setProperty("--utd-head-top", top + "px"); top += row.offsetHeight; }); }
     if (typeof ResizeObserver !== "undefined") new ResizeObserver(offsets).observe(table);

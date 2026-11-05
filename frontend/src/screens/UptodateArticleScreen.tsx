@@ -755,7 +755,7 @@ function UptodateArticle() {
   const [find, setFind] = useState<FindResult>({ count: 0, current: 0 });
   const [graphicId, setGraphicId] = useState<string | null>(null);
   const [tableView, setTableView] = useState<{ html: string; index: number; title: string } | null>(null);
-  const closeAuxiliary = () => tableView ? setTableView(null) : setGraphicId(null);
+  const closeAuxiliary = () => { setTableView(null); setGraphicId(null); };
   const [tocOpen, setTocOpen] = useState(false);
   const [textOpen, setTextOpen] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -843,10 +843,17 @@ function UptodateArticle() {
     enabled: !!graphicTopic,
   });
 
-  const auxiliaryHtml = useMemo(() => wrap(tableView?.html ?? graphicHtml ?? "", wrapColors, {
+  // A linked table enters the zoomable viewer on its first render. Figures
+  // without tables keep their graphic display; there is no intermediate
+  // table preview and closing the viewer returns directly to the article.
+  const activeTable = useMemo(() => tableView ?? (graphicHtml && /<table\b/i.test(graphicHtml)
+    ? { html: graphicHtml, index: 0, title: stripHtml(graphicTopic?.title ?? "") }
+    : null), [tableView, graphicHtml, graphicTopic?.title]);
+  const auxiliaryFullScreen = !!activeTable || (!!graphicId && graphicHtml === undefined && !graphicHtmlError && !graphicTopicError);
+  const auxiliaryHtml = useMemo(() => wrap(activeTable?.html ?? graphicHtml ?? "", wrapColors, {
     scale: textScale, dark: isDark, isFa, tableContext: "graphic",
-    tableViewer: tableView ? { index: tableView.index, title: tableView.title } : undefined,
-  }), [tableView, graphicHtml, colors, textScale, isDark, isFa]);
+    tableViewer: activeTable ? { index: activeTable.index, title: activeTable.title } : undefined,
+  }), [activeTable, graphicHtml, colors, textScale, isDark, isFa]);
 
   // -- cross-platform bridge to the injected find/goto script --------------
   // Web: a srcDoc iframe is same-origin, so the parent can call functions
@@ -953,7 +960,7 @@ function UptodateArticle() {
         : (op.context === "graphic" ? graphicTopic?.title : data?.title)) || titleParam);
       if (source) setTableView({ html: source, index: op.index!, title });
     } else if (op.type === "table-close") {
-      setTableView(null);
+      closeAuxiliary();
     } else if (op.type === "highlights" && Array.isArray(op.items)) {
       const items = op.items.filter(
         (h) => h && typeof h.id === "string" && Number.isFinite(h.start) && Number.isFinite(h.end)
@@ -1299,21 +1306,21 @@ function UptodateArticle() {
         onRequestClose={closeAuxiliary}
         supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: tableView ? colors.cardBg : "rgba(4,10,9,0.55)", padding: tableView ? 0 : 16 }}>
-          <View style={{ flex: 1, backgroundColor: colors.cardBg, borderRadius: tableView ? 0 : 18, overflow: "hidden" }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: auxiliaryFullScreen ? colors.cardBg : "rgba(4,10,9,0.55)", padding: auxiliaryFullScreen ? 0 : 16 }}>
+          <View style={{ flex: 1, backgroundColor: colors.cardBg, borderRadius: auxiliaryFullScreen ? 0 : 18, overflow: "hidden" }}>
             <View
               style={{
                 flexDirection: row,
                 alignItems: "center",
                 gap: 10,
                 paddingHorizontal: 16,
-                paddingVertical: tableView ? 4 : 12,
+                paddingVertical: auxiliaryFullScreen ? 4 : 12,
                 borderBottomWidth: 1,
                 borderBottomColor: colors.sheetLine,
               }}
             >
               <AppText accessibilityRole="header" weight="800" size={13} numberOfLines={2} style={{ flex: 1, writingDirection: "ltr", textAlign: "left" }}>
-                {tableView?.title ?? stripHtml(graphicTopic?.title ?? "")}
+                {activeTable?.title ?? stripHtml(graphicTopic?.title ?? "")}
               </AppText>
               <ChromeButton onPress={closeAuxiliary} size={44} accessibilityLabel={isFa ? "بستن جدول یا تصویر" : "Close table or graphic"}>
                 <AppText weight="800" size={14} color={colors.ink}>
@@ -1322,9 +1329,9 @@ function UptodateArticle() {
               </ChromeButton>
             </View>
 
-            {!tableView && (graphicLoading || (!!graphicTopic && graphicHtml === undefined)) ? (
+            {!activeTable && (graphicLoading || (!!graphicTopic && graphicHtml === undefined)) ? (
               <LoadingState />
-            ) : !tableView && (graphicTopicError || graphicHtmlError || !graphicTopic) ? (
+            ) : !activeTable && (graphicTopicError || graphicHtmlError || !graphicTopic) ? (
               <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
                 <AppText muted weight="600">
                   {t("uptodateGraphicLoadError")}
@@ -1332,15 +1339,15 @@ function UptodateArticle() {
               </View>
             ) : Platform.OS === "web" ? (
               <iframe
-                key={tableView ? "table" : "graphic"}
+                key={activeTable ? "table" : "graphic"}
                 ref={(node) => { auxiliaryIframeRef.current = node; }}
                 srcDoc={auxiliaryHtml}
                 style={{ flexGrow: 1, border: "none", width: "100%", height: "100%" }}
-                title={tableView?.title ?? stripHtml(graphicTopic?.title ?? "")}
+                title={activeTable?.title ?? stripHtml(graphicTopic?.title ?? "")}
               />
             ) : (
               <WebView
-                key={tableView ? "table" : "graphic"}
+                key={activeTable ? "table" : "graphic"}
                 originWhitelist={["*"]}
                 source={{ html: auxiliaryHtml }}
                 onMessage={handleAuxiliaryMessage}
