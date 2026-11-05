@@ -69,9 +69,37 @@
 | `ensure_uptodate_search_index` | — | ایندکس جست‌وجوی عنوان MySQL | [07](07-data.md) |
 | `build_search_lexicon` | `--pipeline --source` | نام فارسی داروها ← مفاهیم UpToDate برای جست‌وجوی هوشمند | [search](search/phase-1-concept-lexicon-2026-10-31.fa.md) |
 | `build_offline_package` | `uptodate\|lexicomp --out --source --part-size-mb` | ساخت بستهٔ آفلاین | [07](07-data.md) |
+| `prepare_offline_upload` | `uptodate\|lexicomp --out --source --part-size-mb --existing` | ساخت و بررسی فایل‌های قابل آپلود و راهنمای ترتیب آپلود | [07](07-data.md) |
 | `offline_bucket_cors` | `--origin --show` | تنظیم و بررسی CORS باکت | [07](07-data.md) |
 | `backup_database` | `--output-dir --name --dry-run` | بکاپ Postgres | [09](09-operations.md) |
 | `delete_guest_accounts` | — | پاک کردن حساب‌های مهمان | [07](07-data.md) |
+
+## ساخت دوبارهٔ بستهٔ UpToDate با جست‌وجوی مفهومی
+
+از پوشهٔ `backend`، با همان `OFFLINE_PACKAGE_SECRET` زمان ساخت بستهٔ قبلی و سرور:
+
+```bash
+.venv/bin/python manage.py prepare_offline_upload uptodate \
+  --source /home/amir/Documents/UpToDate \
+  --out /home/amir/offline-packages
+```
+
+این یک دستور کامل برای ساخت فایل‌های قابل آپلود است: بسته را می‌سازد، اندازه و SHA-256 و MD5 تمام قطعه‌ها را بررسی می‌کند، index را با کلید ساخت باز می‌کند و برای UpToDate وجود دادهٔ مفهومی را می‌سنجد. راهنمای نهایی در `<out>/<dataset>/UPLOAD.fa.md` ساخته می‌شود. این دستور خودش چیزی در باکت آپلود نمی‌کند و رمزگشایی تمام مقاله‌ها را انجام نمی‌دهد.
+
+برای بررسی و آماده‌سازی همان بستهٔ ساخته‌شده، بدون ساخت دوباره:
+
+```bash
+.venv/bin/python manage.py prepare_offline_upload uptodate \
+  --out /home/amir/offline-packages --existing
+```
+
+برای Lexicomp نیز همین دستور با `lexicomp` و مسیر منبع خودش قابل استفاده است. `--existing` با `--source` ترکیب نمی‌شود.
+
+خروجی جدید `search_schema: 1` دارد و واژه‌نامه، نگاشت مفهوم‌ها، اولویت پیشنهادها و همهٔ تخصص‌های مقاله را داخل index رمزگذاری‌شده نگه می‌دارد. پس از دانلود و با مجوز معتبر، این جست‌وجو به اینترنت یا دریافت مکمل نیاز ندارد. برای استفاده از آن، **کلاینت جدید اپ هم باید منتشر شود**؛ APK قدیمی صرفاً با دریافت دادهٔ تازه، الگوریتم جدید را اجرا نمی‌کند.
+
+ساخت تأییدشدهٔ ۵ نوامبر ۲۰۲۶: `uptodate-1-20261105-11f5a4`، شامل ۱۱ قطعه با مجموع ۱٬۰۸۵٬۴۸۵٬۱۰۸ بایت. ابتدا همهٔ فایل‌های پوشهٔ این build را زیر `uptodate/<build>/` آپلود کنید؛ سپس `uptodate/latest.json` محلی را جایگزین کنید. دیتابیس خام، فایل env یا کلیدها جزو آپلود نیستند. Lexicomp در این به‌روزرسانی تغییر نکرده است.
+
+گزارش ساخت و آزمون: [search/offline-package-2026-11-05.fa.md](search/offline-package-2026-11-05.fa.md). جزئیات نگهداری و جایگزینی: [13-offline-storage.md](13-offline-storage.md).
 
 ## دیپلوی و گیت
 

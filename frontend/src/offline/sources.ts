@@ -9,6 +9,17 @@ import { isUsable, renewLicense, touch, useOffline } from "./store";
 import { forgetUptodate, getImage, getTopic, searchTopics, searchTopicsPage } from "./uptodateLocal";
 import { refreshSearchSupplement } from "./uptodateSearchSupplement";
 
+// A successful package replacement must also replace answers already held
+// by React Query. Otherwise a recent search can show the old build's results
+// for another five minutes, even though the new files are installed.
+useOffline.subscribe((state, previous) => {
+  if (state.datasets.uptodate.installed?.manifest.build === previous.datasets.uptodate.installed?.manifest.build) return;
+  forgetUptodate();
+  for (const key of ["uptodate-search-page", "uptodate-topic", "uptodate-graphic-html"]) {
+    void queryClient.invalidateQueries({ queryKey: [key] });
+  }
+});
+
 /** Where the UpToDate and Lexicomp screens get their data: the package on
  * this device first, when one is installed and its license is good; the
  * online API otherwise -- and also whenever reading the package fails, so a

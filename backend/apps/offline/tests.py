@@ -2,6 +2,7 @@ import base64
 import json
 import tempfile
 import zlib
+from unittest.mock import patch
 from io import StringIO
 from pathlib import Path
 
@@ -167,6 +168,42 @@ class BuildTests(TestCase):
         with self.settings(OFFLINE_PACKAGE_SECRET=""):
             with self.assertRaises(CommandError):
                 call_command("build_offline_package", "lexicomp", "--out", str(self.out), "--source", str(self.src))
+
+    def test_prepare_upload_builds_verified_files_and_guide(self):
+        make_uptodate_snapshot(self.src)
+        _add_concept_snapshot(self.src)
+        stdout = StringIO()
+        call_command("prepare_offline_upload", "uptodate", out=str(self.out), source=str(self.src), stdout=stdout)
+        manifest = json.loads((self.out / "uptodate/latest.json").read_text())
+        guide = (self.out / "uptodate/UPLOAD.fa.md").read_text()
+        self.assertIn(manifest["build"], guide)
+        self.assertIn("latest.json LAST", stdout.getvalue())
+        self.assertNotIn(SECRET, guide + stdout.getvalue())
+
+    def test_prepare_existing_preserves_the_build_and_rejects_corrupt_parts(self):
+        make_lexicomp_snapshot(self.src)
+        manifest = build_lexicomp(self.src, self.out, pack.DEFAULT_PART_BYTES, log=_quiet)
+        before = (self.out / "lexicomp/latest.json").read_bytes()
+        with patch("apps.offline.management.commands.prepare_offline_upload.call_command") as build:
+            call_command("prepare_offline_upload", "lexicomp", out=str(self.out), existing=True, stdout=StringIO())
+            build.assert_not_called()
+        self.assertEqual((self.out / "lexicomp/latest.json").read_bytes(), before)
+        part = self.out / "lexicomp" / manifest["build"] / manifest["files"][0]["name"]
+        data = bytearray(part.read_bytes())
+        data[0] ^= 1
+        part.write_bytes(data)
+        with self.assertRaisesMessage(CommandError, "Checksum mismatch"):
+            call_command("prepare_offline_upload", "lexicomp", out=str(self.out), existing=True)
+
+    def test_prepare_existing_rejects_a_wrong_secret_and_missing_concept_metadata(self):
+        make_uptodate_snapshot(self.src)
+        build_uptodate(self.src, self.out, pack.DEFAULT_PART_BYTES, log=_quiet)
+        with self.settings(OFFLINE_PACKAGE_SECRET="wrong-secret"):
+            with self.assertRaisesMessage(CommandError, "cannot be decrypted"):
+                call_command("prepare_offline_upload", "uptodate", out=str(self.out), existing=True)
+        with self.assertRaisesMessage(CommandError, "concept metadata is missing"):
+            call_command("prepare_offline_upload", "uptodate", out=str(self.out), existing=True)
+        self.assertFalse((self.out / "uptodate/UPLOAD.fa.md").exists())
 
 
 @override_settings(OFFLINE_PACKAGE_SECRET=SECRET, OFFLINE_S3_BUCKET="", BILLING_ENFORCEMENT_ENABLED=True)

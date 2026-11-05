@@ -345,7 +345,26 @@ Lexicomp وارد هیچ دیتابیسی نمی‌شود. برای به‌رو�
 .venv/bin/python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-### ساخت
+### ساخت و آماده‌سازی برای آپلود
+
+دستور پیشنهادی از پوشهٔ `backend`:
+
+```bash
+.venv/bin/python manage.py prepare_offline_upload uptodate --out ~/offline-packages --source /home/amir/Documents/UpToDate
+.venv/bin/python manage.py prepare_offline_upload lexicomp --out ~/offline-packages
+```
+
+این دستور ابتدا `build_offline_package` را اجرا می‌کند، سپس اندازه و SHA-256 و MD5 همهٔ قطعه‌ها، تطابق دو manifest، باز شدن index و وجود نگاشت مفهومی UpToDate را بررسی می‌کند. فایل `<out>/<dataset>/UPLOAD.fa.md` مسیر دقیق فایل‌ها و ترتیب آپلود را می‌دهد؛ هیچ آپلودی انجام نمی‌شود. بررسی شامل احراز اصالت تک‌تک رکوردهای مقاله نیست.
+
+برای تأیید دوبارهٔ خروجی موجود، بدون ساخت و تغییر build:
+
+```bash
+.venv/bin/python manage.py prepare_offline_upload uptodate --out ~/offline-packages --existing
+```
+
+گزینه‌های `--source` و `--part-size-mb` مربوط به ساخت تازه‌اند؛ `--existing` از `latest.json` محلی می‌خواند. بستهٔ قدیمی UpToDate که نگاشت مفهومی ندارد رد می‌شود و باید از snapshot حاوی `search.db` دوباره ساخته شود. مقدار راز ساخت باید با سرور همان باشد.
+
+دستور سطح پایین برای فقط ساخت بسته همچنان قابل استفاده است:
 
 ```bash
 .venv/bin/python manage.py build_offline_package uptodate --out ~/offline-packages
@@ -368,17 +387,19 @@ Lexicomp وارد هیچ دیتابیسی نمی‌شود. برای به‌رو�
 ~/offline-packages/
   uptodate/
     latest.json
-    uptodate-1-20261023-5ad32e/  part-000.bin … part-010.bin, manifest.json
+    uptodate-1-20261105-11f5a4/  part-000.bin … part-010.bin, manifest.json
   lexicomp/
     latest.json
     lexicomp-202606-20261023-067e6e/  part-000.bin, manifest.json
 ```
 
+بسته‌های تازهٔ UpToDate از ۵ نوامبر ۲۰۲۶، `search_schema: 1` و دادهٔ جست‌وجوی مفهومی را داخل index دارند. برای استفاده از الگوریتم جدید، انتشار کلاینت به‌روز هم لازم است. دستور با مسیر منبع صریح در [10-commands.md](10-commands.md) و مشخصات ساخت تأییدشده در [گزارش بسته](search/offline-package-2026-11-05.fa.md) آمده است.
+
 ### آپلود
 
 ساختار پوشه‌ها را عیناً در باکت `pharmenta-dl` نگه دارید (اگر `OFFLINE_S3_PREFIX` دارید، زیر همان پیشوند):
 
-1. اول پوشهٔ نسخه را آپلود کنید: `uptodate/<build>/` با همهٔ `part-*.bin`ها.
+1. اول پوشهٔ نسخه را آپلود کنید: `uptodate/<build>/` با همهٔ `part-*.bin`ها و `manifest.json`.
 2. **آخر از همه** `uptodate/latest.json` را آپلود کنید و نسخهٔ قبلی را جایگزین کنید. اپ هر نسخه‌ای که `latest.json` بگوید دانلود می‌کند؛ اگر این فایل پیش از قطعه‌ها برسد، دانلود کاربران خطا می‌دهد.
 3. سرور `latest.json` را ۵ دقیقه کش می‌کند. بعد از آن، نسخهٔ جدید در اپ با نقطهٔ «نسخهٔ جدید» روی دکمهٔ دانلود دیده می‌شود.
 4. پوشهٔ نسخهٔ قبلی را چند روز نگه دارید تا دانلودهای نیمه‌کاره تمام شوند، بعد پاکش کنید.
