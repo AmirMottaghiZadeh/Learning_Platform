@@ -5290,5 +5290,59 @@
     "seen": 1793859048.8530774,
     "ast_hash": "ef4ff0ba2722780774ab85044f3d3e7b",
     "semantic_hash": ""
+  },
+  "docs/prototypes/uptodate-tables/build_preview.py": {
+    "mtime": 1793859768.5721815,
+    "seen": 1793860189.5962262,
+    "ast_hash": "26689adac06f03382ad63929b5fea932",
+    "semantic_hash": ""
+  },
+  "docs/prototypes/uptodate-tables/render_legacy.cjs": {
+    "mtime": 1793859768.6721804,
+    "seen": 1793860189.5962307,
+    "ast_hash": "907312ade4677292b2b5576854ecffd5",
+    "semantic_hash": ""
+  },
+  "docs/prototypes/uptodate-tables/README.fa.md": {
+    "mtime": 1793860163.8246996,
+    "seen": 1793860189.596844,
+    "ast_hash": "ee45ab9f83004a75870d6a6b6af03c0f",
+    "semantic_hash": ""
+  },
+  "docs/prototypes/uptodate-tables/compare.html": {
+    "mtime": 1793860165.2846868,
+    "seen": 1793860189.596847,
+    "ast_hash": "663a901b33f05051519a514086ee48ee",
+    "semantic_hash": ""
+  },
+  "docs/prototypes/uptodate-tables/index.html": {
+    "mtime": 1793860165.276687,
+    "seen": 1793860189.5968487,
+    "ast_hash": "66312678c80341cba91b15e21942551c",
+    "semantic_hash": ""
+  },
+  "docs/prototypes/uptodate-tables/mobile.html": {
+    "mtime": 1793860165.2886868,
+    "seen": 1793860189.5968502,
+    "ast_hash": "447ef72598979fa824182d4e9bbdce2c",
+    "semantic_hash": ""
+  },
+  "docs/prototypes/uptodate-tables/preview.template.html": {
+    "mtime": 1793860163.7047007,
+    "seen": 1793860189.5968518,
+    "ast_hash": "3c04be88568a5aa60cd74b8d9474580e",
+    "semantic_hash": ""
+  },
+  "docs/prototypes/uptodate-tables/reading.html": {
+    "mtime": 1793860165.2806869,
+    "seen": 1793860189.596853,
+    "ast_hash": "d7126f44bc7731ef5ffa5c861d91602b",
+    "semantic_hash": ""
+  },
+  "docs/prototypes/uptodate-tables/reference.html": {
+    "mtime": 1793860165.276687,
+    "seen": 1793860189.5968542,
+    "ast_hash": "66312678c80341cba91b15e21942551c",
+    "semantic_hash": ""
   }
 }
