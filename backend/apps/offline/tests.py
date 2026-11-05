@@ -21,6 +21,7 @@ from apps.lexicomp import services as lexicomp_services
 from apps.lexicomp.tests import _make_snapshot as make_lexicomp_snapshot
 from apps.uptodate import services as uptodate_services
 from apps.uptodate.tests import _make_snapshot as make_uptodate_snapshot
+from apps.uptodate.tests import _add_concept_snapshot
 
 from . import pack, storage
 from .builders import build_lexicomp, build_uptodate
@@ -124,6 +125,22 @@ class BuildTests(TestCase):
         raw = b"".join(p.read_bytes() for p in (self.out / "uptodate" / manifest["build"]).glob("part-*.bin"))
         for needle in (b"Hypertension", b"Jane Doe", b"PNG", b"Cardiovascular"):
             self.assertNotIn(needle, raw)
+
+    def test_uptodate_search_index_keeps_concepts_all_specialties_and_plain_titles(self):
+        make_uptodate_snapshot(self.src)
+        _add_concept_snapshot(self.src)
+        manifest = build_uptodate(self.src, self.out, pack.DEFAULT_PART_BYTES, log=_quiet)
+        key, build_dir, index = _index(self.out, manifest)
+        self.assertEqual(index["search_schema"], 1)
+        self.assertIn(["h pylori", "1", 100], index["search"]["queries"])
+        self.assertEqual(index["search"]["topics"]["1"][0].split(",")[0], "140619")
+        at = index["topics"]["ids"].index("140619")
+        self.assertEqual(index["topics"]["titles"][at], "Treatment of Helicobacter pylori infection in adults")
+        self.assertEqual([index["sections"][s] for s in index["topics"]["memberships"][at]], ["Family Medicine", "Gastroenterology"])
+        at = index["articles"]["ids"].index("140619")
+        article = json.loads(zlib.decompress(_record(build_dir, key, index["articles"]["locs"], at)))
+        self.assertEqual(article["sections"], ["Family Medicine", "Gastroenterology"])
+        self.assertNotIn("<i>", article["title"])
 
     def test_lexicomp_index_and_monographs(self):
         make_lexicomp_snapshot(self.src)

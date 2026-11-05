@@ -5,6 +5,7 @@ class UptodateTopicSerializer(serializers.Serializer):
     id = serializers.CharField()
     title = serializers.CharField()
     section = serializers.CharField(allow_blank=True)
+    sections = serializers.ListField(child=serializers.CharField(), required=False)
     version = serializers.CharField(allow_blank=True)
     # "Feb 11, 2026" -- the topic's own last-updated date, or "" when the
     # header doesn't carry one.
@@ -12,7 +13,7 @@ class UptodateTopicSerializer(serializers.Serializer):
 
 
 class UptodateSearchResultSerializer(UptodateTopicSerializer):
-    # Always empty: the search reads titles only. Kept for app builds up to
+    # Always empty: snippets are not returned. Kept for app builds up to
     # 0.1.0, which show it under the title when it has text.
     snippet = serializers.CharField(allow_blank=True)
     # The title-word starts the query was matched with -- what the app
@@ -36,6 +37,7 @@ class UptodateSearchPageSerializer(serializers.Serializer):
     sections = UptodateSectionCountSerializer(many=True)
     terms = serializers.ListField(child=serializers.CharField())
     corrected = serializers.CharField(allow_blank=True)
+    suggestions = serializers.ListField(child=serializers.DictField(child=serializers.CharField()), default=list)
     results = UptodateSearchResultSerializer(many=True)
 
 

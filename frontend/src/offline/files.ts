@@ -58,6 +58,13 @@ export async function readRange(
   return handle.readBytes(length);
 }
 
+/** Small authenticated supplements; package parts are still downloaded separately. */
+export async function writePart(dataset: OfflineDataset, build: string, name: string, bytes: Uint8Array) {
+  closeHandles(`${dataset}/${build}/${name}`);
+  ensureBuildDir(dataset, build);
+  partFile(dataset, build, name).write(bytes);
+}
+
 function closeHandles(prefix: string) {
   for (const [id, handle] of handles) {
     if (id.startsWith(prefix)) {

@@ -26,6 +26,8 @@ import sqlite3
 from pathlib import Path
 
 from apps.uptodate import services as uptodate_services
+from apps.uptodate.search_catalog import SearchCatalog
+from apps.uptodate.text import plain_title
 
 from .pack import PackWriter, pack_json, pack_text
 
@@ -80,7 +82,7 @@ def _porter_terms(titles: list[str]) -> list[str]:
     return [" ".join(t) for t in terms]
 
 
-def _top_sections(toc: sqlite3.Connection) -> dict[str, str]:
+def _top_sections(toc: sqlite3.Connection) -> dict[str, list[str]]:
     """contentId -> title of its top-level TOC ancestor, like
     `uptodate.services._section_for`, for the whole tree at once."""
     nodes = {row["id"]: (row["title"], row["parentId"]) for row in toc.execute("SELECT id, title, parentId FROM toc")}
@@ -107,8 +109,9 @@ def _top_sections(toc: sqlite3.Connection) -> dict[str, str]:
     sections = {}
     for row in toc.execute("SELECT contentId, parentId FROM toc WHERE contentId IS NOT NULL ORDER BY rowid"):
         cid = str(row["contentId"])
-        if cid not in sections:
-            sections[cid] = top_title(row["parentId"])
+        name = top_title(row["parentId"])
+        if name and name not in sections.setdefault(cid, []):
+            sections[cid].append(name)
     return sections
 
 
@@ -117,7 +120,24 @@ def build_uptodate(source_dir, out_dir, part_bytes, log=print) -> dict:
     version = _info_version(src)
     fts, content = _ro(src / "fts.db"), _ro(src / "content.db")
     toc_path, images_path = src / "toc.db", src / "images.db"
-    sections = _top_sections(_ro(toc_path)) if toc_path.is_file() else {}
+    if toc_path.is_file():
+        toc = _ro(toc_path)
+        try:
+            sections = _top_sections(toc)
+        finally:
+            toc.close()
+    else:
+        sections = {}
+    search = SearchCatalog([], {})
+    if (src / "search.db").is_file():
+        db = _ro(src / "search.db")
+        try:
+            search = SearchCatalog.from_rows(
+                db.execute("SELECT id, word, weight FROM query ORDER BY rowid"),
+                db.execute("SELECT id, x_topic_hits, a_topic_hits, p_topic_hits, i_topic_hits FROM query_topic"),
+            )
+        finally:
+            db.close()
     writer = PackWriter(out_dir, "uptodate", version, part_bytes)
     log(f"build {writer.build}")
 
@@ -136,19 +156,21 @@ def build_uptodate(source_dir, out_dir, part_bytes, log=print) -> dict:
     total = content.execute("SELECT count(*) FROM content").fetchone()[0]
     for n, row in enumerate(content.execute("SELECT id, gzip, version FROM content ORDER BY rowid"), 1):
         cid = str(row["id"])
-        article = uptodate_services.article_from_row(cid, row["gzip"], row["version"] or version, sections.get(cid, ""))
+        names = sections.get(cid, [])
+        article = uptodate_services.article_from_row(cid, row["gzip"], row["version"] or version, next(iter(names), ""))
         if article is None:
             continue
+        article["sections"] = names
         article_ids.append(cid)
         article_locs.extend(writer.add(pack_json(article)))
         if n % 5000 == 0 or n == total:
             log(f"articles {n}/{total}")
 
-    # Searchable topics (type 1) with the text their snippet is cut from, and
-    # each row's token count, which FTS5's bm25 ranks by (shorter first) --
-    # so the app can order title matches the way the server does.
+    # Searchable topics (type 1). Heads, Porter terms and token counts remain
+    # in the index for older app builds; current search uses concepts/titles.
     sizes = {row["id"]: sum(_varints(row["sz"])) for row in fts.execute("SELECT id, sz FROM fts_docsize")}
     topic_ids, titles, topic_sections, updated, head_locs, lengths = [], [], [], [], [], []
+    memberships = []
     seen = set()
     rows = fts.execute(
         "SELECT rowid, title, contentId, substr(content, 1, ?) AS head FROM fts WHERE type = ? ORDER BY rowid",
@@ -161,9 +183,11 @@ def build_uptodate(source_dir, out_dir, part_bytes, log=print) -> dict:
         seen.add(cid)
         head = row["head"] or ""
         topic_ids.append(cid)
-        titles.append(row["title"] or "")
+        titles.append(plain_title(row["title"]))
         lengths.append(sizes.get(row["rowid"], 0))
-        topic_sections.append(section_index(sections.get(cid, "")))
+        names = sections.get(cid, [])
+        topic_sections.append(section_index(next(iter(names), "")))
+        memberships.append([section_index(name) for name in names])
         updated.append(uptodate_services._updated_from_text(head.replace("\xa0", " ")))
         head_locs.extend(writer.add(pack_text(uptodate_services.snippet_source(head, row["title"] or ""))))
     log(f"topics {len(topic_ids)}")
@@ -185,10 +209,13 @@ def build_uptodate(source_dir, out_dir, part_bytes, log=print) -> dict:
         "dataset": "uptodate",
         "version": version,
         "sections": section_names,
+        "search_schema": 1 if search.queries else 0,
+        "search": search.export(),
         "topics": {
             "ids": topic_ids,
             "titles": titles,
             "sections": topic_sections,
+            "memberships": memberships,
             "updated": updated,
             "heads": head_locs,
             "terms": _porter_terms(titles),

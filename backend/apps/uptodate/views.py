@@ -1,6 +1,8 @@
 from hashlib import sha256
 import re
 
+from django.http import HttpResponse
+
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -45,9 +47,8 @@ class TopicSearchView(APIView):
                 "search",
                 str,
                 description=(
-                    "Topic title query: every word must start a word of the title, or from four letters "
-                    "sit inside one; a misspelt word is corrected to the closest title word. Article text "
-                    "is never searched."
+                    "Snapshot concepts, aliases and curated topic associations, with title matching "
+                    "and typo correction as fallback. Article body text is never searched."
                 ),
             ),
             OpenApiParameter("limit", int, description="Max results (default 25, at most 100)."),
@@ -57,7 +58,7 @@ class TopicSearchView(APIView):
                 "paged",
                 int,
                 description=(
-                    "1: answer {total, sections, terms, corrected, results}, results being one page; "
+                    "1: answer {total, all, sections, terms, corrected, suggestions, results}; "
                     "otherwise the first page alone, as a list (app builds up to 0.1.x)."
                 ),
             ),
@@ -77,6 +78,37 @@ class TopicSearchView(APIView):
             "total": 0, "all": 0, "sections": [], "terms": [], "corrected": "", "results": [],
         }
         return Response(UptodateSearchPageSerializer(page).data)
+
+
+class SearchMetadataView(APIView):
+    """Encrypted search-only upgrade for an installed older offline package."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(parameters=[OpenApiParameter("build", str), OpenApiParameter("version", str)],
+                   responses={(200, "application/octet-stream"): bytes})
+    def get(self, request):
+        from apps.offline import services as offline_services
+        from apps.offline.pack import PackError, build_matches_dataset, derive_key, seal
+
+        build = request.query_params.get("build", "")
+        if not build_matches_dataset(build, "uptodate"):
+            raise ValidationError("A valid UpToDate package build is required.")
+        if not offline_services.is_entitled(request.user, "uptodate"):
+            raise PlatformAPIError("Offline access requires a paid plan.", code="PREMIUM_REQUIRED", status_code=402)
+        _require_available()
+        version = services.snapshot_version()
+        if request.query_params.get("version", "") != version or not build.startswith(f"uptodate-{version or 'v'}-"):
+            raise PlatformAPIError("The installed snapshot has a different version.", code="PACKAGE_REPLACED", status_code=409)
+        if not services._search_catalog(version).queries:
+            raise PlatformAPIError("The snapshot search catalog is unavailable.", code="FEATURE_NOT_AVAILABLE", status_code=503)
+        try:
+            payload = seal(derive_key(build), services.search_metadata_record(version))
+        except PackError:
+            raise PlatformAPIError("Offline keys are not configured.", code="FEATURE_NOT_AVAILABLE", status_code=503)
+        response = HttpResponse(payload, content_type="application/octet-stream")
+        response["Cache-Control"] = "private, no-store"
+        return response
 
 
 class TopicDetailView(APIView):

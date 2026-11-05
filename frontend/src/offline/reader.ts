@@ -13,6 +13,7 @@ const CHECK = "pharmenta-offline";
 /** Opens records of one installed build: reads the bytes by offset,
  * decrypts, and inflates JSON/text records. */
 export class PackageReader {
+  private cachedIndex?: Promise<unknown>;
   constructor(
     readonly dataset: OfflineDataset,
     readonly manifest: OfflineManifest,
@@ -41,8 +42,17 @@ export class PackageReader {
     return JSON.parse(await this.text(loc)) as T;
   }
 
+  /** A supplement uses the installed build's existing AES key. */
+  async decodeJson<T>(record: Uint8Array): Promise<T> {
+    return JSON.parse(strFromU8(unzlibSync(await openRecord(this.key, record)))) as T;
+  }
+
   index<T>(): Promise<T> {
-    return this.json<T>(this.manifest.index);
+    if (!this.cachedIndex) {
+      this.cachedIndex = this.json<unknown>(this.manifest.index);
+      this.cachedIndex.catch(() => { this.cachedIndex = undefined; });
+    }
+    return this.cachedIndex as Promise<T>;
   }
 
   /** Throws unless the key opens this build's check record. */

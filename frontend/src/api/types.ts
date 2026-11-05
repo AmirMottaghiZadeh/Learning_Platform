@@ -581,13 +581,14 @@ export interface UptodateTopic {
   id: string;
   title: string;
   section: string;
+  sections?: string[];
   version: string;
   /** the topic's own "last updated" date ("Feb 11, 2026"), or "" */
   updated: string;
 }
 
 export interface UptodateSearchResult extends UptodateTopic {
-  /** always empty now: the search reads titles only */
+  /** always empty: snippets are not returned */
   snippet: string;
   /** the title-word starts the query was matched with, to highlight */
   terms?: string[];
@@ -595,7 +596,7 @@ export interface UptodateSearchResult extends UptodateTopic {
   corrected?: string;
 }
 
-/** One page of the title search (`paged=1`). */
+/** One page of the topic search (`paged=1`). */
 export interface UptodateSearchPage {
   /** every match (in the section asked for, if one was), not just this page */
   total: number;
@@ -605,6 +606,7 @@ export interface UptodateSearchPage {
   sections: { name: string; count: number }[];
   terms: string[];
   corrected: string;
+  suggestions?: { query: string; label: string }[];
   results: UptodateSearchResult[];
 }
 

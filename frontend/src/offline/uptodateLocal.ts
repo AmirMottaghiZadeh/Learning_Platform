@@ -1,19 +1,25 @@
 import type { SearchPageArgs } from "@/api/endpoints";
 import type { UptodateArticle, UptodateImage, UptodateSearchPage, UptodateSearchResult } from "@/api/types";
+import { stripHtml } from "@/utils/html";
 
 import type { Locator, PackageReader } from "./reader";
+import { SearchCatalog, type SearchCatalogData } from "./uptodateSearchCatalog";
+import { loadSearchSupplement } from "./uptodateSearchSupplement";
 
 /** UpToDate answered from the installed package, in the API's own shapes.
- * The search mirrors apps/uptodate/services.py's title search line for line
+ * The search mirrors apps/uptodate/services.py's concepts and title fallback
  * -- the same matches, corrections and order; articles and images as stored. */
 
 type UptodateIndex = {
   version: string;
   sections: string[];
+  search_schema?: number;
+  search?: SearchCatalogData;
   topics: {
     ids: string[];
     titles: string[];
     sections: number[];
+    memberships?: number[][];
     updated: string[];
   };
   articles: { ids: string[]; locs: number[] };
@@ -39,6 +45,9 @@ type Prepared = {
   infixes: Map<string, string[]>;
   articleAt: Map<string, number>;
   imageAt: Map<string, number>;
+  topicAt: Map<string, number>;
+  catalog: SearchCatalog;
+  memberships: string[][];
 };
 
 const cache = new Map<string, Promise<Prepared>>();
@@ -47,14 +56,22 @@ function prepared(reader: PackageReader): Promise<Prepared> {
   const build = reader.manifest.build;
   let entry = cache.get(build);
   if (!entry) {
-    entry = reader.index<UptodateIndex>().then((index) => ({
-      index,
-      titles: buildTitleIndex(index.topics.titles),
-      terms: new Map(),
-      infixes: new Map(),
-      articleAt: new Map(index.articles.ids.map((id, i) => [id, i])),
-      imageAt: new Map(index.images.ids.map((id, i) => [id, i])),
-    }));
+    entry = reader.index<UptodateIndex>().then(async (index) => {
+      index.topics.titles = index.topics.titles.map(stripHtml);
+      const extra = index.search_schema === 1 ? null : await loadSearchSupplement(reader, index.version);
+      return {
+        index,
+        titles: buildTitleIndex(index.topics.titles),
+        terms: new Map(), infixes: new Map(),
+        articleAt: new Map(index.articles.ids.map((id, i) => [id, i])),
+        imageAt: new Map(index.images.ids.map((id, i) => [id, i])),
+        topicAt: new Map(index.topics.ids.map((id, i) => [id, i])),
+        catalog: new SearchCatalog(extra?.search ?? index.search),
+        memberships: index.topics.ids.map((id, i) => [...new Set(extra?.memberships[id]
+          ?? index.topics.memberships?.[i]?.map((n) => index.sections[n]).filter(Boolean)
+          ?? [index.sections[index.topics.sections[i]]].filter(Boolean))]),
+      };
+    });
     cache.clear(); // one build at a time
     cache.set(build, entry);
     entry.catch(() => cache.delete(build));
@@ -72,11 +89,10 @@ export function searchWords(raw: string): string[] {
 // ---- Title search: services.py's, step by step ----
 
 const TITLE_WORD_RE = /[a-z0-9]+/g;
-const TAG_RE = /<[^>]*>/g;
 
 export function titleWords(title: string): string[] {
   // some titles italicise a name: "<i>Chlamydia pneumoniae</i>"
-  return (title || "").replace(TAG_RE, " ").toLowerCase().match(TITLE_WORD_RE) ?? [];
+  return stripHtml(title).toLowerCase().match(TITLE_WORD_RE) ?? [];
 }
 
 export function buildTitleIndex(titles: string[]): TitleIndex {
@@ -288,11 +304,13 @@ export async function searchTopicsPage(
   query: string,
   { limit = 30, offset = 0, section = "" }: SearchPageArgs = {},
 ): Promise<UptodateSearchPage> {
-  const empty: UptodateSearchPage = { total: 0, all: 0, sections: [], terms: [], corrected: "", results: [] };
+  const empty: UptodateSearchPage = { total: 0, all: 0, sections: [], terms: [], corrected: "", suggestions: [], results: [] };
   const words = searchWords(query);
   if (!words.length) return empty;
   const prep = await prepared(reader);
   const { index, titles: titleIndex } = prep;
+  const suggestions = prep.catalog.suggest(query, prep.topicAt);
+  const { concept, remaining } = prep.catalog.resolve(query);
 
   const matched = words.map((word) => {
     const key = word.toLowerCase();
@@ -304,7 +322,7 @@ export async function searchTopicsPage(
     return found;
   });
   const terms = [...new Set(matched.map(([t]) => t))];
-  const corrected = matched.some(([, , fix]) => fix) ? matched.map(([, w]) => w).join(" ") : "";
+  let corrected = matched.some(([, , fix]) => fix) ? matched.map(([, w]) => w).join(" ") : "";
 
   // the titles with every term (`terms` is never empty)
   let found: number[] = [];
@@ -315,19 +333,28 @@ export async function searchTopicsPage(
     }
     found = k === 0 ? [...having] : found.filter((i) => having.has(i));
   });
-  if (!found.length) return { ...empty, terms, corrected };
-  const { topics, sections } = index;
+  let curated: number[] = [];
+  if (concept !== null) {
+    const constraints = remaining.map((w) => term(w, prep)[0]);
+    curated = [...new Set(prep.catalog.hits(concept, query)
+      .map((id) => prep.topicAt.get(id)).filter((i): i is number => i !== undefined)
+      .filter((i) => constraints.every((t) => titleIndex.words[i].some((word) => word.includes(t)))))];
+    found = found.filter((i) => words.every((w) => titleIndex.words[i].includes(w.toLowerCase())));
+    corrected = "";
+  }
+  if (!found.length && !curated.length) return { ...empty, terms, corrected, suggestions };
+  const { topics } = index;
   const keys = new Map(found.map((i) => [i, rank(titleIndex, topics.titles, i, matched)]));
-  let ranked = found.sort((a, b) => compareKeys(keys.get(a)!, keys.get(b)!));
-  const sectionOf = (i: number) => sections[topics.sections[i]] ?? "";
+  const curatedSet = new Set(curated);
+  let ranked = [...curated, ...found.filter((i) => !curatedSet.has(i)).sort((a, b) => compareKeys(keys.get(a)!, keys.get(b)!))];
+  const sectionOf = (i: number) => section || prep.memberships[i][0] || "";
 
   const counts = new Map<string, number>();
   for (const i of ranked) {
-    const name = sectionOf(i);
-    if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
+    for (const name of prep.memberships[i]) if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
   }
   const all = ranked.length;
-  if (section) ranked = ranked.filter((i) => sectionOf(i) === section);
+  if (section) ranked = ranked.filter((i) => prep.memberships[i].includes(section));
   const page = ranked.slice(Math.max(0, offset), Math.max(0, offset) + Math.max(0, limit));
 
   return {
@@ -338,10 +365,12 @@ export async function searchTopicsPage(
       .map(([name, count]) => ({ name, count })),
     terms,
     corrected,
+    suggestions,
     results: page.map((i) => ({
       id: topics.ids[i],
-      title: topics.titles[i],
+      title: stripHtml(topics.titles[i]),
       section: sectionOf(i),
+      sections: prep.memberships[i],
       version: index.version,
       snippet: "",
       updated: topics.updated[i] ?? "",
@@ -357,9 +386,12 @@ export async function searchTopics(reader: PackageReader, query: string, limit =
 
 /** null when the package has no such article. */
 export async function getTopic(reader: PackageReader, id: string): Promise<UptodateArticle | null> {
-  const { index, articleAt } = await prepared(reader);
+  const { index, articleAt, topicAt, memberships } = await prepared(reader);
   const i = articleAt.get(String(id));
-  return i === undefined ? null : reader.json<UptodateArticle>(loc(index.articles.locs, i));
+  if (i === undefined) return null;
+  const article = await reader.json<UptodateArticle>(loc(index.articles.locs, i));
+  const topic = topicAt.get(String(id));
+  return { ...article, title: stripHtml(article.title), ...(topic === undefined ? {} : { sections: memberships[topic] }) };
 }
 
 const IMAGE_TYPES = new Set(["png", "jpeg", "gif", "webp"]);

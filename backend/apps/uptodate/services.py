@@ -29,6 +29,7 @@ SQLite layout (`settings.UPTODATE_DB_DIR`):
 import base64
 import bisect
 import json
+import logging
 import re
 import sqlite3
 import threading
@@ -41,6 +42,11 @@ import dj_database_url
 import pymysql
 import pymysql.cursors
 from django.conf import settings
+
+from .search_catalog import SearchCatalog
+from .text import plain_title
+
+logger = logging.getLogger(__name__)
 
 _LOCK = threading.Lock()
 _CONNS: dict[str, sqlite3.Connection] = {}
@@ -121,6 +127,9 @@ def close_all() -> None:
     _title_index.cache_clear()
     _term.cache_clear()
     _infixed.cache_clear()
+    _search_catalog.cache_clear()
+    search_metadata.cache_clear()
+    search_metadata_record.cache_clear()
     _SECTIONS.clear()
 
 
@@ -183,9 +192,9 @@ def snippet_source(content: str, title: str = "") -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-# contentId -> title of its top-level TOC ancestor ("Cardiovascular Medicine"),
+# contentId -> all top-level TOC ancestors ("Cardiovascular Medicine", ...),
 # filled in as topics are looked up; emptied with the connections.
-_SECTIONS: dict[str, str] = {}
+_SECTIONS: dict[str, list[str]] = {}
 # ids per IN (...) query
 _SECTION_BATCH = 500
 
@@ -206,19 +215,18 @@ def _toc_rows(sql_sqlite: str, sql_mysql: str, ids: list) -> list[dict]:
     return rows
 
 
-def _lookup_sections(content_ids: list[str]) -> dict[str, str]:
+def _lookup_sections(content_ids: list[str]) -> dict[str, list[str]]:
     """Each topic's section, a level of the tree per query: a handful of
     queries for any number of topics."""
-    parent: dict[str, object] = {}
+    parent: dict[str, list] = {}
     for row in _toc_rows(
         "SELECT contentId, parentId FROM toc WHERE contentId IN ({marks})",
         "SELECT contentId, parentId FROM toc WHERE contentId IN ({marks})",
         content_ids,
     ):
-        # the first place a topic sits in the tree, as one lookup reads it
-        parent.setdefault(str(row["contentId"]), row["parentId"])
+        parent.setdefault(str(row["contentId"]), []).append(row["parentId"])
     nodes: dict = {}
-    wanted = {pid for pid in parent.values() if pid}
+    wanted = {pid for parents in parent.values() for pid in parents if pid}
     while wanted:
         rows = _toc_rows(
             "SELECT id, title, parentId FROM toc WHERE id IN ({marks})",
@@ -241,19 +249,25 @@ def _lookup_sections(content_ids: list[str]) -> dict[str, str]:
             pid = node[1]
         return ""
 
-    return {cid: top(parent.get(cid)) for cid in content_ids}
+    return {cid: list(dict.fromkeys(name for pid in parent.get(cid, []) if (name := top(pid))))
+            for cid in content_ids}
 
 
-def _sections_for(content_ids) -> dict[str, str]:
-    """Top-level TOC ancestor title per article, e.g. 'Cardiovascular Medicine'."""
+def _section_memberships_for(content_ids) -> dict[str, list[str]]:
+    """Every top-level TOC ancestor per article, deduplicated across paths."""
     content_ids = [str(c) for c in content_ids]
     missing = [c for c in dict.fromkeys(content_ids) if c not in _SECTIONS]
     if missing:
         try:
             _SECTIONS.update(_lookup_sections(missing))
         except sqlite3.OperationalError:
-            return {c: _SECTIONS.get(c, "") for c in content_ids}
-    return {c: _SECTIONS.get(c, "") for c in content_ids}
+            return {c: _SECTIONS.get(c, []) for c in content_ids}
+    return {c: _SECTIONS.get(c, []) for c in content_ids}
+
+
+def _sections_for(content_ids) -> dict[str, str]:
+    """Compatibility display label; filtering uses all memberships."""
+    return {cid: next(iter(names), "") for cid, names in _section_memberships_for(content_ids).items()}
 
 
 def _section_for(content_id: str) -> str:
@@ -262,18 +276,17 @@ def _section_for(content_id: str) -> str:
 
 # ---- Title search ---------------------------------------------------------
 #
-# The search reads topic titles only -- never the article text. Every title
+# The fallback reads topic titles -- never article text. Every title
 # is held in memory (one read per snapshot), so SQLite and MySQL answer
 # alike, and the offline package's search (frontend
 # src/offline/uptodateLocal.ts) mirrors this section line for line.
 
 _TITLE_WORD_RE = re.compile(r"[a-z0-9]+")
-_TAG_RE = re.compile(r"<[^>]*>")
 
 
 def _title_words(title: str) -> list[str]:
     # some titles italicise a name: "<i>Chlamydia pneumoniae</i>"
-    return _TITLE_WORD_RE.findall(_TAG_RE.sub(" ", title or "").lower())
+    return _TITLE_WORD_RE.findall(plain_title(title).lower())
 
 
 @dataclass
@@ -304,7 +317,7 @@ def build_title_index(rows) -> TitleIndex:
         i = len(ids)
         rowids.append(rowid)
         ids.append(str(content_id))
-        titles.append(title or "")
+        titles.append(plain_title(title))
         title_words = _title_words(title)
         words.append(title_words)
         for word in dict.fromkeys(title_words):
@@ -514,20 +527,75 @@ def _updated_dates(index: TitleIndex, positions: list[int]) -> None:
         index.updated[row["rowid"]] = _updated_from_text((row["head"] or "").replace("\xa0", " "))
 
 
+@lru_cache(maxsize=1)
+def _search_catalog(version: str) -> SearchCatalog:
+    if not _using_mysql() and not (_dir() / "search.db").is_file():
+        return SearchCatalog([], {})
+    try:
+        if _using_mysql():
+            with _mysql_conn().cursor() as cur:
+                cur.execute("SELECT id, word, weight FROM search_query ORDER BY rowid")
+                queries = [(r["id"], r["word"], r["weight"]) for r in cur.fetchall()]
+                cur.execute("SELECT id, x_topic_hits, a_topic_hits, p_topic_hits, i_topic_hits FROM search_query_topic")
+                topics = [(r["id"], r["x_topic_hits"], r["a_topic_hits"], r["p_topic_hits"], r["i_topic_hits"])
+                          for r in cur.fetchall()]
+        else:
+            conn = _sqlite_conn("search")
+            queries = conn.execute("SELECT id, word, weight FROM query ORDER BY rowid").fetchall()
+            topics = conn.execute("SELECT id, x_topic_hits, a_topic_hits, p_topic_hits, i_topic_hits FROM query_topic").fetchall()
+        return SearchCatalog.from_rows(queries, topics)
+    except (sqlite3.OperationalError, pymysql.err.ProgrammingError) as exc:
+        # Older mirrors can lack these optional tables. Do not mask network,
+        # permission or other operational failures as an empty catalog.
+        if isinstance(exc, pymysql.err.ProgrammingError) and exc.args[0] != 1146:
+            raise
+        logger.warning("UpToDate search catalog unavailable: %s", exc)
+        return SearchCatalog([], {})
+
+
+@lru_cache(maxsize=1)
+def search_metadata(version: str) -> dict:
+    """Small supplement for old packages; never contains article bodies."""
+    index = _title_index(version)
+    return {
+        "schema": 1, "version": version,
+        "memberships": _section_memberships_for(index.ids),
+        "search": _search_catalog(version).export(),
+    }
+
+
+@lru_cache(maxsize=1)
+def search_metadata_record(version: str) -> bytes:
+    # Avoid allocating both a ~58 MB JSON string and its UTF-8 copy on the
+    # API worker. The cached result is ~15 MB for the current full snapshot.
+    compressor = zlib.compressobj()
+    chunks = []
+    for fragment in json.JSONEncoder(ensure_ascii=False, separators=(",", ":")).iterencode(search_metadata(version)):
+        chunk = compressor.compress(fragment.encode())
+        if chunk:
+            chunks.append(chunk)
+    chunks.append(compressor.flush())
+    return b"".join(chunks)
+
+
 def search_page(query: str, limit: int = 25, offset: int = 0, section: str = "") -> dict:
-    """Every topic article whose title has every query word -- at the start
-    of a title word, or inside one (from MIN_INFIX letters), a misspelt word
-    corrected to the closest title word -- best first, one page of them.
-    Only titles are searched. `section` keeps only that section's topics
-    (`total` counts those); `all` and `sections` count every match, and per
-    section, whatever `section` is."""
-    empty = {"total": 0, "all": 0, "sections": [], "terms": [], "corrected": "", "results": []}
+    """Curated snapshot concept hits, followed by direct title matches.
+
+    Unrecognized queries retain title prefix/infix matching and typo correction.
+    A specialty matches any TOC membership. Counts deduplicate articles within
+    each specialty, so their sum can exceed `all`. Bodies are never searched.
+    """
+    empty = {"total": 0, "all": 0, "sections": [], "terms": [], "corrected": "", "suggestions": [], "results": []}
     words = _search_words(query)
     if not words:
         return empty
     limit, offset = max(0, int(limit)), max(0, int(offset))
     version = snapshot_version()
     index = _title_index(version)
+    catalog = _search_catalog(version)
+    positions = {cid: i for i, cid in enumerate(index.ids)}
+    suggestions = catalog.suggest(query, positions)
+    concept, remaining, _ = catalog.resolve(query)
 
     matched = [_term(word, version) for word in words]
     terms = list(dict.fromkeys(term for term, _, _ in matched))
@@ -541,19 +609,30 @@ def search_page(query: str, limit: int = 25, offset: int = 0, section: str = "")
         for word in _infixed(term, version):
             having.update(index.postings[word])
         found = having if found is None else found & having
-        if not found:
-            return {**empty, "terms": terms, "corrected": corrected}
-    ranked = sorted(found, key=lambda i: _rank(index, i, matched))
+    found = found or set()
+    curated = []
+    if concept is not None:
+        constraints = [_term(word, version)[0] for word in remaining]
+        curated = [positions[cid] for cid in catalog.hits(concept, query) if cid in positions
+                   and all(any(t in word for word in index.words[positions[cid]]) for t in constraints)]
+        # A known abbreviation must not expand into unrelated word prefixes:
+        # 'h pylori' is not 'hypertrophic pyloric stenosis'. Keep whole-word
+        # direct title matches as a supplement to the snapshot associations.
+        found = {i for i in found if all(word.lower() in index.words[i] for word in words)}
+        corrected = ""
+    curated = list(dict.fromkeys(curated))
+    ranked = curated + sorted(found - set(curated), key=lambda i: _rank(index, i, matched))
+    if not ranked:
+        return {**empty, "terms": terms, "corrected": corrected, "suggestions": suggestions}
 
-    sections = _sections_for(index.ids[i] for i in ranked)
+    sections = _section_memberships_for(index.ids[i] for i in ranked)
     counts: dict[str, int] = {}
     for i in ranked:
-        name = sections[index.ids[i]]
-        if name:
+        for name in sections[index.ids[i]]:
             counts[name] = counts.get(name, 0) + 1
     every = len(ranked)
     if section:
-        ranked = [i for i in ranked if sections[index.ids[i]] == section]
+        ranked = [i for i in ranked if section in sections[index.ids[i]]]
     page = ranked[offset:offset + limit]
 
     _updated_dates(index, page)
@@ -563,11 +642,13 @@ def search_page(query: str, limit: int = 25, offset: int = 0, section: str = "")
         "sections": [{"name": name, "count": count} for name, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))],
         "terms": terms,
         "corrected": corrected,
+        "suggestions": suggestions,
         "results": [
             {
                 "id": index.ids[i],
                 "title": index.titles[i],
-                "section": sections[index.ids[i]],
+                "section": section or next(iter(sections[index.ids[i]]), ""),
+                "sections": sections[index.ids[i]],
                 "version": version,
                 "snippet": "",
                 "updated": index.updated.get(index.rowids[i], ""),
@@ -597,7 +678,10 @@ def get_topic(content_id: str) -> dict | None:
         ).fetchone()
     if not row:
         return None
-    return article_from_row(content_id, row["gzip"], row["version"], _section_for(content_id))
+    article = article_from_row(content_id, row["gzip"], row["version"], _section_for(content_id))
+    if article is not None:
+        article["sections"] = _section_memberships_for([content_id])[content_id]
+    return article
 
 
 def article_from_row(content_id: str, blob: bytes, version, section: str) -> dict | None:
@@ -614,7 +698,7 @@ def article_from_row(content_id: str, blob: bytes, version, section: str) -> dic
                 contributors.append(person["name"])
     return {
         "id": content_id,
-        "title": doc.get("title", ""),
+        "title": plain_title(doc.get("title", "")),
         "section": section,
         "contributors": contributors,
         "outline_html": doc.get("outlineHtml", ""),

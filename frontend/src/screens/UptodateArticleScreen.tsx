@@ -16,6 +16,7 @@ import { TEXT_SCALES, scaleStep, useReader } from "@/store/reader";
 import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
+import { stripHtml } from "@/utils/html";
 import {
   NumberedOutlineNode,
   RelatedGroup,
@@ -36,6 +37,42 @@ type FindResult = { count: number; current: number };
 // instead calls these functions directly and reads the return value, since a
 // srcDoc iframe is same-origin and synchronously callable).
 const FIND_SCRIPT = `
+// Some imported references store italic markup as escaped text. Repair only
+// known inline formatting in text nodes; never interpret attributes or alter
+// links, scripts, tables, clinical comparison symbols or literal code blocks.
+function __utdRepairInlineMarkup() {
+  var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+  var nodes = [], node;
+  while ((node = walker.nextNode())) {
+    var excluded = false;
+    for (var parent = node.parentElement; parent; parent = parent.parentElement) {
+      if (/^(SCRIPT|STYLE|CODE|PRE|TEXTAREA|NOSCRIPT)$/.test(parent.tagName)) { excluded = true; break; }
+    }
+    if (!excluded) nodes.push(node);
+  }
+  nodes.forEach(function (textNode) {
+    var text = textNode.nodeValue.replace(/&(?:amp;)*lt;(\\/?(?:i|em|b|strong|sub|sup)\\s*)&(?:amp;)*gt;/gi, "<$1>");
+    var token = /<(\\/?)(i|em|b|strong|sub|sup)\\s*>/gi;
+    if (!token.test(text)) return;
+    token.lastIndex = 0;
+    var fragment = document.createDocumentFragment(), stack = [fragment], tags = [], last = 0, match;
+    while ((match = token.exec(text))) {
+      stack[stack.length - 1].appendChild(document.createTextNode(text.slice(last, match.index)));
+      var tag = match[2].toLowerCase();
+      if (match[1]) {
+        var at = tags.lastIndexOf(tag);
+        if (at >= 0) { tags.length = at; stack.length = at + 1; }
+      } else {
+        var element = document.createElement(tag);
+        stack[stack.length - 1].appendChild(element);
+        stack.push(element); tags.push(tag);
+      }
+      last = match.index + match[0].length;
+    }
+    stack[stack.length - 1].appendChild(document.createTextNode(text.slice(last)));
+    textNode.parentNode.replaceChild(fragment, textNode);
+  });
+}
 window.__utdMatches = [];
 window.__utdIndex = -1;
 function __utdPost(result) {
@@ -656,6 +693,7 @@ function wrap(bodyHtml: string, c: WrapColors, opts: WrapOptions = {}) {
   a.utd-rel-t::before { border-radius:50%; background:transparent; border:2px solid ${accent}; }
   a.utd-rel-item::after { content:"›"; margin-left:auto; padding-left:8px; color:${muted}; font-size:1.1rem; }
 </style></head><body>${bodyHtml}${relatedHtml(related)}<script>${FIND_SCRIPT}
+__utdRepairInlineMarkup();
 __utdMarkHeadings(${json(levels)}, ${json(tops)});
 __utdMarkBullets();
 __utdRelatedInit();
@@ -954,11 +992,11 @@ function UptodateArticle() {
             </AppText>
           </ChromeButton>
           <AppText weight="700" size={12} muted numberOfLines={1} style={{ flex: 1, textAlign: "left", writingDirection: "ltr" }}>
-            {data?.title || titleParam}
+            {stripHtml(data?.title || titleParam)}
           </AppText>
           <ChromeButton
             onPress={() =>
-              toggleFavorite({ source: "utd", id, title: (data?.title || titleParam).replace(/<[^>]*>/g, ""), section: data?.section ?? "" })
+              toggleFavorite({ source: "utd", id, title: stripHtml(data?.title || titleParam), section: data?.section ?? "" })
             }
             size={34}
             accessibilityLabel={t(favorite ? "favoriteRemove" : "favoriteAdd")}
@@ -1238,7 +1276,7 @@ function UptodateArticle() {
               }}
             >
               <AppText weight="800" size={13} numberOfLines={2} style={{ flex: 1 }}>
-                {graphicTopic?.title ?? ""}
+                {stripHtml(graphicTopic?.title ?? "")}
               </AppText>
               <ChromeButton onPress={() => setGraphicId(null)} size={28}>
                 <AppText weight="800" size={14} color={colors.ink}>

@@ -19,16 +19,12 @@ import { fontFamily } from "@/theme/fonts";
 import { shortDate } from "@/utils/uptodateOutline";
 import { useNavClearance } from "@/components/BottomNav";
 import { useBleedTop } from "@/components/AppShell";
+import { stripHtml } from "@/utils/html";
 
 const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
-// The busiest sections among the results get a filter chip; the rest are
-// still under "All".
-const MAX_SECTION_CHIPS = 4;
 // Results per page; the next page loads as the list nears its end.
 const PAGE = 30;
 
-// some titles italicise a name: "<i>Chlamydia pneumoniae</i>"
-const TAG_RE = /<[^>]*>/g;
 
 /** UpToDate search (design option 1): a white header with the search field
  * and one chip per clinical section among the results, then a card per
@@ -44,9 +40,17 @@ export function UptodateScreen() {
   const [q, setQ] = useState("");
   const query = useDebounced(q.trim());
   const [section, setSection] = useState<string | null>(null);
+  const sectionScroll = React.useRef<ScrollView>(null);
+  const suggestionScroll = React.useRef<ScrollView>(null);
   const favorites = useLibrary((s) => s.favorites);
   // a new query starts on "All"
   React.useEffect(() => setSection(null), [query]);
+  React.useEffect(() => {
+    if (isFa) {
+      sectionScroll.current?.scrollToEnd({ animated: false });
+      suggestionScroll.current?.scrollToEnd({ animated: false });
+    }
+  }, [query, isFa]);
 
   // Every title with the words is a result: one page at a time, the next
   // as the list nears its end. Counts and section chips cover all of them.
@@ -98,7 +102,7 @@ export function UptodateScreen() {
               {isFa ? "›" : "‹"}
             </AppText>
           </ChromeButton>
-          <AppText weight="900" size={18} style={{ flex: 1 }}>
+          <AppText accessibilityRole="header" weight="900" size={18} style={{ flex: 1 }}>
             {t("uptodateScreenTitle")}
           </AppText>
           <TourButton tour="uptodate" size={34} />
@@ -124,6 +128,7 @@ export function UptodateScreen() {
             ⌕
           </AppText>
           <TextInput
+            accessibilityLabel={t("uptodateSearchPlaceholder")}
             value={q}
             onChangeText={setQ}
             placeholder={t("uptodateSearchPlaceholder")}
@@ -159,13 +164,15 @@ export function UptodateScreen() {
         </View>
         </TourTarget>
 
-        {sections.length > 1 ? (
-          <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8 }}>
+        {sections.length > 0 ? (
+          <ScrollView ref={sectionScroll} horizontal showsHorizontalScrollIndicator keyboardShouldPersistTaps="handled"
+            onContentSizeChange={() => { if (isFa) sectionScroll.current?.scrollToEnd({ animated: false }); }}
+            contentContainerStyle={{ flexDirection: row, gap: 8 }} style={{ flexGrow: 0 }}>
             <Chip label={`${t("articleSearchAll")} · ${n(first?.all ?? total)}`} on={!activeSection} onPress={() => setSection(null)} />
-            {sections.slice(0, MAX_SECTION_CHIPS).map(([name, count]) => (
+            {sections.map(([name, count]) => (
               <Chip key={name} label={name} count={n(count)} on={activeSection === name} onPress={() => setSection(name)} />
             ))}
-          </View>
+          </ScrollView>
         ) : null}
       </View>
 
@@ -175,6 +182,19 @@ export function UptodateScreen() {
         scrollEventThrottle={200}
         keyboardShouldPersistTaps="handled"
       >
+        {query.length >= 2 && !!first?.suggestions?.length ? (
+          <View style={{ gap: 6 }}>
+            <AppText muted weight="600" size={12}>{isFa ? "جست‌وجوهای مرتبط" : "Related searches"}</AppText>
+            <ScrollView ref={suggestionScroll} horizontal showsHorizontalScrollIndicator keyboardShouldPersistTaps="handled"
+              onContentSizeChange={() => { if (isFa) suggestionScroll.current?.scrollToEnd({ animated: false }); }}
+              contentContainerStyle={{ gap: 8, flexDirection: row }}>
+              {first.suggestions.map((suggestion) => (
+                <Chip key={suggestion.query} label={stripHtml(suggestion.label)} on={false}
+                  onPress={() => { setSection(null); setQ(suggestion.query); }} />
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
         {locked ? (
           <View style={{ backgroundColor: colors.cardBg, borderRadius: 16, padding: 16 }}>
             <AppText weight="800" size={15} color={colors.accent}>
@@ -209,7 +229,7 @@ export function UptodateScreen() {
             </AppText>
           </View>
         ) : query.length < 2 ? (
-          <Favorites items={favorites} onOpen={(f) => navigate("uptodateOutline", { id: f.id, title: f.title })} />
+          <Favorites items={favorites} onOpen={(f) => navigate("uptodateOutline", { id: f.id, title: stripHtml(f.title) })} />
         ) : (
           <>
             {corrected ? (
@@ -231,7 +251,7 @@ export function UptodateScreen() {
               <ResultCard
                 key={r.id}
                 result={r}
-                onPress={() => navigate("uptodateOutline", { id: r.id, title: r.title.replace(TAG_RE, "") })}
+                onPress={() => navigate("uptodateOutline", { id: r.id, title: stripHtml(r.title) })}
                 shadow={shadows.raisedSm}
               />
             ))}
@@ -264,8 +284,14 @@ function Chip({ label, count, on, onPress }: { label: string; count?: string; on
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      aria-pressed={on}
+      accessibilityLabel={count ? `${label}, ${count}` : label}
       style={{
-        maxWidth: "100%",
+        maxWidth: 280,
+        minHeight: 44,
+        alignItems: "center",
         flexDirection: "row",
         paddingHorizontal: 12,
         paddingVertical: 5,
@@ -297,7 +323,7 @@ function ResultCard({ result, onPress, shadow }: { result: UptodateSearchResult;
   const { colors } = useTheme();
   // the start of each title word the query matched, highlighted
   const title = useMemo(() => {
-    const text = result.title.replace(TAG_RE, "");
+    const text = stripHtml(result.title);
     const terms = result.terms ?? [];
     if (!terms.length) return text;
     const parts: React.ReactNode[] = [];
@@ -329,8 +355,8 @@ function ResultCard({ result, onPress, shadow }: { result: UptodateSearchResult;
       style={[{ backgroundColor: colors.cardBg, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16, gap: 5 }, shadow]}
     >
       {result.section ? (
-        <AppText weight="800" size={10.5} color={colors.accent} style={[LTR, { letterSpacing: 1, lineHeight: 15 }]}>
-          {result.section.toUpperCase()}
+        <AppText weight="700" size={11.5} color={colors.accent} style={[LTR, { lineHeight: 16 }]}>
+          {result.section}
         </AppText>
       ) : null}
       <AppText weight="800" size={15} style={[LTR, { lineHeight: 21 }]}>
@@ -356,7 +382,7 @@ function Favorites({ items, onOpen }: { items: FavoriteArticle[]; onOpen: (f: Fa
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>
         <AppText weight="900" size={15} color="#E0A526">
-          ★
+          {"★" /* taste-skill-ignore: existing monochrome favorite-state icon. */}
         </AppText>
         <AppText weight="800" size={14}>
           {t("favoritesTitle")}
@@ -377,12 +403,12 @@ function Favorites({ items, onOpen }: { items: FavoriteArticle[]; onOpen: (f: Fa
           >
             <View style={{ flex: 1, gap: 4 }}>
               {f.section ? (
-                <AppText weight="800" size={10.5} color={colors.accent} style={[LTR, { letterSpacing: 1, lineHeight: 15 }]}>
-                  {f.section.toUpperCase()}
+                <AppText weight="700" size={11.5} color={colors.accent} style={[LTR, { lineHeight: 16 }]}>
+                  {f.section}
                 </AppText>
               ) : null}
               <AppText weight="800" size={14.5} style={[LTR, { lineHeight: 20 }]}>
-                {f.title}
+                {stripHtml(f.title)}
               </AppText>
             </View>
             <Pressable
@@ -392,7 +418,7 @@ function Favorites({ items, onOpen }: { items: FavoriteArticle[]; onOpen: (f: Fa
               style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
             >
               <AppText weight="800" size={18} color="#E0A526">
-                ★
+                {"★" /* taste-skill-ignore: existing monochrome favorite-state icon. */}
               </AppText>
             </Pressable>
           </Pressable>

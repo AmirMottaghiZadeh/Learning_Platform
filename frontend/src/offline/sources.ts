@@ -1,11 +1,13 @@
 import { SearchPageArgs, lexicompApi, uptodateApi } from "@/api/endpoints";
 import { ApiError } from "@/api/client";
+import { queryClient } from "@/api/queryClient";
 import { LexicompDrug, LexicompInteraction, OfflineDataset, UptodateArticle, UptodateImage, UptodateSearchPage, UptodateSearchResult } from "@/api/types";
 
 import { checkInteractions, searchDrugs } from "./lexicompLocal";
 import { PackageReader, openReader } from "./reader";
 import { isUsable, renewLicense, touch, useOffline } from "./store";
-import { getImage, getTopic, searchTopics, searchTopicsPage } from "./uptodateLocal";
+import { forgetUptodate, getImage, getTopic, searchTopics, searchTopicsPage } from "./uptodateLocal";
+import { refreshSearchSupplement } from "./uptodateSearchSupplement";
 
 /** Where the UpToDate and Lexicomp screens get their data: the package on
  * this device first, when one is installed and its license is good; the
@@ -21,6 +23,14 @@ async function localReader(dataset: OfflineDataset): Promise<PackageReader | nul
   try {
     const reader = await openReader(dataset, manifest);
     touch(dataset);
+    if (dataset === "uptodate") {
+      void refreshSearchSupplement(reader).then((updated) => {
+        if (updated) {
+          forgetUptodate();
+          void queryClient.invalidateQueries({ queryKey: ["uptodate-search-page"] });
+        }
+      }).catch(() => undefined);
+    }
     return reader;
   } catch {
     // e.g. the key went missing: a forced renewal puts it back.

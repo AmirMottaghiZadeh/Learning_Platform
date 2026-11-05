@@ -54,7 +54,7 @@ export function UptodateOutlineScreen() {
   const lastTop = lastIndex !== undefined && lastIndex > 0 ? tops[lastIndex] : undefined;
   const [expanded, setExpanded] = useState<string | null>(null);
   const openId = expanded ?? lastTop?.id ?? null;
-  const title = data?.title || titleParam;
+  const title = stripHtml(data?.title || titleParam);
 
   const read = (sectionId?: string, openSearch?: boolean) =>
     navigate("uptodateArticle", { id, title, sectionId, openSearch });

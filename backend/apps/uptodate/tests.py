@@ -14,6 +14,8 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from rest_framework.test import APIClient
 
 from . import services
+from .search_catalog import SearchCatalog
+from .text import plain_title
 from .mysql_schema import ensure_title_search_index
 from .search_extraction import extract_article
 from apps.core.exceptions import PlatformAPIError
@@ -184,6 +186,43 @@ class UptodateTests(TestCase):
         self.assertIn("<p>Body.</p>", res.data["body_html"])
         self.assertEqual(res.data["contributors"], ["Jane Doe, MD"])
 
+    @override_settings(OFFLINE_PACKAGE_SECRET="search-supplement-tests")
+    def test_old_package_gets_an_encrypted_search_only_supplement(self):
+        from apps.offline.pack import derive_key, open_sealed
+
+        _add_concept_snapshot(self._tmp.name)
+        build = "uptodate-202607-20261101-abcdef"
+        with self._with_snapshot(), patch("apps.offline.services.is_entitled", return_value=True):
+            response = self.client.get("/api/v1/uptodate/search-metadata/", {"build": build, "version": "202607"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/octet-stream")
+        data = json.loads(zlib.decompress(open_sealed(derive_key(build), response.content)))
+        self.assertEqual(data["schema"], 1)
+        self.assertEqual(data["memberships"]["140619"], ["Family Medicine", "Gastroenterology"])
+        self.assertIn(["h pylori", "1", 100], data["search"]["queries"])
+        self.assertNotIn(b"Helicobacter", response.content)
+        self.assertNotIn("body_html", data)
+
+    def test_search_supplement_requires_authentication_paid_access_and_matching_version(self):
+        url = "/api/v1/uptodate/search-metadata/"
+        params = {"build": "uptodate-202607-20261101-abcdef", "version": "202607"}
+        self.assertEqual(APIClient().get(url, params).status_code, 401)
+        with self._with_snapshot():
+            with patch("apps.offline.services.is_entitled", return_value=False):
+                self.assertEqual(self.client.get(url, params).status_code, 402)
+            with patch("apps.offline.services.is_entitled", return_value=True):
+                self.assertEqual(self.client.get(url, {**params, "version": "older"}).status_code, 409)
+                self.assertEqual(self.client.get(url, {**params, "build": "uptodate-202606-20261101-abcdef"}).status_code, 409)
+                self.assertEqual(self.client.get(url, {**params, "build": "../bad"}).status_code, 400)
+
+    def test_paged_concept_response_serializes_suggestions_and_all_memberships(self):
+        _add_concept_snapshot(self._tmp.name)
+        with self._with_snapshot():
+            response = self.client.get("/api/v1/uptodate/topics/", {"search": "h pylori", "paged": 1, "section": "Gastroenterology"})
+        self.assertEqual(response.data["results"][0]["id"], "140619")
+        self.assertEqual(response.data["results"][0]["sections"], ["Family Medicine", "Gastroenterology"])
+        self.assertEqual(response.data["suggestions"][0]["query"], "h pylori treatment")
+
     def test_search_anchor_requires_exact_revision_and_existing_block(self):
         result = extract_article("3851", "<html><body><p>Body.</p></body></html>")
         anchor = result.blocks[0].paragraph_id
@@ -265,6 +304,111 @@ class HeaderTextTests(SimpleTestCase):
         self.assertEqual(services._updated_from_html(html), "Feb 11, 2026")
 
 
+def _add_concept_snapshot(directory):
+    """Real source shapes: aliases, ranked associations and multiple TOC paths."""
+    directory = Path(directory)
+    titles = {
+        "140619": "Treatment of <i>Helicobacter pylori</i> infection in adults",
+        "18": "Approach to the diagnosis of Helicobacter pylori infection in adults",
+        "2012": "Patient education: H. pylori infection",
+        "5890": "Infantile hypertrophic pyloric stenosis",
+        "14409": "Helicobacter pylori: Diagnosis and management in children",
+    }
+    with sqlite3.connect(directory / "fts.db") as db:
+        db.executemany("INSERT INTO fts(title,displayTitle,type,contentId,content) VALUES(?,?,?,?,?)",
+                       [(title, title, 1, cid, "This topic last updated: Feb 11, 2026.") for cid, title in titles.items()])
+    with sqlite3.connect(directory / "content.db") as db:
+        for cid, title in titles.items():
+            doc = {"title": title, "bodyHtml": '<p id="H1">Body &lt;em&gt;versus&lt;/em&gt; placebo. Age &lt;7 and dose &gt;5.</p>'}
+            db.execute("INSERT INTO content VALUES(?,?,?)", (cid, zlib.compress(json.dumps(doc).encode()), "202607"))
+    with sqlite3.connect(directory / "toc.db") as db:
+        db.executemany("INSERT INTO toc VALUES(?,?,?,?,?)", [
+            (20, "Family Medicine", 0, "", None), (21, "Gastroenterology", 0, "", None),
+            (22, titles["140619"], 20, "", "140619"), (23, titles["140619"], 21, "", "140619"),
+            (24, titles["140619"], 21, "", "140619"),  # duplicate path must not double-count
+            (25, titles["18"], 21, "", "18"), (26, titles["14409"], 21, "", "14409"),
+        ])
+    with sqlite3.connect(directory / "search.db") as db:
+        db.executescript('''CREATE TABLE query(id INTEGER, word TEXT, weight INTEGER);
+            CREATE TABLE query_topic(id INTEGER PRIMARY KEY, x_topic_hits TEXT, a_topic_hits TEXT, p_topic_hits TEXT, i_topic_hits TEXT);''')
+        db.executemany("INSERT INTO query VALUES(?,?,?)", [
+            (1, "h pylori", 100), (1, "helicobacter pylori", 90),
+            (1, "pylori (helicobacter pylori)", 80),
+            (2, "h pylori treatment", 150), (2, "treatment of h pylori", 100),
+            (3, "h pylori testing", 80), (3, "h pylori diagnosis", 60),
+        ])
+        db.executemany("INSERT INTO query_topic VALUES(?,?,?,?,?)", [
+            (1, "140619,18,14409,2012,missing", "140619,18", "14409,18", "2012"),
+            (2, "140619,14409,2012", "140619", "14409", "2012"),
+            (3, "18,14409", "18", "14409", "2012"),
+        ])
+
+
+class SnapshotSearchRegressionTests(SimpleTestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.addCleanup(services.close_all)
+        _make_snapshot(tmp.name)
+        _add_concept_snapshot(tmp.name)
+        self.settings = override_settings(UPTODATE_DB_DIR=tmp.name, UPTODATE_MYSQL_URL="")
+        self.settings.enable()
+        self.addCleanup(self.settings.disable)
+        services.close_all()
+
+    def test_abbreviation_and_full_name_use_the_same_curated_order(self):
+        for query in ("h pylori", "H. pylori", "helicobacter pylori", "pylori"):
+            page = services.search_page(query)
+            self.assertEqual(page["results"][0]["id"], "140619")
+            self.assertNotIn("5890", [r["id"] for r in page["results"]])
+            self.assertNotIn("missing", [r["id"] for r in page["results"]])
+            self.assertEqual(page["corrected"], "")
+
+    def test_every_specialty_keeps_treatment_and_counts_it_once(self):
+        page = services.search_page("h pylori", section="Gastroenterology")
+        self.assertEqual(page["results"][0]["id"], "140619")
+        self.assertEqual(page["results"][0]["section"], "Gastroenterology")
+        self.assertEqual(page["results"][0]["sections"], ["Family Medicine", "Gastroenterology"])
+        self.assertEqual(next(s["count"] for s in page["sections"] if s["name"] == "Gastroenterology"), 3)
+
+    def test_suggestions_are_distinct_concepts_and_are_actionable(self):
+        suggestions = services.search_page("h pylori")["suggestions"]
+        self.assertEqual([s["query"] for s in suggestions], ["h pylori treatment", "h pylori testing"])
+        self.assertEqual(services.search_page(suggestions[0]["query"])["results"][0]["id"], "140619")
+
+    def test_unknown_qualifier_is_not_dropped_and_pediatric_audience_is_used(self):
+        self.assertEqual(services.search_page("h pylori zzzzzz")["total"], 0)
+        page = services.search_page("h pylori children")
+        self.assertEqual([r["id"] for r in page["results"]], ["14409"])
+
+    def test_normalizes_titles_but_preserves_original_body_and_anchor_revision(self):
+        article = services.get_topic("140619")
+        self.assertEqual(article["title"], "Treatment of Helicobacter pylori infection in adults")
+        self.assertIn("&lt;em&gt;versus&lt;/em&gt;", article["body_html"])
+        self.assertEqual(article["sections"], ["Family Medicine", "Gastroenterology"])
+        for value in ("Age <7 and dose >5", "Age &lt;7 and dose &gt;5", "Age &amp;lt;7 and dose &amp;gt;5"):
+            self.assertEqual(plain_title(value), "Age <7 and dose >5")
+        self.assertEqual(plain_title("&amp;lt;i&amp;gt;H. pylori&amp;lt;/i&amp;gt;&nbsp;≥5"), "H. pylori ≥5")
+
+    def test_catalog_is_reused_until_the_snapshot_is_closed(self):
+        catalog = services._search_catalog(services.snapshot_version())
+        self.assertIs(catalog, services._search_catalog(services.snapshot_version()))
+
+    @override_settings(UPTODATE_MYSQL_URL="mysql://test:test@localhost/uptodate")
+    def test_mysql_reads_the_same_source_tables(self):
+        connection = MagicMock()
+        cursor = connection.cursor.return_value.__enter__.return_value
+        cursor.fetchall.side_effect = [
+            [{"id": 1, "word": "H. pylori", "weight": 100}],
+            [{"id": 1, "x_topic_hits": "140619,18", "a_topic_hits": "140619", "p_topic_hits": "", "i_topic_hits": ""}],
+        ]
+        with patch.object(services, "_mysql_conn", return_value=connection):
+            catalog = services._search_catalog("mysql-test")
+        self.assertEqual(catalog.resolve("h pylori")[0], "1")
+        self.assertEqual(catalog.hits("1", "h pylori"), ["140619", "18"])
+
+
+
 class MysqlTitleSearchTests(SimpleTestCase):
     def tearDown(self):
         services._title_index.cache_clear()
@@ -285,7 +429,8 @@ class MysqlTitleSearchTests(SimpleTestCase):
         with (
             patch.object(services, "_mysql_conn", return_value=connection),
             patch.object(services, "snapshot_version", return_value="202607"),
-            patch.object(services, "_sections_for", side_effect=lambda ids: {i: "Cardiovascular Medicine" for i in ids}),
+            patch.object(services, "_section_memberships_for", side_effect=lambda ids: {i: ["Cardiovascular Medicine"] for i in ids}),
+            patch.object(services, "_search_catalog", return_value=SearchCatalog([], {})),
         ):
             results = services.search_topics("HYPERT adu", limit=3)
             again = services.search_topics("hypertension", limit=3)
@@ -296,7 +441,7 @@ class MysqlTitleSearchTests(SimpleTestCase):
         self.assertIn("LEFT(content, %s) AS head FROM fts WHERE rowid IN (%s)", statements[1])
         self.assertFalse(any("MATCH" in sql for sql in statements))
         self.assertEqual(results, [{
-            "id": "3851", "title": "Hypertension in adults", "section": "Cardiovascular Medicine",
+            "id": "3851", "title": "Hypertension in adults", "section": "Cardiovascular Medicine", "sections": ["Cardiovascular Medicine"],
             "version": "202607", "snippet": "", "updated": "Feb 11, 2026",
             "terms": ["hypert", "adu"], "corrected": "",
         }])
@@ -381,7 +526,8 @@ class TitleSearchTests(SimpleTestCase):
         with (
             patch.object(services, "_title_index", return_value=index),
             patch.object(services, "snapshot_version", return_value="test"),
-            patch.object(services, "_sections_for", side_effect=lambda ids: {i: self.sections.get(i, "") for i in ids}),
+            patch.object(services, "_search_catalog", return_value=SearchCatalog([], {})),
+            patch.object(services, "_section_memberships_for", side_effect=lambda ids: {i: [self.sections[i]] if self.sections.get(i) else [] for i in ids}),
         ):
             return services.search_page(query, limit=limit, offset=offset, section=section)
 
@@ -431,7 +577,7 @@ class TitleSearchTests(SimpleTestCase):
 
     def test_tags_in_a_title_are_not_words(self):
         titles = ["Infections due to <i>Serratia</i> species"]
-        self.assertEqual(self.titles("serratia", titles), titles)
+        self.assertEqual(self.titles("serratia", titles), ["Infections due to Serratia species"])
         index = services.build_title_index([(1, "1", titles[0])])
         self.assertEqual(index.words[0], ["infections", "due", "to", "serratia", "species"])
 

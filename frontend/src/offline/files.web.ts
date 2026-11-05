@@ -72,6 +72,21 @@ function forget(prefix: string) {
   for (const id of [...snapshots.keys()]) if (id.startsWith(prefix)) snapshots.delete(id);
 }
 
+export async function writePart(dataset: OfflineDataset, build: string, name: string, bytes: Uint8Array) {
+  const parent = await dir([dataset, build], true);
+  if (!parent) throw new Error("offline storage unavailable");
+  const handle = await parent.getFileHandle(name, { create: true });
+  const writer = await handle.createWritable();
+  try {
+    await writer.write(bytes as Uint8Array<ArrayBuffer>);
+    await writer.close();
+  } catch (error) {
+    await writer.abort().catch(() => undefined);
+    throw error;
+  }
+  forget(`${dataset}/${build}/${name}`);
+}
+
 export async function removePart(dataset: OfflineDataset, build: string, name: string) {
   forget(`${dataset}/${build}/${name}`);
   const parent = await dir([dataset, build], false);
