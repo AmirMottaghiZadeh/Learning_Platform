@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-07",
+  "scope": "Local source and isolated PostgreSQL/browser preview; no production deployment",
+  "backend_full_suite": {
+    "tests": 844,
+    "passed": true
+  },
+  "backend_final_changes": {
+    "tests": 31,
+    "passed": true,
+    "scope": "activity, devices, active browser cookies, onboarding plan titles"
+  },
+  "django_check": true,
+  "migration_drift": false,
+  "openapi": {
+    "errors": 0,
+    "pre_existing_warnings": 4
+  },
+  "typescript": true,
+  "web_export": true,
+  "frontend_regressions": [
+    "reference grouping/localized names/escaped reader and anchors",
+    "UpToDate search navigation and HTML",
+    "UpToDate concepts, specialties and pagination",
+    "offline package replacement/cache refresh",
+    "13 calculator, install and announcement checks"
+  ],
+  "browser_checks": [
+    "Private support conversation opens from the notification deep link",
+    "User message persists and admin reply reaches app through real API/polling",
+    "Admin case-table model 2 and user direct-chat model 1",
+    "Time and click heatmaps, session report render",
+    "Shared clinical reader opens guideline and disease articles",
+    "Article search, text scaling and persisted source-specific highlight",
+    "Persian and English drug names switch in the actual formulary chapter",
+    "Concurrent user message is not skipped or acknowledged before fetching"
+  ],
+  "responsive_inspection": {
+    "widths": [
+      390,
+      768,
+      1440
+    ],
+    "user_failures": 0,
+    "admin_failures": 0,
+    "existing_design_system_preserved": true
+  },
+  "external_setup": {
+    "firebase_fcm_configured": false,
+    "android_push_received_on_device_verified": false,
+    "production_web_push_received_verified": false,
+    "local_vapid_key_configured": true
+  }
+}

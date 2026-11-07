@@ -240,9 +240,9 @@ npm run release -- patch             # یا minor یا major
 
 EAS کلید امضای اندروید (keystore) را نگه می‌دارد. همهٔ نسخه‌های بعدی باید با همین کلید امضا شوند. **بدون آن، به‌روزرسانی اپ در بازار و مایکت منتشر نمی‌شود و روی نسخهٔ نصب‌شدهٔ کاربران هم نصب نمی‌شود.**
 
-1. یک بار در `frontend/` دستور `npx eas-cli credentials -p android` را اجرا کنید. پروفایل `production` را انتخاب کنید، بعد بخش Keystore و گزینهٔ دانلود آن را. یک فایل `.jks` دانلود می‌شود و رمز keystore، alias و رمز key چاپ می‌شوند.
-2. فایل و رمزها را در یک مدیر رمز یا دیسک رمزگذاری‌شده، بیرون از مخزن، نگه دارید. `.gitignore` فایل‌های `*.jks`، `*.keystore`، `credentials.json` و کلید service account گوگل را راه نمی‌دهد. جای آن را در [09-operations.md](09-operations.md#رازها-و-چیزهایی-که-باید-امن-نگه-داشته-شوند) ثبت کنید.
-3. **Google Play:** Play App Signing به‌طور پیش‌فرض یک کلید تازهٔ گوگل می‌سازد. در آن صورت APK گوگل‌پلی و APK بازار امضای متفاوت دارند و کاربر نمی‌تواند نسخهٔ یکی را روی دیگری به‌روز کند. هنگام ثبت اپ، گزینهٔ استفاده از کلید موجود را بزنید و همین keystore را بدهید (Play برای این کار ابزار PEPK را می‌دهد).
+روش ساخت کلید، دانلود آن به `frontend/credentials/android/keystore.jks` همراه با `frontend/credentials.json`، قواعد `.gitignore` و `.easignore` و بیلدهای بعدی در [راهنمای اختصاصی کلید امضای اندروید](15-android-signing.fa.md) آمده است. تنظیم فعلی از کلید روی Expo استفاده می‌کند و نسخهٔ داخل پروژه پشتیبان آن است.
+
+**Google Play:** Play App Signing به‌طور پیش‌فرض یک کلید تازهٔ گوگل می‌سازد. در آن صورت APK گوگل‌پلی و APK بازار امضای متفاوت دارند و کاربر نمی‌تواند نسخهٔ یکی را روی دیگری به‌روز کند. هنگام ثبت اپ، گزینهٔ استفاده از کلید موجود را بزنید و همین keystore را بدهید (Play برای این کار ابزار PEPK را می‌دهد).
 
 ## CI
 
@@ -265,3 +265,7 @@ CI جلوی دیپلوی را نمی‌گیرد؛ رانفلر مستقل از �
 | `backend/Dockerfile` | همان ایمیج بک‌اند با `backend/` به‌عنوان context (برای `docker-compose`) |
 | `backend/render.yaml`، `backend/build.sh`، `backend/release.sh`، `backend/Procfile` | میزبان‌هایی که مرحلهٔ build و release جدا دارند (Render، Heroku-مانند). بک‌اند قبلاً مدتی روی Render بود |
 | `EXPO_BASE_URL` در `app.config.js` | سرو وب‌اپ زیر یک زیرمسیر، مثل GitHub Pages |
+
+## انتشار چت، نشست و اعلان پاسخ
+
+این تغییر مهاجرت‌های `accounts`، `activity` و `support` دارد. کد سرور و وب باید با هم به‌روز شوند. وب Push به کلید ثابت VAPID و HTTPS نیاز دارد؛ اندروید به تنظیم Firebase/FCM v1 و APK تازه دارای `expo-notifications` نیاز دارد. مراحل دقیق و وضعیت فعلی در [سند ۱۷](17-sessions-activity-support.fa.md) آمده است. فایل service account در git ذخیره نشود.

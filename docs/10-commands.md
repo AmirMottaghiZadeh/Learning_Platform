@@ -37,6 +37,17 @@
 | `cd frontend && npm run typecheck` | TypeScript |
 | `npm run build:web` | ساخت خروجی وب در `frontend/dist/` |
 
+بررسی‌های رفتاری موجود، از پوشهٔ `frontend` و پس از `npm ci` اجرا می‌شوند:
+
+| دستور | دامنهٔ بررسی |
+|---|---|
+| `node scripts/test-uptodate-search.cjs` | جست‌وجوی TypeScript، پیشنهادها و سازگاری بسته‌های قدیمی |
+| `node scripts/test-offline-source-refresh.cjs` | بی‌اعتبار شدن پاسخ‌های کش‌شده پس از تعویض build داده |
+| `node scripts/test-uptodate-search-navigation.cjs` | اسکریپت جست‌وجو و جابه‌جایی در خوانندهٔ مقاله |
+| `node --test scripts/announcement-calculator.test.cjs` | رفتارهای اعلانات و ماشین‌حساب |
+
+این اسکریپت‌ها در مخزن وجود دارند، اما workflow فعلی CI فرانت‌اند فقط `typecheck` و `build:web` را اجرا می‌کند. نقشهٔ فایل‌های مسئول هر مسیر در [16-code-flows.md](16-code-flows.md) است.
+
 ## دستورهای مدیریتی Django (همه)
 
 | دستور | گزینه‌های اصلی | کار | جزئیات |
@@ -144,3 +155,25 @@
 | `python3 10_import_to_pharmenta.py --dry-run` | فقط گزارش |
 | `python3 10_import_to_pharmenta.py --statuses verified,approved` | فقط موارد بررسی‌شده |
 | `python3 10_import_to_pharmenta.py --export` | بعد از ورود، فایل قابل‌حمل را هم می‌سازد |
+
+## پشتیبانی، دستگاه و فعالیت
+
+از `backend/`:
+
+```bash
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py create_support_push_keys --configure-local
+.venv/bin/python manage.py retry_support_notifications
+.venv/bin/python manage.py test apps.accounts.test_devices apps.support apps.activity --noinput
+```
+
+از `frontend/`:
+
+```bash
+node scripts/test-reference-updates.cjs
+node scripts/test-uptodate-search-navigation.cjs
+npm run typecheck
+npm run build:web
+```
+
+ساخت کلید، هویت موجود را بازنویسی نمی‌کند. تنظیم Firebase، کلید FCM v1 و بیلد جدید اندروید طبق [سند ۱۷](17-sessions-activity-support.fa.md) انجام می‌شود.

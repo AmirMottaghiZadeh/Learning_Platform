@@ -10,13 +10,13 @@
 
 | قابلیت | کار | اپ بک‌اند | صفحه‌های اپ | کلید فروش (feature) |
 |---|---|---|---|---|
-| درس‌نامهٔ دارویی | داروها بر اساس موضوع درسی و گروه ATC، با خلاصهٔ بالینی دوزبانه هر دارو | `drugs`، `lessons` | `LessonsScreen`، `LessonListScreen`، `LessonDetailScreen` | `lessons` |
+| دارونامه | داروها بر اساس موضوع درسی و گروه ATC، با خلاصهٔ بالینی دوزبانه هر دارو | `drugs`، `lessons` | `LessonsScreen`، `LessonListScreen`، `LessonDetailScreen` | `lessons` |
 | فلش‌کارت | جعبهٔ لایتنر (۵ جعبه) و دسته‌های موضوعی | `flashcards` | `FlashcardsScreen` | `flashcards` |
 | آزمون | آزمون چهارگزینه‌ای که سرور نمره می‌دهد و اشتباه‌ها را ثبت می‌کند | `quiz` | `QuizScreen` | `quiz` |
 | پیشرفت و برنامهٔ مطالعه | داشبورد، XP و استریک، آمار هفتگی، اشتباهات، برنامهٔ روزانه | `progress` | `DashboardScreen`، `StatisticsScreen`، `MistakesScreen`، `PlanningScreen`، `PlanningSetupScreen` | `stats` |
-| UpToDate | جست‌وجو در عنوان مقاله‌ها و خواندن مقاله و تصویرها | `uptodate` | `UptodateScreen`، `UptodateOutlineScreen`، `UptodateArticleScreen` | `uptodate` |
+| UpToDate | جست‌وجوی مفهوم‌ها و نام‌های جایگزین snapshot با پیشنهاد خودکار؛ تطبیق عنوان و تصحیح املا به‌عنوان مسیر پشتیبان؛ خواندن مقاله، تصویر و جدول تمام‌صفحه | `uptodate` | `UptodateScreen`، `UptodateOutlineScreen`، `UptodateArticleScreen` | `uptodate` |
 | Lexicomp | جست‌وجوی دارو و بررسی تداخل چند دارو | `lexicomp` | `LexicompScreen` | `lexicomp` |
-| Medscape | بیماری‌ها و گایدلاین‌ها بر اساس تخصص | `medscape` | `MedscapeBrowseScreen`، `MedscapeGuidelinesScreen`، `MedscapeSpecialtyScreen`، `MedscapeOutlineScreen`، `MedscapeArticleScreen` | `medscape` |
+| Medscape | بیماری‌ها و گایدلاین‌ها بر اساس تخصص؛ خوانندهٔ مشترک با UpToDate، جست‌وجو، هایلایت و تنظیم قلم | `medscape` | `MedscapeBrowseScreen`، `MedscapeGuidelinesScreen`، `MedscapeSpecialtyScreen`، `MedscapeOutlineScreen`، `MedscapeArticleScreen` | `medscape` |
 | ماشین‌حساب بالینی | ماشین‌حساب‌های دوزبانه با موتور محاسبهٔ سمت اپ | `calculators` | `CalculatorsScreen`، `CalculatorDomainScreen`، `CalculatorDetailScreen` | `calculators` |
 | دانلود آفلاین | بستهٔ رمزنگاری‌شدهٔ UpToDate و Lexicomp برای استفاده بدون اینترنت | `offline` | `DownloadsScreen` و دکمهٔ دانلود صفحه‌های UpToDate و Lexicomp | فقط پلن پولی که `uptodate`/`lexicomp` دارد |
 | حساب کاربری | ثبت‌نام با شمارهٔ موبایل و کد پیامکی، ورود با رمز، نشست‌ها و نقش‌ها | `accounts` | `AuthScreen`، `SetPasswordScreen`، `OnboardingScreen`، `ProfileScreen` | — |
@@ -24,8 +24,14 @@
 | دسترسی مهمان | ورود بدون حساب برای بازبین‌ها (پیش‌فرض خاموش) | `billing` (`guest.py`) | — | فقط پلن رایگان |
 | سایت و بلاگ | سایت معرفی، بلاگ، پلن‌ها و خرید، دانلود اپ، پنل محتوا | `website` | — | — |
 | مرکز کیفیت داده | ویرایش خلاصه‌های دارویی با تأیید مدیر و سابقهٔ کامل | `data_quality_center` | — | — |
+| اعلانات اپ | انتشار پیام مدیر با تعیین مخاطب و ثبت نمایش و کلیک | `announcements` | `DashboardScreen` | — |
+| مدیریت یکپارچه | ورود و دسترسی مشترک به فروش، محتوای سایت، اعلانات و کیفیت داده | `manage` | رابط وب در `/manage/` | — |
 
 ## معماری
+
+نشست‌ها حداکثر دو دستگاه دارند؛ دستگاه سوم باید پس از خروج یکی از دستگاه‌های قبلی وارد شود. گزارش IP/OS، heatmap سایت و اپ و چت پشتیبانی با اعلان پاسخ در [سند ۱۷](17-sessions-activity-support.fa.md) شرح داده شده‌اند؛ FCM اندروید هنوز نیازمند تنظیم مالک پروژه است.
+
+مسیر اجرای فایل‌ها، از شروع اپ تا API، خواندن منبع و انتشار داده، در [16-code-flows.md](16-code-flows.md) آمده است. جست‌وجوی فعلی UpToDate در سطح مقاله است؛ موتور برداری و بازیابی سلسله‌مراتبی بخش و پاراگراف هنوز در برنامهٔ توسعه‌اند ([وضعیت جست‌وجو](search/README.md)).
 
 ```mermaid
 flowchart LR
@@ -127,10 +133,11 @@ Learning Platform/
 │   └── requirements.txt
 ├── frontend/                 اپ Expo
 │   ├── App.tsx, index.js
-│   ├── src/                  api, components, hooks, i18n, navigation, offline, screens, store, theme, utils
+│   ├── src/                  api, components, hooks, i18n, navigation, offline, pwa, screens, store, theme, tour, utils
 │   ├── assets/               آیکون‌ها، تصویرها، فونت‌ها
 │   ├── public/sw.js          Service Worker وب‌اپ
 │   ├── app.json, app.config.js, eas.json
+│   ├── scripts/              انتشار نسخه و بررسی‌های رفتاری مستقل
 │   └── nginx.conf            پیکربندی nginx وب‌اپ
 ├── docs/                     همین مستندات
 ├── .github/workflows/        ci.yml و deploy-web-branch.yml
@@ -140,3 +147,5 @@ Learning Platform/
 ├── PHASES.md                 تاریخچهٔ فازهای بازنویسی
 └── graphify-out/             گراف دانش کد برای دستیارهای هوش مصنوعی
 ```
+
+در بک‌اند ۱۷ اپ وجود دارد: `accounts`، `announcements`، `billing`، `calculators`، `core`، `data_quality_center`، `drugs`، `flashcards`، `lessons`، `lexicomp`، `manage`، `medscape`، `offline`، `progress`، `quiz`، `uptodate` و `website`. فهرست مسئولیت‌ها در [03-backend.md](03-backend.md) است.

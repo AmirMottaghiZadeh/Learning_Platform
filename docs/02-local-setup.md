@@ -78,7 +78,7 @@ createdb pharmexa_dev                              # یک بار
 .venv/bin/python manage.py import_study_content_db --source ~/Documents/pharmenta-reference-data/study_content.db
 ```
 
-UpToDate و Lexicomp وارد دیتابیس نمی‌شوند و مستقیم از فایل خوانده می‌شوند:
+در تنظیمات محلی پیش‌فرض، UpToDate و Lexicomp مستقیم از فایل‌های مرجع خوانده می‌شوند و با `migrate` پر نمی‌شوند. اگر `UPTODATE_MYSQL_URL` تنظیم شود، UpToDate به‌جای SQLite از MySQL می‌خواند؛ این همان مسیر مورد استفادهٔ production است. مسیر فایل‌های محلی:
 
 | داده | متغیر | پیش‌فرض روی لپ‌تاپ |
 |---|---|---|
@@ -157,10 +157,12 @@ docker compose up --build
 
 CI همین‌ها را روی هر push به `main` و هر Pull Request اجرا می‌کند ([08-deployment.md](08-deployment.md#ci)). اپ تست خودکار رابط کاربری ندارد؛ تغییرات ظاهری را در مرورگر و گوشی ببینید.
 
+بررسی‌های رفتاری مستقل فرانت‌اند در `frontend/scripts/` قرار دارند؛ دستورهای جست‌وجو، تازه‌سازی کش بسته و اعلانات/ماشین‌حساب در [10-commands.md](10-commands.md#تست-و-بررسی) آمده‌اند. این اسکریپت‌ها فعلاً در workflow فرانت‌اند اجرا نمی‌شوند.
+
 ## روال کار با مخزن
 
 - شاخهٔ اصلی `main` است. هر push به `main` بک‌اند را از نو دیپلوی می‌کند و اگر `frontend/` عوض شده باشد، شاخهٔ `deploy-web` را هم از نو می‌سازد ([08-deployment.md](08-deployment.md)).
 - پیام کامیت کوتاه، انگلیسی و امری باشد، مثل `Add offline UpToDate and Lexicomp packages`. تغییرات نامرتبط در یک کامیت نروند.
 - قالب فایل‌ها طبق `.editorconfig`: UTF-8، پایان خط LF، تورفتگی ۴ فاصله برای Python و ۲ فاصله برای `js/ts/tsx/json/yml`.
 - هیچ رازی (`.env`، کلید، رمز) کامیت نشود؛ `.gitignore` جلوی `.env` را می‌گیرد.
-- دستیارهای هوش مصنوعی پیش از جست‌وجو در کد از `graphify query` استفاده می‌کنند و بعد از تغییر کد `graphify update .` را اجرا می‌کنند (`CLAUDE.md`).
+- دستورالعمل دستیارها را از فایل مربوط بخوانید: [AGENTS.md](../AGENTS.md) برای Codex و [CLAUDE.md](../CLAUDE.md) برای Claude. در `AGENTS.md` جست‌وجوی مستقیم و خواندن منبع پیش‌فرض است و گراف برای پرسش رابطه‌ای محدود استفاده می‌شود؛ `CLAUDE.md` روال graphify خود را دارد. ساختار گراف و تازه‌سازی آن در [نقشهٔ جریان](16-code-flows.md#استفاده-از-گراف-و-نگهداری-نقشه) توضیح داده شده است.

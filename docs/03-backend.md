@@ -2,6 +2,8 @@
 
 کد بک‌اند در `backend/` است: یک پروژهٔ Django با Django REST Framework که هم API اپ را می‌دهد، هم سایت `pharmenta.ir` و پنل‌های مدیریت را.
 
+برای دنبال کردن زنجیرهٔ فایل‌ها در درخواست‌های واقعی و مسیر ساخت و انتشار داده، [16-code-flows.md](16-code-flows.md) را ببینید.
+
 ## پیکربندی (`backend/config/`)
 
 | فایل | کار |
@@ -26,16 +28,17 @@
 5. `WhiteNoiseMiddleware` — فایل‌های استاتیک.
 6. `GZipMiddleware` — فشرده‌سازی پاسخ‌های JSON (پروکسی رانفلر فشرده نمی‌کند).
 7. نشست، Common، CSRF، احراز هویت، پیام‌ها.
-8. `website.middleware.SiteMaintenanceMiddleware` — صفحهٔ «در حال تعمیر» سایت وقتی در پنل روشن است (کارکنان رد می‌شوند).
-9. `XFrameOptionsMiddleware`.
+8. `accounts.middleware.BrowserSessionMiddleware` — اتصال نشست کوکی سایت/مدیریت به دستگاه و اجرای سقف دو نشست؛ `activity.middleware.SiteActivityMiddleware` بازدید مسیرهای عمومی را ثبت می‌کند.
+9. `website.middleware.SiteMaintenanceMiddleware` — صفحهٔ «در حال تعمیر» سایت وقتی در پنل روشن است (کارکنان رد می‌شوند).
+10. `XFrameOptionsMiddleware`.
 
 ## اپ‌ها (`backend/apps/`)
 
 | اپ | مسئولیت | مدل‌های اصلی | نکته |
 |---|---|---|---|
-| `core` | سلامت (`health/live/ready`)، شناسهٔ درخواست و لاگ JSON، قالب خطا، صفحه‌بندی، throttling توزیع‌شده، ابزار SQLite قابل‌حمل (`reference_db.py`)، روتر نگهداری آزمون و فلش‌کارت | — | دستورهای `backup_database` و `export_reference_db` |
+| `core` | سلامت (`health/live/ready`)، شناسهٔ درخواست و لاگ JSON، قالب خطا، صفحه‌بندی، throttling توزیع‌شده، ابزار SQLite قابل‌حمل (`reference_db.py`)، روتر نگهداری آزمون و فلش‌کارت | `RateLimitSettings` | دستورهای `backup_database` و `export_reference_db`؛ تنظیم محدودیت‌ها در `ratelimit.py` |
 | `accounts` | کاربر، نشست با توکن مات، کد پیامکی، رمز، نقش‌ها، رویدادهای امنیتی، پروفایل یادگیرنده | `UserSession`، `SessionRefreshToken`، `OneTimeCode`، `Role`، `RoleAssignment`، `SecurityAuditEvent`، `LearnerProfile` | بررسی‌های deploy: `accounts.W001` و `W002` (پیکربندی sms.ir) |
-| `drugs` | ماده‌های دارویی (کلید RXCUI)، بخش‌های بالینی با خلاصهٔ fa/en، کدها و گروه‌های ATC | `Ingredient`، `IngredientProfileSection`، `AtcCode`، `AtcCategory` | دادهٔ ATC سطح ۱ و ۲ در `drugs/atc_reference.py` |
+| `drugs` | ماده‌های دارویی (کلید RXCUI)، بخش‌های بالینی با خلاصهٔ fa/en، کدها و گروه‌های ATC | `Ingredient`، `IngredientProfileSection`، `AtcCode`، `AtcCategory` | دادهٔ ATC سطح ۱ و ۲ در `drugs/data/atc_reference.py` |
 | `lessons` | درخت درسی: موضوع‌های بالینی (`lessons/data/study_topics.py`) ← فصل (زیرگروه ATC سطح ۲) ← دارو؛ جست‌وجوی دارو؛ پیشرفت خواندن | `ChapterProgress`، `ReadDrug` | یک فصل می‌تواند زیر چند موضوع بیاید |
 | `progress` | XP، استریک، آمار روزانه، اشتباهات، برنامهٔ مطالعه و کارهای روزانه | `LearnerProgress`، `DailyStudy`، `Mistake`، `StudyPlan`، `StudyPlanItem` | اپ‌های آزمون و فلش‌کارت از `progress.services` شمارنده‌ها را بالا می‌برند. `progress.planning` برنامه را می‌سازد: از پاسخ‌های آنبوردینگ (`plan_from_onboarding`)، با سرعتی که سطح کاربر تعیین می‌کند، و با جابه‌جا کردن کارهای روز جامانده (`rollover`) ([05-api.md](05-api.md#پیشرفت-و-برنامه--me)) |
 | `flashcards` | فلش‌کارت برای هر (دارو، بخش)، دسته‌های موضوعی، و جعبهٔ لایتنر: فقط کارت‌های بلدنبوده، ۵ کشو به تعداد اشتباه، مرور هوشمند با فاصلهٔ جدا برای هر کارت (`leitner.py`) | `LeitnerCard`، `FlashcardFact`، `TopicProgress` | با `FLASHCARDS_API_ENABLED` روشن می‌شود ([05-api.md](05-api.md#جعبهٔ-لایتنر)) |
@@ -49,6 +52,8 @@
 | `website` | سایت و بلاگ، پنل محتوا، آمار بازدید، ریدایرکت، حالت تعمیر، و مسیر API نسخهٔ اپ (`/app/release/`) | ۲۰ مدل، از جمله `SiteSettings`، `Post`، `Page`، `Media`، `StaffRole`، `DailyStat` | [12-website.md](12-website.md) |
 | `data_quality_center` | ویرایش خلاصه‌های بالینی با بازبینی superuser و سابقهٔ تغییرناپذیر | `SectionEditRequest`، `SectionEdit`، `ReviewEvent` | [11-admin-consoles.md](11-admin-consoles.md) |
 | `announcements` | اعلان‌های مدیر به کاربران اپ، با دکمهٔ اختیاری به نشانی وب یا بخشی از اپ، مخاطب و بازهٔ زمانی، و رسید هر کاربر (دیده، زده، بسته) | `AppAnnouncement`، `AnnouncementReceipt` | API در [05-api.md](05-api.md)، مدیریت در [11-admin-consoles.md](11-admin-consoles.md) |
+| `activity` | رویداد بازدید، زمان پیش‌زمینه و مختصات کلیک/لمس سایت و اپ | `ActivityEvent` | `/manage/app/usage/`؛ [سند ۱۷](17-sessions-activity-support.fa.md) |
+| `support` | گفت‌وگوی خصوصی، رسید خواندن، اشتراک اعلان و outbox | `Conversation`، `Message`، `PushSubscription`، `NotificationDelivery` | `/manage/app/support/`؛ [سند ۱۷](17-sessions-activity-support.fa.md) |
 | `manage` | مدیریت یکپارچه: یک ورود، نوار بخش‌ها و نوار فرمان، خانه با کارهای امروز، گزارش فعالیت یکی‌شده؛ کنسول فروش، پنل سایت و مرکز کیفیت داده زیر آن می‌نشینند | — | نقشهٔ منو در `manage/nav.py`؛ شرح در [11-admin-consoles.md](11-admin-consoles.md) |
 
 ساختار معمول هر اپ: `models.py`، `serializers.py`، `views.py`، `urls.py`، `services.py` (منطق کسب‌وکار)، `tests.py` یا `tests/`، `management/commands/`.
@@ -59,7 +64,7 @@
 
 - احراز هویت DRF با `accounts.authentication.SessionTokenAuthentication` است: هدر `Authorization: Bearer <access_token>`.
 - توکن‌ها مات‌اند (JWT نیستند) و با پیشوند `phx_access_` و `phx_refresh_` ساخته می‌شوند. هر ورود یک `UserSession` می‌سازد.
-- عمر توکن دسترسی `AUTH_ACCESS_TOKEN_TTL_MINUTES` (۱۵ دقیقه) و توکن تمدید `AUTH_REFRESH_TOKEN_TTL_DAYS` (۳۰ روز) است. هر تمدید، توکن تمدید را عوض می‌کند. هر کاربر حداکثر `AUTH_MAX_ACTIVE_SESSIONS` (۱۰) نشست فعال دارد.
+- عمر توکن دسترسی `AUTH_ACCESS_TOKEN_TTL_MINUTES` (۱۵ دقیقه) و توکن تمدید `AUTH_REFRESH_TOKEN_TTL_DAYS` (۳۰ روز) است. هر تمدید، توکن تمدید را عوض می‌کند. هر حساب حداکثر دو دستگاه فعال دارد؛ `AUTH_MAX_ACTIVE_SESSIONS` پیش‌فرض ۲ است و سقف مؤثر از دو بیشتر نمی‌شود. ورود سوم `409 DEVICE_LIMIT_REACHED` می‌گیرد و دو نشست قبلی حفظ می‌شوند. دستگاه، OS، مرورگر و تاریخچهٔ IP در API و مدیریت قابل مشاهده‌اند ([سند ۱۷](17-sessions-activity-support.fa.md)).
 - ابطال نشست فوری است (`logout`، `logout-all`، کنسول فروش).
 - برای کارهای حساس، «تأیید دوباره» (`step-up`) لازم است که `AUTH_STEP_UP_TTL_MINUTES` (۱۰ دقیقه) معتبر می‌ماند.
 
@@ -154,6 +159,7 @@
   - کلید هر نسخه از `OFFLINE_PACKAGE_SECRET` و شناسهٔ نسخه (`build`) مشتق می‌شود: `HMAC-SHA256(secret, "pharmenta-offline-v1:" + build)`.
   - هر بسته شامل `part-NNN.bin`ها، `manifest.json` و `latest.json` است.
 - **ساخت:** روی لپ‌تاپ با `build_offline_package` (`builders.py`). سرور هیچ‌وقت بسته نمی‌سازد.
+- **آماده‌سازی انتشار:** `prepare_offline_upload` ابتدا سازنده را اجرا می‌کند و سپس با `upload.prepare_upload` اندازه و SHA-256 و MD5 قطعه‌ها، تطابق manifestها، رکورد بررسی کلید و باز شدن index را می‌سنجد. برای UpToDate وجود `search_schema: 1` و نگاشت مفاهیم و تخصص‌ها هم لازم است. گزینهٔ `--existing` فقط ساخت موجود را بررسی می‌کند و با `--source` قابل ترکیب نیست. خروجی راهنمای `UPLOAD.fa.md` است؛ آپلود خودکار یا رمزگشایی تک‌تک مقاله‌ها انجام نمی‌شود.
 - **نگهداری (`storage.py`):**
   - بسته‌ها در باکت خصوصی Object Storage نگه داشته می‌شوند. `latest.json` در سرور ۵ دقیقه کش می‌شود.
   - اپ با لینک امضاشدهٔ ۲۴ ساعته (`OFFLINE_URL_TTL_SECONDS`) مستقیم از باکت دانلود می‌کند.

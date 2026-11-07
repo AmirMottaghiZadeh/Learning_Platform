@@ -193,3 +193,7 @@ python manage.py seed_seo_content
 | `apps/website/context.py` | context processor سایت (تنظیمات، منوها) |
 | `apps/website/management/commands/seed_website.py` | محتوای شروع |
 | `config/urls_site.py` | urlconf هاست‌های سایت |
+
+## دستگاه و فعالیت سایت
+
+ورود کوکی سایت در محدودیت دو دستگاه حساب لحاظ می‌شود. OS، مرورگر و تاریخچهٔ IP در گزارش مشترک دستگاه‌ها قرار دارند. `activity.middleware.SiteActivityMiddleware` بازدید مسیرهای عمومی را ثبت می‌کند؛ `website/activity.js` زمان قابل مشاهده بودن تب و مختصات کلیک/لمس را با CSRF به `/events/activity/` می‌فرستد. این مسیر در دامنهٔ سایت است. متن فرم و جست‌وجو ثبت نمی‌شود. گزارش تفکیک‌شده در `/manage/app/usage/` و قرارداد شاخص‌ها در [سند ۱۷](17-sessions-activity-support.fa.md) است.

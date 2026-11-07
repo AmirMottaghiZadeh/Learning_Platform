@@ -70,7 +70,8 @@
 |---|---|---|---|
 | `AUTH_ACCESS_TOKEN_TTL_MINUTES` | `15` | — | عمر توکن دسترسی |
 | `AUTH_REFRESH_TOKEN_TTL_DAYS` | `30` | — | عمر توکن تمدید |
-| `AUTH_MAX_ACTIVE_SESSIONS` | `10` | — | حداکثر نشست هم‌زمان هر کاربر |
+| `AUTH_MAX_ACTIVE_SESSIONS` | `2` | — | سقف دستگاه فعال؛ حداکثر مؤثر ۲، ورود سوم رد می‌شود |
+| `CLIENT_IP_TRUSTED_PROXIES` | loopback و شبکه‌های خصوصی RFC1918 | شبکهٔ واقعی پروکسی | CIDRهای مجاز برای اعتماد به `X-Forwarded-For` |
 | `AUTH_STEP_UP_TTL_MINUTES` | `10` | — | اعتبار تأیید دوباره (و انتخاب رمز بعد از کد پیامکی) |
 | `AUTH_PASSWORD_MIN_LENGTH` | `6` | — | تنها قاعدهٔ رمز عبور |
 | `AUTH_EMAIL_REGISTRATION_ENABLED` | `False` | — | ثبت‌نام قدیمی با ایمیل |
@@ -117,7 +118,7 @@
 | `DRF_BURST_THROTTLE_RATE` / `DRF_SUSTAINED_THROTTLE_RATE` | `120/min` / `5000/day` | |
 | `DRF_AUTH_LOGIN_THROTTLE_RATE` | `5/min` | ورود |
 | `DRF_AUTH_REGISTER_THROTTLE_RATE` | `5/hour` | ثبت‌نام ایمیلی |
-| `DRF_AUTH_PASSWORD_RESET_REQUEST_THROTTLE_RATE` / `..._CONFIRM_...` | `3/hour` / `5/hour` | بازیابی ایمیلی |
+| `DRF_AUTH_PASSWORD_RESET_REQUEST_THROTTLE_RATE` / `DRF_AUTH_PASSWORD_RESET_CONFIRM_THROTTLE_RATE` | `3/hour` / `5/hour` | بازیابی ایمیلی |
 | `DRF_AUTH_OTP_REQUEST_THROTTLE_RATE` | `20/hour` | درخواست کد، هر IP (سقف هر شماره جداست) |
 | `DRF_AUTH_OTP_VERIFY_THROTTLE_RATE` | `30/hour` | تأیید کد |
 | `DRF_AUTH_PASSWORD_SET_THROTTLE_RATE` | `10/hour` | انتخاب رمز |
@@ -213,3 +214,15 @@
 ## متغیرهای منسوخ
 
 این‌ها مال کد پیش از بازنویسی‌اند و نباید تنظیم شوند: `LEARNING_PRODUCT_ADAPTER`، `AI_DATA_PIPELINE_PROVIDER`.
+
+## اعلان پشتیبانی
+
+| متغیر | مقدار پیش‌فرض و کاربرد |
+|---|---|
+| `SUPPORT_WEB_PUSH_PUBLIC_KEY` | خالی؛ کلید عمومی VAPID |
+| `SUPPORT_WEB_PUSH_PRIVATE_KEY` | خالی؛ مسیر فایل خصوصی PEM روی سرور |
+| `SUPPORT_WEB_PUSH_SUBJECT` | `mailto:support@pharmenta.ir` |
+| `SUPPORT_EXPO_ACCESS_TOKEN` | خالی؛ توکن سرور برای push security اختیاری Expo |
+| `GOOGLE_SERVICES_JSON` | فقط هنگام بیلد فرانت؛ مسیر فایل تنظیمات Firebase اندروید، ترجیحاً متغیر فایل EAS |
+
+[ساخت کلید وب و تنظیم FCM v1](17-sessions-activity-support.fa.md#اعلان-پاسخ-پشتیبانی) در سند ۱۷ شرح داده شده است. Firebase هنوز تنظیم نشده؛ افزودن متغیر بدون بارگذاری اعتبارنامهٔ FCM در EAS، ارسال اندروید را فعال نمی‌کند.
