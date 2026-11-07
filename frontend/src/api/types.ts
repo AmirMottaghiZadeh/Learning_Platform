@@ -105,6 +105,7 @@ export interface AtcGroup {
 export interface ChapterDrug {
   slug: string;
   name: string;
+  name_fa?: string;
   pharm_classes: string[];
   /** drugs arrive ordered by it, so each group is one contiguous run */
   atc_group: AtcGroup | null;
@@ -348,7 +349,7 @@ export interface StudyPlanItem {
   reason_fa: string;
   reason_en: string;
   completed_at: string | null;
-  /** What the task is ("درسنامه: ضدفشارخون‌ها"). */
+  /** What the task is ("دارونامه: ضدفشارخون‌ها"). */
   title_fa: string;
   title_en: string;
 }
@@ -622,6 +623,8 @@ export interface UptodateSearchPage {
 }
 
 export interface UptodateArticle extends UptodateTopic {
+  /** Set only by the local Medscape adapter, not by the UpToDate API. */
+  reference_kind?: MedscapeKind;
   contributors: string[];
   outline_html: string;
   body_html: string;

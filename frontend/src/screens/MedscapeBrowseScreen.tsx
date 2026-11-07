@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 
+import { ReferenceFavorites } from "@/components/article/ReferenceFavorites";
 import { medscapeApi } from "@/api/endpoints";
 import { MedscapeArticleListItem, MedscapeKind } from "@/api/types";
 import { LoadFailed } from "@/components/LoadFailed";
@@ -87,6 +88,7 @@ export function MedscapeBrowseScreen() {
   return (
     <Screen>
       <ScreenChrome title={t(titleKey)} onBack={goBack} tour="diseases" />
+      {!q.trim() ? <ReferenceFavorites kind="disease" /> : null}
 
       <TourTarget id="dis.search" style={{ marginBottom: spacing.lg }}>
       <View

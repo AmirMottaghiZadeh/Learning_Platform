@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, TextInput, View } from "react-native";
 
+import { ReferenceFavorites } from "@/components/article/ReferenceFavorites";
 import { medscapeApi } from "@/api/endpoints";
 import { MedscapeArticleListItem } from "@/api/types";
 import { AlphabeticalArticleList } from "@/components/AlphabeticalArticleList";
@@ -92,6 +93,7 @@ export function MedscapeGuidelinesScreen() {
     return (
       <Screen>
         <ScreenChrome title={t("guidelinesLabel")} onBack={goBack} />
+        {!q.trim() ? <ReferenceFavorites kind="guideline" /> : null}
         <LoadFailed message={t("medscapeTreeUnavailable")} onRetry={() => refetchTree()} busy={treeFetching} />
       </Screen>
     );
@@ -102,6 +104,8 @@ export function MedscapeGuidelinesScreen() {
     <Screen scroll={false} padded={false}>
       <View style={{ flex: 1, padding: layout.screenPadding, paddingBottom: 0 }}>
         <ScreenChrome title={t("guidelinesLabel")} onBack={goBack} tour="guidelines" />
+
+        {!q.trim() ? <ScrollView style={{ maxHeight: 180, flexGrow: 0 }}><ReferenceFavorites kind="guideline" /></ScrollView> : null}
 
         {specialties.length > 1 ? (
           <TourTarget id="guide.specialties" style={{ marginBottom: spacing.md }}>

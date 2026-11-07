@@ -20,6 +20,7 @@ import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
 import { htmlToParagraphs } from "@/utils/html";
+import { groupInteractions, InteractionGroup } from "@/utils/lexicompGroups";
 
 const SEVERITY_LABEL: Record<string, StringKey> = {
   major: "lexicompSeverityMajor",
@@ -243,10 +244,10 @@ export function LexicompScreen() {
           </Card>
         ) : (
           <View style={{ gap: 10 }}>
-            {check.data.map((interaction) => (
+            {groupInteractions(check.data).map((group) => (
               <InteractionCard
-                key={`${interaction.monograph_id}-${interaction.object_generic_id}-${interaction.precipitant_generic_id}`}
-                interaction={interaction}
+                key={group.key}
+                group={group}
               />
             ))}
           </View>
@@ -256,12 +257,12 @@ export function LexicompScreen() {
   );
 }
 
-function InteractionCard({ interaction }: { interaction: LexicompInteraction }) {
-  const { t } = useLang();
+function InteractionCard({ group }: { group: InteractionGroup }) {
+  const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
-  const key = interaction.severity.toLowerCase();
+  const key = group.severity.toLowerCase();
   const tone = toneColors(SEVERITY_TONE[key] ?? "info", colors);
-  const severityLabel = SEVERITY_LABEL[key] ? t(SEVERITY_LABEL[key]) : interaction.severity;
+  const severityLabel = SEVERITY_LABEL[key] ? t(SEVERITY_LABEL[key]) : group.severity;
 
   return (
     <Card style={{ gap: 10 }}>
@@ -271,7 +272,7 @@ function InteractionCard({ interaction }: { interaction: LexicompInteraction }) 
           size={14}
           style={{ flex: 1, textAlign: "left", writingDirection: "ltr" }}
         >
-          {interaction.object_name} × {interaction.precipitant_name}
+          {group.names.join(" × ")}
         </AppText>
         <View
           style={{
@@ -289,33 +290,34 @@ function InteractionCard({ interaction }: { interaction: LexicompInteraction }) 
         </View>
       </View>
 
-      {interaction.summary ? (
-        <AppText weight="600" size={13} style={{ lineHeight: 20, textAlign: "left", writingDirection: "ltr" }}>
-          {htmlToParagraphs(interaction.summary)}
-        </AppText>
-      ) : null}
-
-      {interaction.management ? (
-        <View>
-          <AppText muted weight="800" size={11} style={{ marginBottom: 3 }}>
-            {t("lexicompManagementLabel")}
-          </AppText>
-          <AppText weight="600" size={12.5} style={{ lineHeight: 19, textAlign: "left", writingDirection: "ltr" }}>
-            {htmlToParagraphs(interaction.management)}
-          </AppText>
+      <AppText muted size={12}>{isFa ? `${n(group.interactions.length)} نوع تداخل` : `${group.interactions.length} interaction rule(s)`}</AppText>
+      {group.interactions.map((interaction, index) => (
+        <View key={interaction.monograph_id} style={{ gap: 8, borderTopWidth: 1, borderTopColor: colors.sheetLine, paddingTop: 10 }}>
+          <View style={{ flexDirection: row, justifyContent: "space-between", gap: 8 }}>
+            <AppText weight="800" size={13}>{isFa ? `تداخل ${n(index + 1)}` : `Interaction ${index + 1}`}</AppText>
+            <AppText muted size={12}>{SEVERITY_LABEL[interaction.severity.toLowerCase()] ? t(SEVERITY_LABEL[interaction.severity.toLowerCase()]) : interaction.severity}</AppText>
+          </View>
+          <InteractionDisclosure label={isFa ? "خلاصهٔ تداخل" : "Interaction summary"} text={interaction.summary} />
+          <InteractionDisclosure label={t("lexicompManagementLabel")} text={interaction.management} />
+          {interaction.discussion ? <InteractionDisclosure label={t("lexicompDiscussionLabel")} text={interaction.discussion} /> : null}
+          {interaction.footnotes ? <InteractionDisclosure label={isFa ? "منابع و توضیحات" : "References and notes"} text={interaction.footnotes} /> : null}
         </View>
-      ) : null}
-
-      {interaction.discussion ? (
-        <View>
-          <AppText muted weight="800" size={11} style={{ marginBottom: 3 }}>
-            {t("lexicompDiscussionLabel")}
-          </AppText>
-          <AppText muted weight="600" size={12} style={{ lineHeight: 18, textAlign: "left", writingDirection: "ltr" }}>
-            {htmlToParagraphs(interaction.discussion)}
-          </AppText>
-        </View>
-      ) : null}
+      ))}
     </Card>
+  );
+}
+
+function InteractionDisclosure({ label, text }: { label: string; text: string }) {
+  const [open, setOpen] = useState(false);
+  const { colors } = useTheme();
+  const { row, isFa } = useLang();
+  return (
+    <View style={{ borderWidth: 1, borderColor: colors.trackBg, borderRadius: 12, overflow: "hidden" }}>
+      <Pressable onPress={() => setOpen((value) => !value)} accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={label} style={{ minHeight: 46, paddingHorizontal: 12, flexDirection: row, alignItems: "center", justifyContent: "space-between", backgroundColor: colors.softBg }}>
+        <AppText weight="700" size={12}>{label}</AppText>
+        <AppText muted>{open ? "−" : "+"}</AppText>
+      </Pressable>
+      {open ? <AppText size={13} style={{ padding: 12, lineHeight: 22, textAlign: "left", writingDirection: "ltr" }}>{htmlToParagraphs(text) || (isFa ? "در منبع توضیحی ثبت نشده است." : "No explanation in the source.")}</AppText> : null}
+    </View>
   );
 }

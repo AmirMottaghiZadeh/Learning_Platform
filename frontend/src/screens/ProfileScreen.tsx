@@ -14,6 +14,7 @@ import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useNavClearance } from "@/components/BottomNav";
+import { SupportLink } from "@/components/SupportSettings";
 
 export function ProfileScreen() {
   const navClearance = useNavClearance();
@@ -175,13 +176,15 @@ export function ProfileScreen() {
       )}
 
       <View style={{ paddingHorizontal: 20, paddingTop: 18, gap: 8 }}>
+        <SupportLink />
         {user?.is_guest ? null : <Row label={t("profileBuySubscription")} icon="profile-subscription" onPress={() => navigate("plans")} />}
         <Row label={t("profileFullStats")} icon="profile-full-stats" onPress={() => navigate("statistics")} />
         <Row label={t("profilePlanning")} icon="profile-planning" onPress={() => navigate("planning")} />
         <Row label={t("mistakesTitle")} icon="edu-mistakes" onPress={() => navigate("mistakes")} />
         <Row label={t("offlineTitle")} icon="profile-downloads" onPress={() => navigate("downloads")} />
         <Row label={t("settingsTitle")} glyph="⚙" onPress={() => navigate("settings")} />
-        <Row label={t("profileNotifications")} icon="profile-notifications" />
+        <Row label={t("profileNotifications")} icon="profile-notifications" onPress={() => navigate("notifications")} />
+        <Row label={t("devicesTitle")} glyph="▣" onPress={() => navigate("devices")} />
         {user?.is_guest ? (
           // A guest has no account to log out of: this leads to the sign-in screen.
           <Row label={t("profileGuestSignIn")} icon="profile-logout" onPress={signOut} />

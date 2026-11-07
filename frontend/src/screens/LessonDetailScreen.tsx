@@ -14,6 +14,7 @@ import { fontFamily } from "@/theme/fonts";
 import { toneColors } from "@/theme/tone";
 import { useNavClearance } from "@/components/BottomNav";
 import { useBleedTop } from "@/components/AppShell";
+import { drugName } from "@/utils/drugName";
 
 // The upstream summaries are already structured plain text -- lines starting
 // "- " are a bullet list (true for 10 of the 12 clinical fields, e.g. dose,
@@ -342,7 +343,7 @@ export function LessonDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <AppText weight="900" size={26} style={{ lineHeight: 38 }}>
-          {drug?.name}
+          {drugName(drug, isFa)}
         </AppText>
         <AppText weight="700" size={13} muted style={{ marginTop: 4 }}>
           {[...(drug?.pharm_classes ?? []), ...(drug?.atc_codes ?? []).map((a) => a.code)].join(" · ")}
@@ -408,7 +409,7 @@ export function LessonDetailScreen() {
           }}
         >
           <AppText weight="800" size={14}>
-            {isFa ? `خودآزمایی ${drug?.name ?? ""}` : `Self-test: ${drug?.name ?? ""}`}
+            {isFa ? `خودآزمایی ${drugName(drug, true)}` : `Self-test: ${drugName(drug, false)}`}
           </AppText>
           <AppText muted weight="600" size={12} style={{ marginTop: 4 }}>
             {isFa

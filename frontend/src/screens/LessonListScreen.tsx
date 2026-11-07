@@ -246,7 +246,7 @@ export function LessonListScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <AppText weight="800" size={14}>
-                    {drug.name}
+                    {isFa ? drug.name_fa?.trim() || drug.name : drug.name}
                   </AppText>
                   {drug.pharm_classes.length ? (
                     <AppText muted weight="600" size={12} numberOfLines={1} style={{ marginTop: 2 }}>

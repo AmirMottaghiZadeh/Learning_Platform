@@ -117,7 +117,7 @@ export function ScreenChrome({
             </AppText>
           </ChromeButton>
         ) : null}
-        <AppText weight="800" size={17}>
+        <AppText accessibilityRole="header" aria-level={1} weight="800" size={17}>
           {title}
         </AppText>
       </View>

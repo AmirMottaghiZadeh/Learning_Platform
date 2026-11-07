@@ -28,7 +28,7 @@ const FIELDS: Option[] = [
     v: "pharmacy",
     fa: "داروسازی",
     en: "Pharmacy",
-    descFa: "درسنامه‌ی داروها، ATC و تداخلات",
+    descFa: "دارونامه‌ی داروها، ATC و تداخلات",
     descEn: "Drug lessons, ATC and interactions",
     icon: "edu-lessons",
   },
@@ -182,7 +182,7 @@ const START_HERE: Record<string, { icon: IconName; fa: string; en: string; descF
   pharmacy: [
     {
       icon: "edu-lessons",
-      fa: "درسنامه‌ی فارسی داروها",
+      fa: "دارونامه‌ی فارسی داروها",
       en: "Drug lessons in Persian",
       descFa: "دسته‌بندی‌شده بر اساس ATC",
       descEn: "Organised by ATC class",

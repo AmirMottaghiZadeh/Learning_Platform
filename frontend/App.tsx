@@ -16,6 +16,10 @@ import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { useAppFonts } from "@/theme/fonts";
 import { TourProvider } from "@/tour/TourContext";
 import { TourOverlay } from "@/tour/TourOverlay";
+import { useActivity } from "@/activity/useActivity";
+import { ActivityCapture } from "@/activity/ActivityCapture";
+import { useSupportNotifications } from "@/notifications/useSupportNotifications";
+import { SupportAlerts } from "@/components/SupportAlerts";
 
 registerServiceWorker();
 initializeInstall();
@@ -38,15 +42,20 @@ function Gate() {
   }, [hydrate]);
   // Offline UpToDate/Lexicomp packages: resume downloads, renew licenses.
   useOfflineBoot();
+  useActivity();
+  useSupportNotifications();
 
   if (!fontsLoaded || !themeReady || !langReady) return <LoadingState />;
   return (
     <TourProvider>
+      <ActivityCapture>
       <Navigator />
       {/* The section's guided tour, over everything but system dialogs. */}
       <TourOverlay />
+      <SupportAlerts />
       {/* A newer published version: offered, or required, on opening. */}
       <UpdatePrompt />
+      </ActivityCapture>
     </TourProvider>
   );
 }

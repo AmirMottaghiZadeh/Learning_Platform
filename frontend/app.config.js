@@ -30,10 +30,11 @@ module.exports = ({ config }) => {
   const archs = (process.env.ANDROID_ARCHS || "arm64-v8a,armeabi-v7a").split(",").map((a) => a.trim());
   return {
     ...config,
-    android: { ...config.android, versionCode: versionCodeOf(config.version) },
+    android: { ...config.android, ...(process.env.GOOGLE_SERVICES_JSON ? { googleServicesFile: process.env.GOOGLE_SERVICES_JSON } : {}), versionCode: versionCodeOf(config.version) },
     ios: { ...config.ios, buildNumber: config.version },
     plugins: [
       ...(config.plugins || []),
+      "expo-notifications",
       [
         "expo-build-properties",
         {

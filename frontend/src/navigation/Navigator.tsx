@@ -1,4 +1,7 @@
 import React, { useEffect, useRef } from "react";
+import { SupportScreen } from "@/screens/SupportScreen";
+import { DevicesScreen } from "@/screens/DevicesScreen";
+import { NotificationsScreen } from "@/screens/NotificationsScreen";
 import { Animated, BackHandler, Easing, Platform, ToastAndroid, View } from "react-native";
 
 import { AppShell } from "@/components/AppShell";
@@ -152,6 +155,12 @@ function CurrentScreen() {
   const screen = useNav((s) => s.screen);
 
   switch (screen) {
+    case "support":
+      return <SupportScreen />;
+    case "devices":
+      return <DevicesScreen />;
+    case "notifications":
+      return <NotificationsScreen />;
     case "lessons":
       return <LessonsScreen />;
     case "lessonList":

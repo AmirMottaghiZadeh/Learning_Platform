@@ -57,11 +57,11 @@ export const TOURS: Record<TourKey, TourStep[]> = {
       target: "home.plan",
       fa: ["برنامهٔ مطالعه", "کارهای امروز و این هفته. دایره را بزن تا کار انجام‌شده شود؛ «ویرایش برنامه» همه را عوض می‌کند."],
       en: ["Study plan", "Today's tasks and this week. Tap a circle to tick a task off; “Edit plan” changes it all."],
-      preview: { kind: "check", title: FA_EN("درسنامه: ضدفشارخون‌ها", "Lesson: Antihypertensives"), sub: FA_EN("۱۰ دقیقه", "10 min") },
+      preview: { kind: "check", title: FA_EN("دارونامه: ضدفشارخون‌ها", "Formulary: Antihypertensives"), sub: FA_EN("۱۰ دقیقه", "10 min") },
     },
     {
       target: "nav",
-      fa: ["بخش‌های اصلی", "درسنامه، فلش‌کارت، آزمون و پروفایل همیشه این پایین است."],
+      fa: ["بخش‌های اصلی", "دارونامه، فلش‌کارت، آزمون و پروفایل همیشه این پایین است."],
       en: ["The main sections", "Lessons, flashcards, quizzes and your profile are always down here."],
       preview: { kind: "nav" },
     },

@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const ts = require("typescript");
 
-const source = fs.readFileSync("src/screens/UptodateArticleScreen.tsx", "utf8");
+const source = fs.readFileSync("src/components/article/ClinicalArticleReader.tsx", "utf8");
 const ast = ts.createSourceFile("screen.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 let initializer;
 function walk(node) {

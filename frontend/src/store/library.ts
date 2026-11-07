@@ -30,7 +30,8 @@ export const HIGHLIGHT_PAINT: Record<HighlightColor, [string, string]> = {
 
 export type FavoriteArticle = {
   /** "utd" today; the key leaves room for the other readers */
-  source: "utd";
+  source: "utd" | "medscape";
+  kind?: "disease" | "guideline";
   id: string;
   title: string;
   section: string;

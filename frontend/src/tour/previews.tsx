@@ -291,7 +291,7 @@ function Nav({ spec }: { spec: Extract<PreviewSpec, { kind: "nav" }> }) {
   const tx = useTx();
   const labels =
     spec.items?.map(tx) ??
-    (lang === "fa" ? ["خانه", "درسنامه", "فلش‌کارت", "آزمون", "پروفایل"] : ["Home", "Lessons", "Cards", "Quiz", "Profile"]);
+    (lang === "fa" ? ["خانه", "دارونامه", "فلش‌کارت", "آزمون", "پروفایل"] : ["Home", "Lessons", "Cards", "Quiz", "Profile"]);
   const count = labels.length;
   const cell = 100 / count;
   // the pill visits the items in reading order (the nav's first four tabs),

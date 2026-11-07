@@ -1,4 +1,5 @@
 import axios, { AxiosRequestConfig } from "axios";
+import { deviceHeaders } from "./device";
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
@@ -54,7 +55,8 @@ export function configureAuth(controller: AuthController | null) {
   refreshPromise = null;
 }
 
-apiClient.interceptors.request.use((request) => {
+apiClient.interceptors.request.use(async (request) => {
+  for (const [key, value] of Object.entries(await deviceHeaders())) request.headers.set(key, value);
   const token = auth?.getAccessToken();
   if (token && !(request as RetryableConfig).skipAuth) {
     request.headers.set("Authorization", `Bearer ${token}`);

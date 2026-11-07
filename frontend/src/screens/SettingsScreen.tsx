@@ -9,6 +9,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { BG_TONES, DEFAULT_TONE, THEME, ThemeMode } from "@/theme/tokens";
+import { SupportLink, NotificationSettings } from "@/components/SupportSettings";
 
 const MODES: ThemeMode[] = ["light", "dark"];
 
@@ -19,10 +20,18 @@ export function SettingsScreen() {
   const { t, n, row } = useLang();
   const { colors, mode, tones, setMode, setTone } = useTheme();
   const goBack = useNav((s) => s.goBack);
+  const navigate = useNav((s) => s.navigate);
 
   return (
     <Screen>
       <ScreenChrome title={t("settingsTitle")} onBack={goBack} />
+
+      <View style={{ gap: 12, marginBottom: 24 }}>
+        <SupportLink />
+        <Pressable onPress={() => navigate("plans")} accessibilityRole="button"><Card><AppText weight="800">{t("profileBuySubscription")}</AppText></Card></Pressable>
+        <Pressable onPress={() => navigate("devices")} accessibilityRole="button"><Card><AppText weight="800">{t("devicesTitle")}</AppText></Card></Pressable>
+        <NotificationSettings />
+      </View>
 
       <AppText weight="800" size={13} muted style={{ marginBottom: 8 }}>
         {t("settingsAppearance")}

@@ -30,7 +30,7 @@ const HELP: Record<HelpKey, { fa: [string, string[]]; en: [string, string[]] }> 
     en: ["Flashcards guide", ["Tap the card to flip it and see the answer.", "After the answer, rate it easy or hard.", "Use the Leitner box for scheduled review."]],
   },
   lessons: {
-    fa: ["راهنمای درسنامه", ["دروس بر اساس کد ATC به گروه و زیرگروه تقسیم شده‌اند.", "روی هر گروه بزن تا زیرگروه‌هایش باز شود.", "نوار رنگی هر زیرگروه، درصد مطالعهٔ همان بخش را نشان می‌دهد."]],
+    fa: ["راهنمای دارونامه", ["دروس بر اساس کد ATC به گروه و زیرگروه تقسیم شده‌اند.", "روی هر گروه بزن تا زیرگروه‌هایش باز شود.", "نوار رنگی هر زیرگروه، درصد مطالعهٔ همان بخش را نشان می‌دهد."]],
     en: ["Lessons guide", ["Lessons are grouped by ATC code into groups and subgroups.", "Tap a group to expand its subgroups.", "Each bar shows study progress for that section."]],
   },
   mistakes: {

@@ -118,3 +118,35 @@ self.addEventListener("fetch", (event) => {
       .catch(async () => (await caches.match(request)) || Response.error()),
   );
 });
+
+// Support notifications are delivered independently of the app shell cache.
+self.addEventListener("push", (event) => {
+  let data;
+  try { data = event.data?.json(); } catch { return; }
+  if (!data || !/^[a-f0-9-]{36}$/i.test(data.conversation_id || "")) return;
+  event.waitUntil(self.registration.showNotification("پشتیبانی فارمنتا", {
+    body: "یک پاسخ تازه از تیم پشتیبانی دارید.",
+    tag: "support-" + data.conversation_id,
+    data: { conversationId: data.conversation_id },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const id = event.notification.data?.conversationId;
+  if (typeof id !== "string" || !/^[a-f0-9-]{36}$/i.test(id)) return;
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of windows) {
+      const url = new URL(client.url);
+      if (inScope(url)) {
+        await client.focus();
+        client.postMessage({ type: "support-open", conversationId: id });
+        return;
+      }
+    }
+    const url = new URL(SCOPE);
+    url.searchParams.set("supportThread", id);
+    await self.clients.openWindow(url.href);
+  })());
+});
