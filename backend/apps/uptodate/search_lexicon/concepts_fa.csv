@@ -1,0 +1,2009 @@
+fa,en,kind,status,note
+پنومونی|ذات الریه|عفونت ریه|سینه پهلو|عفونت ریوی|پنومونیا|نومونی,pneumonia,condition,proposed,infectious
+پنومونی اکتسابی از جامعه|پنومونی اکتسابی جامعه|پنومونی سرپایی|cap|ذات الریه اکتسابی از جامعه|کپ,community acquired pneumonia,condition,proposed,pulmonology
+پنومونی بیمارستانی|پنومونی اکتسابی از بیمارستان|hap|ذات الریه بیمارستانی,hospital acquired pneumonia,condition,proposed,pulmonology
+پنومونی ناشی از ونتیلاتور|vap|پنومونی وابسته به ونتیلاتور,ventilator associated pneumonia,condition,proposed,pulmonology
+سل|توبرکلوز|توبرکولوز|بیماری سل|تی بی,tuberculosis,condition,proposed,infectious
+سل ریوی,pulmonary tuberculosis,condition,proposed,phase1
+سل نهفته|عفونت نهفته سل,latent tuberculosis,condition,proposed,phase1
+عفونت ادراری|عفونت مجاری ادراری|عفونت دستگاه ادراری|عفونت ادرار|uti|یو تی آی|عفونت راه ادراری,urinary tract infection,condition,proposed,infectious
+سیستیت|عفونت مثانه|التهاب مثانه,cystitis (acute cystitis),condition,proposed,nephrology_urology
+پیلونفریت|عفونت کلیه|پیلونفریت حاد|عفونت کلیوی,pyelonephritis (acute pyelonephritis),condition,proposed,nephrology_urology
+باکتریوری بدون علامت,asymptomatic bacteriuria,condition,proposed,phase1
+سلولیت|عفونت پوست|سلولیت پوستی,cellulitis,condition,proposed,infectious
+مننژیت|مننژیت باکتریایی حاد,meningitis,condition,proposed,infectious
+مننژیت باکتریایی|مننژیت باکتریال|مننژیت چرکی,bacterial meningitis,condition,proposed,phase1
+سپسیس|عفونت خون|سپتی سمی|مسمومیت خون|سپسیس شدید,sepsis,condition,proposed,infectious
+شوک سپتیک|شوک عفونی,septic shock,condition,proposed,infectious
+اندوکاردیت|اندوکاردیت عفونی|عفونت دریچه قلب,endocarditis,condition,proposed,infectious
+استئومیلیت|عفونت استخوان,osteomyelitis,condition,proposed,infectious
+اوتیت میانی|عفونت گوش میانی|عفونت گوش|گوش درد عفونی|اوتیت مدیا,otitis media,condition,proposed,infectious
+سینوزیت|سینوسیت|عفونت سینوس|التهاب سینوس,sinusitis,condition,proposed,infectious
+فارنژیت|گلودرد|عفونت گلو|گلو درد|التهاب حلق|درد گلو|سوزش گلو,pharyngitis,symptom,proposed,infectious
+گلودرد استرپتوکوکی|فارنژیت استرپتوکوکی|عفونت استرپتوکوکی گلو|گلودرد چرکی,streptococcal pharyngitis,condition,proposed,infectious
+سرماخوردگی|سرما خوردگی|زکام|سرماخوردگی معمولی,common cold,condition,proposed,infectious
+آنفولانزا|آنفلوانزا|انفلوانزا|آنفلوآنزا|گریپ|انفولانزا|فلو,influenza,condition,proposed,infectious
+کرونا|کووید|کووید 19|کوید|ویروس کرونا|بیماری کرونا|کویید,covid 19,condition,proposed,infectious
+اچ آی وی|ایدز|hiv|aids|ویروس نقص ایمنی|اچ ای وی|عفونت اچ آی وی,hiv,condition,proposed,infectious
+هپاتیت ب|هپاتیت بی|هپاتیت b|اچ بی وی,hepatitis b,condition,proposed,infectious
+هپاتیت سی|هپاتیت ث|هپاتیت c|اچ سی وی,hepatitis c,condition,proposed,infectious
+زونا|هرپس زوستر|زوستر,herpes zoster,condition,proposed,infectious
+تبخال|هرپس سیمپلکس|هرپس|تب خال,herpes simplex,condition,proposed,infectious
+کلستریدیوم دیفیسیل|کلستریدیوئیدس دیفیسیل|سی دیفیسیل|عفونت کلستریدیوم دیفیسیل|کولیت سودوممبران|عفونت کلستریدیوم|سی دیف,clostridium difficile,condition,proposed,infectious
+هلیکوباکتر|هلیکوباکتر پیلوری|اچ پیلوری|عفونت هلیکوباکتر|میکروب معده,helicobacter pylori,condition,proposed,infectious
+مالاریا|تب نوبه,malaria,condition,proposed,infectious
+بروسلوز|تب مالت|تب مواج|بروسلا,brucellosis,condition,proposed,infectious
+سوزاک|گنوره|گونوره,gonorrhea,condition,proposed,infectious
+سیفلیس|کوفت,syphilis,condition,proposed,infectious
+کاندیدیاز|کاندیدیازیس|کاندیدا|عفونت قارچی,candidiasis,condition,proposed,infectious
+عفونت قارچی واژن|کاندیدیاز واژن|کاندیدیاز ولوواژینال|کاندیدیازیس واژینال|قارچ واژن|عفونت قارچی زنان,vulvovaginal candidiasis,condition,proposed,infectious
+گال|جرب|اسکابیس|جرب و گال,scabies,condition,proposed,infectious
+اسهال|شکم روش|اسهال حاد|مدفوع شل,diarrhea,condition,proposed,gastroenterology
+گاستروانتریت|عفونت روده|گاستروانتریت حاد|اسهال و استفراغ حاد|ورم معده و روده|التهاب معده و روده|انتریت|آنتریت,gastroenteritis,condition,proposed,infectious
+فشار خون|فشار خون بالا|فشار|پرفشاری خون|پر فشاری خون|هایپرتنشن|هیپرتانسیون|htn|فشار بالا|فشارخون|بیماری فشار خون,hypertension,condition,proposed,cardiology
+پره اکلامپسی|مسمومیت بارداری|پره اکلامپسیا|فشار خون بارداری,preeclampsia,condition,proposed,obstetrics_gynecology
+نارسایی قلب|نارسایی قلبی|نارسایی احتقانی قلب|hf|chf|سی اچ اف|نارسایی احتقانی|ضعف قلب|قلب ضعیف|نارسایی قلب جبران نشده|نارسایی قلبی احتقانی,heart failure,condition,proposed,cardiology
+فیبریلاسیون دهلیزی|فیبریلاسیون دهلیزها|afib|ای اف|فیبریلاسیون|آریتمی دهلیزی|فیبریلاسیون دهلیز,atrial fibrillation,condition,proposed,cardiology
+سکته قلبی|انفارکتوس قلبی|انفارکتوس میوکارد|حمله قلبی|mi|انفارکتوس|ام آی|سکته قلب,myocardial infarction,condition,proposed,cardiology
+سندرم حاد کرونری|acs|سندروم حاد کرونری|ای سی اس,acute coronary syndrome,condition,proposed,cardiology
+آنژین|آنژین صدری|درد قفسه سینه قلبی|درد قلبی|آنژین قلبی|آنژین پایدار,angina pectoris,condition,proposed,cardiology
+چربی خون|چربی خون بالا|هیپرلیپیدمی|هایپرلیپیدمی|دیس لیپیدمی|اختلال چربی خون|چربی بالا,hyperlipidemia,condition,proposed,cardiology
+کلسترول بالا|هیپرکلسترولمی|افزایش کلسترول|کلسترول خون بالا,hypercholesterolemia,condition,proposed,cardiology
+تری گلیسیرید بالا|هیپرتری گلیسیریدمی|تری گلیسرید بالا|افزایش تری گلیسرید|هیپرتری گلیسریدمی|هایپرتری گلیسریدمی,hypertriglyceridemia,condition,proposed,cardiology
+ترومبوز وریدی عمقی|لخته ورید عمقی|dvt|ترومبوز ورید عمقی|دی وی تی|لخته پا|لخته در پا|ترومبوز عمقی|ترومبوز|لخته|لخته شدن خون,deep vein thrombosis,condition,proposed,cardiology
+آمبولی ریه|آمبولی ریوی|pe|پی ای|لخته ریه|آمبولی,pulmonary embolism,condition,proposed,cardiology
+ترومبوآمبولی وریدی|ترومبوز وریدی|لخته خون|vte|وی تی ای|ترومبوآمبولی|لخته وریدی|حوادث ترومبوآمبولیک|رویدادهای ترومبوآمبولیک,venous thromboembolism,condition,proposed,cardiology
+سکته مغزی|استروک|سکته|cva|سی وی ای|حمله مغزی,stroke,condition,proposed,neurology
+سکته مغزی ایسکمیک|استروک ایسکمیک|سکته ایسکمیک|انفارکتوس مغزی|سکته مغزی حاد|سکته ایسکمیک حاد,ischemic stroke (acute ischemic stroke),condition,proposed,neurology
+حمله ایسکمیک گذرا|tia|تی آی ای|سکته گذرا|سکته مغزی گذرا|مینی استروک,transient ischemic attack,condition,proposed,neurology
+بیماری عروق محیطی|بیماری شریان محیطی|pad|تنگی عروق پا|گرفتگی رگ پا|پی ای دی,peripheral artery disease,condition,proposed,cardiology
+افت فشار|فشار خون پایین|هیپوتانسیون|فشار پایین|افت فشار خون,hypotension,condition,proposed,cardiology
+سنکوپ|غش|غش کردن|از هوش رفتن|بیهوشی گذرا,syncope,condition,proposed,cardiology
+برادیکاردی|ضربان قلب پایین|برادی کاردی|کندی ضربان,bradycardia,condition,proposed,cardiology
+تاکی کاردی|ضربان قلب بالا|تاکیکاردی|تند شدن ضربان قلب,tachycardia,condition,proposed,cardiology
+هیپرکالمی|هایپرکالمی|پتاسیم بالا|افزایش پتاسیم,hyperkalemia,condition,proposed,nephrology_urology
+هیپوکالمی|هایپوکالمی|پتاسیم پایین|کمبود پتاسیم|کاهش پتاسیم,hypokalemia,condition,proposed,nephrology_urology
+هیپوناترمی|هایپوناترمی|سدیم پایین|کاهش سدیم|کمبود سدیم,hyponatremia,condition,proposed,nephrology_urology
+هیپرناترمی|هایپرناترمی|سدیم بالا|افزایش سدیم,hypernatremia,condition,proposed,nephrology_urology
+هیپوکلسمی|کلسیم پایین|هایپوکلسمی|کاهش کلسیم|کمبود کلسیم,hypocalcemia,condition,proposed,nephrology_urology
+هیپرکلسمی|کلسیم بالا|هایپرکلسمی|افزایش کلسیم,hypercalcemia,condition,proposed,nephrology_urology
+هیپومنیزیمی|منیزیم پایین|کمبود منیزیم|هیپومگنزمی,hypomagnesemia,condition,proposed,nephrology_urology
+آسم|تنگی نفس آسمی|آسم برونشی|نفس تنگی آسمی,asthma,condition,proposed,pulmonology
+حمله آسم|تشدید آسم|آسم حاد|حمله حاد آسم,asthma exacerbation,condition,proposed,pulmonology
+بیماری انسدادی مزمن ریه|بیماری مزمن انسدادی ریه|سی او پی دی|copd|انسداد مزمن ریه|انسداد راه هوایی,copd,condition,proposed,pulmonology
+برونشیولیت|برونشیولیت نوزادان|برونشیولیت حاد,bronchiolitis,condition,proposed,pediatrics
+سرفه|سرفه خشک|سرفه خلط دار,cough,condition,proposed,pulmonology
+رینیت آلرژیک|آلرژی فصلی|حساسیت فصلی|آبریزش بینی آلرژیک|آلرژی بینی|تب یونجه|حساسیت بینی|رینیت,allergic rhinitis,condition,proposed,ent_eye_dental
+آنافیلاکسی|شوک آنافیلاکتیک|آنافیلاکتیک|شوک آنافیلاکسی|واکنش آنافیلاکتیک|حساسیت شدید,anaphylaxis,condition,proposed,toxicology_emergency
+کهیر|اورتیکاریا|کهیر حاد,urticaria,condition,proposed,dermatology
+آنژیوادم|آنژیوادما|ورم صورت|ورم لب و زبان,angioedema,condition,proposed,dermatology
+دیابت|مرض قند|دیابت ملیتوس|قند خون بالا|بیماری قند|قند|دیابتی,diabetes mellitus,condition,proposed,endocrinology
+دیابت نوع 1|دیابت نوع یک|دیابت تیپ 1|دیابت تیپ یک|دیابت جوانان|دیابت وابسته به انسولین,type 1 diabetes,condition,proposed,endocrinology
+دیابت نوع 2|دیابت نوع دو|دیابت تیپ 2|دیابت تیپ دو|دیابت بزرگسالان,type 2 diabetes,condition,proposed,endocrinology
+دیابت بارداری|دیابت حاملگی|دیابت دوران بارداری|قند بارداری,gestational diabetes (gestational diabetes mellitus),condition,proposed,endocrinology
+کتواسیدوز دیابتی|کتواسیدوز|dka|دی کی ای|اسیدوز دیابتی,diabetic ketoacidosis,condition,proposed,endocrinology
+هیپوگلیسمی|هایپوگلیسمی|افت قند|افت قند خون|قند پایین|کاهش قند خون,hypoglycemia,condition,proposed,endocrinology
+پرکاری تیروئید|هیپرتیروئیدی|هایپرتیروئیدی|هیپرتیروئیدیسم|تیروئید پرکار|پر کاری تیروئید|هایپرتیروئید,hyperthyroidism,condition,proposed,endocrinology
+کم کاری تیروئید|هیپوتیروئیدی|هایپوتیروئیدی|هیپوتیروئیدیسم|تیروئید کم کار|کمکاری تیروئید|هایپوتیروئید,hypothyroidism,condition,proposed,endocrinology
+پوکی استخوان|استئوپروز|پوکی|کاهش تراکم استخوان,osteoporosis,condition,proposed,endocrinology
+سندرم کوشینگ|کوشینگ|کوشینگ دارویی|هیپرکورتیزولیسم,cushing syndrome,condition,proposed,endocrinology
+نارسایی آدرنال|نارسایی غده فوق کلیه|آدرنال ناکافی|کمبود کورتیزول,adrenal insufficiency,condition,proposed,endocrinology
+سندرم تخمدان پلی کیستیک|تخمدان پلی کیستیک|pcos|پی سی او اس|کیست تخمدان پلی کیستیک|تخمدان پلیکیستیک,polycystic ovary syndrome,condition,proposed,endocrinology
+نقرس|نقرس حاد|حمله نقرس|ورم نقرسی,gout,condition,proposed,rheumatology_msk
+اسید اوریک بالا|هیپراوریسمی|افزایش اسید اوریک,hyperuricemia,condition,proposed,adverse_effects
+خونریزی گوارشی فوقانی|خونریزی دستگاه گوارش فوقانی|خونریزی گوارش فوقانی|خونریزی معده|استفراغ خونی|خونریزی گوارشی بالا|هماتمز|خون استفراغ,upper gastrointestinal bleeding,condition,proposed,gastroenterology
+خونریزی گوارشی|خونریزی دستگاه گوارش|خونریزی گوارش,gastrointestinal bleeding,condition,proposed,gastroenterology
+زخم معده|زخم پپتیک|زخم اثنی عشر|زخم دوازدهه|اولسر پپتیک|زخم گوارشی,peptic ulcer disease,condition,proposed,gastroenterology
+ریفلاکس|رفلاکس|ریفلاکس معده|برگشت اسید|ترش کردن|gerd|برگشت اسید معده|ریفلاکس معده به مری|جی ای آر دی|رفلاکس اسید,gerd,condition,proposed,gastroenterology
+سوء هاضمه|سوهاضمه|دیسپپسی|دیس پپسی|نفخ و سوء هاضمه|ناراحتی معده,dyspepsia,condition,proposed,gastroenterology
+یبوست|یبس|کم کاری روده|سفت شدن مدفوع|یبوست مزمن,constipation,condition,proposed,gastroenterology
+سندرم روده تحریک پذیر|روده تحریک پذیر|ibs|آی بی اس|کولون تحریک پذیر|روده حساس,irritable bowel syndrome,condition,proposed,gastroenterology
+بیماری التهابی روده|ibd|آی بی دی,inflammatory bowel disease,condition,proposed,gastroenterology
+کرون|بیماری کرون|کرونز,crohns,condition,proposed,gastroenterology
+کولیت اولسراتیو|کولیت زخمی|کولیت اولسرو,ulcerative colitis,condition,proposed,gastroenterology
+تهوع|حالت تهوع|دل به هم خوردگی|دل آشوبه,nausea,condition,proposed,gastroenterology
+سیروز|سیروز کبدی|سیروز کبد|سفتی کبد|تشمع کبد,cirrhosis,condition,proposed,gastroenterology
+پانکراتیت|التهاب لوزالمعده|التهاب پانکراس,pancreatitis,condition,proposed,gastroenterology
+انسفالوپاتی کبدی|آنسفالوپاتی کبدی|کمای کبدی,hepatic encephalopathy,condition,proposed,gastroenterology
+سلیاک|بیماری سلیاک|حساسیت به گلوتن|عدم تحمل گلوتن,celiac disease,condition,proposed,gastroenterology
+بیماری مزمن کلیه|نارسایی مزمن کلیه|ckd|نارسایی مزمن کلیوی|سی کی دی|بیماری مزمن کلیوی,chronic kidney disease,condition,proposed,nephrology_urology
+آسیب حاد کلیه|نارسایی حاد کلیه|aki|نارسایی حاد کلیوی|ای کی آی|آسیب حاد کلیوی,acute kidney injury,condition,proposed,nephrology_urology
+سنگ کلیه|سنگ کلیوی|سنگ ادراری|سنگ مجاری ادراری|نفرولیتیازیس|سنگ حالب,kidney stones,condition,proposed,nephrology_urology
+بزرگی خوش خیم پروستات|هیپرپلازی پروستات|بزرگی پروستات|bph|پروستات بزرگ|بی پی اچ|بزرگ شدن پروستات|پروستات,benign prostatic hyperplasia,condition,proposed,nephrology_urology
+بی اختیاری ادرار|بی اختیاری ادراری|نشت ادرار|کنترل نکردن ادرار,urinary incontinence,condition,proposed,nephrology_urology
+اختلال نعوظ|ناتوانی جنسی|ضعف جنسی|ای دی|اختلال در نعوظ|سستی نعوظ,erectile dysfunction,condition,proposed,nephrology_urology
+صرع|تشنج|اپی لپسی|بیماری صرع|غش صرعی|حمله تشنجی|تشنج کردن,epilepsy,condition,proposed,neurology
+تشنج مداوم|استاتوس اپی لپتیکوس|صرع پایدار,status epilepticus,condition,proposed,neurology
+میگرن|سردرد میگرنی|میگرن با اورا|میگرن بدون اورا,migraine,condition,proposed,neurology
+سردرد|سر درد|درد سر,headache,condition,proposed,neurology
+پارکینسون|بیماری پارکینسون|لرزش پارکینسونی,parkinson,condition,proposed,phase1
+آلزایمر|بیماری آلزایمر|آلزایمر پیری,alzheimers,condition,proposed,neurology
+دمانس|زوال عقل|فراموشی|دمانس پیری|زوال شناختی,dementia,condition,proposed,neurology
+ام اس|مولتیپل اسکلروزیس|مالتیپل اسکلروزیس|ms,multiple sclerosis,condition,proposed,neurology
+افسردگی|دپرشن|غمگینی|افسرده|حال بد,depression,condition,proposed,psychiatry
+اختلال دوقطبی|دوقطبی|بای پولار|دو قطبی|شیدایی افسردگی|مانیا|شیدایی|حمله مانیک,bipolar,condition,proposed,psychiatry
+اسکیزوفرنی|اسکیزوفرنیا|شیزوفرنی|جنون,schizophrenia,condition,proposed,psychiatry
+اضطراب|نگرانی|دلشوره|تشویش,anxiety,condition,proposed,psychiatry
+اختلال اضطراب منتشر|اضطراب منتشر|اختلال اضطراب فراگیر|اضطراب فراگیر|جی ای دی,generalized anxiety disorder,condition,proposed,psychiatry
+اختلال پانیک|حمله پانیک|اختلال وحشت زدگی|پنیک|حمله هراس,panic disorder,condition,proposed,psychiatry
+بی خوابی|بیخوابی|اختلال خواب|کم خوابی|بی خوابی مزمن|بد خوابی,insomnia,condition,proposed,neurology
+بیش فعالی|کم توجهی بیش فعالی|adhd|ای دی اچ دی|بیش فعالی کودکان|اختلال نقص توجه|بیش فعالی و کم توجهی,adhd,condition,proposed,psychiatry
+درد نوروپاتیک|درد عصبی|درد عصب,neuropathic pain,condition,proposed,neurology
+نوروپاتی دیابتی|بی حسی پا در دیابت|درد عصبی دیابتی,diabetic neuropathy,condition,proposed,endocrinology
+ترک الکل|سندرم ترک الکل|محرومیت از الکل|دلیریوم ترمنس,alcohol withdrawal,condition,proposed,psychiatry
+اعتیاد به مواد افیونی|اعتیاد به تریاک|سوء مصرف مواد افیونی|وابستگی به مواد افیونی|اعتیاد به مواد مخدر|اعتیاد به مخدر|اعتیاد به هروئین|اعتیاد به ترامادول,opioid use disorder,condition,proposed,psychiatry
+مسمومیت با مواد افیونی|مسمومیت با تریاک|مسمومیت اپیوئیدی|مسمومیت با اپیوئید|اوردوز مواد مخدر|مسمومیت با مواد مخدر|اوردوز مخدر|مسمومیت با متادون|مسمومیت افیونی|مسمومیت با ترامادول,opioid overdose,condition,proposed,toxicology_emergency
+مسمومیت با استامینوفن|مسمومیت با پاراستامول|مسمومیت استامینوفن|اوردوز استامینوفن,acetaminophen poisoning,condition,proposed,toxicology_emergency
+ترک سیگار|ترک دخانیات|ترک سیگار کشیدن|قطع سیگار,smoking cessation,condition,proposed,pulmonology
+ورتیگو|سرگیجه چرخشی,vertigo,condition,proposed,neurology
+کم خونی فقر آهن|آنمی فقر آهن|فقر آهن|کمبود آهن|کم خونی ناشی از فقر آهن|فقرآهن|کمبود آهن بدون کم خونی|کمبود ذخیره آهن,iron deficiency anemia,condition,proposed,hematology_oncology
+کم خونی|آنمی|کمخونی|کم خون|خون کم,anemia,condition,proposed,hematology_oncology
+کمبود ویتامین ب 12|کمبود b12|کمبود ویتامین b12|کمبود ویتامین ب۱۲|کمبود ب ۱۲|کمبود ب12|کمبود کوبالامین,vitamin b12 deficiency,condition,proposed,hematology_oncology
+ترومبوسیتوپنی ناشی از هپارین|hit|اچ آی تی,heparin induced thrombocytopenia,condition,proposed,hematology_oncology
+ترومبوسیتوپنی|پلاکت پایین|کاهش پلاکت|کمبود پلاکت,thrombocytopenia,condition,proposed,hematology_oncology
+نوتروپنی تب دار|تب و نوتروپنی|تب نوتروپنیک,neutropenic fever,condition,proposed,infectious
+کم خونی داسی شکل|بیماری سلول داسی|سیکل سل|آنمی داسی شکل,sickle cell anemia,condition,proposed,hematology_oncology
+تالاسمی|تالاسمی ماژور|تالاسمی مینور|مینور|بتا تالاسمی|آلفا تالاسمی,thalassemia,condition,proposed,hematology_oncology
+هموفیلی|هموفیلی آ|هموفیلی ب,hemophilia,condition,proposed,hematology_oncology
+سرطان پستان|سرطان سینه|کانسر پستان|کانسر سینه|تومور پستان|کارسینوم پستان,breast cancer,condition,proposed,hematology_oncology
+سرطان پروستات|کانسر پروستات|تومور پروستات,prostate cancer,condition,proposed,nephrology_urology
+سرطان ریه|کانسر ریه|تومور ریه|کارسینوم ریه,lung cancer,condition,proposed,pulmonology
+سرطان روده بزرگ|سرطان کولورکتال|سرطان کولون|کانسر روده|سرطان روده,colorectal cancer (colon cancer),condition,proposed,phase1
+تهوع ناشی از شیمی درمانی|تهوع شیمی درمانی|استفراغ ناشی از شیمی درمانی|تهوع و استفراغ شیمی درمانی,chemotherapy induced nausea and vomiting,condition,proposed,hematology_oncology
+آرتریت روماتوئید|روماتیسم مفصلی|آر ای|روماتیسم|رماتیسم مفصلی,rheumatoid arthritis,condition,proposed,rheumatology_msk
+آرتروز|استئوآرتریت|استئوآرتروز|ساییدگی مفصل,osteoarthritis,condition,proposed,rheumatology_msk
+لوپوس|لوپوس اریتماتوز سیستمیک|اس ال ای|sle|لوپوس سیستمیک,lupus,condition,proposed,rheumatology_msk
+کمردرد|درد کمر|کمر درد|درد پایین کمر,low back pain,condition,proposed,rheumatology_msk
+فیبرومیالژیا|فیبرومیالژی|درد عضلانی منتشر,fibromyalgia,condition,proposed,rheumatology_msk
+آکنه|جوش صورت|جوش|آکنه ولگاریس|جوش غرور جوانی|جوش زدن,acne,condition,proposed,dermatology
+پسوریازیس|صدف|بیماری صدف|پسوریازیس پوستی,psoriasis,condition,proposed,dermatology
+اگزما|درماتیت آتوپیک|اگزمای آتوپیک|خشکی و خارش پوست|اگزمای کودکان,atopic dermatitis,condition,proposed,dermatology
+پیشگیری از بارداری|ضد بارداری|ضدبارداری|جلوگیری از بارداری|روش پیشگیری|کنتراسپشن|روش جلوگیری,contraception,condition,proposed,obstetrics_gynecology
+یائسگی|منوپوز|یائسه|دوران یائسگی,menopause,condition,proposed,endocrinology
+قاعدگی دردناک|دیسمنوره|درد قاعدگی|دل درد پریود|درد پریود|درد عادت ماهانه,dysmenorrhea,condition,proposed,obstetrics_gynecology
+تهوع بارداری|ویار|استفراغ شدید بارداری|هایپرامزیس گراویداروم|هیپرامزیس|تهوع و استفراغ بارداری|حالت تهوع بارداری|ویار بارداری,nausea and vomiting in pregnancy,condition,proposed,obstetrics_gynecology
+زایمان زودرس|درد زایمان زودرس|زایمان پیش از موعد,preterm labor,condition,proposed,obstetrics_gynecology
+خونریزی پس از زایمان|خونریزی بعد از زایمان|پی پی اچ,postpartum hemorrhage,condition,proposed,obstetrics_gynecology
+اندومتریوز|آندومتریوز,endometriosis,condition,proposed,obstetrics_gynecology
+درد|دردها|درد بدن,pain,symptom,proposed,symptoms_general
+تب|درجه حرارت بالا|تب بالا|تب کردن|پیرکسی,fever,symptom,proposed,symptoms_general
+کم آبی|دهیدراتاسیون|کم آبی بدن|از دست دادن آب بدن,dehydration,condition,proposed,nephrology_urology
+کمبود ویتامین د|کمبود ویتامین دی|کمبود ویتامین d|کمبود ویتامینd,vitamin d deficiency,condition,proposed,endocrinology
+گلوکوم|آب سیاه,glaucoma,condition,proposed,ent_eye_dental
+ورم ملتحمه|کونژنکتیویت|کنژنکتیویت|التهاب ملتحمه|چشم صورتی|عفونت چشم,conjunctivitis,condition,proposed,infectious
+ایست قلبی|ایست قلبی تنفسی|ارست قلبی|مرگ ناگهانی قلبی|مرگ ناگهانی,cardiac arrest,condition,proposed,cardiology
+شوک,shock,condition,proposed,cardiology
+سوختگی|سوختگی پوست|سوختگی حرارتی|سوختگی با آب جوش,burn,condition,proposed,dermatology
+بیماری حرکت|دریازدگی|ماشین گرفتگی|حالت تهوع در ماشین,motion sickness,condition,proposed,toxicology_emergency
+استاتین|استاتینها|داروی چربی|قرص چربی|کاهنده چربی,statin,class,proposed,drug_classes
+ضد التهاب غیر استروئیدی|ضدالتهاب غیراستروئیدی|ان سید|nsaid|nsaids|مسکن ضد التهاب|داروهای ضد التهاب|ضد التهاب,nsaids,class,proposed,drug_classes
+مهارکننده ace|مهار کننده ace|مهارکننده آنزیم مبدل آنژیوتانسین|ace inhibitor|مهارکننده ای سی ای|ای سی ای اینهیبیتور|مهار کننده آنزیم مبدل آنژیوتانسین|ace,ace inhibitors,class,proposed,drug_classes
+بتابلاکر|بتا بلاکر|مسدودکننده بتا|بلوک کننده بتا|بتابلوکر|بتا بلوکر|بتابلاکرها|مسدود کننده بتا,beta blockers (beta blockers (systemic)),class,proposed,drug_classes
+مهارکننده انتخابی بازجذب سروتونین|ssri|اس اس آر آی|مهارکننده بازجذب سروتونین|اس اس ار ای,ssri,class,proposed,drug_classes
+مهارکننده پمپ پروتون|ppi|پی پی آی|مهار کننده پمپ پروتون|پنتوپرازول و امپرازول,proton pump inhibitors,class,proposed,drug_classes
+بنزودیازپین|بنزو|قرص آرامبخش|آرام بخش|قرص اعصاب,benzodiazepines,class,proposed,drug_classes
+آنتی بیوتیک|انتی بیوتیک|آنتی بیوتیکها|داروی ضد میکروبی|ضد باکتری,antibiotics,class,proposed,drug_classes
+مواد افیونی|اپیوئید|اپیوئیدها|مسکن مخدر|مخدر|داروهای مخدر|اوپیوئید,opioids (opioids (single active-ingredient)),class,proposed,drug_classes
+کورتیکواستروئید|کورتون|کورتیکو استروئید|استروئید|گلوکوکورتیکوئید|کورتیکواستروئیدها|کورتن,corticosteroids (glucocorticoids),class,proposed,drug_classes
+ضد انعقاد|ضدانعقاد|رقیق کننده خون|درمان ضد انعقادی|آنتی کواگولاسیون|رقیق کردن خون|داروی ضد انعقاد|آنتی کوآگولانت|داروی رقیق کننده خون,anticoagulants,class,proposed,hematology_oncology
+ادرارآور|دیورتیک|مدر|قرص ادرار آور|ادرار آور,diuretics,class,proposed,drug_classes
+مهارکننده sglt2|sglt2|گلیفلوزین ها|اس جی ال تی ۲|مهارکننده اس جی ال تی 2,sglt2 inhibitors,class,proposed,drug_classes
+آگونیست glp 1|glp 1|آگونیست گیرنده glp 1|جی ال پی ۱|glp1|آمپول لاغری|جی ال پی وان,glp 1 receptor agonists,class,proposed,drug_classes
+نیترات|nitrates|نیتروگلیسیرین و نیترات ها|نیترو,nitrates,class,proposed,drug_classes
+پنومونی آسپیراسیون|پنومونی آسپیراسیونی|ذات الریه آسپیراسیون|پنومونیت آسپیراسیون|پنومونیت آسپیراسیونی,aspiration pneumonia,condition,proposed,infectious
+پنومونی آتیپیک|پنومونی آتیپیکال,atypical pneumonia,condition,proposed,infectious
+آبسه ریه|آبسه ریوی,lung abscess,condition,proposed,infectious
+آمپیم|امپیم|آمپیم پلور|چرک پلور,empyema,condition,proposed,infectious
+سل خارج ریوی,extrapulmonary tuberculosis,condition,proposed,infectious
+مننژیت سلی,tuberculous meningitis,condition,proposed,infectious
+سل مقاوم به چند دارو|سل مقاوم,multidrug resistant tuberculosis,condition,proposed,infectious
+مایکوباکتری غیر سلی|مایکوباکتریوم غیر توبرکلوزی,nontuberculous mycobacterial infection,condition,proposed,infectious
+عفونت ادراری ناشی از سوند|عفونت ادراری مرتبط با کاتتر,catheter associated urinary tract infection,condition,proposed,infectious
+پروستاتیت|التهاب پروستات|عفونت پروستات,prostatitis,condition,proposed,infectious
+اپیدیدیمیت|التهاب اپیدیدیم,epididymitis,condition,proposed,infectious
+ارکیت|التهاب بیضه,orchitis,condition,proposed,infectious
+اورتریت|التهاب مجرای ادرار,urethritis,condition,proposed,infectious
+بیماری التهابی لگن|عفونت لگن|پی آی دی,pelvic inflammatory disease,condition,proposed,infectious
+واژینوز باکتریایی|واژینوز,bacterial vaginosis,condition,proposed,infectious
+تریکومونیازیس|تریکوموناس|عفونت تریکوموناس,trichomoniasis,condition,proposed,infectious
+کلامیدیا|عفونت کلامیدیایی,chlamydia,condition,proposed,infectious
+تبخال تناسلی|هرپس تناسلی,genital herpes,condition,proposed,infectious
+زگیل تناسلی|کوندیلوما|زگیل ژنیتال,genital warts,condition,proposed,infectious
+ویروس پاپیلوما|اچ پی وی|ویروس پاپیلومای انسانی,human papillomavirus infection,condition,proposed,infectious
+بیماری های مقاربتی|عفونت های مقاربتی|بیماری آمیزشی,sexually transmitted infections,condition,proposed,infectious
+اریزیپل|باد سرخ,erysipelas,condition,proposed,infectious
+آبسه پوستی|آبسه|دمل,skin abscess,condition,proposed,infectious
+زرد زخم|ایمپتیگو|زردزخم,impetigo,condition,proposed,infectious
+فولیکولیت|التهاب فولیکول مو,folliculitis,condition,proposed,infectious
+فاشئیت نکروزان|فاسئیت نکروزان|عفونت گوشتخوار,necrotizing fasciitis,condition,proposed,infectious
+عفونت پای دیابتی|زخم پای دیابتی عفونی,diabetic foot infection,condition,proposed,infectious
+گازگرفتگی سگ|سگ گزیدگی|گاز گرفتگی سگ|گازگرفتگی حیوان|حیوان گزیدگی,dog bite,condition,proposed,infectious
+گازگرفتگی گربه|گاز گرفتگی گربه,cat bite,condition,proposed,infectious
+گازگرفتگی انسان|گاز گرفتگی انسان,human bite,condition,proposed,infectious
+آرتریت سپتیک|آرتریت عفونی|عفونت مفصل|مفصل عفونی,septic arthritis,condition,proposed,infectious
+عفونت مفصل مصنوعی|عفونت پروتز مفصل,prosthetic joint infection,condition,proposed,infectious
+مننژیت ویروسی,viral meningitis,condition,proposed,infectious
+انسفالیت|آنسفالیت|التهاب مغز,encephalitis,condition,proposed,infectious
+انسفالیت هرپسی,herpes simplex encephalitis,condition,proposed,infectious
+آبسه مغزی|آبسه مغز,brain abscess,condition,proposed,infectious
+باکتریمی|باکتری در خون,bacteremia,condition,proposed,infectious
+باکتریمی استافیلوکوک,staphylococcus aureus bacteremia,condition,proposed,infectious
+تب با منشا نامعلوم|تب نامشخص|تب طول کشیده|اف یو او,fever of unknown origin,condition,proposed,infectious
+عفونت کاتتر|عفونت خون ناشی از کاتتر|عفونت کاتتر مرکزی,catheter infection,condition,proposed,infectious
+عفونت محل جراحی|عفونت زخم جراحی|عفونت بعد از عمل,surgical site infection,condition,proposed,infectious
+اوتیت خارجی|عفونت گوش خارجی|گوش شناگر,otitis externa,condition,proposed,infectious
+سینوزیت حاد,acute sinusitis,condition,proposed,infectious
+سینوزیت مزمن|رینوسینوزیت مزمن,chronic rhinosinusitis,condition,proposed,infectious
+تونسیلیت|التهاب لوزه|عفونت لوزه|لوزه|ورم لوزه,tonsillitis,condition,proposed,infectious
+آبسه دور لوزه|آبسه پری تونسیلار,peritonsillar abscess,condition,proposed,infectious
+اپی گلوتیت|التهاب اپی گلوت,epiglottitis,condition,proposed,infectious
+کروپ|خروسک|خروسک کودکان,croup,condition,proposed,infectious
+سیاه سرفه|پرتوسیس,pertussis,condition,proposed,infectious
+دیفتری|خناق,diphtheria,condition,proposed,infectious
+کزاز|تتانوس,tetanus,condition,proposed,infectious
+سرخک,measles,condition,proposed,infectious
+اوریون|اوریون کودکان,mumps,condition,proposed,infectious
+سرخجه,rubella,condition,proposed,infectious
+آبله مرغان|آبله مرغون|واریسلا,varicella,condition,proposed,infectious
+نورالژی پس از زونا|درد بعد از زونا,postherpetic,condition,proposed,infectious
+مونونوکلئوز|مونونوکلئوز عفونی|بیماری بوسه,infectious mononucleosis,condition,proposed,infectious
+سیتومگالوویروس|سی ام وی|عفونت سیتومگالوویروس,cytomegalovirus,condition,proposed,infectious
+ویروس اپشتین بار|اپشتین بار|ای بی وی,epstein barr virus,condition,proposed,infectious
+بیماری دست و پا و دهان|دست پا دهان,hand foot and mouth disease,condition,proposed,infectious
+رزئولا|روزئولا|بیماری ششم,roseola,condition,proposed,infectious
+بیماری پنجم|اریتم عفونی,erythema infectiosum,condition,proposed,infectious
+مخملک,scarlet fever,condition,proposed,infectious
+تب روماتیسمی|تب روماتیسمال|تب رماتیسمی,rheumatic fever,condition,proposed,infectious
+آنفولانزای پرندگان|آنفلوانزای مرغی,avian influenza,condition,proposed,infectious
+کرونای طولانی|عوارض طولانی کرونا|لانگ کووید,long covid,condition,proposed,infectious
+ویروس سین سیشیال|آر اس وی|ویروس سنسیشیال تنفسی,rsv,condition,proposed,infectious
+پیشگیری قبل از تماس اچ آی وی|پرپ|پی ار ای پی,hiv pre exposure prophylaxis,condition,proposed,infectious
+پیشگیری پس از تماس اچ آی وی|پپ|پروفیلاکسی بعد از تماس,hiv post exposure prophylaxis,condition,proposed,infectious
+هپاتیت|التهاب کبد|زردی عفونی,hepatitis,condition,proposed,infectious
+هپاتیت آ|هپاتیت a,hepatitis a,condition,proposed,infectious
+هپاتیت دی|هپاتیت دلتا|هپاتیت d,hepatitis d,condition,proposed,infectious
+هپاتیت ای|هپاتیت e,hepatitis e,condition,proposed,infectious
+اسهال مسافرتی|اسهال مسافران,travelers diarrhea,condition,proposed,infectious
+مسمومیت غذایی|مسمومیت با غذا,food poisoning,condition,proposed,infectious
+وبا|کلرا,cholera,condition,proposed,infectious
+حصبه|تب تیفوئید|تیفوئید|تب روده ای,typhoid fever,condition,proposed,infectious
+شیگلوز|شیگلا|اسهال خونی باکتریایی,shigellosis,condition,proposed,infectious
+سالمونلا|سالمونلوز,salmonella,condition,proposed,infectious
+کمپیلوباکتر,campylobacter,condition,proposed,infectious
+ژیاردیا|ژیاردیازیس|جیاردیا,giardiasis,condition,proposed,infectious
+آمیبیاز|آمیب|اسهال آمیبی|آمیبیازیس,amebiasis,condition,proposed,infectious
+آبسه آمیبی کبد,amebic liver abscess,condition,proposed,infectious
+آبسه کبدی|آبسه کبد,pyogenic liver abscess,condition,proposed,infectious
+آسکاریس|آسکاریازیس|کرم آسکاریس,ascariasis,condition,proposed,infectious
+کرمک|انتروبیوس|انتروبیازیس|کرم سنجاقی,enterobiasis,condition,proposed,infectious
+انگل روده|انگل های روده ای|کرم روده|انگل,intestinal parasites,condition,proposed,infectious
+کرم کدو|تنیا|تنیازیس,taeniasis,condition,proposed,infectious
+کیست هیداتید|اکینوکوکوز|هیداتیدوز|کیست هیداتیک,echinococcosis,condition,proposed,infectious
+توکسوپلاسموز|توکسوپلاسما,toxoplasmosis,condition,proposed,infectious
+لیشمانیوز|لیشمانیا|لیشمانیازیس,leishmaniasis,condition,proposed,infectious
+سالک|لیشمانیوز جلدی|لیشمانیوز پوستی|زخم سالک,cutaneous leishmaniasis,condition,proposed,infectious
+کالاآزار|لیشمانیوز احشایی,visceral leishmaniasis,condition,proposed,infectious
+لپتوسپیروز|لپتوسپیروزیس,leptospirosis,condition,proposed,infectious
+تب کیو|تب q,q fever,condition,proposed,infectious
+سیاه زخم|آنتراکس,anthrax,condition,proposed,infectious
+طاعون,plague,condition,proposed,infectious
+هاری|بیماری هاری,rabies,condition,proposed,infectious
+تب کریمه کنگو|کریمه کنگو|تب خونریزی دهنده کریمه کنگو|تب خونریزی دهنده,crimean congo hemorrhagic fever,condition,proposed,infectious
+دانگ|تب دنگی|دنگی|تب دانگ,dengue,condition,proposed,infectious
+بیماری لایم|لایم,lyme disease,condition,proposed,infectious
+شپش|پدیکولوز,pediculosis,condition,proposed,infectious
+شپش سر|شپش مو,head lice,condition,proposed,infectious
+کچلی|قارچ پوستی|درماتوفیتوز|تینه آ|تینآ,tinea,condition,proposed,infectious
+کچلی سر|قارچ سر|تینه آ کاپیتیس,tinea capitis,condition,proposed,infectious
+قارچ پا|پای ورزشکار|قارچ لای انگشت پا|تینه آ پدیس,tinea pedis,condition,proposed,infectious
+قارچ کشاله ران|کچلی کشاله ران,tinea cruris,condition,proposed,infectious
+کچلی بدن|قارچ پوست بدن,tinea corporis,condition,proposed,infectious
+قارچ ناخن|اونیکومایکوزیس|عفونت قارچی ناخن,onychomycosis,condition,proposed,infectious
+پیتیریازیس ورسیکالر|تینه آ ورسیکالر|لک قارچی|قارچ پوستی رنگی,tinea versicolor,condition,proposed,infectious
+برفک دهان|کاندیدیازیس دهانی|برفک,oral candidiasis,condition,proposed,infectious
+آسپرژیلوز|آسپرژیلوس|آسپرژیلوزیس,aspergillosis,condition,proposed,infectious
+موکورمایکوزیس|قارچ سیاه|موکور,mucormycosis,condition,proposed,infectious
+کریپتوکوکوز|کریپتوکوک,cryptococcosis,condition,proposed,infectious
+پنوموسیستیس|پنومونی پنوموسیستیس|پی سی پی,pneumocystis pneumonia,condition,proposed,infectious
+هیستوپلاسموز,histoplasmosis,condition,proposed,infectious
+نوکاردیوز|نوکاردیا,nocardiosis,condition,proposed,infectious
+اکتینومایکوزیس|آکتینومیکوز,actinomycosis,condition,proposed,infectious
+جذام|لپروزی,leprosy,condition,proposed,infectious
+بوتولیسم|مسمومیت بوتولیسم,botulism,condition,proposed,infectious
+لیستریا|لیستریوز,listeriosis,condition,proposed,infectious
+آبله میمون|ام پاکس|آبله میمونی,mpox,condition,proposed,infectious
+آبله,smallpox,condition,proposed,infectious
+فلج اطفال|پولیو,poliomyelitis,condition,proposed,infectious
+ابولا|تب ابولا,ebola,condition,proposed,infectious
+زیکا|ویروس زیکا,zika virus,condition,proposed,infectious
+تب زرد,yellow fever,condition,proposed,infectious
+استاف مقاوم به متی سیلین|ام آر اس آ|استافیلوکوک مقاوم,mrsa,condition,proposed,infectious
+انتروکوک مقاوم به وانکومایسین|وی آر ای,vancomycin resistant enterococci,condition,proposed,infectious
+ای اس بی ال|بتالاکتاماز وسیع الطیف|ای اس بی ال مثبت,esbl,condition,proposed,infectious
+اسهال عفونی|اسهال باکتریایی,infectious diarrhea,condition,proposed,infectious
+کونژنکتیویت باکتریایی|عفونت باکتریایی چشم,bacterial conjunctivitis,condition,proposed,infectious
+کونژنکتیویت ویروسی|ورم ملتحمه ویروسی,viral conjunctivitis,condition,proposed,infectious
+کراتیت|التهاب قرنیه|عفونت قرنیه,keratitis,condition,proposed,infectious
+اندوفتالمیت,endophthalmitis,condition,proposed,infectious
+سلولیت اربیت|سلولیت چشم,orbital cellulitis,condition,proposed,infectious
+سلولیت پره سپتال|سلولیت پلک,preseptal cellulitis,condition,proposed,infectious
+آبسه دندان|آبسه دندانی|عفونت دندان,dental abscess,condition,proposed,infectious
+پریتونیت|التهاب صفاق,peritonitis,condition,proposed,infectious
+پریتونیت باکتریایی خودبخودی|اس بی پی,spontaneous bacterial peritonitis,condition,proposed,infectious
+کلانژیت|عفونت مجاری صفراوی,cholangitis,condition,proposed,infectious
+آپاندیسیت|آپاندیس|التهاب آپاندیس,appendicitis,condition,proposed,infectious
+دیورتیکولیت,diverticulitis,condition,proposed,infectious
+عفونت داخل شکمی|عفونت شکمی,intraabdominal infection,condition,proposed,infectious
+عفونت در بارداری,infections in pregnancy,condition,proposed,infectious
+واکسن|واکسیناسیون|ایمن سازی|واکسن زدن|برنامه واکسیناسیون,vaccination,condition,proposed,infectious
+واکسن آنفولانزا|واکسن آنفلوانزا,influenza vaccine,condition,proposed,infectious
+واکسن هپاتیت ب|واکسن هپاتیت بی,hepatitis b vaccine,condition,proposed,infectious
+پیشگیری از کزاز|واکسن کزاز|ضدکزاز,tetanus prophylaxis,condition,proposed,infectious
+پیشگیری از هاری|واکسن هاری,rabies prophylaxis,condition,proposed,infectious
+واکسن پنوموکوک|واکسن ذات الریه,pneumococcal vaccine,condition,proposed,infectious
+واکسن اچ پی وی|واکسن پاپیلوما|گارداسیل,hpv vaccine,condition,proposed,infectious
+واکسن کرونا|واکسن کووید,covid 19 vaccine,condition,proposed,infectious
+واکسن ام ام آر|واکسن سرخک سرخجه اوریون,mmr vaccine,condition,proposed,infectious
+ب ث ژ|واکسن ب ث ژ|بی سی جی|واکسن سل,bcg vaccine,condition,proposed,infectious
+پروفیلاکسی آنتی بیوتیکی|آنتی بیوتیک پروفیلاکسی|پیشگیری آنتی بیوتیکی,antimicrobial prophylaxis,condition,proposed,infectious
+پروفیلاکسی جراحی|آنتی بیوتیک قبل از عمل|پروفیلاکسی قبل از جراحی,surgical prophylaxis,condition,proposed,infectious
+پروفیلاکسی اندوکاردیت|پیشگیری از اندوکاردیت,endocarditis prophylaxis,condition,proposed,infectious
+مقاومت آنتی بیوتیکی|مقاومت میکروبی|مقاومت به آنتی بیوتیک,antibiotic resistance,condition,proposed,infectious
+استافیلوکوک اورئوس|استاف اورئوس|استافیلوکوکوس|استاف,staphylococcus aureus,organism,proposed,infectious
+پنوموکوک|استرپتوکوک پنومونیه|استرپتوکوکوس پنومونیه,streptococcus pneumoniae,organism,proposed,infectious
+استرپتوکوک گروه آ|استرپتوکوک گروه a|استرپتوکوک پیوژنز,group a streptococcus,organism,proposed,infectious
+استرپتوکوک گروه ب|استرپتوکوک گروه b|جی بی اس,group b streptococcus,organism,proposed,infectious
+ای کولای|اشرشیا کلی|اشریشیا کلی|ایکولای,escherichia coli,organism,proposed,infectious
+کلبسیلا|کلبسیلا پنومونیه,klebsiella,organism,proposed,infectious
+سودوموناس|پسودوموناس|سودوموناس آئروژینوزا,pseudomonas,organism,proposed,infectious
+اسینتوباکتر|آسینتوباکتر,acinetobacter,organism,proposed,infectious
+انتروکوک|انتروکوکوس,enterococcus,organism,proposed,infectious
+مننگوکوک|نایسریا مننژیتیدیس,neisseria meningitidis,organism,proposed,infectious
+مایکوپلاسما|مایکوپلاسما پنومونیه,mycoplasma pneumonia,organism,proposed,infectious
+لژیونلا|بیماری لژیونر,legionella,organism,proposed,infectious
+کلامیدیا پنومونیه,chlamydia pneumonia,organism,proposed,infectious
+هموفیلوس|هموفیلوس آنفولانزا,haemophilus influenzae,organism,proposed,infectious
+پروتئوس,proteus mirabilis,organism,proposed,infectious
+استنوتروفوموناس,stenotrophomonas maltophilia,organism,proposed,infectious
+کاندیدا اوریس,candida auris,organism,proposed,infectious
+اورژانس فشار خون|بحران فشار خون|کریز فشار خون|فشار خون بدخیم|بحران هیپرتانسیو|کریز هیپرتانسیو,hypertensive emergency,condition,proposed,cardiology
+فوریت فشار خون|فشار خون فوری,hypertensive urgency,condition,proposed,cardiology
+فشار خون مقاوم|فشار خون مقاوم به درمان,resistant hypertension,condition,proposed,cardiology
+فشار خون ثانویه,secondary hypertension,condition,proposed,cardiology
+افت فشار وضعیتی|هیپوتانسیون ارتوستاتیک|افت فشار ایستادن|سرگیجه موقع بلند شدن|هیپوتانسیون وضعیتی|افت فشار ارتوستاتیک,orthostatic hypotension,condition,proposed,cardiology
+بیماری عروق کرونر|بیماری کرونری|تنگی عروق قلب|گرفتگی رگ قلب|بیماری ایسکمیک قلب|سی ای دی|بیماری شریان کرونر,coronary artery disease,condition,proposed,cardiology
+آنژین ناپایدار,unstable angina,condition,proposed,cardiology
+استمی|انفارکتوس با صعود st|سکته قلبی با بالا رفتن st,stemi,condition,proposed,cardiology
+ان استمی|انفارکتوس بدون صعود st,nstemi,condition,proposed,cardiology
+نارسایی قلبی با کسر جهشی کاهش یافته|نارسایی سیستولیک|ای اف پایین,heart failure reduced ejection fraction,condition,proposed,cardiology
+نارسایی قلبی با کسر جهشی حفظ شده|نارسایی دیاستولیک,heart failure with preserved ejection fraction,condition,proposed,cardiology
+نارسایی قلبی حاد|نارسایی جبران نشده قلب|نارسایی حاد قلب,acute decompensated heart failure,condition,proposed,cardiology
+کاردیومیوپاتی|بیماری عضله قلب,cardiomyopathy,condition,proposed,cardiology
+کاردیومیوپاتی اتساعی|کاردیومیوپاتی دیلاته|قلب بزرگ,dilated cardiomyopathy,condition,proposed,cardiology
+کاردیومیوپاتی هیپرتروفیک|اچ سی ام,hypertrophic cardiomyopathy,condition,proposed,cardiology
+کاردیومیوپاتی پری پارتوم|کاردیومیوپاتی بارداری,peripartum cardiomyopathy,condition,proposed,cardiology
+تاکوتسوبو|سندرم قلب شکسته,takotsubo cardiomyopathy,condition,proposed,cardiology
+میوکاردیت|التهاب عضله قلب,myocarditis,condition,proposed,cardiology
+پریکاردیت|التهاب پرده قلب|التهاب پریکارد,pericarditis,condition,proposed,cardiology
+افیوژن پریکارد|آب آوردن پرده قلب|مایع دور قلب|پریکاردیال افیوژن,pericardial effusion,condition,proposed,cardiology
+تامپوناد قلبی|تامپوناد,cardiac tamponade,condition,proposed,cardiology
+فلاتر دهلیزی|فلوتر دهلیزی|فلاتر,atrial flutter,condition,proposed,cardiology
+تاکیکاردی فوق بطنی|اس وی تی|تاکی کاردی فوق بطنی|حمله تپش قلب,supraventricular tachycardia,condition,proposed,cardiology
+تاکیکاردی بطنی|وی تی|تاکی کاردی بطنی,ventricular tachycardia,condition,proposed,cardiology
+فیبریلاسیون بطنی|وی اف,ventricular fibrillation,condition,proposed,cardiology
+انقباض زودرس بطنی|پی وی سی|ضربان نابجای بطنی|اکستراسیستول بطنی|ضربان زودرس بطنی,premature ventricular contractions,condition,proposed,cardiology
+انقباض زودرس دهلیزی|پی ای سی,premature atrial contractions,condition,proposed,cardiology
+ولف پارکینسون وایت|سندرم ولف پارکینسون وایت|دبلیو پی دبلیو,wolff parkinson white,condition,proposed,cardiology
+سندرم کیو تی طولانی|کیو تی طولانی|qt طولانی|طولانی شدن qt|طولانی شدن فاصله qt|افزایش فاصله کیو تی|طولانی شدن کیو تی|افزایش qt|کیوتی طولانی,long qt,condition,proposed,cardiology
+آریتمی|بی نظمی ضربان قلب|نامنظمی ضربان|ریتم نامنظم قلب,arrhythmias,condition,proposed,cardiology
+بلوک قلبی|بلوک دهلیزی بطنی|بلوک ای وی|بلوک av,heart block,condition,proposed,cardiology
+سندرم سینوس بیمار,sick sinus syndrome,condition,proposed,cardiology
+تپش قلب|طپش قلب|تپش|ضربان بالا|قلب تپش,palpitations,condition,proposed,cardiology
+درد قفسه سینه|درد سینه|سینه درد|قفسه سینه درد|درد قلب|سنگینی قفسه سینه|فشار در سینه|گرفتگی قفسه سینه,chest pain,symptom,proposed,cardiology
+احیا|احیای قلبی ریوی|سی پی آر|cpr|احیای قلبی,cardiopulmonary resuscitation,condition,proposed,cardiology
+تنگی دریچه آئورت|تنگی آئورت|آئورت استنوز,aortic stenosis,condition,proposed,cardiology
+نارسایی دریچه آئورت|نارسایی آئورت|نشت دریچه آئورت,aortic regurgitation,condition,proposed,cardiology
+تنگی دریچه میترال|تنگی میترال|میترال استنوز,mitral stenosis,condition,proposed,cardiology
+نارسایی دریچه میترال|نارسایی میترال|نشت دریچه میترال,mitral regurgitation,condition,proposed,cardiology
+پرولاپس دریچه میترال|افتادگی دریچه میترال|ام وی پی,mitral valve prolapse,condition,proposed,cardiology
+نارسایی دریچه تریکوسپید|نارسایی تریکوسپید,tricuspid regurgitation,condition,proposed,cardiology
+بیماری دریچه قلب|بیماری دریچه ای قلب|مشکل دریچه قلب,valvular heart disease,condition,proposed,cardiology
+دریچه مصنوعی قلب|دریچه مکانیکی|دریچه مصنوعی,prosthetic heart valve,condition,proposed,cardiology
+بیماری روماتیسمی قلب|روماتیسم قلبی,rheumatic heart disease,condition,proposed,cardiology
+بیماری مادرزادی قلب|نقص مادرزادی قلب|بیماری قلبی مادرزادی,congenital heart disease,condition,proposed,cardiology
+نقص دیواره دهلیزی|سوراخ دیواره دهلیزی|ای اس دی,atrial septal defect,condition,proposed,cardiology
+نقص دیواره بطنی|سوراخ دیواره بطنی|وی اس دی|سوراخ قلب,ventricular septal defect,condition,proposed,cardiology
+مجرای شریانی باز|پی دی ای|باز ماندن مجرای شریانی|مجرای شریانی|داکتوس آرتریوزوس,patent ductus arteriosus,anatomy,proposed,cardiology
+تترالوژی فالوت|تترالوژی,tetralogy of fallot,condition,proposed,cardiology
+کوارکتاسیون آئورت|تنگی آئورت مادرزادی,coarctation of aorta,condition,proposed,cardiology
+سوراخ بیضی باز|پی اف او,patent foramen ovale,condition,proposed,cardiology
+دیسکسیون آئورت|پارگی آئورت|دایسکشن آئورت,aortic dissection,condition,proposed,cardiology
+آنوریسم آئورت شکمی|آنوریسم آئورت,abdominal aortic aneurysm,condition,proposed,cardiology
+آنوریسم|اتساع رگ,aneurysm,condition,proposed,cardiology
+لنگش|لنگیدن متناوب|کلادیکاسیون|درد ساق پا هنگام راه رفتن,claudication,condition,proposed,cardiology
+ایسکمی بحرانی اندام|ایسکمی اندام,critical limb ischemia,condition,proposed,cardiology
+ترومبوفلبیت سطحی|التهاب سیاهرگ,superficial thrombophlebitis,condition,proposed,cardiology
+واریس|رگ واریسی|واریس پا|وریدهای واریسی,varicose veins,condition,proposed,cardiology
+نارسایی مزمن وریدی|نارسایی وریدی,chronic venous insufficiency,condition,proposed,cardiology
+زخم وریدی|زخم واریسی,venous ulcer,condition,proposed,cardiology
+لنفادم|ادم لنفاوی|تورم لنفاوی,lymphedema,condition,proposed,cardiology
+ادم|تورم|ورم|آب آوردن بدن|پف کردن|ورم پا|تورم پا|پف پا|ورم مچ پا|احتباس مایع|احتباس آب|نگه داشتن آب|ادم محیطی|تورم محیطی,edema,symptom,proposed,cardiology
+فشار خون ریوی|پرفشاری ریوی|هیپرتانسیون ریوی|فشار ریه,pulmonary hypertension,condition,proposed,cardiology
+شوک کاردیوژنیک|شوک قلبی,cardiogenic shock,condition,proposed,cardiology
+شوک هیپوولمیک|شوک ناشی از کم آبی|شوک خونریزی,hypovolemic shock,condition,proposed,cardiology
+هیپرکلسترولمی خانوادگی|کلسترول بالای ارثی,familial hypercholesterolemia,condition,proposed,cardiology
+اچ دی ال پایین|کلسترول خوب پایین,low hdl,condition,proposed,cardiology
+رینود|پدیده رینود|سندرم رینود,raynauds,condition,proposed,cardiology
+سنکوپ وازوواگال|غش وازوواگال,vasovagal syncope,condition,proposed,cardiology
+پیس میکر|ضربان ساز|باتری قلب|پیسمیکر,pacemaker,condition,proposed,cardiology
+آی سی دی|دفیبریلاتور کاشتنی|شوک دهنده کاشتنی,implantable cardioverter defibrillator,condition,proposed,cardiology
+آنژیوپلاستی|بالن زدن|استنت|فنر قلب|پی سی آی|آنژیوپلاستی کرونر|فنر گذاشتن|مداخله کرونری از راه پوست|مداخله عروق کرونر از راه پوست|آنژیوپلاستی از راه پوست,percutaneous coronary intervention,condition,proposed,cardiology
+بای پس|عمل قلب باز|بای پس عروق کرونر|سی ای بی جی|جراحی بای پس,coronary artery bypass graft,condition,proposed,cardiology
+کاردیوورژن|کاردیوورسیون,cardioversion,condition,proposed,cardiology
+بازتوانی قلبی|توانبخشی قلبی,cardiac rehabilitation,condition,proposed,cardiology
+ارزیابی قبل از عمل|ارزیابی پیش از جراحی|مشاوره قبل از عمل,preoperative evaluation,condition,proposed,cardiology
+ضد انعقاد قبل از عمل|قطع ضد انعقاد قبل از جراحی|بریجینگ,perioperative anticoagulation,condition,proposed,cardiology
+نوار قلب|الکتروکاردیوگرام|ای سی جی|اکگ|ecg,electrocardiogram,test,proposed,cardiology
+اکو|اکوکاردیوگرافی|اکو قلب|سونوگرافی قلب,echocardiography,test,proposed,cardiology
+تست ورزش|تست استرس|تست ورزش قلب,exercise stress test,test,proposed,cardiology
+هولتر|هولتر مانیتورینگ|هولتر قلب,holter monitor,test,proposed,cardiology
+آنژیوگرافی|آنژیوگرافی کرونر|آنژیو|کاتتریزاسیون قلب,coronary angiography,test,proposed,cardiology
+تروپونین|تروپونین قلبی,troponin,test,proposed,cardiology
+بی ان پی|پرو بی ان پی|ان تی پرو بی ان پی,bnp,test,proposed,cardiology
+پروفایل چربی|آزمایش چربی|لیپید پروفایل|چربی ناشتا,lipid profile,test,proposed,cardiology
+کلسیم اسکور|نمره کلسیم عروق کرونر,coronary artery calcium score,test,proposed,cardiology
+شاخص مچ پا بازویی|ای بی آی,ankle brachial index,test,proposed,cardiology
+دی دایمر|دی دیمر,d dimer,test,proposed,cardiology
+اندازه گیری فشار خون|فشار گرفتن|هولتر فشار,blood pressure measurement,test,proposed,cardiology
+آسم ورزشی|آسم ناشی از ورزش,exercise induced bronchoconstriction,condition,proposed,pulmonology
+تشدید سی او پی دی|حمله سی او پی دی|تشدید بیماری انسدادی ریه,copd exacerbation,condition,proposed,pulmonology
+آمفیزم|آمفیزم ریه,emphysema,condition,proposed,pulmonology
+برونشیت مزمن,chronic bronchitis,condition,proposed,pulmonology
+برونشیت حاد|برونشیت|عفونت نایژه|دستگاه تنفسی|مجاری تنفسی|راه های تنفسی,acute bronchitis,anatomy,proposed,pulmonology
+برونشکتازی|برونشکتازیس|اتساع نایژه,bronchiectasis,condition,proposed,pulmonology
+فیبروز کیستیک|سیستیک فیبروزیس|سی اف,cystic fibrosis,condition,proposed,pulmonology
+بیماری بینابینی ریه|آی ال دی|بیماری انترستیشیال ریه|بیماری ریوی بینابینی|پنومونیت بینابینی,interstitial lung disease,condition,proposed,pulmonology
+فیبروز ریوی ایدیوپاتیک|فیبروز ایدیوپاتیک ریه|آی پی اف,idiopathic pulmonary fibrosis,condition,proposed,pulmonology
+فیبروز ریه|فیبروز ریوی,pulmonary fibrosis,condition,proposed,pulmonology
+سارکوئیدوز|سارکوئیدوزیس,sarcoidosis,condition,proposed,pulmonology
+پنوموتوراکس|ریه سوراخ|هوا در قفسه سینه|جمع شدن ریه,pneumothorax,condition,proposed,pulmonology
+افیوژن پلور|پلورال افیوژن|آب آوردن ریه|مایع پلور|آب در ریه|مایع جنب|افیوژن پلورال,pleural effusion,condition,proposed,pulmonology
+پلوریت|پلورزی|التهاب پرده جنب,pleurisy,condition,proposed,pulmonology
+آتلکتازی|جمع شدگی ریه|آتلکتازیس,atelectasis,condition,proposed,pulmonology
+سندرم دیسترس تنفسی حاد|ای آر دی اس|ards,acute respiratory distress syndrome,condition,proposed,pulmonology
+نارسایی تنفسی|نارسایی تنفس,respiratory failure,condition,proposed,pulmonology
+هیپوکسمی|کمبود اکسیژن خون|افت اکسیژن|افت اشباع اکسیژن|هیپوکسی|هایپوکسی|کمبود اکسیژن بافت,hypoxemia,condition,proposed,pulmonology
+تنگی نفس|نفس تنگی|کوتاهی نفس|سختی تنفس|نفس نفس زدن|دیس پنه,dyspnea,condition,proposed,pulmonology
+سرفه مزمن|سرفه طولانی|سرفه طول کشیده,chronic cough,condition,proposed,pulmonology
+هموپتزی|خلط خونی|سرفه خونی|خون در خلط,hemoptysis,condition,proposed,pulmonology
+خس خس|خس خس سینه|ویزینگ|برونکواسپاسم|برونکوسپاسم|اسپاسم برونش|انقباض راه هوایی,wheezing,condition,proposed,pulmonology
+استریدور|صدای خشن تنفس,stridor,condition,proposed,pulmonology
+ادم ریه|ادم ریوی|خیز ریه,pulmonary edema,condition,proposed,pulmonology
+ندول ریه|ندول ریوی|گره ریه|توده کوچک ریه,pulmonary nodule,condition,proposed,pulmonology
+سرطان ریه سلول کوچک,small cell lung cancer,condition,proposed,pulmonology
+سرطان ریه غیر سلول کوچک,non small cell lung cancer,condition,proposed,pulmonology
+مزوتلیوما|مزوتلیوم,mesothelioma,condition,proposed,pulmonology
+آپنه خواب|آپنه انسدادی خواب|وقفه تنفسی خواب|خروپف و آپنه,obstructive sleep apnea,condition,proposed,pulmonology
+خروپف|خر و پف,snoring,condition,proposed,pulmonology
+کمبود آلفا یک آنتی تریپسین,alpha 1 antitrypsin deficiency,condition,proposed,pulmonology
+پنومونیت ازدیاد حساسیت|ریه کشاورز|پنومونیت|التهاب ریه|پنومونیت دارویی|پنومونیت حساسیتی,hypersensitivity pneumonitis,condition,proposed,pulmonology
+سیلیکوز|سیلیکوزیس,silicosis,condition,proposed,pulmonology
+آزبستوز,asbestosis,condition,proposed,pulmonology
+پنوموکونیوز|بیماری ریوی شغلی,pneumoconiosis,condition,proposed,pulmonology
+بیماری ارتفاع|کوه گرفتگی|ارتفاع زدگی,high altitude illness,condition,proposed,pulmonology
+مصرف دخانیات|سیگار|سیگار کشیدن|دخانیات|استعمال دخانیات,tobacco use disorder,condition,proposed,pulmonology
+ویپ|سیگار الکترونیکی|ویپینگ,vaping,condition,proposed,pulmonology
+قلیان,hookah,condition,proposed,pulmonology
+ونتیلاتور|تهویه مکانیکی|دستگاه تنفس مصنوعی|اینتوبه|دستگاه,mechanical ventilation,condition,proposed,pulmonology
+اکسیژن درمانی|اکسیژن|اکسیژن تراپی,oxygen therapy,condition,proposed,pulmonology
+تراکئوستومی|سوراخ نای,tracheostomy,condition,proposed,pulmonology
+آسپیراسیون جسم خارجی|جسم خارجی در راه هوایی|بلعیدن جسم خارجی,foreign body aspiration,condition,proposed,pulmonology
+تست عملکرد ریه|تست ریه|پی اف تی|اسپیرومتری ریه,pulmonary function tests,test,proposed,pulmonology
+اسپیرومتری,spirometry,test,proposed,pulmonology
+گاز خون شریانی|ای بی جی|abg|گازهای خون,arterial blood gas,test,proposed,pulmonology
+پالس اکسیمتری|اکسیمتر|درصد اشباع اکسیژن|اشباع اکسیژن,pulse oximetry,test,proposed,pulmonology
+عکس قفسه سینه|رادیوگرافی قفسه سینه|عکس ریه|سی ایکس آر|گرافی قفسه سینه,chest radiograph,test,proposed,pulmonology
+سی تی ریه|سی تی اسکن ریه|سی تی قفسه سینه|سی تی سینه,chest ct,test,proposed,pulmonology
+برونکوسکوپی,bronchoscopy,test,proposed,pulmonology
+توراسنتز|کشیدن مایع پلور,thoracentesis,test,proposed,pulmonology
+تست کلر عرق|تست عرق,sweat chloride test,test,proposed,pulmonology
+سوزش سر دل|سوزش معده|سوزش سردل|دل سوزه,heartburn,condition,proposed,gastroenterology
+سوء هاضمه عملکردی|دیس پپسی عملکردی,functional dyspepsia,condition,proposed,gastroenterology
+گاستریت|التهاب معده|ورم معده|زخم معده سطحی,gastritis,condition,proposed,gastroenterology
+اولسر معده,gastric ulcer,condition,proposed,gastroenterology
+زخم ناشی از ان سید|زخم معده ناشی از مسکن,nsaid induced ulcer,condition,proposed,gastroenterology
+خونریزی گوارشی تحتانی|خونریزی دستگاه گوارش تحتانی|خونریزی از مقعد|خونریزی روده,lower gastrointestinal bleeding,condition,proposed,gastroenterology
+واریس مری|خونریزی واریسی,esophageal varices,condition,proposed,gastroenterology
+ملنا|مدفوع سیاه|مدفوع قیری|مدفوع سیاه رنگ,melena,condition,proposed,gastroenterology
+هماتوشزی|خون در مدفوع|مدفوع خونی|خونریزی مقعدی,hematochezia,condition,proposed,gastroenterology
+خون مخفی در مدفوع|تست خون مخفی مدفوع,occult blood,condition,proposed,gastroenterology
+آسیت|آب آوردن شکم|آب در شکم|مایع در شکم,ascites,condition,proposed,gastroenterology
+سندرم هپاتورنال|هپاتورنال,hepatorenal syndrome,condition,proposed,gastroenterology
+فشار خون پورت|هیپرتانسیون پورت|پرفشاری ورید پورت,portal hypertension,condition,proposed,gastroenterology
+کبد چرب|کبد چرب غیر الکلی|استئاتوز کبدی|چربی کبد|ان ای اف ال دی|مسلد,fatty liver,condition,proposed,gastroenterology
+استئاتوهپاتیت غیرالکلی|ناش|کبد چرب التهابی,nonalcoholic steatohepatitis,condition,proposed,gastroenterology
+هپاتیت الکلی,alcoholic hepatitis,condition,proposed,gastroenterology
+بیماری کبدی الکلی|کبد الکلی,alcoholic liver disease,condition,proposed,gastroenterology
+هپاتیت خودایمنی|هپاتیت اتوایمیون|هپاتیت اتوایمون,autoimmune hepatitis,condition,proposed,gastroenterology
+کلانژیت صفراوی اولیه|سیروز صفراوی اولیه|پی بی سی,primary biliary cholangitis,condition,proposed,gastroenterology
+کلانژیت اسکلروزان اولیه|پی اس سی,primary sclerosing cholangitis,condition,proposed,gastroenterology
+ویلسون|بیماری ویلسون,wilson disease,condition,proposed,gastroenterology
+هموکروماتوز|اضافه بار آهن ارثی,hemochromatosis,condition,proposed,gastroenterology
+نارسایی حاد کبد|نارسایی حاد کبدی|نارسایی برق آسای کبد|نارسایی کبد|نارسایی کبدی|هپاتیت فولمینانت|هپاتیت برق آسا,acute liver failure,condition,proposed,gastroenterology
+آسیب کبدی دارویی|هپاتیت دارویی|سمیت کبدی دارویی,drug induced liver injury,condition,proposed,gastroenterology
+زردی|یرقان|ایکتر|زردی پوست|زرد شدن|هیپربیلی روبینمی|بیلی روبین بالا|افزایش بیلی روبین|هایپربیلی روبینمی,jaundice,condition,proposed,gastroenterology
+افزایش آنزیم کبدی|آنزیم های کبدی بالا|بالا بودن آنزیم کبد|آنزیم کبد بالا|بالا رفتن آنزیم کبد|افزایش ترانس آمینازها|افزایش ترانس آمیناز,elevated liver enzymes,condition,proposed,gastroenterology
+ژیلبرت|سندرم ژیلبرت|گیلبرت,gilbert syndrome,condition,proposed,gastroenterology
+سرطان کبد|کارسینوم هپاتوسلولار|اچ سی سی|هپاتوما|تومور کبد,hepatocellular carcinoma,condition,proposed,gastroenterology
+پیوند کبد,liver transplantation,condition,proposed,gastroenterology
+سنگ کیسه صفرا|سنگ صفرا|کله لیتیازیس|سنگ صفراوی,gallstones,condition,proposed,gastroenterology
+کوله سیستیت حاد|التهاب حاد کیسه صفرا,acute cholecystitis,condition,proposed,gastroenterology
+کوله سیستیت|التهاب کیسه صفرا|عفونت کیسه صفرا,cholecystitis,condition,proposed,gastroenterology
+کولیک صفراوی|درد صفراوی|قولنج صفراوی,biliary colic,condition,proposed,gastroenterology
+سنگ مجرای صفراوی|کلدوکولیتیازیس|سنگ کلدوک,choledocholithiasis,condition,proposed,gastroenterology
+پانکراتیت حاد|التهاب حاد لوزالمعده|التهاب حاد پانکراس,acute pancreatitis,condition,proposed,gastroenterology
+پانکراتیت مزمن,chronic pancreatitis,condition,proposed,gastroenterology
+نارسایی برون ریز پانکراس|نارسایی پانکراس,exocrine pancreatic insufficiency,condition,proposed,gastroenterology
+سرطان پانکراس|سرطان لوزالمعده|کانسر پانکراس,pancreatic cancer,condition,proposed,gastroenterology
+کولیت میکروسکوپیک,microscopic colitis,condition,proposed,gastroenterology
+کولیت|التهاب روده بزرگ,colitis,condition,proposed,gastroenterology
+عدم تحمل لاکتوز|حساسیت به شیر|عدم تحمل شیر,lactose intolerance,condition,proposed,gastroenterology
+یبوست ناشی از مخدر|یبوست ناشی از اپیوئید,opioid induced constipation,condition,proposed,gastroenterology
+اسهال مزمن|اسهال طولانی,chronic diarrhea,condition,proposed,gastroenterology
+هموروئید|بواسیر|بواسیر خونی,hemorrhoids,condition,proposed,gastroenterology
+شقاق|فیشر|شقاق مقعد|فیشر مقعد|ترک مقعد,anal fissure,condition,proposed,gastroenterology
+فیستول مقعدی|فیستول مقعد,anal fistula,condition,proposed,gastroenterology
+آبسه مقعدی|آبسه دور مقعد,perianal abscess,condition,proposed,gastroenterology
+کیست مویی|سینوس پیلونیدال|پیلونیدال,pilonidal cyst,condition,proposed,gastroenterology
+خارش مقعد,pruritus ani,condition,proposed,gastroenterology
+دیورتیکولوز,diverticulosis,condition,proposed,gastroenterology
+انسداد روده|انسداد روده کوچک|گرفتگی روده|پیچ خوردگی روده,small bowel obstruction,condition,proposed,gastroenterology
+ایلئوس|فلج روده|ایلئوس پارالیتیک|فلج روده ای,ileus,condition,proposed,gastroenterology
+ولولوس|پیچ خوردگی روده بزرگ,volvulus,condition,proposed,gastroenterology
+ایسکمی مزانتریک|ایسکمی روده|سکته روده|کولیت ایسکمیک|+ایسکمی روده,mesenteric ischemia,condition,proposed,gastroenterology
+پولیپ روده|پولیپ کولون|پولیپ روده بزرگ,colon polyps,condition,proposed,gastroenterology
+سرطان معده|کانسر معده|تومور معده,gastric cancer,condition,proposed,gastroenterology
+سرطان مری|کانسر مری,esophageal cancer,condition,proposed,gastroenterology
+مری بارت|بارت|بارت مری,barrett esophagus,condition,proposed,gastroenterology
+ازوفاژیت ائوزینوفیلیک|التهاب ائوزینوفیلی مری,eosinophilic esophagitis,condition,proposed,gastroenterology
+ازوفاژیت|التهاب مری,esophagitis,condition,proposed,gastroenterology
+آشالازی|آکالازی|آشالازیا,achalasia,condition,proposed,gastroenterology
+دیسفاژی|اختلال بلع|سختی بلع|مشکل در بلع|گیر کردن غذا,dysphagia,condition,proposed,gastroenterology
+درد هنگام بلع|بلع دردناک,odynophagia,condition,proposed,gastroenterology
+فتق هیاتال|فتق هیاتوس|فتق دیافراگمی,hiatal hernia,condition,proposed,gastroenterology
+فتق اینگوینال|فتق کشاله ران|فتق,inguinal hernia,condition,proposed,gastroenterology
+فتق نافی|فتق ناف,umbilical hernia,condition,proposed,gastroenterology
+گاستروپارزی|فلج معده|تخلیه کند معده,gastroparesis,condition,proposed,gastroenterology
+تهوع و استفراغ|حالت تهوع و استفراغ|تهوع استفراغ|استفراغ|بالا آوردن|استفراغ کردن,nausea and vomiting,symptom,proposed,gastroenterology
+سندرم استفراغ چرخه ای|استفراغ دوره ای,cyclic vomiting syndrome,condition,proposed,gastroenterology
+درد شکم|دل درد|شکم درد|درد معده|دلدرد|معده درد|درد شکمی,abdominal pain,condition,proposed,gastroenterology
+درد حاد شکم|شکم حاد,acute abdominal pain,condition,proposed,gastroenterology
+نفخ|نفخ شکم|باد شکم|گاز معده,bloating,condition,proposed,gastroenterology
+گاز روده|باد معده|نفخ و گاز,flatulence,condition,proposed,gastroenterology
+سکسکه|سکسکه مقاوم,hiccups,condition,proposed,gastroenterology
+بوی بد دهان|هالیتوزیس|بوی دهان,halitosis,condition,proposed,gastroenterology
+سوء جذب|سوءجذب,malabsorption,condition,proposed,gastroenterology
+سندرم روده کوتاه,short bowel syndrome,condition,proposed,gastroenterology
+رشد بیش از حد باکتری روده|سیبو|sibo,small intestinal bacterial overgrowth,condition,proposed,gastroenterology
+پارگی روده|سوراخ شدن روده|سوراخ شدن معده|سوراخ شدگی گوارشی|پرفوراسیون گوارشی|سوراخ شدن دستگاه گوارش|سوراخ شدگی روده|سوراخ شدگی معده,gastrointestinal perforation,condition,proposed,gastroenterology
+سندرم کارسینوئید|کارسینوئید,carcinoid tumor,condition,proposed,gastroenterology
+سندرم زولینگر الیسون|زولینگر الیسون,zollinger ellison syndrome,condition,proposed,gastroenterology
+بزرگی کبد|هپاتومگالی|کبد بزرگ,hepatomegaly,condition,proposed,gastroenterology
+بزرگی طحال|اسپلنومگالی|طحال بزرگ,splenomegaly,condition,proposed,gastroenterology
+استوما|کولوستومی|ایلئوستومی,stoma,condition,proposed,gastroenterology
+تغذیه روده ای|تغذیه با لوله|گاواژ|تغذیه انترال,enteral nutrition,condition,proposed,gastroenterology
+تغذیه وریدی|تی پی ان|تغذیه تزریقی|تغذیه پرنترال,parenteral nutrition,condition,proposed,gastroenterology
+سوء تغذیه|کمبود تغذیه|سوءتغذیه,malnutrition,condition,proposed,gastroenterology
+سندرم تغذیه مجدد|سندروم ریفیدینگ,refeeding syndrome,condition,proposed,gastroenterology
+آندوسکوپی|اندوسکوپی|آندوسکوپی فوقانی|گاستروسکوپی|آندوسکوپی معده,upper endoscopy,test,proposed,gastroenterology
+کولونوسکوپی|کلونوسکوپی,colonoscopy,test,proposed,gastroenterology
+ای آر سی پی|ercp,ercp,test,proposed,gastroenterology
+تست کبدی|آزمایش کبد|آنزیم های کبدی|ال اف تی|تست عملکرد کبد,liver function tests,test,proposed,gastroenterology
+سونوگرافی شکم|سونو شکم|سونوگرافی کبد,abdominal ultrasound,test,proposed,gastroenterology
+تست تنفسی اوره|تست تنفسی هلیکوباکتر|یوریا بریث تست,urea breath test,test,proposed,gastroenterology
+آزمایش مدفوع|تست مدفوع|آنالیز مدفوع|او پی مدفوع,stool testing,test,proposed,gastroenterology
+کالپروتکتین مدفوع|کالپروتکتین,fecal calprotectin,test,proposed,gastroenterology
+فیبرواسکن|الاستوگرافی کبد|فیبرو اسکن,fibroscan,test,proposed,gastroenterology
+لیپاز|آنزیم لیپاز,lipase,test,proposed,gastroenterology
+آمیلاز|آنزیم آمیلاز,amylase,test,proposed,gastroenterology
+بیلی روبین|بیلیروبین|بیلی روبین خون,bilirubin,test,proposed,gastroenterology
+آمونیاک|آمونیاک خون,ammonia,test,proposed,gastroenterology
+کوله سیستکتومی|جراحی کیسه صفرا|برداشتن کیسه صفرا|عمل کیسه صفرا,cholecystectomy,condition,proposed,gastroenterology
+آپاندکتومی|عمل آپاندیس|جراحی آپاندیس,appendectomy,condition,proposed,gastroenterology
+جراحی چاقی|عمل اسلیو|بای پس معده|جراحی باریاتریک|اسلیو معده,bariatric surgery,condition,proposed,gastroenterology
+سرطان رکتوم|سرطان راست روده|کانسر رکتوم,colorectal cancer (rectal cancer),condition,proposed,gastroenterology
+نارسایی کلیه مرحله آخر|مرحله نهایی بیماری کلیه|ای اس آر دی|نارسایی پیشرفته کلیه,end stage kidney disease,condition,proposed,nephrology_urology
+پیوند کلیه|کلیه پیوندی,kidney transplantation,condition,proposed,nephrology_urology
+سندرم نفروتیک|نفروتیک|سندروم نفروتیک,nephrotic syndrome,condition,proposed,nephrology_urology
+گلومرولونفریت|التهاب کلیه|نفریت,glomerulonephritis,condition,proposed,nephrology_urology
+نفروپاتی ای جی ای|نفروپاتی iga|بیماری برگر,iga nephropathy,condition,proposed,nephrology_urology
+نفروپاتی دیابتی|بیماری کلیوی دیابتی|درگیری کلیه در دیابت,diabetic kidney disease,condition,proposed,nephrology_urology
+کلیه پلی کیستیک|بیماری کلیه پلی کیستیک|کیست کلیه ارثی|پی کی دی,polycystic kidney disease,condition,proposed,nephrology_urology
+کولیک کلیوی|قولنج کلیوی|درد کلیه|دل پیچه کلیوی,renal colic,condition,proposed,nephrology_urology
+هیدرونفروز|تورم کلیه|اتساع کلیه,hydronephrosis,condition,proposed,nephrology_urology
+هماچوری|خون در ادرار|ادرار خونی|خون ادرار,hematuria,condition,proposed,nephrology_urology
+پروتئینوری|پروتئین در ادرار|دفع پروتئین,proteinuria,condition,proposed,nephrology_urology
+آلبومینوری|میکروآلبومینوری|آلبومین ادرار,albuminuria,condition,proposed,nephrology_urology
+تنگی شریان کلیه|تنگی شریان کلیوی,renal artery stenosis,condition,proposed,nephrology_urology
+اسیدوز توبولار کلیوی|آر تی ای,renal tubular acidosis,condition,proposed,nephrology_urology
+نفروپاتی ناشی از ماده حاجب|آسیب کلیه با ماده حاجب|نفروپاتی کنتراست,contrast induced nephropathy,condition,proposed,nephrology_urology
+رابدومیولیز|تخریب عضله|تخریب عضلانی,rhabdomyolysis,condition,proposed,nephrology_urology
+هیپرمنیزیمی|منیزیم بالا,hypermagnesemia,condition,proposed,nephrology_urology
+هیپوفسفاتمی|فسفر پایین|کمبود فسفات,hypophosphatemia,condition,proposed,nephrology_urology
+هیپرفسفاتمی|فسفر بالا,hyperphosphatemia,condition,proposed,nephrology_urology
+اسیدوز متابولیک|اسیدوز,metabolic acidosis,condition,proposed,nephrology_urology
+آلکالوز متابولیک|آلکالوز,metabolic alkalosis,condition,proposed,nephrology_urology
+اسیدوز تنفسی,respiratory acidosis,condition,proposed,nephrology_urology
+آلکالوز تنفسی,respiratory alkalosis,condition,proposed,nephrology_urology
+اسیدوز لاکتیک,lactic acidosis,condition,proposed,nephrology_urology
+هیپوولمی|کمبود حجم خون|کاهش حجم|کمبود حجم|کاهش حجم مایعات,hypovolemia,condition,proposed,nephrology_urology
+اضافه بار مایع|حجم زیاد مایع,fluid overload,condition,proposed,nephrology_urology
+سندرم ترشح نامناسب هورمون ضد ادراری|اس آی ای دی اچ|siadh|ترشح نامناسب هورمون ضد ادراری|سندرم ترشح نامناسب ای دی اچ,siadh,condition,proposed,nephrology_urology
+دیابت بی مزه|دیابت اینسیپیدوس,diabetes insipidus,condition,proposed,nephrology_urology
+سرطان مثانه|کانسر مثانه|تومور مثانه,bladder cancer,condition,proposed,nephrology_urology
+سرطان کلیه|کانسر کلیه|کارسینوم سلول کلیوی|تومور کلیه,renal cell carcinoma,condition,proposed,nephrology_urology
+سرطان بیضه|تومور بیضه,testicular cancer,condition,proposed,nephrology_urology
+بی اختیاری استرسی|بی اختیاری ادرار استرسی|نشت ادرار با سرفه,stress urinary incontinence,condition,proposed,nephrology_urology
+مثانه بیش فعال|مثانه پرکار|تکرر ادرار فوری|فوریت ادرار,overactive bladder,condition,proposed,nephrology_urology
+احتباس ادرار|گیر کردن ادرار|بند آمدن ادرار|احتباس ادراری,urinary retention,condition,proposed,nephrology_urology
+شب ادراری بزرگسالان|تکرر ادرار شبانه|ناکچوریا,nocturia,condition,proposed,nephrology_urology
+شب ادراری|شب ادراری کودکان|خیس کردن رختخواب|انورزیس,nocturnal enuresis,condition,proposed,nephrology_urology
+سوزش ادرار|درد هنگام ادرار|دیزوری|ادرار دردناک,dysuria,condition,proposed,nephrology_urology
+تکرر ادرار|زیاد ادرار کردن,urinary frequency,condition,proposed,nephrology_urology
+پرادراری|پلی اوری|ادرار زیاد,polyuria,condition,proposed,nephrology_urology
+انزال زودرس|زود انزالی,premature ejaculation,condition,proposed,nephrology_urology
+ناباروری مردان|نازایی مردان|ناباروری مردانه,male infertility,condition,proposed,nephrology_urology
+واریکوسل|واریس بیضه,varicocele,condition,proposed,nephrology_urology
+هیدروسل|آب آوردن بیضه,hydrocele,condition,proposed,nephrology_urology
+پیچ خوردگی بیضه|تورشن بیضه,testicular torsion,condition,proposed,nephrology_urology
+بیضه نزول نکرده|عدم نزول بیضه|کریپتورکیدیسم,cryptorchidism,condition,proposed,nephrology_urology
+فیموزیس|تنگی ختنه گاه,phimosis,condition,proposed,nephrology_urology
+هیپوسپادیاس,hypospadias,condition,proposed,nephrology_urology
+ختنه|سیرکومسیزیون,circumcision,condition,proposed,nephrology_urology
+وازکتومی|بستن لوله مردان,vasectomy,condition,proposed,nephrology_urology
+پیرونی|بیماری پیرونی|کجی آلت,peyronie disease,condition,proposed,nephrology_urology
+سیستیت بینابینی|سندرم درد مثانه,interstitial cystitis,condition,proposed,nephrology_urology
+مثانه نوروژنیک|مثانه عصبی,neurogenic bladder,condition,proposed,nephrology_urology
+آزمایش ادرار|تجزیه ادرار|یو ای|آنالیز ادرار|کامل ادرار,urinalysis,test,proposed,nephrology_urology
+کشت ادرار,urine culture,test,proposed,nephrology_urology
+کراتینین|کراتینین خون|کراتینین سرم,serum creatinine,test,proposed,nephrology_urology
+میزان فیلتراسیون گلومرولی|فیلتراسیون گلومرولی,glomerular filtration rate,test,proposed,nephrology_urology
+کراتینین کلیرانس|کلیرانس کراتینین,creatinine clearance,test,proposed,nephrology_urology
+اوره|اوره خون|بی یو ان|bun,blood urea nitrogen,test,proposed,nephrology_urology
+الکترولیت|الکترولیتها|املاح خون|اختلال الکترولیت|عدم تعادل الکترولیت|اختلالات الکترولیتی,electrolytes,test,proposed,nephrology_urology
+ادرار ۲۴ ساعته,24 hour urine,test,proposed,nephrology_urology
+پی اس آ|پی اس ای|آنتی ژن اختصاصی پروستات|psa,psa,test,proposed,nephrology_urology
+سیستوسکوپی,cystoscopy,test,proposed,nephrology_urology
+سونوگرافی کلیه|سونوی کلیه|سونوگرافی کلیه و مجاری,kidney ultrasound,test,proposed,nephrology_urology
+آی وی پی|اوروگرافی وریدی,ivp,test,proposed,nephrology_urology
+اسید اوریک|اوریک اسید,uric acid,test,proposed,nephrology_urology
+پیش دیابت|پره دیابت|مقاومت به انسولین و پیش دیابت,prediabetes,condition,proposed,endocrinology
+هیپراسمولار|حالت هیپراسمولار|کمای هیپراسمولار|اچ اچ اس,hyperosmolar hyperglycemic state,condition,proposed,endocrinology
+هیپرگلیسمی|قند بالا|افزایش قند خون|هایپرگلیسمی,hyperglycemia,condition,proposed,endocrinology
+مقاومت به انسولین|انسولین رزیستنس,insulin resistance,condition,proposed,endocrinology
+رتینوپاتی دیابتی|درگیری چشم در دیابت|آسیب شبکیه دیابتی,diabetic retinopathy,condition,proposed,endocrinology
+پای دیابتی|زخم پای دیابتی|زخم دیابتی,diabetic foot,condition,proposed,endocrinology
+گاستروپارزی دیابتی,diabetic gastroparesis,condition,proposed,endocrinology
+کم کاری تحت بالینی تیروئید|هیپوتیروئیدی ساب کلینیکال,subclinical hypothyroidism,condition,proposed,endocrinology
+گریوز|بیماری گریوز|گریوس,graves disease,condition,proposed,endocrinology
+هاشیموتو|تیروئیدیت هاشیموتو|هاشیموتو تیروئیدیت,hashimoto thyroiditis,condition,proposed,endocrinology
+تیروئیدیت|التهاب تیروئید,thyroiditis,condition,proposed,endocrinology
+ندول تیروئید|گره تیروئید|توده تیروئید,thyroid nodule,condition,proposed,endocrinology
+گواتر|بزرگی تیروئید|غمباد,goiter,condition,proposed,endocrinology
+سرطان تیروئید|کانسر تیروئید|سرطان پاپیلاری تیروئید,thyroid cancer,condition,proposed,endocrinology
+طوفان تیروئیدی|بحران تیروئید,thyroid storm,condition,proposed,endocrinology
+کمای میکزدم|میکزدم,myxedema coma,condition,proposed,endocrinology
+تیروئید در بارداری|کم کاری تیروئید در بارداری,hypothyroidism in pregnancy,condition,proposed,endocrinology
+آدیسون|بیماری آدیسون,addison disease,condition,proposed,endocrinology
+بحران آدرنال|بحران آدیسونی,adrenal crisis,condition,proposed,endocrinology
+فئوکروموسیتوم|فئوکروموسیتوما,pheochromocytoma,condition,proposed,endocrinology
+هیپرآلدوسترونیسم اولیه|آلدوسترونیسم|هیپرآلدوسترونیسم|سندرم کان,primary aldosteronism,condition,proposed,endocrinology
+هیپرپلازی مادرزادی آدرنال|سی ای اچ,congenital adrenal hyperplasia,condition,proposed,endocrinology
+توده تصادفی آدرنال|انسیدنتالوما,adrenal incidentaloma,condition,proposed,endocrinology
+هیپرپاراتیروئیدی|پرکاری پاراتیروئید|هیپرپاراتیروئیدیسم,hyperparathyroidism,condition,proposed,endocrinology
+هیپوپاراتیروئیدی|کم کاری پاراتیروئید,hypoparathyroidism,condition,proposed,endocrinology
+استئوپنی|کم تراکمی استخوان|تحلیل استخوان|از دست رفتن استخوان,osteopenia,condition,proposed,endocrinology
+استئومالاسی|نرمی استخوان,osteomalacia,condition,proposed,endocrinology
+راشیتیسم|نرمی استخوان کودکان|ریکتز,rickets,condition,proposed,endocrinology
+پاژه|بیماری پاژه استخوان|پاژت,paget disease of bone,condition,proposed,endocrinology
+چاقی مفرط|چاقی بیمارگونه|اضافه وزن|چاقی,obesity,condition,proposed,endocrinology
+کاهش وزن|لاغری|وزن کم کردن|کم کردن وزن,weight loss,condition,proposed,endocrinology
+کاهش وزن ناخواسته|کاهش وزن بی دلیل|لاغری بی علت,unintentional weight loss,condition,proposed,endocrinology
+سندرم متابولیک|سندروم متابولیک,metabolic syndrome,condition,proposed,endocrinology
+هیرسوتیسم|پرمویی|موی زائد|رشد موی زیاد در زنان,hirsutism,condition,proposed,endocrinology
+گرگرفتگی|گر گرفتگی|هات فلاش,hot flashes,condition,proposed,endocrinology
+هیپوگنادیسم مردان|کمبود تستوسترون|تستوسترون پایین|کم کاری بیضه,male hypogonadism,condition,proposed,endocrinology
+هیپوگنادیسم|کم کاری غدد جنسی,hypogonadism,condition,proposed,endocrinology
+کمبود هورمون رشد,growth hormone deficiency,condition,proposed,endocrinology
+آکرومگالی|غول پیکری,acromegaly,condition,proposed,endocrinology
+هیپرپرولاکتینمی|پرولاکتین بالا|افزایش پرولاکتین,hyperprolactinemia,condition,proposed,endocrinology
+پرولاکتینوما|پرولاکتینوم,prolactinoma,condition,proposed,endocrinology
+آدنوم هیپوفیز|تومور هیپوفیز,pituitary adenoma,condition,proposed,endocrinology
+کم کاری هیپوفیز|هیپوپیتوئیتاریسم,hypopituitarism,condition,proposed,endocrinology
+کوتاهی قد|قد کوتاه,short stature,condition,proposed,endocrinology
+بلوغ زودرس|بلوغ زودهنگام,precocious puberty,condition,proposed,endocrinology
+تأخیر بلوغ|بلوغ دیررس,delayed puberty,condition,proposed,endocrinology
+ژنیکوماستی|بزرگی پستان در مردان|ژینکوماستی,gynecomastia,condition,proposed,endocrinology
+نئوپلازی متعدد غدد درون ریز,multiple endocrine neoplasia syndrome,condition,proposed,endocrinology
+قند بالای ناشی از کورتون|هیپرگلیسمی ناشی از استروئید,steroid induced hyperglycemia,condition,proposed,endocrinology
+قطع کورتون|قطع کورتیکواستروئید|کاهش تدریجی کورتون,glucocorticoid withdrawal,condition,proposed,endocrinology
+تراجنسیتی|تغییر جنسیت|ترنس,transgender,condition,proposed,endocrinology
+هموگلوبین a1c|هموگلوبین ای وان سی|اچ بی ای وان سی|hba1c|a1c|ای وان سی|هموگلوبین گلیکوزیله,hemoglobin a1c,test,proposed,endocrinology
+قند ناشتا|اف بی اس|fbs|قند خون ناشتا,fasting plasma glucose,test,proposed,endocrinology
+تست تحمل گلوکز|جی تی تی|ogtt|تست قند دو ساعته|تست تحمل قند,oral glucose tolerance test,test,proposed,endocrinology
+تست تیروئید|آزمایش تیروئید|تست عملکرد تیروئید|تیروئید فانکشن,thyroid function tests,test,proposed,endocrinology
+تی اس اچ|tsh|هورمون محرک تیروئید,tsh,test,proposed,endocrinology
+تی ۴ آزاد|تی فور آزاد|t4 آزاد|free t4|تی 4,free t4,test,proposed,endocrinology
+سونوگرافی تیروئید|سونوی تیروئید,thyroid ultrasound,test,proposed,endocrinology
+کورتیزول|کورتیزول صبحگاهی|کورتیزول سرم,cortisol,test,proposed,endocrinology
+تراکم استخوان|سنجش تراکم استخوان|dexa|بی ام دی|تراکم معدنی استخوان|تراکم مواد معدنی استخوان,bone density,test,proposed,endocrinology
+سطح ویتامین دی|آزمایش ویتامین دی|ویتامین دی خون,vitamin d level,test,proposed,endocrinology
+پرولاکتین|هورمون پرولاکتین,prolactin,test,proposed,endocrinology
+سطح تستوسترون|تستوسترون خون,testosterone,test,proposed,endocrinology
+سی پپتید|c پپتید,c peptide,test,proposed,endocrinology
+کم خونی پرنیشیوز|آنمی پرنیشیوز|کم خونی وخیم,pernicious anemia,condition,proposed,hematology_oncology
+کمبود فولات|کمبود اسید فولیک,folate deficiency,condition,proposed,hematology_oncology
+کم خونی مگالوبلاستیک|آنمی مگالوبلاستیک,megaloblastic anemia,condition,proposed,hematology_oncology
+کم خونی همولیتیک|همولیز|آنمی همولیتیک,hemolytic anemia,condition,proposed,hematology_oncology
+کم خونی همولیتیک خودایمنی,autoimmune hemolytic anemia,condition,proposed,hematology_oncology
+فاویسم|کمبود جی شش پی دی|کمبود g6pd|جی 6 پی دی|باقلا زدگی|کمبود آنزیم g6pd,g6pd deficiency,condition,proposed,hematology_oncology
+کم خونی آپلاستیک|آنمی آپلاستیک,aplastic anemia,condition,proposed,hematology_oncology
+کم خونی بیماری مزمن|آنمی بیماری مزمن,anemia of chronic disease,condition,proposed,hematology_oncology
+کم خونی بارداری|کم خونی در بارداری,anemia in pregnancy,condition,proposed,hematology_oncology
+پلی سیتمی ورا|پلی سیتمی,polycythemia vera,condition,proposed,hematology_oncology
+اریتروسیتوز|غلظت خون|خون غلیظ|هموگلوبین بالا,erythrocytosis,condition,proposed,hematology_oncology
+آی تی پی|ترومبوسیتوپنی ایمنی|پورپورای ترومبوسیتوپنیک ایدیوپاتیک|itp,immune thrombocytopenia,condition,proposed,hematology_oncology
+تی تی پی|پورپورای ترومبوتیک ترومبوسیتوپنیک|ttp,thrombotic thrombocytopenic purpura,condition,proposed,hematology_oncology
+سندرم همولیتیک اورمیک|اچ یو اس,hemolytic uremic syndrome,condition,proposed,hematology_oncology
+ترومبوسیتوز|پلاکت بالا|افزایش پلاکت,thrombocytosis,condition,proposed,hematology_oncology
+ترومبوسیتمی اساسی|ترومبوسیتمی ضروری,essential thrombocythemia,condition,proposed,hematology_oncology
+انعقاد منتشر داخل عروقی|دی آی سی|dic,disseminated intravascular coagulation,condition,proposed,hematology_oncology
+فون ویلبراند|بیماری فون ویلبراند|ون ویلبراند,von willebrand disease,condition,proposed,hematology_oncology
+اختلال انعقادی|اختلالات خونریزی دهنده|اختلال خونریزی,bleeding disorders,condition,proposed,hematology_oncology
+ترومبوفیلی|استعداد لخته|افزایش انعقادپذیری,thrombophilia,condition,proposed,hematology_oncology
+فاکتور پنج لیدن|فاکتور ۵ لیدن|فاکتور v لیدن,factor v leiden,condition,proposed,hematology_oncology
+سندرم آنتی فسفولیپید|آنتی فسفولیپید,antiphospholipid syndrome,condition,proposed,hematology_oncology
+نوتروپنی|کاهش نوتروفیل|گلبول سفید پایین,neutropenia,condition,proposed,hematology_oncology
+لکوسیتوز|گلبول سفید بالا|افزایش گلبول سفید,leukocytosis,condition,proposed,hematology_oncology
+ائوزینوفیلی|ائوزینوفیل بالا|افزایش ائوزینوفیل,eosinophilia,condition,proposed,hematology_oncology
+لنفادنوپاتی|بزرگی غدد لنفاوی|غدد لنفاوی بزرگ|غده لنفاوی متورم|تورم غدد لنفاوی|غده گردن|غدد گردنی,lymphadenopathy,symptom,proposed,hematology_oncology
+لوسمی|سرطان خون|لوکمی,leukemia,condition,proposed,hematology_oncology
+لوسمی لنفوبلاستیک حاد|ای ال ال|all|لوسمی حاد لنفوبلاستیک,acute lymphoblastic leukemia,condition,proposed,hematology_oncology
+لوسمی میلوئید حاد|ای ام ال|aml|لوسمی حاد میلوئیدی,acute myeloid leukemia,condition,proposed,hematology_oncology
+لوسمی لنفوسیتی مزمن|سی ال ال|cll,chronic lymphocytic leukemia,condition,proposed,hematology_oncology
+لوسمی میلوئید مزمن|سی ام ال|cml,chronic myeloid leukemia,condition,proposed,hematology_oncology
+لنفوم|لنفوما|سرطان غدد لنفاوی,lymphoma,condition,proposed,hematology_oncology
+هوچکین|لنفوم هوچکین|هاجکین|لنفوم هاجکین,hodgkin lymphoma,condition,proposed,hematology_oncology
+لنفوم غیر هوچکین|غیر هوچکین|ان اچ ال,non hodgkin,condition,proposed,hematology_oncology
+مولتیپل میلوما|میلوم متعدد|میلوما|مالتیپل میلوما,multiple myeloma,condition,proposed,hematology_oncology
+سندرم میلودیسپلاستیک|ام دی اس,myelodysplastic syndromes,condition,proposed,hematology_oncology
+میلوفیبروز,myelofibrosis,condition,proposed,hematology_oncology
+اضافه بار آهن|آهن بالا|رسوب آهن|فریتین بالا,iron overload,condition,proposed,hematology_oncology
+تزریق خون|ترانسفوزیون|خون گرفتن|تزریق گلبول قرمز|تزریق پلاکت,blood transfusion,condition,proposed,hematology_oncology
+واکنش تزریق خون|واکنش ترانسفوزیون,transfusion reaction,condition,proposed,hematology_oncology
+برداشتن طحال|اسپلنکتومی,splenectomy,condition,proposed,hematology_oncology
+پیوند مغز استخوان|پیوند سلول های بنیادی|پیوند سلول بنیادی خونساز,hematopoietic cell transplantation,condition,proposed,hematology_oncology
+سرطان تخمدان|کانسر تخمدان|تومور تخمدان,ovarian cancer,condition,proposed,hematology_oncology
+سرطان دهانه رحم|سرطان سرویکس|کانسر دهانه رحم|سرطان گردن رحم,cervical cancer,condition,proposed,hematology_oncology
+سرطان آندومتر|سرطان رحم|کانسر رحم|سرطان بدنه رحم,endometrial cancer,condition,proposed,hematology_oncology
+ملانوم|ملانوما|سرطان خال,melanoma,condition,proposed,hematology_oncology
+سرطان پوست|کانسر پوست,skin cancer,condition,proposed,hematology_oncology
+کارسینوم سلول بازال|بی سی سی|سرطان سلول پایه پوست,basal cell carcinoma,condition,proposed,hematology_oncology
+کارسینوم سلول سنگفرشی پوست|اس سی سی پوست,cutaneous squamous cell carcinoma,condition,proposed,hematology_oncology
+سرطان سر و گردن|کانسر سر و گردن,head and neck cancer,condition,proposed,hematology_oncology
+سرطان حنجره|کانسر حنجره,laryngeal cancer,condition,proposed,hematology_oncology
+سرطان دهان|سرطان زبان,oral cancer,condition,proposed,hematology_oncology
+گلیوبلاستوما|گلیوبلاستوم,glioblastoma,condition,proposed,hematology_oncology
+تومور مغزی|تومور مغز|سرطان مغز|غده مغزی,brain tumor,condition,proposed,hematology_oncology
+سارکوم|سارکوما,sarcoma,condition,proposed,hematology_oncology
+استئوسارکوم|سرطان استخوان,osteosarcoma,condition,proposed,hematology_oncology
+متاستاز استخوانی|متاستاز به استخوان,bone metastases,condition,proposed,hematology_oncology
+متاستاز مغزی|متاستاز به مغز,brain metastases,condition,proposed,hematology_oncology
+سرطان|کانسر|تومور بدخیم|بدخیمی|نئوپلاسم,cancer,condition,proposed,hematology_oncology
+درد سرطان|درد ناشی از سرطان,cancer pain,condition,proposed,hematology_oncology
+غربالگری سرطان|چکاپ سرطان,cancer screening,condition,proposed,hematology_oncology
+سندرم لیز تومور|سندروم لیز تومور|لیز تومور,tumor lysis syndrome,condition,proposed,hematology_oncology
+هیپرکلسمی بدخیمی|کلسیم بالا در سرطان,hypercalcemia of malignancy,condition,proposed,hematology_oncology
+فشردگی نخاع بدخیم|فشار روی نخاع در سرطان,malignant spinal cord compression,condition,proposed,hematology_oncology
+سندرم ورید اجوف فوقانی,superior vena cava syndrome,condition,proposed,hematology_oncology
+موکوزیت|زخم دهان شیمی درمانی|التهاب مخاط|استوماتیت|التهاب دهان,mucositis,condition,proposed,hematology_oncology
+شیمی درمانی|کموتراپی|شیمیدرمانی|داروی شیمی درمانی|داروهای شیمی درمانی,chemotherapy,condition,proposed,hematology_oncology
+پرتودرمانی|رادیوتراپی|اشعه درمانی,radiation therapy,condition,proposed,hematology_oncology
+ایمونوتراپی|ایمنی درمانی,immunotherapy,condition,proposed,hematology_oncology
+مراقبت تسکینی|طب تسکینی|مراقبت پایان عمر|مراقبت حمایتی|درمان تسکینی|درمان پالیاتیو|پالیاتیو|درمان حمایتی,palliative care,condition,proposed,hematology_oncology
+کاشکسی|لاغری سرطان|تحلیل عضلانی,cachexia,condition,proposed,hematology_oncology
+تومور نوروآندوکرین,neuroendocrine tumor,condition,proposed,hematology_oncology
+کلانژیوکارسینوما|سرطان مجاری صفراوی,cholangiocarcinoma,condition,proposed,hematology_oncology
+سرطان کیسه صفرا,gallbladder cancer,condition,proposed,hematology_oncology
+سرطان نازوفارنکس|کارسینوم نازوفارنکس,nasopharyngeal carcinoma,condition,proposed,hematology_oncology
+تومور ویلمز|ویلمز,wilms tumor,condition,proposed,hematology_oncology
+نوروبلاستوما|نوروبلاستوم,neuroblastoma,condition,proposed,hematology_oncology
+رتینوبلاستوما|رتینوبلاستوم,retinoblastoma,condition,proposed,hematology_oncology
+سارکوم کاپوسی|کاپوسی|کاپوزی|سارکوم کاپوزی,kaposi sarcoma,condition,proposed,hematology_oncology
+والدنشتروم|ماکروگلوبولینمی والدنشتروم,waldenstrom macroglobulinemia,condition,proposed,hematology_oncology
+آمیلوئیدوز|آمیلوئیدوزیس,amyloidosis,condition,proposed,hematology_oncology
+گاموپاتی مونوکلونال|ام جی یو اس|mgus,mgus,condition,proposed,hematology_oncology
+برگرداندن اثر وارفارین|آنتی دوت وارفارین|ریورس وارفارین|خنثی کردن وارفارین,warfarin reversal,condition,proposed,hematology_oncology
+خونریزی|خون ریزی|هموراژی|خونریزی شدید|هموراژ|خونریزی جدی|+خطر خونریزی,bleeding,condition,proposed,hematology_oncology
+کبودی آسان|کبودی زیاد|کبود شدن بدن,easy bruising,condition,proposed,hematology_oncology
+آزمایش خون کامل|سی بی سی|cbc|شمارش کامل خون|آزمایش سی بی سی,complete blood count,test,proposed,hematology_oncology
+فریتین|فریتین سرم|ذخیره آهن,ferritin,test,proposed,hematology_oncology
+آهن سرم|آهن خون|tibc|تی آی بی سی,serum iron,test,proposed,hematology_oncology
+رتیکولوسیت|شمارش رتیکولوسیت,reticulocyte count,test,proposed,hematology_oncology
+لام خون محیطی|اسمیر خون محیطی|پی بی اس,peripheral blood smear,test,proposed,hematology_oncology
+پی تی|زمان پروترومبین|pt,prothrombin time,test,proposed,hematology_oncology
+آی ان آر|ای ان آر|inr,inr,test,proposed,hematology_oncology
+پی تی تی|ptt|aptt|ای پی تی تی,partial thromboplastin time,test,proposed,hematology_oncology
+فیبرینوژن,fibrinogen,test,proposed,hematology_oncology
+الکتروفورز هموگلوبین|الکتروفورز,hemoglobin electrophoresis,test,proposed,hematology_oncology
+بیوپسی مغز استخوان|نمونه برداری مغز استخوان|آسپیراسیون مغز استخوان,bone marrow biopsy,test,proposed,hematology_oncology
+تومور مارکر|مارکر توموری|نشانگر تومور,tumor markers,test,proposed,hematology_oncology
+سی ای ای|cea|آنتی ژن کارسینوامبریونیک,carcinoembryonic antigen,test,proposed,hematology_oncology
+سی ای ۱۲۵|ca125|ca 125,ca 125,test,proposed,hematology_oncology
+آلفا فیتوپروتئین|ای اف پی|afp,alpha fetoprotein,test,proposed,hematology_oncology
+تست کومبس|کومبس|کومبس مستقیم,coombs test,test,proposed,hematology_oncology
+ال دی اچ|ldh|لاکتات دهیدروژناز,ldh,test,proposed,hematology_oncology
+پت اسکن|پت سی تی|pet,pet scan,test,proposed,hematology_oncology
+ماموگرافی|ماموگرافی پستان,mammography,test,proposed,hematology_oncology
+خونریزی مغزی|خونریزی داخل مغزی|سکته مغزی خونریزی دهنده|سکته هموراژیک,intracerebral hemorrhage,condition,proposed,neurology
+خونریزی زیر عنکبوتیه|خونریزی ساب آراکنوئید|اس ای اچ,subarachnoid hemorrhage,condition,proposed,neurology
+هماتوم ساب دورال|خونریزی زیر سخت شامه,subdural hematoma,condition,proposed,neurology
+ترومبوز سینوس وریدی مغز|ترومبوز وریدی مغز|لخته وریدی مغز,cerebral venous thrombosis,condition,proposed,neurology
+تنگی کاروتید|تنگی شریان کاروتید|گرفتگی رگ گردن,carotid artery stenosis,condition,proposed,neurology
+تشنج ناشی از تب|تشنج تب|تب و تشنج,febrile seizure,condition,proposed,neurology
+صرع ابسنس|صرع غیبت|ابسنس|پتی مال,absence seizures,condition,proposed,neurology
+سردرد تنشی|سردرد عصبی|سردرد فشاری,tension type headache,condition,proposed,neurology
+سردرد خوشه ای|سردرد کلاستر,cluster headache,condition,proposed,neurology
+سردرد ناشی از مصرف زیاد دارو|سردرد ریباند,medication overuse headache,condition,proposed,neurology
+نورالژی تری ژمینال|درد عصب سه قلو|تیک دولورو|نورالژی عصب پنجم,trigeminal neuralgia,condition,proposed,neurology
+فلج بل|فلج صورت|فلج عصب صورتی|کج شدن صورت,bells palsy,condition,proposed,neurology
+ترمور اساسی|لرزش اساسی|لرزش دست|رعشه,essential tremor,condition,proposed,neurology
+لرزش|ترمور|رعشه دست,tremor,condition,proposed,neurology
+دمانس عروقی|زوال عقل عروقی,vascular dementia,condition,proposed,neurology
+اختلال شناختی خفیف|ام سی آی,mild cognitive impairment,condition,proposed,neurology
+دلیریوم|هذیان|گیجی حاد|دلیریوم حاد,delirium,condition,proposed,neurology
+میاستنی گراویس|میاستنی|ضعف عضلانی میاستنی,myasthenia gravis,condition,proposed,neurology
+گیلن باره|سندرم گیلن باره|گیلن باره سندروم,guillain barre,condition,proposed,neurology
+ای ال اس|اسکلروز جانبی آمیوتروفیک|als|بیماری نورون حرکتی,amyotrophic lateral sclerosis,condition,proposed,neurology
+نوروپاتی محیطی|نوروپاتی|بی حسی دست و پا|گزگز دست و پا|آسیب عصب محیطی|آسیب اعصاب محیطی,peripheral neuropathy,condition,proposed,neurology
+سندرم تونل کارپ|تونل کارپال|سندرم تونل مچ دست|کارپال تونل,carpal tunnel syndrome,condition,proposed,neurology
+سندرم پای بی قرار|پای بی قرار|آر ال اس,restless leg syndrome,condition,proposed,neurology
+سرگیجه وضعیتی|بی پی پی وی|سرگیجه وضعیتی خوش خیم|سنگ گوش,benign paroxysmal positional vertigo,condition,proposed,neurology
+منیر|بیماری منیر|منیه|بیماری منیه,meniere disease,condition,proposed,neurology
+نوریت وستیبولار|التهاب عصب تعادلی|لابیرنتیت|التهاب گوش داخلی,vestibular neuritis,condition,proposed,neurology
+سرگیجه|گیج رفتن سر|سبکی سر,dizziness,condition,proposed,neurology
+ضربه مغزی|کانکاشن|تکان مغزی,concussion,condition,proposed,neurology
+آسیب تروماتیک مغز|آسیب مغزی|ضربه به سر|آسیب سر|ترومای سر,traumatic brain injury,condition,proposed,neurology
+آسیب نخاع|ضایعه نخاعی|قطع نخاع,spinal cord injury,condition,proposed,neurology
+هیدروسفالی|آب آوردن مغز|هیدروسفالوس,hydrocephalus,condition,proposed,neurology
+هیدروسفالی با فشار طبیعی,normal pressure hydrocephalus,condition,proposed,neurology
+افزایش فشار داخل جمجمه ایدیوپاتیک|سودوتومور سربری|پسودوتومور|پسودوتومور سربری,idiopathic intracranial hypertension,condition,proposed,neurology
+افزایش فشار داخل جمجمه|فشار داخل جمجمه,increased intracranial pressure,condition,proposed,neurology
+فلج مغزی|سی پی|فلج مغزی کودکان,cerebral palsy,condition,proposed,neurology
+هانتینگتون|کره هانتینگتون,huntington disease,condition,proposed,neurology
+دیستونی|دیستونیا|دیستونی حاد,dystonia,condition,proposed,neurology
+توره|سندرم توره,tourette syndrome,condition,proposed,neurology
+تیک|اختلال تیک|تیک عصبی,tic disorders,condition,proposed,neurology
+نارکولپسی|حمله خواب,narcolepsy,condition,proposed,neurology
+اختلالات خواب|مشکل خواب,sleep disorders,condition,proposed,neurology
+سیاتیک|درد سیاتیک|عصب سیاتیک|سیاتالژی,sciatica,condition,proposed,neurology
+دیسک کمر|فتق دیسک کمری|بیرون زدگی دیسک|فتق دیسک|پارگی دیسک,lumbar disc herniation,condition,proposed,neurology
+رادیکولوپاتی گردنی|دیسک گردن|تیر کشیدن دست,cervical radiculopathy,condition,proposed,neurology
+تنگی کانال نخاع|تنگی کانال کمری|تنگی کانال,lumbar spinal stenosis,condition,proposed,neurology
+کما|اغما|استوپور|بهت,coma,condition,proposed,neurology
+مرگ مغزی,brain death,condition,proposed,neurology
+انسفالوپاتی|آنسفالوپاتی,encephalopathy,condition,proposed,neurology
+انسفالوپاتی ورنیکه|ورنیکه|ورنیکه کورساکوف,wernicke encephalopathy,condition,proposed,neurology
+گزگز|خواب رفتگی|مورمور شدن|پارستزی|مورمور|سوزن سوزن شدن,numbness,condition,proposed,neurology
+ضعف|ضعف عضلانی|سستی|ضعف عضلات,weakness,condition,proposed,neurology
+خستگی|خستگی مزمن|کسالت|بی حالی و خستگی|آستنی|ضعف عمومی|بی حالی شدید,fatigue,symptom,proposed,neurology
+سندرم خستگی مزمن,chronic fatigue syndrome,condition,proposed,neurology
+کاهش حافظه|حواس پرتی|ضعف حافظه|اختلال حافظه,memory loss,condition,proposed,neurology
+نوروسیستی سرکوزیس|سیستی سرکوز,neurocysticercosis,condition,proposed,neurology
+نوار مغز|ای ای جی|الکتروانسفالوگرافی|eeg,electroencephalography,test,proposed,neurology
+نوار عصب و عضله|ای ام جی|نوار عصب|emg|الکترومیوگرافی,electromyography,test,proposed,neurology
+ام آر آی مغز|ام ار ای مغز|mri مغز,brain mri,test,proposed,neurology
+سی تی مغز|سی تی اسکن مغز|سی تی سر,head ct,test,proposed,neurology
+پونکسیون کمری|ال پی|کشیدن آب نخاع|مایع نخاع|lp,lumbar puncture,test,proposed,neurology
+افسردگی اساسی|اختلال افسردگی اساسی|افسردگی ماژور|ام دی دی,major depressive disorder,condition,proposed,psychiatry
+افسردگی مقاوم|افسردگی مقاوم به درمان,treatment resistant depression,condition,proposed,psychiatry
+افسردگی پس از زایمان|افسردگی بعد از زایمان|افسردگی پست پارتوم,postpartum depression,condition,proposed,psychiatry
+افسرده خویی|دیس تایمی|افسردگی مزمن,persistent depressive disorder,condition,proposed,psychiatry
+اضطراب اجتماعی|فوبی اجتماعی|هراس اجتماعی,social anxiety,condition,proposed,psychiatry
+فوبی|ترس مرضی|هراس,specific phobia,condition,proposed,psychiatry
+وسواس|اختلال وسواس فکری عملی|او سی دی|وسواس فکری|وسواس عملی|ocd,obsessive compulsive disorder,condition,proposed,psychiatry
+اختلال استرس پس از سانحه|پی تی اس دی|ptsd|استرس پس از حادثه,ptsd,condition,proposed,psychiatry
+سایکوز|روان پریشی|پسیکوز|توهم و هذیان,psychosis,condition,proposed,psychiatry
+اختلال هذیانی,delusional disorder,condition,proposed,psychiatry
+توهم|توهمات|هالوسیناسیون,hallucinations,condition,proposed,psychiatry
+اوتیسم|طیف اوتیسم|اختلال طیف اوتیسم|درخودماندگی,autism spectrum disorder,condition,proposed,psychiatry
+بی اشتهایی عصبی|آنورکسیا نروزا|آنورکسیا|آنورکسی,anorexia nervosa,condition,proposed,psychiatry
+پرخوری عصبی|بولیمیا|بولیمیا نروزا,bulimia nervosa,condition,proposed,psychiatry
+اختلال پرخوری|پرخوری افراطی,binge eating disorder,condition,proposed,psychiatry
+اعتیاد به الکل|الکلیسم|مصرف الکل|وابستگی به الکل|الکلی,alcohol use disorder,condition,proposed,psychiatry
+مسمومیت الکلی|مستی|مسمومیت با الکل,alcohol intoxication,condition,proposed,psychiatry
+ترک مواد مخدر|ترک تریاک|خماری|سندرم ترک مواد افیونی|ترک اعتیاد|محرومیت از مخدر,opioid withdrawal,condition,proposed,psychiatry
+درمان نگهدارنده با متادون|متادون درمانی|ام ام تی,opioid agonist therapy,condition,proposed,psychiatry
+اعتیاد به شیشه|مصرف شیشه|مت آمفتامین|شیشه,methamphetamine withdrawal,condition,proposed,psychiatry
+اعتیاد به محرک ها|مصرف محرک,stimulant use disorders,condition,proposed,psychiatry
+اعتیاد به ماری جوانا|مصرف حشیش|حشیش|گراس|ماری جوانا,cannabis,condition,proposed,psychiatry
+اعتیاد به کوکائین|کوکائین,cocaine addiction,condition,proposed,psychiatry
+ترک بنزودیازپین|قطع بنزودیازپین|ترک قرص اعصاب,benzodiazepine withdrawal,condition,proposed,psychiatry
+اعتیاد به مواد|سوء مصرف مواد|اختلال مصرف مواد,substance use disorder,condition,proposed,psychiatry
+قمار بیمارگونه|اعتیاد به قمار,gambling disorder,condition,proposed,psychiatry
+افکار خودکشی|فکر خودکشی|خودکشی|اقدام به خودکشی|ریسک خودکشی|ایده پردازی خودکشی,suicidal ideation,condition,proposed,psychiatry
+خودآزاری|آسیب به خود,self harm,condition,proposed,psychiatry
+شخصیت مرزی|اختلال شخصیت مرزی|بوردرلاین,borderline personality disorder,condition,proposed,psychiatry
+اختلال شخصیت|اختلالات شخصیت,personality disorders,condition,proposed,psychiatry
+شخصیت ضد اجتماعی|اختلال شخصیت ضد اجتماعی,antisocial personality disorder,condition,proposed,psychiatry
+اختلال ملال پیش از قاعدگی|پی ام دی دی,premenstrual dysphoric disorder,condition,proposed,psychiatry
+سندرم سروتونین|سندروم سروتونین|مسمومیت سروتونینی,serotonin syndrome,condition,proposed,psychiatry
+سندرم نورولپتیک بدخیم|ان ام اس|nms,neuroleptic malignant syndrome,condition,proposed,psychiatry
+کاتاتونی|کاتاتونیا,catatonia,condition,proposed,psychiatry
+سوگ|سوگواری|عزاداری طولانی,grief,condition,proposed,psychiatry
+اختلال سازگاری|اختلال انطباق,adjustment disorder,condition,proposed,psychiatry
+اختلال علائم جسمی|اختلال جسمانی سازی|سوماتیزاسیون,somatic symptom disorder,condition,proposed,psychiatry
+اختلال تبدیلی|کانورژن,conversion disorder,condition,proposed,psychiatry
+آژیتاسیون|تحریک پذیری شدید|بی قراری,agitation,condition,proposed,psychiatry
+علائم رفتاری دمانس|بی قراری در دمانس|پرخاشگری در آلزایمر,dementia behavioral symptoms,condition,proposed,psychiatry
+اختلال جنسی|مشکلات جنسی|سرد مزاجی|اختلال عملکرد جنسی|اختلالات جنسی,sexual dysfunction,condition,proposed,psychiatry
+اختلال جنسی زنان|سرد مزاجی زنان,female sexual dysfunction,condition,proposed,psychiatry
+سندرم قطع داروی ضد افسردگی|قطع ناگهانی ضد افسردگی,discontinuation syndrome,condition,proposed,psychiatry
+کم توانی ذهنی|عقب ماندگی ذهنی|معلولیت ذهنی|اختلال یادگیری|ناتوانی یادگیری,intellectual disability,condition,proposed,psychiatry
+شوک درمانی|ای سی تی|الکتروشوک|ect,electroconvulsive therapy,condition,proposed,psychiatry
+رفتاردرمانی شناختی|سی بی تی|cbt|شناخت درمانی,cognitive behavioral therapy,condition,proposed,psychiatry
+روان درمانی|سایکوتراپی|مشاوره روانشناسی,psychotherapy,condition,proposed,psychiatry
+آرتروز زانو|ساییدگی زانو|استئوآرتریت زانو,knee osteoarthritis,condition,proposed,rheumatology_msk
+آرتروز لگن|آرتروز هیپ,hip osteoarthritis,condition,proposed,rheumatology_msk
+نقرس کاذب|سودوگوت|پیروفسفات کلسیم,pseudogout,condition,proposed,rheumatology_msk
+لوپوس پوستی|لوپوس دیسکوئید,cutaneous lupus,condition,proposed,rheumatology_msk
+شوگرن|سندرم شوگرن|سجوگرن,sjogren syndrome,condition,proposed,rheumatology_msk
+اسکلرودرمی|اسکلروز سیستمیک|اسکلرودرما,systemic sclerosis,condition,proposed,rheumatology_msk
+درماتومیوزیت,dermatomyositis,condition,proposed,rheumatology_msk
+پلی میوزیت|پلی میوزیتیس,polymyositis,condition,proposed,rheumatology_msk
+واسکولیت|التهاب عروق|وسکولیت|واسکولیتیس,vasculitis,condition,proposed,rheumatology_msk
+آرتریت سلول ژانت|آرتریت تمپورال|آرتریت گیجگاهی,giant cell arteritis,condition,proposed,rheumatology_msk
+تاکایاسو|آرتریت تاکایاسو,takayasu arteritis,condition,proposed,rheumatology_msk
+گرانولوماتوز با پلی آنژئیت|وگنر|گرانولوماتوز وگنر,granulomatosis with polyangiitis,condition,proposed,rheumatology_msk
+پلی آرتریت ندوزا,polyarteritis nodosa,condition,proposed,rheumatology_msk
+بهجت|بیماری بهجت|سندرم بهجت|بهچت,behcet,condition,proposed,rheumatology_msk
+هنوخ شوئن لاین|پورپورای هنوخ شوئن لاین|اچ اس پی|واسکولیت iga,iga vasculitis,condition,proposed,rheumatology_msk
+کاوازاکی|بیماری کاوازاکی,kawasaki,condition,proposed,rheumatology_msk
+اسپوندیلیت آنکیلوزان|آنکیلوزان|اسپوندیلیت|ای اس,ankylosing spondylitis,condition,proposed,rheumatology_msk
+اسپوندیلوآرتریت محوری|اسپوندیلوآرتروپاتی,axial spondyloarthritis,condition,proposed,rheumatology_msk
+آرتریت پسوریاتیک|آرتریت پسوریازیسی,psoriatic arthritis,condition,proposed,rheumatology_msk
+آرتریت واکنشی|رایتر|سندرم رایتر,reactive arthritis,condition,proposed,rheumatology_msk
+تب مدیترانه ای|تب مدیترانه|اف ام اف|تب مدیترانه ای فامیلی,familial mediterranean fever,condition,proposed,rheumatology_msk
+آرتریت ایدیوپاتیک جوانان|روماتیسم مفصلی کودکان|جی آی ای,juvenile idiopathic arthritis,condition,proposed,rheumatology_msk
+بیماری استیل|استیل بزرگسالان,adult onset still disease,condition,proposed,rheumatology_msk
+پلی میالژیا روماتیکا|پلی میالژی روماتیکا,polymyalgia rheumatica,condition,proposed,rheumatology_msk
+آرتریت|التهاب مفصل|مفصل|مفاصل|مفصلی,arthritis,anatomy,proposed,rheumatology_msk
+درد مفصل|مفصل درد|دردهای مفصلی|آرترالژی|درد مفاصل|مفصل دردها,joint pain,condition,proposed,rheumatology_msk
+درد عضلانی|درد عضله|میالژی|کوفتگی بدن|بدن درد,myalgia,condition,proposed,rheumatology_msk
+گرفتگی عضله|کرامپ عضلانی|گرفتگی پا|گرفتگی ساق پا|کرامپ|گرفتگی شکم|کرامپ شکمی|دل پیچه,muscle cramps,condition,proposed,rheumatology_msk
+گردن درد|درد گردن,neck pain,condition,proposed,rheumatology_msk
+شانه درد|درد شانه,shoulder pain,condition,proposed,rheumatology_msk
+زانو درد|درد زانو,knee pain,condition,proposed,rheumatology_msk
+شانه منجمد|کپسولیت چسبنده|شانه یخ زده,adhesive capsulitis,condition,proposed,rheumatology_msk
+پارگی روتاتور کاف|پارگی تاندون شانه|روتاتور کاف,rotator cuff tear,condition,proposed,rheumatology_msk
+آرنج تنیس بازان|اپی کندیلیت خارجی|تنیس البو,lateral epicondylitis,condition,proposed,rheumatology_msk
+خار پاشنه|التهاب فاسیای کف پا|فاشئیت پلانتار|درد پاشنه|پلانتار فاشئیت,plantar fasciitis,condition,proposed,rheumatology_msk
+تاندونیت|التهاب تاندون|تاندینوپاتی,tendinopathy,condition,proposed,rheumatology_msk
+بورسیت|التهاب بورس,bursitis,condition,proposed,rheumatology_msk
+دکرون|تنوسینوویت دکرون|دکروین,de quervain tenosynovitis,condition,proposed,rheumatology_msk
+انگشت ماشه ای|تریگر فینگر,trigger finger,condition,proposed,rheumatology_msk
+پیچ خوردگی مچ پا|رگ به رگ شدن مچ|پیچ خوردگی پا,ankle sprain,condition,proposed,rheumatology_msk
+پیچ خوردگی|رگ به رگ شدن,sprain,condition,proposed,rheumatology_msk
+پارگی رباط صلیبی|پارگی رباط صلیبی قدامی|ای سی ال|رباط صلیبی,anterior cruciate ligament injury,condition,proposed,rheumatology_msk
+پارگی منیسک|منیسک,meniscal tear,condition,proposed,rheumatology_msk
+شکستگی لگن|شکستگی گردن فمور|شکستگی هیپ|شکستگی ران,hip fracture,condition,proposed,rheumatology_msk
+شکستگی پوکی استخوان|شکستگی استئوپروتیک,osteoporotic fracture,condition,proposed,rheumatology_msk
+شکستگی|شکستگی استخوان,fracture,condition,proposed,rheumatology_msk
+شکستگی مچ دست|شکستگی رادیوس,distal radius fracture,condition,proposed,rheumatology_msk
+شکستگی فشاری مهره|شکستگی مهره,vertebral compression fracture,condition,proposed,rheumatology_msk
+استئونکروز|نکروز آواسکولار|مرگ استخوان|نکروز سر فمور|نکروز آسپتیک|نکروز استخوان,osteonecrosis,condition,proposed,rheumatology_msk
+اسکولیوز|انحراف ستون فقرات|کج شدن ستون فقرات,scoliosis,condition,proposed,rheumatology_msk
+کوستوکندریت|التهاب غضروف دنده,costochondritis,condition,proposed,rheumatology_msk
+سندرم کمپارتمان|سندروم کمپارتمان,compartment syndrome,condition,proposed,rheumatology_msk
+دررفتگی مادرزادی لگن|دیسپلازی مادرزادی لگن|دی دی اچ,developmental dysplasia of the hip,condition,proposed,rheumatology_msk
+کشیدگی عضله|استرین عضلانی|کشیدگی,muscle strain,condition,proposed,rheumatology_msk
+ضربه شلاقی گردن|ویپلش,whiplash,condition,proposed,rheumatology_msk
+بیش تحرکی مفصل|شلی مفاصل,hypermobility syndrome,condition,proposed,rheumatology_msk
+ای ان ای|آنتی بادی ضد هسته|ana,antinuclear antibody,test,proposed,rheumatology_msk
+فاکتور روماتوئید|آر اف|rf,rheumatoid factor,test,proposed,rheumatology_msk
+آنتی سی سی پی|anti ccp|آنتی ccp,anti ccp,test,proposed,rheumatology_msk
+ای اس آر|سرعت رسوب|سدیمان|esr|سرعت سدیمانتاسیون,esr,test,proposed,rheumatology_msk
+سی آر پی|crp|پروتئین واکنشی سی,c reactive protein,test,proposed,rheumatology_msk
+اچ ال ای بی ۲۷|hla b27,hla b27,test,proposed,rheumatology_msk
+آسپیراسیون مفصل|کشیدن مایع مفصل,joint aspiration,test,proposed,rheumatology_msk
+روزاسه|روزاسئا|آکنه روزاسه,rosacea,condition,proposed,dermatology
+درماتیت تماسی|حساسیت پوستی تماسی|اگزمای تماسی,contact dermatitis,condition,proposed,dermatology
+درماتیت سبورئیک|شوره سر|سبوره|درماتیت سبورئیک صورت,seborrheic dermatitis,condition,proposed,dermatology
+درماتیت|التهاب پوست,dermatitis,condition,proposed,dermatology
+کهیر مزمن,chronic urticaria,condition,proposed,dermatology
+آنژیوادم ارثی|اچ ای ای,hereditary angioedema,condition,proposed,dermatology
+ویتیلیگو|پیسی|لک سفید|برص,vitiligo,condition,proposed,dermatology
+ملاسما|کک و مک|لک صورت|لکه های قهوه ای|ماسک بارداری,melasma,condition,proposed,dermatology
+هیپرپیگمانتاسیون|تیرگی پوست|لک پوستی|افزایش رنگدانه,hyperpigmentation,condition,proposed,dermatology
+آلوپسی آره آتا|ریزش سکه ای مو|طاسی سکه ای|آلوپسی آره آ,alopecia areata,condition,proposed,dermatology
+ریزش موی ارثی|طاسی مردانه|آلوپسی آندروژنتیک|ریزش موی آندروژنیک,androgenetic alopecia,condition,proposed,dermatology
+ریزش مو|ریزش موی سر|کم پشتی مو|آلوپسی|ریزش موی زنان,hair loss,condition,proposed,dermatology
+تلوژن افلوویوم|ریزش موی منتشر,telogen effluvium,condition,proposed,dermatology
+زگیل|زگیل معمولی|وروکا|زگیل دست|زگیل کف پا|میخچه ویروسی,warts,condition,proposed,dermatology
+مولوسکوم|مولوسکوم کونتاژیوزوم,molluscum contagiosum,condition,proposed,dermatology
+پیتریازیس رزه آ|پیتیریازیس روزه آ,pityriasis rosea,condition,proposed,dermatology
+لیکن پلان|لیکن پلانوس,lichen planus,condition,proposed,dermatology
+پمفیگوس|پمفیگوس ولگاریس,pemphigus vulgaris,condition,proposed,dermatology
+پمفیگوئید بولوز|پمفیگوئید,bullous pemphigoid,condition,proposed,dermatology
+استیونس جانسون|سندرم استیونس جانسون|اس جی اس,stevens johnson syndrome,condition,proposed,dermatology
+نکرولیز اپیدرمی توکسیک|سندرم لیل|نکرولیز اپیدرمال سمی|نکرولیز اپیدرمی سمی,toxic epidermal necrolysis,condition,proposed,dermatology
+بثورات دارویی|حساسیت پوستی دارویی|راش دارویی|واکنش پوستی دارویی,drug eruption,condition,proposed,dermatology
+سندرم درس|dress,dress,condition,proposed,dermatology
+اریتم مولتی فرم|اریتم مولتی فورم|اریتما مولتی فرم,erythema multiforme,condition,proposed,dermatology
+اریتم ندوزوم|اریتم نودوزوم,erythema nodosum,condition,proposed,dermatology
+راش|بثورات|بثورات پوستی|جوش پوستی|دانه های پوستی|قرمزی پوست|اریتم,rash,condition,proposed,dermatology
+خارش|خارش پوست|خارش بدن|خارش عمومی,pruritus,condition,proposed,dermatology
+خشکی پوست|پوست خشک|زروزیس|خشکی دهان|دهان خشک|زروستومی,xerosis,condition,proposed,dermatology
+تعریق زیاد|هیپرهیدروزیس|عرق زیاد|عرق کف دست,hyperhidrosis,condition,proposed,dermatology
+آفتاب سوختگی|سوختگی آفتاب,sunburn,condition,proposed,dermatology
+ضد آفتاب|کرم ضد آفتاب,sunscreen,condition,proposed,dermatology
+زخم بستر|زخم فشاری|بدسور,pressure ulcer,condition,proposed,dermatology
+مراقبت زخم|پانسمان زخم|ترمیم زخم|زخم,wound care,condition,proposed,dermatology
+کلوئید|اسکار هیپرتروفیک|جای زخم برجسته,keloid,condition,proposed,dermatology
+اسکار|جای زخم|جای بخیه,scar,condition,proposed,dermatology
+اینترتریگو|التهاب چین های پوستی|سوختگی بین ران,intertrigo,condition,proposed,dermatology
+سوختگی پوشک|درماتیت پوشک|سوختگی پای بچه,diaper dermatitis,condition,proposed,dermatology
+همانژیوم|همانژیوم نوزادی|خال عروقی,infantile hemangioma,condition,proposed,dermatology
+خال|خال پوستی|نووس|خال گوشتی,melanocytic nevi,condition,proposed,dermatology
+کراتوز سبورئیک|زگیل پیری|کراتوز سبوره ای,seborrheic keratosis,condition,proposed,dermatology
+کراتوز اکتینیک|کراتوز آفتابی,actinic keratosis,condition,proposed,dermatology
+زائده پوستی|اسکین تگ|زگیل گوشتی,skin tag,condition,proposed,dermatology
+میخچه|پینه|کالوس|پینه پا,corn,condition,proposed,dermatology
+ناخن فرو رفته|ناخن در گوشت|ناخن فرورفته در گوشت,ingrown toenail,condition,proposed,dermatology
+پارونیشیا|عفونت دور ناخن|کنار ناخن عفونی,paronychia,condition,proposed,dermatology
+سرمازدگی خفیف|پرنیو|چیلبلین,chilblains,condition,proposed,dermatology
+سرمازدگی|سرما زدگی,frostbite,condition,proposed,dermatology
+نیش حشره|گزش حشره|حشره گزیدگی|نیش پشه,insect bite,condition,proposed,dermatology
+نیش زنبور|زنبور گزیدگی|گزش زنبور,bee sting,condition,proposed,dermatology
+لارو مهاجر جلدی,cutaneous larva migrans,condition,proposed,dermatology
+پیتیریازیس آلبا|لک سفید صورت کودکان,pityriasis alba,condition,proposed,dermatology
+لیکن سیمپلکس|نورودرماتیت,lichen simplex chronicus,condition,proposed,dermatology
+هیدرادنیت چرکی|هیدرادنیت|دمل زیر بغل,hidradenitis suppurativa,condition,proposed,dermatology
+ترک پوستی|استریا|ترک بارداری,stretch marks,condition,proposed,dermatology
+حساسیت به نور|فتوسنسیتیویتی|حساسیت به آفتاب|حساسیت نوری,photosensitivity,condition,proposed,dermatology
+پسوریازیس ناخن,nail psoriasis,condition,proposed,dermatology
+پسوریازیس سر|پسوریازیس پوست سر,scalp psoriasis,condition,proposed,dermatology
+پیودرما گانگرنوزوم,pyoderma gangrenosum,condition,proposed,dermatology
+بوتاکس|تزریق ژل|فیلر|تزریق بوتاکس|لیزر موهای زائد,botox,condition,proposed,dermatology
+بیوپسی پوست|نمونه برداری پوست,skin biopsy,test,proposed,dermatology
+تست پچ|پچ تست|تست حساسیت پوستی,patch testing,test,proposed,dermatology
+اسمیر قارچ|تست قارچ|کی او اچ,koh preparation,test,proposed,dermatology
+مراقبت بارداری|مراقبت های دوران بارداری|مراقبت پره ناتال|چکاپ بارداری,prenatal care,condition,proposed,obstetrics_gynecology
+حاملگی خارج رحمی|بارداری خارج رحمی|حاملگی نابجا|اکتوپیک,ectopic pregnancy,condition,proposed,obstetrics_gynecology
+سقط|سقط جنین|سقط خودبخودی|سقط خود به خود|از دست دادن جنین|از دست رفتن بارداری|از دست رفتن حاملگی,miscarriage,condition,proposed,obstetrics_gynecology
+سقط مکرر,recurrent pregnancy loss,condition,proposed,obstetrics_gynecology
+سقط عمدی|سقط درمانی|ختم بارداری|سقط القایی|+سقط,induced abortion,condition,proposed,obstetrics_gynecology
+تولد زودرس|زایمان نارس,preterm birth,condition,proposed,obstetrics_gynecology
+پارگی زودرس کیسه آب|پارگی کیسه آب|پی آر او ام|آبریزش زودرس,premature rupture of membranes,condition,proposed,obstetrics_gynecology
+اکلامپسی|تشنج بارداری,eclampsia,condition,proposed,obstetrics_gynecology
+سندرم هلپ|هلپ,hellp,condition,proposed,obstetrics_gynecology
+فشار خون حاملگی|فشار خون بالای بارداری,gestational hypertension,condition,proposed,obstetrics_gynecology
+جفت سرراهی|جفت پایین|پلاسنتا پرویا,placenta previa,condition,proposed,obstetrics_gynecology
+جدا شدن جفت|دکولمان جفت|کنده شدن جفت,placental abruption,condition,proposed,obstetrics_gynecology
+القای زایمان|اینداکشن|تحریک زایمان,labor induction,condition,proposed,obstetrics_gynecology
+سزارین|زایمان سزارین|عمل سزارین,cesarean delivery,condition,proposed,obstetrics_gynecology
+زایمان طبیعی بعد از سزارین|وی بک,vaginal birth after cesarean,condition,proposed,obstetrics_gynecology
+زایمان|زایمان طبیعی|درد زایمان,labor,condition,proposed,obstetrics_gynecology
+بی حسی اپیدورال|اپیدورال|زایمان بی درد,epidural analgesia,condition,proposed,obstetrics_gynecology
+تغذیه با شیر مادر|شیردهی|شیر دادن,breastfeeding,condition,proposed,obstetrics_gynecology
+ماستیت|التهاب پستان|عفونت پستان|ورم پستان,mastitis,condition,proposed,obstetrics_gynecology
+احتقان پستان|سفتی پستان شیرده,breast engorgement,condition,proposed,obstetrics_gynecology
+خشک کردن شیر|قطع شیر|بند آوردن شیر,lactation suppression,condition,proposed,obstetrics_gynecology
+قرص ضد بارداری|قرص پیشگیری|او سی پی|ocp|قرص جلوگیری|قرص ال دی|قرص اچ دی,combined oral contraceptives,condition,proposed,obstetrics_gynecology
+پیشگیری اورژانسی|قرص اورژانسی|قرص روز بعد|ضد بارداری اورژانسی|لوونورژسترل اورژانسی,emergency contraception,condition,proposed,obstetrics_gynecology
+آی یو دی|iud|دستگاه داخل رحمی|ای یو دی|مس داخل رحمی,intrauterine device,condition,proposed,obstetrics_gynecology
+ناباروری|نازایی|عقیمی|بچه دار نشدن,infertility,condition,proposed,obstetrics_gynecology
+ناباروری زنان|نازایی زنان,female infertility,condition,proposed,obstetrics_gynecology
+آی وی اف|لقاح خارج رحمی|ivf|بچه آزمایشگاهی,in vitro fertilization,condition,proposed,obstetrics_gynecology
+القای تخمک گذاری|تحریک تخمک گذاری,ovulation induction,condition,proposed,obstetrics_gynecology
+آدنومیوز|آدنومیوزیس,adenomyosis,condition,proposed,obstetrics_gynecology
+فیبروم رحم|میوم|میوم رحم|فیبروئید|لیومیوم رحم|فیبروم,uterine fibroids,condition,proposed,obstetrics_gynecology
+خونریزی غیرطبیعی رحم|خونریزی نامنظم|خونریزی بین قاعدگی|خونریزی غیر طبیعی|ای یو بی,abnormal uterine bleeding,condition,proposed,obstetrics_gynecology
+خونریزی شدید قاعدگی|قاعدگی سنگین|منوراژی|پریود سنگین,heavy menstrual bleeding,condition,proposed,obstetrics_gynecology
+آمنوره|قطع قاعدگی|عدم قاعدگی|پریود نشدن|قطع پریود,amenorrhea,condition,proposed,obstetrics_gynecology
+الیگومنوره|قاعدگی نامنظم|پریود نامنظم|عادت ماهانه نامنظم,oligomenorrhea,condition,proposed,obstetrics_gynecology
+سندرم پیش از قاعدگی|پی ام اس|pms|سندرم قبل از پریود,premenstrual syndrome,condition,proposed,obstetrics_gynecology
+قاعدگی|پریود|عادت ماهانه|قاعده,menstruation,condition,proposed,obstetrics_gynecology
+واژینیت|التهاب واژن|عفونت واژن|عفونت زنانه,vaginitis,condition,proposed,obstetrics_gynecology
+ترشحات واژن|ترشح زنانه|ترشحات زنانه|لکوره,vaginal discharge,condition,proposed,obstetrics_gynecology
+آتروفی واژن|خشکی واژن|سندرم ادراری تناسلی یائسگی,vulvovaginal atrophy,condition,proposed,obstetrics_gynecology
+کیست تخمدان|کیست تخمدانی,ovarian cyst,condition,proposed,obstetrics_gynecology
+پیچ خوردگی تخمدان|تورشن تخمدان,ovarian torsion,condition,proposed,obstetrics_gynecology
+افتادگی رحم|پرولاپس رحم|افتادگی مثانه|پرولاپس لگنی|سیستوسل,pelvic organ prolapse,condition,proposed,obstetrics_gynecology
+پاپ اسمیر|غربالگری سرطان دهانه رحم|تست پاپ,cervical cancer screening,condition,proposed,obstetrics_gynecology
+سی آی ان|نئوپلازی داخل اپیتلیالی سرویکس|دیسپلازی سرویکس,cervical intraepithelial neoplasia,condition,proposed,obstetrics_gynecology
+توده پستان|غده پستان|توده سینه|گره پستان,breast mass,condition,proposed,obstetrics_gynecology
+درد پستان|درد سینه زنان|ماستالژی|حساسیت پستان|درد و حساسیت پستان,mastalgia,condition,proposed,obstetrics_gynecology
+فیبروآدنوم|فیبروآدنوما,fibroadenoma,condition,proposed,obstetrics_gynecology
+فیبروکیستیک پستان|پستان فیبروکیستیک,fibrocystic breast disease,condition,proposed,obstetrics_gynecology
+ترشح نوک پستان|ترشح از پستان,nipple discharge,condition,proposed,obstetrics_gynecology
+ناسازگاری ار اچ|ناسازگاری rh|ار اچ منفی|روگام,rh alloimmunization,condition,proposed,obstetrics_gynecology
+بارداری چندقلویی|دوقلویی|بارداری دوقلو|چندقلویی,multiple gestation,condition,proposed,obstetrics_gynecology
+محدودیت رشد جنین|آی یو جی آر|رشد کم جنین|عقب ماندگی رشد داخل رحمی|محدودیت رشد داخل رحمی|تاخیر رشد جنین,fetal growth restriction,condition,proposed,obstetrics_gynecology
+مرده زایی|مرگ داخل رحمی جنین|جنین مرده|آی یو اف دی,stillbirth,condition,proposed,obstetrics_gynecology
+بارداری طول کشیده|حاملگی پست ترم|دیر شدن زایمان,postterm pregnancy,condition,proposed,obstetrics_gynecology
+الیگوهیدرآمنیوس|کم آبی کیسه آمنیون|کم بودن مایع آمنیوتیک,oligohydramnios,condition,proposed,obstetrics_gynecology
+پلی هیدرآمنیوس|زیادی مایع آمنیوتیک,polyhydramnios,condition,proposed,obstetrics_gynecology
+نارسایی دهانه رحم|سرکلاژ|نارسایی سرویکس,cervical insufficiency,condition,proposed,obstetrics_gynecology
+حاملگی مولار|مول هیداتیفورم|بارداری مولار,gestational trophoblastic disease,condition,proposed,obstetrics_gynecology
+کیست بارتولن|آبسه بارتولن,bartholin cyst,condition,proposed,obstetrics_gynecology
+ولوودینیا|درد فرج,vulvodynia,condition,proposed,obstetrics_gynecology
+مقاربت دردناک|دیس پارونی|درد هنگام نزدیکی,dyspareunia,condition,proposed,obstetrics_gynecology
+درد لگن|درد زیر شکم|لگن درد,pelvic pain,condition,proposed,obstetrics_gynecology
+درد مزمن لگن,chronic pelvic pain,condition,proposed,obstetrics_gynecology
+هورمون درمانی یائسگی|اچ آر تی|درمان جایگزینی هورمون|hrt,menopausal hormone therapy,condition,proposed,obstetrics_gynecology
+تراتوژنیسیته|ناهنجاری جنینی|اثر دارو بر جنین|تراتوژن|ناهنجاری مادرزادی,teratogenicity,condition,proposed,obstetrics_gynecology
+غربالگری جنین|غربالگری بارداری|تست غربالگری سه ماهه|غربالگری سندرم داون,prenatal screening,condition,proposed,obstetrics_gynecology
+مصرف اسید فولیک در بارداری|مکمل فولیک اسید|اسید فولیک|فولیک اسید|فولات,folic acid supplementation,drug,proposed,obstetrics_gynecology
+تست بارداری|بی بی چک|آزمایش بارداری|بتا اچ سی جی|تست حاملگی,pregnancy test,condition,proposed,obstetrics_gynecology
+نوار قلب جنین|ان اس تی|مانیتورینگ جنین,fetal monitoring,condition,proposed,obstetrics_gynecology
+سونوگرافی بارداری|سونوگرافی جنین|سونو بارداری|سونوگرافی ان تی,obstetric ultrasound,condition,proposed,obstetrics_gynecology
+مراقبت پس از زایمان|دوران نفاس|نفاس,postpartum care,condition,proposed,obstetrics_gynecology
+ختنه زنان,female genital mutilation,condition,proposed,obstetrics_gynecology
+زردی نوزاد|زردی نوزادی|یرقان نوزاد|هایپربیلی روبینمی نوزادی|زردی بچه,neonatal jaundice,condition,proposed,pediatrics
+سپسیس نوزادی|عفونت خون نوزاد,neonatal sepsis,condition,proposed,pediatrics
+سندرم دیسترس تنفسی نوزاد|آر دی اس|دیسترس تنفسی نوزاد,respiratory distress syndrome in neonate,condition,proposed,pediatrics
+قولنج نوزاد|کولیک نوزادی|دل درد نوزاد|گریه زیاد نوزاد|کولیک شیرخوار,infantile colic,condition,proposed,pediatrics
+دندان درآوردن|رویش دندان شیری,teething,condition,proposed,pediatrics
+اختلال رشد|عدم رشد کافی|وزن نگرفتن کودک|کندی رشد,failure to thrive,condition,proposed,pediatrics
+تأخیر تکاملی|تاخیر رشد تکاملی|تاخیر در راه رفتن|تاخیر در حرف زدن,developmental delay,condition,proposed,pediatrics
+تب کودکان|تب بچه|تب نوزاد|تب در کودکان,fever in children,condition,proposed,pediatrics
+مراقبت کودک سالم|پایش رشد کودک|چکاپ کودک,well child care,condition,proposed,pediatrics
+برنامه واکسیناسیون کودکان|جدول واکسن|واکسن های کودکان|واکسن نوبتی,immunization schedule,condition,proposed,pediatrics
+انواژیناسیون|درهم رفتگی روده|اینتوساسپشن,intussusception,condition,proposed,pediatrics
+تنگی پیلور|تنگی پیلور نوزاد|پیلور,pyloric stenosis,condition,proposed,pediatrics
+ریفلاکس نوزاد|بالا آوردن شیر|برگرداندن شیر نوزاد|ریفلاکس شیرخوار,infant reflux,condition,proposed,pediatrics
+یبوست کودکان|یبوست بچه|یبوست شیرخوار,constipation in children,condition,proposed,pediatrics
+اسهال کودکان|اسهال بچه|گاستروانتریت کودکان|اسهال و استفراغ کودکان,acute gastroenteritis in children,condition,proposed,pediatrics
+او آر اس|محلول خوراکی آبرسانی|ors|آبرسانی خوراکی|پودر او آر اس,oral rehydration therapy,condition,proposed,pediatrics
+سندرم داون|داون|منگولیسم|تریزومی ۲۱,down syndrome,condition,proposed,pediatrics
+شکاف لب و کام|لب شکری|شکاف کام,cleft lip and palate,condition,proposed,pediatrics
+پاچنبری|پای چنبری|کلاب فوت,congenital clubfoot,condition,proposed,pediatrics
+افت قند نوزاد|هیپوگلیسمی نوزادی,neonatal hypoglycemia,condition,proposed,pediatrics
+فنیل کتونوری|پی کی یو|pku,phenylketonuria,condition,proposed,pediatrics
+کم کاری مادرزادی تیروئید|هیپوتیروئیدی مادرزادی|کم کاری تیروئید نوزاد,congenital hypothyroidism,condition,proposed,pediatrics
+مسمومیت با سرب|مسمومیت سرب|سرب,lead poisoning,condition,proposed,pediatrics
+کودک آزاری|آزار کودک|بدرفتاری با کودک,child abuse,condition,proposed,pediatrics
+مرگ ناگهانی نوزاد|سیدز|سندرم مرگ ناگهانی شیرخوار,sudden infant death syndrome,condition,proposed,pediatrics
+شیر خشک|تغذیه با شیر خشک|فرمولا,infant formula,condition,proposed,pediatrics
+غذای کمکی|تغذیه تکمیلی|شروع غذای کمکی,complementary feeding,condition,proposed,pediatrics
+چاقی کودکان|اضافه وزن کودکان,childhood obesity,condition,proposed,pediatrics
+نمودار رشد|منحنی رشد|صدک رشد,growth chart,condition,proposed,pediatrics
+سندرم ترک نوزادی|اعتیاد نوزاد|سندرم محرومیت نوزادی|سندرم محرومیت نوزادی از اپیوئید|ترک مخدر نوزاد|سندرم قطع اپیوئیدی نوزادی|علائم ترک نوزادی|سندرم ترک نوزاد,neonatal abstinence syndrome,condition,proposed,pediatrics
+انتروکولیت نکروزان,necrotizing enterocolitis,condition,proposed,pediatrics
+رتینوپاتی نارسی|آر او پی,retinopathy of prematurity,condition,proposed,pediatrics
+هیرشپرونگ|بیماری هیرشپرونگ,hirschsprung,condition,proposed,pediatrics
+ریفلاکس ادراری|ریفلاکس مثانه به حالب|وی یو آر|برگشت ادرار به کلیه,vesicoureteral reflux,condition,proposed,pediatrics
+عفونت ادراری کودکان|عفونت ادراری بچه|عفونت ادراری نوزاد,uti children,condition,proposed,pediatrics
+دوز کودکان|دوز اطفال|محاسبه دوز کودکان,pediatric dosing,condition,proposed,pediatrics
+سرم کودکان|مایع درمانی کودکان,maintenance fluids pediatrics,condition,proposed,pediatrics
+رینیت غیرآلرژیک|رینیت وازوموتور,chronic nonallergic rhinitis,condition,proposed,ent_eye_dental
+گرفتگی بینی|بینی گرفته|احتقان بینی,nasal congestion,condition,proposed,ent_eye_dental
+آبریزش بینی|آب ریزش بینی|ریزش بینی,rhinorrhea,condition,proposed,ent_eye_dental
+خون دماغ|خونریزی بینی|اپیستاکسی|خون دماغ شدن,epistaxis,condition,proposed,ent_eye_dental
+پولیپ بینی|پولیپ نازال,nasal polyps,condition,proposed,ent_eye_dental
+انحراف تیغه بینی|انحراف بینی|انحراف سپتوم,deviated septum,condition,proposed,ent_eye_dental
+کم شنوایی|کاهش شنوایی|ناشنوایی|کری,hearing loss,condition,proposed,ent_eye_dental
+کاهش شنوایی ناگهانی|کری ناگهانی,sudden sensorineural hearing loss,condition,proposed,ent_eye_dental
+وزوز گوش|صدای گوش|تینیتوس|زنگ زدن گوش|وزوز|صدای زنگ در گوش,tinnitus,condition,proposed,ent_eye_dental
+جرم گوش|واکس گوش|سرومن|گوش گرفته|شستشوی گوش,cerumen impaction,condition,proposed,ent_eye_dental
+گوش درد|درد گوش,earache,condition,proposed,ent_eye_dental
+لارنژیت|التهاب حنجره,laryngitis,condition,proposed,ent_eye_dental
+خشونت صدا|گرفتگی صدا|دورگه شدن صدا,hoarseness,condition,proposed,ent_eye_dental
+زخم دهان|آفت|آفت دهان|زخم آفتی|آفت دهانی,mouth ulcers,condition,proposed,ent_eye_dental
+دندان درد|درد دندان,toothache,condition,proposed,ent_eye_dental
+پوسیدگی دندان|کرم خوردگی دندان|پوسیدگی,dental caries,condition,proposed,ent_eye_dental
+ژنژیویت|التهاب لثه|خونریزی لثه,gingivitis,condition,proposed,ent_eye_dental
+پریودنتیت|بیماری لثه|پیوره,periodontitis,condition,proposed,ent_eye_dental
+کشیدن دندان|جراحی دندان|عصب کشی|دندانپزشکی,dental procedures,condition,proposed,ent_eye_dental
+اختلال مفصل فک|درد فک|تی ام جی|مفصل گیجگاهی فکی|صدای فک,temporomandibular disorders,condition,proposed,ent_eye_dental
+التهاب غدد بزاقی|سیالادنیت|سنگ بزاقی,sialadenitis,condition,proposed,ent_eye_dental
+خشکی چشم|چشم خشک|سندرم چشم خشک,dry eye,condition,proposed,ent_eye_dental
+حساسیت چشم|کونژنکتیویت آلرژیک|آلرژی چشم|خارش چشم,allergic conjunctivitis,condition,proposed,ent_eye_dental
+گلوکوم زاویه باز|آب سیاه زاویه باز,open angle glaucoma,condition,proposed,ent_eye_dental
+گلوکوم زاویه بسته|آب سیاه حاد|گلوکوم حاد,angle closure glaucoma,condition,proposed,ent_eye_dental
+آب مروارید|کاتاراکت|عمل آب مروارید,cataract,condition,proposed,ent_eye_dental
+دژنراسیون ماکولا|ای ام دی|دژنراسیون ماکولای وابسته به سن|تخریب ماکولا,age related macular degeneration,condition,proposed,ent_eye_dental
+جداشدگی شبکیه|پارگی شبکیه|جدا شدن پرده شبکیه,retinal detachment,condition,proposed,ent_eye_dental
+یووئیت|یوئیت|التهاب یووه آ,uveitis,condition,proposed,ent_eye_dental
+خراش قرنیه|زخم قرنیه|ساییدگی قرنیه,corneal abrasion,condition,proposed,ent_eye_dental
+گل مژه|هوردئولوم|سنده سلام,hordeolum,condition,proposed,ent_eye_dental
+شالازیون|کیست پلک|غده پلک,chalazion,condition,proposed,ent_eye_dental
+بلفاریت|التهاب پلک|التهاب لبه پلک,blepharitis,condition,proposed,ent_eye_dental
+استرابیسم|انحراف چشم|چپ بودن چشم|لوچی,strabismus,condition,proposed,ent_eye_dental
+آمبلیوپی|تنبلی چشم|چشم تنبل,amblyopia,condition,proposed,ent_eye_dental
+نزدیک بینی|میوپی,myopia,condition,proposed,ent_eye_dental
+قرمزی چشم|چشم قرمز,red eye,condition,proposed,ent_eye_dental
+کاهش بینایی|از دست دادن بینایی|کوری,vision loss,condition,proposed,ent_eye_dental
+تاری دید|دید تار,blurred vision,condition,proposed,ent_eye_dental
+نوریت اپتیک|التهاب عصب بینایی|نوریت بینایی,optic neuritis,condition,proposed,ent_eye_dental
+ادم ماکولا دیابتی|ادم ماکولار,diabetic macular edema,condition,proposed,ent_eye_dental
+مگس پران|جسم شناور چشم,floaters,condition,proposed,ent_eye_dental
+ضربه به چشم|آسیب چشم|جسم خارجی چشم,eye trauma,condition,proposed,ent_eye_dental
+معاینه چشم|اندازه گیری فشار چشم|تست بینایی,eye exam,test,proposed,ent_eye_dental
+ادیومتری|تست شنوایی|شنوایی سنجی,audiometry,test,proposed,ent_eye_dental
+سم|مسموم شدن|مسمومیت دارویی|مسمومیت,poisoning,condition,proposed,toxicology_emergency
+خوردن قرص زیاد|اوردوز|مصرف بیش از حد,overdose,condition,proposed,toxicology_emergency
+مسمومیت با بنزودیازپین|مسمومیت با قرص خواب|اوردوز بنزودیازپین,benzodiazepine poisoning,condition,proposed,toxicology_emergency
+مسمومیت با ضد افسردگی سه حلقه ای|مسمومیت با آمی تریپتیلین|مسمومیت با تی سی ای,tricyclic antidepressant poisoning,condition,proposed,toxicology_emergency
+مسمومیت با ارگانوفسفره|مسمومیت با سموم کشاورزی|مسمومیت با حشره کش|ارگانوفسفات,organophosphate poisoning,condition,proposed,toxicology_emergency
+مسمومیت با منوکسید کربن|گازگرفتگی|مسمومیت با گاز|مسمومیت با co|گاز گرفتگی,carbon monoxide poisoning,condition,proposed,toxicology_emergency
+مسمومیت با متانول|مسمومیت الکل صنعتی|مسمومیت با الکل تقلبی|متانول,methanol poisoning,condition,proposed,toxicology_emergency
+مسمومیت با اتیلن گلیکول|مسمومیت با ضدیخ,ethylene glycol poisoning,condition,proposed,toxicology_emergency
+مسمومیت با قرص برنج|قرص برنج|فسفید آلومینیوم|مسمومیت با فسفید آلومینیوم,aluminum phosphide poisoning,condition,proposed,toxicology_emergency
+مسمومیت با لیتیوم|مسمومیت لیتیوم,lithium poisoning,condition,proposed,toxicology_emergency
+مسمومیت با دیگوکسین|مسمومیت دیژیتال|مسمومیت دیگوکسین,digoxin toxicity,condition,proposed,toxicology_emergency
+مسمومیت با آهن|مسمومیت آهن|اوردوز آهن,iron poisoning,condition,proposed,toxicology_emergency
+مسمومیت با آسپرین|مسمومیت سالیسیلات|مسمومیت با سالیسیلات,salicylate poisoning,condition,proposed,toxicology_emergency
+مسمومیت با پاراکوات|پاراکوات,paraquat poisoning,condition,proposed,toxicology_emergency
+مسمومیت با سیانید|سیانور,cyanide poisoning,condition,proposed,toxicology_emergency
+مسمومیت با قارچ|مسمومیت قارچی|قارچ سمی,mushroom poisoning,condition,proposed,toxicology_emergency
+مارگزیدگی|مار گزیدگی|نیش مار|گزش مار,snake bite,condition,proposed,toxicology_emergency
+عقرب گزیدگی|عقرب زدگی|نیش عقرب|گزش عقرب,scorpion sting,condition,proposed,toxicology_emergency
+عنکبوت گزیدگی|نیش عنکبوت|رتیل,spider bite,condition,proposed,toxicology_emergency
+مسمومیت با مسدود کننده کانال کلسیم|مسمومیت با آملودیپین|مسمومیت با وراپامیل,calcium channel blocker poisoning,condition,proposed,toxicology_emergency
+مسمومیت با بتابلاکر|مسمومیت با پروپرانولول|مسمومیت بتابلوکر,beta blocker poisoning,condition,proposed,toxicology_emergency
+مسمومیت آنتی کولینرژیک|سندرم آنتی کولینرژیک,anticholinergic poisoning,condition,proposed,toxicology_emergency
+خوردن مواد سوزاننده|بلع مواد سوزاننده|مسمومیت با سفیدکننده|خوردن جوهر نمک|خوردن وایتکس,caustic ingestion,condition,proposed,toxicology_emergency
+مسمومیت با نفت|خوردن بنزین|مسمومیت هیدروکربن,hydrocarbon poisoning,condition,proposed,toxicology_emergency
+پادزهر|آنتی دوت|پادزهرها,antidotes,condition,proposed,toxicology_emergency
+شستشوی معده|لاواژ معده,gastric lavage,condition,proposed,toxicology_emergency
+گرمازدگی|گرما زدگی|هیت استروک|سکته گرمایی,heat stroke,condition,proposed,toxicology_emergency
+خستگی ناشی از گرما|ضعف گرمایی,heat exhaustion,condition,proposed,toxicology_emergency
+هیپوترمی|افت دمای بدن|سرمازدگی شدید|کاهش دمای بدن,hypothermia,condition,proposed,toxicology_emergency
+غرق شدگی|غرق شدن|نزدیک به غرق,drowning,condition,proposed,toxicology_emergency
+برق گرفتگی|آسیب الکتریکی|صاعقه زدگی|احساس شوک الکتریکی|شوک الکتریکی|برق گرفتگی خفیف,electrical injuries,condition,proposed,toxicology_emergency
+تروما|ضربه|حادثه|ترومای متعدد|ترومای چندگانه|مالتیپل تروما|آسیب|صدمه,trauma,condition,proposed,toxicology_emergency
+بریدگی|پارگی پوست|زخم بریده|بخیه,laceration,condition,proposed,toxicology_emergency
+دررفتگی|در رفتگی|لوکسیشن,dislocation,condition,proposed,toxicology_emergency
+دررفتگی شانه|در رفتگی شانه,shoulder dislocation,condition,proposed,toxicology_emergency
+لوله گذاری سریع|انتوباسیون|اینتوباسیون|لوله گذاری داخل تراشه,rapid sequence intubation,condition,proposed,toxicology_emergency
+آرام بخشی حین پروسیجر|بیهوشی سبک,procedural sedation,condition,proposed,toxicology_emergency
+هیپرترمی بدخیم,malignant hyperthermia,condition,proposed,toxicology_emergency
+استنشاق دود|دود گرفتگی,smoke inhalation,condition,proposed,toxicology_emergency
+درد حاد|کنترل درد حاد|مسکن درد حاد,acute pain,condition,proposed,toxicology_emergency
+درد مزمن|درد طولانی,chronic pain,condition,proposed,toxicology_emergency
+درد بعد از عمل|درد پس از جراحی|کنترل درد بعد از عمل,postoperative pain,condition,proposed,toxicology_emergency
+تهوع بعد از عمل|استفراغ پس از جراحی|تهوع بعد از بیهوشی,postoperative nausea and vomiting,condition,proposed,toxicology_emergency
+بیهوشی|آنستزی,anesthesia,condition,proposed,toxicology_emergency
+بیهوشی عمومی|بیهوشی کامل,general anesthesia,condition,proposed,toxicology_emergency
+بی حسی موضعی|بی حسی,local anesthesia,condition,proposed,toxicology_emergency
+بی حسی نخاعی|اسپاینال,spinal anesthesia,condition,proposed,toxicology_emergency
+آرام بخشی|سدیشن|خواب آوری|+خواب آلودگی,sedation,condition,proposed,toxicology_emergency
+آی سی یو|مراقبت ویژه|بخش مراقبت های ویژه|icu|بیماران بدحال|بیمار بدحال|بیماران بحرانی|بیمار بحرانی,intensive care,condition,proposed,toxicology_emergency
+سرم درمانی|مایع درمانی|مایع وریدی|سرم تراپی|هیدراتاسیون|آبرسانی|مایعات کافی|نوشیدن مایعات|هیدراته,fluid therapy,condition,proposed,toxicology_emergency
+وازوپرسور|داروی بالا برنده فشار|وازوپرسورها,vasopressors,condition,proposed,toxicology_emergency
+جت لگ|اختلال خواب پرواز,jet lag,condition,proposed,toxicology_emergency
+طب سفر|توصیه های سفر|واکسن مسافرتی,travel medicine,condition,proposed,toxicology_emergency
+سفالوسپورین|سفالوسپورینها,cephalosporins,class,proposed,drug_classes
+پنی سیلین ها|پنیسیلین ها|خانواده پنی سیلین,penicillin,class,proposed,drug_classes
+ماکرولید|ماکرولیدها,macrolide antibiotics,class,proposed,drug_classes
+فلوروکینولون|کینولون,fluoroquinolones,class,proposed,drug_classes
+آمینوگلیکوزید|آمینوگلیکوزیدها,aminoglycosides,class,proposed,drug_classes
+کارباپنم,carbapenems,class,proposed,drug_classes
+تتراسیکلین ها|خانواده تتراسایکلین,tetracycline,class,proposed,drug_classes
+سولفونامید|سولفونامیدها|سولفا|داروهای سولفا,sulfonamides,class,proposed,drug_classes
+ضد قارچ|داروی ضد قارچ|آنتی فونگال|ضدقارچ,antifungal,class,proposed,drug_classes
+آزول ها|ضد قارچ آزول,azole antifungals,class,proposed,drug_classes
+ضد ویروس|داروی ضد ویروس|آنتی ویرال,antiviral,class,proposed,drug_classes
+داروهای ضد رتروویروس|درمان ضد رتروویروسی|ای آر تی|art|ضدرتروویروسی|ضد رتروویروس|درمان ترکیبی ضدرتروویروسی|درمان ترکیبی ضد رتروویروسی,antiretroviral therapy,class,proposed,drug_classes
+داروهای ضد مالاریا|ضد مالاریا,antimalarials,class,proposed,drug_classes
+ضد انگل|داروی ضد انگل|ضد کرم|داروی ضد کرم,anthelmintic,class,proposed,drug_classes
+مهارکننده کاکس ۲|کاکس 2|کاکس دو|مهار کننده cox 2,cox 2 inhibitors,class,proposed,drug_classes
+مسکن|ضد درد|داروی مسکن|داروی ضد درد,analgesics,class,proposed,drug_classes
+کورتون استنشاقی|کورتیکواستروئید استنشاقی|اسپری کورتون|آی سی اس,inhaled corticosteroids,class,proposed,drug_classes
+کورتون موضعی|پماد کورتون|کرم کورتون|استروئید موضعی,topical corticosteroids,class,proposed,drug_classes
+آنتی هیستامین|ضد حساسیت|داروی ضد حساسیت|ضد آلرژی,antihistamines,class,proposed,drug_classes
+ضد احتقان|داروی ضد احتقان|دکونژستانت,decongestant,class,proposed,drug_classes
+ضد سرفه|شربت سرفه|داروی سرفه|سرکوب کننده سرفه,cough suppressant,class,proposed,drug_classes
+خلط آور|اکسپکتورانت,expectorant,class,proposed,drug_classes
+آنتاگونیست گیرنده اچ ۲|بلوکر اچ 2|آنتی هیستامین اچ ۲|رانیتیدین و فاموتیدین,h2 receptor antagonists,class,proposed,drug_classes
+آنتی اسید|آنتاسید|ضد اسید|شربت معده,antacids,class,proposed,drug_classes
+ملین|مسهل|داروی ملین|لاکزاتیو,laxatives,class,proposed,drug_classes
+ضد اسهال|داروی ضد اسهال,antidiarrheal drugs,class,proposed,drug_classes
+ضد تهوع|ضد استفراغ|داروی ضد تهوع|آنتی امتیک,antiemetics,class,proposed,drug_classes
+ضد اسپاسم|آنتی اسپاسم|داروی ضد اسپاسم,antispasmodics,class,proposed,drug_classes
+پروبیوتیک,probiotics,class,proposed,drug_classes
+فیبرات,fibrates,class,proposed,drug_classes
+مهارکننده pcsk9|پی سی اس کی ۹|pcsk9,pcsk9 inhibitors,class,proposed,drug_classes
+داروهای کاهنده چربی|داروی کاهش کلسترول|کاهنده کلسترول,lipid lowering agents,class,proposed,drug_classes
+داروی فشار خون|ضد فشار خون|داروهای ضد فشار|قرص فشار|داروی فشار|آنتی هایپرتنسیو,antihypertensives,class,proposed,drug_classes
+آنتاگونیست گیرنده آنژیوتانسین|ای آر بی|arb|بلوک کننده گیرنده آنژیوتانسین|سارتان ها,angiotensin receptor blockers,class,proposed,drug_classes
+مسدود کننده کانال کلسیم|بلوکر کانال کلسیم|سی سی بی|ccb|کلسیم بلاکر,calcium channel blockers,class,proposed,drug_classes
+تیازید|دیورتیک تیازیدی|تیازیدها,thiazide diuretics,class,proposed,drug_classes
+دیورتیک لوپ|مدر لوپ,loop diuretics,class,proposed,drug_classes
+دیورتیک نگهدارنده پتاسیم|مدر نگهدارنده پتاسیم,potassium sparing diuretics,class,proposed,drug_classes
+آنتاگونیست مینرالوکورتیکوئید|آنتاگونیست آلدوسترون,mineralocorticoid receptor antagonists,class,proposed,drug_classes
+ضد آریتمی|داروی ضد آریتمی|آنتی آریتمی,antiarrhythmic drugs,class,proposed,drug_classes
+داک|نواک|ضد انعقاد خوراکی جدید|doac|noac|ضد انعقاد خوراکی مستقیم,direct oral anticoagulants,class,proposed,drug_classes
+هپارین با وزن مولکولی پایین|ال ام دبلیو اچ|lmwh|هپارین کم وزن,low molecular weight heparin,class,proposed,drug_classes
+ضد پلاکت|داروی ضد پلاکت|آنتی پلاکت|ضدپلاکت,antiplatelet agents,class,proposed,drug_classes
+مهارکننده p2y12|پی ۲ وای ۱۲,p2y12 inhibitors,class,proposed,drug_classes
+ترومبولیتیک|حل کننده لخته|داروی حل کننده لخته|فیبرینولیتیک,thrombolytics,class,proposed,drug_classes
+انسولین|آمپول انسولین|قلم انسولین,insulin,class,proposed,drug_classes
+داروهای خوراکی دیابت|قرص دیابت|قرص قند|داروی قند|داروی دیابت|ضد دیابت خوراکی,oral hypoglycemic agents,class,proposed,drug_classes
+سولفونیل اوره|سولفونیلوره,sulfonylureas,class,proposed,drug_classes
+مهارکننده dpp4|گلیپتین ها|مهارکننده دی پی پی ۴|dpp4,dpp4 inhibitors,class,proposed,drug_classes
+تیازولیدیندیون|گلیتازون ها,thiazolidinediones,class,proposed,drug_classes
+هورمون تیروئید|لووتیروکسین و هورمون تیروئید,thyroid hormone,class,proposed,drug_classes
+داروی ضد تیروئید|ضد تیروئید|داروی پرکاری تیروئید,antithyroid drugs,class,proposed,drug_classes
+بیس فسفونات|بیسفسفونات|داروی پوکی استخوان,bisphosphonates,class,proposed,drug_classes
+ضد بارداری هورمونی|داروهای ضد بارداری,hormonal contraceptives,class,proposed,drug_classes
+استروژن|هورمون استروژن,estrogen,class,proposed,drug_classes
+پروژستین,progestin,class,proposed,drug_classes
+آندروژن|هورمون مردانه,androgens,class,proposed,drug_classes
+مهارکننده ۵ آلفا ردوکتاز|مهار کننده 5 آلفا ردوکتاز|فیناستراید و دوتاستراید,5 alpha reductase inhibitors,class,proposed,drug_classes
+آلفا بلاکر|آلفابلاکر|بلوکر آلفا|مسدود کننده آلفا,alpha blockers,class,proposed,drug_classes
+مهارکننده فسفودی استراز ۵|مهارکننده pde5|قرص تقویت جنسی|داروی نعوظ,pde5 inhibitors,class,proposed,drug_classes
+آنتی کولینرژیک|ضد کولینرژیک,anticholinergic,class,proposed,drug_classes
+برونکودیلاتور|گشاد کننده برونش|اسپری آسم|بازکننده راه هوایی,bronchodilators,class,proposed,drug_classes
+آگونیست بتا ۲|بتا آگونیست|سابا|لابا,beta 2 agonist,class,proposed,drug_classes
+آنتاگونیست لکوترین|مونته لوکاست و آنتاگونیست لکوترین,leukotriene receptor antagonists,class,proposed,drug_classes
+داروهای بیولوژیک|بیولوژیک|داروی بیولوژیک,biologics,class,proposed,drug_classes
+مهارکننده tnf|آنتی tnf|ضد tnf|مهار کننده تی ان اف,tnf inhibitors,class,proposed,drug_classes
+دی مارد|داروهای ضد روماتیسم|dmard,dmards,class,proposed,drug_classes
+سرکوب کننده ایمنی|داروی سرکوب ایمنی|ایمونوساپرسیو|ایمونوساپرسانت|سرکوب ایمنی|ضعف ایمنی|سرکوب سیستم ایمنی,immunosuppressants,class,proposed,drug_classes
+مهارکننده کلسی نورین|مهار کننده کلسینورین,calcineurin inhibitors,class,proposed,drug_classes
+آنتی بادی مونوکلونال|آنتی بادی تک دودمانی|مونوکلونال,monoclonal antibodies,class,proposed,drug_classes
+ضد افسردگی|داروی ضد افسردگی|داروهای ضد افسردگی|قرص افسردگی|آنتی دپرسانت,antidepressants,class,proposed,drug_classes
+اس ان آر آی|snri|مهارکننده بازجذب سروتونین نوراپی نفرین,snri,class,proposed,drug_classes
+ضد افسردگی سه حلقه ای|سه حلقه ای|تی سی ای|tca,tricyclic antidepressants,class,proposed,drug_classes
+مهارکننده مونوآمین اکسیداز|مائو|maoi,maoi,class,proposed,drug_classes
+آنتی سایکوتیک|ضد روان پریشی|ضد جنون|داروی ضد سایکوز|نورولپتیک,antipsychotics,class,proposed,drug_classes
+آنتی سایکوتیک آتیپیک|ضد روان پریشی آتیپیک|نسل دوم آنتی سایکوتیک,atypical antipsychotics,class,proposed,drug_classes
+خواب آور|قرص خواب|داروی خواب آور|هیپنوتیک,hypnotics,class,proposed,drug_classes
+تثبیت کننده خلق|داروی تثبیت کننده خلق,mood stabilizers,class,proposed,drug_classes
+ضد تشنج|داروی ضد تشنج|ضد صرع|داروی ضد صرع|آنتی اپی لپتیک|داروهای ضد صرع,antiepileptic drugs,class,proposed,drug_classes
+محرک|داروی محرک|داروهای محرک|محرک های سیستم عصبی,stimulants,class,proposed,drug_classes
+مهارکننده کولین استراز|داروی آلزایمر,cholinesterase inhibitors,class,proposed,drug_classes
+تریپتان|داروی میگرن,triptans,class,proposed,drug_classes
+شل کننده عضلانی|شل کننده عضله|ریلکسانت عضلانی|داروی شل کننده,muscle relaxants,class,proposed,drug_classes
+بلوک کننده عصبی عضلانی|شل کننده عضلانی بیهوشی|داروی فلج کننده,neuromuscular blocking agents,class,proposed,drug_classes
+بی حس کننده موضعی|داروی بی حسی|بی حس کننده,local anesthetics,class,proposed,drug_classes
+ویتامین|مولتی ویتامین|مکمل ویتامین,vitamin,class,proposed,drug_classes
+مکمل|مکمل غذایی,dietary supplements,class,proposed,drug_classes
+مکمل آهن|قرص آهن|شربت آهن|آهن خوراکی,iron supplementation,class,proposed,drug_classes
+داروی گیاهی|داروهای گیاهی|طب سنتی|گیاهان دارویی|طب گیاهی,herbal medicines,class,proposed,drug_classes
+ایمونوگلوبولین|آی وی آی جی|ivig|گاما گلوبولین,immune globulin,class,proposed,drug_classes
+ماده حاجب|کنتراست|داروی حاجب|ماده کنتراست,contrast media,class,proposed,drug_classes
+اینوتروپ|داروی اینوتروپ|اینوتروپیک,inotropes,class,proposed,drug_classes
+داروی ترک سیگار|درمان دارویی ترک سیگار,smoking cessation medications,class,proposed,drug_classes
+داروی لاغری|قرص لاغری|داروهای کاهش وزن,weight loss medications,class,proposed,drug_classes
+پماد آنتی بیوتیک|آنتی بیوتیک موضعی,topical antibiotics,class,proposed,drug_classes
+قطره چشم,eye drops,class,proposed,drug_classes
+اسپری داخل بینی,nasal spray,class,proposed,drug_classes
+لرز|تب و لرز|لرزیدن,chills,symptom,proposed,symptoms_general
+تعریق شبانه|عرق شبانه|عرق کردن شب,night sweats,symptom,proposed,symptoms_general
+افزایش وزن|چاق شدن|وزن گرفتن,weight gain,symptom,proposed,symptoms_general
+بی اشتهایی|کاهش اشتها|اشتها نداشتن|کم اشتهایی,loss of appetite,symptom,proposed,symptoms_general
+تشنگی زیاد|پرنوشی|عطش زیاد|پلی دیپسی,polydipsia,symptom,proposed,symptoms_general
+سیانوز|کبود شدن لب,cyanosis,symptom,proposed,symptoms_general
+رنگ پریدگی|رنگ پریده,pallor,symptom,proposed,symptoms_general
+پتشی|نقاط قرمز پوستی|خونریزی نقطه ای,petechiae,symptom,proposed,symptoms_general
+درد پا|پا درد|درد ساق پا,leg pain,symptom,proposed,symptoms_general
+درد دست|دست درد,hand pain,symptom,proposed,symptoms_general
+درد پهلو|پهلو درد,flank pain,symptom,proposed,symptoms_general
+عطسه|عطسه زیاد,sneezing,symptom,proposed,symptoms_general
+گیجی|منگی|اختلال هوشیاری|کاهش هوشیاری|گیج شدن|تغییر وضعیت ذهنی|کاهش سطح هوشیاری|افت هوشیاری|سردرگمی,confusion,symptom,proposed,symptoms_general
+تحریک پذیری|زودرنجی|عصبانیت,irritability,symptom,proposed,symptoms_general
+خواب آلودگی|خواب آلودگی زیاد|خواب زیاد|خواب آلودگی روزانه|خواب آلود|کسلی و خواب آلودگی|منگی و خواب آلودگی|سومنولانس|خواب آلودگی شدید,excessive sleepiness,symptom,proposed,symptoms_general
+علائم ادراری|مشکل ادراری,urinary symptoms,symptom,proposed,symptoms_general
+خونریزی واژینال|خونریزی از واژن|لکه بینی,vaginal bleeding,symptom,proposed,symptoms_general
+تورم مفصل|ورم مفصل,joint swelling,symptom,proposed,symptoms_general
+درد استخوان|استخوان درد,bone pain,symptom,proposed,symptoms_general
+تنفس سریع|تاکی پنه|تند نفس کشیدن,tachypnea,symptom,proposed,symptoms_general
+اتساع شکم|بزرگ شدن شکم|شکم نفخ کرده,abdominal distension,symptom,proposed,symptoms_general
+ادرار کف آلود|کف ادرار,foamy urine,symptom,proposed,symptoms_general
+ادرار تیره|ادرار پررنگ,dark urine,symptom,proposed,symptoms_general
+آلرژی|حساسیت|واکنش آلرژیک|واکنش حساسیتی|واکنش آلرژی|+حساسیت,allergies,condition,proposed,general_topics
+حساسیت دارویی|آلرژی دارویی|حساسیت به دارو,drug allergy,condition,proposed,general_topics
+حساسیت به پنی سیلین|آلرژی پنی سیلین|حساسیت پنی سیلین,penicillin allergy,condition,proposed,general_topics
+حساسیت غذایی|آلرژی غذایی|حساسیت به غذا,food allergy,condition,proposed,general_topics
+ایمونوتراپی آلرژی|واکسن آلرژی|حساسیت زدایی,allergen immunotherapy,condition,proposed,general_topics
+حساسیت زدایی دارویی|دسنسیتیزاسیون,drug desensitization,condition,proposed,general_topics
+تغذیه|رژیم غذایی|رژیم|تغذیه سالم,nutrition,condition,proposed,general_topics
+رژیم مدیترانه ای,mediterranean diet,condition,proposed,general_topics
+رژیم دش|رژیم ضد فشار خون,dash diet,condition,proposed,general_topics
+رژیم کم نمک|کم نمک,low sodium diet,condition,proposed,general_topics
+رژیم کتوژنیک|کتو,ketogenic diet,condition,proposed,general_topics
+روزه داری متناوب|فستینگ|فستینگ متناوب,intermittent fasting,condition,proposed,general_topics
+روزه|روزه داری|روزه گرفتن,fasting,condition,proposed,general_topics
+ورزش|فعالیت بدنی|تمرین ورزشی,exercise,condition,proposed,general_topics
+کمبود ویتامین آ|کمبود ویتامین a,vitamin a deficiency,condition,proposed,general_topics
+کمبود ویتامین سی|اسکوروی|کمبود ویتامین c,vitamin c deficiency,condition,proposed,general_topics
+کمبود تیامین|کمبود ویتامین ب۱|بری بری,thiamine deficiency,condition,proposed,general_topics
+کمبود روی|کمبود زینک,zinc deficiency,condition,proposed,general_topics
+مکمل کلسیم|قرص کلسیم,calcium supplementation,condition,proposed,general_topics
+طب سالمندان,geriatrics,condition,proposed,general_topics
+زمین خوردن|سقوط|افتادن سالمندان|زمین خوردن سالمند,falls in older adults,condition,proposed,general_topics
+شکنندگی|ناتوانی سالمندی|فریلتی,frailty,condition,proposed,general_topics
+چنددارویی|مصرف داروهای متعدد|پلی فارماسی,polypharmacy,condition,proposed,general_topics
+معیار بیرز|بیرز,beers criteria,condition,proposed,general_topics
+کاهش داروها|دپرسکرایبینگ,deprescribing,condition,proposed,general_topics
+پایبندی دارویی|مصرف منظم دارو|ادامه درمان|پیروی از درمان,medication adherence,condition,proposed,general_topics
+خطای دارویی|اشتباه دارویی|خطاهای دارویی,medication errors,condition,proposed,general_topics
+فارماکوژنومیک|فارماکوژنتیک,pharmacogenomics,condition,proposed,general_topics
+پایش دارو|سطح سرمی دارو|اندازه گیری سطح دارو,therapeutic drug monitoring,condition,proposed,general_topics
+دارو در بارداری|مصرف دارو در بارداری|داروهای مجاز بارداری|دارو در حاملگی,drugs in pregnancy,condition,proposed,general_topics
+دارو در شیردهی|مصرف دارو در شیردهی|داروهای مجاز شیردهی,medications breastfeeding,condition,proposed,general_topics
+چکاپ|معاینه دوره ای|چک آپ|آزمایش های دوره ای,health maintenance,condition,proposed,general_topics
+مراقبت پیشگیرانه|طب پیشگیری,preventive care,condition,proposed,general_topics
+تماس شغلی,occupational exposure,condition,proposed,general_topics
+نیدل استیک|فرو رفتن سوزن|سوزن زدگی|آسیب با سوزن,needlestick injury,condition,proposed,general_topics
+اهدای خون|خون دادن,blood donation,condition,proposed,general_topics
+اهدای عضو,organ donation,condition,proposed,general_topics
+رضایت آگاهانه|رضایت نامه,informed consent,condition,proposed,general_topics
+مراقبت پایان حیات|مراقبت پایان زندگی,end of life care,condition,proposed,general_topics
+استرس|فشار روانی|تنش عصبی,stress,condition,proposed,general_topics
+بهداشت خواب|خواب خوب,sleep hygiene,condition,proposed,general_topics
+سلامت جنسی|بهداشت جنسی,sexual health,condition,proposed,general_topics
+شاخص توده بدنی|بی ام آی|bmi,bmi,condition,proposed,general_topics
+پزشکی از راه دور|تله مدیسین,telemedicine,condition,proposed,general_topics
+آزمایش خون|آزمایش|چکاپ خون|تست خون,blood test,test,proposed,general_topics
+کشت خون,blood cultures,test,proposed,general_topics
+پروکلسیتونین|پروکالسی تونین,procalcitonin,test,proposed,general_topics
+لاکتات|اسید لاکتیک|لاکتات خون,lactate,test,proposed,general_topics
+سی تی اسکن|سی تی|توموگرافی کامپیوتری,ct scan,test,proposed,general_topics
+ام آر آی|ام ار ای|mri|تصویربرداری تشدید مغناطیسی,mri,test,proposed,general_topics
+سونوگرافی|سونو|اولتراسوند|سونوگرافی شکم و لگن,ultrasound,test,proposed,general_topics
+رادیوگرافی|عکس رادیولوژی|عکس ساده|ایکس ری,x ray,test,proposed,general_topics
+بیوپسی|نمونه برداری|نمونه برداری بافت,biopsy,test,proposed,general_topics
+رنگ آمیزی گرم|گرم استین,gram stain,test,proposed,general_topics
+آنتی بیوگرام|تست حساسیت آنتی بیوتیکی|کشت و آنتی بیوگرام,antibiogram,test,proposed,general_topics
+پی سی آر|pcr|تست پی سی آر,polymerase chain reaction,test,proposed,general_topics
+آلبومین|آلبومین خون|آلبومین سرم,serum albumin,test,proposed,general_topics
+منیزیم خون|سطح منیزیم,magnesium level,test,proposed,general_topics
+پتاسیم خون|سطح پتاسیم|پتاسیم,serum potassium,test,proposed,general_topics
+سدیم خون|سطح سدیم|سدیم,serum sodium,test,proposed,general_topics
+کلسیم خون|سطح کلسیم,serum calcium,test,proposed,general_topics
+مقدار طبیعی|محدوده نرمال|رنج نرمال|مقادیر طبیعی|نرمال آزمایش,normal lab values,test,proposed,general_topics
+حساسیت مفرط|ازدیاد حساسیت|واکنش حساسیت مفرط|واکنش ازدیاد حساسیت|افزایش حساسیت|هایپرسنسیتیویتی|+حساسیت|+حساسیت شدید,hypersensitivity,condition,proposed,adverse_effects
+سمیت کبدی|هپاتوتوکسیسیتی|آسیب کبدی|مسمومیت کبدی|آسیب کبد,hepatotoxicity,condition,proposed,adverse_effects
+لکوپنی|کاهش گلبول سفید|کمبود گلبول سفید|لوکوپنی,leukopenia,condition,proposed,adverse_effects
+آگرانولوسیتوز|آگرانولوسیتوزیس,agranulocytosis,condition,proposed,adverse_effects
+پان سیتوپنی|پانسیتوپنی|کاهش همه رده های خونی,pancytopenia,condition,proposed,adverse_effects
+سرکوب مغز استخوان|مهار مغز استخوان|ساپرس مغز استخوان|میلوساپرشن|میلوساپرسیون|سرکوب میلوئید,bone marrow suppression,condition,proposed,adverse_effects
+تورسادو پوینت|تورساد دو پوینت|تورساد|تورسادس د پوینت,torsade de pointes,condition,proposed,adverse_effects
+دپرسیون تنفسی|سرکوب تنفسی|ضعف تنفس|کاهش تنفس|تضعیف تنفس|افسردگی تنفسی|تضعیف تنفسی,respiratory depression,condition,proposed,adverse_effects
+کلستاز|کلستاتیک|زردی انسدادی|یرقان کلستاتیک,cholestasis,condition,proposed,adverse_effects
+هپاتیت کلستاتیک,cholestatic hepatitis,condition,proposed,adverse_effects
+پوستولوز اگزانتماتوز حاد|آگپ|پوستولوز اگزانتماتوز,acute generalized exanthematous pustulosis,condition,proposed,adverse_effects
+لوپوس دارویی|سندرم شبه لوپوس|لوپوس ناشی از دارو,drug induced lupus,condition,proposed,adverse_effects
+بیماری سرم|واکنش شبه بیماری سرم,serum sickness,condition,proposed,adverse_effects
+سندرم نشت مویرگی|نشت مویرگی,capillary leak syndrome,condition,proposed,adverse_effects
+سندرم آزادسازی سیتوکین|سندرم رهاسازی سیتوکین|سی آر اس,cytokine release syndrome,condition,proposed,adverse_effects
+سندرم تمایز,differentiation syndrome,condition,proposed,adverse_effects
+سندرم بازسازی ایمنی|سندرم التهابی بازسازی ایمنی|آیریس,immune reconstitution syndrome,condition,proposed,adverse_effects
+لکوانسفالوپاتی چندکانونی پیشرونده|پی ام ال|لکوآنسفالوپاتی پیشرونده,progressive multifocal leukoencephalopathy,condition,proposed,adverse_effects
+انسفالوپاتی خلفی برگشت پذیر|سندرم انسفالوپاتی خلفی برگشت پذیر,posterior reversible encephalopathy syndrome,condition,proposed,adverse_effects
+میکروآنژیوپاتی ترومبوتیک|تی ام ای,thrombotic microangiopathy,condition,proposed,adverse_effects
+پنومونی ائوزینوفیلیک,eosinophilic pneumonia,condition,proposed,adverse_effects
+نفریت بینابینی|نفریت توبولواینترستیشیال|نفریت بینابینی حاد,interstitial nephritis,condition,proposed,adverse_effects
+سمیت کلیوی|نفروتوکسیسیتی|آسیب کلیوی دارویی|نفروتوکسیک,nephrotoxicity,condition,proposed,adverse_effects
+سمیت گوش|اوتوتوکسیسیتی|آسیب شنوایی دارویی,ototoxicity,condition,proposed,adverse_effects
+سمیت عصبی|نوروتوکسیسیتی,neurotoxicity,condition,proposed,adverse_effects
+سمیت قلبی|کاردیوتوکسیسیتی,cardiotoxicity,condition,proposed,adverse_effects
+طاسی,alopecia,condition,proposed,adverse_effects
+برافروختگی|گرگرفتگی صورت|قرمزی صورت|فلاشینگ|+گرگرفتگی,flushing,condition,proposed,adverse_effects
+تعریق|عرق کردن|عرق,sweating,condition,proposed,adverse_effects
+کبودی|اکیموز|کبود شدگی|کبودی پوست|کبود شدن,ecchymosis,condition,proposed,adverse_effects
+هماتوم|خون مردگی|خونمردگی,hematoma,condition,proposed,adverse_effects
+پورپورا|پورپوره,purpura,condition,proposed,adverse_effects
+آتاکسی|اختلال تعادل|ناهماهنگی حرکتی,ataxia,condition,proposed,adverse_effects
+دیسکینزی دیررس|دیسکینزی تاخیری|تاردیو دیسکینزی,tardive dyskinesia,condition,proposed,adverse_effects
+دیسکینزی|حرکات غیرارادی,dyskinesia,condition,proposed,adverse_effects
+علائم اکستراپیرامیدال|عوارض اکستراپیرامیدال|اکستراپیرامیدال,extrapyramidal symptoms,condition,proposed,adverse_effects
+آکاتیزی|بی قراری حرکتی|آکاتژیا,akathisia,condition,proposed,adverse_effects
+میوکلونوس|پرش عضلانی|میوکلونی,myoclonus,condition,proposed,adverse_effects
+نیستاگموس|حرکات پرشی چشم,nystagmus,condition,proposed,adverse_effects
+دوبینی|دو بینی,diplopia,condition,proposed,adverse_effects
+اختلال بینایی|اختلالات بینایی,visual disturbance,condition,proposed,adverse_effects
+نوروپاتی اپتیک|نوروپاتی بینایی,optic neuropathy,condition,proposed,adverse_effects
+تغییر حس چشایی|اختلال چشایی|دیسژوزی|بدمزگی دهان,dysgeusia,condition,proposed,adverse_effects
+از دست دادن بویایی|آنوسمی|کاهش بویایی,anosmia,condition,proposed,adverse_effects
+پریاپیسم|نعوظ طولانی|نعوظ دردناک طولانی,priapism,condition,proposed,adverse_effects
+گالاکتوره|ترشح شیر از پستان,galactorrhea,condition,proposed,adverse_effects
+درد بالای شکم|درد اپی گاستر|درد سر دل,upper abdominal pain,condition,proposed,adverse_effects
+انسداد گوارشی,intestinal obstruction,condition,proposed,adverse_effects
+مگاکولون سمی|مگاکولون توکسیک,toxic megacolon,condition,proposed,adverse_effects
+کولیت سودوممبرانو|کولیت پسودوممبرانو|کولیت غشای کاذب,pseudomembranous colitis,condition,proposed,adverse_effects
+افزایش آلکالن فسفاتاز|آلکالن فسفاتاز بالا,increased alkaline phosphatase,condition,proposed,adverse_effects
+فشار خون کنترل نشده|فشار خون مهار نشده,uncontrolled hypertension,condition,proposed,adverse_effects
+بلوک شاخه|بلوک شاخه ای,bundle branch block,condition,proposed,adverse_effects
+آریتمی بطنی,ventricular arrhythmias,condition,proposed,adverse_effects
+ایسکمی قلبی|ایسکمی میوکارد|ایسکمی قلب|+ایسکمی میوکارد,cardiac ischemia,condition,proposed,adverse_effects
+ترومبوز شریانی|لخته شریانی,arterial thrombosis,condition,proposed,adverse_effects
+خونریزی داخل جمجمه|خونریزی مغزی داخل جمجمه,intracranial hemorrhage,condition,proposed,adverse_effects
+ادم مغزی|تورم مغز,cerebral edema,condition,proposed,adverse_effects
+میلیت عرضی,transverse myelitis,condition,proposed,adverse_effects
+مننژیت آسپتیک|مننژیت غیرعفونی,aseptic meningitis,condition,proposed,adverse_effects
+کابوس|کابوس شبانه|خواب های آشفته,nightmares,condition,proposed,adverse_effects
+اختلال شناختی|اختلال عملکرد شناختی|اختلالات شناختی,cognitive dysfunction,condition,proposed,adverse_effects
+افکار و رفتار خودکشی,suicidal thoughts,condition,proposed,adverse_effects
+اختلالات خلقی|اختلال خلق|اختلالات خلق,mood disorders,condition,proposed,adverse_effects
+اختلال راه رفتن|اختلال در راه رفتن,gait disturbance,condition,proposed,adverse_effects
+میوپاتی|بیماری عضلانی,myopathy,condition,proposed,adverse_effects
+میوزیت|التهاب عضله,myositis,condition,proposed,adverse_effects
+پارگی تاندون|پاره شدن تاندون,tendon rupture,condition,proposed,adverse_effects
+استئونکروز فک|نکروز فک|مرگ استخوان فک,osteonecrosis of the jaw,condition,proposed,adverse_effects
+تاخیر رشد|کندی رشد کودکان,growth retardation,condition,proposed,adverse_effects
+سرکوب آدرنال|سرکوب محور هیپوتالاموس هیپوفیز آدرنال|سرکوب غده فوق کلیه,adrenal suppression,condition,proposed,adverse_effects
+عفونت فرصت طلب,opportunistic infections,condition,proposed,adverse_effects
+واکنش محل تزریق|عوارض محل تزریق|درد محل تزریق|التهاب محل تزریق,injection site reaction,condition,proposed,adverse_effects
+نشت دارو|اکستراوازیشن|نشت از رگ|نشت,extravasation,condition,proposed,adverse_effects
+واکنش انفوزیون|واکنش حین تزریق|واکنش تزریق,infusion reaction,condition,proposed,adverse_effects
+نقایص مادرزادی|نقص های مادرزادی|ناهنجاری هنگام تولد,birth defects,condition,proposed,adverse_effects
+نقص لوله عصبی|نقایص لوله عصبی,neural tube defects,condition,proposed,adverse_effects
+وزن کم هنگام تولد|کم وزنی نوزاد|وزن کم تولد,low birth weight,condition,proposed,adverse_effects
+باروری|قدرت باروری,fertility,condition,proposed,adverse_effects
+کاهش میل جنسی|کاهش لیبیدو|بی میلی جنسی,decreased libido,condition,proposed,adverse_effects
+لکه بینی بین قاعدگی|خونریزی بین قاعدگی ناگهانی|خونریزی ناگهانی,breakthrough bleeding,condition,proposed,adverse_effects
+هیپرپلازی آندومتر|ضخیم شدن آندومتر,endometrial hyperplasia,condition,proposed,adverse_effects
+سندرم تحریک بیش از حد تخمدان|او اچ اس اس,ovarian hyperstimulation syndrome,condition,proposed,adverse_effects
+کریستالوری|کریستال در ادرار,crystalluria,condition,proposed,adverse_effects
+الیگوری|کاهش ادرار|کم ادراری,oliguria,condition,proposed,adverse_effects
+نکروز حاد توبولی|ای تی ان,acute tubular necrosis,condition,proposed,adverse_effects
+سیستیت هموراژیک|سیستیت خونریزی دهنده,hemorrhagic cystitis,condition,proposed,adverse_effects
+هیپوتونی|شلی عضلانی,hypotonia,condition,proposed,adverse_effects
+آپنه|وقفه تنفسی,apnea,condition,proposed,adverse_effects
+لارنگواسپاسم|اسپاسم حنجره,laryngospasm,condition,proposed,adverse_effects
+دیسترس تنفسی|زجر تنفسی,respiratory distress,condition,proposed,adverse_effects
+بیماری انسدادی وریدهای ریوی,pulmonary veno occlusive disease,condition,proposed,adverse_effects
+سندرم انسداد سینوزوئیدی|بیماری وریدی انسدادی کبد,sinusoidal obstruction syndrome,condition,proposed,adverse_effects
+انسداد ورید شبکیه|ترومبوز ورید شبکیه,retinal vein occlusion,condition,proposed,adverse_effects
+رتینوپاتی|آسیب شبکیه,retinopathy,condition,proposed,adverse_effects
+خونریزی ملتحمه|خونریزی زیر ملتحمه,conjunctival hemorrhage,condition,proposed,adverse_effects
+درد چشم|چشم درد,eye pain,condition,proposed,adverse_effects
+تحریک چشم|سوزش چشم,eye irritation,condition,proposed,adverse_effects
+هیپوپیگمانتاسیون|کاهش رنگدانه پوست,hypopigmentation,condition,proposed,adverse_effects
+تلانژکتازی|تلانژکتازیا|مویرگ های سطحی,telangiectasia,condition,proposed,adverse_effects
+آتروفی پوست|نازک شدن پوست,skin atrophy,condition,proposed,adverse_effects
+سندرم دست و پا|اریترودیس استزی کف دست و پا|سندرم کف دست و پا,palmar plantar erythrodysesthesia,condition,proposed,adverse_effects
+بثورات ثابت دارویی|راش ثابت دارویی,fixed drug eruption,condition,proposed,adverse_effects
+درماتیت اکسفولیاتیو|درماتیت پوسته ریزی,exfoliative dermatitis,condition,proposed,adverse_effects
+درماتیت اطراف دهان|درماتیت دور دهان,perioral dermatitis,condition,proposed,adverse_effects
+هیپرپلازی لثه|رشد بیش از حد لثه,gingival hyperplasia,condition,proposed,adverse_effects
+فیبروز سیستمیک نفروژنیک,nephrogenic systemic fibrosis,condition,proposed,adverse_effects
+متهموگلوبینمی|مت هموگلوبینمی,methemoglobinemia,condition,proposed,adverse_effects
+اختلال عملکرد تیروئید|اختلال تیروئید,thyroid dysfunction,condition,proposed,adverse_effects
+هیپوفیزیت|التهاب هیپوفیز,hypophysitis,condition,proposed,adverse_effects
+خطر خونریزی|ریسک خونریزی|هموستاز|بند آمدن خونریزی,bleeding risk,condition,proposed,adverse_effects
+پارگی طحال,splenic rupture,condition,proposed,adverse_effects
+لنفوهیستیوسیتوز هموفاگوسیتیک|اچ ال اچ,hemophagocytic lymphohistiocytosis,condition,proposed,adverse_effects
+آپلازی خالص گلبول قرمز|آپلازی گلبول قرمز,pure red cell aplasia,condition,proposed,adverse_effects
+لنفوپنی|کاهش لنفوسیت,lymphopenia,condition,proposed,adverse_effects
+بیماری پیوند علیه میزبان|جی وی اچ دی|پیوند علیه میزبان,graft versus host disease,condition,proposed,adverse_effects
+رد پیوند|پس زدن پیوند,transplant rejection,condition,proposed,adverse_effects
+بدخیمی ثانویه|سرطان ثانویه,secondary malignancy,condition,proposed,adverse_effects
+اختلالات لنفوپرولیفراتیو|اختلال لنفوپرولیفراتیو,lymphoproliferative disorders,condition,proposed,adverse_effects
+سوء مصرف|سوءمصرف|مصرف نابجا,abuse,condition,proposed,adverse_effects
+اعتیاد|اعتیاد دارویی,addiction,condition,proposed,adverse_effects
+علائم ترک|علائم قطع|علایم محرومیت|سندرم ترک,withdrawal symptoms,condition,proposed,adverse_effects
+فشار خون برگشتی|افزایش ناگهانی فشار پس از قطع,rebound hypertension,condition,proposed,adverse_effects
+سوراخ شدگی تیغه بینی|سوراخ شدن سپتوم بینی,nasal septal perforation,condition,proposed,adverse_effects
+لیودو رتیکولاریس|لیودو,livedo reticularis,condition,proposed,adverse_effects
+بحران کولینرژیک,cholinergic crisis,condition,proposed,adverse_effects
+هیپرترمی|افزایش دمای بدن|هایپرپیرکسی|هیپرپیرکسی|تب بسیار بالا,hyperthermia,condition,proposed,adverse_effects
+کوتریموکسازول|کوتریماکسازول|کوتری موکسازول|سولفامتوکسازول تری متوپریم|باکتریم|کو تریموکسازول,trimethoprim sulfamethoxazole,drug,proposed,drug_names_iran
+کوآموکسی کلاو|کو آموکسی کلاو|آموکسی کلاو|آموکسی سیلین کلاوولانیک اسید|اوگمنتین|کوآموکسیکلاو,amoxicillin clavulanate,drug,proposed,drug_names_iran
+پنی سیلین ۱۲۰۰|پنی سیلین بنزاتین|پنی سیلین دوازده لاکی|بنزاتین پنی سیلین|پنی سیلین ۱۲ لاکی,penicillin g benzathine,drug,proposed,drug_names_iran
+پنی سیلین ۶۳۳|پنی سیلین ۶.۳.۳|پنی سیلین شش سه سه,penicillin g benzathine penicillin g procaine,drug,proposed,drug_names_iran
+پنی سیلین جی|پنی سیلین g|پنی سیلین کریستال|پنی سیلین کریستالی,penicillin g,drug,proposed,drug_names_iran
+پنی سیلین وی|پنی سیلین v|پنی سیلین خوراکی,penicillin v,drug,proposed,drug_names_iran
+نوالژین|متامیزول|دیپیرون|متامیزول سدیم,dipyrone,drug,proposed,drug_names_iran
+پاراستامول|استامینوفن|تایلنول,acetaminophen,drug,proposed,drug_names_iran
+استامینوفن کدئین|تایلنول کدئین,acetaminophen and codeine,drug,proposed,drug_names_iran
+ژلوفن|بروفن|آدویل|ایبوپروفن,ibuprofen,drug,proposed,drug_names_iran
+ولتارن|دیکلوفناک سدیم|دیکلوفناک پتاسیم,diclofenac,drug,proposed,drug_names_iran
+سالبوتامول|ونتولین|اسپری سالبوتامول,albuterol,drug,proposed,drug_names_iran
+آدرنالین|اپی نفرین|اپی پن,epinephrine,drug,proposed,drug_names_iran
+زایلوکائین|لیدوکائین|گزیلوکائین,lidocaine,drug,proposed,drug_names_iran
+گلی بن کلامید|گلیبن کلامید|گلی بنکلامید|دیابتون,glyburide,drug,proposed,drug_names_iran
+پی تی یو|پروپیل تیواوراسیل|پروپیل تیو اوراسیل,propylthiouracil,drug,proposed,drug_names_iran
+متی مازول|تیامازول|متیمازول,methimazole,drug,proposed,drug_names_iran
+کلکسان|انوکساپارین|اینوکساپارین,enoxaparin,drug,proposed,drug_names_iran
+تی ان جی|نیتروگلیسرین|نیتروکانتین|نیترو گلیسیرین|نیتروگلیسیرین,nitroglycerin,drug,proposed,drug_names_iran
+ان استیل سیستئین|استیل سیستئین,acetylcysteine,drug,proposed,drug_names_iran
+هیوسین|هیوسین بوتیل بروماید|بوسکوپان|اسکوپولامین,scopolamine,drug,proposed,drug_names_iran
+دیمن هیدرینات|دیمنهیدرینات|گراوول,dimenhydrinate,drug,proposed,drug_names_iran
+کلرفنیرامین|کلر فنیرامین,chlorpheniramine,drug,proposed,drug_names_iran
+ویتامین ب۱۲|ویتامین ب ۱۲|ب ۱۲|ب12|آمپول ب۱۲|سیانوکوبالامین,cyanocobalamin,drug,proposed,drug_names_iran
+ویتامین ب۱|ویتامین ب ۱|تیامین,thiamine,drug,proposed,drug_names_iran
+ویتامین ب۶|ویتامین ب ۶|پیریدوکسین,pyridoxine,drug,proposed,drug_names_iran
+ویتامین ث|ویتامین سی|ویتامین c|اسید آسکوربیک|آسکوربیک اسید,ascorbic acid,drug,proposed,drug_names_iran
+ویتامین د|ویتامین دی|ویتامین d|پرل ویتامین د|ویتامین د ۵۰۰۰۰|ویتامین د3|ویتامین دی 3,vitamin d,drug,proposed,drug_names_iran
+ویتامین آ|ویتامین a|رتینول,vitamin a,drug,proposed,drug_names_iran
+ویتامین ای|ویتامین e|توکوفرول,vitamin e,drug,proposed,drug_names_iran
+ویتامین کا|ویتامین k|ویتامین کی|فیتونادیون|ویتامین k1,phytonadione,drug,proposed,drug_names_iran
+سولفات آهن|فروس سولفات|فرو سولفات|قرص آهن سولفات,ferrous sulfate,drug,proposed,drug_names_iran
+نرمال سالین|سرم نمکی|سدیم کلراید|نرمال سالاین|سرم فیزیولوژی|سالین,sodium chloride,drug,proposed,drug_names_iran
+سرم قندی|دکستروز|سرم قندی نمکی|دکستروز ۵ درصد|سرم دکستروز,dextrose,drug,proposed,drug_names_iran
+رینگر|رینگر لاکتات|سرم رینگر,lactated ringers,drug,proposed,drug_names_iran
+کلرور پتاسیم|کلرید پتاسیم|پتاسیم کلراید,potassium chloride,drug,proposed,drug_names_iran
+بیکربنات سدیم|جوش شیرین|بی کربنات,sodium bicarbonate,drug,proposed,drug_names_iran
+سولفات منیزیم|منیزیم سولفات,magnesium sulfate,drug,proposed,drug_names_iran
+گلوکونات کلسیم|کلسیم گلوکونات,calcium gluconate,drug,proposed,drug_names_iran
+انسولین ان پی اچ|ان پی اچ|انسولین nph|انسولین ایزوفان,insulin nph,drug,proposed,drug_names_iran
+انسولین رگولار|رگولار|انسولین کریستال|انسولین کوتاه اثر,insulin regular,drug,proposed,drug_names_iran
+لانتوس|گلارژین|انسولین گلارژین|انسولین لانتوس|بازاگلار,insulin glargine,drug,proposed,drug_names_iran
+نوورپید|انسولین آسپارت|آسپارت,insulin aspart,drug,proposed,drug_names_iran
+لومیر|انسولین دتمیر|دتمیر,insulin detemir,drug,proposed,drug_names_iran
+ریتالین|متیل فنیدیت|کنسرتا,methylphenidate,drug,proposed,drug_names_iran
+کلونازپام|ریوتریل,clonazepam,drug,proposed,drug_names_iran
+آلپرازولام|زاناکس,alprazolam,drug,proposed,drug_names_iran
+سرترالین|زولوفت,sertraline,drug,proposed,drug_names_iran
+فلوکستین|پروزاک,fluoxetine,drug,proposed,drug_names_iran
+سیلدنافیل|ویاگرا,sildenafil,drug,proposed,drug_names_iran
+تادالافیل|سیالیس,tadalafil,drug,proposed,drug_names_iran
+ترامادول|ترامادول هیدروکلراید,tramadol,drug,proposed,drug_names_iran
+مورفین|مرفین,morphine,drug,proposed,drug_names_iran
+متادون|شربت متادون|قرص متادون,methadone,drug,proposed,drug_names_iran
+بوپرنورفین|تمجزیک|بوپره نورفین,buprenorphine,drug,proposed,drug_names_iran
+نالوکسان|نارکان,naloxone,drug,proposed,drug_names_iran
+اندانسترون|اوندانسترون|زوفران,ondansetron,drug,proposed,drug_names_iran
+متوکلوپرامید|پلازیل,metoclopramide,drug,proposed,drug_names_iran
+امپرازول|اومپرازول|لوسک,omeprazole,drug,proposed,drug_names_iran
+رانیتیدین|زانتاک,ranitidine,drug,proposed,drug_names_iran
+فاموتیدین|پپسید,famotidine,drug,proposed,drug_names_iran
+لوپرامید|ایمودیوم,loperamide,drug,proposed,drug_names_iran
+بیزاکودیل|بیساکودیل,bisacodyl,drug,proposed,drug_names_iran
+لاکتولوز|شربت لاکتولوز,lactulose,drug,proposed,drug_names_iran
+پلی اتیلن گلیکول|پی ای جی|peg,polyethylene glycol,drug,proposed,drug_names_iran
+سایمتیکون|سیمتیکون|دایمتیکون|دایمتیکون قطره,simethicone,drug,proposed,drug_names_iran
+دگزامتازون|آمپول دگزا|دکسامتازون,dexamethasone,drug,proposed,drug_names_iran
+پردنیزولون|پردنیزلون,prednisolone,drug,proposed,drug_names_iran
+پردنیزون,prednisone,drug,proposed,drug_names_iran
+هیدروکورتیزون|هیدروکورتیزون استات,hydrocortisone,drug,proposed,drug_names_iran
+بتامتازون|سلستون,betamethasone,drug,proposed,drug_names_iran
+تریامسینولون|تریامسینولون استوناید|کنالوگ,triamcinolone,drug,proposed,drug_names_iran
+لووتیروکسین|لووتیروکسین سدیم|تیروکسین|قرص تیروئید,levothyroxine,drug,proposed,drug_names_iran
+آسپرین|اسپرین|آسپیرین|آ اس آ|آسپرین ۸۰|asa,aspirin,drug,proposed,drug_names_iran
+کلوپیدوگرل|پلاویکس|اسوگرل,clopidogrel,drug,proposed,drug_names_iran
+وارفارین|کومادین,warfarin,drug,proposed,drug_names_iran
+آتورواستاتین|لیپیتور,atorvastatin,drug,proposed,drug_names_iran
+رزوواستاتین|کرستور|روزوواستاتین,rosuvastatin,drug,proposed,drug_names_iran
+لوزارتان|کوزار,losartan,drug,proposed,drug_names_iran
+والزارتان|دیووان,valsartan,drug,proposed,drug_names_iran
+کاپتوپریل,captopril,drug,proposed,drug_names_iran
+انالاپریل,enalapril,drug,proposed,drug_names_iran
+پروپرانولول|ایندرال,propranolol,drug,proposed,drug_names_iran
+متوپرولول|لوپرسور,metoprolol,drug,proposed,drug_names_iran
+کارودیلول,carvedilol,drug,proposed,drug_names_iran
+فوروزماید|فروزماید|لازیکس|فوروزمید,furosemide,drug,proposed,drug_names_iran
+هیدروکلروتیازید|اچ سی تی زد|هیدروکلرتیازید,hydrochlorothiazide,drug,proposed,drug_names_iran
+اسپیرونولاکتون|آلداکتون,spironolactone,drug,proposed,drug_names_iran
+آملودیپین|نورواسک,amlodipine,drug,proposed,drug_names_iran
+دیگوکسین|لانوکسین,digoxin,drug,proposed,drug_names_iran
+سفالکسین|کفلکس,cephalexin,drug,proposed,drug_names_iran
+سفیکسیم|سفکسیم,cefixime,drug,proposed,drug_names_iran
+آزیترومایسین|زیتروماکس,azithromycin,drug,proposed,drug_names_iran
+کلاریترومایسین|کلاریترو,clarithromycin,drug,proposed,drug_names_iran
+سیپروفلوکساسین|سیپرو|سیپروفلوکسازین,ciprofloxacin,drug,proposed,drug_names_iran
+مترونیدازول|فلاژیل,metronidazole,drug,proposed,drug_names_iran
+نیتروفورانتوئین|نیتروفورانتوین|ماکروبید,nitrofurantoin,drug,proposed,drug_names_iran
+جنتامایسین|جنتامیسین,gentamicin,drug,proposed,drug_names_iran
+وانکومایسین|ونکومایسین,vancomycin,drug,proposed,drug_names_iran
+فلوکونازول|دیفلوکان,fluconazole,drug,proposed,drug_names_iran
+کلوتریمازول,clotrimazole,drug,proposed,drug_names_iran
+آسیکلوویر|زوویراکس|اسیکلوویر,acyclovir,drug,proposed,drug_names_iran
+اوسلتامیویر|تامی فلو|تامیفلو,oseltamivir,drug,proposed,drug_names_iran
+هیدروکسی کلروکین|پلاکنیل,hydroxychloroquine,drug,proposed,drug_names_iran
+متوترکسات,methotrexate,drug,proposed,drug_names_iran
+ایزوترتینوئین|راکوتان|آکوتان,isotretinoin,drug,proposed,drug_names_iran
+ترتینوئین|رتین آ,tretinoin,drug,proposed,drug_names_iran
+ماینوکسیدیل|مینوکسیدیل|رگایین,minoxidil,drug,proposed,drug_names_iran
+فیناستراید|پروپشیا|پروسکار,finasteride,drug,proposed,drug_names_iran
+تامسولوسین|فلومکس,tamsulosin,drug,proposed,drug_names_iran
+لوونورژسترل,levonorgestrel,drug,proposed,drug_names_iran
+مدروکسی پروژسترون|دپو پروورا|آمپول دپو,medroxyprogesterone,drug,proposed,drug_names_iran
+اکسی توسین|اکسیتوسین|سینتوسینون,oxytocin,drug,proposed,drug_names_iran
+میزوپروستول|سایتوتک,misoprostol,drug,proposed,drug_names_iran
+کابرگولین|دوستینکس,cabergoline,drug,proposed,drug_names_iran
+کلومیفن|کلومیفن سیترات,clomiphene,drug,proposed,drug_names_iran
+لتروزول|فمارا,letrozole,drug,proposed,drug_names_iran
+تاموکسیفن|نولوادکس,tamoxifen,drug,proposed,drug_names_iran
+آلوپورینول|زیلوریک,allopurinol,drug,proposed,drug_names_iran
+کلشی سین|کلشیسین,colchicine,drug,proposed,drug_names_iran
+گاباپنتین|نورونتین,gabapentin,drug,proposed,drug_names_iran
+پرگابالین|لیریکا,pregabalin,drug,proposed,drug_names_iran
+آمی تریپتیلین|آمیتریپتیلین|ایلاویل,amitriptyline,drug,proposed,drug_names_iran
+نورتریپتیلین|نورتریپتیلن,nortriptyline,drug,proposed,drug_names_iran
+کاربامازپین|تگرتول,carbamazepine,drug,proposed,drug_names_iran
+والپروات سدیم|دپاکین|اسید والپروئیک,sodium valproate,drug,proposed,drug_names_iran
+فنی توئین|فنیتوئین|دیلانتین,phenytoin,drug,proposed,drug_names_iran
+لوتیراستام|کپرا,levetiracetam,drug,proposed,drug_names_iran
+لاموتریژین|لامیکتال,lamotrigine,drug,proposed,drug_names_iran
+ریسپریدون|ریسپردال,risperidone,drug,proposed,drug_names_iran
+اولانزاپین|زیپرکسا,olanzapine,drug,proposed,drug_names_iran
+کوئتیاپین|سروکوئل|کوتیاپین,quetiapine,drug,proposed,drug_names_iran
+هالوپریدول|هالدول,haloperidol,drug,proposed,drug_names_iran
+لیتیوم|کربنات لیتیوم,lithium,drug,proposed,drug_names_iran
+مونته لوکاست|مونتلوکاست|سینگولر,montelukast,drug,proposed,drug_names_iran
+ستیریزین|زیرتک,cetirizine,drug,proposed,drug_names_iran
+لوراتادین|کلاریتین,loratadine,drug,proposed,drug_names_iran
+دیفن هیدرامین|دیفنهیدرامین|بنادریل,diphenhydramine,drug,proposed,drug_names_iran
+پرومتازین|فنرگان,promethazine,drug,proposed,drug_names_iran
+هیدروکسی زین|هیدروکسیزین|آتاراکس,hydroxyzine,drug,proposed,drug_names_iran
+هپارین|هپارین سدیم|هپارین معمولی|هپارین تزریقی,heparin,drug,proposed,drug_names_iran
+پنتوپرازول|پانتوپرازول|پنتوپرازول سدیم,pantoprazole,drug,proposed,drug_names_iran
+پوست|پوستی,skin,anatomy,proposed,anatomy_general
+چشم|چشمی,eye,anatomy,proposed,anatomy_general
+خون|خونی,blood,anatomy,proposed,anatomy_general
+قلب|+قلبی,heart,anatomy,proposed,anatomy_general
+ریه|+ریوی,lung,anatomy,proposed,anatomy_general
+استخوان|استخوانی,bone,anatomy,proposed,anatomy_general
+مغز|مغزی,brain,anatomy,proposed,anatomy_general
+مثانه,bladder,anatomy,proposed,anatomy_general
+پستان|پستانی,breast,anatomy,proposed,anatomy_general
+رحم|رحمی,uterus,anatomy,proposed,anatomy_general
+جفت,placenta,anatomy,proposed,anatomy_general
+گردن,neck,anatomy,proposed,anatomy_general
+قفسه سینه|سینه,chest,anatomy,proposed,anatomy_general
+پوست سر,scalp,anatomy,proposed,anatomy_general
+کیسه صفرا|بیماری کیسه صفرا,gallbladder,anatomy,proposed,anatomy_general
+تیروئید|غده تیروئید,thyroid,anatomy,proposed,anatomy_general
+معده|معدی,stomach,anatomy,proposed,anatomy_general
+روده,bowel,anatomy,proposed,anatomy_general
+مری,esophagus,anatomy,proposed,anatomy_general
+پانکراس|لوزالمعده,pancreas,anatomy,proposed,anatomy_general
+طحال,spleen,anatomy,proposed,anatomy_general
+عضله|عضلات|عضلانی,muscle,anatomy,proposed,anatomy_general
+عصب|اعصاب محیطی|عصبی,nerve,anatomy,proposed,anatomy_general
+ادرار,urine,anatomy,proposed,anatomy_general
+دندان,dental,anatomy,proposed,anatomy_general
+گوش,ear,anatomy,proposed,anatomy_general
+دهان|دهانی,mouth,anatomy,proposed,anatomy_general
+مو|موی سر,hair,anatomy,proposed,anatomy_general
+ناخن,nail,anatomy,proposed,anatomy_general
+بینایی,vision,anatomy,proposed,anatomy_general
+خواب,sleep,anatomy,proposed,anatomy_general
+هموگلوبین,hemoglobin,test,proposed,anatomy_general
+پلاکت,platelets,test,proposed,anatomy_general
+نوتروفیل|+کاهش نوتروفیل,neutrophils,test,proposed,anatomy_general
+پلاسما,plasma,test,proposed,anatomy_general
+عفونت|عفونی شدن,infection,condition,proposed,anatomy_general
+عفونت باکتریایی|عفونت میکروبی,bacterial infection,condition,proposed,anatomy_general
+مرگ|فوت,death,condition,proposed,anatomy_general
+جراحی|عمل جراحی|اعمال جراحی,surgery,condition,proposed,anatomy_general
+عود|عود بیماری|برگشت بیماری,recurrence,condition,proposed,anatomy_general
+محرومیت|سندرم محرومیت|قطع ناگهانی|قطع ناگهانی دارو,withdrawal,condition,proposed,anatomy_general
+ضربان قلب|تعداد ضربان قلب,heart rate,condition,proposed,anatomy_general
+سابقه خانوادگی|سابقه فامیلی,family history,condition,proposed,anatomy_general
+خودایمنی|اتوایمیون,autoimmune,condition,proposed,anatomy_general
+پرتو|اشعه|پرتوتابی,radiation,condition,proposed,anatomy_general
+کاتتر|سوند,catheter,condition,proposed,anatomy_general
+بیماری قلبی عروقی|بیماری قلب و عروق|بیماری قلبی و عروقی,cardiovascular disease,condition,proposed,anatomy_general
+عملکرد کلیه|عملکرد کلیوی|کارکرد کلیه,renal function,test,proposed,anatomy_general
+عملکرد کبد|عملکرد کبدی|کارکرد کبد,liver function,test,proposed,anatomy_general
+گوارشی|دستگاه گوارش,gastrointestinal,anatomy,proposed,anatomy_general
+تنفسی|دستگاه تنفس,respiratory,anatomy,proposed,anatomy_general
+عروقی,vascular,anatomy,proposed,anatomy_general
+روانی|روانپزشکی,psychiatric,anatomy,proposed,anatomy_general
+ادراری|دستگاه ادراری,urinary,anatomy,proposed,anatomy_general
+متابولیک,metabolic,anatomy,proposed,anatomy_general
+بیماری کبدی|بیماری کبد|مشکل کبدی,chronic liver disease,condition,proposed,context_second_reading
+اختلال عملکرد کبد|اختلال کبدی|اختلال کبد,hepatic dysfunction,condition,proposed,context_second_reading
+کبد|کبدی,liver,anatomy,proposed,context_second_reading
+بیماری کلیوی|بیماری کلیه|مشکل کلیوی,kidney disease,condition,proposed,context_second_reading
+نارسایی کلیه|نارسایی کلیوی,renal failure,condition,proposed,context_second_reading
+اختلال کلیوی|اختلال عملکرد کلیه|اختلال کلیه,renal impairment,condition,proposed,context_second_reading
+کلیه|کلیوی,renal,anatomy,proposed,context_second_reading
+بارداری|حاملگی|دوران بارداری,pregnancy,condition,proposed,context_second_reading
+سه ماهه اول,first trimester,condition,proposed,context_second_reading
+سه ماهه دوم,second trimester,condition,proposed,context_second_reading
+سه ماهه سوم,third trimester,condition,proposed,context_second_reading
+دیالیز,dialysis,condition,proposed,context_second_reading
+همودیالیز,hemodialysis,condition,proposed,context_second_reading
+دیالیز صفاقی,peritoneal dialysis,condition,proposed,context_second_reading
+تداخل دارویی|تداخلات دارویی,drug interactions,condition,proposed,context_second_reading
+آسیستول|ایست بطنی,asystole,condition,proposed,corpus_medical_terms
+ازوتمی|آزوتمی,azotemia,condition,proposed,corpus_medical_terms
+گلوسیت|التهاب زبان,glossitis,condition,proposed,corpus_medical_terms
+دیسکرازی خونی,blood dyscrasia,condition,proposed,corpus_medical_terms
+بیماری قلبی|بیماری قلب,cardiac disease,condition,proposed,corpus_medical_terms
+بیماری تیروئید|بیماری تیروئیدی,thyroid disorders,condition,proposed,corpus_medical_terms
+آلودینیا|آلودینی,allodynia,condition,proposed,corpus_medical_terms
+پتوز|افتادگی پلک,ptosis,condition,proposed,corpus_medical_terms
+میدریاز|میدریازیس|گشادی مردمک,mydriasis,condition,proposed,corpus_medical_terms
+میوز|تنگی مردمک,miosis,condition,proposed,corpus_medical_terms
+آکروسیانوز,acrocyanosis,condition,proposed,corpus_medical_terms
+دمیلینه شدن|دمیلیناسیون,demyelination,condition,proposed,corpus_medical_terms
+وزیکول|تاول کوچک,vesicles,condition,proposed,corpus_medical_terms
+تاول|بلیستر,blister,condition,proposed,corpus_medical_terms
+کومدون|جوش سرسیاه,comedone,condition,proposed,corpus_medical_terms
+پاپیل ادم|ادم پاپی,papilledema,condition,proposed,corpus_medical_terms
+هیپرآمونمی|هایپرآمونمی|آمونیاک بالا,hyperammonemia,condition,proposed,corpus_medical_terms
+گلوکاگونوما,glucagonoma,condition,proposed,corpus_medical_terms
+آکندروپلازی,achondroplasia,condition,proposed,corpus_medical_terms
+اسپاستیسیتی|سفتی عضلات,spasticity,condition,proposed,corpus_medical_terms
+لنز تماسی|لنز,contact lens,condition,proposed,corpus_medical_terms
+بی حالی|کسالت عمومی|احساس ناخوشی,malaise,symptom,proposed,corpus_medical_terms
+ترانس آمیناز|ترانس آمینازها|آمینوترانسفراز|آنزیم های کبدی alt و ast,aminotransferases,test,proposed,corpus_medical_terms
+هیپوفیز|غده هیپوفیز,pituitary,anatomy,proposed,corpus_medical_terms
+کولون|روده بزرگ,colon,anatomy,proposed,corpus_medical_terms
+سفتی|خشکی مفاصل,stiffness,symptom,proposed,corpus_medical_terms
+نوریت|التهاب عصب,neuritis,condition,proposed,corpus_medical_terms
+کراتین کیناز|سی پی کی|cpk|کراتین فسفوکیناز,creatine kinase,test,proposed,corpus_medical_terms
+نیکوتین|آدامس نیکوتین|چسب نیکوتین,nicotine,drug,proposed,corpus_medical_terms
+سینوس,sinus,anatomy,proposed,corpus_medical_terms
+عفونت تنفسی فوقانی|عفونت دستگاه تنفسی فوقانی|عفونت راه هوایی فوقانی|عفونت مجاری تنفسی فوقانی|یو آر آی,upper respiratory tract infection,condition,proposed,longtail_round3
+سوراخ شدگی|سوراخ شدن|پرفوراسیون,perforation,condition,proposed,longtail_round3
+سیتوپنی|کاهش رده های خونی,cytopenias,condition,proposed,longtail_round3
+انسداد,obstruction,condition,proposed,longtail_round3
+آسپیراسیون|ورود محتویات به ریه,aspiration,condition,proposed,longtail_round3
+پیوند,transplant,anatomy,proposed,longtail_round3
+پیوند عضو|پیوند اعضا|گیرنده پیوند,organ transplant,condition,proposed,longtail_round3
+فیبروز,fibrosis,condition,proposed,longtail_round3
+گانگرن|قانقاریا,gangrene,condition,proposed,longtail_round3
+پس از زایمان|بعد از زایمان|پست پارتوم|دوره پس از زایمان,postpartum,condition,proposed,longtail_round3
+سیستم رنین آنژیوتانسین|رنین آنژیوتانسین|سیستم رنین آنژیوتانسین آلدوسترون,renin angiotensin system,condition,proposed,longtail_round3
+آدرنال|غده فوق کلیوی|غده فوق کلیه,adrenal,anatomy,proposed,longtail_round3
+لیپودیستروفی|لیپوآتروفی,lipodystrophy,condition,proposed,longtail_round3
+تاخیر تخلیه معده|تاخیر در تخلیه معده,delayed gastric emptying,condition,proposed,longtail_round3
+بیماری عروق مغزی|بیماری مغزی عروقی|بیماری عروقی مغز,cerebrovascular disease,condition,proposed,longtail_round3
+مایع آمنیوتیک|مایع آمنیون,amniotic fluid,anatomy,proposed,longtail_round3
+فشار خون شریان ریوی|هیپرتانسیون شریان ریوی|پرفشاری شریان ریوی|فشار شریان ریوی,pulmonary arterial hypertension,condition,proposed,longtail_round3
+تصویربرداری|تصویر برداری,imaging,test,proposed,longtail_round3
+پروتئین,protein,test,proposed,longtail_round3
+ریتم سینوسی|ریتم سینوس,sinus rhythm,condition,proposed,longtail_round3
+پورفیری|پورفیریا,porphyria,condition,proposed,longtail_round3
+راه هوایی,airway,anatomy,proposed,longtail_round3
+کوفتگی|ضرب دیدگی,contusion,condition,proposed,longtail_round3
+فیستول,fistula,condition,proposed,longtail_round3
+باربیتورات|باربیتوراتها,barbiturates,class,proposed,longtail_round3
+نوزاد|نوزادان,newborns,anatomy,proposed,longtail_round3
+پلک,eyelid,anatomy,proposed,longtail_round3
+واسکولوپاتی,vasculopathy,condition,proposed,longtail_round3
+سالیسیلات,salicylate,class,proposed,longtail_round3
+ترشحات|ترشح,secretions,condition,proposed,longtail_round3
+پارکینسونیسم|علائم پارکینسونی|پارکینسونیسم دارویی,parkinsonism,condition,proposed,longtail_round3
+بیماری مجاری صفراوی|بیماری صفراوی,biliary tract disease,condition,proposed,longtail_round3
+نقص ایمنی|بیماران دچار نقص ایمنی|بیماران با نقص ایمنی|ایمنی ضعیف,immunocompromised patients,condition,proposed,longtail_round3
+تهویه|تهویه ریوی,ventilation,condition,proposed,longtail_round3
+آفازی|اختلال تکلم|اختلال گفتار,aphasia,condition,proposed,longtail_round3
+سمیت آلومینیوم|مسمومیت با آلومینیوم,aluminum toxicity,condition,proposed,longtail_round3
+استرپتوکوک|استرپتوکوکی|استرپتوکوکوس,streptococcus,organism,proposed,longtail_round3
+حوالی جراحی|پیرامون جراحی|حین جراحی|دوره جراحی,perioperative,condition,proposed,longtail_round3
+انفیلتراسیون|ارتشاح,infiltration,condition,proposed,longtail_round3
+قبل از عمل|پیش از عمل|پیش از جراحی|قبل از جراحی,preoperative,condition,proposed,longtail_round3
+وستیبولار|سیستم تعادلی گوش,vestibular,anatomy,proposed,longtail_round3
+کف پا|پاها,foot,anatomy,proposed,longtail_round3
+تورم صورت|پف صورت,facial swelling,condition,proposed,longtail_round3
+هیپوپلازی ریه|هیپوپلازی ریوی,lung hypoplasia,condition,proposed,longtail_round3
+آنتراسایکلین|آنتراسیکلین,anthracycline,class,proposed,longtail_round3
+اسپاسم عروقی|وازواسپاسم|اسپاسم عروق,vasospasm,condition,proposed,longtail_round3
+فتوتراپی|نوردرمانی|نور درمانی,phototherapy,condition,proposed,longtail_round3
+لنفوم سلول مانتل|لنفوم مانتل,mantle cell lymphoma,condition,proposed,longtail_round3
+کارسینوم مدولاری تیروئید|سرطان مدولاری تیروئید,medullary thyroid carcinoma,condition,proposed,longtail_round3
+خطر قلبی عروقی|ریسک قلبی عروقی,cardiovascular risk,condition,proposed,longtail_round3
+عفونت ویروسی,virus infection,condition,proposed,longtail_round3
+اسپاسم عضلانی|اسپاسم عضله|انقباض عضلانی,muscle spasm,condition,proposed,longtail_round3
+جراحی قلب|عمل جراحی قلب,heart surgery,condition,proposed,longtail_round3
+پیش از یائسگی|قبل از یائسگی|پیش یائسگی,premenopausal,condition,proposed,longtail_round3
+آلت|آلت تناسلی,penis,anatomy,proposed,longtail_round3
+آسم حساس به آسپرین|آسم ناشی از آسپرین,aspirin sensitive asthma,condition,proposed,longtail_round3
+بی اختیاری مدفوع,fecal incontinence,condition,proposed,longtail_round3
+واژن|مهبل,vagina,anatomy,proposed,longtail_round3
+اختلالات تشنجی|اختلال تشنجی,seizure disorders,condition,proposed,longtail_round3
+اسپینا بیفیدا|شکاف مهره,spina bifida,condition,proposed,longtail_round3
+آدنوم کبدی|آدنوم کبد,hepatic adenoma,condition,proposed,longtail_round3
+لنفوسیت,lymphocytes,test,proposed,longtail_round3
+رتینوئید|رتینوئیدها,retinoid,class,proposed,longtail_round3
+مرگ پری ناتال|مرگ و میر پری ناتال|مرگ و میر حول تولد,perinatal mortality,condition,proposed,longtail_round3
+سن بارداری|سن حاملگی|سن جنین,gestational age,condition,proposed,longtail_round3
+اشکال در ادرار کردن|مشکل در ادرار کردن|سختی ادرار کردن|سختی در دفع ادرار,difficulty urinating,condition,proposed,longtail_round3
+پیچک سمی,poison ivy,condition,proposed,longtail_round3
+نورالژی|نورالژیا,neuralgia,condition,proposed,longtail_round3
+کسر جهشی|کسر تخلیه,ejection fraction,test,proposed,longtail_round3
+برادیکاردی جنین|کاهش ضربان قلب جنین,fetal bradycardia,condition,proposed,longtail_round3
+تورم پاروتید|تورم غده بناگوشی|تورم بناگوش,parotid swelling,condition,proposed,longtail_round3
+آسیب کلیه|آسیب کلیوی,kidney injury,condition,proposed,longtail_round3
+برون ده قلبی|برون ده قلب,cardiac output,test,proposed,longtail_round3
+آدنوکارسینوم|آدنوکارسینوما,adenocarcinoma,condition,proposed,longtail_round3
+بیماری کلاژن عروقی|بیماری بافت همبند,collagen vascular disease,condition,proposed,longtail_round3
+شانت,shunt,condition,proposed,longtail_round3
+اینترفرون,interferon,drug,proposed,longtail_round3
+اسپاسم شیرخوارگی|سندرم وست,infantile spasms,condition,proposed,longtail_round3
+بیماری پومپه|پومپه,pompe disease,condition,proposed,longtail_round3
+واسکولیت شبکیه,retinal vasculitis,condition,proposed,longtail_round3
+لنفوم فولیکولار,follicular lymphoma,condition,proposed,longtail_round3
+فلج خواب,sleep paralysis,condition,proposed,longtail_round3
+میلیت|التهاب نخاع,myelitis,condition,proposed,longtail_round3
+داروهای ضدترومبوز|ضد ترومبوز|ضدترومبوز,antithrombotic drugs,class,proposed,longtail_round3
+سندرم بروگادا|بروگادا,brugada syndrome,condition,proposed,longtail_round3
+واکنش آنافیلاکتوئید|آنافیلاکتوئید,anaphylactoid reaction,condition,proposed,longtail_round3
+ماستوسیتوز سیستمیک|ماستوسیتوز,systemic mastocytosis,condition,proposed,longtail_round3
+تریشینوز|تریشینلوز,trichinosis,condition,proposed,longtail_round3
+استرونژیلوئیدیازیس|استرونژیلوئیدس|استرونژیلوئیدوز,strongyloidiasis,condition,proposed,longtail_round3
+حساسیت به بادام زمینی|آلرژی بادام زمینی,peanut allergy,condition,proposed,longtail_round3
+اختلال حرکتی|اختلالات حرکتی,movement disorder,condition,proposed,longtail_round3
+پریکاردیت فشارنده|پریکاردیت کانستریکتیو|پریکاردیت انقباضی,constrictive pericarditis,condition,proposed,longtail_round3
+پورفیری کوتانه تاردا|پورفیری پوستی,porphyria cutanea tarda,condition,proposed,longtail_round3
+پاراپلژی|فلج دو اندام تحتانی|فلج پاها,paraplegia,condition,proposed,longtail_round3
+مایکوزیس فونگوئیدس|میکوزیس فونگوئیدس,mycosis fungoides,condition,proposed,longtail_round3
+خوابگردی|راه رفتن در خواب,sleep walking,condition,proposed,longtail_round3
+التهاب لب|کیلیت|شیلیت|ترک لب,cheilitis,condition,proposed,longtail_round3
+دندان قروچه|دندان قروچه شبانه,bruxism,condition,proposed,longtail_round3
+سیستینوری,cystinuria,condition,proposed,longtail_round3
+جیوه|مسمومیت با جیوه,mercury,condition,proposed,longtail_round3
+نفروپاتی ممبرانو|گلومرولوپاتی غشایی|نفروپاتی غشایی,membranous glomerulopathy,condition,proposed,longtail_round3
+بیماری فابری|فابری,fabry disease,condition,proposed,longtail_round3
+بیماری گوشه|گوشه,gaucher,condition,proposed,longtail_round3
+سندرم پرادر ویلی|پرادر ویلی,prader willi,condition,proposed,longtail_round3
+نفریت لوپوسی|نفریت لوپوس|درگیری کلیه در لوپوس,lupus nephritis,condition,proposed,longtail_round3
+کارسینوم اوروتلیال|سرطان اوروتلیال,urothelial carcinoma,condition,proposed,longtail_round3
+هیپرتروفی بطن چپ|بزرگی بطن چپ|ال وی اچ,left ventricular hypertrophy,condition,proposed,longtail_round3
+استئاتوز|چربی کبد ساده,steatosis,condition,proposed,longtail_round3
+آنژین وازواسپاستیک|آنژین پرینزمتال|پرینزمتال,vasospastic angina,condition,proposed,longtail_round3
+فکالوما|انسداد مدفوعی|سفت شدن مدفوع در روده,fecal impaction,condition,proposed,longtail_round3
+کرانیوتومی|جراحی جمجمه,craniotomy,condition,proposed,longtail_round3
+اندومتریت|التهاب آندومتر,endometritis,condition,proposed,longtail_round3
+پنومونی ارگانیزه|پنومونی سازمان یافته|برونشیولیت انسدادی با پنومونی ارگانیزه,cryptogenic organizing pneumonia,condition,proposed,longtail_round3
+نکروز پاپیلری|نکروز پاپیلاری,papillary necrosis,condition,proposed,longtail_round3
+تنگی مری,esophageal stricture,condition,proposed,longtail_round3
+زخم مری,esophageal ulcer,condition,proposed,longtail_round3
+دیسفوری|دیسفوریا|ناخوشایندی خلق,dysphoria,condition,proposed,longtail_round3
+سرخوشی|یوفوری,euphoria,condition,proposed,longtail_round3
+خصومت,hostility,condition,proposed,longtail_round3
+پرخاشگری|رفتار پرخاشگرانه,aggression,condition,proposed,longtail_round3
+عصبی بودن|حالت عصبی,nervousness,condition,proposed,longtail_round3
+عدم جهت یابی|گم کردن جهت|سردرگمی زمان و مکان,disorientation,condition,proposed,longtail_round3
+بیش فعالی حرکتی|پرتحرکی,hyperactivity,condition,proposed,longtail_round3
+فاسیکولاسیون|فاسیکولاسیون عضلانی,fasciculations,condition,proposed,longtail_round3
+کلونوس,clonus,condition,proposed,longtail_round3
+افزایش رفلکس|افزایش رفلکس های تاندونی عمقی|هایپررفلکسی,hyperreflexia,condition,proposed,longtail_round3
+هیپواستزی|کاهش حس,hypoesthesia,condition,proposed,longtail_round3
+ادم ملتحمه|کموزیس,conjunctival edema,condition,proposed,longtail_round3
+نکروز پوست|نکروز پوستی,skin necrosis,condition,proposed,longtail_round3
+تغییر رنگ پوست|بی رنگی پوست,skin discoloration,condition,proposed,longtail_round3
+ترومبوفلبیت|فلبیت,thrombophlebitis,condition,proposed,longtail_round3
+نازوفارنژیت|التهاب نازوفارنکس,nasopharyngitis,condition,proposed,longtail_round3
+علائم شبه آنفولانزا|شبه آنفولانزا|سندرم شبه آنفلوانزا,influenza like illness,condition,proposed,longtail_round3
+دیسکیت|التهاب دیسک,discitis,condition,proposed,longtail_round3
+آراکنوئیدیت,arachnoiditis,condition,proposed,longtail_round3
+سندرم گاسپینگ|سندرم نفس نفس زدن نوزاد,gasping syndrome,condition,proposed,longtail_round3
+دیستروفی عضلانی|دیستروفی عضلانی دوشن,muscular dystrophy,condition,proposed,longtail_round3
+پایش همودینامیک|مانیتورینگ همودینامیک,hemodynamic monitoring,condition,proposed,longtail_round3
+دسترسی شریانی,arterial access,condition,proposed,longtail_round3
+پروفیلاکسی پیش از مواجهه|پیشگیری پیش از تماس,pre exposure prophylaxis,condition,proposed,longtail_round3
+her2 مثبت|اچ ای آر ۲ مثبت|هر۲ مثبت,her2 positive,condition,proposed,longtail_round3
+کارسینوم پیشرفته سلول کلیوی|سرطان پیشرفته کلیه,advanced renal cell carcinoma,condition,proposed,longtail_round3
+پروتئین c|پروتئین سی|کمبود پروتئین c,protein c,condition,proposed,longtail_round3
+آمبولی کلسترول|آمبولی کلسترولی,cholesterol embolization,condition,proposed,longtail_round3
+زنان|خانم ها|بانوان,females,anatomy,proposed,generic_real
+مردان|مرد|آقایان,male,anatomy,proposed,generic_real
+رشد|رشد کودک|رشد کودکان,growth,condition,proposed,generic_real
+وزن|وزن بدن,weight,condition,proposed,generic_real
+نارس|زودرس,premature,condition,proposed,generic_real
+اورژانس|اورژانسی|فوریت های پزشکی,emergency,condition,proposed,generic_real
+سیستمیک,systemic,anatomy,proposed,generic_real
+شکمی|ناحیه شکم,abdominal,anatomy,proposed,generic_real
+عصبی روانی|نوروسایکیاتریک|عوارض عصبی روانی,neuropsychiatric,condition,proposed,generic_real
+سالم|افراد سالم|داوطلبان سالم,healthy,condition,proposed,generic_real
+پزشکان|پزشک,clinicians,anatomy,proposed,generic_real
+قلبی,cardiac,anatomy,proposed,shared_readings
+ریوی,pulmonary,anatomy,proposed,shared_readings
++آسیب کبدی|+آسیب کبد,hepatic injury,condition,proposed,shared_readings
++زایمان,delivery,condition,proposed,shared_readings
++تغییر حس چشایی|+اختلال چشایی|کاهش حس چشایی,taste alteration,condition,proposed,shared_readings
+فشار داخل چشم|افزایش فشار داخل چشم|فشار چشم|فشار بالای چشم,intraocular pressure,condition,proposed,precision_fixes
+انفارکتوس نخاع|انفارکتوس نخاعی|سکته نخاعی,spinal cord infarction,condition,proposed,precision_fixes
+مغز استخوان,bone marrow,anatomy,proposed,precision_fixes
+افسردگی سیستم عصبی مرکزی|تضعیف سیستم عصبی مرکزی|سرکوب سیستم عصبی مرکزی|دپرسیون سیستم عصبی,cns depression,condition,proposed,precision_fixes
+قند خون|سطح قند خون|گلوکز خون,blood glucose,test,proposed,precision_fixes
+آموکسی,amoxicillin,drug,proposed,frequency_fixes
+پروگراف,tacrolimus,drug,proposed,frequency_fixes
+مونوریل,fosfomycin,drug,proposed,frequency_fixes
+کریون,pancrelipase,drug,proposed,frequency_fixes
+هیالورونان,hyaluronan,drug,proposed,frequency_fixes
+پلاسمینوژن,plasminogen,drug,proposed,frequency_fixes

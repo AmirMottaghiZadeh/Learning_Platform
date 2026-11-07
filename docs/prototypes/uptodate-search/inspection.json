@@ -1,0 +1,62 @@
+[
+  {
+    "mode": "attached",
+    "width": 1440,
+    "findings": []
+  },
+  {
+    "mode": "attached",
+    "width": 768,
+    "findings": []
+  },
+  {
+    "mode": "attached",
+    "width": 390,
+    "findings": []
+  },
+  {
+    "mode": "guided",
+    "width": 1440,
+    "findings": []
+  },
+  {
+    "mode": "guided",
+    "width": 768,
+    "findings": []
+  },
+  {
+    "mode": "guided",
+    "width": 390,
+    "findings": []
+  },
+  {
+    "mode": "preview",
+    "width": 1440,
+    "findings": []
+  },
+  {
+    "mode": "preview",
+    "width": 768,
+    "findings": []
+  },
+  {
+    "mode": "preview",
+    "width": 390,
+    "findings": []
+  },
+  {
+    "mode": "focused",
+    "width": 1440,
+    "findings": []
+  },
+  {
+    "mode": "focused",
+    "width": 768,
+    "findings": []
+  },
+  {
+    "mode": "focused",
+    "width": 390,
+    "findings": []
+  }
+]

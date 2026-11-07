@@ -1,0 +1,21 @@
+# Both images (Dockerfile = backend, Dockerfile.frontend = web app) build with
+# the repo root as context; keep local-only bulk and secrets out of it.
+.git
+.claude
+.codegraph
+.codesight-cache.json
+Icon_Candidates
+**/node_modules
+**/__pycache__
+**/*.py[cod]
+**/.env
+**/.env.*
+!**/.env.example
+frontend/dist
+frontend/.expo
+backend/.venv
+backend/exports
+backend/backups
+backend/data
+backend/staticfiles
+backend/db.sqlite3*

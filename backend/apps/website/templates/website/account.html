@@ -1,0 +1,15 @@
+{% extends "website/base.html" %}
+{% load billing_extras %}
+{% block content %}
+<div class="wrap page" style="max-width:900px">
+  <h1>حساب من</h1>
+  <p style="color:var(--muted);margin-bottom:22px">{% if profile and profile.phone %}شمارهٔ <span dir="ltr">{{ profile.phone }}</span>{% endif %}</p>
+  <div class="box" style="margin-bottom:22px"><b>اشتراک‌های فعال</b>
+    {% for e in entitlements %}<p>{{ e.plan.name_fa }} · {% if e.ends_at %}تا {{ e.ends_at|jdate:"long" }}{% else %}دائمی{% endif %}</p>{% empty %}<p style="color:var(--muted)">اشتراک فعالی ندارید. <a href="{% url 'site:plans' %}" style="color:var(--p);font-weight:700">مشاهدهٔ پلن‌ها</a></p>{% endfor %}
+    <a class="btn s" style="margin-top:12px" href="{{ app_url }}">ورود به وب‌اپ</a></div>
+  <h2 style="font-size:20px;margin-bottom:12px">سفارش‌ها</h2>
+  <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>تاریخ</th><th>پلن</th><th>مبلغ</th><th>وضعیت</th></tr></thead><tbody>
+    {% for o in orders %}<tr><td>{{ o.created_at|jdate:"long" }}</td><td>{{ o.plan.name_fa }}</td><td>{{ o.payable_toman|toman }}</td><td><span class="status{% if o.status != 'paid' %} bad{% endif %}">{{ o.get_status_display }}</span></td></tr>{% empty %}<tr><td colspan="4" style="color:var(--muted)">سفارشی ثبت نشده است.</td></tr>{% endfor %}</tbody></table></div>
+  <form method="post" action="{% url 'site:logout' %}" style="margin-top:26px">{% csrf_token %}<button class="btn" type="submit">خروج</button></form>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "panel/base.html" %}
+{% load billing_extras %}
+{% block title %}اشتراک‌ها و تخفیف{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>اشتراک‌ها و تخفیف</h1><div class="sub">{{ total|fa }} کاربر با اشتراک فعال</div></div>{% if request.user.is_superuser %}<div class="acts"><a class="btn" href="{{ access_url }}">دسترسی کاربران</a><a class="btn" href="{{ discounts_url }}">مدیریت کدهای تخفیف</a></div>{% endif %}</div>
+<div class="grid two">
+  <div class="card"><h2>در ۷ روز آینده تمام می‌شود</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>کاربر</th><th>پلن</th><th>پایان</th></tr></thead><tbody>{% for e in expiring %}<tr><td dir="ltr" style="text-align:right">{{ e.user.learner_profile.phone|default:e.user.get_username }}</td><td>{{ e.plan.name_fa }}</td><td class="sm">{{ e.ends_at|jdate:"time" }}</td></tr>{% empty %}<tr><td colspan="3" class="empty">موردی نیست.</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="card"><h2>کاربر فعال هر پلن</h2>{% for r in by_plan %}<div class="task"><span style="flex:1">{{ r.plan__name_fa }}</span><b class="num">{{ r.n|fa }}</b></div>{% empty %}<p class="empty">اشتراک فعالی نیست.</p>{% endfor %}</div>
+</div>
+<div class="card"><h2>کدهای تخفیف</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>کد</th><th>مقدار</th><th>استفاده</th><th>وضعیت</th></tr></thead><tbody>{% for d in discounts %}<tr><td dir="ltr" style="text-align:right" class="ttl">{{ d.code }}</td><td>{% if d.percent %}{{ d.percent|fa }}٪{% else %}{{ d.amount_toman|toman }}{% endif %}</td><td class="num">{{ d.used_count|fa }}{% if d.max_uses %} / {{ d.max_uses|fa }}{% endif %}</td><td><span class="chip {% if d.is_active %}ok{% endif %}">{% if d.is_active %}فعال{% else %}غیرفعال{% endif %}</span></td></tr>{% empty %}<tr><td colspan="4" class="empty">کدی ساخته نشده است.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

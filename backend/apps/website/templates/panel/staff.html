@@ -1,0 +1,20 @@
+{% extends "panel/base.html" %}
+{% load billing_extras website_extras %}
+{% block title %}کاربران و نقش‌ها{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>کاربران و نقش‌ها</h1><div class="sub">چه کسی به پنل دسترسی دارد و چه کاری می‌تواند بکند</div></div></div>
+<div class="grid" style="grid-template-columns:1.6fr 1fr;align-items:start">
+  <div class="card" style="padding:6px 8px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>کاربر</th><th>نقش</th><th></th></tr></thead><tbody>
+  {% for u in supers %}<tr><td class="ttl">{{ u|person }} <span class="sm">{{ u.email }}</span></td><td><span class="chip ok">مدیر اصلی (superuser)</span></td><td></td></tr>{% endfor %}
+  {% for r in rows %}<tr><td class="ttl">{{ r.user|person }} <span class="sm" dir="ltr">{{ r.user.learner_profile.phone|default:r.user.email }}</span></td>
+  <td><form method="post" action="{% url 'panel:staff_update' r.pk %}" style="display:flex;gap:6px">{% csrf_token %}<select class="inp sel" name="role" style="width:140px" aria-label="نقش" {% if r.user_id == request.user.id %}disabled{% endif %}>{% for k, l in roles %}<option value="{{ k }}"{% if k == r.role %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>{% if r.user_id != request.user.id %}<button class="btn s" type="submit">ذخیره</button>{% endif %}</form></td>
+  <td>{% if r.user_id != request.user.id %}<form method="post" action="{% url 'panel:staff_update' r.pk %}" data-confirm="دسترسی این کاربر به پنل برداشته شود؟">{% csrf_token %}<button class="btn s danger" type="submit" name="action" value="remove">برداشتن دسترسی</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="card"><h2>افزودن به پنل</h2><p class="note" style="margin-bottom:12px">کاربر باید قبلاً در اپ یا سایت حساب ساخته باشد.</p>
+    <form method="post" class="grid">{% csrf_token %}<input type="hidden" name="action" value="add">{% for field in form %}{% include "panel/_field.html" %}{% endfor %}<button class="btn p" type="submit">افزودن</button></form></div>
+</div>
+<div class="card"><h2>نقش‌ها چه می‌توانند؟</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>نقش</th><th>دسترسی</th></tr></thead><tbody>
+<tr><td class="ttl">مدیر</td><td>همه‌چیز، از جمله تنظیمات، کاربران و گزارش فعالیت</td></tr>
+<tr><td class="ttl">سردبیر</td><td>مطالب (همه)، انتشار، برگه‌ها، رسانه، نظرات، اطلاعیه‌ها، دانلودها، منوها، سئو، صفحهٔ اصلی؛ دیدن سفارش‌ها</td></tr>
+<tr><td class="ttl">نویسنده</td><td>نوشتن و ویرایش مطالب خودش و ارسال برای بازبینی؛ بارگذاری رسانه؛ بدون انتشار</td></tr>
+<tr><td class="ttl">پشتیبان</td><td>نظرات، پیام‌های تماس، مشترکان خبرنامه و سفارش‌ها (فقط دیدن)</td></tr></tbody></table></div></div>
+{% endblock %}

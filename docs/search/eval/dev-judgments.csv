@@ -1,0 +1,509 @@
+query_id,level,article_id,section_id,paragraph_id,grade,judge,note,workbook
+d001,article,11907,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d001,article,13136,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d001,article,9229,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d002,article,10888,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d002,article,12631,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d002,article,8673,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d003,article,10947,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d003,article,12677,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d003,article,9474,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d004,article,10807,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d004,article,12550,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d004,article,9557,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d005,article,11577,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d005,article,12908,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d005,article,8949,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d006,article,11753,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d006,article,13349,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d006,article,8518,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d007,article,16019,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d007,article,9589,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d007,article,9590,,,1,assistant,شکل دیگر دارو (موضعی/چشمی/...)؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d008,article,10035,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d008,article,11136,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d008,article,12873,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d009,article,10813,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d009,article,12559,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d009,article,9566,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d010,article,12382,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d010,article,13230,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d010,article,9360,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d011,article,10822,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d011,article,12587,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d011,article,8595,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d012,article,12311,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d012,article,12984,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d012,article,8921,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d013,article,119911,,,0,assistant,زمینهٔ نخواسته (چاقی),judging-dev-2026-10-31-r2.xlsx
+d013,article,522,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d013,article,527,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d013,article,543,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d013,article,547,,,2,assistant,مقالهٔ مرور/پایه؛ بهترین شروع برای سؤال بدون هدف,judging-dev-2026-10-31-r2.xlsx
+d014,article,111683,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d014,article,115049,,,1,assistant,سل نهفته؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d014,article,7026,,,2,assistant,تظاهرات بالینی سل ریوی؛ مقالهٔ پایه,judging-dev-2026-10-31-r2.xlsx
+d014,article,8015,,,1,assistant,افزوده توسط داور (در استخر نبود): درمان سل ریوی؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d015,article,3345,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d015,article,3347,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d015,article,3348,,,2,assistant,مقالهٔ مرور/پایه؛ بهترین شروع برای سؤال بدون هدف,judging-dev-2026-10-31-r2.xlsx
+d016,article,117561,,,2,assistant,مقالهٔ مرور/پایه؛ بهترین شروع برای سؤال بدون هدف,judging-dev-2026-10-31-r2.xlsx
+d016,article,7027,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d016,article,7031,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d017,article,1666,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d017,article,1667,,,2,assistant,مقالهٔ مرور/پایه؛ بهترین شروع برای سؤال بدون هدف,judging-dev-2026-10-31-r2.xlsx
+d017,article,1672,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d018,article,7833,,,2,assistant,مقالهٔ مرور/پایه؛ بهترین شروع برای سؤال بدون هدف,judging-dev-2026-10-31-r2.xlsx
+d018,article,7847,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d018,article,7872,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d019,article,14094,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d019,article,2219,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d019,article,2220,,,2,assistant,مقالهٔ مرور/پایه؛ بهترین شروع برای سؤال بدون هدف,judging-dev-2026-10-31-r2.xlsx
+d020,article,5350,,,1,assistant,همان هدف، جمعیت محدودتر؛ قابل قبول,judging-dev-2026-10-31-r2.xlsx
+d020,article,7148,,,2,assistant,درمان؛ از دو مقالهٔ اصلی,judging-dev-2026-10-31-r2.xlsx
+d020,article,7150,,,2,assistant,تشخیص؛ از دو مقالهٔ اصلی,judging-dev-2026-10-31-r2.xlsx
+d021,article,1022,,,2,assistant,مقالهٔ مرور/پایه؛ بهترین شروع برای سؤال بدون هدف,judging-dev-2026-10-31-r2.xlsx
+d021,article,144679,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d021,article,956,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d022,article,7366,,,2,assistant,مقالهٔ مرور/پایه؛ بهترین شروع برای سؤال بدون هدف,judging-dev-2026-10-31-r2.xlsx
+d022,article,7371,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d022,article,7375,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d023,article,11790,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d023,article,12589,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d023,article,9621,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d023,section,9621,F193824,,2,owner,,judging-dev-2026-10-31.xlsx
+d023,section,9621,F54311968,,1,owner,,judging-dev-2026-10-31.xlsx
+d024,article,11907,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d024,article,13136,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d024,article,9229,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d024,section,9229,F50991630,,2,owner,,judging-dev-2026-10-31.xlsx
+d024,section,9229,F51084386,,1,owner,,judging-dev-2026-10-31.xlsx
+d025,article,10050,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d025,article,11147,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d025,article,12886,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d025,article,1337,,,1,assistant,افزوده توسط داور (در استخر نبود): زیست‌شناسی وارفارین و عوامل مؤثر بر INR؛ جدول تداخل‌ها,judging-dev-2026-10-31-r2.xlsx
+d025,section,10050,F234842,,2,owner,,judging-dev-2026-10-31.xlsx
+d025,section,10050,F234872,,0,owner,,judging-dev-2026-10-31.xlsx
+d026,article,10888,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d026,article,12631,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d026,article,8673,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d026,section,8673,F5720643,,2,owner,,judging-dev-2026-10-31.xlsx
+d027,article,10807,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d027,article,12550,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d027,article,9557,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d027,section,9557,F188342,,2,owner,,judging-dev-2026-10-31.xlsx
+d028,article,11790,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d028,article,12589,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d028,article,9621,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d028,section,9621,F193820,,2,owner,,judging-dev-2026-10-31.xlsx
+d029,article,10807,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d029,article,12550,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d029,article,9557,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d029,section,9557,F188334,,2,owner,,judging-dev-2026-10-31.xlsx
+d029,section,9557,F188353,,1,owner,,judging-dev-2026-10-31.xlsx
+d029,section,9557,F52613001,,1,owner,,judging-dev-2026-10-31.xlsx
+d029,section,9557,F52613150,,1,owner,,judging-dev-2026-10-31.xlsx
+d030,article,10050,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d030,article,11147,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d030,article,12886,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d030,section,10050,F234856,,2,owner,,judging-dev-2026-10-31.xlsx
+d031,article,10852,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d031,article,12603,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d031,article,8627,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d031,section,8627,F133964,,2,owner,,judging-dev-2026-10-31.xlsx
+d031,section,8627,F54357125,,1,owner,,judging-dev-2026-10-31.xlsx
+d032,article,11577,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d032,article,12908,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d032,article,8949,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d032,section,8949,F137666,,2,owner,,judging-dev-2026-10-31.xlsx
+d033,article,10813,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d033,article,12559,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d033,article,15317,,,1,assistant,افزوده توسط داور (در استخر نبود): لیتیوم در دوقطبی: مصرف و پایش عوارض؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d033,article,9566,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d033,section,9566,F189314,,2,owner,,judging-dev-2026-10-31.xlsx
+d034,article,10947,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d034,article,12677,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d034,article,9474,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d034,section,9474,F206211,,2,owner,,judging-dev-2026-10-31.xlsx
+d034,section,9474,F52867838,,2,owner,,judging-dev-2026-10-31.xlsx
+d035,article,12382,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d035,article,13230,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d035,article,9360,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d035,section,9360,F160122,,2,owner,,judging-dev-2026-10-31.xlsx
+d035,section,9360,F51153948,,2,owner,,judging-dev-2026-10-31.xlsx
+d036,article,10037,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d036,article,11281,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d036,article,12874,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d036,article,484,,,1,assistant,افزوده توسط داور (در استخر نبود): دوز وریدی وانکومایسین در بزرگسالان؛ دیالیز را هم دارد,judging-dev-2026-10-31-r2.xlsx
+d036,section,10037,F233334,,1,owner,,judging-dev-2026-10-31.xlsx
+d036,section,10037,F233335,,1,owner,,judging-dev-2026-10-31.xlsx
+d036,section,10037,F50990835,,2,owner,,judging-dev-2026-10-31.xlsx
+d036,section,10037,F51193236,,1,owner,,judging-dev-2026-10-31.xlsx
+d037,article,139200,,,0,assistant,صفحهٔ پیوند فرمولاسیون‌ها؛ مونوگراف اصلی جداست,judging-dev-2026-10-31-r2.xlsx
+d037,article,139201,,,0,assistant,صفحهٔ پیوند فرمولاسیون‌ها,judging-dev-2026-10-31-r2.xlsx
+d037,article,139202,,,0,assistant,صفحهٔ پیوند فرمولاسیون‌ها,judging-dev-2026-10-31-r2.xlsx
+d037,article,8483,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d037,section,8483,F50991466,,2,owner,,judging-dev-2026-10-31.xlsx
+d037,section,8483,F51110605,,1,owner,,judging-dev-2026-10-31.xlsx
+d038,article,12338,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d038,article,13028,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d038,article,9242,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d038,section,9242,F50987988,,2,owner,,judging-dev-2026-10-31.xlsx
+d038,section,9242,F51010947,,1,owner,,judging-dev-2026-10-31.xlsx
+d039,article,9049,,,0,assistant,شکل دیگر دارو؛ سؤال دربارهٔ شکل سیستمیک است,judging-dev-2026-10-31-r2.xlsx
+d039,article,9050,,,0,assistant,شکل دیگر دارو؛ سؤال دربارهٔ شکل سیستمیک است,judging-dev-2026-10-31-r2.xlsx
+d039,article,9053,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d039,section,9053,F54460472,,1,assistant,افزوده توسط داور (در استخر نبود): عوارض مهم؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d039,section,9053,F9611220,,2,assistant,افزوده توسط داور (در استخر نبود): هشدار جعبه‌ای؛ مهم‌ترین هشدار فلوروکینولون‌ها,judging-dev-2026-10-31-r2.xlsx
+d039,section,9053,F9611302,,2,assistant,هشدارها و احتیاط‌ها,judging-dev-2026-10-31-r2.xlsx
+d040,article,11872,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d040,article,12803,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d040,article,9943,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d040,section,9943,F222826,,2,owner,,judging-dev-2026-10-31.xlsx
+d040,section,9943,F54485792,,2,owner,,judging-dev-2026-10-31.xlsx
+d041,article,11763,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d041,article,13371,,,2,assistant,مونوگراف اطفال؛ جواب سؤال کودکان,judging-dev-2026-10-31-r2.xlsx
+d041,article,8547,,,1,assistant,مونوگراف بزرگسال؛ بخش دوز کودکان را هم دارد ولی بهترین نیست,judging-dev-2026-10-31-r2.xlsx
+d041,section,13371,F181483,,2,owner,,judging-dev-2026-10-31.xlsx
+d042,article,10822,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d042,article,12587,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d042,article,8595,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d042,section,8595,F133602,,2,owner,,judging-dev-2026-10-31.xlsx
+d042,section,8595,F25724840,,2,owner,,judging-dev-2026-10-31.xlsx
+d043,article,14675,,,0,assistant,فارماکولوژی SSRI؛ بارداری را پوشش نمی‌دهد,judging-dev-2026-10-31-r2.xlsx
+d043,article,1716,,,0,assistant,تعویض داروی ضدافسردگی؛ نامرتبط,judging-dev-2026-10-31-r2.xlsx
+d043,article,89067,,,2,assistant,مصرف SSRI در بارداری؛ جواب کامل,judging-dev-2026-10-31-r2.xlsx
+d043,article,9886,,,2,assistant,مونوگراف؛ بخش ملاحظات بارداری,judging-dev-2026-10-31-r2.xlsx
+d043,section,9886,F220669,,2,owner,,judging-dev-2026-10-31.xlsx
+d044,article,12514,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d044,article,13339,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d044,article,8439,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d044,section,8439,F131708,,2,owner,,judging-dev-2026-10-31.xlsx
+d044,section,8439,F55027363,,2,owner,,judging-dev-2026-10-31.xlsx
+d045,article,3831,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d045,article,527,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d045,article,543,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d045,article,547,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d045,article,554,,,1,assistant,همان هدف، جمعیت محدودتر؛ قابل قبول,judging-dev-2026-10-31-r2.xlsx
+d046,article,111683,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d046,article,115049,,,0,assistant,غربالگری سل نهفته؛ هدف دیگر,judging-dev-2026-10-31-r2.xlsx
+d046,article,7026,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d046,article,8013,,,1,assistant,افزوده توسط داور (در استخر نبود): درمان در HIV؛ همان هدف، جمعیت محدودتر؛ قابل قبول,judging-dev-2026-10-31-r2.xlsx
+d046,article,8015,,,2,assistant,افزوده توسط داور (در استخر نبود): درمان سل ریوی حساس؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d046,article,8017,,,1,assistant,افزوده توسط داور (در استخر نبود): درمان سل نهفته؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d047,article,111683,,,2,assistant,تشخیص سل ریوی؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d047,article,7026,,,1,assistant,تظاهرات بالینی؛ به تشخیص کمک می‌کند,judging-dev-2026-10-31-r2.xlsx
+d047,article,8015,,,0,assistant,درمان؛ سؤال دربارهٔ تشخیص است,judging-dev-2026-10-31-r2.xlsx
+d048,article,3345,,,1,assistant,درمان پیشگیرانه؛ مرحلهٔ دیگر درمان,judging-dev-2026-10-31-r2.xlsx
+d048,article,3347,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d048,article,3348,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d049,article,3345,,,2,assistant,درمان پیشگیرانه؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d049,article,3347,,,1,assistant,درمان حمله؛ مرحلهٔ دیگر درمان,judging-dev-2026-10-31-r2.xlsx
+d049,article,3348,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d050,article,117561,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d050,article,7027,,,2,assistant,درمان بستری؛ محیط مشخص نشده,judging-dev-2026-10-31-r2.xlsx
+d050,article,7031,,,2,assistant,درمان سرپایی؛ محیط مشخص نشده,judging-dev-2026-10-31-r2.xlsx
+d051,article,147054,,,1,assistant,افزوده توسط داور (در استخر نبود): تیتراسیون داروی فشار؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d051,article,3852,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d051,article,3869,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d051,article,3879,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d052,article,147187,,,1,assistant,افزوده توسط داور (در استخر نبود): یافتن علت فقر آهن؛ بخشی از ارزیابی,judging-dev-2026-10-31-r2.xlsx
+d052,article,3483,,,0,assistant,زمینهٔ نخواسته (نارسایی قلب),judging-dev-2026-10-31-r2.xlsx
+d052,article,5350,,,1,assistant,همان هدف، جمعیت محدودتر؛ قابل قبول,judging-dev-2026-10-31-r2.xlsx
+d052,article,7148,,,0,assistant,درمان؛ سؤال دربارهٔ تشخیص است,judging-dev-2026-10-31-r2.xlsx
+d052,article,7150,,,2,assistant,تشخیص؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d053,article,1666,,,2,assistant,درمان حملهٔ حاد؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d053,article,1667,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d053,article,1672,,,1,assistant,درمان کاهش اورات؛ مرحلهٔ دیگر درمان,judging-dev-2026-10-31-r2.xlsx
+d054,article,318,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d054,article,340,,,1,assistant,ارزیابی (نوموگرام)؛ برای تصمیم درمان لازم است,judging-dev-2026-10-31-r2.xlsx
+d054,article,3570,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d055,article,108803,,,0,assistant,اختلال مصرف مواد؛ موضوع دیگر,judging-dev-2026-10-31-r2.xlsx
+d055,article,300,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d055,article,4315,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d055,article,6492,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d055,article,6504,,,1,assistant,افزوده توسط داور (در استخر نبود): مسمومیت کودکان و نوجوانان؛ همان هدف، جمعیت محدودتر؛ قابل قبول,judging-dev-2026-10-31-r2.xlsx
+d055,article,99945,,,1,assistant,پیشگیری از اوردوز (نالوکسان)؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d056,article,2547,,,0,assistant,خونریزی تحتانی؛ موضوع دیگر,judging-dev-2026-10-31-r2.xlsx
+d056,article,2548,,,2,assistant,رویکرد و درمان خونریزی حاد فوقانی؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d056,article,2573,,,1,assistant,افزوده توسط داور (در استخر نبود): درمان زخم پپتیک خونریزی‌دهنده؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d056,article,2644,,,0,assistant,علت‌شناسی؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d057,article,1335,,,1,assistant,افزوده توسط داور (در استخر نبود): پیشگیری در جراحی ارتوپدی؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d057,article,1339,,,1,assistant,افزوده توسط داور (در استخر نبود): پیشگیری در جراحی غیرارتوپدی؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d057,article,1346,,,2,assistant,افزوده توسط داور (در استخر نبود): پیشگیری در بیماران داخلی بستری؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d057,article,1361,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d057,article,1362,,,0,assistant,درمان DVT؛ نه پیشگیری,judging-dev-2026-10-31-r2.xlsx
+d057,article,143167,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d057,article,144475,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d057,article,95395,,,0,assistant,درمان پس از ترومبوز؛ نه پیشگیری اولیه,judging-dev-2026-10-31-r2.xlsx
+d058,article,1792,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d058,article,1794,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d058,article,1795,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d059,article,2297,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d059,article,2305,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d059,article,2341,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d060,article,5837,,,1,assistant,کم‌کاری مادرزادی؛ همان هدف، جمعیت محدودتر؛ قابل قبول,judging-dev-2026-10-31-r2.xlsx
+d060,article,7846,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d060,article,7855,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d060,article,7893,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d061,article,110529,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d061,article,110530,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d061,article,16650,,,1,assistant,سلولیت پره‌سپتال؛ زیرنوع، درمان را هم دارد,judging-dev-2026-10-31-r2.xlsx
+d062,article,1022,,,1,assistant,مرور مدیریت؛ کنترل ضربان را خلاصه دارد,judging-dev-2026-10-31-r2.xlsx
+d062,article,1045,,,1,assistant,افزوده توسط داور (در استخر نبود): مقایسهٔ کنترل ریتم و ضربان؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d062,article,144679,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d062,article,938,,,2,assistant,افزوده توسط داور (در استخر نبود): کنترل ضربان در AF؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d062,article,956,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d063,article,140619,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d063,article,140621,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d063,article,18,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d063,article,25,,,1,assistant,افزوده توسط داور (در استخر نبود): درمان زخم پپتیک؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d064,article,106778,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d064,article,391,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d064,article,392,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d065,article,440,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d065,article,446,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d065,article,527,,,1,assistant,درمان عمومی آسم؛ زمینهٔ بارداری را ندارد,judging-dev-2026-10-31-r2.xlsx
+d065,article,543,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d065,article,547,,,1,assistant,مرور درمان آسم؛ زمینهٔ بارداری را ندارد,judging-dev-2026-10-31-r2.xlsx
+d065,article,554,,,2,assistant,افزوده توسط داور (در استخر نبود): مدیریت آسم در بارداری؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d066,article,116432,,,1,assistant,افزوده توسط داور (در استخر نبود): فشار خون مزمن در بارداری؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d066,article,3852,,,0,assistant,فشار خون عمومی؛ برای بارداری نامناسب,judging-dev-2026-10-31-r2.xlsx
+d066,article,3869,,,0,assistant,درمان عمومی؛ برای بارداری نامناسب,judging-dev-2026-10-31-r2.xlsx
+d066,article,3879,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d066,article,6814,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d066,article,6815,,,2,assistant,افزوده توسط داور (در استخر نبود): درمان فشار خون در بارداری؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d066,article,6825,,,1,assistant,پره‌اکلامپسی؛ بخشی از فشار خون بارداری,judging-dev-2026-10-31-r2.xlsx
+d067,article,5986,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d067,article,5987,,,2,assistant,درمان سرپایی کودکان؛ محیط مشخص نشده,judging-dev-2026-10-31-r2.xlsx
+d067,article,6054,,,2,assistant,درمان بستری کودکان؛ محیط مشخص نشده,judging-dev-2026-10-31-r2.xlsx
+d068,article,547,,,0,assistant,مدیریت؛ سؤال دربارهٔ تشخیص است,judging-dev-2026-10-31-r2.xlsx
+d068,article,5742,,,2,assistant,تشخیص آسم کودکان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d068,article,90904,,,0,assistant,شروع درمان؛ سؤال دربارهٔ تشخیص است,judging-dev-2026-10-31-r2.xlsx
+d068,article,91328,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d069,article,117351,,,0,assistant,آموزش بیمار؛ زمینهٔ دیگر,judging-dev-2026-10-31-r2.xlsx
+d069,article,16109,,,0,assistant,عفونت عارضه‌دار عمومی؛ زمینهٔ بارداری را ندارد,judging-dev-2026-10-31-r2.xlsx
+d069,article,8054,,,0,assistant,عفونت کاتتر؛ زمینهٔ دیگر,judging-dev-2026-10-31-r2.xlsx
+d069,article,8061,,,0,assistant,باکتریوری عمومی؛ زمینهٔ بارداری را ندارد,judging-dev-2026-10-31-r2.xlsx
+d069,article,8065,,,2,assistant,عفونت ادراری در بارداری؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d070,article,1283,,,1,assistant,درمان بر اساس عامل خاص؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d070,article,1287,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d070,article,1290,,,2,assistant,درمان اولیه؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d071,article,4800,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d071,article,6790,,,2,assistant,کنترل قند و درمان؛ از دو مقالهٔ اصلی,judging-dev-2026-10-31-r2.xlsx
+d071,article,6797,,,2,assistant,غربالگری و تشخیص؛ از دو مقالهٔ اصلی,judging-dev-2026-10-31-r2.xlsx
+d072,article,118269,,,1,assistant,درمان دارویی بزرگسال؛ زمینهٔ سالمندی را ندارد,judging-dev-2026-10-31-r2.xlsx
+d072,article,1719,,,2,assistant,افزوده توسط داور (در استخر نبود): تشخیص و درمان افسردگی سالمندی؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d072,article,1721,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d072,article,1725,,,1,assistant,درمان افسردگی بزرگسال؛ زمینهٔ سالمندی را ندارد,judging-dev-2026-10-31-r2.xlsx
+d073,article,10037,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d073,article,11281,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d073,article,12874,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d073,article,484,,,1,assistant,افزوده توسط داور (در استخر نبود): دوز وریدی وانکومایسین در بزرگسالان؛ جایگزین خوب,judging-dev-2026-10-31-r2.xlsx
+d073,paragraph,10037,F50990835,utd-06d7e3ab592c48f2364eb5c1c29db9c8,1,assistant,توضیح انفوزیون متناوب,judging-dev-2026-10-31-r2.xlsx
+d073,paragraph,10037,F50990835,utd-2e28e083e36494f22435de5ee2af3fc2,2,assistant,ردیف جدول CrCl ۱۵ تا کمتر از ۵۰,judging-dev-2026-10-31-r2.xlsx
+d073,paragraph,10037,F50990835,utd-4c334d2cdf079f27c9f6fb760b8dba90,1,assistant,انفوزیون مداوم، CrCl ۲۵ تا ۵۰,judging-dev-2026-10-31-r2.xlsx
+d073,paragraph,10037,F50990835,utd-5e32b6be01d7c06671b9f7791913ad07,2,assistant,انفوزیون مداوم، CrCl کمتر از ۲۵,judging-dev-2026-10-31-r2.xlsx
+d073,paragraph,10037,F50990835,utd-94d1a9a6b6f8bd3e20df33572e948938,1,assistant,پانویس دوز بارگیری,judging-dev-2026-10-31-r2.xlsx
+d073,paragraph,10037,F50990835,utd-b4c2edc0953eae91cd891b0b2fdc1a63,1,assistant,سرستون جدول,judging-dev-2026-10-31-r2.xlsx
+d073,paragraph,10037,F50990835,utd-d6cf15a83e40611fd3f2e8ec565b580c,2,assistant,ردیف جدول CrCl کمتر از ۱۵,judging-dev-2026-10-31-r2.xlsx
+d073,section,10037,F233334,,1,owner,,judging-dev-2026-10-31.xlsx
+d073,section,10037,F233335,,1,owner,,judging-dev-2026-10-31.xlsx
+d073,section,10037,F50990835,,2,owner,,judging-dev-2026-10-31.xlsx
+d073,section,10037,F51193236,,1,owner,,judging-dev-2026-10-31.xlsx
+d074,article,1370,,,1,assistant,افزوده توسط داور (در استخر نبود): دوز DOACها؛ تنظیم کلیوی را هم دارد,judging-dev-2026-10-31-r2.xlsx
+d074,article,150350,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d074,article,85642,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d074,article,85643,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d074,paragraph,85642,F50991355,utd-23d8a492d4719c9a2f1a727abd321406,2,assistant,همودیالیز ← ۲٫۵ میلی‌گرم در شرایط,judging-dev-2026-10-31-r2.xlsx
+d074,paragraph,85642,F50991355,utd-41788f27c4673421e2f668825889ebdf,1,assistant,AF: کراتینین <۱٫۵؛ کاهش به ۲٫۵ در سن و وزن,judging-dev-2026-10-31-r2.xlsx
+d074,paragraph,85642,F50991355,utd-91d02c70ecd298f3bc9094003bc08888,1,assistant,CrCl <۲۵,judging-dev-2026-10-31-r2.xlsx
+d074,paragraph,85642,F50991355,utd-c688ad3f9478ddec9286eec50fcc220e,2,assistant,AF: کراتینین ≥۱٫۵ و سن/وزن ← ۲٫۵ میلی‌گرم,judging-dev-2026-10-31-r2.xlsx
+d074,paragraph,85642,F50991355,utd-d0cbf6f22921cb3f3becb5a450d7d21b,1,assistant,ترومبوز بطن چپ: ۲٫۵ میلی‌گرم,judging-dev-2026-10-31-r2.xlsx
+d074,paragraph,85642,F50991355,utd-fb1c4b1f2d57c3a9635a051d74d26d28,1,assistant,VTE: بدون تنظیم,judging-dev-2026-10-31-r2.xlsx
+d074,paragraph,85642,F50991355,utd-fbc3f8d8c0e3c1edc1fda0eb1b1ee39f,1,assistant,AF در دیالیز,judging-dev-2026-10-31-r2.xlsx
+d074,section,85642,F50991355,,2,owner,,judging-dev-2026-10-31.xlsx
+d074,section,85642,F61318558,,1,owner,,judging-dev-2026-10-31.xlsx
+d075,article,12419,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d075,article,13270,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d075,article,1348,,,1,assistant,افزوده توسط داور (در استخر نبود): دوز هپارین و LMWH؛ تنظیم کلیوی را هم دارد,judging-dev-2026-10-31-r2.xlsx
+d075,article,9407,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d075,paragraph,9407,F50991262,utd-4e7fd164d56aa75b50701f78ea723882,1,assistant,تروما در CrCl <۳۰,judging-dev-2026-10-31-r2.xlsx
+d075,paragraph,9407,F50991262,utd-586c5c07475f1815c0c523b1c3547307,2,assistant,NSTE-ACS در CrCl <۳۰,judging-dev-2026-10-31-r2.xlsx
+d075,paragraph,9407,F50991262,utd-5b62e7c9e88d22ed935cfecdb6d4ec60,1,assistant,عنوان CrCl <۳۰,judging-dev-2026-10-31-r2.xlsx
+d075,paragraph,9407,F50991262,utd-6980c29a2d189217b23815e3fd6d690e,2,assistant,STEMI ۷۵ سال و بالاتر در CrCl <۳۰,judging-dev-2026-10-31-r2.xlsx
+d075,paragraph,9407,F50991262,utd-75f2b5e425260a5cc1ee2ce11b661aa6,2,assistant,درمان VTE: ۱ mg/kg روزی یک بار,judging-dev-2026-10-31-r2.xlsx
+d075,paragraph,9407,F50991262,utd-acc57318c210a2a01b1329c552b5b6dd,2,assistant,پیشگیری: ۳۰ میلی‌گرم روزی یک بار,judging-dev-2026-10-31-r2.xlsx
+d075,paragraph,9407,F50991262,utd-b8f6b12c9fc01c730f42db48d5796e02,1,assistant,عنوان STEMI,judging-dev-2026-10-31-r2.xlsx
+d075,paragraph,9407,F50991262,utd-c1017bb49dcd922d53ee38ca94e8aabf,2,assistant,STEMI زیر ۷۵ سال در CrCl <۳۰,judging-dev-2026-10-31-r2.xlsx
+d075,section,9407,F50991262,,2,owner,,judging-dev-2026-10-31.xlsx
+d075,section,9407,F51128324,,1,owner,,judging-dev-2026-10-31.xlsx
+d076,article,11907,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d076,article,13136,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d076,article,3942,,,0,assistant,ایمونوگلوبولین عضلانی؛ نامرتبط,judging-dev-2026-10-31-r2.xlsx
+d076,article,9229,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148179,utd-38d9f288dae34f897b56b9e47efc7fe8,2,assistant,تزریق عمیق عضلانی و غلظت,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148193,utd-00899723d3d7b3ffb67182b95f4c029d,1,assistant,حجم برای ویال,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148193,utd-1051fb0fd055c2c8e30b46f6b7bc8d53,1,assistant,حجم رقیق‌کننده ۲۵۰ mg/mL,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148193,utd-1fa3b2c25c5aa98ca1abea597f912a5d,1,assistant,حجم برای ویال,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148193,utd-4a9d5924e5d9a2b95e80e034218c15f8,1,assistant,حجم برای ویال,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148193,utd-95a7da8df9a6ec5e6b18dcf2ada7f667,1,assistant,حجم برای ویال,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148193,utd-b4886c878fe39ab2d5b84d41692b2d12,1,assistant,حجم برای ویال,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148193,utd-bb2b782dcab20cff16c1ca76af965974,2,assistant,آماده‌سازی تزریق عضلانی,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148193,utd-c1369a01e99031bf044fab355aed0014,1,assistant,حجم رقیق‌کننده ۳۵۰ mg/mL,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148193,utd-cea8c2fe03b914a9e0984a9abeeeec64,1,assistant,حجم برای ویال,judging-dev-2026-10-31-r2.xlsx
+d076,paragraph,9229,F148193,utd-e841b45b1214ee3187f86758be5a5206,1,assistant,حجم برای ویال,judging-dev-2026-10-31-r2.xlsx
+d076,section,9229,F148179,,1,owner,,judging-dev-2026-10-31.xlsx
+d076,section,9229,F148193,,2,owner,,judging-dev-2026-10-31.xlsx
+d076,section,9229,F52612388,,1,owner,,judging-dev-2026-10-31.xlsx
+d076,section,9229,F52612669,,1,owner,,judging-dev-2026-10-31.xlsx
+d077,article,11790,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d077,article,12589,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d077,article,9621,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d077,paragraph,9621,F50991520,utd-25ad52fe131bfc5f4563da0bd8e15e49,1,assistant,عنوان eGFR ۳۰ تا ۴۵,judging-dev-2026-10-31-r2.xlsx
+d077,paragraph,9621,F50991520,utd-8cd959d19249aa15a765279bcff9cb5b,2,assistant,eGFR ۳۰ تا ۴۵: شروع درمان,judging-dev-2026-10-31-r2.xlsx
+d077,paragraph,9621,F50991520,utd-9b6a4beb254a9bcc990bdea42cec2da3,2,assistant,eGFR <۳۰: منع مصرف,judging-dev-2026-10-31-r2.xlsx
+d077,paragraph,9621,F50991520,utd-ea0b42ef76932d5e04a9d05e1e278269,1,assistant,همودیالیز: پرهیز,judging-dev-2026-10-31-r2.xlsx
+d077,paragraph,9621,F50991520,utd-f4221f690d75393e4b48f305f369ffba,2,assistant,eGFR ۳۰ تا ۴۵: ادامهٔ درمان,judging-dev-2026-10-31-r2.xlsx
+d077,section,9621,F50991520,,2,owner,,judging-dev-2026-10-31.xlsx
+d077,section,9621,F51129337,,1,owner,,judging-dev-2026-10-31.xlsx
+d078,article,12338,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d078,article,13028,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d078,article,9242,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d078,paragraph,9242,F129323,utd-3c3f7ac06ead61df43b14c7ed0bead43,1,assistant,عنوان وریدی,judging-dev-2026-10-31-r2.xlsx
+d078,paragraph,9242,F129323,utd-a930d355ace6555e3ad15ea8556043bd,1,assistant,یادداشت حداکثر دوز,judging-dev-2026-10-31-r2.xlsx
+d078,paragraph,9242,F129323,utd-d6234a1c7a0c20093a1d2a8bc1c5e009,2,assistant,وریدی ≥۵۰ کیلوگرم,judging-dev-2026-10-31-r2.xlsx
+d078,paragraph,9242,F129323,utd-ea7b5be371fdb15aed93096ae3994b83,2,assistant,وریدی <۵۰ کیلوگرم,judging-dev-2026-10-31-r2.xlsx
+d078,section,9242,F129323,,2,owner,,judging-dev-2026-10-31.xlsx
+d078,section,9242,F129324,,2,owner,,judging-dev-2026-10-31.xlsx
+d079,article,110370,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d079,article,11753,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d079,article,13349,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d079,article,1348,,,2,assistant,افزوده توسط داور (در استخر نبود): دوز هپارین و نوموگرام وزنی؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d079,article,15671,,,0,assistant,موضوع یا زمینهٔ دیگر؛ نامرتبط با سؤال,judging-dev-2026-10-31-r2.xlsx
+d079,article,8265,,,1,assistant,افزوده توسط داور (در استخر نبود): درمان آمبولی ریه؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d079,article,8518,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d079,paragraph,8518,F178757,utd-1a74ec929f6943ac8dfffacb7a2271ce,1,assistant,نوموگرام: سرستون,judging-dev-2026-10-31-r2.xlsx
+d079,paragraph,8518,F178757,utd-30f94715218ea223d9bf1a06e5e1170e,1,assistant,یادداشت نوموگرام وزنی,judging-dev-2026-10-31-r2.xlsx
+d079,paragraph,8518,F178757,utd-6c02de6e63578ee7d3cbd33f0ee255f7,2,assistant,نوموگرام: دوز اولیه و بولوس,judging-dev-2026-10-31-r2.xlsx
+d079,paragraph,8518,F178757,utd-7dc8fd4b477f1b0a5cdd13b30e4f63e4,1,assistant,نوموگرام: محدودهٔ درمانی,judging-dev-2026-10-31-r2.xlsx
+d079,paragraph,8518,F178757,utd-993ef897ad669e549c47dbfd8e8832c2,1,assistant,عنوان درمان DVT/PE,judging-dev-2026-10-31-r2.xlsx
+d079,paragraph,8518,F178757,utd-cc7cd003853f356034a8035a454fb23d,1,assistant,نوموگرام: بولوس تکمیلی,judging-dev-2026-10-31-r2.xlsx
+d079,paragraph,8518,F178757,utd-d8c559336203612def78e261d41c5b1c,2,assistant,درمان بستری VTE/PE: بولوس ۸۰ واحد/کیلوگرم,judging-dev-2026-10-31-r2.xlsx
+d079,section,8518,F178757,,1,owner,,judging-dev-2026-10-31.xlsx
+d080,article,10096,,,0,assistant,شکل دیگر دارو؛ سؤال دربارهٔ شکل سیستمیک است,judging-dev-2026-10-31-r2.xlsx
+d080,article,10214,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d080,article,108311,,,0,assistant,شکل دیگر دارو؛ سؤال دربارهٔ شکل سیستمیک است,judging-dev-2026-10-31-r2.xlsx
+d080,paragraph,10214,F50990717,utd-0e9b1e7f2673273386a68983984a500e,1,assistant,CrCl ≥۵۰: بدون تنظیم,judging-dev-2026-10-31-r2.xlsx
+d080,paragraph,10214,F50990717,utd-2289167e74940499f10ddee6ecf119d7,1,assistant,همودیالیز,judging-dev-2026-10-31-r2.xlsx
+d080,paragraph,10214,F50990717,utd-6289eb179a30c7458d4d6195e32c6c26,2,assistant,CrCl <۲۰,judging-dev-2026-10-31-r2.xlsx
+d080,paragraph,10214,F50990717,utd-8699bf65a41d948353b6137a19b3a08f,1,assistant,عنوان: خوراکی و وریدی,judging-dev-2026-10-31-r2.xlsx
+d080,paragraph,10214,F50990717,utd-9a10418e3f317a9df3321f274b06d5aa,1,assistant,پانویس سل,judging-dev-2026-10-31-r2.xlsx
+d080,paragraph,10214,F50990717,utd-ceddbb0c258fdab4c294b221dc3bd544,2,assistant,CrCl ۲۰ تا <۵۰,judging-dev-2026-10-31-r2.xlsx
+d080,paragraph,10214,F50990717,utd-da51588dace91c11d7fd763bab5243b2,1,assistant,سرستون جدول,judging-dev-2026-10-31-r2.xlsx
+d080,paragraph,10214,F50990717,utd-e73fe32984915ce8d0f61da7abb33bcc,1,assistant,دیالیز صفاقی,judging-dev-2026-10-31-r2.xlsx
+d080,section,10214,F50990717,,2,assistant,دوز در نارسایی کلیه بزرگسال؛ خوراکی و وریدی یکسان,judging-dev-2026-10-31-r2.xlsx
+d080,section,10214,F51117769,,1,assistant,دوز کلیوی کودکان؛ مثل داوری‌های قبلی مالک,judging-dev-2026-10-31-r2.xlsx
+d085,article,116432,,,1,assistant,افزوده توسط داور (در استخر نبود): فشار خون مزمن در بارداری؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d085,article,3852,,,0,assistant,فشار خون عمومی؛ برای بارداری نامناسب,judging-dev-2026-10-31-r2.xlsx
+d085,article,3869,,,0,assistant,درمان عمومی؛ برای بارداری نامناسب,judging-dev-2026-10-31-r2.xlsx
+d085,article,3879,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d085,article,6814,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d085,article,6815,,,2,assistant,افزوده توسط داور (در استخر نبود): درمان فشار خون در بارداری؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d085,article,6825,,,1,assistant,پره‌اکلامپسی؛ بخشی از فشار خون بارداری,judging-dev-2026-10-31-r2.xlsx
+d086,article,11907,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d086,article,13136,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d086,article,9229,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d087,article,11790,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d087,article,12589,,,1,assistant,مونوگراف اطفال؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d087,article,9621,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d088,article,12311,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d088,article,12984,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d088,article,8921,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d088,section,8921,F153598,,2,owner,,judging-dev-2026-10-31.xlsx
+d088,section,8921,F56021613,,2,owner,,judging-dev-2026-10-31.xlsx
+d089,article,10900,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d089,article,12639,,,2,assistant,مونوگراف اطفال؛ جواب سؤال کودکان,judging-dev-2026-10-31-r2.xlsx
+d089,article,8676,,,1,assistant,مونوگراف بزرگسال؛ بخش دوز کودکان را هم دارد ولی بهترین نیست,judging-dev-2026-10-31-r2.xlsx
+d089,section,12639,F134628,,2,owner,,judging-dev-2026-10-31.xlsx
+d090,article,147054,,,1,assistant,افزوده توسط داور (در استخر نبود): تیتراسیون داروی فشار؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d090,article,3852,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d090,article,3869,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d090,article,3879,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d091,article,117561,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d091,article,16261,,,0,assistant,CAP به معنی دیگر؛ نامرتبط,judging-dev-2026-10-31-r2.xlsx
+d091,article,2620,,,0,assistant,CAP به معنی دیگر؛ نامرتبط,judging-dev-2026-10-31-r2.xlsx
+d091,article,7027,,,0,assistant,درمان بستری؛ خلاف خواستهٔ سرپایی,judging-dev-2026-10-31-r2.xlsx
+d091,article,7031,,,2,assistant,درمان سرپایی؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d092,article,11545,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d092,article,123060,,,0,assistant,پمپ انسولین؛ موضوع دیگر,judging-dev-2026-10-31-r2.xlsx
+d092,article,12633,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d092,article,1789,,,0,assistant,فیزیولوژی انسولین؛ نه دوز,judging-dev-2026-10-31-r2.xlsx
+d092,article,1801,,,1,assistant,افزوده توسط داور (در استخر نبود): شروع انسولین در دیابت نوع ۲؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d092,article,9023,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d092,section,9023,F2110691,,2,owner,,judging-dev-2026-10-31.xlsx
+d093,article,121961,,,1,assistant,صفحهٔ پیوند استاتین‌ها؛ فقط راه به مونوگراف‌ها,judging-dev-2026-10-31-r2.xlsx
+d093,article,121962,,,0,assistant,صفحهٔ پیوند استاتین‌ها (اطفال)؛ عوارض ندارد,judging-dev-2026-10-31-r2.xlsx
+d093,article,121963,,,0,assistant,صفحهٔ پیوند استاتین‌ها (بیمار)؛ عوارض ندارد,judging-dev-2026-10-31-r2.xlsx
+d093,article,4564,,,2,assistant,افزوده توسط داور (در استخر نبود): استاتین‌ها: عوارض؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d093,article,6833,,,2,assistant,افزوده توسط داور (در استخر نبود): عوارض عضلانی استاتین؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d094,article,1211,,,1,assistant,آموزش بیمار (Beyond the Basics)؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d094,article,16629,,,2,assistant,مقالهٔ درمان؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d094,article,5978,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d095,article,1779,,,2,assistant,درمان دیابت نوع ۲؛ یکی از گزینه‌های سؤال مبهم,judging-dev-2026-10-31-r2.xlsx
+d095,article,1790,,,1,assistant,افزوده توسط داور (در استخر نبود): هیپرگلیسمی پایدار در نوع ۲؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d095,article,1793,,,0,assistant,انواع دیابت؛ نه درمان,judging-dev-2026-10-31-r2.xlsx
+d095,article,1796,,,2,assistant,افزوده توسط داور (در استخر نبود): درمان دیابت نوع ۱؛ یکی از گزینه‌های سؤال مبهم,judging-dev-2026-10-31-r2.xlsx
+d095,article,1812,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d096,article,111383,,,2,assistant,صفحهٔ پیوند انواع انسولین؛ برای سؤال مبهم مناسب,judging-dev-2026-10-31-r2.xlsx
+d096,article,111384,,,1,assistant,صفحهٔ پیوند انسولین‌ها (اطفال),judging-dev-2026-10-31-r2.xlsx
+d096,article,111385,,,0,assistant,صفحهٔ پیوند انسولین‌ها (بیمار),judging-dev-2026-10-31-r2.xlsx
+d096,article,123060,,,0,assistant,پمپ انسولین؛ موضوع دیگر,judging-dev-2026-10-31-r2.xlsx
+d096,article,1752,,,2,assistant,افزوده توسط داور (در استخر نبود): اصول انسولین‌درمانی؛ برای سؤال مبهم مناسب,judging-dev-2026-10-31-r2.xlsx
+d096,article,1789,,,0,assistant,فیزیولوژی انسولین؛ نه دوز,judging-dev-2026-10-31-r2.xlsx
+d096,article,1801,,,1,assistant,افزوده توسط داور (در استخر نبود): انسولین در دیابت نوع ۲؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d097,article,1335,,,1,assistant,افزوده توسط داور (در استخر نبود): پیشگیری در جراحی ارتوپدی؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d097,article,1339,,,2,assistant,افزوده توسط داور (در استخر نبود): پیشگیری در جراحی؛ یکی از گزینه‌ها,judging-dev-2026-10-31-r2.xlsx
+d097,article,1346,,,2,assistant,افزوده توسط داور (در استخر نبود): پیشگیری در بیماران داخلی بستری؛ یکی از گزینه‌ها,judging-dev-2026-10-31-r2.xlsx
+d097,article,1361,,,0,assistant,علت‌ها؛ نه پیشگیری,judging-dev-2026-10-31-r2.xlsx
+d097,article,1362,,,0,assistant,درمان DVT؛ نه پیشگیری,judging-dev-2026-10-31-r2.xlsx
+d097,article,95395,,,1,assistant,ادامهٔ ضدانعقاد پس از ترومبوز (پیشگیری ثانویه),judging-dev-2026-10-31-r2.xlsx
+d098,article,16109,,,2,assistant,عفونت ادراری عارضه‌دار؛ از گزینه‌های اصلی,judging-dev-2026-10-31-r2.xlsx
+d098,article,8054,,,1,assistant,عفونت ادراری با کاتتر؛ یکی از گزینه‌ها,judging-dev-2026-10-31-r2.xlsx
+d098,article,8059,,,1,assistant,افزوده توسط داور (در استخر نبود): سیستیت ساده در مردان؛ یکی از گزینه‌ها,judging-dev-2026-10-31-r2.xlsx
+d098,article,8063,,,2,assistant,افزوده توسط داور (در استخر نبود): سیستیت ساده در زنان؛ از گزینه‌های اصلی,judging-dev-2026-10-31-r2.xlsx
+d098,article,8065,,,1,assistant,عفونت ادراری بارداری؛ یکی از گزینه‌ها,judging-dev-2026-10-31-r2.xlsx
+d099,article,1428,,,2,assistant,ارزیابی و درمان سرفهٔ مزمن؛ از گزینه‌های اصلی,judging-dev-2026-10-31-r2.xlsx
+d099,article,1460,,,1,assistant,همان بیماری، جنبهٔ دیگر؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d099,article,6343,,,1,assistant,افزوده توسط داور (در استخر نبود): سرفهٔ مزمن کودکان؛ یکی از گزینه‌ها,judging-dev-2026-10-31-r2.xlsx
+d099,article,6870,,,1,assistant,افزوده توسط داور (در استخر نبود): برونشیت حاد (سرفهٔ حاد)؛ یکی از گزینه‌ها,judging-dev-2026-10-31-r2.xlsx
+d099,article,83242,,,0,assistant,مراقبت تسکینی؛ زمینهٔ نخواسته,judging-dev-2026-10-31-r2.xlsx
+d100,article,11907,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d100,article,13136,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d100,article,9229,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d100,section,9229,F50991630,,2,owner,,judging-dev-2026-10-31.xlsx
+d100,section,9229,F51084386,,1,owner,,judging-dev-2026-10-31.xlsx
+d101,article,11790,,,1,assistant,اطلاعات بیمار؛ مرتبط ولی سطح حرفه‌ای ندارد,judging-dev-2026-10-31-r2.xlsx
+d101,article,12589,,,1,assistant,مونوگراف اطفال؛ همین موضوع را دارد ولی جمعیت پیش‌فرض بزرگسال است,judging-dev-2026-10-31-r2.xlsx
+d101,article,9621,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d101,section,9621,F193824,,2,owner,,judging-dev-2026-10-31.xlsx
+d101,section,9621,F54311968,,2,owner,,judging-dev-2026-10-31.xlsx
+d102,article,111683,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d102,article,115049,,,0,assistant,غربالگری سل نهفته؛ هدف دیگر,judging-dev-2026-10-31-r2.xlsx
+d102,article,7026,,,0,assistant,تشخیص/پاتوژنز؛ سؤال دربارهٔ درمان است,judging-dev-2026-10-31-r2.xlsx
+d102,article,8013,,,1,assistant,درمان در HIV؛ همان هدف، جمعیت محدودتر؛ قابل قبول,judging-dev-2026-10-31-r2.xlsx
+d102,article,8015,,,2,assistant,افزوده توسط داور (در استخر نبود): درمان سل ریوی حساس؛ جواب سؤال,judging-dev-2026-10-31-r2.xlsx
+d102,article,8019,,,1,assistant,پایبندی به درمان؛ مرتبط,judging-dev-2026-10-31-r2.xlsx
+d103,article,1370,,,1,assistant,افزوده توسط داور (در استخر نبود): دوز DOACها؛ تنظیم کلیوی را هم دارد,judging-dev-2026-10-31-r2.xlsx
+d103,article,150350,,,0,assistant,مونوگراف اطفال؛ دوز/جمعیت دیگر,judging-dev-2026-10-31-r2.xlsx
+d103,article,85642,,,2,assistant,مونوگراف اصلی بزرگسال؛ جواب سؤال اینجاست,judging-dev-2026-10-31-r2.xlsx
+d103,article,85643,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d103,section,85642,F14479016,,1,owner,,judging-dev-2026-10-31.xlsx
+d103,section,85642,F14479017,,1,owner,,judging-dev-2026-10-31.xlsx
+d103,section,85642,F50991355,,2,owner,,judging-dev-2026-10-31.xlsx
+d103,section,85642,F61318558,,1,owner,,judging-dev-2026-10-31.xlsx
+d104,article,10037,,,1,assistant,مونوگراف بزرگسال؛ بخش دوز کودکان را هم دارد ولی بهترین نیست,judging-dev-2026-10-31-r2.xlsx
+d104,article,11281,,,0,assistant,اطلاعات بیمار؛ این جزئیات را ندارد,judging-dev-2026-10-31-r2.xlsx
+d104,article,12874,,,2,assistant,مونوگراف اطفال؛ جواب سؤال کودکان,judging-dev-2026-10-31-r2.xlsx
+d104,section,12874,F233358,,2,owner,,judging-dev-2026-10-31.xlsx
+d104,section,12874,F53462617,,2,owner,,judging-dev-2026-10-31.xlsx

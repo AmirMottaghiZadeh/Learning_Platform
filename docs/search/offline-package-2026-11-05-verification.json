@@ -1,0 +1,98 @@
+{
+  "build": "uptodate-1-20261105-11f5a4",
+  "source_version": "1",
+  "total_size": 1085485108,
+  "parts": 11,
+  "records": {
+    "articles": 62228,
+    "images": 29787,
+    "topics": 22217
+  },
+  "search_schema": 1,
+  "query_aliases": 157164,
+  "concepts": 85588,
+  "validation": {
+    "cases": 32,
+    "articles": 7,
+    "verifiedWebCrypto": true,
+    "networkRequests": 0,
+    "oldFirst": "15734",
+    "newFirst": "140619",
+    "newTotal": 42,
+    "firstSuggestions": [
+      {
+        "query": "h pylori treatment",
+        "label": "h pylori treatment",
+        "kind": "treatment",
+        "count": 40
+      },
+      {
+        "query": "h pylori treatment adult",
+        "label": "h pylori treatment adult",
+        "kind": "treatment",
+        "count": 30
+      },
+      {
+        "query": "h pylori testing",
+        "label": "h pylori testing",
+        "kind": "diagnosis",
+        "count": 40
+      },
+      {
+        "query": "h pylori treatment children",
+        "label": "h pylori treatment children",
+        "kind": "treatment",
+        "count": 30
+      },
+      {
+        "query": "h pylori test of cure",
+        "label": "h pylori test of cure",
+        "kind": "followup",
+        "count": 30
+      },
+      {
+        "query": "h pylori symptoms",
+        "label": "h pylori symptoms",
+        "kind": "diagnosis",
+        "count": 40
+      },
+      {
+        "query": "h pylori quadruple therapy",
+        "label": "h pylori quadruple therapy",
+        "kind": "treatment",
+        "count": 30
+      },
+      {
+        "query": "h pylori breath test",
+        "label": "h pylori breath test",
+        "kind": "diagnosis",
+        "count": 30
+      },
+      {
+        "query": "h pylori eradication",
+        "label": "h pylori eradication",
+        "kind": "general",
+        "count": 40
+      },
+      {
+        "query": "h pylori salvage treatment",
+        "label": "h pylori salvage treatment",
+        "kind": "treatment",
+        "count": 40
+      },
+      {
+        "query": "h pylori children",
+        "label": "h pylori children",
+        "kind": "general",
+        "count": 30
+      },
+      {
+        "query": "h pylori patient education",
+        "label": "h pylori patient education",
+        "kind": "general",
+        "count": 30
+      }
+    ]
+  },
+  "elapsed_seconds": 62.9
+}

@@ -1,0 +1,7 @@
+{% if not field.is_hidden %}
+<div class="field{% if field.widget_type == 'checkbox' %} inline{% endif %}{% if field.widget_type == 'textarea' %} full{% endif %}">
+  {% if field.widget_type == 'checkbox' %}{{ field }}<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {% else %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
+  {% if field.help_text %}<span class="hint">{{ field.help_text }}</span>{% endif %}
+  {% for e in field.errors %}<span class="err">{{ e }}</span>{% endfor %}
+</div>{% else %}{{ field }}{% endif %}

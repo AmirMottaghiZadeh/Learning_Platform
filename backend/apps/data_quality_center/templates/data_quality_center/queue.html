@@ -1,0 +1,66 @@
+{% extends "data_quality_center/base.html" %}
+{% load dqc_extras %}
+{% block title %}صف ویرایش{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="grow">
+    <h1 class="page-title">صف ویرایش</h1>
+    <p class="page-sub">خلاصه‌های فارسی و انگلیسی هر ماده را کنار متن برچسب کامل یا اصلاح کنید؛ هر تغییر پس از تأیید سوپریوزر اعمال می‌شود.</p>
+  </div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap">
+  <div class="pills">
+    {% for key, label in filters.items %}
+      <a class="pill {% if show == key %}on{% endif %}" href="?{% if search %}q={{ search|urlencode }}&{% endif %}show={{ key }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  {% if search %}<span class="chip tone-muted">جستجو: <span class="ltr">{{ search }}</span> · <a href="?show={{ show }}">پاک کردن</a></span>{% endif %}
+  <span style="flex: 1"></span>
+  <span class="muted" style="font-size: 12.5px">{{ page.paginator.count|fa_digits }} ماده</span>
+</div>
+
+<div class="card" style="overflow: hidden">
+  {% if page.object_list %}
+  <table class="table">
+    <thead><tr><th>ماده</th><th style="width: 34%">پیشرفت خلاصه‌ها</th><th>وضعیت</th><th style="width: 90px"></th></tr></thead>
+    <tbody>
+    {% for ing in page %}
+      <tr>
+        <td>
+          <a href="{% url 'data_quality_center:workspace' ing.slug %}" class="ltr" style="display: block; font-weight: 800; color: var(--ink)">{{ ing.name }}</a>
+          <span class="faint ltr" style="display: block; font-size: 11.5px">RxCUI {{ ing.rxcui }}</span>
+        </td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div class="bar" style="flex: 1"><i class="ok" style="width: {% widthratio ing.filled ing.total|default:1 100 %}%"></i></div>
+            <span class="muted" style="font-size: 12px; white-space: nowrap">{{ ing.filled|fa_digits }} از {{ ing.total|fa_digits }}</span>
+          </div>
+        </td>
+        <td>
+          <div class="pills">
+            {% if ing.total and ing.filled < ing.total %}<span class="chip tone-danger">بدون خلاصه</span>{% endif %}
+            {% if ing.pending %}<span class="chip tone-warn">{{ ing.pending|fa_digits }} در انتظار</span>{% endif %}
+            {% if ing.changes %}<span class="chip tone-orange">{{ ing.changes|fa_digits }} نیاز به اصلاح</span>{% endif %}
+            {% if ing.total and ing.filled == ing.total and not ing.pending and not ing.changes %}<span class="chip tone-ok">کامل</span>{% endif %}
+            {% if not ing.total %}<span class="chip tone-muted">بدون متن منبع</span>{% endif %}
+          </div>
+        </td>
+        <td style="text-align: left"><a class="btn outline" style="padding: 5px 12px; font-size: 12.5px" href="{% url 'data_quality_center:workspace' ing.slug %}">باز کردن</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty"><b>چیزی پیدا نشد</b>فیلتر یا جستجوی دیگری را امتحان کنید.</div>
+  {% endif %}
+</div>
+
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a class="btn ghost" href="?{% if search %}q={{ search|urlencode }}&{% endif %}show={{ show }}&page={{ page.previous_page_number }}">→ قبلی</a>{% endif %}
+  <span>صفحهٔ {{ page.number|fa_digits }} از {{ page.paginator.num_pages|fa_digits }}</span>
+  {% if page.has_next %}<a class="btn ghost" href="?{% if search %}q={{ search|urlencode }}&{% endif %}show={{ show }}&page={{ page.next_page_number }}">بعدی ←</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

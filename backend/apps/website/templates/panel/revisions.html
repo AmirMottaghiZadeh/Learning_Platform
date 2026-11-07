@@ -1,0 +1,10 @@
+{% extends "panel/base.html" %}
+{% load billing_extras website_extras %}
+{% block title %}نسخه‌های مطلب{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>نسخه‌های «{{ post.title }}»</h1><div class="sub">هر ذخیرهٔ تغییر در متن یا عنوان یک نسخه می‌سازد؛ آخرین ۳۰ نسخه نگه داشته می‌شود.</div></div><div class="acts"><a class="btn" href="{% url 'panel:post_edit' post.pk %}">بازگشت به ویرایش</a></div></div>
+<div class="card" style="padding:6px 8px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>زمان</th><th>ذخیره‌کننده</th><th>عنوان در آن نسخه</th><th>طول متن</th><th></th></tr></thead><tbody>
+{% for r in revisions %}<tr><td class="num">{{ r.created_at|jdate:"time" }}</td><td>{{ r.saved_by|person }}</td><td class="ttl">{{ r.title }}</td><td class="num">{{ r.body_html|length|num }} نویسه</td>
+<td><form method="post" action="{% url 'panel:revision_restore' post.pk r.pk %}" data-confirm="متن فعلی با این نسخه جایگزین شود؟ (نسخهٔ فعلی هم نگه داشته می‌شود)">{% csrf_token %}<button class="btn s" type="submit">بازگردانی</button></form></td></tr>
+{% empty %}<tr><td colspan="5" class="empty">نسخه‌ای ثبت نشده است.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "website/base.html" %}
+{% load billing_extras website_extras %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumbs" aria-label="مسیر"><a href="{% url 'site:home' %}">خانه</a> ‹ <a href="{% url 'site:drugs' %}">دارونامه</a> ‹ <a href="{% url 'site:drugs' %}#{{ category.code|lower }}">{{ category.name }}</a> ‹ {{ name_fa }}</nav>
+  <div class="art">
+    <article class="dn-drug">
+      <a class="pill" href="{% url 'site:drugs' %}#{{ category.code|lower }}">{{ subgroup.name }}</a>
+      <h1>{{ name_fa }}{% if has_fa %} <span class="en" dir="ltr">{{ name_en }}</span>{% endif %}</h1>
+      <p class="dn-intro">{{ both }} دارویی از گروه <b>{{ subgroup.name }}</b> در دستهٔ {{ category.name }} است{% if atc_codes %}؛ کد ATC: <span dir="ltr">{{ atc_codes|join:", " }}</span>{% endif %}.</p>
+      <div class="meta"><span>{{ editorial }}</span><span>منبع: برچسب رسمی دارو (FDA)</span><span>به‌روزرسانی {{ updated|jdate:"long" }}</span></div>
+
+      {% for s in sections %}
+      <section class="dn-sec dn-{{ s.key }}" id="{{ s.key }}">
+        <h2>{{ s.title }}</h2>
+        <div class="prose">{{ s.html }}</div>
+      </section>
+      {% endfor %}
+
+      {% if in_app %}
+      <section class="dn-sec dn-more" id="more">
+        <h2>ادامهٔ درس‌نامهٔ {{ name_fa }} در اپ</h2>
+        <p>این بخش‌ها و فلش‌کارت و آزمون همین دارو در اپ {{ site.site_name }} است:</p>
+        <ul class="dn-applist">{% for t in in_app %}<li>{{ t }}</li>{% endfor %}<li>فلش‌کارت لایتنر</li><li>آزمون</li></ul>
+        <div class="row"><a class="btn p" href="{{ site.app_url }}">ادامه در وب‌اپ</a><a class="btn" href="{% url 'site:download' %}">دانلود اپ</a></div>
+      </section>
+      {% endif %}
+
+      <p class="dn-note">این صفحه برای آموزش دانشجویان و داروسازان تهیه شده و جایگزین تجویز پزشک یا مشورت با داروساز نیست. پیش از مصرف یا تغییر هر دارو با پزشک یا داروساز مشورت کنید.</p>
+    </article>
+    <aside class="side">
+      <div class="box"><b>در این صفحه</b><nav class="toc" aria-label="فهرست">{% for s in sections %}<a href="#{{ s.key }}">{{ s.title }}</a>{% endfor %}{% if in_app %}<a href="#more">ادامه در اپ</a>{% endif %}</nav></div>
+      {% if related %}<div class="box"><b>داروهای هم‌گروه</b><div class="toc">{% for r in related %}<a href="{% url 'site:drug' r.slug %}">{{ r.name_fa }} <span dir="ltr" style="opacity:.7">{{ r.name }}</span></a>{% endfor %}</div><a class="dn-all" href="{% url 'site:drugs' %}">همهٔ داروهای دارونامه ‹</a></div>{% endif %}
+      <div class="box cta"><b>{{ site.site_name }}</b><p style="margin-bottom:14px;opacity:.9">درس‌نامهٔ کامل، فلش‌کارت و آزمون داروشناسی در یک اپ.</p><a class="btn s" href="{% url 'site:download' %}">دانلود اپ</a></div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

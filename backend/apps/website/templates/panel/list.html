@@ -1,0 +1,19 @@
+{% extends "panel/base.html" %}
+{% load billing_extras %}
+{% block title %}{{ section.title }}{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>{{ section.title }}</h1>{% if section.hint %}<div class="sub">{{ section.hint }}</div>{% endif %}</div>
+  <div class="acts"><a class="btn p" href="{{ new_url }}"><svg class="i"><use href="#i-plus"/></svg>{{ section.new_label|default:"افزودن" }}</a></div></div>
+{% if tabs %}<div class="tabs">{% for label, url, key in tabs %}<a href="{{ url }}" class="{% if key == section.key %}on{% endif %}">{{ label }}</a>{% endfor %}</div>{% endif %}
+{% if section.search or filters %}<div class="toolbar"><form method="get">
+  {% if section.search %}<label class="sr" for="q">جستجو</label><input class="inp" id="q" name="q" value="{{ q }}" placeholder="جستجو" style="width:240px">{% endif %}
+  {% for param, label, choices, value in filters %}<label class="sr" for="f-{{ param }}">{{ label }}</label><select class="inp sel" id="f-{{ param }}" name="{{ param }}" style="width:170px" onchange="this.form.submit()"><option value="">{{ label }}: همه</option>{% for k, l in choices %}<option value="{{ k }}"{% if k == value %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>{% endfor %}
+  <button class="btn" type="submit">اعمال</button></form></div>{% endif %}
+<div class="card" style="padding:6px 8px"><div class="tbl-wrap"><table class="tbl"><thead><tr>{% for h in headers %}<th>{{ h }}</th>{% endfor %}<th></th></tr></thead><tbody>
+{% for row in rows %}<tr>{% for c in row.cells %}<td{% if forloop.first %} class="ttl"{% endif %}>{{ c }}</td>{% endfor %}
+<td><div class="ac"><a class="btn s" href="{{ row.edit }}"><svg class="i"><use href="#i-edit"/></svg>ویرایش</a>
+{% if section.can_delete %}<form method="post" action="{{ row.delete }}" data-confirm="«{{ row.obj }}» حذف شود؟">{% csrf_token %}<button class="btn s danger" type="submit"><svg class="i"><use href="#i-trash"/></svg></button></form>{% endif %}</div></td></tr>
+{% empty %}<tr><td colspan="{{ headers|length|add:1 }}" class="empty">موردی ثبت نشده است.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% include "panel/_pagination.html" %}
+{% endblock %}

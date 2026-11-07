@@ -1,0 +1,16 @@
+{% extends "website/base.html" %}
+{% load billing_extras %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumbs" aria-label="مسیر"><a href="{% url 'site:home' %}">خانه</a> ‹ پلن‌ها</nav>
+  <div class="hd2 center" style="margin-top:30px"><span class="ey">پلن‌ها</span><h2>پلنی که به شما می‌خورد</h2><p>با یک حساب، روی همهٔ دستگاه‌ها. پرداخت با درگاه امن و فعال‌سازی فوری.</p></div>
+  {% include "website/_pricing.html" %}
+  {% if cards %}
+  <section class="sec" aria-labelledby="cmp"><div class="hd2"><h2 id="cmp" style="font-size:28px">مقایسهٔ امکانات</h2></div>
+    <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>امکان</th>{% for card in cards %}<th>{{ card.plan.name_fa }}</th>{% endfor %}</tr></thead><tbody>
+    {% for row in compare %}<tr><td>{{ row.name }}</td>{% for cell in row.cells %}<td>{% if cell is None %}—{% elif cell == "" %}✓{% else %}{{ cell }}{% endif %}</td>{% endfor %}</tr>{% endfor %}
+    </tbody></table></div></section>
+  {% endif %}
+  {% if blocks.faq %}<section class="sec"><div class="hd2"><h2 style="font-size:28px">سؤالات متداول</h2></div><div class="faq">{% for b in blocks.faq %}<details><summary>{{ b.title }}</summary><div class="ans">{{ b.text|linebreaksbr }}</div></details>{% endfor %}</div></section>{% endif %}
+</div>
+{% endblock %}
