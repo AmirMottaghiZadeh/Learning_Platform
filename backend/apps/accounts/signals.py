@@ -5,7 +5,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from .models import UserSession
-from .services import SessionLimitError, issue_user_session, revoke_user_session
+from .services import issue_user_session, revoke_user_session
 
 
 @receiver(user_logged_in, dispatch_uid="accounts.track_browser_login")
@@ -24,13 +24,7 @@ def browser_signed_in(sender, request, user, **kwargs):
             prior.save(update_fields=["django_session_key", "surface"])
             touch_session(prior, request, force=True)
             return
-    try:
-        issued = issue_user_session(user, request=request, surface=surface)
-    except SessionLimitError as exc:
-        # Authentication has already set the Django cookie by the time this
-        # signal runs. The middleware flushes it before sending any response.
-        request.session["device_limit_error"] = exc.message
-        return
+    issued = issue_user_session(user, request=request, surface=surface)
     session = issued.session
     session.django_session_key = request.session.session_key or ""
     session.save(update_fields=["django_session_key"])

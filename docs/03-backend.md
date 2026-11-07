@@ -64,7 +64,7 @@
 
 - احراز هویت DRF با `accounts.authentication.SessionTokenAuthentication` است: هدر `Authorization: Bearer <access_token>`.
 - توکن‌ها مات‌اند (JWT نیستند) و با پیشوند `phx_access_` و `phx_refresh_` ساخته می‌شوند. هر ورود یک `UserSession` می‌سازد.
-- عمر توکن دسترسی `AUTH_ACCESS_TOKEN_TTL_MINUTES` (۱۵ دقیقه) و توکن تمدید `AUTH_REFRESH_TOKEN_TTL_DAYS` (۳۰ روز) است. هر تمدید، توکن تمدید را عوض می‌کند. هر حساب حداکثر دو دستگاه فعال دارد؛ `AUTH_MAX_ACTIVE_SESSIONS` پیش‌فرض ۲ است و سقف مؤثر از دو بیشتر نمی‌شود. ورود سوم `409 DEVICE_LIMIT_REACHED` می‌گیرد و دو نشست قبلی حفظ می‌شوند. دستگاه، OS، مرورگر و تاریخچهٔ IP در API و مدیریت قابل مشاهده‌اند ([سند ۱۷](17-sessions-activity-support.fa.md)).
+- عمر توکن دسترسی `AUTH_ACCESS_TOKEN_TTL_MINUTES` (۱۵ دقیقه) و توکن تمدید `AUTH_REFRESH_TOKEN_TTL_DAYS` (۳۰ روز) است. هر تمدید، توکن تمدید را عوض می‌کند. هر حساب حداکثر دو دستگاه فعال دارد؛ `AUTH_MAX_ACTIVE_SESSIONS` پیش‌فرض ۲ است و سقف مؤثر از دو بیشتر نمی‌شود. ورود تازه پذیرفته می‌شود؛ اگر ظرفیت پر باشد، قدیمی‌ترین نشست بر اساس آخرین استفاده خودکار باطل می‌شود و دو نشست فعال باقی می‌مانند. تغییر IP در همان نشست مانع ورود یا ادامهٔ استفاده نیست. دستگاه، OS، مرورگر و تاریخچهٔ IP در API و مدیریت قابل مشاهده‌اند ([سند ۱۷](17-sessions-activity-support.fa.md)).
 - ابطال نشست فوری است (`logout`، `logout-all`، کنسول فروش).
 - برای کارهای حساس، «تأیید دوباره» (`step-up`) لازم است که `AUTH_STEP_UP_TTL_MINUTES` (۱۰ دقیقه) معتبر می‌ماند.
 

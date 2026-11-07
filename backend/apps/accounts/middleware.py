@@ -1,6 +1,5 @@
 from django.contrib.auth import logout
 from django.shortcuts import render
-from django.utils import timezone
 import secrets
 
 from .devices import touch_session
@@ -21,23 +20,25 @@ class BrowserSessionMiddleware:
                 session = UserSession.objects.filter(pk=session_id, user=request.user).first()
                 if not session or not session.is_active:
                     logout(request)
-                    return self.denied(request, "این نشست پایان یافته است؛ دوباره وارد شوید.", 401)
-                touch_session(session, request)
-                request.device_session = session
+                    # An old cookie must not consume the user's next login
+                    # attempt after another device has replaced its session.
+                    login_path = request.path in {
+                        "/manage/login/", "/admin/login/", "/account/login/", "/account/code/",
+                    }
+                    # API auth endpoints check their own bearer tokens or login
+                    # credentials; a stale browser cookie must not block them.
+                    api_auth_path = request.path.startswith(("/api/v1/auth/", "/api/auth/"))
+                    if not login_path and not api_auth_path:
+                        return self.denied(request, "این نشست پایان یافته است؛ دوباره وارد شوید.", 401)
+                else:
+                    touch_session(session, request)
+                    request.device_session = session
             else:
                 # Adopt browser cookies issued before device tracking existed.
                 from .signals import browser_signed_in
 
                 browser_signed_in(None, request, request.user)
-                error = request.session.pop("device_limit_error", None)
-                if error:
-                    logout(request)
-                    return self.denied(request, error, 409)
         response = self.get_response(request)
-        error = request.session.pop("device_limit_error", None)
-        if error:
-            logout(request)
-            return self.denied(request, error, 409)
         if not request.COOKIES.get("pharmenta.device"):
             response.set_cookie("pharmenta.device", request.browser_device_id, max_age=365 * 86400, httponly=True, secure=request.is_secure(), samesite="Lax")
         return response

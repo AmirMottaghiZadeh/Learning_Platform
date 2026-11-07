@@ -206,18 +206,16 @@ class PhaseTwoSessionSecurityTests(TestCase):
         self.assertIsNotNone(replacement.session.revoked_at)
 
     @override_settings(AUTH_MAX_ACTIVE_SESSIONS=2)
-    def test_session_cap_rejects_third_device_and_preserves_existing_sessions(self):
-        from .services import SessionLimitError
-
+    def test_session_cap_replaces_oldest_device_and_admits_new_login(self):
         first = issue_user_session(self.user, device_name="First")
         second = issue_user_session(self.user, device_name="Second")
-        with self.assertRaises(SessionLimitError):
-            issue_user_session(self.user, device_name="Third")
+        third = issue_user_session(self.user, device_name="Third")
 
         first.session.refresh_from_db()
         second.session.refresh_from_db()
-        self.assertIsNone(first.session.revoked_at)
+        self.assertEqual(first.session.revoke_reason, "session_limit_replaced")
         self.assertIsNone(second.session.revoked_at)
+        self.assertTrue(third.session.is_active)
 
 
 class PhaseTwoAuthorizationTests(TestCase):

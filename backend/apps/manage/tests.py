@@ -7,7 +7,8 @@ from django.test import Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.accounts.models import LearnerProfile, SecurityAuditEvent
+from apps.accounts.models import LearnerProfile, SecurityAuditEvent, UserSession
+from apps.accounts.services import issue_user_session
 from apps.billing.models import AdminAction, Order, Plan
 from apps.drugs.models import Ingredient
 from apps.website.models import ActivityLog, Comment, ContactMessage, Media, Post, StaffRole
@@ -46,6 +47,32 @@ class SignInTests(SiteTestCase):
         user = make("ed", role=StaffRole.EDITOR)
         LearnerProfile.objects.create(user=user, phone="09121234567")
         self.assertEqual(self.sign_in("09121234567").status_code, 302)
+
+    def test_superuser_login_replaces_oldest_session_when_two_devices_are_active(self):
+        user = make("root", superuser=True)
+        first = issue_user_session(user)
+        second = issue_user_session(user)
+        response = self.client.post(reverse("manage:login"), {
+            "identifier": user.username, "password": "pw-12345-x",
+        }, REMOTE_ADDR="198.51.100.8")
+        self.assertRedirects(response, reverse("manage:home"), fetch_redirect_response=False)
+        self.assertEqual(self.client.get(reverse("manage:home"), REMOTE_ADDR="198.51.100.8").status_code, 200)
+        first.session.refresh_from_db()
+        second.session.refresh_from_db()
+        self.assertEqual(first.session.revoke_reason, "session_limit_replaced")
+        self.assertTrue(second.session.is_active)
+        current = UserSession.objects.get(pk=self.client.session["tracked_session_id"])
+        self.assertEqual((current.surface, current.ip_address), ("manage", "198.51.100.8"))
+        self.assertEqual(UserSession.objects.filter(user=user, revoked_at=None).count(), 2)
+
+    def test_replaced_cookie_does_not_block_posting_valid_login_credentials(self):
+        user = make("root", superuser=True)
+        self.client.force_login(user)
+        record = UserSession.objects.get(user=user)
+        UserSession.objects.filter(pk=record.pk).update(revoked_at=timezone.now())
+        response = self.sign_in(user.username)
+        self.assertRedirects(response, reverse("manage:home"), fetch_redirect_response=False)
+        self.assertEqual(self.client.get(reverse("manage:home")).status_code, 200)
 
     def test_a_learner_is_refused(self):
         make("plain")

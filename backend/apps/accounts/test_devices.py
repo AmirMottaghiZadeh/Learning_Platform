@@ -1,30 +1,60 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import caches
 from django.test import Client, RequestFactory, TestCase, TransactionTestCase, override_settings, skipUnlessDBFeature
 from django.utils import timezone
 from rest_framework.test import APIClient
 
 from .devices import client_ip, device_details
 from .models import UserSession
-from .services import SessionLimitError, issue_user_session, revoke_user_session
+from .services import issue_user_session, revoke_user_session
 
 
-@override_settings(AUTH_MAX_ACTIVE_SESSIONS=2, AUTH_SESSION_LIMIT_POLICY="reject")
+@override_settings(AUTH_MAX_ACTIVE_SESSIONS=2)
 class DeviceSessionTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username="device-user", password="test-password")
         self.factory = RequestFactory()
+        caches["throttle"].clear()
+        self.addCleanup(caches["throttle"].clear)
 
     def request(self, identity, ip="203.0.113.1"):
         return self.factory.post("/api/v1/auth/login/", HTTP_X_DEVICE_ID=identity * 32, HTTP_X_CLIENT_PLATFORM="android", HTTP_X_DEVICE_OS_VERSION="14", HTTP_USER_AGENT="Pharmenta/1.0", REMOTE_ADDR=ip)
 
-    def test_third_device_is_rejected_without_revoking_existing_devices(self):
+    def test_third_device_replaces_oldest_session(self):
         first = issue_user_session(self.user, request=self.request("a"))
         second = issue_user_session(self.user, request=self.request("b"))
-        with self.assertRaises(SessionLimitError):
-            issue_user_session(self.user, request=self.request("c"))
+        third = issue_user_session(self.user, request=self.request("c"))
         self.assertEqual(UserSession.objects.filter(user=self.user, revoked_at=None).count(), 2)
         first.session.refresh_from_db(); second.session.refresh_from_db()
-        self.assertTrue(first.session.is_active and second.session.is_active)
+        self.assertFalse(first.session.is_active)
+        self.assertEqual(first.session.revoke_reason, "session_limit_replaced")
+        self.assertTrue(second.session.is_active and third.session.is_active)
+        self.assertFalse(first.session.refresh_tokens.filter(revoked_at=None).exists())
+
+    def test_http_login_from_new_ip_succeeds_when_two_slots_are_full(self):
+        first = issue_user_session(self.user, request=self.request("a"))
+        issue_user_session(self.user, request=self.request("b"))
+        client = APIClient()
+        response = client.post("/api/v1/auth/login/", {
+            "username": self.user.username, "password": "test-password",
+        }, format="json", HTTP_X_DEVICE_ID="c" * 32, REMOTE_ADDR="198.51.100.7")
+        self.assertEqual(response.status_code, 200)
+        new_session = UserSession.objects.get(pk=response.data["session_id"])
+        self.assertEqual(new_session.ip_address, "198.51.100.7")
+        client.credentials(HTTP_AUTHORIZATION="Bearer " + first.access_token)
+        self.assertEqual(client.get("/api/v1/auth/me/").status_code, 401)
+        client.credentials(HTTP_AUTHORIZATION="Bearer " + response.data["access_token"])
+        self.assertEqual(client.get("/api/v1/auth/me/").status_code, 200)
+
+    def test_session_with_least_recent_use_is_replaced(self):
+        first = issue_user_session(self.user, request=self.request("a"))
+        second = issue_user_session(self.user, request=self.request("b"))
+        UserSession.objects.filter(pk=first.session.pk).update(last_used_at=timezone.now())
+        third = issue_user_session(self.user, request=self.request("c"))
+        first.session.refresh_from_db()
+        second.session.refresh_from_db()
+        self.assertTrue(first.session.is_active and third.session.is_active)
+        self.assertFalse(second.session.is_active)
 
     def test_reauthentication_same_install_does_not_use_an_extra_slot(self):
         first = issue_user_session(self.user, request=self.request("a"))
@@ -49,6 +79,8 @@ class DeviceSessionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         issued.session.refresh_from_db()
         self.assertEqual(issued.session.os_name, "Android")
+        self.assertTrue(issued.session.is_active)
+        self.assertEqual(UserSession.objects.filter(user=self.user, revoked_at=None).count(), 1)
         self.assertEqual(set(issued.session.addresses.values_list("ip_address", flat=True)), {"203.0.113.1", "203.0.113.2"})
 
     def test_browser_and_app_share_the_limit(self):
@@ -57,8 +89,21 @@ class DeviceSessionTests(TestCase):
         self.assertTrue(browser.login(username=self.user.username, password="test-password"))
         browser.get("/api/v1/docs/")
         self.assertEqual(UserSession.objects.filter(user=self.user, revoked_at=None).count(), 2)
-        with self.assertRaises(SessionLimitError):
-            issue_user_session(self.user, request=self.request("b"))
+        replacement = issue_user_session(self.user, request=self.request("b"))
+        issued.session.refresh_from_db()
+        self.assertFalse(issued.session.is_active)
+        self.assertTrue(replacement.session.is_active)
+        self.assertEqual(browser.get("/api/v1/docs/").status_code, 200)
+
+    def test_replacing_browser_session_deletes_its_cookie(self):
+        browser = Client()
+        browser.force_login(self.user)
+        record = UserSession.objects.get(user=self.user)
+        issue_user_session(self.user, request=self.request("a"))
+        issue_user_session(self.user, request=self.request("b"))
+        record.refresh_from_db()
+        self.assertFalse(record.is_active)
+        self.assertNotIn("_auth_user_id", browser.session)
 
     def test_revoked_browser_cookie_no_longer_authenticates(self):
         browser = Client()
@@ -85,8 +130,8 @@ class DeviceSessionTests(TestCase):
         with override_settings(AUTH_MAX_ACTIVE_SESSIONS=10):
             issue_user_session(self.user, request=self.request("a"))
             issue_user_session(self.user, request=self.request("b"))
-            with self.assertRaises(SessionLimitError):
-                issue_user_session(self.user, request=self.request("c"))
+            issue_user_session(self.user, request=self.request("c"))
+            self.assertEqual(UserSession.objects.filter(user=self.user, revoked_at=None).count(), 2)
 
 
 @override_settings(AUTH_MAX_ACTIVE_SESSIONS=2)
@@ -106,15 +151,13 @@ class ConcurrentDeviceTests(TransactionTestCase):
                 local_user = get_user_model().objects.get(pk=user.pk)
                 barrier.wait(timeout=10)
                 request = RequestFactory().post("/api/v1/auth/login/", HTTP_X_DEVICE_ID=(str(index) * 32))
-                try:
-                    issue_user_session(local_user, request=request)
-                    return True
-                except SessionLimitError:
-                    return False
+                issue_user_session(local_user, request=request)
+                return True
             finally:
                 close_old_connections()
 
         with ThreadPoolExecutor(max_workers=3) as pool:
             outcomes = list(pool.map(login, range(3)))
-        self.assertEqual(sorted(outcomes), [False, True, True])
+        self.assertEqual(outcomes, [True, True, True])
         self.assertEqual(UserSession.objects.filter(user=user, revoked_at=None).count(), 2)
+        self.assertEqual(UserSession.objects.filter(user=user, revoke_reason="session_limit_replaced").count(), 1)

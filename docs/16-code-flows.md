@@ -127,7 +127,7 @@ flowchart TD
 
 ## دستگاه، فعالیت و پشتیبانی
 
-`api/device.ts` → هدر نصب/OS → `accounts/services.py` و قفل کاربر → `UserSession` و `SessionAddress`؛ ورود سایت/مدیریت از `accounts/signals.py` و middleware همین سقف دو دستگاه را اعمال می‌کند.
+`api/device.ts` → هدر نصب/OS → `accounts/services.py` و قفل کاربر → `UserSession` و `SessionAddress`؛ ورود سایت/مدیریت از `accounts/signals.py` و middleware همین سقف دو دستگاه را با پذیرش ورود تازه و ابطال قدیمی‌ترین نشست اعمال می‌کند.
 
 `ActivityCapture` و `useActivity` → صف محلی هر حساب → `/activity/events/` → `ActivityEvent`؛ سایت از middleware و `website/activity.js` → `/events/activity/` استفاده می‌کند. گزارش‌ها از `activity/services.py` به `manage/user_activity.py` و قالب‌های devices/usage می‌روند.
 

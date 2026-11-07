@@ -50,5 +50,16 @@
     "android_push_received_on_device_verified": false,
     "production_web_push_received_verified": false,
     "local_vapid_key_configured": true
+  },
+  "session_policy_update": {
+    "maximum_active_sessions": 2,
+    "on_full_capacity": "replace_least_recently_used_session",
+    "new_ip_same_session": "update_ip_history",
+    "backend_tests_passed": 114,
+    "superuser_management_login_verified": true,
+    "replaced_cookie_relogin_verified": true,
+    "concurrent_logins_verified": true,
+    "migration_required": false,
+    "production_deployed": false
   }
 }

@@ -15,7 +15,6 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils import timezone
 
 from apps.core.logging import get_request_id
-from rest_framework.exceptions import APIException
 from .devices import client_ip, device_details
 
 from .models import (
@@ -31,15 +30,6 @@ logger = logging.getLogger(__name__)
 
 class SessionTokenError(ValueError):
     pass
-
-
-class SessionLimitError(APIException):
-    status_code = 409
-    default_code = "DEVICE_LIMIT_REACHED"
-
-    def __init__(self):
-        self.message = "این حساب روی دو دستگاه وارد شده است. ابتدا از یکی از دستگاه‌های قبلی خارج شوید یا از پشتیبانی کمک بگیرید."
-        super().__init__(self.message, code=self.default_code)
 
 
 @dataclass(frozen=True)
@@ -201,10 +191,12 @@ def issue_user_session(user, *, request=None, device_name="", surface="app"):
     same_device = list(active.filter(device_id=device["device_id"])) if device["device_id"] else []
     maximum = min(2, max(1, settings.AUTH_MAX_ACTIVE_SESSIONS))
     other_sessions = list(active.exclude(pk__in=[s.pk for s in same_device]).order_by("-last_used_at", "-created_at"))
-    if len(other_sessions) >= maximum:
-        raise SessionLimitError()
     for old in same_device:
         _revoke_session_locked(old, reason="device_signed_in_again", request=request, actor=user)
+    # Always admit a valid new login. Keep the most recently used sessions
+    # that fit alongside it and revoke older tokens/browser cookies atomically.
+    for old in other_sessions[maximum - 1:]:
+        _revoke_session_locked(old, reason="session_limit_replaced", request=request, actor=user)
     access_token = _new_token("phx_access")
     refresh_token = _new_token("phx_refresh")
     access_token_hash = hash_session_token(access_token)

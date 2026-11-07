@@ -70,7 +70,7 @@
 |---|---|---|---|
 | `AUTH_ACCESS_TOKEN_TTL_MINUTES` | `15` | — | عمر توکن دسترسی |
 | `AUTH_REFRESH_TOKEN_TTL_DAYS` | `30` | — | عمر توکن تمدید |
-| `AUTH_MAX_ACTIVE_SESSIONS` | `2` | — | سقف دستگاه فعال؛ حداکثر مؤثر ۲، ورود سوم رد می‌شود |
+| `AUTH_MAX_ACTIVE_SESSIONS` | `2` | — | سقف دستگاه فعال؛ حداکثر مؤثر ۲؛ ورود تازه قدیمی‌ترین نشست را خودکار جایگزین می‌کند |
 | `CLIENT_IP_TRUSTED_PROXIES` | loopback و شبکه‌های خصوصی RFC1918 | شبکهٔ واقعی پروکسی | CIDRهای مجاز برای اعتماد به `X-Forwarded-For` |
 | `AUTH_STEP_UP_TTL_MINUTES` | `10` | — | اعتبار تأیید دوباره (و انتخاب رمز بعد از کد پیامکی) |
 | `AUTH_PASSWORD_MIN_LENGTH` | `6` | — | تنها قاعدهٔ رمز عبور |

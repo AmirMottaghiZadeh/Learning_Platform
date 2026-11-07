@@ -144,9 +144,9 @@
     "semantic_hash": ""
   },
   "backend/apps/accounts/services.py": {
-    "mtime": 1794032403.5826201,
-    "seen": 1794033259.3105648,
-    "ast_hash": "94b298d0e8423f6d09e0c3b24a4a86a4",
+    "mtime": 1794054352.8786871,
+    "seen": 1794054846.7662082,
+    "ast_hash": "fc209244bfeafa45c13a5fcdeb8849f8",
     "semantic_hash": ""
   },
   "backend/apps/accounts/sms.py": {
@@ -162,9 +162,9 @@
     "semantic_hash": ""
   },
   "backend/apps/accounts/test_phase2_security.py": {
-    "mtime": 1794031795.7539427,
-    "seen": 1794033259.310589,
-    "ast_hash": "ba71b6c57290a93bd7adcf237f84ca53",
+    "mtime": 1794054504.8512802,
+    "seen": 1794054846.766224,
+    "ast_hash": "1c964556820b529d74a7763f330e13c5",
     "semantic_hash": ""
   },
   "backend/apps/accounts/test_phone_auth.py": {
@@ -4230,9 +4230,9 @@
     "semantic_hash": ""
   },
   "docs/01-overview.md": {
-    "mtime": 1794032878.4619305,
-    "seen": 1794033259.3155308,
-    "ast_hash": "84c57d287b6f718794e00f1ea3d643be",
+    "mtime": 1794054543.849608,
+    "seen": 1794054846.7684462,
+    "ast_hash": "471cc0fad016da7eb5d60e99af9eabeb",
     "semantic_hash": ""
   },
   "docs/02-local-setup.md": {
@@ -4242,9 +4242,9 @@
     "semantic_hash": ""
   },
   "docs/03-backend.md": {
-    "mtime": 1794032878.4659278,
-    "seen": 1794033259.3155427,
-    "ast_hash": "1037b830dbc138c3b53d6d2f104e4d53",
+    "mtime": 1794054543.8456059,
+    "seen": 1794054846.768451,
+    "ast_hash": "70d076b6cab39e3eeced92725fc59e4f",
     "semantic_hash": ""
   },
   "docs/04-frontend.md": {
@@ -4254,15 +4254,15 @@
     "semantic_hash": ""
   },
   "docs/05-api.md": {
-    "mtime": 1794032906.6615782,
-    "seen": 1794033259.3155556,
-    "ast_hash": "6bfeacf13f776abe500da9ddf750b083",
+    "mtime": 1794054543.8456059,
+    "seen": 1794054846.7684557,
+    "ast_hash": "e0f52524f30c3f506b1b6317bfefe10f",
     "semantic_hash": ""
   },
   "docs/06-configuration.md": {
-    "mtime": 1794032878.4739227,
-    "seen": 1794033259.3155622,
-    "ast_hash": "6dca8dc928c61f627be1acc9d9b7e741",
+    "mtime": 1794054543.8456059,
+    "seen": 1794054846.768458,
+    "ast_hash": "dc475351b91f99bc1ea2f7998c3cd85f",
     "semantic_hash": ""
   },
   "docs/07-data.md": {
@@ -4644,9 +4644,9 @@
     "semantic_hash": ""
   },
   "backend/apps/manage/tests.py": {
-    "mtime": 1794033086.9368823,
-    "seen": 1794033259.311807,
-    "ast_hash": "ae6c328fee78a9eb243be372505f22f8",
+    "mtime": 1794054543.633493,
+    "seen": 1794054846.7668726,
+    "ast_hash": "2f8e16911169569bd0d2557a03a5956b",
     "semantic_hash": ""
   },
   "backend/apps/manage/urls.py": {
@@ -5574,9 +5574,9 @@
     "semantic_hash": ""
   },
   "backend/apps/accounts/middleware.py": {
-    "mtime": 1794030143.8134322,
-    "seen": 1794033259.3104706,
-    "ast_hash": "d86a5786194c26abd2713ddf196d15db",
+    "mtime": 1794054667.4184558,
+    "seen": 1794054846.7661548,
+    "ast_hash": "efa924b1f3bee99d6046048f6dc12569",
     "semantic_hash": ""
   },
   "backend/apps/accounts/migrations/0007_usersession_browser_usersession_client_platform_and_more.py": {
@@ -5592,15 +5592,15 @@
     "semantic_hash": ""
   },
   "backend/apps/accounts/signals.py": {
-    "mtime": 1794031916.3209314,
-    "seen": 1794033259.3105695,
-    "ast_hash": "eb21619c240cdd99120fb8c326d58663",
+    "mtime": 1794054352.88269,
+    "seen": 1794054846.7662115,
+    "ast_hash": "6ab7a0d2815e133b952d4d46da622d6b",
     "semantic_hash": ""
   },
   "backend/apps/accounts/test_devices.py": {
-    "mtime": 1794031952.9070213,
-    "seen": 1794033259.310584,
-    "ast_hash": "7c54a1f97bcef42592db5f47c47f825e",
+    "mtime": 1794054667.4184558,
+    "seen": 1794054846.7662213,
+    "ast_hash": "ad8238051681b9d2d10d7f59216316bd",
     "semantic_hash": ""
   },
   "backend/apps/activity/__init__.py": {
@@ -5880,9 +5880,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/DevicesScreen.tsx": {
-    "mtime": 1794052318.5787642,
-    "seen": 1794052590.3160088,
-    "ast_hash": "f66ff7fe41882b543b29276f280095f3",
+    "mtime": 1794054543.849608,
+    "seen": 1794054846.768009,
+    "ast_hash": "0625ca7c64813c6594114dc0696a8315",
     "semantic_hash": ""
   },
   "frontend/src/screens/NotificationsScreen.tsx": {
@@ -5916,15 +5916,15 @@
     "semantic_hash": ""
   },
   "backend/apps/accounts/templates/accounts/session_denied.html": {
-    "mtime": 1794030094.1633306,
-    "seen": 1794033259.314945,
-    "ast_hash": "ba9c08d2a54415f125108d5d8b7d4586",
+    "mtime": 1794054352.88269,
+    "seen": 1794054846.7682142,
+    "ast_hash": "c2b58242e8f0f8b7facebd7acb4ae46f",
     "semantic_hash": ""
   },
   "backend/apps/manage/templates/manage/devices.html": {
-    "mtime": 1794032403.7346272,
-    "seen": 1794033259.3151622,
-    "ast_hash": "00caa616892eefe9085ed36aa65fed9f",
+    "mtime": 1794054543.85361,
+    "seen": 1794054846.768299,
+    "ast_hash": "759b823a6c415f0e302624e9abe85053",
     "semantic_hash": ""
   },
   "backend/apps/manage/templates/manage/usage.html": {
@@ -5946,15 +5946,15 @@
     "semantic_hash": ""
   },
   "docs/16-code-flows.md": {
-    "mtime": 1794032906.6615782,
-    "seen": 1794033259.3156273,
-    "ast_hash": "6262c3906c875aaf00e7df28cc363024",
+    "mtime": 1794054543.849608,
+    "seen": 1794054846.7684834,
+    "ast_hash": "3b01e7ce1e49d0e268777c47f4ff19ea",
     "semantic_hash": ""
   },
   "docs/17-sessions-activity-support.fa.md": {
-    "mtime": 1794052550.5873327,
-    "seen": 1794052590.3164663,
-    "ast_hash": "0db7520aa20394378db46c42e2dfedef",
+    "mtime": 1794054809.5928395,
+    "seen": 1794054846.7684865,
+    "ast_hash": "6ebb220c006d9ed7e29a2d939cd5333b",
     "semantic_hash": ""
   },
   "docs/prototypes/support/README.fa.md": {
@@ -6030,9 +6030,9 @@
     "semantic_hash": ""
   },
   "docs/prototypes/support/implemented/verification.json": {
-    "mtime": 1794052550.5873327,
-    "seen": 1794052590.3156333,
-    "ast_hash": "943a743212e16b49f1a887fe177c29a6",
+    "mtime": 1794054809.596839,
+    "seen": 1794054846.7675617,
+    "ast_hash": "b0749ee634db1b9c3912275146573111",
     "semantic_hash": ""
   }
 }
