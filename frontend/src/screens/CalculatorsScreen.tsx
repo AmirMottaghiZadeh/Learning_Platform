@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 
+import { includePediatricDose } from "@/pediatricDose/catalog";
 import { calculatorsApi } from "@/api/endpoints";
 import { CalculatorListItem } from "@/api/types";
 import { ScreenChrome } from "@/components/ScreenChrome";
@@ -50,13 +51,14 @@ export function CalculatorsScreen() {
     queryKey: ["calculators"],
     queryFn: calculatorsApi.list,
   });
-  const { data: categoriesData } = useQuery({
+  const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
     queryKey: ["calculator-categories"],
     queryFn: calculatorsApi.categories,
   });
 
-  const items = data ?? [];
-  const allCategories = categoriesData ?? [];
+  const catalog = useMemo(() => includePediatricDose(data ?? [], categoriesData ?? []), [data, categoriesData]);
+  const items = catalog.items;
+  const allCategories = catalog.categories;
   const query = q.trim().toLowerCase();
 
   const searchResults = useMemo(() => {
@@ -75,7 +77,7 @@ export function CalculatorsScreen() {
   const mainGroups = useMemo(() => groupByMainCategory(items, allCategories), [items, allCategories]);
   useTour("calculator", mainGroups.length > 0);
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading || categoriesLoading) return <LoadingState />;
 
   return (
     <Screen>

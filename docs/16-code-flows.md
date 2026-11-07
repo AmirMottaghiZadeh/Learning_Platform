@@ -1,6 +1,6 @@
 # ۱۶. نقشهٔ فایل‌ها و جریان اجرای پروژه
 
-مبنای این نقشه، کد محلی در ۲۰۲۶-۱۱-۰۷ و آخرین کامیت کد `2c801b9` است. مسیرها نسبت به ریشهٔ مخزن‌اند. این سند رفتار پیاده‌سازی‌شده را توضیح می‌دهد؛ وضعیت سرویس زنده و انتشار فایل‌های بیرون از Git باید جداگانه بررسی شود.
+مبنای این نقشه، کد محلی در ۲۰۲۶-۱۱-۰۷ با افزودن ابزار تنظیم دوز اطفالِ طرح ۲ است. مسیرها نسبت به ریشهٔ مخزن‌اند. این سند رفتار پیاده‌سازی‌شده را توضیح می‌دهد؛ وضعیت سرویس زنده و انتشار فایل‌های بیرون از Git باید جداگانه بررسی شود.
 
 ## شروع اپ و انتخاب صفحه
 
@@ -45,6 +45,20 @@ flowchart TD
 ## آزمون و دسته‌بندی داروها
 
 نوار پایین در [navigation/types.ts](../frontend/src/navigation/types.ts) فقط `dashboard`، `lessons` و `profile` دارد. [EducationScreen.tsx](../frontend/src/screens/EducationScreen.tsx) آزمون را با `navigate("quiz")` باز می‌کند. [QuizSetup.tsx](../frontend/src/components/quiz/QuizSetup.tsx) از `lessonsApi.groups` و `groupByCategory` برای شبکهٔ دسته‌ها و فهرست زیردسته‌ها استفاده می‌کند؛ پس از انتخاب موضوع، پیش‌نمایش و شروع از [quiz/views.py](../backend/apps/quiz/views.py) به [bank_selectors.py](../backend/apps/quiz/bank_selectors.py) و `BankQuestion` می‌رسد. [QuizScreen.tsx](../frontend/src/screens/QuizScreen.tsx) سؤال، پاسخ، نتیجه و مرور اشتباهات را نگه می‌دارد. سوابق فلش‌کارت حذف شده‌اند و نکته‌های مشترک منبع با `quiz.StudyFact` نگه‌داری می‌شوند؛ [سند ۱۹](19-quiz-navigation-and-flashcard-removal.fa.md).
+
+## ماشین‌حساب اختصاصی اطفال
+
+`CalculatorsScreen` و `CalculatorDomainScreen` دادهٔ snapshot را با [pediatricDose/catalog.ts](../frontend/src/pediatricDose/catalog.ts) ترکیب می‌کنند. ورودی «تنظیم دوز اطفال / Pediatric Dose Adjustment» در زیردستهٔ مستقل Pediatrics است. `Navigator` نشانی پایدار `calculatorDetail` با `slug=pediatric-dose` را به [PediatricDoseScreen.tsx](../frontend/src/screens/PediatricDoseScreen.tsx) می‌فرستد.
+
+```text
+pediatricDose/api.ts → GET /calculators/pediatric-dose/
+  → calculators/pediatric.py → مجوز/سهمیهٔ calculators → data/pediatric-dose.json
+  → بررسی schema_version و engine_sha256 در اپ
+  → patientInput → engine.js → انتخاب صریح رژیم/فرآورده/فاصله
+  → PediatricDoseResult + PediatricSource → خوانندهٔ فعلی UpToDate
+```
+
+اعداد بیمار وارد API، کش پایدار یا رویداد فعالیت نمی‌شوند. منبع کد/داده، ۵۰ مدخل و ۲۳۳ رژیم از مجموعهٔ کاربر است. همگام‌سازی و تست‌ها در [سند ۲۰](20-pediatric-dose.fa.md) آمده‌اند.
 
 ## خرید از اپ و بازگشت درگاه
 

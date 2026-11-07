@@ -498,9 +498,9 @@
     "semantic_hash": ""
   },
   "backend/apps/calculators/urls.py": {
-    "mtime": 1791577049.826154,
-    "seen": 1792686658.6822276,
-    "ast_hash": "c0963634f2b3e08a58543e233f5dbd3d",
+    "mtime": 1794080373.842034,
+    "seen": 1794081977.2425385,
+    "ast_hash": "cf7cb10a88a3054efaa89bf249ba53b2",
     "semantic_hash": ""
   },
   "backend/apps/calculators/views.py": {
@@ -1914,9 +1914,9 @@
     "semantic_hash": ""
   },
   "frontend/package.json": {
-    "mtime": 1794030722.3500316,
-    "seen": 1794033259.3130813,
-    "ast_hash": "41cb25c8af6f3e988d297b979bbe21e8",
+    "mtime": 1794082147.4639978,
+    "seen": 1794082170.0531745,
+    "ast_hash": "068e041a63b474821e3e62ffd95a319f",
     "semantic_hash": ""
   },
   "frontend/src/api/client.ts": {
@@ -2214,9 +2214,9 @@
     "semantic_hash": ""
   },
   "frontend/src/navigation/Navigator.tsx": {
-    "mtime": 1794074945.823438,
-    "seen": 1794075996.9075272,
-    "ast_hash": "f50c2cde7fa6f602ead5308110f27d77",
+    "mtime": 1794080506.2596712,
+    "seen": 1794081977.2434962,
+    "ast_hash": "01e27bc035168a578c331b20bc0f4876",
     "semantic_hash": ""
   },
   "frontend/src/navigation/back.ts": {
@@ -2244,15 +2244,15 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/CalculatorDomainScreen.tsx": {
-    "mtime": 1791577049.8821537,
-    "seen": 1792686658.6835978,
-    "ast_hash": "1dace524fabfb16b2e6faea8921db4f8",
+    "mtime": 1794080506.2596712,
+    "seen": 1794081977.2435744,
+    "ast_hash": "d17568b22384f3e55eabe9c5765772d5",
     "semantic_hash": ""
   },
   "frontend/src/screens/CalculatorsScreen.tsx": {
-    "mtime": 1792930343.5733225,
-    "seen": 1792931284.842772,
-    "ast_hash": "bd6e185de0338d1d347fc0ea82ab4f05",
+    "mtime": 1794080506.2556667,
+    "seen": 1794081977.243576,
+    "ast_hash": "fe57bee9ddef1cac633797452e3049a6",
     "semantic_hash": ""
   },
   "frontend/src/screens/DashboardScreen.tsx": {
@@ -2508,9 +2508,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1791580142.7985086,
-    "seen": 1792686658.6837683,
-    "ast_hash": "2a683e3911d804b9b5df93173cebc27c",
+    "mtime": 1794082147.4639978,
+    "seen": 1794082170.0537088,
+    "ast_hash": "7043eb924cb0dce2c1669a76d5bacf26",
     "semantic_hash": ""
   },
   ".github/workflows/deploy-web-branch.yml": {
@@ -2532,15 +2532,15 @@
     "semantic_hash": ""
   },
   "PHASES.md": {
-    "mtime": 1794076090.622022,
-    "seen": 1794076298.7486048,
-    "ast_hash": "35f51afd3203f9e9f6b3848e328483b5",
+    "mtime": 1794081517.419336,
+    "seen": 1794081977.243723,
+    "ast_hash": "e5267e4d9a99f479021a71551b8be79b",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1794075605.278873,
-    "seen": 1794075996.907846,
-    "ast_hash": "eec61fce212542e28ee7053b91bad7e2",
+    "mtime": 1794081953.6699073,
+    "seen": 1794081977.243725,
+    "ast_hash": "f846e9bcf3bd8b91afef125cce89c720",
     "semantic_hash": ""
   },
   "backend/apps/billing/templates/billing/_payment_base.html": {
@@ -4176,15 +4176,15 @@
     "semantic_hash": ""
   },
   "docs/04-frontend.md": {
-    "mtime": 1794075540.1261573,
-    "seen": 1794075996.9081445,
-    "ast_hash": "2b41eab800c5acf6dc561b2054575983",
+    "mtime": 1794081517.4113321,
+    "seen": 1794081977.2439191,
+    "ast_hash": "04b274e318d595afabc328dd2564fcd5",
     "semantic_hash": ""
   },
   "docs/05-api.md": {
-    "mtime": 1794075605.282863,
-    "seen": 1794075996.908147,
-    "ast_hash": "2df001f452c087c5cc8a91d72ae3a826",
+    "mtime": 1794081517.4113321,
+    "seen": 1794081977.2439215,
+    "ast_hash": "627290df5814ddda481be47e03e9759e",
     "semantic_hash": ""
   },
   "docs/06-configuration.md": {
@@ -4194,9 +4194,9 @@
     "semantic_hash": ""
   },
   "docs/07-data.md": {
-    "mtime": 1794075540.1341126,
-    "seen": 1794075996.908153,
-    "ast_hash": "ba6b18d4cc6e76a07b501f042da3c389",
+    "mtime": 1794081517.4153342,
+    "seen": 1794081977.243926,
+    "ast_hash": "296132c692c5deff173e46020d9515d7",
     "semantic_hash": ""
   },
   "docs/08-deployment.md": {
@@ -4230,9 +4230,9 @@
     "semantic_hash": ""
   },
   "docs/README.md": {
-    "mtime": 1794075540.1142242,
-    "seen": 1794075996.9081929,
-    "ast_hash": "7581475971298f870871910129337b39",
+    "mtime": 1794081517.4073303,
+    "seen": 1794081977.2439566,
+    "ast_hash": "7082e76350b524d41704c1a179cb530b",
     "semantic_hash": ""
   },
   "backend/apps/website/management/commands/seed_seo_content.py": {
@@ -5850,9 +5850,9 @@
     "semantic_hash": ""
   },
   "docs/16-code-flows.md": {
-    "mtime": 1794076090.622022,
-    "seen": 1794076298.7491293,
-    "ast_hash": "e401ccf8a42dd13de90565fb88d3530d",
+    "mtime": 1794081517.4153342,
+    "seen": 1794081977.243945,
+    "ast_hash": "f06b4ea9c1ddf5281cf0b5296ef91120",
     "semantic_hash": ""
   },
   "docs/17-sessions-activity-support.fa.md": {
@@ -6015,6 +6015,294 @@
     "mtime": 1794076288.734249,
     "seen": 1794076298.7473218,
     "ast_hash": "10caf45b05426f154e0c3929019a4f70",
+    "semantic_hash": ""
+  },
+  "backend/apps/calculators/data/pediatric-dose.json": {
+    "mtime": 1794081423.00551,
+    "seen": 1794081977.2424893,
+    "ast_hash": "a0880e9e0d6dafe0ee84c5f6f0b8fdde",
+    "semantic_hash": ""
+  },
+  "backend/apps/calculators/pediatric.py": {
+    "mtime": 1794081423.00551,
+    "seen": 1794081977.2425268,
+    "ast_hash": "53f11b48af09b59707d1678507faeb72",
+    "semantic_hash": ""
+  },
+  "backend/apps/calculators/test_pediatric.py": {
+    "mtime": 1794081517.4033282,
+    "seen": 1794081977.2425342,
+    "ast_hash": "fc5acf8c1cb131a7a6eb9e2aea0c2315",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/app.js": {
+    "mtime": 1794079425.5885727,
+    "seen": 1794081977.243239,
+    "ast_hash": "f996093d788304f7483feef234e14bf0",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/browser-check.json": {
+    "mtime": 1794079645.5473402,
+    "seen": 1794081977.2432415,
+    "ast_hash": "6e1169ab802cd98ddf012deb15b440df",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/vendor/drugs.json": {
+    "mtime": 1794079007.1841288,
+    "seen": 1794081977.243244,
+    "ast_hash": "e0edaaf6d769940c3e2f79c93f0326d4",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/vendor/engine.js": {
+    "mtime": 1794079007.1801558,
+    "seen": 1794081977.243246,
+    "ast_hash": "61d76d26efe616a97286976af37b4b20",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/vendor/provenance.json": {
+    "mtime": 1794079007.1920745,
+    "seen": 1794081977.2432482,
+    "ast_hash": "d02c62c78659c5b151d2420ba29ff829",
+    "semantic_hash": ""
+  },
+  "frontend/scripts/pediatric-dose/engine.test.cjs": {
+    "mtime": 1794080373.6419334,
+    "seen": 1794081977.243311,
+    "ast_hash": "33b1856f4d78bf6c5c2a63bbd1e70315",
+    "semantic_hash": ""
+  },
+  "frontend/scripts/pediatric-dose/integration.test.cjs": {
+    "mtime": 1794081423.0094926,
+    "seen": 1794081977.243313,
+    "ast_hash": "09e92f9f4b2bd263396cfb0cfd6d542e",
+    "semantic_hash": ""
+  },
+  "frontend/scripts/pediatric-dose/regressions.test.cjs": {
+    "mtime": 1794080373.6419334,
+    "seen": 1794081977.2433162,
+    "ast_hash": "7875c88ed137098516c4c2a807bc9463",
+    "semantic_hash": ""
+  },
+  "frontend/scripts/sync-pediatric-dose.mjs": {
+    "mtime": 1794081423.0094926,
+    "seen": 1794081977.2433214,
+    "ast_hash": "ccda673937bf9c087207d4aea3f7d32f",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/calculator/PediatricChoice.tsx": {
+    "mtime": 1794081813.336082,
+    "seen": 1794081977.2434278,
+    "ast_hash": "1ef66519439ee0c3ffa4f2d5c216efe1",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/calculator/PediatricResult.tsx": {
+    "mtime": 1794080706.147092,
+    "seen": 1794081977.2434304,
+    "ast_hash": "c10dcbf8adb6e6823d5d5ce3745fb874",
+    "semantic_hash": ""
+  },
+  "frontend/src/pediatricDose/api.ts": {
+    "mtime": 1794081423.00551,
+    "seen": 1794081977.2435439,
+    "ast_hash": "b457e0ae3139b5d5e38109bf553e41f9",
+    "semantic_hash": ""
+  },
+  "frontend/src/pediatricDose/catalog.ts": {
+    "mtime": 1794080442.2922983,
+    "seen": 1794081977.2435465,
+    "ast_hash": "c26457377c87a7bb4e13d44a850d4aaf",
+    "semantic_hash": ""
+  },
+  "frontend/src/pediatricDose/engine.d.ts": {
+    "mtime": 1794080442.2882962,
+    "seen": 1794081977.2435482,
+    "ast_hash": "1439b5710bced9316a7aeacb93b0c0bf",
+    "semantic_hash": ""
+  },
+  "frontend/src/pediatricDose/engine.js": {
+    "mtime": 1794080373.6419334,
+    "seen": 1794081977.24355,
+    "ast_hash": "61d76d26efe616a97286976af37b4b20",
+    "semantic_hash": ""
+  },
+  "frontend/src/pediatricDose/model.ts": {
+    "mtime": 1794080442.2922983,
+    "seen": 1794081977.2435517,
+    "ast_hash": "c263afdfc348ea752036bafd0932dec2",
+    "semantic_hash": ""
+  },
+  "frontend/src/pediatricDose/names.ts": {
+    "mtime": 1794080373.6419334,
+    "seen": 1794081977.2435532,
+    "ast_hash": "cc5a930e3d72d1d5faf7a758a271c9e8",
+    "semantic_hash": ""
+  },
+  "frontend/src/pediatricDose/provenance.json": {
+    "mtime": 1794080373.6419334,
+    "seen": 1794081977.2435548,
+    "ast_hash": "d02c62c78659c5b151d2420ba29ff829",
+    "semantic_hash": ""
+  },
+  "frontend/src/pediatricDose/types.ts": {
+    "mtime": 1794081423.00551,
+    "seen": 1794081977.2435565,
+    "ast_hash": "fd9db97989957e7e58cac54b5611747b",
+    "semantic_hash": ""
+  },
+  "frontend/src/pediatricDose/version.ts": {
+    "mtime": 1794081423.00551,
+    "seen": 1794081977.2435586,
+    "ast_hash": "6145041a9803aeaf039db9c2474b5ff8",
+    "semantic_hash": ""
+  },
+  "frontend/src/screens/PediatricDoseScreen.tsx": {
+    "mtime": 1794081423.00551,
+    "seen": 1794081977.2436128,
+    "ast_hash": "5fd2f3349e13407e3b7708f7dd32f114",
+    "semantic_hash": ""
+  },
+  "docs/20-pediatric-dose.fa.md": {
+    "mtime": 1794082147.4639978,
+    "seen": 1794082170.054022,
+    "ast_hash": "65620a688708ec9dc7a29fb01b728ff9",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/README.md": {
+    "mtime": 1794081953.6619203,
+    "seen": 1794081977.2439582,
+    "ast_hash": "8d0d3107dbf8c25527d4fb4b218e7115",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/comparison.html": {
+    "mtime": 1794081517.4073303,
+    "seen": 1794081977.24396,
+    "ast_hash": "e9e0d822107219e58deabebc3af33093",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/index.html": {
+    "mtime": 1794081517.4073303,
+    "seen": 1794081977.2439616,
+    "ast_hash": "b45e906882105dd853a6b006724ebd2d",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/comparison.png": {
+    "mtime": 1794079645.5473402,
+    "seen": 1794081977.2441204,
+    "ast_hash": "95c1559533bce44586fe0bebb0272070",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-1-dark.png": {
+    "mtime": 1794079634.857599,
+    "seen": 1794081977.244122,
+    "ast_hash": "edddf7edec8efa1f7d9e7ed6d8c3d01e",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-1-en.png": {
+    "mtime": 1794079634.69729,
+    "seen": 1794081977.2441237,
+    "ast_hash": "660fb921091e5291129118429d046247",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-1-fa.png": {
+    "mtime": 1794079633.7955399,
+    "seen": 1794081977.2441254,
+    "ast_hash": "792a4edab78ac4db7f37987d7721488a",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-1-full.png": {
+    "mtime": 1794079633.8756988,
+    "seen": 1794081977.2441273,
+    "ast_hash": "21d3787e3df73f5a3c9d50a579c9d2fe",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-2-dark.png": {
+    "mtime": 1794079636.9013965,
+    "seen": 1794081977.2441292,
+    "ast_hash": "2f19667a7cc1a86d2808f11301ecc4b4",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-2-en.png": {
+    "mtime": 1794079636.7411036,
+    "seen": 1794081977.2441308,
+    "ast_hash": "d002165888c24f9b134889d70f6d3606",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-2-fa.png": {
+    "mtime": 1794079635.9195993,
+    "seen": 1794081977.2441323,
+    "ast_hash": "3ac2d41a840f9ba74e653880a8d5027e",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-2-full.png": {
+    "mtime": 1794079635.9917347,
+    "seen": 1794081977.244134,
+    "ast_hash": "50047fc90e2c7ad5ce6b167ed65c59c1",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-2-patient.png": {
+    "mtime": 1794079640.8241203,
+    "seen": 1794081977.2441356,
+    "ast_hash": "a171883f13b4125030e2309e9dfbb8d9",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-3-dark.png": {
+    "mtime": 1794079639.0411537,
+    "seen": 1794081977.2441373,
+    "ast_hash": "837ead5b8230d77e273d012f7751b34a",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-3-en.png": {
+    "mtime": 1794079638.8648503,
+    "seen": 1794081977.2441392,
+    "ast_hash": "645f7df0ff75eb5c7a92993893f386f0",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-3-fa.png": {
+    "mtime": 1794079637.97531,
+    "seen": 1794081977.244141,
+    "ast_hash": "50a7712537460c5cce1e42c2887572ca",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-3-full.png": {
+    "mtime": 1794079638.0474362,
+    "seen": 1794081977.2441423,
+    "ast_hash": "2e72ae58284695c9f180325f466491ee",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/design-3-preparations.png": {
+    "mtime": 1794079641.6173947,
+    "seen": 1794081977.244144,
+    "ast_hash": "901e99c55b9e34f0e61fff22383bb08d",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/implemented-drug.jpg": {
+    "mtime": 1794081611.7559786,
+    "seen": 1794081977.2441456,
+    "ast_hash": "155f56a3adcbeafa765385498434826f",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/implemented-entry.jpg": {
+    "mtime": 1794081604.4603326,
+    "seen": 1794081977.2441475,
+    "ast_hash": "1cf8b09d564c5ff9cbb9f783a445afc7",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/implemented-patient.jpg": {
+    "mtime": 1794081606.2572308,
+    "seen": 1794081977.244149,
+    "ast_hash": "0f22b189d0c32d99b8d4c275acab74a9",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/implemented-result.jpg": {
+    "mtime": 1794081612.5323668,
+    "seen": 1794081977.2441506,
+    "ast_hash": "099bbe650940319b9effdf748646e90e",
+    "semantic_hash": ""
+  },
+  "docs/designs/pediatric-dose/screenshots/pediatrics-entry.png": {
+    "mtime": 1794079642.3785949,
+    "seen": 1794081977.244152,
+    "ast_hash": "ab27e34b95617f56447ee6c54b7ffdab",
     "semantic_hash": ""
   }
 }

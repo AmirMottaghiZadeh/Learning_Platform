@@ -9,6 +9,8 @@ import { BottomNav } from "@/components/BottomNav";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
 import { AuthScreen } from "@/screens/AuthScreen";
+import { PediatricDoseScreen } from "@/screens/PediatricDoseScreen";
+import { PEDIATRIC_DOSE_SLUG } from "@/pediatricDose/catalog";
 import { CalculatorDetailScreen } from "@/screens/CalculatorDetailScreen";
 import { CalculatorDomainScreen } from "@/screens/CalculatorDomainScreen";
 import { CalculatorsScreen } from "@/screens/CalculatorsScreen";
@@ -152,6 +154,7 @@ function ScreenTransition({ children }: { children: React.ReactNode }) {
 
 function CurrentScreen() {
   const screen = useNav((s) => s.screen);
+  const calculatorSlug = useNav((s) => s.params.slug);
 
   switch (screen) {
     case "support":
@@ -209,7 +212,7 @@ function CurrentScreen() {
     case "calculatorDomain":
       return <CalculatorDomainScreen />;
     case "calculatorDetail":
-      return <CalculatorDetailScreen />;
+      return calculatorSlug === PEDIATRIC_DOSE_SLUG ? <PediatricDoseScreen /> : <CalculatorDetailScreen />;
     case "dashboard":
     default:
       return <DashboardScreen />;

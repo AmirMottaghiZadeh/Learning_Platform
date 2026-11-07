@@ -20,6 +20,7 @@ python manage.py <دستور> [گزینه‌ها]                # کنسول س
 | گروه‌های ATC سطح ۱ و ۲ | `backend/apps/drugs/atc_reference.py` (داخل کد) | خودکار، هر شروع کانتینر | Postgres: `drugs_atccategory` |
 | کد ATC تکمیلی | `backend/apps/drugs/data/atc_supplement` | `apply_atc_supplement` | Postgres |
 | ماشین‌حساب‌ها | `backend/data/calculators.sqlite` (پایپلاین ترجمه) | `export_reference_db` ← `import_calculators_db` | Postgres: `calculators_*` |
+| تنظیم دوز اطفال | `/home/amir/Documents/Medscape/peds_dose/` | `node frontend/scripts/sync-pediatric-dose.mjs`، سپس تست و انتشار هماهنگ بک‌اند و اپ | `backend/apps/calculators/data/pediatric-dose.json` + موتور مستقل فرانت‌اند؛ بدون ایمپورت SQL |
 | بیماری‌ها و گایدلاین‌های Medscape | `/home/amir/Documents/Medscape/...` (JSON و تصویر اسکرپر) | `export_reference_db` ← `import_diseases_db` / `import_guidelines_db` | Postgres: `medscape_*` (تصویرها داخل دیتابیس) |
 | سؤال‌ها و نکته‌های آموزشی مشترک | `/home/amir/Documents/openfda/study_content/study_content.db` (ساختهٔ مدل‌های زبانی) | `import_study_content` ← `export_study_content_db` ← `import_study_content_db` | Postgres: `quiz_bankquestion`، `flashcards_flashcardfact` |
 | UpToDate | `/home/amir/Documents/UpToDate/` (حدود ۲٫۷ گیگ SQLite) | `migrate_uptodate_to_mysql` | MySQL (`UPTODATE_MYSQL_URL`) |

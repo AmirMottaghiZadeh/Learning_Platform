@@ -29,7 +29,12 @@
 | ۱۷ | [17-sessions-activity-support.fa.md](17-sessions-activity-support.fa.md) | سقف دو دستگاه، IP و سیستم‌عامل، heatmap، چت و راه‌اندازی اعلان وب و اندروید | توسعه‌دهنده، مدیر، مسئول انتشار |
 | ۱۸ | [18-notifications-setup.fa.md](18-notifications-setup.fa.md) | راهنمای کامل Firebase، FCM، EAS، APK، VAPID، آزمون نهایی و کلید خاموش/روشن کردن اعلان | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | ۱۹ | [19-quiz-navigation-and-flashcard-removal.fa.md](19-quiz-navigation-and-flashcard-removal.fa.md) | آزمون با دسته و زیردسته، ناوبری سه‌گزینه‌ای و حذف سوابق فلش‌کارت | توسعه‌دهنده، مسئول انتشار |
+| ۲۰ | [20-pediatric-dose.fa.md](20-pediatric-dose.fa.md) | تنظیم دوز اطفال، طرح مرحله‌ای منتخب، API، موتور و همگام‌سازی منبع | توسعه‌دهنده، مسئول داده و انتشار |
 | — | [search/README.md](search/README.md) | وضعیت جست‌وجوی فعلی، فازهای توسعه، وظایف مالک پروژه، مجموعهٔ ارزیابی، [برنامهٔ دقت و جست‌وجوی برداری](search/plan-precision-and-vector-search-2026-11-01.fa.md) و [بازبینی پایلوت قبلی](search/phase-11-review-and-redesign-2026-10-31.fa.md) | مالک محصول، توسعه‌دهنده، مسئول داده |
+
+## آرشیو طراحی رابط
+
+[سه طرح تنظیم دوز اطفال](designs/pediatric-dose/README.md): آرشیو مقایسه؛ **طرح ۲ انتخاب و در اپ پیاده‌سازی شد**. رفتار نهایی و مسیر داده در [سند ۲۰](20-pediatric-dose.fa.md) است.
 
 ## سندهای دیگر مخزن
 
