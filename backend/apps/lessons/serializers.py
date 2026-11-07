@@ -54,6 +54,7 @@ class ChapterDrugSerializer(serializers.Serializer):
 
     slug = serializers.CharField()
     name = serializers.CharField()
+    name_fa = serializers.CharField(allow_blank=True)
     pharm_classes = serializers.ListField(child=serializers.CharField())
     atc_group = AtcGroupSerializer(allow_null=True)
 

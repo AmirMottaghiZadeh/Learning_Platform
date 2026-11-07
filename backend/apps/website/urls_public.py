@@ -1,10 +1,12 @@
 from django.urls import path
 
 from . import views_account, views_drugs, views_public as v
+from apps.activity.views import site_clicks
 
 app_name = "site"
 
 urlpatterns = [
+    path("events/activity/", site_clicks, name="activity_clicks"),
     path("", v.home, name="home"),
     path("blog/", v.blog_index, name="blog"),
     path("blog/category/<str:slug>/", v.category, name="category"),

@@ -241,12 +241,15 @@ class RefreshSessionSerializer(serializers.Serializer):
 
 class SessionSerializer(serializers.ModelSerializer):
     current = serializers.SerializerMethodField()
+    is_active = serializers.BooleanField(read_only=True)
+    addresses = serializers.SerializerMethodField()
 
     class Meta:
         model = UserSession
         fields = [
             "id",
             "device_name",
+            "os_name", "os_version", "browser", "device_type", "client_platform", "surface", "addresses",
             "ip_address",
             "user_agent",
             "created_at",
@@ -255,11 +258,15 @@ class SessionSerializer(serializers.ModelSerializer):
             "refresh_expires_at",
             "revoked_at",
             "current",
+            "is_active",
         ]
 
     def get_current(self, obj) -> bool:
         current_session_id = self.context.get("current_session_id")
         return bool(current_session_id and obj.id == current_session_id)
+
+    def get_addresses(self, obj) -> list[dict]:
+        return [{"ip_address": address.ip_address, "first_seen_at": address.first_seen_at.isoformat(), "last_seen_at": address.last_seen_at.isoformat()} for address in obj.addresses.all()[:20]]
 
 
 class SessionRevokeSerializer(serializers.Serializer):

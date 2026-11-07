@@ -56,6 +56,8 @@ INSTALLED_APPS = [
     "apps.website",
     "apps.manage",
     "apps.announcements",
+    "apps.activity",
+    "apps.support",
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -75,6 +77,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "apps.accounts.middleware.BrowserSessionMiddleware",
+    "apps.activity.middleware.SiteActivityMiddleware",
     "apps.website.middleware.SiteMaintenanceMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -232,7 +236,7 @@ STORAGES = {
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOWED_ORIGINS = [o for o in config("CORS_ALLOWED_ORIGINS", default="").split(",") if o]
-CORS_ALLOW_HEADERS = (*default_headers, "idempotency-key")
+CORS_ALLOW_HEADERS = (*default_headers, "idempotency-key", "x-device-id", "x-client-platform", "x-device-os-version", "x-device-model")
 CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=False, cast=bool)
 CSRF_TRUSTED_ORIGINS = [o for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",") if o]
 AUTH_ACCESS_TOKEN_TTL_MINUTES = config(
@@ -247,8 +251,16 @@ AUTH_REFRESH_TOKEN_TTL_DAYS = config(
 )
 AUTH_MAX_ACTIVE_SESSIONS = config(
     "AUTH_MAX_ACTIVE_SESSIONS",
-    default=10,
+    default=2,
     cast=int,
+)
+SUPPORT_WEB_PUSH_PUBLIC_KEY = config("SUPPORT_WEB_PUSH_PUBLIC_KEY", default="")
+SUPPORT_WEB_PUSH_PRIVATE_KEY = config("SUPPORT_WEB_PUSH_PRIVATE_KEY", default="")
+SUPPORT_WEB_PUSH_SUBJECT = config("SUPPORT_WEB_PUSH_SUBJECT", default="mailto:support@pharmenta.ir")
+SUPPORT_EXPO_ACCESS_TOKEN = config("SUPPORT_EXPO_ACCESS_TOKEN", default="")
+CLIENT_IP_TRUSTED_PROXIES = config(
+    "CLIENT_IP_TRUSTED_PROXIES",
+    default="127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16",
 )
 AUTH_STEP_UP_TTL_MINUTES = config(
     "AUTH_STEP_UP_TTL_MINUTES",

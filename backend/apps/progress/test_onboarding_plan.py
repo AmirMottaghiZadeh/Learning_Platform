@@ -148,7 +148,7 @@ class PlanPaceRolloverAndWeekTests(TestCase):
     def test_tasks_carry_their_titles(self):
         plan = self._plan(minutes=240)
         titles = {i.activity_type: i.title_fa for i in planning.today_items(self.user, plan)}
-        self.assertTrue(titles[StudyPlanItem.LESSON].startswith("درسنامه: "))
+        self.assertTrue(titles[StudyPlanItem.LESSON].startswith("دارونامه: "))
         self.assertTrue(titles[StudyPlanItem.QUIZ].startswith("آزمون: "))
 
     def test_summary_counts_days_weeks_and_progress(self):

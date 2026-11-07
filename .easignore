@@ -2,6 +2,13 @@
 .git
 .gitignore
 
+# App signing credentials are handled separately by EAS, not source uploads.
+*.jks
+*.keystore
+credentials.json
+frontend/credentials/
+play-service-account*.json
+
 # Backend
 backend/
 
@@ -22,3 +29,6 @@ frontend/.expo
 
 # OS
 .DS_Store
+
+# Local support Web Push signing keys
+backend/.private/

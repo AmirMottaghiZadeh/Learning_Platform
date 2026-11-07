@@ -93,7 +93,8 @@ class NavigationTests(SiteTestCase):
         self.assertEqual(rail, ["home", "data"])
         self.assertNotContains(res, reverse("console:plans"))
         rail, res = self.rail(make("help", role=StaffRole.SUPPORT))
-        self.assertEqual(rail, ["home", "sales", "site"])
+        self.assertEqual(rail, ["home", "sales", "app", "site"])
+        self.assertContains(res, reverse("support_admin:inbox"))
         self.assertNotContains(res, reverse("console:discounts"))
 
     def test_the_current_page_and_badges(self):

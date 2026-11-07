@@ -389,7 +389,7 @@ class SessionListView(APIView):
 
     @extend_schema(responses=SessionSerializer(many=True))
     def get(self, request):
-        sessions = UserSession.objects.filter(user=request.user).order_by(
+        sessions = UserSession.objects.filter(user=request.user).prefetch_related("addresses").order_by(
             "-last_used_at",
             "-created_at",
         )

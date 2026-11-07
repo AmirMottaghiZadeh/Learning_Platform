@@ -113,6 +113,14 @@ class UserSession(models.Model):
     revoked_at = models.DateTimeField(null=True, blank=True)
     revoke_reason = models.CharField(max_length=120, blank=True)
     device_name = models.CharField(max_length=120, blank=True)
+    device_id = models.CharField(max_length=64, blank=True, db_index=True)
+    os_name = models.CharField(max_length=40, blank=True)
+    os_version = models.CharField(max_length=40, blank=True)
+    browser = models.CharField(max_length=40, blank=True)
+    device_type = models.CharField(max_length=16, blank=True)
+    client_platform = models.CharField(max_length=16, blank=True)
+    surface = models.CharField(max_length=16, default="app")
+    django_session_key = models.CharField(max_length=40, blank=True, db_index=True)
     user_agent = models.CharField(max_length=255, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -141,7 +149,23 @@ class UserSession(models.Model):
 
     @property
     def is_active(self):
-        return self.revoked_at is None and self.refresh_expires_at > timezone.now()
+        active = self.revoked_at is None and self.refresh_expires_at > timezone.now()
+        if active and self.django_session_key:
+            from django.contrib.sessions.models import Session
+
+            return Session.objects.filter(session_key=self.django_session_key, expire_date__gt=timezone.now()).exists()
+        return active
+
+
+class SessionAddress(models.Model):
+    session = models.ForeignKey(UserSession, on_delete=models.CASCADE, related_name="addresses")
+    ip_address = models.GenericIPAddressField()
+    first_seen_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["session", "ip_address"], name="acct_session_address_unique")]
+        ordering = ["-last_seen_at"]
 
 
 class SessionRefreshToken(models.Model):

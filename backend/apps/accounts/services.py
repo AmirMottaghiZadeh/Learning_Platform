@@ -15,6 +15,8 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils import timezone
 
 from apps.core.logging import get_request_id
+from rest_framework.exceptions import APIException
+from .devices import client_ip, device_details
 
 from .models import (
     Role,
@@ -29,6 +31,15 @@ logger = logging.getLogger(__name__)
 
 class SessionTokenError(ValueError):
     pass
+
+
+class SessionLimitError(APIException):
+    status_code = 409
+    default_code = "DEVICE_LIMIT_REACHED"
+
+    def __init__(self):
+        self.message = "این حساب روی دو دستگاه وارد شده است. ابتدا از یکی از دستگاه‌های قبلی خارج شوید یا از پشتیبانی کمک بگیرید."
+        super().__init__(self.message, code=self.default_code)
 
 
 @dataclass(frozen=True)
@@ -55,7 +66,7 @@ def _request_metadata(request):
         }
     return {
         "request_id": getattr(request, "request_id", get_request_id()),
-        "ip_address": request.META.get("REMOTE_ADDR") or None,
+        "ip_address": client_ip(request),
         "user_agent": request.META.get("HTTP_USER_AGENT", "")[:255],
     }
 
@@ -157,6 +168,10 @@ def _revoke_session_locked(session, *, reason, request=None, actor=None):
     session.revoked_at = now
     session.revoke_reason = reason
     session.save(update_fields=["revoked_at", "revoke_reason"])
+    if session.django_session_key:
+        from django.contrib.sessions.models import Session
+
+        Session.objects.filter(session_key=session.django_session_key).delete()
     SessionRefreshToken.objects.filter(
         session=session,
         revoked_at__isnull=True,
@@ -173,8 +188,23 @@ def _revoke_session_locked(session, *, reason, request=None, actor=None):
 
 
 @transaction.atomic
-def issue_user_session(user, *, request=None, device_name=""):
+def issue_user_session(user, *, request=None, device_name="", surface="app"):
+    # Lock the account, including the zero-session case, to serialize logins on
+    # different workers. Locking only existing sessions leaves that case racy.
+    get_user_model().objects.select_for_update().get(pk=user.pk)
     now = timezone.now()
+    device = device_details(request)
+    active = UserSession.objects.filter(user=user, revoked_at__isnull=True, refresh_expires_at__gt=now)
+    for stale in active.exclude(django_session_key=""):
+        if not stale.is_active:
+            _revoke_session_locked(stale, reason="browser_cookie_expired", request=request, actor=user)
+    same_device = list(active.filter(device_id=device["device_id"])) if device["device_id"] else []
+    maximum = min(2, max(1, settings.AUTH_MAX_ACTIVE_SESSIONS))
+    other_sessions = list(active.exclude(pk__in=[s.pk for s in same_device]).order_by("-last_used_at", "-created_at"))
+    if len(other_sessions) >= maximum:
+        raise SessionLimitError()
+    for old in same_device:
+        _revoke_session_locked(old, reason="device_signed_in_again", request=request, actor=user)
     access_token = _new_token("phx_access")
     refresh_token = _new_token("phx_refresh")
     access_token_hash = hash_session_token(access_token)
@@ -189,7 +219,9 @@ def issue_user_session(user, *, request=None, device_name=""):
         refresh_expires_at=now
         + timedelta(days=settings.AUTH_REFRESH_TOKEN_TTL_DAYS),
         last_used_at=now,
-        device_name=device_name.strip()[:120],
+        device_name=(device_name.strip() or (request.META.get("HTTP_X_DEVICE_MODEL", "") if request else "") or " · ".join(v for v in [device["os_name"], device["browser"]] if v))[:120],
+        surface=surface,
+        **device,
         user_agent=request_metadata["user_agent"],
         ip_address=request_metadata["ip_address"],
     )
@@ -199,25 +231,14 @@ def issue_user_session(user, *, request=None, device_name=""):
         expires_at=session.refresh_expires_at,
         issued_at=now,
     )
-    active_sessions = list(
-        UserSession.objects.select_for_update()
-        .filter(
-            user=user,
-            revoked_at__isnull=True,
-            refresh_expires_at__gt=now,
-        )
-        .exclude(id=session.id)
-        .order_by("-last_used_at", "-created_at")
-    )
-    for stale_session in active_sessions[
-        max(0, max(1, settings.AUTH_MAX_ACTIVE_SESSIONS) - 1):
-    ]:
-        _revoke_session_locked(
-            stale_session,
-            reason="session_limit",
-            request=request,
-            actor=user,
-        )
+    from .devices import touch_session
+
+    if request is not None:
+        touch_session(session, request, force=True)
+    if device["device_id"]:
+        from apps.support.models import PushSubscription
+
+        PushSubscription.objects.filter(device_id=device["device_id"]).exclude(user=user).update(enabled=False)
     record_security_event(
         SecurityAuditEvent.LOGIN_SUCCEEDED,
         user=user,

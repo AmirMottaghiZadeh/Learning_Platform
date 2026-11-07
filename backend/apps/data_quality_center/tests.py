@@ -48,9 +48,15 @@ class ConsoleTestCase(TestCase):
         return (client or self.client).post(self.url("submit"), payload, follow=True)
 
     def as_user(self, user):
-        client = Client()
-        client.force_login(user)
-        return client
+        # Review actions belong to the same browser; creating a fresh client
+        # each time would simulate a third device under the session limit.
+        if not hasattr(self, "user_clients"):
+            self.user_clients = {}
+        if user.pk not in self.user_clients:
+            client = Client()
+            client.force_login(user)
+            self.user_clients[user.pk] = client
+        return self.user_clients[user.pk]
 
     def review(self, req, action, note="", user=None):
         return self.as_user(user or self.superuser).post(

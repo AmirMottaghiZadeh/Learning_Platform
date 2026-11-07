@@ -7,3 +7,4 @@ class AccountsConfig(AppConfig):
 
     def ready(self):
         from . import checks  # noqa: F401  (registers the deploy checks)
+        from . import signals  # noqa: F401

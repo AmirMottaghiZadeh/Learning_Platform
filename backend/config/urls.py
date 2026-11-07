@@ -34,6 +34,7 @@ else:
 # The admin: one sign-in and home (apps.manage), with every tool under it --
 # the sales console, the site's content panel and the data-quality desk.
 urlpatterns += [
+    path("manage/app/support/", include("apps.support.admin_urls")),
     path("manage/site/", include("apps.website.panel.urls")),
     path("manage/app/", include("apps.announcements.manage_urls")),
     path("manage/", include("apps.manage.urls")),

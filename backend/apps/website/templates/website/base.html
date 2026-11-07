@@ -2,6 +2,8 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
+<meta name="activity-section" content="{{ request.resolver_match.url_name }}">
+<meta name="activity-csrf" content="{{ csrf_token }}">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{{ meta_title }}</title>
 <meta name="description" content="{{ meta_description|oneline }}">
@@ -77,5 +79,6 @@
   <div class="ft-name" aria-hidden="true">{{ site.site_name }}</div>
 </footer>
 <script src="{% static 'website/site.js' %}" defer></script>
+<script src="{% static 'website/activity.js' %}" defer></script>
 </body>
 </html>

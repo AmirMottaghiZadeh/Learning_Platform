@@ -7,6 +7,7 @@ from rest_framework.exceptions import AuthenticationFailed
 
 from .models import UserSession
 from .services import hash_session_token
+from .devices import touch_session
 
 
 class SessionTokenAuthentication(BaseAuthentication):
@@ -44,17 +45,7 @@ class SessionTokenAuthentication(BaseAuthentication):
         if not session.user.is_active:
             raise AuthenticationFailed("This account is inactive.")
 
-        if session.last_used_at <= now - timedelta(minutes=1):
-            UserSession.objects.filter(
-                id=session.id,
-                revoked_at__isnull=True,
-            ).update(
-                last_used_at=now,
-                ip_address=request.META.get("REMOTE_ADDR") or session.ip_address,
-                user_agent=request.META.get("HTTP_USER_AGENT", "")[:255]
-                or session.user_agent,
-            )
-            session.last_used_at = now
+        touch_session(session, request)
 
         return session.user, session
 

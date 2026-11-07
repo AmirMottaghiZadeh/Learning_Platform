@@ -91,6 +91,9 @@ MODULES = (
         Page("gateway", "درگاه پرداخت", "console:gateway", access.is_super, ("console:gateway*",)),
     )),
     Module("app", "اپ", ICONS["app"], (
+        Page("support", "پشتیبانی کاربران", "support_admin:inbox", access.support, ("support_admin:*",)),
+        Page("devices", "دستگاه‌ها و نشست‌ها", "manage:devices", access.is_super, ("manage:devices", "manage:device_revoke")),
+        Page("usage", "نقشهٔ فعالیت کاربران", "manage:usage", access.is_super, ("manage:usage",)),
         Page("announcements", "اعلانات اپ", "app_admin:announcements", access.is_super, ("app_admin:*",)),
         Page("releases", "نسخه‌ها و دانلود", "panel:releases", access.site("download.manage"), ("panel:releases*", "panel:links*")),
         Page("access", "دسترسی مهمان", "console:access", access.is_super, ("console:access",)),

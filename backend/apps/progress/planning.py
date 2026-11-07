@@ -416,13 +416,13 @@ def _is_done_elsewhere(user, item, groups):
 
 
 def _title(item, groups):
-    """What the task is, for the Today box: "Lesson: Antihypertensives"."""
+    """What the task is, for the Today box: "Formulary: Antihypertensives"."""
     topic = _topic_by_key(item.topic_key)
     topic_fa, topic_en = (topic["name_fa"], topic["name_en"]) if topic else ("", "")
     if item.activity_type == StudyPlanItem.LESSON:
         chapter = _chapter(groups, item)
-        return (f"درسنامه: {chapter['name_fa'] if chapter else topic_fa}",
-                f"Lesson: {chapter['name_en'] if chapter else topic_en}")
+        return (f"دارونامه: {chapter['name_fa'] if chapter else topic_fa}",
+                f"Formulary: {chapter['name_en'] if chapter else topic_en}")
     if item.activity_type == StudyPlanItem.QUIZ:
         return f"آزمون: {topic_fa}", f"Quiz: {topic_en}"
     if item.activity_type == StudyPlanItem.FLASHCARDS:

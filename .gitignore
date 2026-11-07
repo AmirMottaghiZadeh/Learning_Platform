@@ -11,6 +11,7 @@
 *.jks
 *.keystore
 credentials.json
+frontend/credentials/
 play-service-account*.json
 
 # Python / Django
@@ -99,3 +100,6 @@ celerybeat.pid
 
 # Playwright MCP browser output (screenshots, snapshots, console logs)
 .playwright-mcp/
+
+# Local support Web Push signing keys
+backend/.private/

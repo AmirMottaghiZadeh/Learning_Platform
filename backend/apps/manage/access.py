@@ -23,7 +23,13 @@ def has_site_role(user):
 
 
 def can_enter(user):
-    return is_super(user) or is_operator(user) or has_site_role(user)
+    return is_super(user) or is_operator(user) or has_site_role(user) or support(user)
+
+
+def support(user):
+    from apps.support.services import can_support
+
+    return can_support(user)
 
 
 def site(perm):

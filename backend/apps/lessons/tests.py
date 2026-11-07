@@ -109,7 +109,7 @@ class LessonTaxonomyTests(TestCase):
         # own when opened, so the chapter carries no lesson content at all.
         res = self.client.get("/api/v1/lessons/chapters/C07/")
         for drug in res.data["drugs"]:
-            self.assertEqual(set(drug), {"slug", "name", "pharm_classes", "atc_group"})
+            self.assertEqual(set(drug), {"slug", "name", "name_fa", "pharm_classes", "atc_group"})
         self.assertNotIn("exam_points", res.data)
 
     def test_lesson_drug_returns_the_lesson_text_but_not_the_raw_label(self):
