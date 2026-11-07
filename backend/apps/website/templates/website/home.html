@@ -52,17 +52,7 @@
         {% if b.bullet_list %}<ul class="checks">{% for x in b.bullet_list %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
         <a class="btn p s" href="{% url 'site:download' %}">همین حالا امتحان کنید</a></div>
       <div class="pv" data-ui>
-        {% if b.screen == "card" %}
-        <div class="lt" data-leitner>
-          <div class="lt-deck"><span class="ghost"></span><span class="ghost"></span>
-            <button class="lt-card" type="button" aria-pressed="false" aria-label="برگرداندن کارت"><span class="in"><span class="face front"><small data-f="box">جعبهٔ ۱ از ۵</small><strong data-f="name">لوزارتان</strong><span class="en" data-f="en">Losartan</span><small data-f="q">مکانیسم اثر؟</small></span><span class="face back"><small>پاسخ</small><strong data-f="a">مهار گیرندهٔ آنژیوتانسین II (ARB)</strong></span></span></button>
-          </div>
-          <div class="lt-ans"><button class="btn hard" type="button" data-ans="0">سخت بود</button><button class="btn p" type="button" data-ans="1">بلد بودم</button></div>
-          <p class="lt-hint" aria-live="polite">کارت را بزنید تا پاسخ را ببینید، بعد جواب بدهید.</p>
-          <div class="lt-bins" aria-label="جعبه‌های لایتنر"><div class="bin"><b>۳</b><span>جعبهٔ ۱</span></div><div class="bin"><b>۲</b><span>جعبهٔ ۲</span></div><div class="bin"><b>۱</b><span>جعبهٔ ۳</span></div><div class="bin"><b>۱</b><span>جعبهٔ ۴</span></div><div class="bin"><b>۰</b><span>جعبهٔ ۵</span></div></div>
-          <div class="lt-scale" aria-hidden="true"><span>مرور هر روز</span><span>مرور با فاصلهٔ بیشتر</span></div>
-        </div>
-        {% else %}{% include "website/_phone.html" with screen=b.screen %}{% endif %}
+        {% include "website/_phone.html" with screen=b.screen %}
       </div>
     </div>
     {% endfor %}

@@ -1,12 +1,11 @@
 from django.conf import settings
 from django.db import models
 
-from apps.flashcards.sections import CARD_SECTIONS, SECTION_CHOICES
+from .sections import CARD_SECTIONS, SECTION_CHOICES
 
 COUNT_CHOICES = [5, 10, 15, 20]
 
-# Bank questions come only from the five flashcard sections, built from the
-# exact facts build_flashcards extracted (apps.quiz.bank_generator).
+# Clinical question fields shared with the authored study-content dataset.
 # Question topics from the study_content pipeline that are not card sections.
 EXTRA_QUESTION_TOPICS = [
     ("adverse_effect", "عوارض جانبی", "Adverse effects", "caution"),
@@ -28,7 +27,7 @@ LEGACY_FIELD_CHOICES = [
 ]
 
 # field -> (fa label, tone) -- tone matches the frontend's SectionTone /
-# toneColors(), the same colors the flashcard back gives each section.
+# toneColors(), matching the clinical reader.
 FIELD_META = {
     **{key: (fa, tone) for key, fa, _en, tone in CARD_SECTIONS},
     **{key: (fa, tone) for key, fa, _en, tone in EXTRA_QUESTION_TOPICS},
@@ -164,3 +163,36 @@ class QuizAnswer(models.Model):
     is_correct = models.BooleanField()
     answered_at = models.DateTimeField(auto_now_add=True)
     client_answered_at = models.DateTimeField(null=True, blank=True)
+
+
+class StudyFact(models.Model):
+    """Shared authored clinical facts used by the question-bank import/export."""
+
+    LANG_CHOICES = [("fa", "Persian"), ("en", "English")]
+
+    ingredient = models.ForeignKey(
+        "drugs.Ingredient",
+        on_delete=models.CASCADE,
+        related_name="study_facts",
+    )
+    section = models.CharField(max_length=20, choices=SECTION_CHOICES)
+    lang = models.CharField(max_length=2, choices=LANG_CHOICES)
+    # Source order within (ingredient, section, lang).
+    order = models.PositiveSmallIntegerField()
+    text = models.TextField()
+
+    class Meta:
+        db_table = "flashcards_flashcardfact"  # Preserve existing shared source content.
+        ordering = ["ingredient_id", "section", "lang", "order"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["ingredient", "section", "lang", "order"],
+                name="flashcards_unique_fact_slot",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["section", "lang"], name="flashcards_fact_section_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.ingredient_id}:{self.section}:{self.lang}#{self.order}"

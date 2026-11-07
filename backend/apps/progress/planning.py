@@ -4,10 +4,10 @@ Deliberately separate from `services.py` (which just records what already
 happened) and `selectors.py` (which just reads): this module *decides* what a
 learner should study next, so its logic -- the mastery formula, the
 generation algorithm, replanning -- stays out of both the views and the other
-apps that feed it signals (lessons/flashcards/quiz).
+apps that feed it signals (lessons/quiz).
 
 Three planning models share this one module because they share the same
-underlying signals (`ReadDrug`, quiz answers, Leitner boxes) -- see
+underlying signals (`ReadDrug`, quiz answers) -- see
 `models.StudyPlan` for what distinguishes "goal" from "maintenance".
 """
 
@@ -16,8 +16,6 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-from apps.flashcards.models import MAX_BOX, LeitnerCard, TopicProgress
-from apps.flashcards.services import due_card_count
 from apps.lessons.data.study_topics import CATEGORIES, STUDY_TOPICS
 from apps.lessons.models import ChapterProgress
 from apps.lessons.selectors import lesson_groups, slugs_for_topic, topic_progress
@@ -34,16 +32,12 @@ LESSON_MINUTES_BY_LEVEL = {"beginner": 14, "intermediate": 10, "advanced": 7}
 # An open-ended daily review (the "clinical" onboarding goal) by default.
 MAINTENANCE_DEFAULT_MINUTES = 10
 QUIZ_MINUTES = 10
-FLASHCARD_MINUTES = 8
 MISTAKE_REVIEW_MINUTES = 10
 
-# Assessment performance is the strongest signal of real mastery, recall
-# (flashcard retention) the next strongest, and merely having read the
-# material the weakest -- see the Mastery section of the planning spec this
-# implements. Whichever signals have no data yet (quiz/flashcards never
-# touched) drop out and the rest are renormalised, so a topic still gets a
-# mastery score from completion alone before the learner has quizzed on it.
-MASTERY_WEIGHTS = {"completion": 0.3, "quiz": 0.4, "recall": 0.3}
+# Assessment accuracy and reading completion are renormalised over the
+# signals available for this learner. Before the first quiz only completion
+# contributes; the ratio between completion and quiz remains 3:4.
+MASTERY_WEIGHTS = {"completion": 0.3, "quiz": 0.4}
 
 _NEVER = timezone.now() - timedelta(days=365 * 100)
 
@@ -65,22 +59,6 @@ def _quiz_accuracy_for_slugs(user, slugs):
     return round(100 * correct / total)
 
 
-def _flashcard_recall_for_slugs(user, slugs):
-    """How well the topic's flashcards are recalled, from the Leitner box:
-    its drawers count misses, so a topic with only drawer-1 cards scores 80
-    and one whose cards sit in drawer 5 scores 0. None while none of the
-    topic's cards was ever in the box -- no recall signal yet."""
-    if not slugs:
-        return None
-    cards = LeitnerCard.objects.filter(user=user, ingredient__slug__in=slugs).exclude(section="")
-    if not cards.exists():
-        return None
-    boxes = list(cards.filter(box__gte=1).values_list("box", flat=True))
-    if not boxes:
-        return 100  # every card that was missed has left the box
-    return round(100 * (1 - (sum(boxes) / len(boxes)) / MAX_BOX))
-
-
 def topic_mastery(user, topic_key):
     """0-100: how well the learner actually knows this topic, as distinct
     from how much of it they've merely read (see `topic_progress` for that)."""
@@ -89,10 +67,6 @@ def topic_mastery(user, topic_key):
     quiz_pct = _quiz_accuracy_for_slugs(user, slugs)
     if quiz_pct is not None:
         signals["quiz"] = quiz_pct
-    recall_pct = _flashcard_recall_for_slugs(user, slugs)
-    if recall_pct is not None:
-        signals["recall"] = recall_pct
-
     total_weight = sum(MASTERY_WEIGHTS[k] for k in signals)
     return round(sum(v * MASTERY_WEIGHTS[k] for k, v in signals.items()) / total_weight)
 
@@ -115,7 +89,7 @@ def _lesson_minutes(user):
 def _topic_backlog(topic_key, group, lesson_minutes=LESSON_MINUTES_PER_CHAPTER, done=frozenset(),
                    done_chapters=frozenset()):
     """Ordered work units for one topic: unread chapters first, then one
-    quiz and one flashcard pass over the whole topic -- each pass left out
+    quiz over the whole topic -- left out
     once `done` (pairs of topic key and activity) says it was done, and a
     chapter left out once the learner ticked its task off (`done_chapters`),
     read or not."""
@@ -143,15 +117,6 @@ def _topic_backlog(topic_key, group, lesson_minutes=LESSON_MINUTES_PER_CHAPTER, 
             "estimated_minutes": QUIZ_MINUTES,
             "reason_fa": f"یک آزمون کوتاه برای سنجش تسلطت روی «{topic['name_fa']}».",
             "reason_en": f"A short quiz to check your grasp of {topic['name_en']}.",
-        })
-    if chapters["all"] and (topic_key, StudyPlanItem.FLASHCARDS) not in done:
-        items.append({
-            "activity_type": StudyPlanItem.FLASHCARDS,
-            "topic_key": topic_key,
-            "atc_code": "",
-            "estimated_minutes": FLASHCARD_MINUTES,
-            "reason_fa": f"مرور فلش‌کارتی داروهای «{topic['name_fa']}».",
-            "reason_en": f"Flashcard review for the {topic['name_en']} drugs.",
         })
     return items
 
@@ -217,7 +182,7 @@ def _goal_items(user, plan):
     groups = _groups_by_topic(user)
     done = set(
         plan.items.filter(
-            status=StudyPlanItem.DONE, activity_type__in=[StudyPlanItem.QUIZ, StudyPlanItem.FLASHCARDS]
+            status=StudyPlanItem.DONE, activity_type=StudyPlanItem.QUIZ
         ).values_list("topic_key", "activity_type")
     )
     done_chapters = set(
@@ -268,16 +233,6 @@ def _maintenance_items(user, plan):
         return [], True
     backlog = []
 
-    due = due_card_count(user)
-    if due:
-        backlog.append({
-            "activity_type": StudyPlanItem.FLASHCARDS,
-            "topic_key": "",
-            "atc_code": "",
-            "estimated_minutes": min(20, max(5, round(due * 0.4))),
-            "reason_fa": f"{due} فلش‌کارت سررسیده برای مرور داری.",
-            "reason_en": f"You have {due} flashcards due for review.",
-        })
     if Mistake.objects.filter(user=user, resolved=False).exists():
         backlog.append({
             "activity_type": StudyPlanItem.MISTAKE_REVIEW,
@@ -394,8 +349,6 @@ def _is_done_elsewhere(user, item, groups):
     activity affects the smart plan" requirement):
     - a lesson: its chapter is fully read;
     - a quiz: a quiz on its topic was finished that day or later;
-    - flashcards: its topic's deck was worked on that day or later, or, for
-      a review of due cards, none are due any more;
     - a mistake review: no mistake is left open."""
     if item.activity_type == StudyPlanItem.LESSON:
         chapter = _chapter(groups, item) if item.atc_code else None
@@ -404,12 +357,6 @@ def _is_done_elsewhere(user, item, groups):
         return bool(item.topic_key) and QuizSession.objects.filter(
             user=user, category=item.topic_key, finished_at__date__gte=item.day
         ).exists()
-    if item.activity_type == StudyPlanItem.FLASHCARDS:
-        if item.topic_key:
-            return TopicProgress.objects.filter(
-                user=user, topic_key=item.topic_key, position__gt=0, updated_at__date__gte=item.day
-            ).exists()
-        return due_card_count(user) == 0
     if item.activity_type == StudyPlanItem.MISTAKE_REVIEW:
         return not Mistake.objects.filter(user=user, resolved=False).exists()
     return False
@@ -425,10 +372,6 @@ def _title(item, groups):
                 f"Formulary: {chapter['name_en'] if chapter else topic_en}")
     if item.activity_type == StudyPlanItem.QUIZ:
         return f"آزمون: {topic_fa}", f"Quiz: {topic_en}"
-    if item.activity_type == StudyPlanItem.FLASHCARDS:
-        if topic:
-            return f"فلش‌کارت: {topic_fa}", f"Flashcards: {topic_en}"
-        return "مرور فلش‌کارت‌های امروز", "Today's flashcard review"
     return "مرور اشتباه‌ها", "Review your mistakes"
 
 

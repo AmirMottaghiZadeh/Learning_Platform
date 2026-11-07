@@ -162,7 +162,7 @@ export interface Chapter {
   progress: ChapterProgress;
 }
 
-export type FocusRowKind = "leitner" | "mistake" | "lesson";
+export type FocusRowKind = "mistake" | "lesson";
 
 export interface FocusRow {
   kind: FocusRowKind;
@@ -301,7 +301,6 @@ export interface Statistics {
   week_bars: number[];
   accuracy_pct: number;
   quizzes: number;
-  reviews: number;
   minutes: number;
   mastery_pct: number;
 }
@@ -334,7 +333,7 @@ export interface StudyPlan {
   fits_deadline?: boolean;
 }
 
-export type PlanItemActivity = "lesson" | "quiz" | "flashcards" | "mistake_review";
+export type PlanItemActivity = "lesson" | "quiz" | "mistake_review";
 export type PlanItemStatus = "pending" | "done" | "skipped";
 
 export interface StudyPlanItem {
@@ -393,118 +392,6 @@ export interface PlanToday {
   week: PlanDay[];
 }
 
-/** One card section (indication, common / serious side effects, dosage
- * forms, contraindications & boxed warning) on a flashcard's back. */
-export interface LeitnerCardField {
-  field: string;
-  label: string;
-  tone: SectionTone;
-  /** Up to three facts. Absent on cards cached before sections had lists. */
-  items?: string[];
-  /** The same facts joined by newlines. */
-  text: string;
-}
-
-/** A topic deck's position for one learner -- GET/POST /flashcards/decks/<key>/... */
-export interface DeckNextTopic {
-  key: string;
-  name_fa: string;
-  name_en: string;
-  category_key: string;
-  category_name_fa: string;
-  category_name_en: string;
-}
-
-export interface DeckProgress {
-  total: number;
-  position: number;
-  known: number;
-  hard: number;
-  finished: boolean;
-  next_topic: DeckNextTopic | null;
-}
-
-export interface DeckTopicSummary {
-  key: string;
-  name_fa: string;
-  name_en: string;
-  total: number;
-  position: number;
-  finished: boolean;
-}
-
-export interface DeckCategory {
-  key: string;
-  name_fa: string;
-  name_en: string;
-  topics_finished: number;
-  topics: DeckTopicSummary[];
-}
-
-export interface DeckOverview {
-  topics_finished: number;
-  cards_reviewed: number;
-  categories: DeckCategory[];
-}
-
-/** One flashcard: one drug's one section (indication, common side
- * effects ...). The front is the drug (Persian name, English name) and the
- * section; the back that section's facts. */
-export interface DeckCard {
-  drug_slug: string;
-  section: string;
-  section_label_fa: string;
-  section_label_en: string;
-  section_tone: SectionTone;
-  front_fa: string;
-  front_en: string;
-  back_fields_fa: LeitnerCardField[];
-  back_fields_en: LeitnerCardField[];
-}
-
-/** "یادم نبود": a drawer up, toward 5; "یادم بود": a drawer down, out from 1. */
-export type BoxRating = "forgot" | "good";
-
-/** What a review button would do: the drawer the card moves to (0 = it
- * leaves the box) and the minutes until it is due again. */
-export interface RatingOutcome {
-  box: number;
-  minutes: number;
-}
-
-/** A card in the Leitner box; `box` is how often it was missed (1-5). */
-export interface BoxCard extends DeckCard {
-  id: number;
-  box: number;
-  outcomes: Record<BoxRating, RatingOutcome>;
-}
-
-export interface LeitnerOverview {
-  drawers: { box: number; count: number; due: number }[];
-  total: number;
-  due: number;
-  /** Cards in today's review, within the day's minutes. */
-  today: number;
-  today_minutes: number;
-  daily_minutes: number;
-  reviewed_today: number;
-  /** Cards that have left the box. */
-  left_box: number;
-  exam_days_left: number | null;
-  /** The first cards of today's review. */
-  preview: BoxCard[];
-}
-
-export interface TopicDeck extends DeckProgress {
-  key: string;
-  name_fa: string;
-  name_en: string;
-  category_key: string;
-  category_name_fa: string;
-  category_name_en: string;
-  cards: DeckCard[];
-}
-
 export interface QuizQuestion {
   id: number;
   order: number;
@@ -530,8 +417,6 @@ export interface QuizAnswerResult {
   correct: boolean;
   correct_index: number;
   extra_context: string[];
-  /** The wrong answer's flashcard went in the Leitner box. */
-  added_to_leitner?: boolean;
 }
 
 export interface QuizFieldBreakdown {

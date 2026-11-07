@@ -120,7 +120,7 @@ class PlanBuilderTests(ConsoleTestCase):
         self.assertRedirects(res, reverse("console:plan_features", args=[plan.pk]), fetch_redirect_response=False)
         self.assertEqual(plan.status, Plan.STATUS_HIDDEN)
 
-        flash = Feature.objects.get(key="flashcards")
+        flash = Feature.objects.get(key="quiz")
         lessons = Feature.objects.get(key="lessons")
         self.assertContains(self.client.get(reverse("console:plan_features", args=[plan.pk])), "امکان کاملاً جدید")
         self.client.post(reverse("console:plan_features", args=[plan.pk]), {
@@ -128,7 +128,7 @@ class PlanBuilderTests(ConsoleTestCase):
             f"f_{lessons.pk}": "on",
         })
         rows = {pf.feature.key: (pf.limit, pf.period) for pf in plan.plan_features.select_related("feature")}
-        self.assertEqual(rows, {"flashcards": (50, "day"), "lessons": (None, "day")})
+        self.assertEqual(rows, {"quiz": (50, "day"), "lessons": (None, "day")})
 
         res = self.client.post(reverse("console:plan_prices", args=[plan.pk]), {"new_days": "90", "new_price": "۳۰۰٬۰۰۰"})
         self.assertRedirects(res, reverse("console:plan_review", args=[plan.pk]), fetch_redirect_response=False)

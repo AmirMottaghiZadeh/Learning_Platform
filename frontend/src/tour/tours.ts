@@ -11,8 +11,6 @@ export type TourKey =
   | "home"
   | "lessons"
   | "lessonList"
-  | "flashcards"
-  | "leitner"
   | "quiz"
   | "calculator"
   | "guidelines"
@@ -61,8 +59,8 @@ export const TOURS: Record<TourKey, TourStep[]> = {
     },
     {
       target: "nav",
-      fa: ["بخش‌های اصلی", "دارونامه، فلش‌کارت، آزمون و پروفایل همیشه این پایین است."],
-      en: ["The main sections", "Lessons, flashcards, quizzes and your profile are always down here."],
+      fa: ["بخش‌های اصلی", "خانه، دارونامه و پروفایل همیشه این پایین است."],
+      en: ["The main sections", "Home, the formulary and your profile are always down here."],
       preview: { kind: "nav" },
     },
   ],
@@ -107,61 +105,6 @@ export const TOURS: Record<TourKey, TourStep[]> = {
     },
   ],
 
-  flashcards: [
-    {
-      target: "flash.stats",
-      fa: ["پیشرفت تو", "زیردسته‌های تمام‌شده و کارت‌هایی که مرور کرده‌ای."],
-      en: ["Your progress", "Topics you have finished and cards you have reviewed."],
-      preview: { kind: "check", title: FA_EN("فشار خون بالا", "Hypertension"), sub: FA_EN("۴۲ از ۱۵۴ کارت", "42 of 154 cards") },
-    },
-    {
-      target: "flash.categories",
-      fa: ["دسته‌ها", "دسته را باز کن، زیردسته را بزن و کارت‌ها را یکی‌یکی ببین."],
-      en: ["Categories", "Open a category, pick a topic and go through its cards one by one."],
-      preview: {
-        kind: "tap",
-        tiles: [FA_EN("قلب و عروق", "Cardio"), FA_EN("غدد", "Endocrine"), FA_EN("گوارش", "GI"), FA_EN("عفونت‌ها", "Infection")],
-        result: FA_EN("فشار خون بالا", "Hypertension"),
-      },
-    },
-    {
-      fa: ["هر کارت", "روی کارت بزن تا جواب را ببینی. «یادم نبود» کارت را به جعبهٔ لایتنر می‌برد."],
-      en: ["Each card", "Tap the card to see the answer. “I didn't know” sends it to the Leitner box."],
-      preview: {
-        kind: "flip",
-        front: "amlodipine",
-        chip: FA_EN("عوارض شایع", "Common side effects"),
-        back: [FA_EN("ادم", "Edema"), FA_EN("برافروختگی", "Flushing"), FA_EN("سردرد، سرگیجه", "Headache, dizziness")],
-      },
-    },
-    {
-      target: "flash.leitner",
-      fa: ["جعبهٔ لایتنر", "کارت‌هایی که بلد نبودی اینجا جمع می‌شوند تا مرورشان کنی."],
-      en: ["Leitner box", "The cards you didn't know gather here for review."],
-      preview: { kind: "drawers" },
-    },
-  ],
-
-  leitner: [
-    {
-      target: "leitner.drawers",
-      fa: ["پنج کشو", "شمارهٔ کشو یعنی چند بار اشتباه شده. هر کشو را بزن تا کارت‌هایش را مرور کنی."],
-      en: ["Five drawers", "A drawer's number is how often its cards were missed. Tap one to review it."],
-      preview: { kind: "drawers" },
-    },
-    {
-      target: "leitner.today",
-      fa: ["مرور امروز", "کارت‌های امروز، از کشوی بالاتر، به اندازهٔ وقت روزانه‌ات."],
-      en: ["Today's review", "Today's cards, highest drawer first, as many as your daily time allows."],
-      preview: { kind: "list", rows: [FA_EN("آملودیپین، عوارض شایع", "amlodipine, side effects"), FA_EN("وارفارین، تداخلات", "warfarin, interactions"), FA_EN("آتورواستاتین، مکانیسم", "atorvastatin, mechanism")] },
-    },
-    {
-      fa: ["دو جواب", "«یادم نبود» کارت را یک کشو بالا می‌برد؛ «یادم بود» یک کشو پایین و از کشوی ۱ بیرون."],
-      en: ["Two answers", "“I didn't know” moves a card up a drawer; “I knew it” moves it down, and out from drawer 1."],
-      preview: { kind: "drawers" },
-    },
-  ],
-
   quiz: [
     {
       target: "quiz.stats",
@@ -177,13 +120,13 @@ export const TOURS: Record<TourKey, TourStep[]> = {
     },
     {
       target: "quiz.topics",
-      fa: ["انتخاب و شروع", "موضوع را بزن، فصل و تعداد سؤال را انتخاب کن و شروع کن. درصد، تسلط توست."],
-      en: ["Pick and start", "Tap a topic, choose a chapter and how many questions, and start. The percentage is your mastery."],
+      fa: ["انتخاب و شروع", "دسته را باز کن، زیردسته را انتخاب کن و تعداد سؤال‌ها را تعیین کن."],
+      en: ["Pick and start", "Open a category, select a topic, then choose the number of questions."],
       preview: { kind: "list", rows: [FA_EN("فشار خون بالا · ۶۲٪", "Hypertension · 62%"), FA_EN("همهٔ فصل‌ها", "All chapters"), FA_EN("۱۰ سؤال", "10 questions")], highlight: 0 },
     },
     {
-      fa: ["جواب دادن", "جواب درست سبز و غلط قرمز می‌شود؛ فلش‌کارت نکتهٔ غلط به جعبهٔ لایتنر می‌رود."],
-      en: ["Answering", "Right turns green, wrong turns red; a wrong answer's flashcard goes to the Leitner box."],
+      fa: ["جواب دادن", "جواب درست سبز و غلط قرمز می‌شود؛ اشتباه‌ها برای مرور ذخیره می‌شوند."],
+      en: ["Answering", "Right turns green, wrong turns red; mistakes are saved for review."],
       preview: { kind: "choice", options: [FA_EN("ریفامپین", "Rifampin"), FA_EN("آمیودارون", "Amiodarone"), FA_EN("ویتامین K", "Vitamin K")], wrong: 0, correct: 1 },
     },
   ],

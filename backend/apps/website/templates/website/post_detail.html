@@ -25,7 +25,7 @@
     </article>
     <aside class="side">
       {% if toc|length > 1 %}<div class="box"><b>در این مطلب</b><nav class="toc" aria-label="فهرست مطالب">{% for id, level, text in toc %}<a class="l{{ level }}" href="#{{ id }}">{{ text }}</a>{% endfor %}</nav></div>{% endif %}
-      <div class="box cta"><b>{{ site.site_name }}</b><p style="margin-bottom:14px;opacity:.9">درس، فلش‌کارت و آزمون ATC در یک اپ.</p><a class="btn s" href="{% url 'site:download' %}">دانلود اپ</a></div>
+      <div class="box cta"><b>{{ site.site_name }}</b><p style="margin-bottom:14px;opacity:.9">دارونامه و آزمون ATC در یک اپ.</p><a class="btn s" href="{% url 'site:download' %}">دانلود اپ</a></div>
       {% if related %}<div class="box"><b>مطالب مرتبط</b><div class="toc">{% for r in related %}<a href="{{ r.get_absolute_url }}">{{ r.title }}</a>{% endfor %}</div></div>{% endif %}
     </aside>
   </div>

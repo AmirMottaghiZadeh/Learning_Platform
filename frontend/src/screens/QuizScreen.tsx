@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, TextInput, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Pressable, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 import { ApiError } from "@/api/client";
@@ -17,16 +17,9 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useBackInterceptor } from "@/navigation/back";
 import { useTheme } from "@/theme/ThemeProvider";
-import { TourTarget, useTour } from "@/tour/TourContext";
-import { fontFamily } from "@/theme/fonts";
-import { layout, spacing } from "@/theme/tokens";
+import { spacing } from "@/theme/tokens";
 import { toneColors } from "@/theme/tone";
-import { groupByCategory } from "@/utils/lessonCategories";
-import { useNavClearance } from "@/components/BottomNav";
-
-const COUNTS = [5, 10, 15, 20];
-const MASTERY_HIGH = 70;
-const MASTERY_MID = 40;
+import { QuizSetup } from "@/components/quiz/QuizSetup";
 
 /** "metronidazole-10432" -> "metronidazole" -- the ingredient slug is a
  * name plus its RxNorm RXCUI (apps.drugs.models.Ingredient.build_slug), and
@@ -43,71 +36,30 @@ function chipColors(tone: SectionTone, colors: ReturnType<typeof useTheme>["colo
   return toneColors(tone, colors);
 }
 
-function masteryColors(pct: number, colors: ReturnType<typeof useTheme>["colors"]) {
-  if (pct >= MASTERY_HIGH) return { bg: colors.accent + "1a", label: colors.accent };
-  if (pct >= MASTERY_MID) return { bg: colors.cautBg, label: colors.cautLabel };
-  return { bg: colors.denyBg, label: colors.denyLabel };
-}
-
 export function QuizScreen() {
-  const navClearance = useNavClearance();
   const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
   const setTab = useNav((s) => s.setTab);
   const goBack = useNav((s) => s.goBack);
   // Set when this screen was opened from the end of a drug's lesson page
-  // ("test yourself on this drug") rather than from the quiz tab -- skips
+  // ("test yourself on this drug") rather than from the quiz browser -- skips
   // the topic-picker setup stage entirely and auto-starts a session scoped
   // to just this one ingredient's bank questions.
   const ingredientSlug = String(useNav((s) => s.params.ingredientSlug ?? ""));
   const autoStarted = useRef(false);
 
+  const [lastSelection, setLastSelection] = useState<{ category: string; atc_code: string; count: number }>();
   const [stage, setStage] = useState<"setup" | "running" | "done">("setup");
-  // `topicKey` is a clinical study-topic code (same taxonomy Lessons browses
-  // by, so picking a subject here means the same thing there); `atcCode`
-  // optionally narrows it to one ATC chapter within that topic.
-  const [topicKey, setTopicKey] = useState<string | null>(null);
-  const [atcCode, setAtcCode] = useState("");
-  const [countIdx, setCountIdx] = useState(1); // COUNTS[1] = 10
-  const count = COUNTS[countIdx];
-  const [search, setSearch] = useState("");
   const [locked, setLocked] = useState(false);
   const [insufficientData, setInsufficientData] = useState(false);
 
+  const { data: groups } = useQuery({ queryKey: ["lesson-groups"], queryFn: lessonsApi.groups });
   const [session, setSession] = useState<QuizSession | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [answerResult, setAnswerResult] = useState<QuizAnswerResult | null>(null);
   const [runningScore, setRunningScore] = useState({ correct: 0, total: 0 });
   const [result, setResult] = useState<QuizResult | null>(null);
-
-  const { data: groups, isLoading: groupsLoading } = useQuery({
-    queryKey: ["lesson-groups"],
-    queryFn: lessonsApi.groups,
-  });
-  const categories = useMemo(() => groupByCategory(groups ?? []), [groups]);
-  const selectedTopic = groups?.find((g) => g.code === topicKey) ?? null;
-
-  const { data: overview } = useQuery({ queryKey: ["quiz-overview"], queryFn: quizApi.overview });
-  const { data: preview } = useQuery({
-    queryKey: ["quiz-preview", topicKey, atcCode, count],
-    queryFn: () => quizApi.preview(topicKey ?? "", atcCode, count),
-    enabled: !!topicKey,
-  });
-
-  const filteredCategories = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return categories;
-    return categories
-      .map((c) => ({ ...c, topics: c.topics.filter((top) => (isFa ? top.name_fa : top.name_en).toLowerCase().includes(q)) }))
-      .filter((c) => c.topics.length > 0);
-  }, [categories, search, isFa]);
-
-  const pickTopic = (code: string) => {
-    setTopicKey((cur) => (cur === code ? null : code));
-    setAtcCode("");
-    setInsufficientData(false);
-  };
 
   const resetRun = () => {
     setIndex(0);
@@ -117,10 +69,10 @@ export function QuizScreen() {
   };
 
   const start = useMutation({
-    mutationFn: () =>
+    mutationFn: (selection?: { category: string; atc_code: string; count: number }) =>
       ingredientSlug
         ? quizApi.start({ ingredient_slug: ingredientSlug })
-        : quizApi.start({ category: topicKey!, atc_code: atcCode, count }),
+        : quizApi.start(selection!),
     onSuccess: (s) => {
       setSession(s);
       resetRun();
@@ -191,8 +143,6 @@ export function QuizScreen() {
   // nav history, back to the lesson page it was opened from.
   const backFromRun = ingredientSlug ? goBack : exitToSetup;
   useBackInterceptor(stage !== "setup" && !ingredientSlug, exitToSetup);
-  // the tour belongs to the topic picker, not a drug's own self-test
-  useTour("quiz", stage === "setup" && !ingredientSlug && !locked && !groupsLoading);
   const goHome = () => setTab("dashboard");
 
   if (locked) {
@@ -263,279 +213,10 @@ export function QuizScreen() {
   }
 
   if (stage === "setup") {
-    const willHaveEnough = !preview || preview.available >= count;
-    return (
-      <Screen scroll={false} padded={false}>
-        <View style={{ flex: 1, padding: layout.screenPadding, paddingBottom: 0 }}>
-          <ScreenChrome title={t("quizSetupTitle")} tour="quiz" />
-
-          {overview ? (
-            <TourTarget id="quiz.stats" style={{ flexDirection: row, gap: 8, marginBottom: 12 }}>
-              <StatTile value={`${n(overview.avg_score_pct)}٪`} label={t("quizStatAvgScore")} color={colors.accent} />
-              <StatTile value={n(overview.total_quizzes)} label={t("quizStatTotalQuizzes")} />
-              <StatTile value={n(overview.weak_topics_count)} label={t("quizStatWeakTopics")} color={colors.cautLabel} />
-            </TourTarget>
-          ) : null}
-
-          <TourTarget id="quiz.search" style={{ marginBottom: 12 }}>
-          <View
-            style={{
-              flexDirection: row,
-              alignItems: "center",
-              gap: 8,
-              backgroundColor: colors.inputBg,
-              borderWidth: 1,
-              borderColor: colors.trackBg,
-              borderRadius: 13,
-              paddingHorizontal: 13,
-              paddingVertical: 10,
-            }}
-          >
-            <AppText muted size={12}>⌕</AppText>
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder={t("quizSearchTopicPlaceholder")}
-              placeholderTextColor={colors.muted}
-              style={{
-                flex: 1,
-                fontFamily: fontFamily("600"),
-                fontSize: 12.5,
-                color: colors.ink,
-                textAlign: isFa ? "right" : "left",
-                writingDirection: isFa ? "rtl" : "ltr",
-                padding: 0,
-              }}
-            />
-          </View>
-          </TourTarget>
-
-          <AppText weight="800" size={11.5} muted style={{ marginBottom: 8 }}>
-            {t("quizCategoryLabel")}
-          </AppText>
-
-          {groupsLoading ? (
-            <LoadingState />
-          ) : (
-            <TourTarget id="quiz.topics" style={{ flex: 1 }}>
-            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 12 }}>
-              <View style={{ gap: 14 }}>
-                {filteredCategories.map((category) => (
-                  <View key={category.code}>
-                    <AppText weight="800" size={11} muted style={{ marginBottom: 6 }}>
-                      {isFa ? category.name_fa : category.name_en}
-                    </AppText>
-                    <View style={{ gap: 8 }}>
-                      {category.topics.map((topic) => {
-                        const sel = topicKey === topic.code;
-                        const totalDrugs = topic.subgroups.reduce((a, s) => a + s.total, 0);
-                        const mastery = overview?.mastery[topic.code];
-
-                        if (!sel) {
-                          const mc = mastery !== undefined ? masteryColors(mastery, colors) : null;
-                          return (
-                            <Pressable
-                              key={topic.code}
-                              onPress={() => pickTopic(topic.code)}
-                              style={{
-                                flexDirection: row,
-                                alignItems: "center",
-                                gap: 10,
-                                paddingVertical: 9,
-                                paddingHorizontal: 12,
-                                borderRadius: 12,
-                                backgroundColor: colors.cardBg,
-                                borderWidth: 1,
-                                borderColor: colors.trackBg,
-                              }}
-                            >
-                              <AppText weight="700" size={12.5} style={{ flex: 1 }}>
-                                {isFa ? topic.name_fa : topic.name_en}
-                              </AppText>
-                              <View
-                                style={{
-                                  paddingHorizontal: 8,
-                                  paddingVertical: 3,
-                                  borderRadius: 999,
-                                  backgroundColor: mc ? mc.bg : colors.softBg,
-                                }}
-                              >
-                                <AppText weight="800" size={9.5} color={mc ? mc.label : colors.muted}>
-                                  {mastery !== undefined ? `${n(mastery)}٪` : t("quizNewTopic")}
-                                </AppText>
-                              </View>
-                            </Pressable>
-                          );
-                        }
-
-                        return (
-                          <View
-                            key={topic.code}
-                            style={{
-                              backgroundColor: colors.cardBg,
-                              borderWidth: 2,
-                              borderColor: colors.accent,
-                              borderRadius: 16,
-                              padding: 14,
-                            }}
-                          >
-                            <View style={{ flexDirection: row, alignItems: "center", gap: 10, marginBottom: 12 }}>
-                              <View
-                                style={{
-                                  width: 34, height: 34, borderRadius: 11,
-                                  backgroundColor: colors.accent, alignItems: "center", justifyContent: "center",
-                                }}
-                              >
-                                <AppText weight="900" size={12} color={colors.onAccent}>
-                                  {(isFa ? topic.name_fa : topic.name_en).slice(0, 2)}
-                                </AppText>
-                              </View>
-                              <View style={{ flex: 1 }}>
-                                <AppText weight="800" size={13.5}>
-                                  {isFa ? topic.name_fa : topic.name_en}
-                                </AppText>
-                                <AppText muted weight="700" size={10.5} style={{ marginTop: 1 }}>
-                                  {n(totalDrugs)} {t("quizDrugCount")}
-                                </AppText>
-                              </View>
-                              {mastery !== undefined ? (
-                                <View style={{ paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999, backgroundColor: colors.accent + "1a" }}>
-                                  <AppText weight="800" size={10.5} color={colors.accent}>
-                                    {t("quizMastery")} {n(mastery)}٪
-                                  </AppText>
-                                </View>
-                              ) : null}
-                            </View>
-
-                            <View style={{ flexDirection: row, flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-                              <Chip
-                                label={t("quizAllChapters")}
-                                active={atcCode === ""}
-                                onPress={() => setAtcCode("")}
-                                activeColors={{ bg: colors.accent, border: colors.accent, label: colors.onAccent }}
-                              />
-                              {topic.subgroups.map((sub) => (
-                                <Chip
-                                  key={sub.code}
-                                  label={`${sub.code} ${isFa ? sub.name_fa : sub.name_en}`}
-                                  active={atcCode === sub.code}
-                                  onPress={() => setAtcCode(sub.code)}
-                                  activeColors={{ bg: colors.accent, border: colors.accent, label: colors.onAccent }}
-                                />
-                              ))}
-                            </View>
-
-                            {preview && preview.by_field.length > 0 ? (
-                              <>
-                                <AppText muted weight="800" size={9.5} style={{ marginBottom: 7 }}>
-                                  {t("quizThisQuizCovers")}
-                                </AppText>
-                                <View style={{ flexDirection: row, flexWrap: "wrap", gap: 6, marginBottom: 13 }}>
-                                  {preview.by_field.map((f) => {
-                                    const cc = chipColors(f.tone, colors);
-                                    return (
-                                      <View
-                                        key={f.field}
-                                        style={{
-                                          paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10,
-                                          backgroundColor: cc.bg, borderWidth: 1, borderColor: cc.border,
-                                        }}
-                                      >
-                                        <AppText weight="700" size={10} color={cc.label}>
-                                          {f.label_fa} {n(f.count)}
-                                        </AppText>
-                                      </View>
-                                    );
-                                  })}
-                                </View>
-                              </>
-                            ) : null}
-
-                            <View
-                              style={{
-                                flexDirection: row, alignItems: "center", justifyContent: "space-between",
-                                paddingTop: 11, borderTopWidth: 1, borderTopColor: colors.softBg,
-                              }}
-                            >
-                              <View>
-                                <AppText weight="700" size={10} muted>{t("quizCountLabel")}</AppText>
-                                {preview ? (
-                                  <AppText weight="600" size={9.5} color={colors.muted} style={{ marginTop: 1 }}>
-                                    ~{n(preview.estimated_minutes)} {t("quizEstimatedMinutes")}
-                                  </AppText>
-                                ) : null}
-                              </View>
-                              <View style={{ flexDirection: row, alignItems: "center", gap: 12 }}>
-                                <Pressable
-                                  onPress={() => setCountIdx((i) => Math.max(0, i - 1))}
-                                  style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: colors.softBg, borderWidth: 1, borderColor: colors.trackBg, alignItems: "center", justifyContent: "center" }}
-                                >
-                                  <AppText weight="800" size={13}>−</AppText>
-                                </Pressable>
-                                <AppText weight="900" size={14} style={{ minWidth: 18, textAlign: "center" }}>{n(count)}</AppText>
-                                <Pressable
-                                  onPress={() => setCountIdx((i) => Math.min(COUNTS.length - 1, i + 1))}
-                                  style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center" }}
-                                >
-                                  <AppText weight="800" size={13} color={colors.onAccent}>+</AppText>
-                                </Pressable>
-                              </View>
-                            </View>
-                            {!willHaveEnough ? (
-                              <AppText size={10.5} weight="700" color={colors.denyLabel} style={{ marginTop: 8 }}>
-                                {t("quizInsufficientData")}
-                              </AppText>
-                            ) : null}
-                          </View>
-                        );
-                      })}
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
-            </TourTarget>
-          )}
-        </View>
-
-        <View
-          style={{
-            padding: 14,
-            // BottomNav overlays the screen (position: absolute) instead of
-            // taking flex space -- Screen's own scroll={true} path reserves
-            // room for it via contentContainerStyle, but scroll={false}
-            // (used here for the sticky footer) doesn't, so this footer has
-            // to reserve it itself or it renders half-hidden behind the nav.
-            paddingBottom: navClearance + 14,
-            backgroundColor: colors.appBg,
-            borderTopWidth: 1,
-            borderTopColor: colors.trackBg,
-          }}
-        >
-          {insufficientData ? (
-            <AppText size={11.5} weight="700" color={colors.denyLabel} style={{ marginBottom: 10, textAlign: "center" }}>
-              {t("quizInsufficientData")}
-            </AppText>
-          ) : null}
-          {start.isError && !insufficientData && !locked ? (
-            <AppText size={11.5} weight="700" color={colors.denyLabel} style={{ marginBottom: 10, textAlign: "center" }}>
-              {quizErrorMessage(start.error, t("quizStartFailed"))}
-            </AppText>
-          ) : null}
-          <Button
-            label={topicKey ? `${t("quizStartBtn")} · ${n(count)}` : t("quizStartBtn")}
-            onPress={() => start.mutate()}
-            loading={start.isPending}
-            disabled={!topicKey || !willHaveEnough}
-          />
-          {!topicKey ? (
-            <AppText muted size={11} weight="600" center style={{ marginTop: 8 }}>
-              {t("quizNoTopicSelected")}
-            </AppText>
-          ) : null}
-        </View>
-      </Screen>
-    );
+    return <QuizSetup pending={start.isPending} initialSelection={lastSelection}
+      onSelectionChange={() => { start.reset(); setInsufficientData(false); }}
+      error={insufficientData ? t("quizInsufficientData") : start.isError ? quizErrorMessage(start.error, t("quizStartFailed")) : undefined}
+      onStart={(category, atc_code, count) => { setInsufficientData(false); setLastSelection({ category, atc_code, count }); start.mutate({ category, atc_code, count }); }} />;
   }
 
   if (stage === "done" && result) {
@@ -631,6 +312,7 @@ export function QuizScreen() {
   }
 
   // running
+  const selectedTopic = groups?.find((group) => group.code === session!.category);
   const q = session!.questions[index];
   const options = isFa ? q.options_fa : q.options_en;
   const answered = answerResult !== null;
@@ -728,12 +410,6 @@ export function QuizScreen() {
         </AppText>
       ) : null}
 
-      {answered && answerResult.added_to_leitner ? (
-        <AppText weight="700" size={12} color={colors.accent} style={{ marginTop: 12 }}>
-          {isFa ? "فلش‌کارت این نکته به جعبهٔ لایتنر رفت." : "This fact's flashcard went into the Leitner box."}
-        </AppText>
-      ) : null}
-
       {answered && answerResult.extra_context.length > 0 ? (
         <View style={{ backgroundColor: colors.softBg, borderRadius: 16, padding: 14, marginTop: 16 }}>
           <View style={{ flexDirection: row, alignItems: "center", gap: 7, marginBottom: 8 }}>
@@ -779,46 +455,5 @@ export function QuizScreen() {
         </View>
       )}
     </Screen>
-  );
-}
-
-function StatTile({ value, label, color }: { value: string; label: string; color?: string }) {
-  const { colors } = useTheme();
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.trackBg, borderRadius: 13, padding: 10 }}>
-      <AppText weight="900" size={16} color={color}>{value}</AppText>
-      <AppText muted weight="700" size={9.5} style={{ marginTop: 2 }}>{label}</AppText>
-    </View>
-  );
-}
-
-function Chip({
-  label,
-  active,
-  onPress,
-  activeColors,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-  activeColors: { bg: string; border: string; label: string };
-}) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        borderRadius: 10,
-        backgroundColor: active ? activeColors.bg : colors.softBg,
-        borderWidth: 1,
-        borderColor: active ? activeColors.border : colors.trackBg,
-      }}
-    >
-      <AppText weight="700" size={10.5} color={active ? activeColors.label : colors.ink}>
-        {label}
-      </AppText>
-    </Pressable>
   );
 }

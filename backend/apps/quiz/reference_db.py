@@ -1,4 +1,4 @@
-"""The quiz bank and the flashcard facts as a portable reference-data file
+"""The quiz bank and the shared study facts as a portable reference-data file
 (see apps.core.reference_db): study_content.db.
 
 Written by `export_study_content_db` from a database that already holds the
@@ -9,7 +9,7 @@ Drugs are matched by RxCUI, which is the same on every database, never by
 local row id. Tables:
 
     question       one row per quiz.BankQuestion  (source_id is the study_content question id)
-    flashcard_fact one row per flashcards.FlashcardFact
+    flashcard_fact one row per quiz.StudyFact
 """
 
 from collections import defaultdict
@@ -18,7 +18,7 @@ from django.db import transaction
 
 from apps.core.reference_db import dumps, expected_count, loads, record_counts, rows
 from apps.drugs.models import Ingredient
-from apps.flashcards.models import FlashcardFact
+from apps.quiz.models import StudyFact
 
 from .models import BankQuestion
 
@@ -38,7 +38,7 @@ CREATE TABLE flashcard_fact (
 
 
 def export(conn):
-    """Writes every bank question that came from study_content and every flashcard
+    """Writes every bank question that came from study_content and every shared study
     fact into `conn`. Returns the row counts."""
     conn.executescript(SCHEMA)
     rxcui = dict(Ingredient.objects.values_list("id", "rxcui"))
@@ -54,7 +54,7 @@ def export(conn):
             for q in questions.iterator(chunk_size=500)
         ],
     )
-    facts = FlashcardFact.objects.order_by("ingredient_id", "section", "lang", "order")
+    facts = StudyFact.objects.order_by("ingredient_id", "section", "lang", "order")
     conn.executemany(
         "INSERT INTO flashcard_fact VALUES (?,?,?,?,?)",
         [(rxcui[f.ingredient_id], f.section, f.lang, f.order, f.text) for f in facts.iterator(chunk_size=2000)],
@@ -66,7 +66,7 @@ def export(conn):
 
 def load(conn, meta, *, prune=False, log=print):
     """Upserts the file's questions (matched on `source_id`) and replaces, for
-    every (drug, section, language) in the file, that group of flashcard facts.
+    every (drug, section, language) in the file, that group of shared study facts.
     With `prune`, bank questions from study_content that are not in the file,
     and fact groups of drugs/sections the file does not mention, are deleted.
     Everything runs in one transaction. Returns a summary dict."""
@@ -109,7 +109,7 @@ def load(conn, meta, *, prune=False, log=print):
             summary["question pruned"] = gone.count()
             gone.delete()
 
-        # -- flashcard facts: whole (drug, section, language) groups are replaced
+        # -- shared study facts: whole (drug, section, language) groups are replaced
         groups = defaultdict(list)
         for row in rows(conn, "SELECT * FROM flashcard_fact ORDER BY rxcui, section, lang, ord", batch=2000):
             groups[(row["rxcui"], row["section"], row["lang"])].append(row)
@@ -122,22 +122,22 @@ def load(conn, meta, *, prune=False, log=print):
                 missing.add(rx)
                 continue
             keep.add((ing, section, lang))
-            FlashcardFact.objects.filter(ingredient_id=ing, section=section, lang=lang).delete()
+            StudyFact.objects.filter(ingredient_id=ing, section=section, lang=lang).delete()
             new_facts += [
-                FlashcardFact(ingredient_id=ing, section=section, lang=lang, order=i["ord"], text=i["text"]) for i in items
+                StudyFact(ingredient_id=ing, section=section, lang=lang, order=i["ord"], text=i["text"]) for i in items
             ]
             total += len(items)
-        FlashcardFact.objects.bulk_create(new_facts, batch_size=1000)
+        StudyFact.objects.bulk_create(new_facts, batch_size=1000)
         summary["flashcard_fact"] = f"{total} in {len(keep)} groups"
         expected = expected_count(meta, "flashcard_fact")
         read = sum(len(v) for v in groups.values())
         if expected is not None and read != expected:
-            raise RuntimeError(f"Read {read} flashcard facts but the file says {expected}; it may be damaged.")
+            raise RuntimeError(f"Read {read} shared study facts but the file says {expected}; it may be damaged.")
         if prune:
             pruned = 0
-            for fact in FlashcardFact.objects.values_list("pk", "ingredient_id", "section", "lang"):
+            for fact in StudyFact.objects.values_list("pk", "ingredient_id", "section", "lang"):
                 if (fact[1], fact[2], fact[3]) not in keep:
-                    FlashcardFact.objects.filter(pk=fact[0]).delete()
+                    StudyFact.objects.filter(pk=fact[0]).delete()
                     pruned += 1
             summary["flashcard_fact pruned"] = pruned
     if missing:

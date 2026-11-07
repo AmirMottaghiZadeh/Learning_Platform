@@ -9,7 +9,6 @@ import { useTheme } from "@/theme/ThemeProvider";
 export type HelpKey =
   | "dashboard"
   | "quiz"
-  | "flashcards"
   | "lessons"
   | "mistakes"
   | "statistics"
@@ -24,10 +23,6 @@ const HELP: Record<HelpKey, { fa: [string, string[]]; en: [string, string[]] }> 
   quiz: {
     fa: ["راهنمای آزمون", ["هر سؤال یک‌بار قابل پاسخ است؛ بعدش جواب درست نشان داده می‌شود.", "در پایان، امتیاز کلی و گزینهٔ تلاش دوباره را می‌بینی.", "سؤال‌ها بر اساس داروهای پرتکرار ساخته شده‌اند."]],
     en: ["Quiz guide", ["Each question is answered once; the answer is revealed after.", "At the end you see your score and a retry option.", "Questions are built around frequently-used drugs."]],
-  },
-  flashcards: {
-    fa: ["راهنمای فلش‌کارت", ["روی کارت بزن تا برگردد و جواب را ببینی.", "بعد از دیدن جواب، آسان یا سخت بودنش را مشخص کن.", "با «جعبهٔ لایتنر» به مرور زمان‌بندی‌شده دسترسی داری."]],
-    en: ["Flashcards guide", ["Tap the card to flip it and see the answer.", "After the answer, rate it easy or hard.", "Use the Leitner box for scheduled review."]],
   },
   lessons: {
     fa: ["راهنمای دارونامه", ["دروس بر اساس کد ATC به گروه و زیرگروه تقسیم شده‌اند.", "روی هر گروه بزن تا زیرگروه‌هایش باز شود.", "نوار رنگی هر زیرگروه، درصد مطالعهٔ همان بخش را نشان می‌دهد."]],

@@ -132,7 +132,6 @@
 | متغیر | پیش‌فرض | رانفلر | کار |
 |---|---|---|---|
 | `QUIZ_API_ENABLED` | `False` | `True` | بدون آن، `/quiz/*` پاسخ 503 می‌دهد |
-| `FLASHCARDS_API_ENABLED` | `False` | `True` | بدون آن، `/flashcards/*` پاسخ 503 می‌دهد |
 | `DATA_QUALITY_CENTER_ENABLED` | `True` | — | `/manage/data/` |
 | `DATA_QUALITY_MIN_REASON_LENGTH` | `12` | — | حداقل طول دلیل هر درخواست ویرایش |
 | `BILLING_CONSOLE_ENABLED` | `True` | — | `/manage/sales/` |

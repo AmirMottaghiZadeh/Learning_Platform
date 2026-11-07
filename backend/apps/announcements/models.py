@@ -32,8 +32,6 @@ class AppAnnouncement(models.Model):
     SCREEN_CHOICES = [
         ("lessons", "درسنامه"),
         ("lesson", "یک گروه درسنامه (کد ATC)"),
-        ("flashcards", "فلش‌کارت"),
-        ("leitner", "جعبهٔ لایتنر"),
         ("quiz", "آزمون"),
         ("uptodate", "UpToDate"),
         ("lexicomp", "LexiComp"),

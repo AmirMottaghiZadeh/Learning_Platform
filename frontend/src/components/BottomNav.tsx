@@ -22,12 +22,10 @@ export function useNavClearance(extra = 0) {
 
 const TAB_META: Record<
   TabKey,
-  { icon: IconName; labelKey: "navHome" | "lessonsLabel" | "cardsLabel" | "quizLabel" | "profileLabel" }
+  { icon: IconName; labelKey: "navHome" | "lessonsLabel" | "profileLabel" }
 > = {
   dashboard: { icon: "nav-home", labelKey: "navHome" },
   lessons: { icon: "nav-lessons", labelKey: "lessonsLabel" },
-  flashcards: { icon: "nav-flashcards", labelKey: "cardsLabel" },
-  quiz: { icon: "nav-quiz", labelKey: "quizLabel" },
   profile: { icon: "nav-profile", labelKey: "profileLabel" },
 };
 
@@ -37,8 +35,7 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
   lessons: "lessons",
   lessonList: "lessons",
   lessonDetail: "lessons",
-  flashcards: "flashcards",
-  quiz: "quiz",
+  quiz: "lessons",
   profile: "profile",
   mistakes: "profile",
   statistics: "profile",

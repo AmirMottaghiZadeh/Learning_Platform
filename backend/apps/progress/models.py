@@ -1,6 +1,6 @@
 """Per-learner progress: streak, XP, study minutes, recurring mistakes, plan.
 
-Quiz and flashcard apps (Phase 3c) call the helpers in `services.py` to bump
+The quiz app calls the helpers in `services.py` to bump
 these; on their own the endpoints just report what is here.
 """
 
@@ -24,7 +24,6 @@ class LearnerProgress(models.Model):
     last_study_date = models.DateField(null=True, blank=True)
 
     total_quizzes = models.PositiveIntegerField(default=0)
-    total_reviews = models.PositiveIntegerField(default=0)
     total_minutes = models.PositiveIntegerField(default=0)
     quiz_answers = models.PositiveIntegerField(default=0)
     quiz_correct = models.PositiveIntegerField(default=0)
@@ -101,7 +100,7 @@ class StudyPlan(models.Model):
       Items for the whole remaining date range are generated up front by
       `services.regenerate_items` and only touched again on replanning.
     - "maintenance": no deadline -- a day's items are recomputed fresh each
-      time (due flashcards, open mistakes, the stalest fully-read chapter)
+      time (open mistakes, the stalest fully-read chapter)
       rather than pre-scheduled, since "what's due" changes daily.
     """
 
@@ -144,12 +143,10 @@ class StudyPlanItem(models.Model):
 
     LESSON = "lesson"
     QUIZ = "quiz"
-    FLASHCARDS = "flashcards"
     MISTAKE_REVIEW = "mistake_review"
     ACTIVITY_CHOICES = [
         (LESSON, "Lesson"),
         (QUIZ, "Quiz"),
-        (FLASHCARDS, "Flashcards"),
         (MISTAKE_REVIEW, "Mistake review"),
     ]
 

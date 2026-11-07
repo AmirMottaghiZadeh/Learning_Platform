@@ -55,14 +55,14 @@ class SiteSettings(models.Model):
     tagline = models.CharField("شعار", max_length=160, default="آموزش داروشناسی بر پایهٔ طبقه‌بندی ATC", blank=True)
     description = models.CharField(
         "توضیح پیش‌فرض (متا)", max_length=300, blank=True,
-        default="درس، فلش‌کارت و آزمون داروشناسی بر پایهٔ طبقه‌بندی جهانی ATC، با خلاصهٔ فارسی از برچسب رسمی دارو.",
+        default="دارونامه و آزمون داروشناسی بر پایهٔ طبقه‌بندی جهانی ATC، با خلاصهٔ فارسی از برچسب رسمی دارو.",
     )
     default_og_image = models.ForeignKey("Media", verbose_name="تصویر پیش‌فرض اشتراک‌گذاری", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
 
     # hero
     hero_title = models.CharField("تیتر صفحهٔ اصلی", max_length=160, default="داروشناسی را دسته‌به‌دسته یاد بگیرید")
     hero_highlight = models.CharField("کلمهٔ پررنگ در تیتر", max_length=60, default="دسته‌به‌دسته", blank=True)
-    hero_text = models.TextField("متن زیر تیتر", default="درس، فلش‌کارت و آزمون بر پایهٔ طبقه‌بندی جهانی ATC. هر دارو در جای درست خودش، با خلاصهٔ فارسی از برچسب رسمی دارو.")
+    hero_text = models.TextField("متن زیر تیتر", default="دارونامه و آزمون بر پایهٔ طبقه‌بندی جهانی ATC. هر دارو در جای درست خودش، با خلاصهٔ فارسی از برچسب رسمی دارو.")
     hero_primary_label = models.CharField("دکمهٔ اصلی", max_length=40, default="دانلود اپ")
     hero_primary_url = models.CharField("نشانی دکمهٔ اصلی", max_length=300, default="/download/")
     hero_secondary_label = models.CharField("دکمهٔ دوم", max_length=40, default="استفاده از وب‌اپ", blank=True)
@@ -543,7 +543,7 @@ class ContentBlock(models.Model):
     FEATURE, SHOWCASE, STEP, AUDIENCE, STAT, FAQ = "feature", "showcase", "step", "audience", "stat", "faq"
     KINDS = [(FEATURE, "کارت ویژگی"), (SHOWCASE, "بخش معرفی (متن و گوشی)"), (STEP, "مرحلهٔ کار"),
              (AUDIENCE, "مخاطب"), (STAT, "عدد و آمار"), (FAQ, "پرسش متداول")]
-    SCREENS = [("list", "فهرست داروها"), ("card", "فلش‌کارت"), ("quiz", "آزمون"), ("dash", "پیشرفت"), ("calc", "ماشین‌حساب")]
+    SCREENS = [("list", "فهرست داروها"), ("quiz", "آزمون"), ("dash", "پیشرفت"), ("calc", "ماشین‌حساب")]
 
     kind = models.CharField("نوع", max_length=10, choices=KINDS, db_index=True)
     title = models.CharField("عنوان", max_length=160, help_text="برای آمار: عدد (مثلاً ۱٬۷۹۴)؛ برای پرسش: خود پرسش")

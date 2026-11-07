@@ -8,31 +8,31 @@ import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
+import { ScreenKey } from "@/navigation/types";
 import { StringKey } from "@/i18n/strings";
 
 // Lessons leads the list so it lands on the leading edge of the row --
 // right in fa (the row is row-reverse there, so the first child sits on the
 // right, same mechanism BottomNav uses), left in en -- with the rest
 // following in the order a learner actually moves through them: study the
-// lesson, test with a quiz, review with flashcards, then check progress.
-const PATHS: { tab: string; icon: IconName; labelKey: StringKey }[] = [
+// lesson, test with a quiz, review mistakes, then check progress.
+const PATHS: { tab: ScreenKey; icon: IconName; labelKey: StringKey }[] = [
   { tab: "lessons", icon: "edu-lessons", labelKey: "lessonsLabel" },
   { tab: "quiz", icon: "edu-quiz", labelKey: "quizLabel" },
-  { tab: "flashcards", icon: "edu-flashcards", labelKey: "cardsLabel" },
   { tab: "statistics", icon: "edu-stats", labelKey: "statsLabel" },
   { tab: "mistakes", icon: "edu-mistakes", labelKey: "mistakesLabel" },
   { tab: "profile", icon: "edu-profile", labelKey: "profileLabel" },
 ];
 
 /** Hub screen for everything that used to sit directly on the dashboard as
- * its own quick-access tile (quiz, flashcards, lessons, mistakes, profile,
+ * its own quick-access tile (quiz, formulary, mistakes, profile,
  * stats) -- now grouped behind one "Education" entry so the dashboard has
  * room for the Medscape reference sections next to it. */
 export function EducationScreen() {
   const { t, row } = useLang();
   const { colors, shadows } = useTheme();
   const goBack = useNav((s) => s.goBack);
-  const setTab = useNav((s) => s.setTab);
+  const navigate = useNav((s) => s.navigate);
 
   return (
     <Screen>
@@ -41,7 +41,7 @@ export function EducationScreen() {
         {PATHS.map((p) => (
           <Pressable
             key={p.tab}
-            onPress={() => setTab(p.tab as any)}
+            onPress={() => navigate(p.tab)}
             style={[
               {
                 flexGrow: 1,

@@ -6,7 +6,7 @@ from .models import DailyStudy, LearnerProgress, Mistake, StudyPlan
 @admin.register(LearnerProgress)
 class LearnerProgressAdmin(admin.ModelAdmin):
     list_display = ["user", "xp", "streak_days", "last_study_date",
-                    "total_quizzes", "total_reviews", "total_minutes"]
+                    "total_quizzes", "total_minutes"]
     search_fields = ["user__username", "user__email"]
 
 

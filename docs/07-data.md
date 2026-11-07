@@ -21,7 +21,7 @@ python manage.py <دستور> [گزینه‌ها]                # کنسول س
 | کد ATC تکمیلی | `backend/apps/drugs/data/atc_supplement` | `apply_atc_supplement` | Postgres |
 | ماشین‌حساب‌ها | `backend/data/calculators.sqlite` (پایپلاین ترجمه) | `export_reference_db` ← `import_calculators_db` | Postgres: `calculators_*` |
 | بیماری‌ها و گایدلاین‌های Medscape | `/home/amir/Documents/Medscape/...` (JSON و تصویر اسکرپر) | `export_reference_db` ← `import_diseases_db` / `import_guidelines_db` | Postgres: `medscape_*` (تصویرها داخل دیتابیس) |
-| سؤال‌ها و فلش‌کارت‌ها | `/home/amir/Documents/openfda/study_content/study_content.db` (ساختهٔ مدل‌های زبانی) | `import_study_content` ← `export_study_content_db` ← `import_study_content_db` | Postgres: `quiz_bankquestion`، `flashcards_flashcardfact` |
+| سؤال‌ها و نکته‌های آموزشی مشترک | `/home/amir/Documents/openfda/study_content/study_content.db` (ساختهٔ مدل‌های زبانی) | `import_study_content` ← `export_study_content_db` ← `import_study_content_db` | Postgres: `quiz_bankquestion`، `flashcards_flashcardfact` |
 | UpToDate | `/home/amir/Documents/UpToDate/` (حدود ۲٫۷ گیگ SQLite) | `migrate_uptodate_to_mysql` | MySQL (`UPTODATE_MYSQL_URL`) |
 | Lexicomp | `/home/amir/Documents/Lexicomp_Drug_Interactions/` (`interact.db` حدود ۹۵ مگ، `info.json`) | کپی دستی فایل‌ها روی دیسک سرویس بک‌اند | دیسک (`LEXICOMP_DB_DIR`) |
 | بستهٔ آفلاین | از همان فایل‌های UpToDate و Lexicomp | `build_offline_package` و آپلود دستی | Object Storage |
@@ -63,8 +63,8 @@ python manage.py <دستور> [گزینه‌ها]                # کنسول س
 | `import_medscape_articles` | medscape | مقاله‌ها از JSON خام اسکرپر | دستی، روی لپ‌تاپ |
 | `export_reference_db` | core | فایل قابل‌حمل ماشین‌حساب، گایدلاین و بیماری | دستی، روی لپ‌تاپ |
 | `import_calculators_db` / `import_guidelines_db` / `import_diseases_db` | calculators / medscape | ایمپورت فایل قابل‌حمل | دستی |
-| `import_study_content` | quiz | سؤال و فلش‌کارت از دیتابیس پایپلاین | دستی، روی لپ‌تاپ |
-| `export_study_content_db` | quiz | فایل قابل‌حمل سؤال و فلش‌کارت | دستی، روی لپ‌تاپ |
+| `import_study_content` | quiz | سؤال و نکتهٔ آموزشی از دیتابیس پایپلاین | دستی، روی لپ‌تاپ |
+| `export_study_content_db` | quiz | فایل قابل‌حمل سؤال و نکتهٔ آموزشی | دستی، روی لپ‌تاپ |
 | `import_study_content_db` | quiz | ایمپورت آن فایل | دستی |
 | `migrate_uptodate_to_mysql` | uptodate | کپی UpToDate به MySQL | دستی، روی لپ‌تاپ |
 | `build_search_lexicon` | uptodate | نگاشت نام فارسی داروهای پایپلاین به مفاهیم UpToDate در `search_lexicon/drugs_fa.csv`، برای [جست‌وجوی هوشمند](search/README.md) | دستی، روی لپ‌تاپ |
@@ -153,7 +153,7 @@ python manage.py import_openfda_db --source <پوشه>
 
 - **بخش‌ها:** هر بخش جدول `meta` دارد: شناسهٔ خروجی، شمارهٔ بخش، تعداد کل بخش‌ها و تعداد ردیف‌ها. ایمپورت مجموعهٔ ناقص یا بخش‌هایی از دو خروجی متفاوت را رد می‌کند.
 - **خروجی دوباره:** بخش‌های خروجی قبلی در پوشه فقط وقتی جایگزین می‌شوند که مجموعهٔ تازه کامل نوشته شده باشد.
-- **ایمپورت:** فقط اضافه یا به‌روزرسانی می‌کند و چیزی را پاک نمی‌کند، چون سؤال‌ها و فلش‌کارت‌های هر دارو به آن وابسته‌اند. ردیف‌ها با RxCUI و (دارو، بخش) تطبیق داده می‌شوند. بخش‌ها با MD5 مقایسه می‌شوند، پس از دیتابیس مقصد فقط ردیف‌هایی خوانده و نوشته می‌شوند که فرق دارند. کل کار در یک تراکنش است.
+- **ایمپورت:** فقط اضافه یا به‌روزرسانی می‌کند و چیزی را پاک نمی‌کند، چون سؤال‌ها و نکته‌های آموزشی مشترکی هر دارو به آن وابسته‌اند. ردیف‌ها با RxCUI و (دارو، بخش) تطبیق داده می‌شوند. بخش‌ها با MD5 مقایسه می‌شوند، پس از دیتابیس مقصد فقط ردیف‌هایی خوانده و نوشته می‌شوند که فرق دارند. کل کار در یک تراکنش است.
 - **حجم فعلی:** حدود ۱۲۷ مگابایت، یعنی یک بخش.
 
 ### `apply_atc_supplement`
@@ -256,7 +256,9 @@ python manage.py import_calculators_db --source <مسیر>/calculators.db
 - **تراکنش و تکرار:** هر ایمپورت در یک تراکنش است و اجرای دوباره امن است.
 - **حجم تقریبی فایل‌ها:** `calculators.db` حدود ۷ مگ، `guidelines.db` حدود ۱۶۰ مگ، `diseases.db` حدود ۲۹۰ مگ.
 
-## سؤال‌ها و فلش‌کارت‌ها (study_content)
+## سؤال‌ها و نکته‌های آموزشی مشترک (study_content)
+
+بخش فلش‌کارت اپ حذف شده است؛ این نکته‌ها محتوای منبعِ بدون دادهٔ کاربر هستند. مدل فعال `quiz.StudyFact` است. نام فیزیکی جدول `flashcards_flashcardfact`، جدول SQLite قابل‌حمل `flashcard_fact` و نام جدول‌های ورودی پایپلاین برای سازگاری فایل‌های موجود حفظ شده‌اند. سوابق کاربر در این خروجی‌ها نیستند.
 
 محتوا را مدل‌های زبانی از متن پروفایل خود هر دارو می‌سازند و یک مدل دوم بررسی می‌کند. پایپلاین بیرون از این مخزن است: `/home/amir/Documents/openfda/study_content/` (با `schema.sql` و `README.md`).
 
@@ -265,7 +267,7 @@ python manage.py import_calculators_db --source <مسیر>/calculators.db
   - فقط از متن پروفایل خود دارو ساخته می‌شود.
   - دوزبانه است، چهار گزینه و یک پاسخ درست دارد.
   - توضیح و نقل‌قول مستند دارد و نقل‌قول با متن منبع تطبیق داده می‌شود.
-- **فلش‌کارت:**
+- **نکتهٔ آموزشی مشترک (`quiz.StudyFact`):**
   - تلگرافی است: ۲ تا ۶ عبارت و هر عبارت حداکثر ۸ کلمه.
   - فقط این موضوع‌ها را پوشش می‌دهد: موارد مصرف، عوارض شایع و جدی خاص همان دارو، تداخل‌ها و هشدارهای مهم (با منع مصرف مطلق)، هشدار جعبه‌ای، و مکانیسم به‌اختصار.
 
@@ -294,8 +296,8 @@ python manage.py import_study_content_db --source <مسیر>/study_content.db
 | `import_study_content_db` | `--source` (الزامی)، `--dry-run`، `--prune` | — |
 
 **تفاوت رفتار:**
-- **`import_study_content`:** جدول‌های سؤال و فلش‌کارت را **کاملاً جایگزین** می‌کند.
-- **`import_study_content_db`:** اضافه یا به‌روزرسانی می‌کند؛ سؤال‌ها با شناسهٔ پایپلاین و فلش‌کارت‌ها به‌صورت گروه «دارو، بخش، زبان».
+- **`import_study_content`:** جدول‌های سؤال و نکتهٔ آموزشی را **کاملاً جایگزین** می‌کند.
+- **`import_study_content_db`:** اضافه یا به‌روزرسانی می‌کند؛ سؤال‌ها با شناسهٔ پایپلاین و نکته‌های آموزشی به‌صورت گروه «دارو، بخش، زبان».
   - داروها با RxCUI تطبیق داده می‌شوند. داروی ناموجود روی سرور رد و گزارش می‌شود.
   - کل کار در یک تراکنش است.
 

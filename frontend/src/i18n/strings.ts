@@ -172,7 +172,6 @@ export const strings = {
     pathsTitle: "درِ ورودی مسیرها",
 
     quizLabel: "آزمون",
-    cardsLabel: "فلش‌کارت",
     devicesTitle: "دستگاه‌های من",
     lessonsLabel: "دارونامه",
     mistakesLabel: "اشتباهات",
@@ -215,24 +214,7 @@ export const strings = {
     quizNext: "سؤال بعدی",
     quizResultTitle: "آزمون کامل شد!",
 
-    cardsTitle: "فلش‌کارت",
-    cardsTapHint: "برای دیدن جزئیات لمس کن",
-    cardEasy: "یادم بود",
-    cardHard: "یادم نبود",
-    cardsDoneTitle: "مرور کامل شد!",
-    cardsDoneSub: "همه‌ی کارت‌های امروز را مرور کردی.",
 
-    leitnerShow: "جعبه‌ی لایتنر",
-    leitnerHide: "بازگشت به مرور",
-    leitnerSub: "هر کشو یک سطح تکرار فاصله‌دار است — دوز مرور با فاصله‌ی زمانی تنظیم می‌شود",
-    leitnerL1: "روزانه",
-    leitnerL2: "هر ۲ روز",
-    leitnerL3: "هفتگی",
-    leitnerL4: "دوهفته‌ای",
-    leitnerL5: "مسلط‌شده",
-    leitnerDueToday: "آماده‌ی مرور — امروز",
-    leitnerCards: "کارت",
-    leitnerStartBtn: "شروع مرور دوز روزانه",
 
     lessonsTitle: "دارونامه",
     lessonsSearchPlaceholder: "جست‌وجوی دارو به فارسی یا انگلیسی…",
@@ -312,7 +294,6 @@ export const strings = {
     statsAccuracy: "دقت کلی",
     statsWeek: "فعالیت هفتگی",
     statsQuizzes: "آزمون کامل",
-    statsReviews: "مرور کارت",
     statsMinutes: "دقیقه مطالعه",
 
     planningTitle: "برنامه‌ریزی مطالعه",
@@ -357,7 +338,6 @@ export const strings = {
 
     planningActivityLesson: "مطالعه‌ی فصل",
     planningActivityQuiz: "آزمون کوتاه",
-    planningActivityFlashcards: "مرور فلش‌کارتی",
     planningActivityMistakeReview: "مرور اشتباهات",
 
     planSectionTitle: "برنامهٔ مطالعه",
@@ -637,7 +617,6 @@ export const strings = {
     pathsTitle: "Your learning paths",
 
     quizLabel: "Quiz",
-    cardsLabel: "Flashcards",
     devicesTitle: "My devices",
     lessonsLabel: "Formulary",
     mistakesLabel: "Mistakes",
@@ -680,24 +659,7 @@ export const strings = {
     quizNext: "Next question",
     quizResultTitle: "Quiz complete!",
 
-    cardsTitle: "Flashcards",
-    cardsTapHint: "Tap to see details",
-    cardEasy: "I knew it",
-    cardHard: "I didn't know",
-    cardsDoneTitle: "Review complete!",
-    cardsDoneSub: "You've reviewed all of today's cards.",
 
-    leitnerShow: "Leitner box",
-    leitnerHide: "Back to review",
-    leitnerSub: "Each drawer is a spaced-repetition level — review dose set by time interval",
-    leitnerL1: "Daily",
-    leitnerL2: "Every 2 days",
-    leitnerL3: "Weekly",
-    leitnerL4: "Biweekly",
-    leitnerL5: "Mastered",
-    leitnerDueToday: "Ready to review — today",
-    leitnerCards: "cards",
-    leitnerStartBtn: "Start daily dose",
 
     lessonsTitle: "Formulary",
     lessonsSearchPlaceholder: "Search a drug in English or Persian…",
@@ -777,7 +739,6 @@ export const strings = {
     statsAccuracy: "Overall accuracy",
     statsWeek: "Weekly activity",
     statsQuizzes: "Quizzes done",
-    statsReviews: "Card reviews",
     statsMinutes: "Study minutes",
 
     planningTitle: "Study planning",
@@ -822,7 +783,6 @@ export const strings = {
 
     planningActivityLesson: "Read a chapter",
     planningActivityQuiz: "Short quiz",
-    planningActivityFlashcards: "Flashcard review",
     planningActivityMistakeReview: "Mistake review",
 
     planSectionTitle: "Study plan",

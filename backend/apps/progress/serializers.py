@@ -46,7 +46,6 @@ class StatisticsSerializer(serializers.Serializer):
     week_bars = serializers.ListField(child=serializers.IntegerField())
     accuracy_pct = serializers.IntegerField()
     quizzes = serializers.IntegerField()
-    reviews = serializers.IntegerField()
     minutes = serializers.IntegerField()
     mastery_pct = serializers.IntegerField()
 

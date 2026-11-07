@@ -42,6 +42,10 @@ flowchart TD
 
 جزئیات قراردادها در [05-api.md](05-api.md) و تنظیمات در [06-configuration.md](06-configuration.md) است.
 
+## آزمون و دسته‌بندی داروها
+
+نوار پایین در [navigation/types.ts](../frontend/src/navigation/types.ts) فقط `dashboard`، `lessons` و `profile` دارد. [EducationScreen.tsx](../frontend/src/screens/EducationScreen.tsx) آزمون را با `navigate("quiz")` باز می‌کند. [QuizSetup.tsx](../frontend/src/components/quiz/QuizSetup.tsx) از `lessonsApi.groups` و `groupByCategory` برای شبکهٔ دسته‌ها و فهرست زیردسته‌ها استفاده می‌کند؛ پس از انتخاب موضوع، پیش‌نمایش و شروع از [quiz/views.py](../backend/apps/quiz/views.py) به [bank_selectors.py](../backend/apps/quiz/bank_selectors.py) و `BankQuestion` می‌رسد. [QuizScreen.tsx](../frontend/src/screens/QuizScreen.tsx) سؤال، پاسخ، نتیجه و مرور اشتباهات را نگه می‌دارد. سوابق فلش‌کارت حذف شده‌اند و نکته‌های مشترک منبع با `quiz.StudyFact` نگه‌داری می‌شوند؛ [سند ۱۹](19-quiz-navigation-and-flashcard-removal.fa.md).
+
 ## خرید از اپ و بازگشت درگاه
 
 [PlansScreen.tsx](../frontend/src/screens/PlansScreen.tsx) کاتالوگ، قیمت و پیش‌فاکتور را از API می‌گیرد. `CheckoutView` در [billing/views.py](../backend/apps/billing/views.py) سفارش حساب واردشده را می‌سازد و `payment_url` برمی‌گرداند. این نشانی به `pay_start` روی سایت می‌رسد؛ پرداخت در مرورگر و با درگاه انتخاب‌شده انجام می‌شود. بازگشت درگاه از مسیرهای [urls_site.py](../backend/config/urls_site.py) به `payment_callback` می‌رسد و منطق [billing/services.py](../backend/apps/billing/services.py) پرداخت و حق دسترسی را ثبت می‌کند. سفارش با مبلغ نهایی صفر همان‌جا در checkout پرداخت‌شده می‌شود و URL پرداخت ندارد.
@@ -108,8 +112,8 @@ flowchart TD
 |---|---|
 | داروها و خلاصه‌ها | دستورهای `drugs/management/commands/`؛ انتقال قابل‌حمل در [drugs/reference_db.py](../backend/apps/drugs/reference_db.py)؛ مدل‌های Django در Postgres |
 | ماشین‌حساب، بیماری و گایدلاین | قالب انتقال مشترک در [core/reference_db.py](../backend/apps/core/reference_db.py)، پیاده‌سازی هر dataset در `reference_db.py` اپ مربوط؛ پس از ایمپورت از مدل‌های Django خوانده می‌شوند |
-| سؤال و واقعیت فلش‌کارت | `import_study_content`، سپس `export_study_content_db` و `import_study_content_db`؛ منطق انتقال در [quiz/reference_db.py](../backend/apps/quiz/reference_db.py)، تطبیق داروها با RxCUI |
-| پیشرفت مطالعه | درخواست‌های درس، آزمون و فلش‌کارت؛ ثبت در مدل‌های Django و منطق [progress/services.py](../backend/apps/progress/services.py) و [progress/planning.py](../backend/apps/progress/planning.py) |
+| سؤال و نکتهٔ آموزشی مشترک | `import_study_content`، سپس `export_study_content_db` و `import_study_content_db`؛ منطق انتقال در [quiz/reference_db.py](../backend/apps/quiz/reference_db.py)، تطبیق داروها با RxCUI |
+| پیشرفت مطالعه | درخواست‌های دارونامه و آزمون؛ ثبت در مدل‌های Django و منطق [progress/services.py](../backend/apps/progress/services.py) و [progress/planning.py](../backend/apps/progress/planning.py) |
 | Lexicomp | [lexicomp/services.py](../backend/apps/lexicomp/services.py) منبع SQLite را مستقیم می‌خواند؛ نسخهٔ محلی کلاینت در [lexicompLocal.ts](../frontend/src/offline/lexicompLocal.ts) است |
 
 فایل قابل‌حمل ایمپورت (`*.db`) با بستهٔ دانلود کاربر (`part-*.bin`) متفاوت است. ترتیب ایمپورت‌ها و مسیر منبع‌ها در [07-data.md](07-data.md) ثبت شده است.

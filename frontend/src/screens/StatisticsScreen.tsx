@@ -90,7 +90,6 @@ export function StatisticsScreen() {
 
       <View style={{ flexDirection: row, gap: 8 }}>
         <StatTile icon="stat-quizzes" value={n(data?.quizzes ?? 0)} label={t("statsQuizzes")} />
-        <StatTile icon="edu-flashcards" value={n(data?.reviews ?? 0)} label={t("statsReviews")} />
         <StatTile icon="entry-today-plan" value={n(data?.minutes ?? 0)} label={t("statsMinutes")} />
       </View>
     </Screen>

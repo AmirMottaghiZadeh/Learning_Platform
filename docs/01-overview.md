@@ -11,7 +11,6 @@
 | قابلیت | کار | اپ بک‌اند | صفحه‌های اپ | کلید فروش (feature) |
 |---|---|---|---|---|
 | دارونامه | داروها بر اساس موضوع درسی و گروه ATC، با خلاصهٔ بالینی دوزبانه هر دارو | `drugs`، `lessons` | `LessonsScreen`، `LessonListScreen`، `LessonDetailScreen` | `lessons` |
-| فلش‌کارت | جعبهٔ لایتنر (۵ جعبه) و دسته‌های موضوعی | `flashcards` | `FlashcardsScreen` | `flashcards` |
 | آزمون | آزمون چهارگزینه‌ای که سرور نمره می‌دهد و اشتباه‌ها را ثبت می‌کند | `quiz` | `QuizScreen` | `quiz` |
 | پیشرفت و برنامهٔ مطالعه | داشبورد، XP و استریک، آمار هفتگی، اشتباهات، برنامهٔ روزانه | `progress` | `DashboardScreen`، `StatisticsScreen`، `MistakesScreen`، `PlanningScreen`، `PlanningSetupScreen` | `stats` |
 | UpToDate | جست‌وجوی مفهوم‌ها و نام‌های جایگزین snapshot با پیشنهاد خودکار؛ تطبیق عنوان و تصحیح املا به‌عنوان مسیر پشتیبان؛ خواندن مقاله، تصویر و جدول تمام‌صفحه | `uptodate` | `UptodateScreen`، `UptodateOutlineScreen`، `UptodateArticleScreen` | `uptodate` |
@@ -148,4 +147,4 @@ Learning Platform/
 └── graphify-out/             گراف دانش کد برای دستیارهای هوش مصنوعی
 ```
 
-در بک‌اند ۱۷ اپ وجود دارد: `accounts`، `announcements`، `billing`، `calculators`، `core`، `data_quality_center`، `drugs`، `flashcards`، `lessons`، `lexicomp`، `manage`، `medscape`، `offline`، `progress`، `quiz`، `uptodate` و `website`. فهرست مسئولیت‌ها در [03-backend.md](03-backend.md) است.
+در بک‌اند ۱۹ اپ ثبت شده است: `accounts`، `activity`، `announcements`، `billing`، `calculators`، `core`، `data_quality_center`، `drugs`، `flashcards`، `lessons`، `lexicomp`، `manage`، `medscape`، `offline`، `progress`، `quiz`، `support`، `uptodate` و `website`. `flashcards` فقط برای مهاجرت‌های تاریخی نصب می‌ماند و قابلیت فعالی ندارد. فهرست مسئولیت‌ها در [03-backend.md](03-backend.md) است.

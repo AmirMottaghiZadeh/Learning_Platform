@@ -5,7 +5,7 @@
  *
  * A step back is, in order:
  *  1. the innermost screen-level interceptor, if one is active -- a screen
- *     with its own internal levels (flashcard category -> topic -> deck, a
+ *     with its own internal levels (quiz category -> topic -> setup, a
  *     running quiz, a calculator's next question, an open sheet) steps back
  *     through those first;
  *  2. the in-app navigation history;

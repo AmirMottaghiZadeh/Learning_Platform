@@ -2,7 +2,6 @@
 
 from datetime import timedelta
 
-from django.apps import apps as django_apps
 from django.utils import timezone
 
 from apps.lessons.selectors import lesson_groups
@@ -39,38 +38,12 @@ def _mastery_pct(groups):
     return round(100 * done / total) if total else 0
 
 
-def _leitner_focus_row(user):
-    """Only present once the flashcards app is installed and has due cards."""
-    if not django_apps.is_installed("apps.flashcards"):
-        return None
-    try:
-        from apps.flashcards.services import due_card_count
-    except Exception:
-        return None
-    due = due_card_count(user)
-    if not due:
-        return None
-    minutes = max(2, round(min(due, 10) * 0.4))
-    return {
-        "kind": "leitner",
-        "title_fa": f"{min(due, 10)} فلش‌کارت سررسیده",
-        "title_en": f"{min(due, 10)} due flashcards",
-        "sub_fa": f"از {due} کارت لایتنر امروز",
-        "sub_en": f"of {due} Leitner cards today",
-        "minutes": minutes,
-        "count": min(due, 10),
-    }
-
-
 def dashboard(user):
     progress = get_progress(user)
     groups = lesson_groups(user)
     next_chapter = _next_chapter(groups)
 
     rows = []
-    leitner = _leitner_focus_row(user)
-    if leitner:
-        rows.append(leitner)
 
     top_mistake = (
         Mistake.objects.filter(user=user, resolved=False).order_by("-count", "-last_seen").first()
@@ -128,7 +101,6 @@ def statistics(user):
         "week_bars": week_bars(user),
         "accuracy_pct": progress.accuracy_pct,
         "quizzes": progress.total_quizzes,
-        "reviews": progress.total_reviews,
         "minutes": progress.total_minutes,
         "mastery_pct": _mastery_pct(groups),
     }

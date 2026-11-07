@@ -1,4 +1,4 @@
-"""Writes the quiz bank and flashcard facts out of this database into one
+"""Writes the quiz bank and shared study facts out of this database into one
 portable SQLite file, study_content.db, for loading into another database
 (the production server) with import_study_content_db (see apps.quiz.reference_db).
 
@@ -18,7 +18,7 @@ DEFAULT_OUT = "/home/amir/Documents/pharmenta-reference-data"
 
 
 class Command(BaseCommand):
-    help = "Export the quiz question bank and flashcard facts into study_content.db."
+    help = "Export the quiz question bank and shared study facts into study_content.db."
 
     def add_arguments(self, parser):
         parser.add_argument("--out", default=DEFAULT_OUT, help=f"Directory to write study_content.db into (default: {DEFAULT_OUT}).")

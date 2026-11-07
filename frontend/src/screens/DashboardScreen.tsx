@@ -295,7 +295,7 @@ export function DashboardScreen() {
                   const first = rows[0];
                   if (first?.kind === "lesson" && first.atc_code) navigate("lessonList", { code: first.atc_code });
                   else if (first?.kind === "mistake") setTab("profile" as any), navigate("mistakes");
-                  else if (rows.length > 0) setTab("flashcards" as any);
+                  else if (rows.length > 0) setTab("lessons");
                 }}
               >
                 <Card

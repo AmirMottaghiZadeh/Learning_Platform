@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     "apps.progress",
     # Installed so their models/migrations exist; the API is gated by
     # QUIZ_API_ENABLED / FLASHCARDS_API_ENABLED (default off -> maintenance router).
-    "apps.flashcards",
+    "apps.flashcards",  # Historical migrations only; no active models or API.
     "apps.quiz",
     # Internal ops tool; its URLs mount only when DATA_QUALITY_CENTER_ENABLED.
     "apps.data_quality_center",
@@ -310,10 +310,8 @@ DATA_QUALITY_MIN_REASON_LENGTH = config(
     cast=int,
 )
 
-# quiz + flashcards ship built but locked: the maintenance routers answer their
-# paths with a 503 envelope until these are switched on deliberately.
+# Quiz routes return a 503 envelope until explicitly enabled.
 QUIZ_API_ENABLED = config("QUIZ_API_ENABLED", default=False, cast=bool)
-FLASHCARDS_API_ENABLED = config("FLASHCARDS_API_ENABLED", default=False, cast=bool)
 # The staff console at /ops/data-quality/ -- on unless switched off; every
 # page needs a staff login, and applying a change needs a superuser.
 DATA_QUALITY_CENTER_ENABLED = config("DATA_QUALITY_CENTER_ENABLED", default=True, cast=bool)

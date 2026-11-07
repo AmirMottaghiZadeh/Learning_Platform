@@ -73,9 +73,9 @@
 | `import_calculators_db` | `--source --dry-run --prune` | ایمپورت `calculators.db` | [07](07-data.md) |
 | `import_guidelines_db` | `--source --dry-run --prune` | ایمپورت `guidelines.db` | [07](07-data.md) |
 | `import_diseases_db` | `--source --dry-run --prune` | ایمپورت `diseases.db` | [07](07-data.md) |
-| `import_study_content` | `--source --statuses --dry-run` | سؤال و فلش‌کارت از پایپلاین (جایگزین کامل) | [07](07-data.md) |
-| `export_study_content_db` | `--out` | فایل قابل‌حمل سؤال و فلش‌کارت | [07](07-data.md) |
-| `import_study_content_db` | `--source --dry-run --prune` | ایمپورت فایل قابل‌حمل سؤال و فلش‌کارت | [07](07-data.md) |
+| `import_study_content` | `--source --statuses --dry-run` | سؤال و نکتهٔ آموزشی از پایپلاین (جایگزین کامل) | [07](07-data.md) |
+| `export_study_content_db` | `--out` | فایل قابل‌حمل سؤال و نکتهٔ آموزشی | [07](07-data.md) |
+| `import_study_content_db` | `--source --dry-run --prune` | ایمپورت فایل قابل‌حمل سؤال و نکتهٔ آموزشی | [07](07-data.md) |
 | `migrate_uptodate_to_mysql` | `--tables --checkpoint-file --reset` | کپی UpToDate به MySQL | [07](07-data.md) |
 | `ensure_uptodate_search_index` | — | ایندکس جست‌وجوی عنوان MySQL | [07](07-data.md) |
 | `build_search_lexicon` | `--pipeline --source` | نام فارسی داروها ← مفاهیم UpToDate برای جست‌وجوی هوشمند | [search](search/phase-1-concept-lexicon-2026-10-31.fa.md) |

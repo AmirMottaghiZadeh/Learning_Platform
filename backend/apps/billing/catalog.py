@@ -13,7 +13,6 @@ BUILTIN_FEATURES = [
     ("lexicomp", "اطلاعات و تداخل‌های Lexicomp", "Lexicomp interactions", True, "بررسی تداخل"),
     ("medscape", "بیماری‌ها و گایدلاین‌های Medscape", "Medscape diseases and guidelines", True, "مقاله"),
     ("calculators", "ماشین‌حساب‌های بالینی", "Clinical calculators", True, "ماشین‌حساب"),
-    ("flashcards", "فلش‌کارت", "Flashcards", True, "کارت"),
     ("quiz", "آزمون‌ها", "Quizzes", True, "سؤال"),
     ("stats", "آمار و برنامه‌ریزی مطالعه", "Statistics and study planning", False, ""),
 ]

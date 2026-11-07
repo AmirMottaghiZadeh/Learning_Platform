@@ -36,12 +36,12 @@
 
 | اپ | مسئولیت | مدل‌های اصلی | نکته |
 |---|---|---|---|
-| `core` | سلامت (`health/live/ready`)، شناسهٔ درخواست و لاگ JSON، قالب خطا، صفحه‌بندی، throttling توزیع‌شده، ابزار SQLite قابل‌حمل (`reference_db.py`)، روتر نگهداری آزمون و فلش‌کارت | `RateLimitSettings` | دستورهای `backup_database` و `export_reference_db`؛ تنظیم محدودیت‌ها در `ratelimit.py` |
+| `core` | سلامت (`health/live/ready`)، شناسهٔ درخواست و لاگ JSON، قالب خطا، صفحه‌بندی، throttling توزیع‌شده، ابزار SQLite قابل‌حمل (`reference_db.py`)، روتر نگهداری آزمون | `RateLimitSettings` | دستورهای `backup_database` و `export_reference_db`؛ تنظیم محدودیت‌ها در `ratelimit.py` |
 | `accounts` | کاربر، نشست با توکن مات، کد پیامکی، رمز، نقش‌ها، رویدادهای امنیتی، پروفایل یادگیرنده | `UserSession`، `SessionRefreshToken`، `OneTimeCode`، `Role`، `RoleAssignment`، `SecurityAuditEvent`، `LearnerProfile` | بررسی‌های deploy: `accounts.W001` و `W002` (پیکربندی sms.ir) |
 | `drugs` | ماده‌های دارویی (کلید RXCUI)، بخش‌های بالینی با خلاصهٔ fa/en، کدها و گروه‌های ATC | `Ingredient`، `IngredientProfileSection`، `AtcCode`، `AtcCategory` | دادهٔ ATC سطح ۱ و ۲ در `drugs/data/atc_reference.py` |
 | `lessons` | درخت درسی: موضوع‌های بالینی (`lessons/data/study_topics.py`) ← فصل (زیرگروه ATC سطح ۲) ← دارو؛ جست‌وجوی دارو؛ پیشرفت خواندن | `ChapterProgress`، `ReadDrug` | یک فصل می‌تواند زیر چند موضوع بیاید |
-| `progress` | XP، استریک، آمار روزانه، اشتباهات، برنامهٔ مطالعه و کارهای روزانه | `LearnerProgress`، `DailyStudy`، `Mistake`، `StudyPlan`، `StudyPlanItem` | اپ‌های آزمون و فلش‌کارت از `progress.services` شمارنده‌ها را بالا می‌برند. `progress.planning` برنامه را می‌سازد: از پاسخ‌های آنبوردینگ (`plan_from_onboarding`)، با سرعتی که سطح کاربر تعیین می‌کند، و با جابه‌جا کردن کارهای روز جامانده (`rollover`) ([05-api.md](05-api.md#پیشرفت-و-برنامه--me)) |
-| `flashcards` | فلش‌کارت برای هر (دارو، بخش)، دسته‌های موضوعی، و جعبهٔ لایتنر: فقط کارت‌های بلدنبوده، ۵ کشو به تعداد اشتباه، مرور هوشمند با فاصلهٔ جدا برای هر کارت (`leitner.py`) | `LeitnerCard`، `FlashcardFact`، `TopicProgress` | با `FLASHCARDS_API_ENABLED` روشن می‌شود ([05-api.md](05-api.md#جعبهٔ-لایتنر)) |
+| `progress` | XP، استریک، آمار روزانه، اشتباهات، برنامهٔ مطالعه و کارهای روزانه | `LearnerProgress`، `DailyStudy`، `Mistake`، `StudyPlan`، `StudyPlanItem` | اپ آزمون از `progress.services` شمارنده‌ها را بالا می‌برند. `progress.planning` برنامه را می‌سازد: از پاسخ‌های آنبوردینگ (`plan_from_onboarding`)، با سرعتی که سطح کاربر تعیین می‌کند، و با جابه‌جا کردن کارهای روز جامانده (`rollover`) ([05-api.md](05-api.md#پیشرفت-و-برنامه--me)) |
+| `flashcards` | پوستهٔ مهاجرت‌های تاریخی؛ بخش و سوابق کاربران حذف شده‌اند | بدون مدل فعال | محتوای مشترک به `quiz.StudyFact` منتقل شده؛ [جزئیات](19-quiz-navigation-and-flashcard-removal.fa.md) |
 | `quiz` | بانک سؤال، جلسهٔ آزمون، نمره‌دهی سمت سرور، ثبت اشتباه | `BankQuestion`، `QuizSession`، `QuizQuestion`، `QuizAnswer` | با `QUIZ_API_ENABLED` روشن می‌شود؛ محتوا از پایپلاین `study_content` |
 | `uptodate` | جست‌وجو و خواندن مقاله‌ها و تصویرهای UpToDate | — | از SQLite (`UPTODATE_DB_DIR`) یا MySQL (`UPTODATE_MYSQL_URL`)؛ بدون منبع → 503 |
 | `lexicomp` | جست‌وجوی دارو و بررسی تداخل | — | از `interact.db` در `LEXICOMP_DB_DIR`؛ بدون منبع → 503 |
@@ -104,7 +104,7 @@
 
 ## صورتحساب و دسترسی (`apps.billing`)
 
-- **ویژگی (Feature):** هر بخش فروشی یک کلید دارد. کلیدهای داخلی در `billing/catalog.py`: `lessons`، `uptodate`، `lexicomp`، `medscape`، `calculators`، `flashcards`، `quiz`، `stats`. مدیر در کنسول می‌تواند ویژگی «محتوایی» (قفل یک دستهٔ مطالعه یا پیشوند ATC) یا «سفارشی» بسازد. ویژگی سفارشی فقط وقتی اعمال می‌شود که کد آن کلید را بررسی کند و کلید در `WIRED_CUSTOM_KEYS` ثبت شود.
+- **ویژگی (Feature):** هر بخش فروشی یک کلید دارد. کلیدهای داخلی در `billing/catalog.py`: `lessons`، `uptodate`، `lexicomp`، `medscape`، `calculators`، `quiz`، `stats`. مدیر در کنسول می‌تواند ویژگی «محتوایی» (قفل یک دستهٔ مطالعه یا پیشوند ATC) یا «سفارشی» بسازد. ویژگی سفارشی فقط وقتی اعمال می‌شود که کد آن کلید را بررسی کند و کلید در `WIRED_CUSTOM_KEYS` ثبت شود.
 - **پلن و محصول:** مجموعه‌ای از ویژگی‌ها، هر کدام با سقف روزانه یا ماهانه (تقویم تهران، ماه شمسی) یا بی‌سقف، و یک یا چند قیمت با مدت (`duration_days`؛ خالی یعنی دائمی). پلنی که `is_free` دارد را همه دارند.
 - **حق دسترسی (Entitlement):** با خرید یا با دادن دستی در کنسول ساخته می‌شود. نسخه‌ای از ویژگی‌های پلن در لحظهٔ خرید را نگه می‌دارد، پس ویرایش پلن فقط روی خریدهای بعدی اثر دارد. اگر دو منبع یک ویژگی را بدهند، دست‌ودل‌بازترش حساب می‌شود.
 - **اعمال (`billing/enforcement.py`):** ویوهای محتوا `require_feature(request, key, item=..., consume=...)` را صدا می‌زنند.
@@ -179,7 +179,7 @@
   - **`user`:** سقف همهٔ درخواست‌های یک کاربر واردشده. پیش‌فرض ندارد و فقط از مدیریت (یا `DRF_USER_THROTTLE_RATE`) روشن می‌شود. درخواست بدون ورود را نمی‌شمارد؛ آن کار `anon` است.
   - برای scopeهای `THROTTLE_FAIL_CLOSED_SCOPES` (ورود، ثبت‌نام، بازیابی، کد پیامکی، انتخاب رمز)، اگر کش در دسترس نباشد، درخواست رد می‌شود.
 - **مستندات زنده:** drf-spectacular در `/api/v1/schema/` و `/api/v1/docs/`. برای ورودی و خروجی هر ویو از `@extend_schema` استفاده کنید.
-- **پرچم‌های قابلیت:** `QUIZ_API_ENABLED` و `FLASHCARDS_API_ENABLED`. اگر خاموش باشند، روتر نگهداری به همهٔ مسیرهای آن بخش `503 FEATURE_NOT_AVAILABLE` می‌دهد. کنسول‌ها هم `DATA_QUALITY_CENTER_ENABLED` و `BILLING_CONSOLE_ENABLED` را دارند.
+- **پرچم‌های قابلیت:** فقط `QUIZ_API_ENABLED`. اگر خاموش باشد، روتر نگهداری به مسیرهای آزمون `503 FEATURE_NOT_AVAILABLE` می‌دهد. کنسول‌ها هم `DATA_QUALITY_CENTER_ENABLED` و `BILLING_CONSOLE_ENABLED` را دارند.
 
 ## کار پس‌زمینه
 

@@ -16,7 +16,7 @@ export const CACHE_MAX_AGE = 7 * DAY;
  * build is then discarded on start instead of being fed to newer code. Also
  * when data the app caches for a day was corrected on the server (calculator
  * formulas, lesson text) and should not wait out that day. */
-export const CACHE_BUSTER = "2026-11-07";
+export const CACHE_BUSTER = "2026-11-07-no-flashcards";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,8 +74,6 @@ const PERSISTED_KEYS = new Set([
   "lesson-groups",
   "chapter",
   "lesson-drug",
-  "flashcards-due",
-  "flashcards-boxes",
   "quiz-overview",
   "calculators",
   "calculator-categories",

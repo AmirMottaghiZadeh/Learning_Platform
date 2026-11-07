@@ -13,9 +13,7 @@ type Nav = {
 const SCREENS: Record<string, (nav: Nav, param: string) => void> = {
   lessons: (nav) => nav.setTab("lessons"),
   lesson: (nav, code) => nav.navigate("lessonList", { code }),
-  flashcards: (nav) => nav.setTab("flashcards"),
-  leitner: (nav) => nav.navigate("flashcards", { leitner: true }),
-  quiz: (nav) => nav.setTab("quiz"),
+  quiz: (nav) => nav.navigate("quiz"),
   uptodate: (nav) => nav.navigate("uptodate"),
   lexicomp: (nav) => nav.navigate("lexicomp"),
   calculator: (nav) => nav.navigate("calculator"),

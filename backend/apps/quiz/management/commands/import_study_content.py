@@ -2,7 +2,7 @@
 
 Source: the SQLite database /home/amir/Documents/openfda/study_content/study_content.db
 (opened read-only). Questions go to quiz.BankQuestion, flashcard phrases to
-flashcards.FlashcardFact. The command replaces whatever those two tables hold
+quiz.StudyFact. The command replaces whatever those two tables hold
 (wipe-and-reload, idempotent), like import_openfda.
 
 Which rows: those whose status is in --statuses. The default is draft, verified
@@ -13,7 +13,7 @@ Flashcard kind -> card section:
     indication -> indication, mechanism -> mechanism, adverse_common -> adr_common,
     adverse_serious -> adr_serious, interaction -> interaction, warning -> warning,
     boxed_warning -> contra_boxed
-Each phrase of a flashcard becomes one FlashcardFact per language.
+Each phrase of a flashcard becomes one StudyFact per language.
 
 Question topic -> field: the topic key itself, except contraindication -> contra_boxed.
 Difficulty 1-2 -> medium, 3 -> hard.
@@ -25,7 +25,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.drugs.models import Ingredient
-from apps.flashcards.models import FlashcardFact
+from apps.quiz.models import StudyFact
 from apps.quiz.models import BankQuestion
 
 DEFAULT_SOURCE = "/home/amir/Documents/openfda/study_content/study_content.db"
@@ -77,7 +77,7 @@ class Command(BaseCommand):
         try:
             with transaction.atomic():
                 BankQuestion.objects.all().delete()
-                FlashcardFact.objects.all().delete()
+                StudyFact.objects.all().delete()
 
                 # -- questions
                 questions = []
@@ -119,8 +119,8 @@ class Command(BaseCommand):
                         for lang, text in (("fa", it["text_fa"]), ("en", it["text_en"])):
                             n = order.get((ing, section, lang), 0)
                             order[(ing, section, lang)] = n + 1
-                            facts.append(FlashcardFact(ingredient_id=ing, section=section, lang=lang, order=n, text=text))
-                FlashcardFact.objects.bulk_create(facts, batch_size=1000)
+                            facts.append(StudyFact(ingredient_id=ing, section=section, lang=lang, order=n, text=text))
+                StudyFact.objects.bulk_create(facts, batch_size=1000)
                 stats["facts"] = len(facts)
 
                 if options["dry_run"]:

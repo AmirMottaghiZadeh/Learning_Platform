@@ -53,27 +53,19 @@ class QuizApiTests(TestCase):
         self.assertEqual(res.status_code, 201, res.data)
         return res.data
 
-    def test_a_wrong_answer_puts_its_flashcard_in_the_leitner_box(self):
-        from apps.flashcards.models import FlashcardFact, LeitnerCard
-
+    def test_wrong_answers_work_without_a_flashcard_side_effect(self):
         data = self._start()
         session = QuizSession.objects.get(pk=data["id"])
-        wrong, right = list(session.questions.all()[:2])
-        drug = Ingredient.objects.get(slug=wrong.subject_slug)
-        FlashcardFact.objects.create(ingredient=drug, section="indication", lang="fa", order=0, text="کاربرد")
-
+        question = session.questions.first()
         res = self.client.post(
             f"/quiz/{session.id}/answer/",
-            {"question_id": wrong.id, "selected_index": (wrong.correct_index + 1) % 4},
+            {"question_id": question.id, "selected_index": (question.correct_index + 1) % 4},
             format="json",
         )
-        self.assertTrue(res.data["added_to_leitner"])
-        card = LeitnerCard.objects.get(user=self.user)
-        self.assertEqual((card.ingredient_id, card.section, card.box), (drug.id, "indication", 1))
-        res = self.client.post(
-            f"/quiz/{session.id}/answer/", {"question_id": right.id, "selected_index": right.correct_index}, format="json"
-        )
-        self.assertFalse(res.data["added_to_leitner"])
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(res.data["correct"])
+        self.assertNotIn("added_to_leitner", res.data)
+        self.assertFalse(question.answer.is_correct)
 
     def test_start_returns_questions_without_the_answer_key(self):
         data = self._start()

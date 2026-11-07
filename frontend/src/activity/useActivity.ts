@@ -7,6 +7,7 @@ import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
 
 type Event = { id: string; section: string; action: "view" | "engagement" | "click"; duration_seconds: number; x?: number; y?: number; area?: "screen" | "article"; viewport?: "mobile" | "tablet" | "desktop" };
+const activeEvents = (events: Event[]) => events.filter(event => !["flashcards", "leitner"].includes(event.section));
 const writers = new Map<string, Promise<void>>();
 const flushing = new Set<string>();
 let clickCapture: ((x: number, y: number, area: "screen" | "article", width: number) => void) | null = null;
@@ -30,7 +31,7 @@ export function useActivity() {
     const enqueue = (event: Event) => {
       const operation = (writers.get(key) || Promise.resolve()).then(async () => {
         try {
-          const events: Event[] = JSON.parse(await AsyncStorage.getItem(key) || "[]");
+          const events: Event[] = activeEvents(JSON.parse(await AsyncStorage.getItem(key) || "[]"));
           events.push(event);
           await AsyncStorage.setItem(key, JSON.stringify(events.slice(-500)));
         } catch { /* Analytics storage must never block reading. */ }
@@ -46,13 +47,13 @@ export function useActivity() {
       flushing.add(key);
       await writers.get(key);
       try {
-        const events: Event[] = JSON.parse(await AsyncStorage.getItem(key) || "[]");
+        const events: Event[] = activeEvents(JSON.parse(await AsyncStorage.getItem(key) || "[]"));
         const batch = events.slice(0, 100);
         if (!batch.length) return;
         await apiClient.post("/activity/events/", { events: batch });
         const ids = new Set(batch.map(e => e.id));
         const operation = (writers.get(key) || Promise.resolve()).then(async () => {
-          const current: Event[] = JSON.parse(await AsyncStorage.getItem(key) || "[]");
+          const current: Event[] = activeEvents(JSON.parse(await AsyncStorage.getItem(key) || "[]"));
           await AsyncStorage.setItem(key, JSON.stringify(current.filter(e => !ids.has(e.id))));
         });
         writers.set(key, operation);

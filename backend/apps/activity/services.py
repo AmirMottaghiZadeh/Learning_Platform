@@ -10,7 +10,7 @@ from .models import ActivityEvent
 
 APP_SECTIONS = {
     "dashboard": "خانه", "lessons": "دارونامه", "lessonList": "فهرست داروها", "lessonDetail": "جزئیات دارو",
-    "flashcards": "فلش‌کارت", "quiz": "آزمون", "profile": "پروفایل", "mistakes": "اشتباهات", "statistics": "آمار",
+    "quiz": "آزمون", "profile": "پروفایل", "mistakes": "اشتباهات", "statistics": "آمار",
     "planning": "برنامهٔ مطالعه", "planningSetup": "تنظیم برنامه", "uptodate": "جست‌وجوی آپتودیت",
     "uptodateOutline": "فهرست مقالهٔ آپتودیت", "uptodateArticle": "خواندن آپتودیت", "lexicomp": "تداخلات دارویی",
     "downloads": "دانلودها", "settings": "تنظیمات", "plans": "خرید اشتراک", "education": "آموزش",

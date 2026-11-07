@@ -20,8 +20,8 @@
       {% if in_app %}
       <section class="dn-sec dn-more" id="more">
         <h2>ادامهٔ درس‌نامهٔ {{ name_fa }} در اپ</h2>
-        <p>این بخش‌ها و فلش‌کارت و آزمون همین دارو در اپ {{ site.site_name }} است:</p>
-        <ul class="dn-applist">{% for t in in_app %}<li>{{ t }}</li>{% endfor %}<li>فلش‌کارت لایتنر</li><li>آزمون</li></ul>
+        <p>این بخش‌ها و آزمون همین دارو در اپ {{ site.site_name }} است:</p>
+        <ul class="dn-applist">{% for t in in_app %}<li>{{ t }}</li>{% endfor %}<li>آزمون</li></ul>
         <div class="row"><a class="btn p" href="{{ site.app_url }}">ادامه در وب‌اپ</a><a class="btn" href="{% url 'site:download' %}">دانلود اپ</a></div>
       </section>
       {% endif %}
@@ -31,7 +31,7 @@
     <aside class="side">
       <div class="box"><b>در این صفحه</b><nav class="toc" aria-label="فهرست">{% for s in sections %}<a href="#{{ s.key }}">{{ s.title }}</a>{% endfor %}{% if in_app %}<a href="#more">ادامه در اپ</a>{% endif %}</nav></div>
       {% if related %}<div class="box"><b>داروهای هم‌گروه</b><div class="toc">{% for r in related %}<a href="{% url 'site:drug' r.slug %}">{{ r.name_fa }} <span dir="ltr" style="opacity:.7">{{ r.name }}</span></a>{% endfor %}</div><a class="dn-all" href="{% url 'site:drugs' %}">همهٔ داروهای دارونامه ‹</a></div>{% endif %}
-      <div class="box cta"><b>{{ site.site_name }}</b><p style="margin-bottom:14px;opacity:.9">درس‌نامهٔ کامل، فلش‌کارت و آزمون داروشناسی در یک اپ.</p><a class="btn s" href="{% url 'site:download' %}">دانلود اپ</a></div>
+      <div class="box cta"><b>{{ site.site_name }}</b><p style="margin-bottom:14px;opacity:.9">دارونامهٔ کامل و آزمون داروشناسی در یک اپ.</p><a class="btn s" href="{% url 'site:download' %}">دانلود اپ</a></div>
     </aside>
   </div>
 </div>

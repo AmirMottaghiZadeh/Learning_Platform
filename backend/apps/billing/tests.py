@@ -47,7 +47,7 @@ class SeedTests(TestCase):
     def test_free_plan_holds_every_builtin_feature_uncapped(self):
         free = Plan.objects.get(is_free=True)
         rows = {pf.feature.key: pf.limit for pf in free.plan_features.select_related("feature")}
-        self.assertEqual(set(rows), {"lessons", "uptodate", "lexicomp", "medscape", "calculators", "flashcards", "quiz", "stats"})
+        self.assertEqual(set(rows), {"lessons", "uptodate", "lexicomp", "medscape", "calculators", "quiz", "stats"})
         self.assertTrue(all(limit is None for limit in rows.values()))
 
 
@@ -116,7 +116,7 @@ class AccessTests(TestCase):
         self.assertNotIn("lexicomp", services.effective_features(self.user, when=later))
 
     def test_content_feature_fences_its_scope(self):
-        narrow_free_plan("lessons", "flashcards")
+        narrow_free_plan("lessons", "quiz")
         Feature.objects.create(key="cardio-pack", name_fa="بسته قلب", kind=Feature.KIND_CONTENT,
                                scope_type="topic_category", scope_value="cardio-blood")
         Feature.objects.create(key="c09", name_fa="ACE", kind=Feature.KIND_CONTENT,

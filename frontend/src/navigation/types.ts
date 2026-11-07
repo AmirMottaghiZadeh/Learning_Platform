@@ -1,7 +1,8 @@
-export type TabKey = "dashboard" | "lessons" | "flashcards" | "quiz" | "profile";
+export type TabKey = "dashboard" | "lessons" | "profile";
 
 export type ScreenKey =
   | TabKey
+  | "quiz"
   | "auth"
   | "onboarding"
   | "lessonList"
@@ -30,10 +31,7 @@ export type ScreenKey =
   | "medscapeArticle"
   | "medscapeSpecialty";
 
-export const TAB_ORDER: TabKey[] = ["dashboard", "lessons", "flashcards", "quiz", "profile"];
+export const TAB_ORDER: TabKey[] = ["dashboard", "lessons", "profile"];
 
-/** Tabs that are built but locked server-side (feature flags off). Both quiz
- * and flashcards are live now (QUIZ_API_ENABLED / FLASHCARDS_API_ENABLED) --
- * kept as an empty list, not removed, so the next tab that ships behind a
- * flag has somewhere to go. */
+/** Reserved for tabs shipped behind a server feature flag. */
 export const LOCKED_TABS: TabKey[] = [];

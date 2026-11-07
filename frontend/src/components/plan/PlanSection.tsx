@@ -132,14 +132,10 @@ function SummaryLine({ data }: { data: PlanToday }) {
 
 function useOpenActivity() {
   const navigate = useNav((s) => s.navigate);
-  const setTab = useNav((s) => s.setTab);
   return (item: StudyPlanItem) => {
     if (item.activity_type === "lesson" && item.atc_code) navigate("lessonList", { code: item.atc_code });
     else if (item.activity_type === "mistake_review") navigate("mistakes");
-    else if (item.activity_type === "quiz") setTab("quiz");
-    // a topic's flashcard pass opens its deck; a review of due cards, the Leitner box
-    else if (item.activity_type === "flashcards")
-      navigate("flashcards", item.topic_key ? { topic: item.topic_key } : { leitner: true });
+    else if (item.activity_type === "quiz") navigate("quiz", { topic: item.topic_key });
   };
 }
 

@@ -26,10 +26,6 @@ if settings.QUIZ_API_ENABLED:
 else:
     urlpatterns.append(path("api/", include("apps.core.quiz_maintenance_urls")))
 
-if settings.FLASHCARDS_API_ENABLED:
-    urlpatterns.append(path("api/", include("apps.flashcards.urls")))
-else:
-    urlpatterns.append(path("api/", include("apps.core.flashcards_maintenance_urls")))
 
 # The admin: one sign-in and home (apps.manage), with every tool under it --
 # the sales console, the site's content panel and the data-quality desk.

@@ -31,13 +31,12 @@ def _touch_streak(progress, today):
     progress.last_study_date = today
 
 
-def record_study(user, *, minutes=0, reviews=0, quizzes=0, xp=0):
+def record_study(user, *, minutes=0, quizzes=0, xp=0):
     """Log study activity for today and roll the streak / totals forward."""
     today = timezone.localdate()
     progress = get_progress(user)
     _touch_streak(progress, today)
     progress.total_minutes += max(0, minutes)
-    progress.total_reviews += max(0, reviews)
     progress.total_quizzes += max(0, quizzes)
     progress.xp += max(0, xp)
     progress.save()

@@ -221,37 +221,6 @@ p{margin:0}
 .checks li::before{content:"";flex:none;width:26px;height:26px;border-radius:8px;background:var(--p2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/16px no-repeat;margin-top:3px}
 @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 
-/* the Leitner deck you can play */
-.lt{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:520px}
-.lt-deck{position:relative;width:min(100%,380px);aspect-ratio:1.42/1;margin-bottom:12px}
-.lt-deck .ghost{position:absolute;inset:0;border-radius:24px;border:2px solid var(--stroke);background:var(--light)}
-.lt-deck .ghost:nth-child(1){transform:translate(-14px,14px) rotate(-4deg);background:var(--mint)}
-.lt-deck .ghost:nth-child(2){transform:translate(-7px,7px) rotate(-2deg)}
-.lt-card{all:unset;direction:rtl;cursor:pointer;position:absolute;inset:0;perspective:1200px;-webkit-tap-highlight-color:transparent}
-.lt-card .in{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .6s var(--spring)}
-.lt-card[aria-pressed="true"] .in{transform:rotateY(180deg)}
-.lt-card .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:24px;border:2px solid var(--stroke);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:20px;text-align:center;box-shadow:0 6px 0 var(--edge)}
-.lt-card .back{transform:rotateY(180deg);background:#125954;color:#fff;border-color:#125954}
-.lt-card small{font-size:13.5px;font-weight:500;color:var(--muted)}
-.lt-card .back small{color:#A3D5BB}
-.lt-card strong{font-size:clamp(28px,3.4vw,38px);font-weight:900;line-height:1.35;color:var(--h)}
-.lt-card .back strong{font-size:20px;line-height:1.7;color:#fff}
-.lt-card .en{direction:ltr;font-size:14px;color:var(--p2);font-weight:700}
-.lt-card:focus-visible .face{outline:3px solid var(--coral);outline-offset:4px}
-.lt-ans{display:flex;gap:10px}
-.lt-ans .btn{min-width:140px}
-.lt-ans .hard{border-color:var(--coral-ink);color:var(--coral-ink)}
-.lt-ans .hard:hover{box-shadow:0 4px 0 var(--coral-ink)}
-.lt-hint{font-size:13.5px;color:var(--muted);text-align:center;min-height:2em}
-.lt-bins{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%}
-.bin{position:relative;border-radius:12px 12px 16px 16px;background:var(--surface);border:2px solid var(--stroke);padding:16px 4px 8px;text-align:center;overflow:hidden;transition:background .25s}
-.bin::before{content:"";position:absolute;inset:0 0 auto;height:10px;background:var(--stroke)}
-.bin b{display:block;font-size:26px;font-weight:900;line-height:1.3;color:var(--h)}
-.bin span{font-size:13px;color:var(--muted);font-weight:500}
-.bin.hot{background:var(--light)}
-.lt-scale{display:flex;justify-content:space-between;width:100%;font-size:13px;color:var(--muted);font-weight:500}
-.lt-fly{position:fixed;z-index:60;pointer-events:none;border-radius:16px;border:2px solid var(--stroke);background:var(--surface);display:grid;place-items:center;font-weight:900;color:var(--h)}
-
 /* ATC groups */
 .atc{display:grid;grid-template-columns:repeat(7,1fr);gap:14px}
 .atc div{border-radius:20px;padding:16px 14px;min-height:130px;transition:transform .25s var(--ease),box-shadow .25s var(--ease),background .25s}
@@ -510,7 +479,6 @@ a.rel:hover{transform:translateY(-3px);box-shadow:0 calc(var(--lift) + 3px) 0 va
   .ft .wrap{grid-template-columns:1fr}.ft .trustbar{padding:14px 14px 14px 18px;gap:14px}.ft .seal{width:92px;height:100px}.ft .seal img{max-height:88px}.nl .input{width:100%}.nl form{width:100%;margin:0}.nl{padding:22px 20px}
   .adj{grid-template-columns:1fr}.sec{padding-block:72px 0}
   .center-card{margin:28px 0;padding:26px 22px}.sumtbl td{font-size:14px}.tab{padding:8px 16px}
-  .lt-ans{width:100%}.lt-ans .btn{min-width:0;flex:1}.bin b{font-size:22px}
   .dlx{padding:32px 22px;border-radius:26px}.dlx h2{font-size:30px}
 }
 @media (prefers-reduced-motion:reduce){

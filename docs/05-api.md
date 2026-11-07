@@ -12,7 +12,7 @@
 | موضوع | قاعده |
 |---|---|
 | نشانی پایه | `https://api.pharmenta.ir/api/v1/` |
-| نام‌های قدیمی | بخش‌های `auth`، `drugs`، `lessons`، `me`، `uptodate`، `quiz` و `flashcards` یک نشانی بدون نسخه هم دارند (`/api/...`). برای کد تازه فقط `/api/v1/` را به کار ببرید |
+| نام‌های قدیمی | بخش‌های `auth`، `drugs`، `lessons`، `me`، `uptodate` و `quiz` یک نشانی بدون نسخه هم دارند (`/api/...`). برای کد تازه فقط `/api/v1/` را به کار ببرید |
 | احراز هویت | `Authorization: Bearer <access_token>`. همهٔ مسیرها احراز هویت می‌خواهند، مگر آن‌هایی که در جدول‌ها «عمومی» علامت خورده‌اند |
 | تمدید توکن | `POST /auth/refresh/` با `refresh_token`. هر تمدید توکن تمدید را عوض می‌کند |
 | بدنه | JSON. پاسخ‌های بزرگ gzip می‌شوند |
@@ -174,7 +174,7 @@
 | روش | مسیر | توضیح |
 |---|---|---|
 | GET | `/me/dashboard/` | نام، استریک، XP، فصل بعدی، و «جلسهٔ تمرکز» (کارت‌های موعد، اشتباه، درس) |
-| GET | `/me/statistics/` | `{week_bars[7], accuracy_pct, quizzes, reviews, minutes, mastery_pct}` (روز ۰ = شنبه) |
+| GET | `/me/statistics/` | `{week_bars[7], accuracy_pct, quizzes, minutes, mastery_pct}` (روز ۰ = شنبه) |
 | GET | `/me/mistakes/` · POST `/me/mistakes/{id}/resolve/` · POST `/me/mistakes/restore/` | اشتباهات / حل‌شده کردن یکی / برگرداندن همه |
 | GET / PUT | `/me/plan/` | برنامهٔ مطالعه (ویژگی `stats`). پاسخ PUT `fits_deadline` هم دارد. تغییر حالت، موضوع‌ها یا تاریخ یعنی برنامهٔ تازه: شمارش هفته‌ها از همان روز شروع می‌شود |
 | GET | `/me/plan/today/?brief=1` | کارهای امروز، خلاصهٔ برنامه و این هفته (پایین). بدون `brief`، پیشرفت و تسلط هر موضوع برنامه هم می‌آید (`topics`)؛ خانهٔ اپ `brief=1` می‌فرستد چون برای آزمون پایان دوره همهٔ موضوع‌ها در برنامه‌اند |
@@ -183,7 +183,7 @@
 ```jsonc
 // GET /me/plan/today/?brief=1
 { "mode": "goal",                       // none | goal | maintenance
-  "items": [{ "id": 12, "day": "2026-10-25", "activity_type": "lesson", // lesson | quiz | flashcards | mistake_review
+  "items": [{ "id": 12, "day": "2026-10-25", "activity_type": "lesson", // lesson | quiz | mistake_review
               "topic_key": "cv-htn", "atc_code": "C02", "estimated_minutes": 10, "status": "pending",
               "title_fa": "درسنامه: ضدفشارخون‌ها", "title_en": "Lesson: Antihypertensives", "…": "…" }],
   "total_minutes": 28, "topics": [],
@@ -196,7 +196,6 @@
 - **خودکار انجام‌شدن:** کار امروز وقتی بیرون از برنامه انجام شده باشد، خودش «انجام‌شده» می‌شود:
   - درس: وقتی فصلش کامل خوانده شده باشد.
   - آزمون: وقتی آزمونی روی همان موضوع تمام شده باشد.
-  - فلش‌کارت: وقتی دستهٔ همان موضوع مرور شده باشد، یا در مرور سررسیده‌ها، وقتی کارتی سررسیده نمانده باشد.
   - مرور اشتباه: وقتی اشتباه بازی نمانده باشد.
 - **روز جامانده:** در حالت goal، اگر از روزهای گذشته کاری مانده باشد، با اولین درخواست هر روز باقی برنامه از امروز دوباره چیده می‌شود. کارهای آن روز در هفته «missed» نشان داده می‌شوند و فقط یک بار در پیشرفت حساب می‌شوند.
 
@@ -214,54 +213,9 @@
 - **سطح:** سرعت برنامه را تعیین می‌کند؛ هر فصل برای مبتدی ۱۴، متوسط ۱۰ و پیشرفته ۷ دقیقه برنامه‌ریزی می‌شود.
 - **رشته:** پزشکی و داروسازی هر دو همان درسنامهٔ داروها را برنامه‌ریزی می‌کنند.
 
-## فلش‌کارت — `/flashcards/` (ویژگی `flashcards`؛ پرچم `FLASHCARDS_API_ENABLED`)
+## حذف فلش‌کارت
 
-هر فلش‌کارت یک بخشِ یک دارو است. بخش‌ها این‌ها هستند:
-
-- `indication`
-- `mechanism`
-- `adr_common`
-- `adr_serious`
-- `interaction`
-- `warning`
-- `contra_boxed`
-
-محتوای کارت‌ها از پایپلاین `study_content` می‌آید ([07-data.md](07-data.md)). دستهٔ یک موضوع، داروهایش را به ترتیب می‌آورد و برای هر دارو، کارت بخش‌هایش را به همان ترتیب بالا.
-
-### دسته‌ها
-
-| روش | مسیر | توضیح |
-|---|---|---|
-| GET | `/flashcards/decks/` | دسته‌ها و موضوع‌ها با پیشرفت (`total` و `position` تعداد کارت است) |
-| GET | `/flashcards/decks/{topic}/` | کارت‌های یک موضوع به ترتیب ثابت: `{drug_slug, section, section_label_fa/en, section_tone, front_fa, front_en, back_fields_fa/en}`، با `position`، `known`، `hard`، `finished`، `next_topic` |
-| POST | `/flashcards/decks/{topic}/answer/` | `{drug_slug, section, rating: "easy"\|"hard"}`. `hard` («یادم نبود») کارت را به جعبهٔ لایتنر می‌برد. بدون `section`، کارت فعلی دسته (برای اپ‌های قدیمی). 422 `NOT_IN_DECK` |
-| POST | `/flashcards/decks/{topic}/restart/` | شروع دوبارهٔ موضوع |
-
-### جعبهٔ لایتنر
-
-کد: `apps/flashcards/leitner.py`.
-
-- **ورود:** فقط کارتی وارد جعبه می‌شود که کاربر بلد نبوده:
-  - «یادم نبود» در دسته
-  - «یادم نبود» در مرور
-  - پاسخ غلط آزمون روی همان دارو و بخش (پاسخ `/quiz/{id}/answer/` در این حالت `added_to_leitner: true` دارد)
-- **شمارهٔ کشو (۱ تا ۵):** یعنی چند بار اشتباه شده. کارت در کشوی ۱ وارد می‌شود و هر اشتباه بعدی یک کشو بالاترش می‌برد.
-- **دو پاسخ مرور:**
-  - `forgot` («یادم نبود»): یک کشو بالا و نزدیک‌تر به ۵. اپ کارت را آخر همان مرور یک بار دیگر نشان می‌دهد و از فردا دوباره سررسید می‌شود.
-  - `good` («یادم بود»): یک کشو پایین. از کشوی ۱، کارت از جعبه بیرون می‌رود (`box` صفر).
-- **فاصلهٔ برگشت:** برای هر کارت جداست و با «آسانی» خود کارت رشد می‌کند. آسانی با هر اشتباه کم می‌شود، پس کارت پراشتباه زودتر برمی‌گردد.
-- **تاریخ آزمون:** اگر برنامهٔ مطالعه تاریخ آزمون دارد، هر فاصله حداکثر نصف روزهای مانده تا آزمون است.
-- **مرور امروز:** کارت‌های سررسیده را از بالاترین کشو برمی‌دارد، به اندازهٔ دقیقه‌های روزانهٔ برنامه (هر کارت ۲۰ ثانیه؛ بدون برنامه ۱۵ دقیقه).
-
-| روش | مسیر | توضیح |
-|---|---|---|
-| GET | `/flashcards/leitner/` | `{drawers: [{box, count, due}], total, due, today, today_minutes, daily_minutes, reviewed_today, left_box, exam_days_left, preview}` |
-| GET | `/flashcards/leitner/cards/?box=N` | مرور امروز، یا با `box` همهٔ کارت‌های یک کشو، سررسیده یا نه. هر کارت `outcomes` دارد: `{forgot\|good: {box, minutes}}` (کشوی مقصد و دقیقه تا سررسید). 400 `INVALID_BOX` |
-| POST | `/flashcards/leitner/cards/{id}/review/` | `{rating: "forgot"\|"good"}` ← خود کارت پس از مرور. 404 `NOT_FOUND` برای کارتی که در جعبه نیست |
-
-### جعبهٔ قدیمی
-
-`/flashcards/`، `/flashcards/boxes/`، `/flashcards/seed/` و `/flashcards/{id}/review/` جعبهٔ قبلی‌اند: کارت برای هر دارو و فاصله‌های ثابت. این مسیرها فقط برای اپ‌هایی که پیش از جعبهٔ تازه نصب شده‌اند می‌مانند. فقط کارت‌های بدون بخش (`section` خالی) را می‌بینند و جعبهٔ تازه را لمس نمی‌کنند.
+همهٔ مسیرهای `/flashcards/*` در نشانی نسخه‌دار و بدون نسخه حذف شده‌اند و 404 برمی‌گردانند. پرچم `FLASHCARDS_API_ENABLED` کاربردی ندارد. پاسخ آزمون دیگر `added_to_leitner` ندارد و هیچ کارت یا سابقهٔ مرور ایجاد نمی‌کند. جزئیات حذف داده در [سند ۱۹](19-quiz-navigation-and-flashcard-removal.fa.md).
 
 ## آزمون — `/quiz/` (ویژگی `quiz`؛ پرچم `QUIZ_API_ENABLED`)
 
@@ -270,7 +224,7 @@
 | GET | `/quiz/overview/` | آمار و نشان‌های صفحهٔ انتخاب آزمون |
 | GET | `/quiz/preview/?category=&atc_code=&count=` | اینکه آزمون با این انتخاب چه چیزهایی را پوشش می‌دهد. 400 `INVALID_CATEGORY` |
 | POST | `/quiz/start/` | `{category, atc_code?, count}` (count: ۵، ۱۰، ۱۵ یا ۲۰) ← جلسه با سؤال‌ها، بدون کلید پاسخ. 422 `INSUFFICIENT_QUESTIONS` |
-| POST | `/quiz/{id}/answer/` | `{question_id, selected_index, client_answered_at?}` ← `{correct, correct_index, extra_context, added_to_leitner}`. پاسخ غلط، فلش‌کارت همان نکته را به جعبهٔ لایتنر می‌برد. 409 `ALREADY_ANSWERED` / `QUIZ_ALREADY_FINISHED`، 400 `INVALID_QUESTION`. با اعمال فروش، هر پاسخ از سهمیه کم می‌کند (402 ممکن است) |
+| POST | `/quiz/{id}/answer/` | `{question_id, selected_index, client_answered_at?}` ← `{correct, correct_index, extra_context}`. 409 `ALREADY_ANSWERED` / `QUIZ_ALREADY_FINISHED`، 400 `INVALID_QUESTION`. با اعمال فروش، هر پاسخ از سهمیه کم می‌کند (402 ممکن است) |
 | POST | `/quiz/{id}/finish/` | ← `{score, total, mistakes_added}`؛ فقط یک بار. XP و آمار و اشتباه‌ها را ثبت می‌کند |
 | POST | `/quiz/{id}/review-mistakes/` | آزمون تازه از سؤال‌های غلط همان جلسه. 409 `QUIZ_NOT_FINISHED`، 422 `NOTHING_TO_REVIEW` |
 

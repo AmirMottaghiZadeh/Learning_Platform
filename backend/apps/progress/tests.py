@@ -6,7 +6,6 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.drugs.models import AtcCategory, AtcCode, Ingredient
-from apps.flashcards.models import LeitnerCard
 from apps.lessons.selectors import mark_drug_read
 from apps.quiz.models import QuizAnswer, QuizQuestion, QuizSession
 
@@ -47,12 +46,11 @@ class ProgressServiceTests(TestCase):
         self.user = get_user_model().objects.create_user(username="u", email="u@e.com", password="x")
 
     def test_record_study_builds_daily_row_and_totals(self):
-        record_study(self.user, minutes=15, reviews=3, xp=12)
+        record_study(self.user, minutes=15, xp=12)
         record_study(self.user, minutes=5, quizzes=1)
 
         progress = LearnerProgress.objects.get(user=self.user)
         self.assertEqual(progress.total_minutes, 20)
-        self.assertEqual(progress.total_reviews, 3)
         self.assertEqual(progress.total_quizzes, 1)
         self.assertEqual(progress.xp, 12)
         self.assertEqual(DailyStudy.objects.get(user=self.user).minutes, 20)
@@ -104,7 +102,7 @@ class MeApiTests(TestCase):
         self.assertEqual(res.data["streak_days"], 0)
         self.assertEqual(res.data["next_chapter"]["code"], "C07")
         kinds = [r["kind"] for r in res.data["focus_session"]["rows"]]
-        self.assertEqual(kinds, ["lesson"])  # no mistakes, no flashcards app
+        self.assertEqual(kinds, ["lesson"])  # no mistakes
 
     def test_dashboard_includes_top_unresolved_mistake_row(self):
         bump_mistake(self.user, topic_key="dose", topic_fa="دوز", topic_en="Dosage")
@@ -169,7 +167,7 @@ class TopicMasteryTests(TestCase):
         self.user = get_user_model().objects.create_user(username="u", email="u@e.com", password="x")
         self.beta, self.diuretic = _two_chapter_topic()
 
-    def test_mastery_is_pure_completion_before_any_quiz_or_flashcards(self):
+    def test_mastery_is_pure_completion_before_any_quiz(self):
         self.assertEqual(planning.topic_mastery(self.user, "cv-htn"), 0)
         mark_drug_read(self.user, self.beta.slug)
         mark_drug_read(self.user, self.diuretic.slug)
@@ -189,16 +187,6 @@ class TopicMasteryTests(TestCase):
         # completion=50 (w=.3) + quiz=100 (w=.4), recall absent -> renormalised over .7
         self.assertEqual(mastery, round((50 * 0.3 + 100 * 0.4) / 0.7))
 
-    def test_mastery_blends_in_flashcard_recall(self):
-        # a card once missed that has since left the Leitner box: recall 100
-        card = LeitnerCard.objects.create(user=self.user, ingredient=self.beta, section="indication", box=0)
-        mastery = planning.topic_mastery(self.user, "cv-htn")
-        # completion=0 (w=.3) + recall=100 (w=.3) -> renormalised over .6
-        self.assertEqual(mastery, round((0 * 0.3 + 100 * 0.3) / 0.6))
-        # back in drawer 5 (missed five times): recall 0
-        card.box = 5
-        card.save()
-        self.assertEqual(planning.topic_mastery(self.user, "cv-htn"), 0)
 
 
 class GoalPlanGenerationTests(TestCase):
@@ -217,17 +205,17 @@ class GoalPlanGenerationTests(TestCase):
         plan.save()
         return plan
 
-    def test_unread_chapters_scheduled_before_quiz_and_flashcards(self):
+    def test_unread_chapters_scheduled_before_quiz(self):
         plan = self._plan()
         fits = planning.regenerate_items(self.user, plan)
         self.assertTrue(fits)
 
         items = list(StudyPlanItem.objects.filter(plan=plan).order_by("day", "order"))
         types = [i.activity_type for i in items]
-        # 2 unread chapters, then one quiz + one flashcard pass for the topic
+        # 2 unread chapters, then one quiz for the topic
         self.assertEqual(types.count(StudyPlanItem.LESSON), 2)
         self.assertEqual(types.count(StudyPlanItem.QUIZ), 1)
-        self.assertEqual(types.count(StudyPlanItem.FLASHCARDS), 1)
+        self.assertEqual(set(types), {StudyPlanItem.LESSON, StudyPlanItem.QUIZ})
         self.assertEqual(items[0].activity_type, StudyPlanItem.LESSON)
         self.assertTrue(all(i.topic_key == "cv-htn" for i in items))
 
@@ -273,7 +261,7 @@ class GoalPlanGenerationTests(TestCase):
         planning.regenerate_items(self.user, plan)
 
         self.assertTrue(StudyPlanItem.objects.filter(id=first.id, status=StudyPlanItem.DONE).exists())
-        # nothing left to read -> only quiz + flashcards regenerated
+        # nothing left to read -> only quiz regenerated
         remaining = StudyPlanItem.objects.filter(plan=plan, status=StudyPlanItem.PENDING)
         self.assertEqual(remaining.filter(activity_type=StudyPlanItem.LESSON).count(), 0)
 
@@ -322,14 +310,11 @@ class MaintenancePlanAndApiTests(TestCase):
         today = self.client.get("/api/v1/me/plan/today/").data
         self.assertEqual(today["mode"], "goal")
         kinds = {i["activity_type"] for i in today["items"]}
-        self.assertEqual(kinds, {"quiz", "flashcards"})  # both chapters already read
+        self.assertEqual(kinds, {"quiz"})  # both chapters already read
         self.assertEqual(today["topics"][0]["key"], "cv-htn")
         self.assertEqual(today["topics"][0]["progress_pct"], 100)
 
-    def test_maintenance_mode_surfaces_due_flashcards_and_open_mistakes(self):
-        LeitnerCard.objects.create(
-            user=self.user, ingredient=self.beta, section="indication", due_at=timezone.now() - timedelta(hours=1)
-        )
+    def test_maintenance_mode_surfaces_open_mistakes(self):
         bump_mistake(self.user, topic_key="drug_class", topic_fa="دسته", topic_en="Class")
         self.client.put(
             "/api/v1/me/plan/",
@@ -341,7 +326,7 @@ class MaintenancePlanAndApiTests(TestCase):
         )
 
         kinds = {i["activity_type"] for i in self.client.get("/api/v1/me/plan/today/").data["items"]}
-        self.assertIn("flashcards", kinds)
+        self.assertNotIn("flashcards", kinds)
         self.assertIn("mistake_review", kinds)
 
     def test_maintenance_mode_stays_quiet_on_a_day_not_chosen_for_study(self):
