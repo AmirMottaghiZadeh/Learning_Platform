@@ -55,57 +55,28 @@
 | `GET support/conversations/{uuid}/messages/` | آخرین ۱۰۰ پیام؛ `before` برای قدیمی‌تر و `after` برای ادامه؛ پاسخ `messages,has_older,user_read_id,staff_read_id` |
 | `POST support/conversations/{uuid}/messages/` | `{client_id:uuid,text:string}`؛ `201` تازه و `200` تکرار همان درخواست |
 | `POST support/conversations/{uuid}/read/` | `{through:message_id}`؛ پاسخ `204` |
-| `GET support/summary/` | `unread,web_push_public_key,web_push_configured`؛ هیچ کلید خصوصی برنمی‌گردد |
+| `GET support/summary/` | `unread,push_enabled,web_push_public_key,web_push_configured`؛ هیچ کلید خصوصی برنمی‌گردد |
 | `POST support/subscription/` | `device_id,platform:android|web,enabled` و `expo_token` یا `web_subscription` برای فعال‌سازی |
 
 سایت عمومی `POST /events/activity/` دارد: حداکثر ۲۰ کلیک یا heartbeat زمان، CSRF و محدودیت نرخ؛ بازدید صفحه فقط سمت سرور ثبت می‌شود. شناسه‌های بخش از فهرست ثابت انتخاب می‌شوند.
 
 ## اعلان پاسخ پشتیبانی
 
-سه مسیر وجود دارد: نشان خوانده‌نشده و بنر داخل اپ، Web Push با Service Worker، و Expo Push اندروید. اعلان عمومی «پاسخ تازه دارید» است و متن خصوصی گفت‌وگو را روی صفحهٔ قفل نمایش نمی‌دهد. لمس آن گفت‌وگوی مربوط را باز می‌کند. روشن کردن اعلان با اقدام و اجازهٔ کاربر انجام می‌شود؛ تعویض حساب، اشتراک حساب قبلی همان دستگاه را غیرفعال می‌کند. نشست باطل‌شده دیگر اعلان دریافت نمی‌کند.
+**وضعیت فعلی: موقتاً غیرفعال**؛ `SUPPORT_PUSH_NOTIFICATIONS_ENABLED=False` پیش‌فرض است. گزینه‌های اعلان در تنظیمات/پروفایل، بنر تازهٔ پشتیبانی، درخواست مجوز، ثبت اشتراک و ارسال Push اندروید/وب خاموش‌اند. چت و شمارندهٔ پیام خوانده‌نشده فعال‌اند. کد اتصال، کلیدهای محلی و داده‌های قبلی برای فعال‌سازی بعدی نگه داشته شده‌اند.
 
-هر پاسخ مدیر، `NotificationDelivery` می‌سازد؛ ارسال از task و outbox انجام می‌شود. برای خطای قابل تلاش مجدد حداکثر سه کوشش وجود دارد. وضعیت `accepted` اندروید یعنی Expo درخواست را پذیرفته است، نه تأیید نمایش روی گوشی. این نسخه رسید نهایی Expo را بازیابی نمی‌کند. در حالت Celery eager ارسال در همان درخواست انجام می‌شود؛ برای جدا کردن کار ارسال، worker پروژه را طبق [تنظیمات](06-configuration.md) فعال کنید.
+[راهنمای کامل راه‌اندازی اعلان‌ها](18-notifications-setup.fa.md) از ساخت پروژهٔ Firebase، تفاوت دو فایل JSON، تنظیم EAS، ساخت APK و کلیدهای وب تا روشن کردن قابلیت، آزمون دریافت، worker، retry و خاموش کردن دوباره را شرح می‌دهد.
 
 ### Web Push
 
-HTTPS و مرورگر دارای Push API لازم است؛ localhost برای توسعه استثناست. کلید VAPID باید ثابت بماند، زیرا تعویض آن اشتراک‌های قبلی را نیازمند ثبت دوباره می‌کند.
+کلید VAPID محلی ساخته شده است؛ فایل خصوصی و متغیرهای مربوط باید در سرور هم آماده شوند. جزئیات در [سند ۱۸](18-notifications-setup.fa.md). روشن شدن پرچم پس از پیکربندی سرور لازم است.
 
-```bash
-cd backend
-.venv/bin/python manage.py create_support_push_keys --configure-local
-```
+### اندروید
 
-دستور کلید خصوصی را با مجوز `0600` در `.private/support-vapid.pem` می‌سازد، کلید عمومی را جدا نگه می‌دارد و فقط نام مسیر را چاپ می‌کند. هویت موجود را بازنویسی نمی‌کند. برای محیط محلی اجرا شده؛ پس از بارگذاری دوبارهٔ بک‌اند تنظیمات فعال می‌شوند. در محیط انتشار، فایل خصوصی را امن mount و مقادیر زیر را در محیط همان سرویس قرار دهید:
+Firebase و FCM v1 هنوز تنظیم نشده‌اند؛ پس از تنظیم آن‌ها در EAS باید APK تازه ساخته شود. تا روشن شدن قابلیت، کتابخانهٔ اعلان بومی در جریان عادی اپ بارگذاری نمی‌شود و اجازه یا توکن اعلان درخواست نمی‌شود.
 
-| متغیر | کاربرد |
-|---|---|
-| `SUPPORT_WEB_PUSH_PUBLIC_KEY` | کلید عمومی VAPID |
-| `SUPPORT_WEB_PUSH_PRIVATE_KEY` | مسیر فایل خصوصی PEM روی سرور؛ مقدار خصوصی وارد مستندات یا git نشود |
-| `SUPPORT_WEB_PUSH_SUBJECT` | پیش‌فرض `mailto:support@pharmenta.ir`؛ نشانی تماس معتبر |
-| `SUPPORT_EXPO_ACCESS_TOKEN` | در صورت فعال کردن push security در Expo، توکن سرور |
+### API و ارسال در حالت خاموش
 
-پس از انتشار فرانت و بک‌اند، با کاربر واردشده اعلان را در تنظیمات روشن کنید، اپ را به پس‌زمینه ببرید و از مدیریت پاسخ بدهید. Web Push واقعی در این تغییر روی دامنهٔ منتشرشده آزمایش نشده است. [مرجع Push API](https://developer.mozilla.org/en-US/docs/Web/API/PushManager/subscribe).
-
-### اندروید: کار باقی‌ماندهٔ مالک پروژه
-
-Firebase و FCM v1 هنوز برای این پروژه تنظیم نشده‌اند؛ بنابراین ارسال واقعی اندروید هنوز تأیید نشده است. پکیج `expo-notifications` و کانال `support` به کد اضافه شده‌اند. APK قبلی این وابستگی بومی را ندارد و باید نسخهٔ جدید ساخته شود.
-
-1. در Firebase یک پروژه ایجاد و اپ اندروید با package فعلی `com.pharmenta.learning` ثبت کنید.
-2. فایل `google-services.json` همان اپ را دریافت و در EAS به‌صورت متغیر **فایل** با نام `GOOGLE_SERVICES_JSON` برای محیط بیلد قرار دهید. `frontend/app.config.js` مقدار این متغیر را به `android.googleServicesFile` می‌دهد. برای بیلد محلی، مقدار متغیر مسیر فایل روی دستگاه است.
-3. کلید service account مربوط به FCM v1 را طبق راهنمای Expo بسازید و از `eas credentials -p android` در قسمت Push Notifications بارگذاری کنید. این فایل، فایل تنظیمات مرحلهٔ قبل نیست و باید خصوصی بماند؛ داخل git قرار نگیرد.
-4. از همان پروژه و پروفایل انتشار EAS یک APK/بیلد تازه بسازید، روی گوشی واقعی نصب و مجوز اعلان را در تنظیمات اپ فعال کنید. برای بیلد از جریان افزایش نسخه و امضای [08-deployment.md](08-deployment.md) و [15-android-signing.fa.md](15-android-signing.fa.md) استفاده کنید.
-5. وقتی اپ در پس‌زمینه است از مدیریت پاسخ بدهید؛ دریافت، لمس اعلان، باز شدن گفت‌وگو، خروج حساب و تعویض حساب را روی دستگاه آزمایش کنید. تست اعلان بومی با Expo Go جای بیلد توسعه/انتشار خود پروژه را نمی‌گیرد.
-
-راهنمای رسمی: [تنظیم اعلان Expo](https://docs.expo.dev/push-notifications/push-notifications-setup/)، [کلید FCM v1](https://docs.expo.dev/push-notifications/fcm-credentials/)، [ارسال و معنای ticket/receipt](https://docs.expo.dev/push-notifications/sending-notifications/).
-
-### بازیابی ارسال ناموفق
-
-```bash
-cd backend
-.venv/bin/python manage.py retry_support_notifications
-```
-
-این دستور درخواست‌های pending/failed و ارسال‌های رهاشدهٔ قدیمی را دوباره وارد جریان ارسال می‌کند؛ سقف سه تلاش رعایت می‌شود. وضعیت `failed` و `accepted` را با تأیید دریافت کاربر اشتباه نگیرید.
+`GET /support/summary/` همچنان `unread` را برمی‌گرداند؛ `push_enabled=false`، کلید عمومی خالی و `web_push_configured=false` هستند. ثبت اشتراک با `enabled=true` پاسخ `503 SUPPORT_NOTIFICATIONS_DISABLED` دارد؛ غیرفعال کردن اشتراک موجود مجاز است. پاسخ مدیر ذخیره می‌شود ولی outbox تازه و task ارسال ساخته نمی‌شود. ارسال‌های قبلی اگر به worker خاموش برسند `skipped` می‌شوند و با ارائه‌دهنده تماس نمی‌گیرند. فرمان `retry_support_notifications` نیز در حالت خاموش pending/failedها و sendingهای رهاشدهٔ بیش از پنج دقیقه را `skipped` می‌کند و چیزی وارد صف نمی‌کند.
 
 ## دارونامه و خوانندهٔ مرجع
 

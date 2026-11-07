@@ -254,6 +254,7 @@ AUTH_MAX_ACTIVE_SESSIONS = config(
     default=2,
     cast=int,
 )
+SUPPORT_PUSH_NOTIFICATIONS_ENABLED = config("SUPPORT_PUSH_NOTIFICATIONS_ENABLED", default=False, cast=bool)
 SUPPORT_WEB_PUSH_PUBLIC_KEY = config("SUPPORT_WEB_PUSH_PUBLIC_KEY", default="")
 SUPPORT_WEB_PUSH_PRIVATE_KEY = config("SUPPORT_WEB_PUSH_PRIVATE_KEY", default="")
 SUPPORT_WEB_PUSH_SUBJECT = config("SUPPORT_WEB_PUSH_SUBJECT", default="mailto:support@pharmenta.ir")

@@ -10,6 +10,7 @@ export async function enableSupportNotifications(): Promise<void> {
   const owner = useAuth.getState().user?.id;
   if (!notificationSupport()) throw new Error("این مرورگر از اعلان وب پشتیبانی نمی‌کند؛ نسخهٔ HTTPS وب‌اپ را باز کنید.");
   const config = await supportApi.summary();
+  if (!config.push_enabled) throw new Error("اعلان‌های پشتیبانی فعلاً غیرفعال هستند.");
   if (!config.web_push_configured) throw new Error("کلید ارسال اعلان وب هنوز در سرور تنظیم نشده است.");
   const permission = await Notification.requestPermission();
   if (permission !== "granted") throw new Error("اجازهٔ اعلان داده نشد؛ از تنظیمات مرورگر آن را فعال کنید.");
@@ -36,6 +37,7 @@ export async function notificationPermission(): Promise<boolean> {
 }
 
 export async function refreshSupportNotifications(): Promise<void> {
+  if (!(await supportApi.summary()).push_enabled) return;
   if (!await notificationPermission()) return;
   const registration = await navigator.serviceWorker.getRegistration();
   const subscription = await registration?.pushManager.getSubscription();

@@ -177,3 +177,5 @@ npm run build:web
 ```
 
 ساخت کلید، هویت موجود را بازنویسی نمی‌کند. تنظیم Firebase، کلید FCM v1 و بیلد جدید اندروید طبق [سند ۱۷](17-sessions-activity-support.fa.md) انجام می‌شود.
+
+فرمان `retry_support_notifications` به پرچم `SUPPORT_PUSH_NOTIFICATIONS_ENABLED` وابسته است: در حالت `False`، pending/failedها را کنار می‌گذارد و هیچ ارسال یا enqueue انجام نمی‌دهد؛ در حالت `True`، ارسال مجدد را انجام می‌دهد. [راهنمای کامل اعلان‌ها](18-notifications-setup.fa.md).

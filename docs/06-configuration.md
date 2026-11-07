@@ -219,6 +219,7 @@
 
 | متغیر | مقدار پیش‌فرض و کاربرد |
 |---|---|
+| `SUPPORT_PUSH_NOTIFICATIONS_ENABLED` | `False`؛ خاموش بودن گزینه‌ها، بنر پشتیبانی، ثبت و ارسال Push؛ چت و شمارنده فعال می‌مانند |
 | `SUPPORT_WEB_PUSH_PUBLIC_KEY` | خالی؛ کلید عمومی VAPID |
 | `SUPPORT_WEB_PUSH_PRIVATE_KEY` | خالی؛ مسیر فایل خصوصی PEM روی سرور |
 | `SUPPORT_WEB_PUSH_SUBJECT` | `mailto:support@pharmenta.ir` |
@@ -226,3 +227,5 @@
 | `GOOGLE_SERVICES_JSON` | فقط هنگام بیلد فرانت؛ مسیر فایل تنظیمات Firebase اندروید، ترجیحاً متغیر فایل EAS |
 
 [ساخت کلید وب و تنظیم FCM v1](17-sessions-activity-support.fa.md#اعلان-پاسخ-پشتیبانی) در سند ۱۷ شرح داده شده است. Firebase هنوز تنظیم نشده؛ افزودن متغیر بدون بارگذاری اعتبارنامهٔ FCM در EAS، ارسال اندروید را فعال نمی‌کند.
+
+راهنمای کامل مراحل و کلید روشن/خاموش کردن در [سند ۱۸](18-notifications-setup.fa.md) است. برای تغییر پرچم، بک‌اند و worker باید با مقدار یکسان دوباره اجرا شوند؛ فرانت وضعیت را از `support/summary/` می‌خواند.

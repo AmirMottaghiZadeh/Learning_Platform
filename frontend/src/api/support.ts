@@ -6,7 +6,7 @@ export type SupportConversation = {
 };
 export type SupportMessage = { id: number; client_id: string; text: string; from_staff: boolean; created_at: string };
 export type SupportMessages = { messages: SupportMessage[]; has_older: boolean; user_read_id: number; staff_read_id: number };
-export type SupportSummary = { unread: number; web_push_public_key: string; web_push_configured: boolean };
+export type SupportSummary = { unread: number; push_enabled: boolean; web_push_public_key: string; web_push_configured: boolean };
 export type SupportSubscription = { device_id: string; platform: "android" | "web"; enabled: boolean; expo_token?: string; web_subscription?: unknown };
 
 export const supportApi = {

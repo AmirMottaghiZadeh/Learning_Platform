@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Count, Q, F
 from django.utils import timezone
@@ -37,7 +38,7 @@ def send_message(conversation, sender, text, client_id, *, staff=False):
         conversation.updated_at = timezone.now()
         conversation.status = "open"
         conversation.save(update_fields=["updated_at", "status"])
-        if staff:
+        if staff and settings.SUPPORT_PUSH_NOTIFICATIONS_ENABLED:
             subscriptions = PushSubscription.objects.filter(user=conversation.user, enabled=True, session__revoked_at__isnull=True, session__refresh_expires_at__gt=timezone.now())
             NotificationDelivery.objects.bulk_create([NotificationDelivery(message=message, subscription=sub) for sub in subscriptions], ignore_conflicts=True)
             transaction.on_commit(lambda: _queue_notification(message.pk))
@@ -45,6 +46,8 @@ def send_message(conversation, sender, text, client_id, *, staff=False):
 
 
 def _queue_notification(message_id):
+    if not settings.SUPPORT_PUSH_NOTIFICATIONS_ENABLED:
+        return
     from apps.core.queue import enqueue
     from .tasks import deliver_message_notifications
 

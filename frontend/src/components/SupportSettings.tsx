@@ -5,7 +5,6 @@ import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useSupportSummary } from "@/notifications/useSupportNotifications";
-import { disableSupportNotifications, enableSupportNotifications, notificationSupport, notificationPermission } from "@/notifications/registration";
 import { useAuth } from "@/store/auth";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -19,16 +18,31 @@ export function SupportLink() {
 }
 
 export function NotificationSettings() {
+  const { data } = useSupportSummary();
+  return data?.push_enabled === true ? <ActiveNotificationSettings /> : null;
+}
+
+function ActiveNotificationSettings() {
   const { isFa, row } = useLang();
   const { colors } = useTheme();
   const userId = useAuth(s => s.user?.id);
+  const [runtime, setRuntime] = useState<typeof import("@/notifications/registration") | null>(null);
   const [enabled, setEnabled] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("");
-  const supported = notificationSupport();
-  useEffect(() => { let alive = true; setEnabled(false); void Promise.all([AsyncStorage.getItem(`pharmenta.notifications.${userId}`), notificationPermission()]).then(([v, permission]) => { if (alive) setEnabled(v === "on" && permission); }).catch(() => undefined); return () => { alive = false; }; }, [userId]);
+  const supported = runtime?.notificationSupport() ?? false;
+  useEffect(() => {
+    let alive = true;
+    setEnabled(false);
+    void import("@/notifications/registration").then(async registration => {
+      const [value, permission] = await Promise.all([AsyncStorage.getItem(`pharmenta.notifications.${userId}`), registration.notificationPermission()]);
+      if (alive) { setRuntime(registration); setEnabled(value === "on" && permission); }
+    }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [userId]);
   const change = async (value: boolean) => {
+    if (!runtime) return;
     setBusy(true); setError("");
     try {
-      if (value) await enableSupportNotifications(); else await disableSupportNotifications();
+      if (value) await runtime.enableSupportNotifications(); else await runtime.disableSupportNotifications();
       if (useAuth.getState().user?.id !== userId) return;
       await AsyncStorage.setItem(`pharmenta.notifications.${userId}`, value ? "on" : "off"); setEnabled(value);
     } catch (e) { setError(e instanceof Error ? e.message : isFa ? "تنظیم اعلان انجام نشد." : "Could not update notifications."); }

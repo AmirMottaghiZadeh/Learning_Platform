@@ -25,6 +25,7 @@ class MessagePageSerializer(serializers.Serializer):
 
 class SupportSummarySerializer(serializers.Serializer):
     unread = serializers.IntegerField()
+    push_enabled = serializers.BooleanField()
     web_push_public_key = serializers.CharField()
     web_push_configured = serializers.BooleanField()
 

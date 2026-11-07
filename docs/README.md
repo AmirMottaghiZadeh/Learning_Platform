@@ -27,6 +27,7 @@
 | ۱۵ | [15-android-signing.fa.md](15-android-signing.fa.md) | ساخت keystore با EAS، دانلود کلید و رمزها داخل پروژه، قواعد ignore و بیلدهای بعدی | توسعه‌دهنده، مسئول انتشار |
 | ۱۶ | [16-code-flows.md](16-code-flows.md) | نقشهٔ فایل‌های فعلی و جریان شروع اپ، API، جست‌وجو، آفلاین، انتقال داده و انتشار | توسعه‌دهنده |
 | ۱۷ | [17-sessions-activity-support.fa.md](17-sessions-activity-support.fa.md) | سقف دو دستگاه، IP و سیستم‌عامل، heatmap، چت و راه‌اندازی اعلان وب و اندروید | توسعه‌دهنده، مدیر، مسئول انتشار |
+| ۱۸ | [18-notifications-setup.fa.md](18-notifications-setup.fa.md) | راهنمای کامل Firebase، FCM، EAS، APK، VAPID، آزمون نهایی و کلید خاموش/روشن کردن اعلان | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | — | [search/README.md](search/README.md) | وضعیت جست‌وجوی فعلی، فازهای توسعه، وظایف مالک پروژه، مجموعهٔ ارزیابی، [برنامهٔ دقت و جست‌وجوی برداری](search/plan-precision-and-vector-search-2026-11-01.fa.md) و [بازبینی پایلوت قبلی](search/phase-11-review-and-redesign-2026-10-31.fa.md) | مالک محصول، توسعه‌دهنده، مسئول داده |
 
 ## سندهای دیگر مخزن

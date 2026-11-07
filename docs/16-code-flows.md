@@ -131,10 +131,12 @@ flowchart TD
 
 `ActivityCapture` و `useActivity` → صف محلی هر حساب → `/activity/events/` → `ActivityEvent`؛ سایت از middleware و `website/activity.js` → `/events/activity/` استفاده می‌کند. گزارش‌ها از `activity/services.py` به `manage/user_activity.py` و قالب‌های devices/usage می‌روند.
 
-`SupportScreen` → `api/support.ts` → `support/views.py` → `support/services.py` → Conversation/Message؛ صفحهٔ مدیریت در `support/admin_views.py` به همان سرویس متصل است. پاسخ مدیر → NotificationDelivery → task → Expo یا Web Push → `notifications/` و `public/sw.js` → باز شدن گفت‌وگو. [سند ۱۷](17-sessions-activity-support.fa.md) تنظیم کلید و مراحل باقی‌ماندهٔ Firebase را شرح می‌دهد.
+`SupportScreen` → `api/support.ts` → `support/views.py` → `support/services.py` → Conversation/Message؛ صفحهٔ مدیریت در `support/admin_views.py` به همان سرویس متصل است. پاسخ مدیر → فقط با پرچم `SUPPORT_PUSH_NOTIFICATIONS_ENABLED=True`: NotificationDelivery → task → Expo یا Web Push → `notifications/` و `public/sw.js` → باز شدن گفت‌وگو. [سند ۱۷](17-sessions-activity-support.fa.md) تنظیم کلید و مراحل باقی‌ماندهٔ Firebase را شرح می‌دهد.
 
 ## استفاده از گراف و نگهداری نقشه
 
 گراف محلی در [graphify-out/](../graphify-out/) شامل `graph.json`، `manifest.json` و `GRAPH_REPORT.md` است. شناسهٔ `built_at_commit` به‌تنهایی معیار تازگی نیست؛ تغییر فایل‌ها و هش‌های manifest را هم بررسی کنید. پس از تغییر کد یا مستندات، دستور `graphify update .` از ریشهٔ مخزن، خروجی تولیدشده را به‌روز می‌کند. این گراف با نمایهٔ سرویس Code Cortex یکی نیست؛ وضعیت هرکدام جداگانه بررسی می‌شود.
 
 هنگام تغییر مسیر درخواست، منبع داده، کلید کش یا فایل مسئول، علاوه بر سند تخصصی، همین نقشه را هم اصلاح کنید. گزارش‌های `search/history/` سابقهٔ پایلوت کنارگذاشته‌شده‌اند؛ سند اجرایی فعلی محسوب نمی‌شوند.
+
+اعلان‌های پشتیبانی فعلاً خاموش‌اند. فرانت پرچم `push_enabled` را از summary می‌خواند؛ ماژول ثبت اعلان فقط در حالت روشن بارگذاری می‌شود. شمارندهٔ پیام خوانده‌نشده و چت مستقل‌اند. راهنمای کامل زیرساخت و روشن کردن بعدی در [سند ۱۸](18-notifications-setup.fa.md) است.

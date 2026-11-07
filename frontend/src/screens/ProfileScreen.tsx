@@ -15,6 +15,7 @@ import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useNavClearance } from "@/components/BottomNav";
 import { SupportLink } from "@/components/SupportSettings";
+import { useSupportSummary } from "@/notifications/useSupportNotifications";
 
 export function ProfileScreen() {
   const navClearance = useNavClearance();
@@ -23,6 +24,7 @@ export function ProfileScreen() {
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
   const navigate = useNav((s) => s.navigate);
+  const notificationsEnabled = useSupportSummary().data?.push_enabled === true;
 
   const { data: stats } = useQuery({ queryKey: ["statistics"], queryFn: meApi.statistics });
   const { data: dash } = useQuery({ queryKey: ["dashboard"], queryFn: meApi.dashboard });
@@ -183,7 +185,7 @@ export function ProfileScreen() {
         <Row label={t("mistakesTitle")} icon="edu-mistakes" onPress={() => navigate("mistakes")} />
         <Row label={t("offlineTitle")} icon="profile-downloads" onPress={() => navigate("downloads")} />
         <Row label={t("settingsTitle")} glyph="⚙" onPress={() => navigate("settings")} />
-        <Row label={t("profileNotifications")} icon="profile-notifications" onPress={() => navigate("notifications")} />
+        {notificationsEnabled ? <Row label={t("profileNotifications")} icon="profile-notifications" onPress={() => navigate("notifications")} /> : null}
         <Row label={t("devicesTitle")} glyph="▣" onPress={() => navigate("devices")} />
         {user?.is_guest ? (
           // A guest has no account to log out of: this leads to the sign-in screen.

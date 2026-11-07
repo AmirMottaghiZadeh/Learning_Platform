@@ -44,6 +44,11 @@ def send_delivery(delivery_id):
         delivery = NotificationDelivery.objects.select_for_update(of=("self",)).select_related("subscription__session", "subscription__user", "message__conversation").get(pk=delivery_id)
         if delivery.status in {"sent", "accepted", "sending", "skipped"} or delivery.attempts >= 3:
             return True
+        if not settings.SUPPORT_PUSH_NOTIFICATIONS_ENABLED:
+            delivery.status = "skipped"
+            delivery.error = "notifications_disabled"
+            delivery.save(update_fields=["status", "error", "updated_at"])
+            return True
         subscription = delivery.subscription
         message = delivery.message
         if not subscription.enabled or not subscription.user.is_active or not subscription.session or not subscription.session.is_active or message.pk <= message.conversation.user_read_id:

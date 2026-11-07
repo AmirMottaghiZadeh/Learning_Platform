@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema
+from apps.core.exceptions import PlatformAPIError
 
 from .models import Conversation, Message, PushSubscription
 from .serializers import ConversationCreateSerializer, ConversationSerializer, MessageSerializer, MessagePageSerializer, ReadSerializer, SendSerializer, SubscriptionSerializer, SupportSummarySerializer, SubscriptionResponseSerializer
@@ -73,7 +74,8 @@ class ReadView(SupportView):
 class SummaryView(SupportView):
     @extend_schema(responses=SupportSummarySerializer)
     def get(self, request):
-        return Response({"unread": Message.objects.filter(conversation__user=request.user, from_staff=True, id__gt=F("conversation__user_read_id")).count(), "web_push_public_key": settings.SUPPORT_WEB_PUSH_PUBLIC_KEY, "web_push_configured": bool(settings.SUPPORT_WEB_PUSH_PUBLIC_KEY and settings.SUPPORT_WEB_PUSH_PRIVATE_KEY)})
+        enabled = settings.SUPPORT_PUSH_NOTIFICATIONS_ENABLED
+        return Response({"unread": Message.objects.filter(conversation__user=request.user, from_staff=True, id__gt=F("conversation__user_read_id")).count(), "push_enabled": enabled, "web_push_public_key": settings.SUPPORT_WEB_PUSH_PUBLIC_KEY if enabled else "", "web_push_configured": bool(enabled and settings.SUPPORT_WEB_PUSH_PUBLIC_KEY and settings.SUPPORT_WEB_PUSH_PRIVATE_KEY)})
 
 
 class SubscriptionView(SupportView):
@@ -82,6 +84,8 @@ class SubscriptionView(SupportView):
         serializer = SubscriptionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        if data["enabled"] and not settings.SUPPORT_PUSH_NOTIFICATIONS_ENABLED:
+            raise PlatformAPIError("اعلان‌های پشتیبانی فعلاً غیرفعال هستند.", code="SUPPORT_NOTIFICATIONS_DISABLED", status_code=503)
         # A shared browser/install moving to another account must stop sending
         # that device the previous account's private notifications.
         PushSubscription.objects.filter(device_id=data["device_id"]).exclude(user=request.user).update(enabled=False)

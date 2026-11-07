@@ -13,6 +13,7 @@ export function notificationSupport(): boolean { return Platform.OS === "android
 async function register(ask: boolean): Promise<void> {
   const owner = useAuth.getState().user?.id;
   if (Platform.OS !== "android" || !Device.isDevice) throw new Error("برای اعلان اندروید، اپ را روی گوشی واقعی اجرا کنید.");
+  if (!(await supportApi.summary()).push_enabled) throw new Error("اعلان‌های پشتیبانی فعلاً غیرفعال هستند.");
   await Notifications.setNotificationChannelAsync("support", { name: "پشتیبانی فارمنتا", importance: Notifications.AndroidImportance.HIGH });
   let permission = await Notifications.getPermissionsAsync();
   if (!permission.granted && ask) permission = await Notifications.requestPermissionsAsync();

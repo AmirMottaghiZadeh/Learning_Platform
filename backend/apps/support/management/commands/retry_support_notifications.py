@@ -1,5 +1,7 @@
 from datetime import timedelta
+from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from django.utils import timezone
 from apps.core.queue import enqueue
 from apps.support.models import NotificationDelivery
@@ -13,6 +15,13 @@ class Command(BaseCommand):
         parser.add_argument("--limit", type=int, default=100)
 
     def handle(self, *args, **options):
+        if not settings.SUPPORT_PUSH_NOTIFICATIONS_ENABLED:
+            now = timezone.now()
+            skipped = NotificationDelivery.objects.filter(
+                Q(status__in=["pending", "failed"]) | Q(status="sending", updated_at__lt=now - timedelta(minutes=5))
+            ).update(status="skipped", error="notifications_disabled", updated_at=now)
+            self.stdout.write(f"Support push notifications are disabled. Skipped {skipped} pending delivery(s); nothing was queued.")
+            return
         # Recover worker crashes after claiming a delivery, but never steal an
         # in-flight request (the provider timeout is eight seconds).
         NotificationDelivery.objects.filter(status="sending", updated_at__lt=timezone.now() - timedelta(minutes=5)).update(status="failed")

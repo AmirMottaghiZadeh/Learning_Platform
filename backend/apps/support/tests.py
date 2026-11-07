@@ -1,9 +1,13 @@
 import base64
 import uuid
+from io import StringIO
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
+from django.core.management import call_command
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.services import issue_user_session, revoke_user_session
@@ -12,6 +16,7 @@ from .notifications import send_delivery, validate_web_subscription
 from .services import mark_read, send_message
 
 
+@override_settings(SUPPORT_PUSH_NOTIFICATIONS_ENABLED=True)
 class SupportTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username="support-learner", password="password")
@@ -98,3 +103,76 @@ class SupportTests(TestCase):
     def test_empty_and_oversized_messages_are_rejected(self):
         for text in ["   ", "a" * 4001]:
             self.assertEqual(self.client.post(self.base + "/messages/", {"text": text, "client_id": str(uuid.uuid4())}).status_code, 400)
+
+
+@override_settings(SUPPORT_PUSH_NOTIFICATIONS_ENABLED=False)
+class DisabledSupportNotificationsTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="paused-push-user")
+        self.staff = get_user_model().objects.create_superuser(username="paused-push-admin", password="password")
+        self.session = issue_user_session(self.user).session
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user, token=self.session)
+        self.thread = Conversation.objects.create(user=self.user)
+        self.subscription = PushSubscription.objects.create(user=self.user, session=self.session, device_id="paused-install-123456", platform="android", expo_token="ExpoPushToken[valid]")
+
+    @override_settings(SUPPORT_WEB_PUSH_PUBLIC_KEY="configured-public", SUPPORT_WEB_PUSH_PRIVATE_KEY="/private/configured.pem")
+    def test_summary_preserves_unread_count_but_disables_push(self):
+        Message.objects.create(conversation=self.thread, sender=self.staff, from_staff=True, text="reply")
+        response = self.client.get("/api/v1/support/summary/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"unread": 1, "push_enabled": False, "web_push_public_key": "", "web_push_configured": False})
+
+    def test_registration_is_blocked_but_unsubscribe_still_works(self):
+        body = {"device_id": self.subscription.device_id, "platform": "android", "expo_token": self.subscription.expo_token, "enabled": True}
+        response = self.client.post("/api/v1/support/subscription/", body, format="json")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["code"], "SUPPORT_NOTIFICATIONS_DISABLED")
+        body["enabled"] = False
+        self.assertEqual(self.client.post("/api/v1/support/subscription/", body, format="json").status_code, 200)
+        self.subscription.refresh_from_db()
+        self.assertFalse(self.subscription.enabled)
+
+    def test_reply_is_saved_without_creating_or_queuing_push(self):
+        with patch("apps.support.services._queue_notification") as queue, self.captureOnCommitCallbacks(execute=True):
+            message, created = send_message(self.thread, self.staff, "chat still works", uuid.uuid4(), staff=True)
+        self.assertTrue(created)
+        self.assertEqual(message.text, "chat still works")
+        self.assertFalse(NotificationDelivery.objects.exists())
+        queue.assert_not_called()
+
+    def test_existing_deliveries_cannot_contact_either_provider(self):
+        message = Message.objects.create(conversation=self.thread, sender=self.staff, from_staff=True, text="old reply")
+        with patch("apps.support.notifications.urlopen") as expo, patch("pywebpush.webpush") as web:
+            for platform in ["android", "web"]:
+                with self.subTest(platform=platform):
+                    self.subscription.platform = platform
+                    self.subscription.save(update_fields=["platform"])
+                    delivery = NotificationDelivery.objects.create(message=message, subscription=self.subscription)
+                    self.assertTrue(send_delivery(delivery.pk))
+                    delivery.refresh_from_db()
+                    self.assertEqual((delivery.status, delivery.error, delivery.attempts), ("skipped", "notifications_disabled", 0))
+                    delivery.delete()
+            expo.assert_not_called()
+            web.assert_not_called()
+
+    def test_disabled_retry_command_skips_pending_messages_without_queuing(self):
+        message = Message.objects.create(conversation=self.thread, sender=self.staff, from_staff=True, text="old reply")
+        delivery = NotificationDelivery.objects.create(message=message, subscription=self.subscription)
+        abandoned_message = Message.objects.create(conversation=self.thread, sender=self.staff, from_staff=True, text="abandoned reply")
+        abandoned = NotificationDelivery.objects.create(message=abandoned_message, subscription=self.subscription, status="sending")
+        NotificationDelivery.objects.filter(pk=abandoned.pk).update(updated_at=timezone.now() - timedelta(minutes=6))
+        with patch("apps.support.management.commands.retry_support_notifications.enqueue") as queue:
+            output = StringIO()
+            call_command("retry_support_notifications", stdout=output)
+        queue.assert_not_called()
+        self.assertIn("disabled", output.getvalue())
+        delivery.refresh_from_db()
+        self.assertEqual(delivery.status, "skipped")
+        abandoned.refresh_from_db()
+        self.assertEqual(abandoned.status, "skipped")
+
+    def test_management_chat_displays_paused_notification_status(self):
+        browser = Client()
+        browser.force_login(self.staff)
+        self.assertContains(browser.get("/manage/app/support/"), "اعلان‌ها: فعلاً غیرفعال")

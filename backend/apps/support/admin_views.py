@@ -37,7 +37,7 @@ def inbox(request, conversation_id=None):
     conversations = list(qs.order_by("-unread", "-updated_at")[:100])
     current = get_object_or_404(Conversation.objects.select_related("user"), pk=conversation_id) if conversation_id else None
     messages = list(reversed(list(current.messages.order_by("-pk")[:100]))) if current else []
-    return render(request, "support/inbox.html", {"conversations": conversations, "total": total, "conversation": current, "chat_messages": messages, "q": q, "state": state, "web_push_ready": bool(settings.SUPPORT_WEB_PUSH_PUBLIC_KEY and settings.SUPPORT_WEB_PUSH_PRIVATE_KEY)})
+    return render(request, "support/inbox.html", {"conversations": conversations, "total": total, "conversation": current, "chat_messages": messages, "q": q, "state": state, "push_enabled": settings.SUPPORT_PUSH_NOTIFICATIONS_ENABLED, "web_push_ready": bool(settings.SUPPORT_WEB_PUSH_PUBLIC_KEY and settings.SUPPORT_WEB_PUSH_PRIVATE_KEY)})
 
 
 @require_GET
