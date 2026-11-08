@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ReviewEvent, SectionEdit, SectionEditRequest
+from .models import DrugReview, ReviewEvent, SectionEdit, SectionEditRequest
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -19,6 +19,12 @@ class ReadOnlyAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(DrugReview)
+class DrugReviewAdmin(ReadOnlyAdmin):
+    list_display = ["created_at", "ingredient", "reviewer_username", "ip_address"]
+    search_fields = ["ingredient__name", "reviewer_username"]
 
 
 @admin.register(SectionEdit)

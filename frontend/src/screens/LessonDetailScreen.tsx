@@ -3,6 +3,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, TextInput, View } from "react-native";
 
 import { lessonsApi } from "@/api/endpoints";
+import { DrugReviewBadge } from "@/components/DrugReviewBadge";
 import { LessonSection } from "@/api/types";
 import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
@@ -198,6 +199,11 @@ function sectionText(b: LessonSection, isFa: boolean): string {
   return (isFa ? b.text_fa : b.text_en) || (isFa ? b.text_en : b.text_fa);
 }
 
+function otherSourcesText(b: LessonSection, isFa: boolean): string {
+  return ((isFa ? b.other_sources_fa : b.other_sources_en) || "").trim()
+    || ((isFa ? b.other_sources_en : b.other_sources_fa) || "").trim();
+}
+
 export function LessonDetailScreen() {
   const navClearance = useNavClearance();
   const bleedTop = useBleedTop(true);
@@ -244,7 +250,8 @@ export function LessonDetailScreen() {
     return list.filter(
       (b) =>
         (isFa ? b.title_fa : b.title_en).toLowerCase().includes(q) ||
-        sectionText(b, isFa).toLowerCase().includes(q),
+        sectionText(b, isFa).toLowerCase().includes(q) ||
+        otherSourcesText(b, isFa).toLowerCase().includes(q),
     );
   }, [drug, query, isFa]);
 
@@ -261,11 +268,11 @@ export function LessonDetailScreen() {
 
   if (isLoading || !drugSlug) return <LoadingState />;
 
-  const hasBoxed = (drug?.sections ?? []).some((s) => s.field === "boxed_warning" && s.has_summary);
-  const hasAbuse = (drug?.sections ?? []).some((s) => s.field === "abuse" && s.has_summary);
+  const hasBoxed = (drug?.lesson_sections ?? []).some((s) => s.field === "boxed_warning");
+  const hasAbuse = (drug?.lesson_sections ?? []).some((s) => s.field === "abuse");
   const mins = Math.max(
     3,
-    Math.round((drug?.lesson_sections.reduce((a, b) => a + sectionText(b, isFa).length, 0) ?? 0) / 620),
+    Math.round((drug?.lesson_sections.reduce((a, b) => a + sectionText(b, isFa).length + otherSourcesText(b, isFa).length, 0) ?? 0) / 620),
   );
 
   return (
@@ -350,6 +357,7 @@ export function LessonDetailScreen() {
         </AppText>
 
         <View style={{ flexDirection: row, flexWrap: "wrap", gap: 6, marginTop: 13 }}>
+          <DrugReviewBadge reviewed={drug?.is_reviewed === true} />
           {hasBoxed ? (
             <Badge bg={colors.boxedBorder} fg={colors.cardBg} text={isFa ? "جعبه‌سیاه" : "Boxed"} />
           ) : null}
@@ -389,9 +397,17 @@ export function LessonDetailScreen() {
                 <AppText weight="900" size={isBox ? 14 : 18} color={isBox ? tc.label : colors.ink}>
                   {isFa ? b.title_fa : b.title_en}
                 </AppText>
-                <View style={{ marginTop: 10 }}>
+                {sectionText(b, isFa) ? <View style={{ marginTop: 10 }}>
                   <LessonBody text={sectionText(b, isFa)} color={colors.proseInk} />
-                </View>
+                </View> : null}
+                {otherSourcesText(b, isFa) ? (
+                  <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: isBox ? tc.border : colors.sheetLine }}>
+                    <AppText weight="800" size={12.5} color={colors.accent}>
+                      {isFa ? "اطلاعات سایر منابع" : "Information from other sources"}
+                    </AppText>
+                    <View style={{ marginTop: 8 }}><LessonBody text={otherSourcesText(b, isFa)} color={colors.proseInk} /></View>
+                  </View>
+                ) : null}
               </View>
             );
           })

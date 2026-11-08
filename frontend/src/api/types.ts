@@ -57,6 +57,7 @@ export interface AtcCode {
 }
 
 export interface IngredientListItem {
+  is_reviewed?: boolean;
   rxcui: string;
   name: string;
   slug: string;
@@ -84,6 +85,8 @@ export interface LessonSection {
   tone: SectionTone;
   text_fa: string;
   text_en: string;
+  other_sources_fa?: string;
+  other_sources_en?: string;
   has_summary: boolean;
 }
 
@@ -103,6 +106,7 @@ export interface AtcGroup {
 
 /** A chapter's drug list entry: names only, the lesson comes per drug. */
 export interface ChapterDrug {
+  is_reviewed?: boolean;
   slug: string;
   name: string;
   name_fa?: string;
@@ -693,6 +697,7 @@ export interface MedscapeArticleDetail extends MedscapeArticleListItem {
 
 /** One hit of the lessons' drug search (GET /lessons/search/?q=). */
 export interface LessonDrugSearchResult {
+  is_reviewed?: boolean;
   slug: string;
   name: string;
   name_fa: string;

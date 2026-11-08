@@ -35,7 +35,7 @@ class IngredientAdmin(admin.ModelAdmin):
     search_fields = ["name", "name_fa", "rxcui"]
     list_filter = ["atc_codes"]
     ordering = ["name"]
-    readonly_fields = ["slug", "created_at", "updated_at", "source_fetched_at"]
+    readonly_fields = ["slug", "created_at", "updated_at", "source_fetched_at", "reviewed_at", "reviewed_by_username", "is_reviewed"]
     filter_horizontal = ["atc_codes"]
     inlines = [IngredientProfileSectionInline]
 

@@ -18,6 +18,7 @@ from apps.manage.views import login_url as manage_login_url
 from apps.manage.views import logout_view as manage_logout
 from apps.manage.views import to_login
 from apps.drugs.models import CLINICAL_FIELD_KEYS, Ingredient, IngredientProfileSection
+from apps.drugs.review import with_review_status
 
 from . import access, services
 from .checks import run_checks, warning_count, word_diff
@@ -128,6 +129,8 @@ QUEUE_FILTERS = {
     "pending": "در انتظار تأیید",
     "changes": "نیاز به اصلاح",
     "mine": "پیش‌نویس‌های من",
+    "unreviewed": "بازبینی نشده",
+    "reviewed": "بازبینی شده",
 }
 
 
@@ -139,7 +142,7 @@ def queue(request):
         show = ""
 
     with_raw = Q(sections__raw_text__gt="")
-    qs = Ingredient.objects.annotate(
+    qs = with_review_status(Ingredient.objects.all()).annotate(
         total=Count("sections", filter=with_raw, distinct=True),
         filled=Count(
             "sections",
@@ -159,6 +162,8 @@ def queue(request):
     ).order_by("name")
     if search:
         qs = qs.filter(Q(name__icontains=search) | Q(rxcui=search))
+    if show in {"reviewed", "unreviewed"}:
+        qs = qs.filter(_is_reviewed=show == "reviewed")
     if show == "missing":
         qs = qs.filter(with_raw & (Q(sections__summary_fa="") | Q(sections__summary_en=""))).distinct()
     elif show == "pending":
@@ -190,7 +195,7 @@ def _neighbours(ingredient):
 
 @operator_required
 def workspace(request, slug):
-    ingredient = get_object_or_404(Ingredient, slug=slug)
+    ingredient = get_object_or_404(with_review_status(Ingredient.objects.all()), slug=slug)
     by_field = {s.field: s for s in IngredientProfileSection.objects.filter(ingredient=ingredient)}
     sections = [by_field[f] for f in CLINICAL_FIELD_KEYS if f in by_field]
     if not sections:
@@ -250,6 +255,11 @@ def workspace(request, slug):
         base_fa, base_en = current.before_fa, current.before_en
         checks = current.checks
 
+    extra_before_fa = current.before_other_sources_fa if current else selected.other_sources_fa
+    extra_before_en = current.before_other_sources_en if current else selected.other_sources_en
+    extra_fa = current.after_other_sources_fa if current else selected.other_sources_fa
+    extra_en = current.after_other_sources_en if current else selected.other_sources_en
+
     last_edit = SectionEdit.objects.filter(section=selected).first()
     previous_slug, next_slug = _neighbours(ingredient)
     if not access.can_edit(request.user):
@@ -275,6 +285,11 @@ def workspace(request, slug):
         "previous_slug": previous_slug,
         "next_slug": next_slug,
         "min_reason": services.min_reason_length(),
+        "other_sources_fa": extra_fa,
+        "other_sources_en": extra_en,
+        "other_sources_diff": _other_sources_diff(extra_before_fa, extra_fa, extra_before_en, extra_en),
+        "review_version": services.drug_review_version(ingredient, sections),
+        "drug_reviews": ingredient.drug_reviews.all()[:5],
     })
 
 
@@ -286,6 +301,29 @@ def _section_or_404(slug, field):
 
 def _workspace_url(slug, field):
     return f"{reverse('data_quality_center:workspace', args=[slug])}?field={field}"
+
+
+def _other_sources_diff(before_fa, after_fa, before_en, after_en):
+    return {**_diffs(before_fa, after_fa, before_en, after_en),
+            "has_content": any(v.strip() for v in (before_fa, after_fa, before_en, after_en))}
+
+
+def _request_extra_diff(req):
+    return _other_sources_diff(req.before_other_sources_fa, req.after_other_sources_fa,
+                               req.before_other_sources_en, req.after_other_sources_en)
+
+
+@require_POST
+@capability_required(access.can_approve)
+def confirm_drug_review(request, slug):
+    ingredient = get_object_or_404(Ingredient, slug=slug)
+    try:
+        services.confirm_drug_review(ingredient, request.user, request.POST.get("version", ""), http_request=request)
+    except WorkflowError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "بازبینی کل دارو تأیید شد.")
+    return redirect("data_quality_center:workspace", slug=slug)
 
 
 @require_POST
@@ -301,6 +339,8 @@ def save_draft(request, slug, field):
             summary_fa=request.POST.get("summary_fa", ""),
             summary_en=request.POST.get("summary_en", ""),
             reason=request.POST.get("reason", ""),
+            other_sources_fa=request.POST.get("other_sources_fa"),
+            other_sources_en=request.POST.get("other_sources_en"),
         )
     except WorkflowError as exc:
         return JsonResponse({"ok": False, "error": str(exc)}, status=409)
@@ -313,6 +353,7 @@ def save_draft(request, slug, field):
         "checks": checks,
         "warnings": warning_count(checks),
         "diff": _diffs(req.before_fa, req.after_fa, req.before_en, req.after_en),
+        "other_sources_diff": _request_extra_diff(req),
     })
 
 
@@ -327,6 +368,8 @@ def submit(request, slug, field):
             summary_fa=request.POST.get("summary_fa", ""),
             summary_en=request.POST.get("summary_en", ""),
             reason=request.POST.get("reason", ""),
+            other_sources_fa=request.POST.get("other_sources_fa"),
+            other_sources_en=request.POST.get("other_sources_en"),
         )
         services.submit(req, request.user, http_request=request)
     except WorkflowError as exc:
@@ -423,8 +466,9 @@ def review_desk(request):
         section = selected.section
         context.update({
             "diff": _diffs(selected.before_fa, selected.after_fa, selected.before_en, selected.after_en),
+            "other_sources_diff": _request_extra_diff(selected),
             "events": selected.events.all(),
-            "drifted": section.summary_fa != selected.before_fa or section.summary_en != selected.before_en,
+            "drifted": services.request_has_drifted(selected, section),
             "workspace_url": _workspace_url(section.ingredient.slug, section.field),
         })
     return _render(request, "review.html", "review", context)
@@ -474,6 +518,7 @@ def history(request):
         for edit in page:
             edit.field_label = FIELD_FA.get(edit.field, edit.get_field_display())
             edit.diff = _diffs(edit.before_fa, edit.after_fa, edit.before_en, edit.after_en)
+            edit.other_sources_diff = _request_extra_diff(edit)
             edit.reverted = any(r.status == SectionEditRequest.STATUS_APPROVED for r in edit.revert_requests.all())
             edit.revert_open = any(r.status in SectionEditRequest.OPEN_STATUSES for r in edit.revert_requests.all())
     else:

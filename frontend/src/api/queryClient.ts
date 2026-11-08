@@ -16,7 +16,7 @@ export const CACHE_MAX_AGE = 7 * DAY;
  * build is then discarded on start instead of being fed to newer code. Also
  * when data the app caches for a day was corrected on the server (calculator
  * formulas, lesson text) and should not wait out that day. */
-export const CACHE_BUSTER = "2026-11-07-no-flashcards";
+export const CACHE_BUSTER = "2026-11-08-drug-review-sources";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +49,12 @@ const isEmptyList = (data: unknown) => Array.isArray(data) && data.length === 0;
 const REFERENCE_KEYS = ["calculators", "calculator-categories", "calculator", "medscape-tree"];
 for (const key of REFERENCE_KEYS) {
   queryClient.setQueryDefaults([key], { staleTime: (query) => (isEmptyList(query.state.data) ? 0 : DAY) });
+}
+
+// Published drug corrections and the whole-drug review label are checked
+// whenever their screen is opened; cached content still paints immediately.
+for (const key of ["chapter", "lesson-drug"]) {
+  queryClient.setQueryDefaults([key], { staleTime: 0 });
 }
 
 // UpToDate and Lexicomp read the package on this device first (see

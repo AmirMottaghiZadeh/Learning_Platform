@@ -53,6 +53,7 @@ class ChapterDrugSerializer(serializers.Serializer):
     several MB."""
 
     slug = serializers.CharField()
+    is_reviewed = serializers.BooleanField(read_only=True)
     name = serializers.CharField()
     name_fa = serializers.CharField(allow_blank=True)
     pharm_classes = serializers.ListField(child=serializers.CharField())
@@ -91,6 +92,7 @@ class DrugSearchChapterSerializer(serializers.Serializer):
 
 class DrugSearchResultSerializer(serializers.Serializer):
     slug = serializers.CharField()
+    is_reviewed = serializers.BooleanField()
     name = serializers.CharField()
     name_fa = serializers.CharField(allow_blank=True)
     # The lesson chapters the drug appears in; the first opens it.

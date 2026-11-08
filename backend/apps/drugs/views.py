@@ -10,6 +10,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics
 
 from .models import AtcCode, Ingredient
+from .review import with_review_status
 from .serializers import (
     AtcCodeSerializer,
     IngredientDetailSerializer,
@@ -30,7 +31,7 @@ class IngredientListView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        qs = Ingredient.objects.prefetch_related("atc_codes").order_by("name")
+        qs = with_review_status(Ingredient.objects.all()).prefetch_related("atc_codes").order_by("name")
         search = self.request.query_params.get("search", "").strip()
         if search:
             qs = qs.filter(name__istartswith=search) | qs.filter(rxcui=search)
@@ -46,7 +47,7 @@ class IngredientDetailView(generics.RetrieveAPIView):
     lookup_field = "slug"
 
     def get_queryset(self):
-        return Ingredient.objects.prefetch_related("atc_codes", "sections")
+        return with_review_status(Ingredient.objects.all()).prefetch_related("atc_codes", "sections")
 
 
 class AtcCodeListView(generics.ListAPIView):

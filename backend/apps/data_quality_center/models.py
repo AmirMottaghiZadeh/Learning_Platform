@@ -8,9 +8,9 @@ from apps.drugs.models import CLINICAL_FIELDS
 class SectionEdit(models.Model):
     """Append-only ledger of one edit actually APPLIED to an ingredient
     section's summaries -- written only when a `SectionEditRequest` clears
-    superuser review (see below), never at submission time.
+    authorized approval (see below), never at submission time.
 
-    The Data Quality Center only edits `summary_fa` / `summary_en` on
+    The Data Quality Center edits summaries and optional other-source notes on
     `drugs.IngredientProfileSection`; the raw label text stays read-only.
     """
 
@@ -52,6 +52,10 @@ class SectionEdit(models.Model):
     after_fa = models.TextField(blank=True)
     before_en = models.TextField(blank=True)
     after_en = models.TextField(blank=True)
+    before_other_sources_fa = models.TextField(blank=True, default="", db_default="")
+    after_other_sources_fa = models.TextField(blank=True, default="", db_default="")
+    before_other_sources_en = models.TextField(blank=True, default="", db_default="")
+    after_other_sources_en = models.TextField(blank=True, default="", db_default="")
     reason = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -127,6 +131,10 @@ class SectionEditRequest(models.Model):
     after_fa = models.TextField(blank=True)
     before_en = models.TextField(blank=True)
     after_en = models.TextField(blank=True)
+    before_other_sources_fa = models.TextField(blank=True, default="", db_default="")
+    after_other_sources_fa = models.TextField(blank=True, default="", db_default="")
+    before_other_sources_en = models.TextField(blank=True, default="", db_default="")
+    after_other_sources_en = models.TextField(blank=True, default="", db_default="")
     reason = models.TextField(blank=True)
     # Results of the automatic checks at the last submission (see checks.py).
     checks = models.JSONField(default=list, blank=True)
@@ -184,6 +192,25 @@ class SectionEditRequest(models.Model):
     @property
     def is_editable(self):
         return self.status in self.EDITABLE_STATUSES
+
+
+class DrugReview(models.Model):
+    """Append-only confirmation of a whole drug's published content."""
+
+    ingredient = models.ForeignKey("drugs.Ingredient", on_delete=models.CASCADE, related_name="drug_reviews")
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    reviewer_username = models.CharField(max_length=150)
+    content_version = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValueError("DrugReview rows are append-only.")
+        return super().save(*args, **kwargs)
 
 
 class ReviewEvent(models.Model):

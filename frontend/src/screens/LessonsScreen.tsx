@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 
 import { lessonsApi } from "@/api/endpoints";
+import { DrugReviewBadge } from "@/components/DrugReviewBadge";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
@@ -36,7 +37,7 @@ export function LessonsScreen() {
     queryKey: ["lesson-search", query],
     queryFn: () => lessonsApi.search(query),
     enabled: searching,
-    staleTime: 5 * 60_000,
+    staleTime: 0,
   });
   useTour("lessons", !isLoading && !isError);
 
@@ -184,6 +185,7 @@ function DrugSearchResults({
                 <AppText weight="800" size={15}>
                   {primary}
                 </AppText>
+                <View style={{ marginTop: 5 }}><DrugReviewBadge reviewed={hit.is_reviewed === true} /></View>
                 {secondary ? (
                   <AppText muted weight="600" size={12.5} style={{ marginTop: 1 }}>
                     {secondary}

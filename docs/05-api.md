@@ -145,6 +145,7 @@
 ```jsonc
 // یک ماده در فهرست
 { "rxcui": "52175", "name": "losartan", "slug": "losartan-52175", "n_products": 7, "n_source_records": 206,
+  "is_reviewed": false,
   "pharm_classes": ["Angiotensin 2 Receptor Blocker"],
   "atc_codes": [{ "code": "C09CA", "name": "…", "level": 4 }] }
 // بخش درس‌نامه
@@ -152,7 +153,7 @@
   "tone": "info",            // info | deny | boxed | caution | special
   "text_fa": "…", "text_en": "…", "has_summary": true }
 // ترتیب کلیدها: mechanism, indication, dose, forms, contraindications, do_not_use, boxed_warning,
-// warning, side, interactions, pregnancy, abuse — کلیدی که خلاصه ندارد حذف می‌شود
+// warning, side, interactions, pregnancy, abuse — کلیدی که نه خلاصه و نه اطلاعات سایر منابع دارد حذف می‌شود
 ```
 
 ## درس‌نامه — `/lessons/` (ویژگی `lessons`)
@@ -168,6 +169,10 @@
 | GET | `/lessons/drugs/{slug}/` | درس یک دارو (`lesson_sections`) |
 
 خوانده‌شدن دارو سراسری است: دارویی که در چند فصل هست، با یک بار خواندن همه‌جا خوانده‌شده نشان داده می‌شود.
+
+**بازبینی و اطلاعات سایر منابع:** `is_reviewed` یک Boolean فقط‌خواندنی در داروهای `/drugs/`، جزئیات دارو، داروهای فصل و نتیجهٔ جست‌وجو است. این مقدار از تأیید مستقلِ کل دارو و نسخهٔ فعلی محتوای منتشرشده محاسبه می‌شود؛ ربطی به `read_drug_slugs` یا صرفاً وجود خلاصه ندارد. جزئیات `sections` دارای `other_sources_fa/en` هستند؛ در `lesson_sections` این دو کلید فقط وقتی حداقل یک زبان متن داشته باشد اضافه می‌شوند. بخشِ دارای فقط اطلاعات تکمیلی هم با `has_summary: false` در `lesson_sections` می‌آید؛ بخشِ کاملاً خالی حذف می‌شود. متن‌های پیش‌نویس/در انتظار هیچ‌گاه از این API خواندنی منتشر نمی‌شوند.
+
+ثبت تأیید کل دارو از فرم مدیریت `POST /manage/data/drugs/{slug}/confirm-review/` با CSRF و `version` صفحه انجام می‌شود؛ مجوز تأیید لازم است. این مسیر یک API ویرایشی عمومی در اپ نیست. جزئیات گردش، نسخهٔ قدیمی، سوابق و مهاجرت در [مدیریت کیفیت داده](11-admin-consoles.md#وضعیت-بازبینی-کل-دارو) آمده است.
 
 ## پیشرفت و برنامه — `/me/`
 

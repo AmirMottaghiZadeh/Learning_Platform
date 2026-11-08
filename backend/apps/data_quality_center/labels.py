@@ -14,8 +14,8 @@ STATES = {
     "locked": ("در دست دیگری", "muted"),
     "draft": ("پیش‌نویس", "teal"),
     "missing": ("بدون خلاصه", "danger"),
-    "approved": ("تأییدشده", "ok"),
-    "unreviewed": ("بازبینی‌نشده", "muted"),
+    "approved": ("ویرایش اعمال‌شده", "ok"),
+    "unreviewed": ("خلاصهٔ واردشده", "muted"),
     "no_source": ("بدون متن منبع", "muted"),
 }
 

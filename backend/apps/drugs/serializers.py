@@ -54,6 +54,7 @@ class AtcCodeSerializer(serializers.ModelSerializer):
 
 class IngredientListSerializer(serializers.ModelSerializer):
     atc_codes = AtcCodeSerializer(many=True, read_only=True)
+    is_reviewed = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Ingredient
@@ -65,6 +66,7 @@ class IngredientListSerializer(serializers.ModelSerializer):
             "n_source_records",
             "pharm_classes",
             "atc_codes",
+            "is_reviewed",
         ]
 
 
@@ -83,6 +85,8 @@ class ProfileSectionSerializer(serializers.ModelSerializer):
             "n_contributing_products",
             "summary_fa",
             "summary_en",
+            "other_sources_fa",
+            "other_sources_en",
             "raw_text",
         ]
 
@@ -108,6 +112,8 @@ class LessonSectionSerializer(serializers.Serializer):
     text_fa = serializers.CharField()
     text_en = serializers.CharField()
     has_summary = serializers.BooleanField()
+    other_sources_fa = serializers.CharField(required=False, allow_blank=True)
+    other_sources_en = serializers.CharField(required=False, allow_blank=True)
 
 
 class IngredientDetailSerializer(IngredientListSerializer):
@@ -140,9 +146,11 @@ class IngredientDetailSerializer(IngredientListSerializer):
                 continue
             text_fa = (section.summary_fa or "").strip()
             text_en = (section.summary_en or "").strip()
-            if not text_fa and not text_en:
+            other_fa = section.other_sources_fa.strip()
+            other_en = section.other_sources_en.strip()
+            if not any((text_fa, text_en, other_fa, other_en)):
                 continue
-            rows.append({
+            row = {
                 "key": key,
                 "field": field,
                 "title_fa": title_fa,
@@ -150,8 +158,11 @@ class IngredientDetailSerializer(IngredientListSerializer):
                 "tone": tone,
                 "text_fa": text_fa,
                 "text_en": text_en,
-                "has_summary": True,
-            })
+                "has_summary": bool(text_fa or text_en),
+            }
+            if other_fa or other_en:
+                row.update(other_sources_fa=other_fa, other_sources_en=other_en)
+            rows.append(row)
         return rows
 
 

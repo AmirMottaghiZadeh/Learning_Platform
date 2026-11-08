@@ -46,11 +46,12 @@ CREATE TABLE ingredient_atc (rxcui TEXT NOT NULL, code TEXT NOT NULL);
 CREATE TABLE section (
     rxcui TEXT NOT NULL, field TEXT NOT NULL, raw_text TEXT NOT NULL,
     n_contributing_products INTEGER NOT NULL, summary_fa TEXT NOT NULL, summary_en TEXT NOT NULL,
+    other_sources_fa TEXT NOT NULL, other_sources_en TEXT NOT NULL,
     PRIMARY KEY (rxcui, field)
 );
 """
 
-_SECTION_FIELDS = ("raw_text", "n_contributing_products", "summary_fa", "summary_en")
+_SECTION_FIELDS = ("raw_text", "n_contributing_products", "summary_fa", "summary_en", "other_sources_fa", "other_sources_en")
 
 
 def part_name(number):
@@ -138,7 +139,7 @@ def export(out, max_bytes, log=print):
         )
         for n, s in enumerate(sections.iterator(chunk_size=500), start=1):
             row = (s.ingredient.rxcui, s.field, s.raw_text or "", s.n_contributing_products,
-                   s.summary_fa or "", s.summary_en or "")
+                   s.summary_fa or "", s.summary_en or "", s.other_sources_fa or "", s.other_sources_en or "")
             # Room for the row (its text, generously counted) or a new part.
             needed = 2 * sum(len(str(v).encode()) for v in row) + 65536
             if n % 200 == 0:
@@ -146,7 +147,7 @@ def export(out, max_bytes, log=print):
             if parts.counts[-1]["section"] and parts.size() + needed > parts.max_bytes:
                 log(f"  part {len(parts.paths)}: {parts.size() / 1_000_000:.0f} MB")
                 parts.next()
-            parts.conn.execute("INSERT INTO section VALUES (?, ?, ?, ?, ?, ?)", row)
+            parts.conn.execute("INSERT INTO section VALUES (?, ?, ?, ?, ?, ?, ?, ?)", row)
             parts.counts[-1]["section"] += 1
         parts.close(timezone.now().isoformat())
     except BaseException:
@@ -293,7 +294,7 @@ def load(parts, log=print):
             (s["ingredient_id"], s["field"]): s
             for s in IngredientProfileSection.objects.annotate(
                 raw_md5=MD5("raw_text"), fa_md5=MD5("summary_fa"), en_md5=MD5("summary_en")
-            ).values("pk", "ingredient_id", "field", "n_contributing_products", "raw_md5", "fa_md5", "en_md5")
+            ).values("pk", "ingredient_id", "field", "n_contributing_products", "raw_md5", "fa_md5", "en_md5", "other_sources_fa", "other_sources_en")
         }
         to_create, to_update, unchanged = [], [], 0
         updated = 0
@@ -302,8 +303,10 @@ def load(parts, log=print):
                 ingredient = by_rxcui.get(row["rxcui"]) if row["rxcui"] in in_file else None
                 if ingredient is None:
                     continue  # its ingredient was skipped above
-                values = {f: row[f] for f in _SECTION_FIELDS}
                 have_row = existing.get((ingredient.pk, row["field"]))
+                # Old reference files have no supplementary columns. Keep
+                # local reviewed additions when loading such a file.
+                values = {f: row[f] if f in row.keys() else (have_row or {}).get(f, "") for f in _SECTION_FIELDS}
                 if have_row is None:
                     to_create.append(IngredientProfileSection(ingredient=ingredient, field=row["field"], **values))
                 elif (
@@ -311,6 +314,8 @@ def load(parts, log=print):
                     or have_row["raw_md5"] != _digest(row["raw_text"])
                     or have_row["fa_md5"] != _digest(row["summary_fa"])
                     or have_row["en_md5"] != _digest(row["summary_en"])
+                    or have_row["other_sources_fa"] != values["other_sources_fa"]
+                    or have_row["other_sources_en"] != values["other_sources_en"]
                 ):
                     to_update.append(IngredientProfileSection(pk=have_row["pk"], updated_at=timezone.now(), **values))
                 else:

@@ -59,6 +59,7 @@ import re
 import sqlite3
 
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 
 from apps.drugs.management.commands.import_openfda import DEFAULT_SOURCE
 from apps.drugs.models import IngredientProfileSection
@@ -257,6 +258,7 @@ class Command(BaseCommand):
                     removed_here += removed_en
 
             if update_fields:
+                s.updated_at = timezone.now()
                 touched += 1
                 total_removed += removed_here
                 if not s.summary_fa.strip() and not s.summary_en.strip():
@@ -270,7 +272,7 @@ class Command(BaseCommand):
             for fields in ({"summary_fa"}, {"summary_en"}, {"summary_fa", "summary_en"}):
                 batch = [s for s, uf in to_save if set(uf) == fields]
                 if batch:
-                    IngredientProfileSection.objects.bulk_update(batch, list(fields), batch_size=500)
+                    IngredientProfileSection.objects.bulk_update(batch, [*fields, "updated_at"], batch_size=500)
 
         self.stdout.write(self.style.SUCCESS(
             f"{'(dry-run) ' if dry_run else ''}{touched} sections touched, "

@@ -61,6 +61,7 @@
       <a href="{{ workspace_url }}" style="font-size: 12.5px; font-weight: 800">باز کردن در میز کار ←</a>
     </div>
     <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap"><span class="ltr" style="font-size: 22px; font-weight: 800">{{ selected.ingredient_name }}</span><span style="font-size: 15px; font-weight: 800; color: var(--prose)">{{ selected.field_label }}</span></div>
+    <div>{% include "data_quality_center/drug_review_badge.html" with ingredient=selected.section.ingredient %}</div>
     <div class="muted" style="font-size: 12.5px">ارسال از <b class="ltr">{{ selected.requested_by_username }}</b> · {{ selected.submitted_at|tehran }} ·
       {% if drifted %}<span style="color: var(--danger); font-weight: 800">متن بخش پس از ارسال تغییر کرده — تأیید ممکن نیست</span>{% else %}نسخهٔ پایهٔ بخش هنوز معتبر است ✓{% endif %}
     </div>
@@ -84,6 +85,13 @@
     </div>
 
     <div class="checks">
+      {% if other_sources_diff.has_content %}
+      <div style="width: 100%">
+        <div class="field-label">اطلاعات سایر منابع — تغییرات پیشنهادی</div>
+        <div class="diff" dir="rtl">{{ other_sources_diff.fa|safe }}</div>
+        <div class="diff" dir="ltr">{{ other_sources_diff.en|safe }}</div>
+      </div>
+      {% endif %}
       <span style="font-size: 12.5px; font-weight: 800; color: var(--muted); margin-left: 4px">بررسی خودکار هنگام ارسال:</span>
       {% for c in selected.checks %}<span class="check {{ c.level }}">{% if c.level == 'ok' %}✓ {% else %}! {% endif %}{{ c.label }}</span>{% empty %}<span class="faint" style="font-size: 12px">—</span>{% endfor %}
     </div>

@@ -8,15 +8,67 @@ Who may do what:
 - reverting additionally requires the apply-data-quality-change permission.
 """
 
+import hashlib
+import json
+
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from apps.drugs.models import IngredientProfileSection
+from apps.drugs.models import Ingredient, IngredientProfileSection
 
 from . import access
 from .checks import run_checks
-from .models import ReviewEvent, SectionEdit, SectionEditRequest
+from .models import DrugReview, ReviewEvent, SectionEdit, SectionEditRequest
+
+CONTENT_FIELDS = ("summary_fa", "summary_en", "other_sources_fa", "other_sources_en")
+SNAPSHOT_FIELDS = ("fa", "en", "other_sources_fa", "other_sources_en")
+
+
+def _snapshot(req, prefix):
+    return tuple(getattr(req, f"{prefix}_{name}") for name in SNAPSHOT_FIELDS)
+
+
+def _live(section):
+    return tuple(getattr(section, name) for name in CONTENT_FIELDS)
+
+
+def _set_snapshot(req, prefix, values):
+    for name, value in zip(SNAPSHOT_FIELDS, values):
+        setattr(req, f"{prefix}_{name}", value)
+
+
+def request_has_drifted(req, section):
+    return _live(section) != _snapshot(req, "before")
+
+
+def drug_review_version(ingredient, sections=None):
+    sections = sections if sections is not None else ingredient.sections.order_by("pk")
+    payload = [ingredient.name, ingredient.name_fa, ingredient.pharm_classes,
+               [(s.pk, s.field, s.raw_text, *_live(s), s.updated_at.isoformat()) for s in sorted(sections, key=lambda s: s.pk)]]
+    return hashlib.sha256(json.dumps(payload, ensure_ascii=False).encode()).hexdigest()
+
+
+@transaction.atomic
+def confirm_drug_review(ingredient, user, expected_version, *, http_request=None):
+    _require_capability(user, access.can_approve)
+    ingredient = Ingredient.objects.select_for_update().get(pk=ingredient.pk)
+    sections = list(ingredient.sections.select_for_update().order_by("pk"))
+    version = drug_review_version(ingredient, sections)
+    if not expected_version or expected_version != version:
+        raise WorkflowError("محتوای دارو تغییر کرده؛ صفحه را تازه کنید و دوباره بازبینی کنید.")
+    if not any(any(value.strip() for value in _live(s)) for s in sections):
+        raise WorkflowError("این دارو هنوز محتوای منتشرشده‌ای برای بازبینی ندارد.")
+    if SectionEditRequest.objects.filter(section__ingredient=ingredient, status__in=SectionEditRequest.OPEN_STATUSES).exists():
+        raise WorkflowError("ابتدا درخواست‌های باز این دارو را تعیین تکلیف کنید.")
+    if ingredient.is_reviewed:
+        return ingredient
+    DrugReview.objects.create(ingredient=ingredient, reviewer=user, reviewer_username=user.get_username(),
+                             content_version=version, ip_address=_client_ip(http_request))
+    ingredient.reviewed_at = timezone.now()
+    ingredient.reviewed_by_username = user.get_username()
+    ingredient.save(update_fields=["reviewed_at", "reviewed_by_username"])
+    return ingredient
 
 
 class WorkflowError(ValueError):
@@ -83,7 +135,7 @@ def editable_request(section, user):
     )
 
 
-def save_draft(section, user, *, summary_fa, summary_en, reason):
+def save_draft(section, user, *, summary_fa, summary_en, reason, other_sources_fa=None, other_sources_en=None):
     """Creates or updates `user`'s editable request on the section (the
     autosave). Refused while someone else's request holds the section."""
     _require_capability(user, access.can_edit)
@@ -113,6 +165,15 @@ def save_draft(section, user, *, summary_fa, summary_en, reason):
         # (and the app's line parser) use plain LF.
         req.after_fa = _clean(summary_fa)
         req.after_en = _clean(summary_en)
+        if req.pk is None:
+            req.before_other_sources_fa = section.other_sources_fa
+            req.before_other_sources_en = section.other_sources_en
+            req.after_other_sources_fa = section.other_sources_fa
+            req.after_other_sources_en = section.other_sources_en
+        if other_sources_fa is not None:
+            req.after_other_sources_fa = _clean(other_sources_fa)
+        if other_sources_en is not None:
+            req.after_other_sources_en = _clean(other_sources_en)
         req.reason = " ".join(reason.split())
         req.save()
         return req
@@ -131,15 +192,14 @@ def submit(req, user, *, http_request=None):
             raise WorkflowError(f"دلیل تغییر را دست‌کم در {min_reason_length()} نویسه بنویسید.")
 
         section = IngredientProfileSection.objects.select_for_update().get(pk=req.section_id)
-        if req.after_fa == section.summary_fa and req.after_en == section.summary_en:
+        if _snapshot(req, "after") == _live(section):
             raise WorkflowError("متن پیشنهادی با متن فعلی فرقی ندارد.")
         held = open_request(section)
         if held and held.pk != req.pk:
             raise WorkflowError(f"درخواست #{held.pk} برای همین بخش هنوز باز است.")
 
-        drifted = section.summary_fa != req.before_fa or section.summary_en != req.before_en
-        req.before_fa = section.summary_fa
-        req.before_en = section.summary_en
+        drifted = _live(section) != _snapshot(req, "before")
+        _set_snapshot(req, "before", _live(section))
         req.checks = run_checks(section.raw_text, req.before_fa, req.after_fa, req.before_en, req.after_en)
         if drifted:
             req.checks.insert(0, {
@@ -221,15 +281,19 @@ def approve(req, reviewer, note="", *, http_request=None):
         req = SectionEditRequest.objects.select_for_update().get(pk=req.pk)
         if not req.is_pending:
             raise WorkflowError("فقط درخواست در انتظار تأیید را می‌شود تأیید کرد.")
+        # All published writes and whole-drug confirmations lock the parent
+        # first, so confirming a drug cannot race with applying a summary.
+        ingredient_id = IngredientProfileSection.objects.values_list("ingredient_id", flat=True).get(pk=req.section_id)
+        Ingredient.objects.select_for_update().get(pk=ingredient_id)
         section = IngredientProfileSection.objects.select_for_update().get(pk=req.section_id)
-        if section.summary_fa != req.before_fa or section.summary_en != req.before_en:
+        if request_has_drifted(req, section):
             raise WorkflowError(
                 "متن این بخش پس از ارسال درخواست تغییر کرده؛ آن را برای اصلاح برگردانید."
             )
 
-        section.summary_fa = req.after_fa
-        section.summary_en = req.after_en
-        section.save(update_fields=["summary_fa", "summary_en", "updated_at"])
+        for name, value in zip(CONTENT_FIELDS, _snapshot(req, "after")):
+            setattr(section, name, value)
+        section.save(update_fields=[*CONTENT_FIELDS, "updated_at"])
         edit = SectionEdit.objects.create(
             section=section,
             request=req,
@@ -243,6 +307,10 @@ def approve(req, reviewer, note="", *, http_request=None):
             after_fa=req.after_fa,
             before_en=req.before_en,
             after_en=req.after_en,
+            before_other_sources_fa=req.before_other_sources_fa,
+            after_other_sources_fa=req.after_other_sources_fa,
+            before_other_sources_en=req.before_other_sources_en,
+            after_other_sources_en=req.after_other_sources_en,
             reason=req.reason,
         )
         _close(req, reviewer, SectionEditRequest.STATUS_APPROVED, note)
@@ -295,7 +363,7 @@ def start_revert(edit, user, reason, *, http_request=None):
         held = open_request(section)
         if held:
             raise WorkflowError(f"درخواست #{held.pk} برای همین بخش هنوز باز است.")
-        if section.summary_fa == edit.before_fa and section.summary_en == edit.before_en:
+        if _live(section) == _snapshot(edit, "before"):
             raise WorkflowError("متن این بخش همین حالا همان متن قبل از این ویرایش است.")
         req = SectionEditRequest.objects.create(
             section=section,
@@ -307,6 +375,10 @@ def start_revert(edit, user, reason, *, http_request=None):
             before_en=section.summary_en,
             after_fa=edit.before_fa,
             after_en=edit.before_en,
+            before_other_sources_fa=section.other_sources_fa,
+            before_other_sources_en=section.other_sources_en,
+            after_other_sources_fa=edit.before_other_sources_fa,
+            after_other_sources_en=edit.before_other_sources_en,
             reason=reason,
             reverts=edit,
             status=SectionEditRequest.STATUS_PENDING,

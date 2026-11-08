@@ -3,6 +3,7 @@ import React from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
 import { lessonsApi } from "@/api/endpoints";
+import { DrugReviewBadge } from "@/components/DrugReviewBadge";
 import type { AtcGroup, ChapterDrug } from "@/api/types";
 import { ChromeButton, LangToggleButton, TourButton } from "@/components/ScreenChrome";
 import { useBleedTop } from "@/components/AppShell";
@@ -248,6 +249,7 @@ export function LessonListScreen() {
                   <AppText weight="800" size={14}>
                     {isFa ? drug.name_fa?.trim() || drug.name : drug.name}
                   </AppText>
+                  <View style={{ marginTop: 5 }}><DrugReviewBadge reviewed={drug.is_reviewed === true} /></View>
                   {drug.pharm_classes.length ? (
                     <AppText muted weight="600" size={12} numberOfLines={1} style={{ marginTop: 2 }}>
                       {drug.pharm_classes.join(" · ")}

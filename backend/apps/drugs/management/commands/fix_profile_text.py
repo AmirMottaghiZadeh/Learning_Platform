@@ -11,6 +11,7 @@ Idempotent. `--pipeline` makes the same change in the openfda pipeline file
 import sqlite3
 
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 
 from apps.drugs.management.commands.import_openfda import DEFAULT_SOURCE
 from apps.drugs.models import IngredientProfileSection
@@ -45,13 +46,14 @@ class Command(BaseCommand):
                     setattr(section, attr, new)
                     fields.append(attr)
             if fields:
+                section.updated_at = timezone.now()
                 changed.append((section, fields))
 
         if not dry_run:
             for fields in ({"summary_fa"}, {"summary_en"}, {"summary_fa", "summary_en"}):
                 batch = [s for s, f in changed if set(f) == fields]
                 if batch:
-                    IngredientProfileSection.objects.bulk_update(batch, list(fields), batch_size=500)
+                    IngredientProfileSection.objects.bulk_update(batch, [*fields, "updated_at"], batch_size=500)
         emptied = sum(1 for s, _ in changed if not s.summary_fa.strip() and not s.summary_en.strip())
         self.stdout.write(self.style.SUCCESS(
             f"{'(dry-run) ' if dry_run else ''}{len(changed)} sections fixed, {emptied} now empty"

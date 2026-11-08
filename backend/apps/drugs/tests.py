@@ -580,6 +580,42 @@ class OpenfdaReferenceDbTests(TestCase):
         self.assertEqual(list(self.drug.atc_codes.values_list("code", flat=True)), ["C02AC01"])
         self.assertTrue(Ingredient.objects.filter(pk=other.pk).exists())  # nothing is deleted
 
+    def test_other_sources_round_trip_and_legacy_files_preserve_local_additions(self):
+        from apps.drugs import reference_db
+
+        section = IngredientProfileSection.objects.get(ingredient=self.drug, field="warnings")
+        section.other_sources_fa = "یادداشت منبع تکمیلی"
+        section.other_sources_en = "Supplementary source note."
+        section.save()
+        with tempfile.TemporaryDirectory() as tmp:
+            paths, _ = reference_db.export(tmp, 300_000)
+            IngredientProfileSection.objects.filter(pk=section.pk).update(other_sources_fa="", other_sources_en="")
+            parts = reference_db.open_parts(tmp)
+            try:
+                reference_db.load(parts)
+            finally:
+                for conn, _ in parts:
+                    conn.close()
+            section.refresh_from_db()
+            self.assertEqual(section.other_sources_en, "Supplementary source note.")
+            for path in paths:
+                conn = sqlite3.connect(path)
+                conn.execute("CREATE TABLE legacy_section AS SELECT rxcui, field, raw_text, n_contributing_products, summary_fa, summary_en FROM section")
+                conn.execute("DROP TABLE section")
+                conn.execute("ALTER TABLE legacy_section RENAME TO section")
+                conn.commit()
+                conn.close()
+            IngredientProfileSection.objects.filter(pk=section.pk).update(summary_fa="Changed summary")
+            parts = reference_db.open_parts(tmp)
+            try:
+                reference_db.load(parts)
+            finally:
+                for conn, _ in parts:
+                    conn.close()
+            section.refresh_from_db()
+            self.assertEqual(section.other_sources_en, "Supplementary source note.")
+            self.assertEqual(section.other_sources_fa, "یادداشت منبع تکمیلی")
+
     def test_parts_of_two_exports_are_refused(self):
         from django.core.management.base import CommandError
 

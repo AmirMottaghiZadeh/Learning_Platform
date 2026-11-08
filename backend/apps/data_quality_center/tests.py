@@ -9,7 +9,7 @@ from apps.drugs.models import Ingredient, IngredientProfileSection
 
 from . import services
 from .checks import numbers_missing_from_source, run_checks, word_diff
-from .models import ReviewEvent, SectionEdit, SectionEditRequest
+from .models import DrugReview, ReviewEvent, SectionEdit, SectionEditRequest
 from .services import WorkflowError
 
 FIELD = "dosage_and_administration"
@@ -391,3 +391,152 @@ class RoleWorkflowTests(ConsoleTestCase):
         self.superuser.is_active = False
         with self.assertRaises(WorkflowError):
             services.approve(req, self.superuser)
+
+
+class WholeDrugAndSourcesTests(ConsoleTestCase):
+    def publish(self):
+        self.section.summary_fa = FA
+        self.section.summary_en = EN
+        self.section.save()
+
+    def confirm(self, *, user=None, version=None):
+        return self.as_user(user or self.superuser).post(
+            reverse("data_quality_center:confirm_drug_review", args=[self.ingredient.slug]),
+            {"version": version if version is not None else services.drug_review_version(self.ingredient)},
+        )
+
+    def test_filled_summaries_are_unreviewed_until_whole_drug_confirmation(self):
+        self.publish()
+        self.assertFalse(self.ingredient.is_reviewed)
+        response = self.client.get(reverse("data_quality_center:queue"))
+        self.assertContains(response, 'data-drug-reviewed="false"')
+        self.confirm()
+        self.ingredient.refresh_from_db()
+        self.assertTrue(self.ingredient.is_reviewed)
+        self.assertEqual(self.ingredient.reviewed_by_username, self.superuser.username)
+        self.assertEqual(DrugReview.objects.count(), 1)
+        self.confirm()
+        self.assertEqual(DrugReview.objects.count(), 1)  # double click is harmless
+        response = self.client.get(reverse("data_quality_center:queue"), {"show": "reviewed"})
+        self.assertContains(response, 'data-drug-reviewed="true"')
+        response = self.client.get(reverse("data_quality_center:queue"), {"show": "unreviewed"})
+        self.assertEqual(response.context["page"].paginator.count, 0)
+
+    def test_approving_one_section_does_not_mark_the_whole_drug_reviewed(self):
+        self.submit()
+        self.review(SectionEditRequest.objects.get(), "approve")
+        self.ingredient.refresh_from_db()
+        self.assertFalse(self.ingredient.is_reviewed)
+
+    def test_operator_cannot_confirm_or_see_the_confirmation_button(self):
+        self.publish()
+        page = self.client.get(reverse("data_quality_center:workspace", args=[self.ingredient.slug]))
+        self.assertNotContains(page, "تأیید بازبینی دارو")
+        self.confirm(user=self.staff)
+        self.assertFalse(DrugReview.objects.exists())
+        with self.assertRaises(WorkflowError):
+            services.confirm_drug_review(self.ingredient, self.staff, services.drug_review_version(self.ingredient))
+
+    def test_assigned_approver_can_confirm_without_django_staff_flags(self):
+        self.publish()
+        approver = get_user_model().objects.create_user("drug-approver", password="pass-123456")
+        RoleAssignment.objects.create(user=approver, role=Role.objects.get(key=Role.DATA_QUALITY_APPROVER))
+        page = self.as_user(approver).get(reverse("data_quality_center:workspace", args=[self.ingredient.slug]))
+        self.assertContains(page, "تأیید بازبینی دارو")
+        self.confirm(user=approver)
+        self.ingredient.refresh_from_db()
+        self.assertTrue(self.ingredient.is_reviewed)
+        self.assertEqual(DrugReview.objects.get().reviewer, approver)
+
+    def test_confirmation_refuses_empty_pending_or_stale_content(self):
+        self.confirm()
+        self.assertFalse(DrugReview.objects.exists())
+        self.publish()
+        old_version = services.drug_review_version(self.ingredient)
+        self.section.other_sources_fa = "اطلاعات تکمیلی آزمایشی"
+        self.section.save()
+        self.confirm(version=old_version)
+        self.assertFalse(DrugReview.objects.exists())
+        self.submit(summary_en="Changed text.")
+        self.confirm()
+        self.assertFalse(DrugReview.objects.exists())
+
+    def test_published_changes_and_deleted_sections_require_a_new_review(self):
+        self.publish()
+        extra = IngredientProfileSection.objects.create(ingredient=self.ingredient, field="warnings", summary_en="Sample text.")
+        self.confirm()
+        self.section.other_sources_en = "New supplementary content."
+        self.section.save()
+        self.ingredient.refresh_from_db()
+        self.assertFalse(self.ingredient.is_reviewed)
+        self.confirm()
+        self.ingredient.refresh_from_db()
+        self.assertTrue(self.ingredient.is_reviewed)
+        extra.delete()
+        self.ingredient.refresh_from_db()
+        self.assertFalse(self.ingredient.is_reviewed)
+
+    @override_settings(ROOT_URLCONF="config.urls")
+    def test_other_sources_are_hidden_until_approved_and_can_be_removed(self):
+        from rest_framework.test import APIClient
+
+        api = APIClient()
+        api.force_authenticate(self.staff)
+        url = f"/api/v1/lessons/drugs/{self.ingredient.slug}/"
+        self.submit(other_sources_fa="اطلاعات تکمیلی آزمایشی", other_sources_en="Supplementary preview content.")
+        self.assertEqual(api.get(url).data["lesson_sections"], [])
+        req = SectionEditRequest.objects.get()
+        page = self.as_user(self.superuser).get(reverse("data_quality_center:review"))
+        self.assertContains(page, "اطلاعات تکمیلی آزمایشی")
+        self.review(req, "approve")
+        drug = api.get(url).data
+        self.assertFalse(drug["is_reviewed"])
+        self.assertEqual(drug["lesson_sections"][0]["other_sources_fa"], "اطلاعات تکمیلی آزمایشی")
+        self.confirm()
+        self.assertTrue(api.get(url).data["is_reviewed"])
+        self.submit(other_sources_fa="", other_sources_en="")
+        req = SectionEditRequest.objects.get(status=SectionEditRequest.STATUS_PENDING)
+        self.review(req, "approve")
+        drug = api.get(url).data
+        self.assertFalse(drug["is_reviewed"])
+        self.assertNotIn("other_sources_fa", drug["lesson_sections"][0])
+        self.assertNotIn("other_sources_en", drug["lesson_sections"][0])
+
+    def test_other_sources_only_change_can_be_approved_and_reverted(self):
+        self.publish()
+        self.submit(other_sources_fa="اطلاعات تکمیلی", other_sources_en="Additional source text.")
+        req = SectionEditRequest.objects.get()
+        self.review(req, "approve")
+        edit = SectionEdit.objects.get()
+        self.assertEqual(edit.after_other_sources_en, "Additional source text.")
+        revert = services.start_revert(edit, self.superuser, "Restoring the previous published content.")
+        services.approve(revert, self.superuser)
+        self.section.refresh_from_db()
+        self.assertEqual(self.section.other_sources_en, "")
+        self.assertEqual(self.section.summary_en, EN)
+
+    def test_other_source_drift_blocks_approval_and_old_clients_preserve_additions(self):
+        self.publish()
+        self.section.other_sources_en = "Published extra text."
+        self.section.save()
+        self.submit(summary_en="Proposed changed summary.")
+        req = SectionEditRequest.objects.get()
+        self.assertEqual(req.after_other_sources_en, "Published extra text.")
+        self.section.other_sources_en = "Changed independently."
+        self.section.save()
+        with self.assertRaises(WorkflowError):
+            services.approve(req, self.superuser)
+        self.assertFalse(SectionEdit.objects.exists())
+
+    def test_reviewer_history_survives_account_deletion_and_is_append_only(self):
+        self.publish()
+        self.confirm()
+        row = DrugReview.objects.get()
+        with self.assertRaises(ValueError):
+            row.save()
+        self.superuser.delete()
+        row.refresh_from_db()
+        self.assertIsNone(row.reviewer)
+        self.assertEqual(row.reviewer_username, "boss")
+        self.ingredient.refresh_from_db()
+        self.assertTrue(self.ingredient.is_reviewed)

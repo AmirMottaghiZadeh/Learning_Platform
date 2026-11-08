@@ -14,6 +14,7 @@ urlpatterns = [
     path("history/", views.history, name="history"),
     path("edits/<int:pk>/revert/", views.revert, name="revert"),
     path("drugs/<slug:slug>/", views.workspace, name="workspace"),
+    path("drugs/<slug:slug>/confirm-review/", views.confirm_drug_review, name="confirm_drug_review"),
     path("drugs/<slug:slug>/<str:field>/draft/", views.save_draft, name="save_draft"),
     path("drugs/<slug:slug>/<str:field>/submit/", views.submit, name="submit"),
     path("drugs/<slug:slug>/<str:field>/withdraw/", views.withdraw, name="withdraw"),

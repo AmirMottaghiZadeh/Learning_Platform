@@ -15,6 +15,7 @@ from collections import defaultdict
 from django.db.models import Prefetch
 
 from apps.drugs.models import AtcCategory, Ingredient, IngredientProfileSection
+from apps.drugs.review import with_review_status
 
 from .data.study_topics import CATEGORIES, STUDY_TOPICS
 from .models import ChapterProgress, ReadDrug
@@ -206,7 +207,7 @@ def get_chapter(user, atc_code):
     # Just the drug list -- each drug's lesson text is fetched on its own
     # (get_lesson_drug) when the learner opens it.
     ingredients = (
-        Ingredient.objects.filter(atc_codes__code__startswith=atc_code)
+        with_review_status(Ingredient.objects.filter(atc_codes__code__startswith=atc_code))
         .prefetch_related("atc_codes")
         .distinct()
     )
@@ -247,7 +248,7 @@ def get_lesson_drug(slug):
     """One drug with what its lesson needs, or None. raw_text (the full label
     text, most of each section row) is never part of a lesson -- not read."""
     return (
-        Ingredient.objects.filter(slug=slug)
+        with_review_status(Ingredient.objects.filter(slug=slug))
         .prefetch_related(
             "atc_codes",
             Prefetch("sections", queryset=IngredientProfileSection.objects.defer("raw_text")),
@@ -331,6 +332,8 @@ def search_drugs(query, limit=SEARCH_LIMIT):
     }
 
     results = []
+    reviewed_by_pk = dict(with_review_status(Ingredient.objects.filter(pk__in=[row[3] for row in top]))
+                          .values_list("pk", "_is_reviewed"))
     for *_order, pk, slug, name, name_fa in top:
         drug_chapters = [chapters[c] for c in sorted(codes_by_pk[pk]) if c in chapters]
         if not drug_chapters:
@@ -339,6 +342,7 @@ def search_drugs(query, limit=SEARCH_LIMIT):
             "slug": slug,
             "name": name,
             "name_fa": name_fa,
+            "is_reviewed": reviewed_by_pk.get(pk, False),
             "chapters": [{"code": c.code, "name_fa": c.name_fa, "name_en": c.name_en} for c in drug_chapters],
         })
     return results

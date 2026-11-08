@@ -50,7 +50,7 @@
 | `medscape` | مقاله‌های بیماری و گایدلاین با تصویرهای ذخیره‌شده با هش محتوا | `Article`، `ArticleImage` | — |
 | `billing` | ویژگی، پلن و محصول، قیمت، کد تخفیف، سفارش، حق دسترسی، سهمیه، درگاه پرداخت، مهمان، کنسول `/manage/sales/` | `Feature`، `Plan`، `PlanFeature`، `PlanPrice`، `DiscountCode`، `Order`، `Entitlement`، `UsageRecord`، `PaymentGateway`، `BillingSettings`، `GuestAccount`، `AdminAction` | جزئیات در «صورتحساب» پایین‌تر |
 | `website` | سایت و بلاگ، پنل محتوا، آمار بازدید، ریدایرکت، حالت تعمیر، و مسیر API نسخهٔ اپ (`/app/release/`) | ۲۰ مدل، از جمله `SiteSettings`، `Post`، `Page`، `Media`، `StaffRole`، `DailyStat` | [12-website.md](12-website.md) |
-| `data_quality_center` | ویرایش خلاصه‌های بالینی با بازبینی و تأیید مجوزدار و سابقهٔ تغییرناپذیر | `SectionEditRequest`، `SectionEdit`، `ReviewEvent` | [11-admin-consoles.md](11-admin-consoles.md) |
+| `data_quality_center` | ویرایش خلاصه‌ها و اطلاعات سایر منابع با تأیید مجوزدار؛ تأیید مستقل کل دارو و سابقهٔ تغییرناپذیر | `SectionEditRequest`، `SectionEdit`، `ReviewEvent`، `DrugReview` | [11-admin-consoles.md](11-admin-consoles.md) |
 | `announcements` | اعلان‌های مدیر به کاربران اپ، با دکمهٔ اختیاری به نشانی وب یا بخشی از اپ، مخاطب و بازهٔ زمانی، و رسید هر کاربر (دیده، زده، بسته) | `AppAnnouncement`، `AnnouncementReceipt` | API در [05-api.md](05-api.md)، مدیریت در [11-admin-consoles.md](11-admin-consoles.md) |
 | `activity` | رویداد بازدید، زمان پیش‌زمینه و مختصات کلیک/لمس سایت و اپ | `ActivityEvent` | `/manage/app/usage/`؛ [سند ۱۷](17-sessions-activity-support.fa.md) |
 | `support` | گفت‌وگوی خصوصی، رسید خواندن، اشتراک اعلان و outbox | `Conversation`، `Message`، `PushSubscription`، `NotificationDelivery` | `/manage/app/support/`؛ [سند ۱۷](17-sessions-activity-support.fa.md) |

@@ -110,6 +110,8 @@ class Ingredient(models.Model):
     atc_codes = models.ManyToManyField(AtcCode, related_name="ingredients", blank=True)
 
     source_fetched_at = models.DateTimeField(null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by_username = models.CharField(max_length=150, blank=True, default="", db_default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -129,6 +131,14 @@ class Ingredient(models.Model):
     def primary_atc(self):
         return self.atc_codes.order_by("code").first()
 
+    @property
+    def is_reviewed(self):
+        if "_is_reviewed" in self.__dict__:
+            return self.__dict__["_is_reviewed"]
+        if not self.reviewed_at or self.updated_at > self.reviewed_at:
+            return False
+        return not self.sections.filter(updated_at__gt=self.reviewed_at).exists()
+
 
 class IngredientProfileSection(models.Model):
     """One clinical-label field for an ingredient, with its fa/en summaries."""
@@ -146,6 +156,8 @@ class IngredientProfileSection(models.Model):
     n_contributing_products = models.PositiveIntegerField(default=0)
     summary_fa = models.TextField(blank=True)
     summary_en = models.TextField(blank=True)
+    other_sources_fa = models.TextField(blank=True, default="", db_default="")
+    other_sources_en = models.TextField(blank=True, default="", db_default="")
 
     updated_at = models.DateTimeField(auto_now=True)
 
