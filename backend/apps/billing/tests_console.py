@@ -27,14 +27,14 @@ class ConsoleTestCase(TestCase):
 
 
 class AccessTests(ConsoleTestCase):
-    def test_only_superusers_get_in(self):
+    def test_staff_without_a_billing_role_cannot_enter_sales(self):
         self.client.logout()
         res = self.client.get(reverse("console:users"))
         self.assertRedirects(res, f"{reverse('manage:login')}?next={reverse('console:users')}", fetch_redirect_response=False)
         # staff get into the admin (for the data-quality desk) but not the sales tools
         staff = User.objects.create_user(username="staff", password="pw-123456", is_staff=True)
         self.client.force_login(staff)
-        self.assertEqual(self.client.get(reverse("console:users")).status_code, 302)
+        self.assertEqual(self.client.get(reverse("console:users")).status_code, 403)
         self.assertNotContains(self.client.get(reverse("manage:home")), reverse("console:users"))
 
     def test_login(self):

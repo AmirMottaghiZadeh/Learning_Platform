@@ -1,11 +1,12 @@
-"""Who may do what in the panel. Superusers are admins; everyone else needs a
-StaffRole row."""
+"""Website capabilities from legacy site roles and active platform roles."""
 
 from functools import wraps
 
-from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 
+from apps.accounts.access import billing_admin
+from apps.accounts.models import Role
+from apps.accounts.services import active_role_keys
 from .models import StaffRole
 
 EDITORIAL = {
@@ -22,27 +23,44 @@ PERMS = {
 }
 
 
-def role_of(user):
+def roles_of(user):
     if not (user.is_authenticated and user.is_active):
-        return None
+        return set()
     if user.is_superuser:
-        return StaffRole.ADMIN
-    row = getattr(user, "site_role", None) if hasattr(user, "site_role") else None
-    return row.role if row else None
+        return {StaffRole.ADMIN}
+    keys = set(active_role_keys(user))
+    if Role.PLATFORM_ADMIN in keys:
+        return {StaffRole.ADMIN}
+    roles = set()
+    row = getattr(user, "site_role", None)
+    if row:
+        roles.add(row.role)
+    if Role.CONTENT_EDITOR in keys:
+        roles.add(StaffRole.EDITOR)
+    if Role.SUPPORT_AGENT in keys:
+        roles.add(StaffRole.SUPPORT)
+    return roles
+
+
+def role_of(user):
+    roles = roles_of(user)
+    return next((role for role in (StaffRole.ADMIN, StaffRole.EDITOR, StaffRole.SUPPORT, StaffRole.AUTHOR) if role in roles), None)
 
 
 def can(user, perm):
-    granted = PERMS.get(role_of(user), set())
+    if perm == "orders.view" and billing_admin(user):
+        return True
+    granted = set().union(*(PERMS.get(role, set()) for role in roles_of(user)))
     return "*" in granted or perm in granted
 
 
 def panel_required(perm=None):
-    """A panel view: needs a signed-in staff user, and `perm` when given."""
+    """A panel view needs site access, or the given service capability."""
 
     def decorator(view):
         @wraps(view)
         def wrapper(request, *args, **kwargs):
-            if role_of(request.user) is None:
+            if role_of(request.user) is None and not (perm and can(request.user, perm)):
                 from apps.manage.views import login_url
 
                 return redirect(login_url(request.get_full_path()))

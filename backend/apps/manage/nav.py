@@ -77,27 +77,27 @@ MODULES = (
         Page("today", "امروز", "manage:home", access.anyone, ("manage:home",)),
     )),
     Module("users", "کاربران", ICONS["users"], (
-        Page("users", "همهٔ کاربران", "console:users", access.is_super,
+        Page("users", "همهٔ کاربران", "console:users", access.billing_admin,
              ("console:users", "console:users_export", "console:user", "console:user_*", "console:entitlement_*")),
     )),
     Module("sales", "فروش", ICONS["sales"], (
-        Page("sales", "گزارش فروش", "console:sales", access.is_super, ("console:sales",)),
+        Page("sales", "گزارش فروش", "console:sales", access.billing_admin, ("console:sales",)),
         Page("orders", "سفارش‌ها", "panel:orders", access.site("orders.view"), ("panel:orders",)),
         Page("subscriptions", "اشتراک‌ها", "panel:subscriptions", access.site("orders.view"), ("panel:subscriptions",)),
-        Page("plans", "پلن‌ها و محصول‌ها", "console:plans", access.is_super, ("console:plans", "console:plan_*")),
-        Page("site_plans", "پلن‌ها", "panel:plans", lambda u: not access.is_super(u) and access.site("orders.view")(u), ("panel:plans",)),
-        Page("features", "امکانات و سقف‌ها", "console:features", access.is_super, ("console:features", "console:feature_*")),
-        Page("discounts", "کدهای تخفیف", "console:discounts", access.is_super, ("console:discount*",)),
-        Page("gateway", "درگاه پرداخت", "console:gateway", access.is_super, ("console:gateway*",)),
+        Page("plans", "پلن‌ها و محصول‌ها", "console:plans", access.billing_admin, ("console:plans", "console:plan_*")),
+        Page("site_plans", "پلن‌ها", "panel:plans", lambda u: not access.billing_admin(u) and access.site("orders.view")(u), ("panel:plans",)),
+        Page("features", "امکانات و سقف‌ها", "console:features", access.billing_admin, ("console:features", "console:feature_*")),
+        Page("discounts", "کدهای تخفیف", "console:discounts", access.billing_admin, ("console:discount*",)),
+        Page("gateway", "درگاه پرداخت", "console:gateway", access.billing_admin, ("console:gateway*",)),
     )),
     Module("app", "اپ", ICONS["app"], (
         Page("support", "پشتیبانی کاربران", "support_admin:inbox", access.support, ("support_admin:*",)),
-        Page("devices", "دستگاه‌ها و نشست‌ها", "manage:devices", access.is_super, ("manage:devices", "manage:device_revoke")),
-        Page("usage", "نقشهٔ فعالیت کاربران", "manage:usage", access.is_super, ("manage:usage",)),
-        Page("announcements", "اعلانات اپ", "app_admin:announcements", access.is_super, ("app_admin:*",)),
+        Page("devices", "دستگاه‌ها و نشست‌ها", "manage:devices", access.platform_admin, ("manage:devices", "manage:device_revoke")),
+        Page("usage", "نقشهٔ فعالیت کاربران", "manage:usage", access.platform_admin, ("manage:usage",)),
+        Page("announcements", "اعلانات اپ", "app_admin:announcements", access.platform_admin, ("app_admin:*",)),
         Page("releases", "نسخه‌ها و دانلود", "panel:releases", access.site("download.manage"), ("panel:releases*", "panel:links*")),
-        Page("access", "دسترسی مهمان", "console:access", access.is_super, ("console:access",)),
-        Page("rate_limits", "محدودیت درخواست‌ها", "console:rate_limits", access.is_super, ("console:rate_limits",)),
+        Page("access", "دسترسی مهمان", "console:access", access.platform_admin, ("console:access",)),
+        Page("rate_limits", "محدودیت درخواست‌ها", "console:rate_limits", access.platform_admin, ("console:rate_limits",)),
     )),
     Module("site", "سایت", ICONS["site"], (
         Page("overview", "نمای کلی", "panel:dashboard", access.site("dashboard.view"), ("panel:dashboard",)),
@@ -119,27 +119,27 @@ MODULES = (
              ("data_quality_center:queue", "data_quality_center:workspace", "data_quality_center:save_draft",
               "data_quality_center:submit", "data_quality_center:withdraw", "data_quality_center:discard")),
         Page("mine", "درخواست‌های من", "data_quality_center:mine", access.is_operator, ("data_quality_center:mine",), _my_changes),
-        Page("review", "میز بازبینی", "data_quality_center:review", lambda u: access.is_operator(u) and access.is_super(u),
+        Page("review", "میز بازبینی", "data_quality_center:review", access.quality_review,
              ("data_quality_center:review*",), _pending_reviews),
         Page("history", "سابقه و ممیزی", "data_quality_center:history", access.is_operator,
              ("data_quality_center:history", "data_quality_center:revert")),
     )),
     Module("system", "سیستم", ICONS["system"], (
-        Page("activity", "گزارش فعالیت", "manage:activity", lambda u: access.is_super(u) or access.site_admin(u),
+        Page("activity", "گزارش فعالیت", "manage:activity", lambda u: access.billing_admin(u) or access.site_admin(u),
              ("manage:activity", "panel:activity", "console:audit")),
         Page("staff", "مدیران و نقش‌ها", "panel:staff", access.site_admin, ("panel:staff*",)),
         Page("settings", "تنظیمات سایت", "panel:settings", access.site_admin, ("panel:settings",)),
-        Page("django", "ادمین Django", "/admin/", lambda u: access.is_super(u), (), None, True),
+        Page("django", "ادمین Django", "/admin/", access.is_super, (), None, True),
     )),
 )
 
 # Things to do, offered on the home column and in the command bar.
 ACTIONS = (
-    ("اعلان تازه در اپ", "app_admin:announcements", access.is_super),
+    ("اعلان تازه در اپ", "app_admin:announcements", access.platform_admin),
     ("مطلب تازه برای بلاگ", "panel:post_new", access.site("post.create")),
-    ("کد تخفیف تازه", "console:discounts", access.is_super),
-    ("پلن تازه", "console:plan_new", access.is_super),
-    ("دادن دسترسی به کاربر", "console:users", access.is_super),
+    ("کد تخفیف تازه", "console:discounts", access.billing_admin),
+    ("پلن تازه", "console:plan_new", access.billing_admin),
+    ("دادن دسترسی به کاربر", "console:users", access.billing_admin),
 )
 
 
@@ -197,6 +197,6 @@ def build(request):
         if url:
             actions.append({"label": label, "url": url})
             jump.append({"label": label, "group": "کار", "url": url})
-    guest_url = _resolve("console:access") if access.is_super(user) else None
+    guest_url = _resolve("console:access") if access.platform_admin(user) else None
     return {"modules": modules, "module": current, "page": current_page, "actions": actions, "jump": jump,
             "guest_url": guest_url}

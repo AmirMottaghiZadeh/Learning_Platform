@@ -18,7 +18,7 @@ def super_required(view):
     @manage_required
     @wraps(view)
     def wrapper(request, *args, **kwargs):
-        if not access.is_super(request.user):
+        if not access.platform_admin(request.user):
             return HttpResponseForbidden("این گزارش فقط برای مدیر سامانه قابل دسترسی است.")
         return view(request, *args, **kwargs)
     return wrapper

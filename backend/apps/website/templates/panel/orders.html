@@ -2,7 +2,7 @@
 {% load billing_extras %}
 {% block title %}سفارش‌ها{% endblock %}
 {% block content %}
-<div class="hd"><div><h1>سفارش‌ها</h1><div class="sub">خریدهای انجام‌شده از سایت و اپ</div></div>{% if request.user.is_superuser %}<div class="acts"><a class="btn" href="{{ sales_url }}">گزارش فروش</a></div>{% endif %}</div>
+<div class="hd"><div><h1>سفارش‌ها</h1><div class="sub">خریدهای انجام‌شده از سایت و اپ</div></div>{% if can_manage_billing %}<div class="acts"><a class="btn" href="{{ sales_url }}">گزارش فروش</a></div>{% endif %}</div>
 <div class="grid kpis"><div class="card kpi"><div class="l">درآمد ۳۰ روز (تومان)</div><div class="v num">{{ summary.revenue_30|num }}</div></div><div class="card kpi"><div class="l">سفارش پرداخت‌شده</div><div class="v num">{{ summary.orders_30|num }}</div></div><div class="card kpi"><div class="l">ناموفق (۳۰ روز)</div><div class="v num">{{ summary.failed_30|num }}</div></div><div class="card kpi"><div class="l">در انتظار پرداخت</div><div class="v num">{{ summary.pending|num }}</div></div></div>
 <div class="tabs">{% for key, label, n in tabs %}<a class="{% if key == status %}on{% endif %}" href="?status={{ key }}">{{ label }} <span class="num">{{ n|fa }}</span></a>{% endfor %}</div>
 <div class="toolbar"><form method="get"><input type="hidden" name="status" value="{{ status }}"><label class="sr" for="q">جستجو</label><input class="inp" id="q" name="q" value="{{ q }}" placeholder="موبایل، کد پیگیری یا پلن" style="width:260px"><button class="btn" type="submit">جستجو</button></form></div>

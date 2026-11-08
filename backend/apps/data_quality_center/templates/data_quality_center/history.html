@@ -5,7 +5,7 @@
 <div class="page-head">
   <div class="grow">
     <h1 class="page-title">تاریخچه و ممیزی</h1>
-    <p class="page-sub">هر اقدام روی درخواست‌ها با نام، زمان و یادداشت ثبت می‌شود؛ ویرایش‌های اعمال‌شده را سوپریوزر می‌تواند بازگرداند.</p>
+    <p class="page-sub">هر اقدام روی درخواست‌ها با نام، زمان و یادداشت ثبت می‌شود؛ ویرایش‌های اعمال‌شده را تأییدکنندهٔ مجاز می‌تواند بازگرداند.</p>
   </div>
 </div>
 <form method="get" style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap">
@@ -63,7 +63,7 @@
         <td style="text-align: left; min-width: 200px">
           {% if edit.reverted %}<span class="chip tone-muted">بازگردانده شد</span>
           {% elif edit.revert_open %}<span class="chip tone-warn">بازگردانی در جریان</span>
-          {% elif user.is_superuser %}
+          {% elif can_revert %}
             <form method="post" action="{% url 'data_quality_center:revert' edit.pk %}" style="display: flex; gap: 6px">
               {% csrf_token %}
               <input class="input" name="reason" placeholder="دلیل بازگردانی" minlength="{{ min_reason }}" required style="padding: 5px 8px; font-size: 12px">

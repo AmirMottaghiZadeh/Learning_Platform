@@ -99,12 +99,12 @@
         {% if mode == 'pending' %}
           <span class="step done"><span class="n">✓</span>ویرایش</span><span class="step-line done"></span>
           <span class="step done"><span class="n">✓</span>بررسی خودکار</span><span class="step-line done"></span>
-          <span class="step now"><span class="n">۳</span>تأیید سوپریوزر</span><span class="step-line"></span>
+          <span class="step now"><span class="n">۳</span>تأیید نهایی</span><span class="step-line"></span>
           <span class="step"><span class="n">۴</span>اعمال در دیتابیس</span>
         {% else %}
           <span class="step now"><span class="n">۱</span>ویرایش</span><span class="step-line"></span>
           <span class="step {% if warnings %}warn{% endif %}" id="step-checks"><span class="n">۲</span>بررسی خودکار</span><span class="step-line"></span>
-          <span class="step"><span class="n">۳</span>تأیید سوپریوزر</span><span class="step-line"></span>
+          <span class="step"><span class="n">۳</span>تأیید نهایی</span><span class="step-line"></span>
           <span class="step"><span class="n">۴</span>اعمال در دیتابیس</span>
         {% endif %}
       </div>
@@ -114,7 +114,7 @@
       {% elif mode == 'pending' %}
         <div class="banner info">درخواست #{{ current.pk|fa_digits }} {{ current.submitted_at|ago }} برای تأیید نهایی فرستاده شد. برای تغییر دادنش، اول آن را پس بگیرید.</div>
       {% elif current and current.status == 'changes_requested' %}
-        <div class="banner orange"><b>سوپریوزر ({{ current.reviewed_by_username }}) اصلاح خواسته:</b> {{ current.review_note }}</div>
+        <div class="banner orange"><b>بازبین ({{ current.reviewed_by_username }}) اصلاح خواسته:</b> {{ current.review_note }}</div>
       {% endif %}
 
       <div class="panes">
@@ -155,10 +155,10 @@
 
       {% if mode == 'edit' %}
       <div>
-        <label class="field-label" for="reason">دلیل تغییر <span class="req">*</span> <span class="faint" style="font-weight: 600">(دست‌کم {{ min_reason|fa_digits }} نویسه؛ سوپریوزر این را می‌بیند)</span></label>
+        <label class="field-label" for="reason">دلیل تغییر <span class="req">*</span> <span class="faint" style="font-weight: 600">(دست‌کم {{ min_reason|fa_digits }} نویسه؛ بازبین این را می‌بیند)</span></label>
         <input class="input" id="reason" name="reason" value="{{ current.reason|default:'' }}" placeholder="مثلاً: هشدار قطع فوری دارو طبق بخش 6.1 برچسب اضافه شد" autocomplete="off">
       </div>
-      {% else %}
+      {% elif current %}
       <div class="banner caution"><b>دلیل اپراتور:</b> {{ current.reason }}</div>
       {% endif %}
 
@@ -186,7 +186,7 @@
         <button class="btn outline" type="button" id="save-now">ذخیرهٔ پیش‌نویس</button>
         <button class="btn" type="submit" id="submit-btn">{% if current.status == 'changes_requested' %}ارسال دوباره برای تأیید{% else %}ارسال برای تأیید نهایی{% endif %}<span class="kbd">Ctrl ↵</span></button>
       {% elif mode == 'pending' %}
-        <span class="muted" style="font-size: 12.5px">در انتظار تأیید سوپریوزر</span>
+        <span class="muted" style="font-size: 12.5px">در انتظار تأیید نهایی</span>
         <span style="flex: 1"></span>
         <button class="btn outline" type="submit" form="withdraw-form">پس گرفتن برای ویرایش</button>
       {% else %}

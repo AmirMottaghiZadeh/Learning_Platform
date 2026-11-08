@@ -2,8 +2,9 @@ from django.contrib.auth import get_user_model
 from django.core.cache import caches
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
-from apps.accounts.models import SecurityAuditEvent
+from apps.accounts.models import Role, RoleAssignment, SecurityAuditEvent
 from apps.drugs.models import Ingredient, IngredientProfileSection
 
 from . import services
@@ -321,3 +322,72 @@ class CheckTests(TestCase):
         self.assertIn("<ins>75</ins>", html)
         self.assertIn("&lt;b&gt;", html)
         self.assertEqual((added, removed), (2, 1))
+
+
+class RoleWorkflowTests(ConsoleTestCase):
+    def role_user(self, key):
+        user = get_user_model().objects.create_user(key, password="pass-123456")
+        RoleAssignment.objects.create(user=user, role=Role.objects.get(key=key))
+        return user
+
+    def test_reviewer_can_submit_review_and_request_changes_but_cannot_apply(self):
+        reviewer = self.role_user(Role.DATA_QUALITY_REVIEWER)
+        client = self.as_user(reviewer)
+        self.submit(client=client)
+        req = SectionEditRequest.objects.get()
+        page = client.get(reverse("data_quality_center:review"))
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, 'name="action" value="approve"')
+        self.review(req, "approve", user=reviewer)
+        req.refresh_from_db()
+        self.assertEqual(req.status, SectionEditRequest.STATUS_PENDING)
+        self.section.refresh_from_db()
+        self.assertEqual(self.section.summary_en, "")
+        self.assertFalse(SectionEdit.objects.exists())
+        with self.assertRaises(WorkflowError):
+            services.approve(req, reviewer)
+        self.review(req, "changes", "Correct the units.", user=reviewer)
+        req.refresh_from_db()
+        self.assertEqual(req.status, SectionEditRequest.STATUS_CHANGES_REQUESTED)
+
+    def test_approver_can_apply_without_django_staff_or_superuser_flags(self):
+        self.submit()
+        req = SectionEditRequest.objects.get()
+        approver = self.role_user(Role.DATA_QUALITY_APPROVER)
+        page = self.as_user(approver).get(reverse("data_quality_center:review"))
+        self.assertContains(page, 'name="action" value="approve"')
+        self.review(req, "approve", user=approver)
+        self.section.refresh_from_db()
+        self.assertEqual(self.section.summary_en, EN)
+        self.assertEqual(SectionEdit.objects.get().approved_by, approver)
+
+    def test_view_permission_is_read_only_and_does_not_allow_mutations(self):
+        from django.contrib.auth.models import Permission
+
+        viewer = get_user_model().objects.create_user("viewer", password="pass-123456")
+        viewer.user_permissions.add(Permission.objects.get(content_type__app_label="accounts", codename="view_data_quality_center"))
+        client = self.as_user(viewer)
+        page = client.get(reverse("data_quality_center:workspace", args=[self.ingredient.slug]))
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.context["mode"], "readonly")
+        self.assertNotContains(page, 'id="submit-btn"')
+        response = self.save_draft(client=client)
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(SectionEditRequest.objects.exists())
+        with self.assertRaises(WorkflowError):
+            services.save_draft(self.section, viewer, summary_fa=FA, summary_en=EN, reason=REASON)
+
+    def test_role_revocation_blocks_service_mutations_with_the_same_user_object(self):
+        reviewer = self.role_user(Role.DATA_QUALITY_REVIEWER)
+        req = services.save_draft(self.section, reviewer, summary_fa=FA, summary_en=EN, reason=REASON)
+        RoleAssignment.objects.filter(user=reviewer).update(revoked_at=timezone.now())
+        for action in (services.submit, services.discard):
+            with self.assertRaises(WorkflowError):
+                action(req, reviewer)
+
+    def test_inactive_superuser_cannot_apply_through_workflow(self):
+        self.submit()
+        req = SectionEditRequest.objects.get()
+        self.superuser.is_active = False
+        with self.assertRaises(WorkflowError):
+            services.approve(req, self.superuser)

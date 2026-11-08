@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.utils.functional import SimpleLazyObject
 
-from . import nav
+from . import access, nav
 
 
 def shell(request):
@@ -13,4 +13,5 @@ def shell(request):
         "mg": SimpleLazyObject(lambda: nav.build(request)),
         "mg_env": settings.ENVIRONMENT,
         "mg_site_url": settings.SITE_PUBLIC_URL.rstrip("/"),
+        "can_manage_billing": access.billing_admin(request.user),
     }

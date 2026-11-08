@@ -18,17 +18,19 @@
     </div>
     <div class="row" style="gap:8px">
       <a class="btn primary" href="#grant">دادن پلن یا محصول</a>
+      {% if can_administer_users %}
       <form method="post" action="{% url 'console:user_logout_all' u.pk %}" onsubmit="return confirm('کاربر از همه‌ی دستگاه‌ها خارج شود؟')">{% csrf_token %}<button class="btn" type="submit">خروج از همه‌ی دستگاه‌ها</button></form>
       {% if u.is_active %}
         <form method="post" action="{% url 'console:user_block' u.pk %}" onsubmit="return confirm('این حساب مسدود و از همه‌ی دستگاه‌ها خارج شود؟')">{% csrf_token %}<input type="hidden" name="block" value="1"><button class="btn danger" type="submit">مسدود کردن</button></form>
       {% else %}
         <form method="post" action="{% url 'console:user_block' u.pk %}">{% csrf_token %}<input type="hidden" name="block" value="0"><button class="btn" type="submit">رفع مسدودی</button></form>
       {% endif %}
+      {% endif %}
     </div>
   </div>
 
   <nav class="tabs" aria-label="بخش‌های پرونده">
-    <a href="#access">اشتراک و دسترسی‌ها</a><a href="#usage">مصرف</a><a href="#payments">پرداخت‌ها</a><a href="#devices">دستگاه‌ها</a><a href="#roles">نقش‌ها</a><a href="#log">گزارش تغییرات</a><a href="#delete" style="color:var(--deny)">حذف حساب</a>
+    <a href="#access">اشتراک و دسترسی‌ها</a><a href="#usage">مصرف</a><a href="#payments">پرداخت‌ها</a><a href="#devices">دستگاه‌ها</a>{% if can_administer_users %}<a href="#roles">نقش‌ها</a>{% endif %}<a href="#log">گزارش تغییرات</a>{% if can_administer_users %}<a href="#delete" style="color:var(--deny)">حذف حساب</a>{% endif %}
   </nav>
 
   <div class="grid g2" style="align-items:start">
@@ -108,6 +110,7 @@
       </div>
     </section>
 
+    {% if can_administer_users %}
     <section class="card" id="roles" aria-labelledby="h-roles">
       <h2 id="h-roles">نقش‌ها</h2>
       <div class="row" style="gap:8px;margin:10px 0">
@@ -122,6 +125,7 @@
         <button class="btn" type="submit">دادن نقش</button>
       </form>
     </section>
+    {% endif %}
   </div>
 
   <section class="card" id="log" aria-labelledby="h-log">
@@ -133,6 +137,7 @@
     </div>
   </section>
 
+  {% if can_administer_users %}
   <section class="card stack" id="delete" aria-labelledby="h-delete" style="border:2px solid var(--deny-line);background:var(--deny-bg)">
     <h2 id="h-delete" style="color:var(--deny)">حذف حساب</h2>
     {% if u.is_superuser or u == request.user %}
@@ -156,4 +161,5 @@
       </form>
     {% endif %}
   </section>
+  {% endif %}
 {% endblock %}

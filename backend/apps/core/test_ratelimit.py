@@ -154,7 +154,7 @@ class RateLimitConsoleTests(LimitsTestCase):
         self.assertContains(res, "باید عددی بین")
         self.assertFalse(RateLimitSettings.objects.exists())
 
-    def test_only_superusers(self):
+    def test_staff_without_platform_admin_role_is_denied(self):
         staff = User.objects.create_user("staff", "staff@example.com", "pw", is_staff=True)
         self.client.force_login(staff)
-        self.assertEqual(self.client.get(self.url).status_code, 302)
+        self.assertEqual(self.client.get(self.url).status_code, 403)

@@ -99,7 +99,7 @@
         {% endfor %}
         <div class="tl-row">
           <div class="tl-rail"><span class="tl-dot open"></span></div>
-          <div class="tl-body" style="color: var(--warn); font-weight: 700">در انتظار تأیید نهایی سوپریوزر</div>
+          <div class="tl-body" style="color: var(--warn); font-weight: 700">در انتظار تأیید نهایی تأییدکنندهٔ مجاز</div>
         </div>
       </div>
     </div>
@@ -109,7 +109,7 @@
     {% csrf_token %}
     <textarea class="textarea" name="note" rows="2" placeholder="یادداشت بررسی (برای اپراتور فرستاده و در ممیزی ثبت می‌شود؛ برای «درخواست اصلاح» الزامی است)…"></textarea>
     <div class="row">
-      <button class="btn approve" type="submit" name="action" value="approve" {% if drifted %}disabled{% endif %}>✓ تأیید و اعمال</button>
+      {% if can_approve %}<button class="btn approve" type="submit" name="action" value="approve" {% if drifted %}disabled{% endif %}>✓ تأیید و اعمال</button>{% endif %}
       <button class="btn changes" type="submit" name="action" value="changes">درخواست اصلاح</button>
       <button class="btn reject" type="submit" name="action" value="reject" onclick="return confirm('این درخواست رد شود؟')">رد</button>
       <span style="flex: 1"></span>

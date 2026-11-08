@@ -26,6 +26,7 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from apps.accounts.access import billing_admin, platform_admin
 from apps.accounts.models import Role, RoleAssignment, UserSession
 from apps.accounts.services import (
     assign_platform_role,
@@ -74,15 +75,21 @@ STEPS = [("basics", "اطلاعات پایه"), ("features", "امکانات"), 
 
 # -- access -------------------------------------------------------------------
 
-def superuser_required(view):
-    @wraps(view)
-    def wrapper(request, *args, **kwargs):
-        user = request.user
-        if not (user.is_authenticated and user.is_active and user.is_superuser):
-            return redirect(manage_login_url(request.get_full_path()))
-        return view(request, *args, **kwargs)
+def _console_required(allowed):
+    def decorator(view):
+        @wraps(view)
+        def wrapper(request, *args, **kwargs):
+            if not allowed(request.user):
+                if not (request.user.is_authenticated and request.user.is_active):
+                    return redirect(manage_login_url(request.get_full_path()))
+                return render(request, "manage/forbidden.html", status=403)
+            return view(request, *args, **kwargs)
+        return wrapper
+    return decorator
 
-    return wrapper
+
+platform_admin_required = _console_required(platform_admin)
+billing_required = _console_required(billing_admin)
 
 
 # Signing in and out is the admin's (apps.manage); these old addresses send there.
@@ -183,7 +190,7 @@ def _grantable_plans():
 
 # -- users --------------------------------------------------------------------
 
-@superuser_required
+@billing_required
 def users(request):
     now = timezone.now()
     segment = request.GET.get("seg", "all")
@@ -230,6 +237,7 @@ def users(request):
     return render(request, "billing/console/users.html", {
         "active": "users", "rows": rows, "page": page, "q": q, "seg": segment, "segments": segments,
         "kpis": kpis, "drawer": drawer, "plans": _grantable_plans(), "durations": DURATION_CHOICES,
+        "can_administer_users": platform_admin(request.user),
     })
 
 
@@ -252,7 +260,7 @@ def _user_summary(user, now):
     }
 
 
-@superuser_required
+@billing_required
 def user_detail(request, pk):
     user = get_object_or_404(User.objects.select_related("learner_profile"), pk=pk)
     now = timezone.now()
@@ -269,7 +277,8 @@ def user_detail(request, pk):
             "unit": names[key].unit_fa if key in names else "",
             "sources": "، ".join(grant["sources"]),
         })
-    roles_active = list(RoleAssignment.objects.filter(user=user, revoked_at__isnull=True).select_related("role"))
+    roles_active = list(RoleAssignment.objects.filter(user=user, revoked_at__isnull=True)
+                        .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now)).select_related("role"))
     return render(request, "billing/console/user_detail.html", {
         "active": "users",
         "u": user,
@@ -281,6 +290,7 @@ def user_detail(request, pk):
         "orders": Order.objects.filter(user=user).select_related("plan", "discount")[:30],
         "sessions": UserSession.objects.filter(user=user, revoked_at__isnull=True, refresh_expires_at__gt=now).order_by("-last_used_at")[:20],
         "roles_active": roles_active,
+        "can_administer_users": platform_admin(request.user),
         "roles": Role.objects.order_by("name"),
         "actions": AdminAction.objects.filter(target_user=user).select_related("actor")[:30],
         "plans": _grantable_plans(),
@@ -305,7 +315,7 @@ def _days(value):
     return int(text)
 
 
-@superuser_required
+@billing_required
 @require_POST
 def user_grant(request, pk):
     user = get_object_or_404(User, pk=pk)
@@ -326,7 +336,7 @@ def user_grant(request, pk):
     return _back_to_user(request, user)
 
 
-@superuser_required
+@billing_required
 @require_POST
 def entitlement_extend(request, pk, eid):
     user = get_object_or_404(User, pk=pk)
@@ -347,7 +357,7 @@ def entitlement_extend(request, pk, eid):
     return _back_to_user(request, user)
 
 
-@superuser_required
+@billing_required
 @require_POST
 def entitlement_revoke(request, pk, eid):
     user = get_object_or_404(User, pk=pk)
@@ -358,7 +368,7 @@ def entitlement_revoke(request, pk, eid):
     return _back_to_user(request, user)
 
 
-@superuser_required
+@platform_admin_required
 @require_POST
 def user_block(request, pk):
     user = get_object_or_404(User, pk=pk)
@@ -375,7 +385,7 @@ def user_block(request, pk):
     return _back_to_user(request, user)
 
 
-@superuser_required
+@platform_admin_required
 @require_POST
 def user_logout_all(request, pk):
     user = get_object_or_404(User, pk=pk)
@@ -385,7 +395,7 @@ def user_logout_all(request, pk):
     return _back_to_user(request, user)
 
 
-@superuser_required
+@platform_admin_required
 @require_POST
 def user_role(request, pk):
     user = get_object_or_404(User, pk=pk)
@@ -412,7 +422,7 @@ def _confirmation_matches(user, typed):
     return typed in known - {""}
 
 
-@superuser_required
+@platform_admin_required
 @require_POST
 def user_delete(request, pk):
     user = get_object_or_404(User.objects.select_related("learner_profile"), pk=pk)
@@ -444,7 +454,7 @@ def user_delete(request, pk):
     return redirect("console:users")
 
 
-@superuser_required
+@billing_required
 def users_export(request):
     now = timezone.now()
     qs = _search(_segment_filter(_people().select_related("learner_profile").order_by("-date_joined"), request.GET.get("seg", "all"), now), request.GET.get("q", ""))
@@ -473,7 +483,7 @@ def users_export(request):
 
 # -- plans --------------------------------------------------------------------
 
-@superuser_required
+@billing_required
 def plans(request):
     rows = (
         Plan.objects.annotate(
@@ -520,7 +530,7 @@ def _wizard(request, plan, step, extra):
     })
 
 
-@superuser_required
+@billing_required
 def plan_new(request):
     kind = request.GET.get("kind", Plan.KIND_PLAN)
     form = PlanBasicsForm(request.POST or None, initial={"kind": kind})
@@ -533,7 +543,7 @@ def plan_new(request):
     return _wizard(request, None, "basics", {"form": form})
 
 
-@superuser_required
+@billing_required
 def plan_basics(request, pk):
     plan = get_object_or_404(Plan, pk=pk)
     form = PlanBasicsForm(request.POST or None, instance=plan)
@@ -544,7 +554,7 @@ def plan_basics(request, pk):
     return _wizard(request, plan, "basics", {"form": form})
 
 
-@superuser_required
+@billing_required
 def plan_features(request, pk):
     plan = get_object_or_404(Plan, pk=pk)
     current = {pf.feature_id: pf for pf in plan.plan_features.all()}
@@ -596,7 +606,7 @@ def plan_features(request, pk):
     })
 
 
-@superuser_required
+@billing_required
 def plan_prices(request, pk):
     plan = get_object_or_404(Plan, pk=pk)
     if plan.is_free:
@@ -644,7 +654,7 @@ def plan_prices(request, pk):
     return _wizard(request, plan, "prices", {"prices": plan.prices.all(), "durations": DURATION_CHOICES})
 
 
-@superuser_required
+@billing_required
 def plan_review(request, pk):
     plan = get_object_or_404(Plan, pk=pk)
     if request.method == "POST":
@@ -666,7 +676,7 @@ def plan_review(request, pk):
     })
 
 
-@superuser_required
+@billing_required
 @require_POST
 def plan_copy(request, pk):
     source = get_object_or_404(Plan, pk=pk)
@@ -691,7 +701,7 @@ def plan_copy(request, pk):
     return redirect("console:plan_basics", pk=copy.pk)
 
 
-@superuser_required
+@billing_required
 @require_POST
 def plan_delete(request, pk):
     plan = get_object_or_404(Plan, pk=pk)
@@ -707,7 +717,7 @@ def plan_delete(request, pk):
 
 # -- features -----------------------------------------------------------------
 
-@superuser_required
+@billing_required
 def features(request):
     rows = Feature.objects.annotate(n_plans=Count("plan_features")).order_by("order", "id")
     return render(request, "billing/console/features.html", {
@@ -723,7 +733,7 @@ def _back(request, fallback):
     return redirect(fallback)
 
 
-@superuser_required
+@billing_required
 @require_POST
 def feature_new(request):
     form = FeatureForm(request.POST)
@@ -740,7 +750,7 @@ def feature_new(request):
     return _back(request, "console:features")
 
 
-@superuser_required
+@billing_required
 @require_POST
 def feature_edit(request, pk):
     feature = get_object_or_404(Feature, pk=pk)
@@ -769,7 +779,7 @@ def feature_edit(request, pk):
 
 # -- discounts ----------------------------------------------------------------
 
-@superuser_required
+@billing_required
 def discounts(request):
     form = DiscountForm(request.POST or None)
     if request.method == "POST":
@@ -793,7 +803,7 @@ def discounts(request):
     return render(request, "billing/console/discounts.html", {"active": "discounts", "form": form, "rows": rows, "now": timezone.now()})
 
 
-@superuser_required
+@billing_required
 @require_POST
 def discount_toggle(request, pk):
     code = get_object_or_404(DiscountCode, pk=pk)
@@ -803,7 +813,7 @@ def discount_toggle(request, pk):
     return redirect("console:discounts")
 
 
-@superuser_required
+@billing_required
 @require_POST
 def discount_delete(request, pk):
     """Gone for good; orders paid with it keep what it took off."""
@@ -867,7 +877,7 @@ def _gateway_state(g):
     return {"kind": g.kind, "enabled": g.is_enabled, "priority": g.priority, "merchant": _masked(g.merchant_id), "sandbox": g.sandbox}
 
 
-@superuser_required
+@billing_required
 def gateway(request):
     current = config.current()
     if request.method == "POST":
@@ -911,7 +921,7 @@ def gateway(request):
     })
 
 
-@superuser_required
+@billing_required
 def gateway_edit(request, pk=None):
     if pk is None:
         kind = request.GET.get("kind") or request.POST.get("kind")
@@ -958,7 +968,7 @@ def gateway_edit(request, pk=None):
     })
 
 
-@superuser_required
+@billing_required
 @require_POST
 def gateway_toggle(request, pk):
     gw = get_object_or_404(PaymentGateway, pk=pk)
@@ -973,7 +983,7 @@ def gateway_toggle(request, pk):
     return redirect("console:gateway")
 
 
-@superuser_required
+@billing_required
 @require_POST
 def gateway_test(request, pk):
     gw = get_object_or_404(PaymentGateway, pk=pk)
@@ -1021,7 +1031,7 @@ def _outbound_ips(samples=3):
     return found
 
 
-@superuser_required
+@billing_required
 @require_POST
 def gateway_outbound_ip(request):
     """The address this server's calls to a gateway come from -- the one SEP
@@ -1047,7 +1057,7 @@ def gateway_outbound_ip(request):
 
 # -- guest access -------------------------------------------------------------
 
-@superuser_required
+@platform_admin_required
 def access(request):
     current = config.current()
     if request.method == "POST":
@@ -1147,7 +1157,7 @@ def _read_otp_form(post):
     return values
 
 
-@superuser_required
+@platform_admin_required
 def rate_limits(request):
     """The app's request limits: one switch for all of them, a rate (or none)
     per scope, and the SMS code's own limits with a switch of their own."""
@@ -1224,7 +1234,7 @@ def _save_signup_gift(request):
     return redirect("console:access")
 
 
-@superuser_required
+@billing_required
 def sales(request):
     now = timezone.now()
     first = month_start(timezone.localtime(now, services.TEHRAN).date())
@@ -1259,12 +1269,12 @@ def sales(request):
     })
 
 
-@superuser_required
+@billing_required
 def audit(request):
     page = Paginator(AdminAction.objects.select_related("actor", "target_user"), 40).get_page(request.GET.get("page"))
     return render(request, "billing/console/audit.html", {"active": "audit", "page": page})
 
 
-@superuser_required
+@billing_required
 def home(request):
     return redirect("console:users")

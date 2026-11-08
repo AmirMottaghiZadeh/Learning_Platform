@@ -137,7 +137,7 @@ def _review_column(user):
     from apps.data_quality_center.labels import FIELD_FA
     from apps.data_quality_center.models import SectionEditRequest as R
 
-    if access.is_super(user):
+    if access.quality_review(user):
         qs = R.objects.filter(status=R.STATUS_PENDING).order_by("submitted_at", "pk")
         title, link_label = "بازبینی داده‌ها", "میز بازبینی"
         items = [{
@@ -212,7 +212,8 @@ def _sales_column(user, now):
         })
     guest = config.current().guest_access
     return {"key": "sales", "tone": "bad", "title": "فروش و حساب‌ها", "count": len(items), "items": items,
-            "more": 0, "guest": guest, "guest_url": _url("console:access")}
+            "more": 0, "guest": guest if access.platform_admin(user) else False,
+            "guest_url": _url("console:access") if access.platform_admin(user) else None}
 
 
 def _daily(qs, field, value_field=None, days=14):
@@ -237,7 +238,7 @@ def _spark(values, width=96, height=28):
 
 def _tiles(user, now):
     tiles = []
-    if access.is_super(user):
+    if access.billing_admin(user):
         active = UserSession.objects.filter(last_used_at__gte=now - timedelta(days=7)).values("user").distinct().count()
         joined = User.objects.filter(date_joined__gte=now - timedelta(days=7)).count()
         tiles.append({"label": "کاربران", "value": jalali.fa_digits(f"{active:,}").replace(",", "٬"),
@@ -254,19 +255,19 @@ def _tiles(user, now):
         })
     from apps.website.permissions import can
 
-    if can(user, "download.manage") or access.is_super(user):
+    if can(user, "download.manage") or access.platform_admin(user):
         from apps.website.models import AppRelease
 
         latest = AppRelease.objects.filter(is_published=True).order_by("-released_at", "-id").first()
         sub = jalali.format_date(latest.released_at, with_month_name=True) if latest else "هنوز نسخه‌ای ثبت نشده"
-        if access.is_super(user):
+        if access.platform_admin(user):
             from apps.announcements.models import AppAnnouncement
 
             live = sum(1 for a in AppAnnouncement.objects.filter(is_published=True) if a.state_at(now) == AppAnnouncement.STATE_ACTIVE)
             sub = f"{jalali.fa_digits(live)} اعلان فعال · {sub}"
         tiles.append({"label": "اپ", "value": jalali.fa_digits(latest.version) if latest else "—",
                       "unit": "آخرین نسخه" if latest else "", "sub": sub,
-                      "url": _url("app_admin:announcements") if access.is_super(user) else _url("panel:releases")})
+                      "url": _url("app_admin:announcements") if access.platform_admin(user) else _url("panel:releases")})
     if can(user, "dashboard.view"):
         from apps.website.models import DailyStat
 
@@ -298,7 +299,7 @@ def home(request):
     inbox = _inbox_column(user)
     if inbox:
         columns.append(inbox)
-    if access.is_super(user):
+    if access.billing_admin(user):
         columns.append(_sales_column(user, now))
     waiting = sum(c["count"] for c in columns)
     urgent = sum(c["count"] for c in columns if c["key"] in ("sales", "data"))
@@ -336,7 +337,7 @@ def _site_action(entry):
     return what
 
 def _may_see_activity(user):
-    return access.is_super(user) or access.site_admin(user)
+    return access.billing_admin(user) or access.site_admin(user)
 
 
 def activity_rows(user, *, limit=40, offset=0, source="", q="", since=None):
@@ -355,7 +356,7 @@ def activity_rows(user, *, limit=40, offset=0, source="", q="", since=None):
             qs = qs.filter(created_at__gte=since)
         rows += [{"at": a.created_at, "who": a.user_label or "—", "what": _site_action(a),
                   "action": a.action, "detail": a.detail, "source": "سایت", "tone": "info"} for a in qs.order_by("-created_at")[:take]]
-    if access.is_super(user) and source in ("", "sales"):
+    if access.billing_admin(user) and source in ("", "sales"):
         qs = AdminAction.objects.select_related("actor", "target_user")
         if q:
             qs = qs.filter(Q(summary__icontains=q) | Q(action__icontains=q) | Q(actor__username__icontains=q))
@@ -388,7 +389,7 @@ def activity(request):
     rows = activity_rows(request.user, limit=per + 1, offset=(page - 1) * per, source=source, q=q)
     return render(request, "manage/activity.html", {
         "rows": rows[:per], "has_next": len(rows) > per, "page": page, "source": source, "q": q,
-        "show_site": access.site_admin(request.user), "show_sales": access.is_super(request.user),
+        "show_site": access.site_admin(request.user), "show_sales": access.billing_admin(request.user),
     })
 
 
@@ -407,7 +408,7 @@ def search(request):
         from apps.website.panel.views import search_items
 
         out += search_items(user, q)
-    if access.is_super(user):
+    if access.billing_admin(user):
         from apps.billing.models import DiscountCode, Plan
 
         latin = q.translate(_LATIN)

@@ -1,6 +1,6 @@
 """The admin's «اعلانات اپ» (apps.manage): the announcements beside the one
 being edited, with a live preview of the app's card and what learners did
-with it. For superusers."""
+with it. For platform administrators."""
 
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.billing import services as billing
-from apps.billing.console.views import superuser_required
+from apps.billing.console.views import platform_admin_required
 
 from . import services
 from .forms import AnnouncementForm
@@ -32,13 +32,13 @@ def _page(request, item, form):
     })
 
 
-@superuser_required
+@platform_admin_required
 def announcements(request):
     """The list with a blank editor for a new one."""
     return _page(request, None, AnnouncementForm(initial={"dismissible": True}))
 
 
-@superuser_required
+@platform_admin_required
 def announcement(request, pk=None):
     item = get_object_or_404(AppAnnouncement, pk=pk) if pk else None
     if request.method != "POST":
@@ -66,7 +66,7 @@ def announcement(request, pk=None):
     return redirect("app_admin:announcement", pk=obj.pk)
 
 
-@superuser_required
+@platform_admin_required
 @require_POST
 def announcement_action(request, pk):
     item = get_object_or_404(AppAnnouncement, pk=pk)

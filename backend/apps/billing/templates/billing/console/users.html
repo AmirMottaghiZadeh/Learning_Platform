@@ -100,10 +100,12 @@
       {% with target=drawer.user %}{% include "billing/console/_grant_form.html" %}{% endwith %}
     </details>
     <div class="grid g2">
+      {% if can_administer_users %}
       {% if drawer.user.is_active %}
         <form method="post" action="{% url 'console:user_block' drawer.user.pk %}" onsubmit="return confirm('این حساب مسدود و از همه‌ی دستگاه‌ها خارج شود؟')">{% csrf_token %}<input type="hidden" name="block" value="1"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn danger" style="width:100%" type="submit">مسدود کردن</button></form>
       {% else %}
         <form method="post" action="{% url 'console:user_block' drawer.user.pk %}">{% csrf_token %}<input type="hidden" name="block" value="0"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn" style="width:100%" type="submit">رفع مسدودی</button></form>
+      {% endif %}
       {% endif %}
       <a class="btn outline" href="{% url 'console:user' drawer.user.pk %}">پرونده‌ی کامل</a>
     </div>

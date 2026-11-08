@@ -7,9 +7,9 @@ from django.test import Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.accounts.models import LearnerProfile, SecurityAuditEvent, UserSession
+from apps.accounts.models import LearnerProfile, Role, RoleAssignment, SecurityAuditEvent, UserSession
 from apps.accounts.services import issue_user_session
-from apps.billing.models import AdminAction, Order, Plan
+from apps.billing.models import AdminAction, Entitlement, Order, Plan
 from apps.drugs.models import Ingredient
 from apps.website.models import ActivityLog, Comment, ContactMessage, Media, Post, StaffRole
 from apps.website.tests.base import SiteTestCase
@@ -258,3 +258,140 @@ class ShellTests(SiteTestCase):
         Post.objects.create(title="منتشرشده", slug="live", status=Post.PUBLISHED, published_at=timezone.now() - timedelta(days=1))
         res = self.client.get(reverse("panel:posts"))
         self.assertContains(res, f'{settings.SITE_PUBLIC_URL.rstrip("/")}/blog/live/')
+
+
+class PlatformRoleAccessTests(SiteTestCase):
+    """Grant through the actual console, then sign in without Django flags."""
+
+    def setUp(self):
+        super().setUp()
+        caches["throttle"].clear()
+        self.addCleanup(caches["throttle"].clear)
+        self.root = make("role-owner", superuser=True)
+        self.client.force_login(self.root)
+
+    def grant(self, user, key, op="assign"):
+        response = self.client.post(reverse("console:user_role", args=[user.pk]), {"role": key, "op": op})
+        self.assertEqual(response.status_code, 302)
+
+    def sign_in(self, user):
+        client = Client()
+        response = client.post(reverse("manage:login"), {"identifier": user.username, "password": "pw-12345-x"})
+        self.assertRedirects(response, reverse("manage:home"), fetch_redirect_response=False)
+        return client
+
+    def test_each_administrative_role_opens_all_its_visible_services(self):
+        expected = {
+            Role.CONTENT_EDITOR: {"site", "data"},
+            Role.MEDICAL_REVIEWER: {"data"},
+            Role.DATA_QUALITY_REVIEWER: {"data"},
+            Role.DATA_QUALITY_APPROVER: {"data"},
+            Role.SUPPORT_AGENT: {"app", "site"},
+            Role.BILLING_ADMIN: {"users", "sales"},
+            Role.PLATFORM_ADMIN: {"users", "sales", "app", "site", "data", "system"},
+        }
+        for key, required_modules in expected.items():
+            with self.subTest(role=key):
+                user = make(key)
+                self.grant(user, key)
+                user.refresh_from_db()
+                self.assertFalse(user.is_staff)
+                self.assertFalse(user.is_superuser)
+                client = self.sign_in(user)
+                home = client.get(reverse("manage:home"))
+                self.assertEqual(home.status_code, 200)
+                modules = home.context["mg"]["modules"]
+                self.assertTrue(required_modules.issubset({m["key"] for m in modules}))
+                for module in modules:
+                    for page in module["pages"]:
+                        self.assertFalse(page["external"], (key, page["url"]))
+                        response = client.get(page["url"])
+                        self.assertEqual(response.status_code, 200, (key, page["url"]))
+
+    def test_learning_roles_do_not_grant_management_access(self):
+        for key in (Role.LEARNER, Role.VERIFIED_PROFESSIONAL):
+            user = make(key)
+            self.grant(user, key)
+            response = Client().post(reverse("manage:login"), {"identifier": user.username, "password": "pw-12345-x"})
+            self.assertContains(response, "به مدیریت دسترسی ندارد")
+
+    def test_custom_role_uses_its_quality_permission_without_a_known_role_key(self):
+        from django.contrib.auth.models import Permission
+
+        role = Role.objects.create(key="quality_observer", name="Quality observer", is_system=False)
+        role.permissions.add(Permission.objects.get(content_type__app_label="accounts", codename="view_data_quality_center"))
+        user = make("observer")
+        self.grant(user, role.key)
+        client = self.sign_in(user)
+        home = client.get(reverse("manage:home"))
+        pages = {page["key"] for module in home.context["mg"]["modules"] for page in module["pages"]}
+        self.assertIn("queue", pages)
+        self.assertNotIn("review", pages)
+        self.assertNotIn("users", pages)
+        self.assertEqual(client.get(reverse("data_quality_center:queue")).status_code, 200)
+        self.grant(user, role.key, op="revoke")
+        self.assertEqual(client.get(reverse("manage:home")).status_code, 302)
+
+    def test_revoking_a_role_blocks_existing_sessions_and_can_be_reassigned(self):
+        for key, endpoint in (
+            (Role.DATA_QUALITY_REVIEWER, "data_quality_center:queue"),
+            (Role.CONTENT_EDITOR, "panel:posts"),
+            (Role.SUPPORT_AGENT, "support_admin:inbox"),
+            (Role.BILLING_ADMIN, "console:plans"),
+            (Role.PLATFORM_ADMIN, "manage:devices"),
+        ):
+            with self.subTest(role=key):
+                user = make(key)
+                self.grant(user, key)
+                client = self.sign_in(user)
+                self.assertEqual(client.get(reverse(endpoint)).status_code, 200)
+                self.grant(user, key, op="revoke")
+                self.assertNotEqual(client.get(reverse(endpoint)).status_code, 200)
+                self.assertEqual(client.get(reverse("manage:home")).status_code, 302)
+                self.grant(user, key)
+                self.assertEqual(client.get(reverse(endpoint)).status_code, 200)
+
+    def test_expired_roles_neither_sign_in_nor_appear_active(self):
+        user = make("expired-reviewer")
+        self.grant(user, Role.DATA_QUALITY_REVIEWER)
+        now = timezone.now()
+        RoleAssignment.objects.filter(user=user).update(created_at=now - timedelta(days=2), expires_at=now - timedelta(days=1))
+        response = Client().post(reverse("manage:login"), {"identifier": user.username, "password": "pw-12345-x"})
+        self.assertContains(response, "به مدیریت دسترسی ندارد")
+        response = self.client.get(reverse("console:user", args=[user.pk]))
+        self.assertEqual(response.context["roles_active"], [])
+
+    def test_billing_admin_cannot_delegate_roles_or_change_platform_settings(self):
+        user = make("billing")
+        target = make("customer")
+        self.grant(user, Role.BILLING_ADMIN)
+        client = self.sign_in(user)
+        response = client.get(reverse("console:user", args=[target.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'id="roles"')
+        self.assertNotContains(response, 'id="delete"')
+        drawer = client.get(reverse("console:users"), {"u": target.pk})
+        self.assertEqual(drawer.status_code, 200)
+        self.assertNotContains(drawer, reverse("console:user_block", args=[target.pk]))
+        plan = Plan.objects.create(slug="billing-role-plan", name_fa="پلن آزمایشی نقش", is_free=False)
+        response = client.post(reverse("console:user_grant", args=[target.pk]), {"plan": plan.pk, "days": "30"})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Entitlement.objects.filter(user=target, plan=plan, granted_by=user).exists())
+        for endpoint in ("user_role", "user_block", "user_logout_all", "user_delete"):
+            response = client.post(reverse(f"console:{endpoint}", args=[target.pk]), {"role": Role.PLATFORM_ADMIN})
+            self.assertEqual(response.status_code, 403, endpoint)
+        for endpoint in ("console:access", "console:rate_limits", "manage:devices", "manage:usage", "app_admin:announcements", "panel:settings"):
+            self.assertNotEqual(client.get(reverse(endpoint)).status_code, 200, endpoint)
+        self.assertFalse(RoleAssignment.objects.filter(user=target).exists())
+
+    def test_site_and_platform_role_permissions_are_combined(self):
+        from apps.support.services import can_support
+        from apps.website.permissions import can
+
+        user = make("combined", role=StaffRole.SUPPORT)
+        self.grant(user, Role.CONTENT_EDITOR)
+        self.assertTrue(can(user, "post.publish"))
+        self.assertTrue(can_support(user))
+        self.grant(user, Role.CONTENT_EDITOR, op="revoke")
+        self.assertFalse(can(user, "post.publish"))
+        self.assertTrue(can_support(user))

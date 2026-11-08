@@ -1,7 +1,6 @@
-"""The Data Quality Center console: staff operators fill in and correct the
-ingredient section summaries next to the raw label text; a superuser
-reviews every change before it reaches the live data. Server-rendered,
-Persian, right to left; the workflow itself lives in services.py.
+"""The quality desk: operators draft summaries; authorized reviewers decide
+before approvers apply them. Workflow and capability checks are shared with
+services.py and the management shell.
 """
 
 from functools import wraps
@@ -20,7 +19,7 @@ from apps.manage.views import logout_view as manage_logout
 from apps.manage.views import to_login
 from apps.drugs.models import CLINICAL_FIELD_KEYS, Ingredient, IngredientProfileSection
 
-from . import services
+from . import access, services
 from .checks import run_checks, warning_count, word_diff
 from .labels import FIELD_FA, section_state
 from .models import ReviewEvent, SectionEdit, SectionEditRequest
@@ -32,29 +31,34 @@ PAGE_SIZE = 25
 # -- access -----------------------------------------------------------------
 
 def operator_required(view):
-    """Signed-in, active staff only; anyone else goes to the console's own
-    sign-in page."""
+    """Read access to the desk, including assigned platform permissions."""
 
     @wraps(view)
     def wrapper(request, *args, **kwargs):
         user = request.user
-        if not (user.is_authenticated and user.is_active and user.is_staff):
+        if not access.can_view(user):
             return redirect(manage_login_url(request.get_full_path()))
         return view(request, *args, **kwargs)
 
     return wrapper
 
 
-def superuser_required(view):
-    @operator_required
-    @wraps(view)
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_superuser:
-            messages.error(request, "این بخش فقط برای سوپریوزر است.")
-            return redirect("data_quality_center:queue")
-        return view(request, *args, **kwargs)
+def capability_required(allowed):
+    def decorator(view):
+        @operator_required
+        @wraps(view)
+        def wrapper(request, *args, **kwargs):
+            if not allowed(request.user):
+                messages.error(request, "مجوز انجام این کار را ندارید.")
+                return redirect("data_quality_center:queue")
+            return view(request, *args, **kwargs)
+        return wrapper
+    return decorator
 
-    return wrapper
+
+editor_required = capability_required(access.can_edit)
+reviewer_required = capability_required(access.can_review)
+revert_required = capability_required(access.can_revert)
 
 
 # Signing in and out is the admin's (apps.manage); these old addresses send there.
@@ -80,12 +84,14 @@ def _shell(request, active):
     )
     return {
         "active": active,
+        "can_approve": access.can_approve(user),
+        "can_revert": access.can_revert(user),
         "nav": {
             "my_open": counts["drafts"] + counts["pending"] + counts["changes"],
             "changes": counts["changes"],
             "review": (
                 SectionEditRequest.objects.filter(status=SectionEditRequest.STATUS_PENDING).count()
-                if user.is_superuser else 0
+                if access.can_review(user) else 0
             ),
             "ingredients": Ingredient.objects.count(),
         },
@@ -246,6 +252,8 @@ def workspace(request, slug):
 
     last_edit = SectionEdit.objects.filter(section=selected).first()
     previous_slug, next_slug = _neighbours(ingredient)
+    if not access.can_edit(request.user):
+        mode = "readonly"
 
     return _render(request, "workspace.html", "queue", {
         "ingredient": ingredient,
@@ -281,7 +289,7 @@ def _workspace_url(slug, field):
 
 
 @require_POST
-@operator_required
+@editor_required
 def save_draft(request, slug, field):
     """Autosave: stores the editor's content as the operator's draft and
     answers with the live checks and diff."""
@@ -309,7 +317,7 @@ def save_draft(request, slug, field):
 
 
 @require_POST
-@operator_required
+@editor_required
 def submit(request, slug, field):
     section = _section_or_404(slug, field)
     try:
@@ -324,12 +332,12 @@ def submit(request, slug, field):
     except WorkflowError as exc:
         messages.error(request, str(exc))
     else:
-        messages.success(request, f"درخواست #{req.pk} برای تأیید نهایی سوپریوزر فرستاده شد.")
+        messages.success(request, f"درخواست #{req.pk} برای تأیید نهایی فرستاده شد.")
     return redirect(_workspace_url(slug, field))
 
 
 @require_POST
-@operator_required
+@editor_required
 def withdraw(request, slug, field):
     section = _section_or_404(slug, field)
     req = get_object_or_404(
@@ -345,7 +353,7 @@ def withdraw(request, slug, field):
 
 
 @require_POST
-@operator_required
+@editor_required
 def discard(request, slug, field):
     section = _section_or_404(slug, field)
     req = services.editable_request(section, request.user)
@@ -389,7 +397,7 @@ def my_requests(request):
 
 # -- review desk ----------------------------------------------------------------
 
-@superuser_required
+@reviewer_required
 def review_desk(request):
     pending = list(
         SectionEditRequest.objects.filter(status=SectionEditRequest.STATUS_PENDING)
@@ -423,7 +431,7 @@ def review_desk(request):
 
 
 @require_POST
-@superuser_required
+@reviewer_required
 def review_action(request, pk):
     req = get_object_or_404(SectionEditRequest, pk=pk)
     action = request.POST.get("action")
@@ -489,7 +497,7 @@ def history(request):
 
 
 @require_POST
-@superuser_required
+@revert_required
 def revert(request, pk):
     edit = get_object_or_404(SectionEdit, pk=pk)
     try:

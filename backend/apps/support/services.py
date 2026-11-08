@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 def can_support(user):
     if not (user.is_authenticated and user.is_active):
         return False
-    from apps.website.permissions import role_of
+    from apps.website.permissions import roles_of
     from apps.website.models import StaffRole
 
-    return bool(user.is_superuser or role_of(user) in {StaffRole.SUPPORT, StaffRole.ADMIN} or set(active_role_keys(user)) & {"support_agent", "platform_admin"})
+    return bool(roles_of(user) & {StaffRole.SUPPORT, StaffRole.ADMIN} or set(active_role_keys(user)) & {"support_agent", "platform_admin"})
 
 
 def conversations_for(user):

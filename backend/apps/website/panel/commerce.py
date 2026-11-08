@@ -55,5 +55,5 @@ def subscriptions(request):
     expiring = active.filter(ends_at__isnull=False, ends_at__lte=now + timedelta(days=7)).select_related("plan", "user", "user__learner_profile").order_by("ends_at")[:15]
     return render_panel(request, "panel/subscriptions.html", {
         "by_plan": by_plan, "total": active.values("user").distinct().count(), "expiring": expiring,
-        "discounts": DiscountCode.objects.order_by("-created_at")[:20], "discounts_url": reverse("console:discounts"), "access_url": reverse("console:access"),
+        "discounts": DiscountCode.objects.order_by("-created_at")[:20], "discounts_url": reverse("console:discounts"), "access_url": reverse("console:users"),
     }, active="subs")

@@ -3,10 +3,9 @@ one transaction with the request (and, when applying, the section) locked,
 each writing its `ReviewEvent`. Views only translate HTTP into these calls.
 
 Who may do what:
-- any staff operator drafts, submits, withdraws and discards their own
-  requests;
-- only a superuser approves (which applies the change), rejects, sends a
-  request back for changes, or starts a revert of an applied edit.
+- staff operators and assigned editors/reviewers manage their own drafts;
+- reviewers reject or request changes; approvers also apply summaries;
+- reverting additionally requires the apply-data-quality-change permission.
 """
 
 from django.conf import settings
@@ -15,6 +14,7 @@ from django.utils import timezone
 
 from apps.drugs.models import IngredientProfileSection
 
+from . import access
 from .checks import run_checks
 from .models import ReviewEvent, SectionEdit, SectionEditRequest
 
@@ -48,9 +48,9 @@ def _event(req, actor, action, *, note="", metadata=None, http_request=None):
     )
 
 
-def _require_superuser(user):
-    if not user.is_superuser:
-        raise WorkflowError("فقط سوپریوزر می‌تواند این کار را انجام دهد.")
+def _require_capability(user, allowed):
+    if not allowed(user):
+        raise WorkflowError("مجوز انجام این کار را ندارید.")
 
 
 def _clean(text):
@@ -86,6 +86,7 @@ def editable_request(section, user):
 def save_draft(section, user, *, summary_fa, summary_en, reason):
     """Creates or updates `user`'s editable request on the section (the
     autosave). Refused while someone else's request holds the section."""
+    _require_capability(user, access.can_edit)
     with transaction.atomic():
         section = IngredientProfileSection.objects.select_for_update().get(pk=section.pk)
         held = open_request(section)
@@ -118,7 +119,8 @@ def save_draft(section, user, *, summary_fa, summary_en, reason):
 
 
 def submit(req, user, *, http_request=None):
-    """Sends a draft, or a request sent back for changes, to the superuser."""
+    """Sends a draft, or a request sent back for changes, for review."""
+    _require_capability(user, access.can_edit)
     with transaction.atomic():
         req = SectionEditRequest.objects.select_for_update().select_related("section").get(pk=req.pk)
         if req.requested_by_id != user.id:
@@ -162,6 +164,7 @@ def submit(req, user, *, http_request=None):
 
 def withdraw(req, user, *, http_request=None):
     """Takes a pending request back to draft, so its author can change it."""
+    _require_capability(user, access.can_edit)
     with transaction.atomic():
         req = SectionEditRequest.objects.select_for_update().get(pk=req.pk)
         if req.requested_by_id != user.id:
@@ -181,6 +184,7 @@ def withdraw(req, user, *, http_request=None):
 def discard(req, user, *, http_request=None):
     """Drops a draft (or sent-back request). One never submitted has no
     history and is deleted; otherwise it is closed as discarded."""
+    _require_capability(user, access.can_edit)
     with transaction.atomic():
         req = SectionEditRequest.objects.select_for_update().get(pk=req.pk)
         if req.requested_by_id != user.id:
@@ -212,7 +216,7 @@ def approve(req, reviewer, note="", *, http_request=None):
     permanent `SectionEdit`. Refuses if the section changed since the
     request was submitted -- the reviewer sends it back instead of silently
     overwriting someone else's applied change."""
-    _require_superuser(reviewer)
+    _require_capability(reviewer, access.can_approve)
     with transaction.atomic():
         req = SectionEditRequest.objects.select_for_update().get(pk=req.pk)
         if not req.is_pending:
@@ -247,7 +251,7 @@ def approve(req, reviewer, note="", *, http_request=None):
 
 
 def reject(req, reviewer, note="", *, http_request=None):
-    _require_superuser(reviewer)
+    _require_capability(reviewer, access.can_review)
     with transaction.atomic():
         req = SectionEditRequest.objects.select_for_update().get(pk=req.pk)
         if not req.is_pending:
@@ -259,7 +263,7 @@ def reject(req, reviewer, note="", *, http_request=None):
 
 def request_changes(req, reviewer, note, *, http_request=None):
     """Sends a pending request back to its author with what to fix."""
-    _require_superuser(reviewer)
+    _require_capability(reviewer, access.can_review)
     if not note.strip():
         raise WorkflowError("بنویسید چه چیزی باید اصلاح شود.")
     with transaction.atomic():
@@ -282,7 +286,7 @@ def start_revert(edit, user, reason, *, http_request=None):
     """Opens a pending request that puts back the text `edit` replaced. It
     goes through the same approval as any change -- and refuses while the
     section has another open request."""
-    _require_superuser(user)
+    _require_capability(user, access.can_revert)
     reason = reason.strip()
     if len(reason) < min_reason_length():
         raise WorkflowError(f"دلیل بازگردانی را دست‌کم در {min_reason_length()} نویسه بنویسید.")

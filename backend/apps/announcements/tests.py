@@ -182,10 +182,10 @@ class AdminTests(TestCase):
         self.client.post(reverse("app_admin:announcement_action", args=[item.pk]), {"action": "delete"})
         self.assertFalse(AppAnnouncement.objects.exists())
 
-    def test_only_superusers(self):
+    def test_staff_without_platform_admin_role_is_denied(self):
         staff = User.objects.create_user("staff", password="x", is_staff=True)
         self.client.force_login(staff)
-        self.assertEqual(self.client.get(reverse("app_admin:announcements")).status_code, 302)
+        self.assertEqual(self.client.get(reverse("app_admin:announcements")).status_code, 403)
 
     def test_install_action_sets_audience_and_permanent_dismissal_without_custom_url(self):
         self.client.post(reverse("app_admin:announcement_new"), self.payload(
