@@ -2,16 +2,10 @@
 {% load static dqc_extras %}
 {% comment %}The data-quality desk's pages, inside the admin shell (apps.manage):
 the shell draws the rail, the page column and the command bar; the desk
-adds its drug search and today's count to the column.{% endcomment %}
+adds today's count to the column. Drug search lives above the queue list.{% endcomment %}
 {% block module_css %}
 <link rel="stylesheet" href="{% static 'dqc/dqc.css' %}">
 {% block head %}{% endblock %}
-{% endblock %}
-{% block sub_extra %}
-<form class="mg-sub-extra" method="get" action="{% url 'data_quality_center:queue' %}" role="search">
-  <label class="mg-sr" for="global-search">جست‌وجوی دارو</label>
-  <input id="global-search" type="search" name="q" value="{{ search|default:'' }}" placeholder="نام دارو یا RxCUI…" autocomplete="off">
-</form>
 {% endblock %}
 {% block sub_note %}
 {% if today %}<div class="mg-note"><b>امروز</b>{{ today.submitted|fa_digits }} ارسال · {{ today.approved|fa_digits }} تأییدشده</div>{% endif %}

@@ -53,6 +53,10 @@
 .mx-data .btn .kbd { background: rgba(255,255,255,.18); border: 0; color: inherit; }
 .mx-data .field-label { display: block; font-size: 12.5px; font-weight: 800; margin-bottom: 6px; }
 .mx-data .field-label .req { color: var(--danger); }
+.mx-data .drug-search { margin-bottom: 14px; }
+.mx-data .drug-search-controls { display: flex; align-items: center; gap: 8px; }
+.mx-data .drug-search-controls .input { flex: 1; min-width: 0; min-height: 44px; }
+.mx-data .drug-search-controls .btn { min-height: 44px; flex: none; }
 .mx-data .input, .mx-data .textarea { width: 100%; border: 1.5px solid var(--track); border-radius: 10px; background: var(--surface); padding: 9px 12px; font-size: 13.5px; outline: none; transition: border-color .15s, box-shadow .15s; }
 .mx-data .input:focus, .mx-data .textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(15,92,82,.12); }
 .mx-data .textarea { resize: vertical; line-height: 1.9; }

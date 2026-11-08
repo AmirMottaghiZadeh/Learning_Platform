@@ -9,6 +9,15 @@
   </div>
 </div>
 
+<form class="drug-search" method="get" action="{% url 'data_quality_center:queue' %}" role="search" aria-label="جست‌وجوی دارو">
+  <label class="field-label" for="drug-search">جست‌وجوی دارو</label>
+  <div class="drug-search-controls">
+    <input class="input" id="drug-search" type="search" name="q" value="{{ search }}" placeholder="نام دارو یا RxCUI…" autocomplete="off">
+    <input type="hidden" name="show" value="{{ show }}">
+    <button class="btn" type="submit">جست‌وجو</button>
+  </div>
+</form>
+
 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap">
   <div class="pills">
     {% for key, label in filters.items %}
