@@ -9,7 +9,31 @@
   </div>
 </div>
 
-<form class="drug-search" method="get" action="{% url 'data_quality_center:queue' %}" role="search" aria-label="جست‌وجوی دارو">
+<form class="drug-search" id="drug-browse-form" method="get" action="{% url 'data_quality_center:queue' %}" role="search" aria-label="جست‌وجو و دسته‌بندی دارو">
+  <div class="drug-catalog-grid">
+    <div>
+      <label class="field-label" for="drug-category">دستهٔ کلی</label>
+      <select class="input" id="drug-category" name="category">
+        <option value="">همهٔ دسته‌ها</option>
+        {% for item in categories %}<option value="{{ item.code }}" {% if category == item.code %}selected{% endif %}>{{ item.name_fa }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="field-label" for="drug-topic">موضوع بالینی</label>
+      <select class="input" id="drug-topic" name="topic" {% if not category %}disabled{% endif %}>
+        <option value="">{% if category %}همهٔ موضوع‌های این دسته{% else %}ابتدا دسته را انتخاب کنید{% endif %}</option>
+        {% for item in topics %}<option value="{{ item.code }}" {% if topic == item.code %}selected{% endif %}>{{ item.name_fa }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="field-label" for="drug-chapter">زیرگروه دارویی</label>
+      <select class="input" id="drug-chapter" name="chapter" {% if not topic %}disabled{% endif %}>
+        <option value="">{% if topic %}همهٔ زیرگروه‌های این موضوع{% else %}ابتدا موضوع را انتخاب کنید{% endif %}</option>
+        {% for item in chapters %}<option value="{{ item.code }}" {% if chapter == item.code %}selected{% endif %}>{{ item.name_fa }} · {{ item.code }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+  {% if category %}<div class="drug-catalog-reset"><a href="{% querystring browse_query category=None topic=None chapter=None page=None %}">پاک کردن دسته‌بندی</a></div>{% endif %}
   <label class="field-label" for="drug-search">جست‌وجوی دارو</label>
   <div class="drug-search-controls">
     <input class="input" id="drug-search" type="search" name="q" value="{{ search }}" placeholder="نام دارو یا RxCUI…" autocomplete="off">
@@ -21,10 +45,10 @@
 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap">
   <div class="pills">
     {% for key, label in filters.items %}
-      <a class="pill {% if show == key %}on{% endif %}" href="?{% if search %}q={{ search|urlencode }}&{% endif %}show={{ key }}">{{ label }}</a>
+      <a class="pill {% if show == key %}on{% endif %}" href="{% querystring browse_query show=key page=None %}">{{ label }}</a>
     {% endfor %}
   </div>
-  {% if search %}<span class="chip tone-muted">جستجو: <span class="ltr">{{ search }}</span> · <a href="?show={{ show }}">پاک کردن</a></span>{% endif %}
+  {% if search %}<span class="chip tone-muted">جستجو: <span class="ltr">{{ search }}</span> · <a href="{% querystring browse_query q=None page=None %}">پاک کردن</a></span>{% endif %}
   <span style="flex: 1"></span>
   <span class="muted" style="font-size: 12.5px">{{ page.paginator.count|fa_digits }} ماده</span>
 </div>
@@ -37,7 +61,8 @@
     {% for ing in page %}
       <tr>
         <td>
-          <a href="{% url 'data_quality_center:workspace' ing.slug %}" class="ltr" style="display: block; font-weight: 800; color: var(--ink)">{{ ing.name }}</a>
+          <a href="{% url 'data_quality_center:workspace' ing.slug %}{% querystring browse_query %}" class="ltr" style="display: block; font-weight: 800; color: var(--ink)">{{ ing.name }}</a>
+          {% if ing.name_fa %}<span class="muted" style="display: block; font-size: 12px">{{ ing.name_fa }}</span>{% endif %}
           <span class="faint ltr" style="display: block; font-size: 11.5px">RxCUI {{ ing.rxcui }}</span>
           <div style="margin-top: 6px">{% include "data_quality_center/drug_review_badge.html" with ingredient=ing %}</div>
         </td>
@@ -56,7 +81,7 @@
             {% if not ing.total %}<span class="chip tone-muted">بدون متن منبع</span>{% endif %}
           </div>
         </td>
-        <td style="text-align: left"><a class="btn outline" style="padding: 5px 12px; font-size: 12.5px" href="{% url 'data_quality_center:workspace' ing.slug %}">باز کردن</a></td>
+        <td style="text-align: left"><a class="btn outline" style="padding: 5px 12px; font-size: 12.5px" href="{% url 'data_quality_center:workspace' ing.slug %}{% querystring browse_query %}">باز کردن</a></td>
       </tr>
     {% endfor %}
     </tbody>
@@ -68,9 +93,22 @@
 
 {% if page.has_other_pages %}
 <div class="pager">
-  {% if page.has_previous %}<a class="btn ghost" href="?{% if search %}q={{ search|urlencode }}&{% endif %}show={{ show }}&page={{ page.previous_page_number }}">→ قبلی</a>{% endif %}
+  {% if page.has_previous %}<a class="btn ghost" href="{% querystring browse_query page=page.previous_page_number %}">→ قبلی</a>{% endif %}
   <span>صفحهٔ {{ page.number|fa_digits }} از {{ page.paginator.num_pages|fa_digits }}</span>
-  {% if page.has_next %}<a class="btn ghost" href="?{% if search %}q={{ search|urlencode }}&{% endif %}show={{ show }}&page={{ page.next_page_number }}">بعدی ←</a>{% endif %}
+  {% if page.has_next %}<a class="btn ghost" href="{% querystring browse_query page=page.next_page_number %}">بعدی ←</a>{% endif %}
 </div>
 {% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+  (function () {
+    var form = document.getElementById("drug-browse-form");
+    var category = document.getElementById("drug-category");
+    var topic = document.getElementById("drug-topic");
+    var chapter = document.getElementById("drug-chapter");
+    category.addEventListener("change", function () { topic.value = ""; chapter.value = ""; form.requestSubmit(); });
+    topic.addEventListener("change", function () { chapter.value = ""; form.requestSubmit(); });
+    chapter.addEventListener("change", function () { form.requestSubmit(); });
+  })();
+</script>
 {% endblock %}

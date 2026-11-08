@@ -54,6 +54,12 @@
 .mx-data .field-label { display: block; font-size: 12.5px; font-weight: 800; margin-bottom: 6px; }
 .mx-data .field-label .req { color: var(--danger); }
 .mx-data .drug-search { margin-bottom: 14px; }
+.mx-data .drug-catalog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.mx-data .drug-catalog-grid > div { min-width: 0; }
+.mx-data .drug-catalog-grid select { min-height: 44px; }
+.mx-data .drug-catalog-grid select:disabled { background: var(--soft); color: var(--muted); cursor: not-allowed; }
+.mx-data .drug-catalog-reset { margin: -4px 0 12px; font-size: 12px; }
+@media (max-width: 700px) { .mx-data .drug-catalog-grid { grid-template-columns: 1fr; } }
 .mx-data .drug-search-controls { display: flex; align-items: center; gap: 8px; }
 .mx-data .drug-search-controls .input { flex: 1; min-width: 0; min-height: 44px; }
 .mx-data .drug-search-controls .btn { min-height: 44px; flex: none; }

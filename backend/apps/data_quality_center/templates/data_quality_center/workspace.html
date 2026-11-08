@@ -68,7 +68,7 @@
 
 {% block content %}
 {% if not sections %}
-  <div class="main-col"><div class="main-scroll"><div class="empty"><b class="ltr">{{ ingredient.name }}</b>{% include "data_quality_center/drug_review_badge.html" %}<p>این ماده هنوز بخش بالینی ندارد.</p></div></div></div>
+  <div class="main-col"><div class="main-scroll"><div class="empty"><b class="ltr">{{ ingredient.name }}</b>{% include "data_quality_center/drug_review_badge.html" %}<p>این ماده هنوز بخش بالینی ندارد.</p><a href="{% url 'data_quality_center:queue' %}{% querystring browse_query %}">بازگشت به فهرست داروها</a></div></div></div>
 {% else %}
 <div class="sections-col">
   <div style="padding: 0 4px">
@@ -76,7 +76,7 @@
     <div style="margin: 8px 0">{% include "data_quality_center/drug_review_badge.html" %}</div>
     <div class="muted" style="font-size: 12.5px">{{ total|fa_digits }} بخش بالینی · <span class="ltr">RxCUI {{ ingredient.rxcui }}</span></div>
     {% if can_approve and not ingredient.is_reviewed %}
-      <form method="post" action="{% url 'data_quality_center:confirm_drug_review' ingredient.slug %}" style="margin-top: 10px">
+      <form method="post" action="{% url 'data_quality_center:confirm_drug_review' ingredient.slug %}{% querystring workspace_query %}" style="margin-top: 10px">
         {% csrf_token %}<input type="hidden" name="version" value="{{ review_version }}">
         <button class="btn outline" type="submit">تأیید بازبینی دارو</button>
       </form>
@@ -89,7 +89,7 @@
   </div>
   <div style="display: flex; flex-direction: column; gap: 2px">
     {% for row in sections %}
-      <a class="sec-row {% if row.selected %}on{% endif %}" href="?field={{ row.section.field }}">
+      <a class="sec-row {% if row.selected %}on{% endif %}" href="{% querystring workspace_query field=row.section.field %}">
         <span class="t"><span class="fa">{{ row.label }}</span><span class="en">{{ row.section.get_field_display }}</span></span>
         <span class="chip tone-{{ row.state.tone }}">{% if row.selected and mode == 'edit' and row.state.key != 'changes' %}در حال ویرایش{% else %}{{ row.state.label }}{% endif %}</span>
       </a>
@@ -103,21 +103,21 @@
     {% endif %}
   </div>
   <div class="nav-pn" style="margin-top: 0">
-    {% if previous_slug %}<a href="{% url 'data_quality_center:workspace' previous_slug %}" id="prev-link">→ مادهٔ قبلی</a>{% else %}<span></span>{% endif %}
+    {% if previous_slug %}<a href="{% url 'data_quality_center:workspace' previous_slug %}{% querystring workspace_query %}" id="prev-link">→ مادهٔ قبلی</a>{% else %}<span></span>{% endif %}
     <span class="kbd">J / K</span>
-    {% if next_slug %}<a href="{% url 'data_quality_center:workspace' next_slug %}" id="next-link">مادهٔ بعدی ←</a>{% else %}<span></span>{% endif %}
+    {% if next_slug %}<a href="{% url 'data_quality_center:workspace' next_slug %}{% querystring workspace_query %}" id="next-link">مادهٔ بعدی ←</a>{% else %}<span></span>{% endif %}
   </div>
 </div>
 
 <div class="main-col">
-  <form id="edit-form" class="main-col" method="post" action="{% url 'data_quality_center:submit' ingredient.slug section.field %}" style="min-height: 0">
+  <form id="edit-form" class="main-col" method="post" action="{% url 'data_quality_center:submit' ingredient.slug section.field %}{% querystring workspace_query %}" style="min-height: 0">
     {% csrf_token %}
     <div class="main-scroll">
       {% if messages %}<div class="msgs" style="margin: 0">{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
 
       <div style="display: flex; align-items: flex-end; gap: 12px">
         <div style="flex: 1">
-          <div class="crumbs"><a href="{% url 'data_quality_center:queue' %}" class="faint">داروها</a> ‹ <span class="ltr">{{ ingredient.name }}</span> ‹ {{ section_label }}</div>
+          <div class="crumbs"><a href="{% url 'data_quality_center:queue' %}{% querystring browse_query %}" class="faint">داروها</a> ‹ <span class="ltr">{{ ingredient.name }}</span> ‹ {{ section_label }}</div>
           <div style="display: flex; align-items: baseline; gap: 10px"><span class="page-title">{{ section_label }}</span><span class="ltr muted" style="font-size: 14px; font-weight: 600">{{ section.get_field_display }}</span></div>
         </div>
         <span class="muted" style="font-size: 12px">
@@ -237,8 +237,8 @@
       {% endif %}
     </div>
   </form>
-  <form id="discard-form" method="post" action="{% url 'data_quality_center:discard' ingredient.slug section.field %}" onsubmit="return confirm('تغییرات این پیش‌نویس کنار گذاشته شود؟')">{% csrf_token %}</form>
-  <form id="withdraw-form" method="post" action="{% url 'data_quality_center:withdraw' ingredient.slug section.field %}">{% csrf_token %}</form>
+  <form id="discard-form" method="post" action="{% url 'data_quality_center:discard' ingredient.slug section.field %}{% querystring workspace_query %}" onsubmit="return confirm('تغییرات این پیش‌نویس کنار گذاشته شود؟')">{% csrf_token %}</form>
+  <form id="withdraw-form" method="post" action="{% url 'data_quality_center:withdraw' ingredient.slug section.field %}{% querystring workspace_query %}">{% csrf_token %}</form>
 </div>
 {{ section.raw_text|json_script:"raw-text" }}
 {% endif %}

@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Role, RoleAssignment, SecurityAuditEvent
-from apps.drugs.models import Ingredient, IngredientProfileSection
+from apps.drugs.models import AtcCategory, AtcCode, Ingredient, IngredientProfileSection
 
 from . import services
 from .checks import numbers_missing_from_source, run_checks, word_diff
@@ -540,3 +540,141 @@ class WholeDrugAndSourcesTests(ConsoleTestCase):
         self.assertEqual(row.reviewer_username, "boss")
         self.ingredient.refresh_from_db()
         self.assertTrue(self.ingredient.is_reviewed)
+
+
+class CatalogBrowsingTests(ConsoleTestCase):
+    def setUp(self):
+        super().setUp()
+        for parent, code, name in (("C", "C07", "مسدودکننده‌های بتا"), ("C", "C09", "رنین و آنژیوتانسین"), ("J", "J01", "آنتی‌باکتریال‌ها")):
+            root, _ = AtcCategory.objects.get_or_create(code=parent, defaults={"level": 1, "name_fa": parent, "name_en": parent})
+            AtcCategory.objects.create(code=code, level=2, name_fa=name, name_en=code, parent=root)
+        self.attach(self.ingredient, "C09CA01")
+        self.beta = self.drug("metoprolol", "browse-beta", "C07AB02")
+        self.beta.name_fa = "متوپرولول"
+        self.beta.save()
+        self.attach(self.beta, "C07AB03")  # two links must not duplicate a row
+        self.other_beta = self.drug("atenolol", "browse-beta2", "C07AB04")
+        self.antibiotic = self.drug("amoxicillin", "browse-abx", "J01CA04")
+        self.unclassified = Ingredient.objects.create(name="uncategorized", rxcui="browse-none", slug="browse-none")
+        self.params = {"category": "cardio-blood", "topic": "cv-htn", "chapter": "C09"}
+
+    def attach(self, drug, code):
+        node, _ = AtcCode.objects.get_or_create(code=code, defaults={"name": code})
+        drug.atc_codes.add(node)
+
+    def drug(self, name, rxcui, code):
+        drug = Ingredient.objects.create(name=name, rxcui=rxcui, slug=rxcui)
+        self.attach(drug, code)
+        return drug
+
+    def browse(self, **params):
+        response = self.client.get(reverse("data_quality_center:queue"), params)
+        self.assertEqual(response.status_code, 200)
+        return response
+
+    def slugs(self, response):
+        return [drug.slug for drug in response.context["page"]]
+
+    def test_category_topic_and_chapter_match_the_app(self):
+        from apps.lessons.selectors import lesson_groups
+
+        response = self.browse(category="cardio-blood")
+        self.assertCountEqual(self.slugs(response), [self.ingredient.slug, self.beta.slug, self.other_beta.slug])
+        expected = [g for g in lesson_groups(self.staff) if g["category_code"] == "cardio-blood"]
+        self.assertEqual([g["code"] for g in response.context["topics"]], [g["code"] for g in expected])
+        self.assertIn({"code": "cardio-blood", "name_fa": "قلب، عروق و خون", "name_en": "Cardiovascular & blood"}, response.context["categories"])
+        response = self.browse(category="cardio-blood", topic="cv-arrhythmia")
+        self.assertCountEqual(self.slugs(response), [self.beta.slug, self.other_beta.slug])
+        response = self.browse(**self.params)
+        self.assertEqual(self.slugs(response), [self.ingredient.slug])
+        self.assertEqual(response.context["page"].paginator.count, 1)
+
+    def test_search_and_review_filters_combine_with_the_catalog(self):
+        self.beta.reviewed_at = timezone.now()
+        self.beta.save(update_fields=["reviewed_at"])
+        response = self.browse(category="cardio-blood", topic="cv-htn", chapter="C07", q="متوپرولول", show="reviewed")
+        self.assertEqual(self.slugs(response), [self.beta.slug])
+        response = self.browse(category="infection", q="metoprolol")
+        self.assertEqual(self.slugs(response), [])
+        response = self.browse(category="cardio-blood", topic="cv-htn", chapter="C07", show="unreviewed")
+        self.assertEqual(self.slugs(response), [self.other_beta.slug])
+
+    def test_invalid_or_stale_children_are_cleared(self):
+        response = self.browse(category="infection", topic="cv-htn", chapter="C07")
+        self.assertEqual(response.context["topic"], "")
+        self.assertEqual(response.context["chapter"], "")
+        self.assertEqual(self.slugs(response), [self.antibiotic.slug])
+        response = self.browse(category="unknown", topic="cv-htn", chapter="C07")
+        self.assertEqual(response.context["category"], "")
+        self.assertIn(self.unclassified.slug, self.slugs(response))
+
+    def test_all_drugs_remain_reachable_and_new_classes_use_the_app_fallback(self):
+        future = self.drug("future", "browse-future", "Z99AA01")
+        self.assertIn(self.unclassified.slug, self.slugs(self.browse()))
+        response = self.browse(category="misc", topic="other-Z", chapter="Z99")
+        self.assertEqual(self.slugs(response), [future.slug])
+
+    def test_workspace_neighbors_and_return_links_stay_within_the_selection(self):
+        from html import unescape
+        from urllib.parse import urlencode
+
+        params = {"category": "cardio-blood", "topic": "cv-htn", "chapter": "C07"}
+        response = self.client.get(reverse("data_quality_center:workspace", args=[self.beta.slug]), params)
+        # Give this drug a section so the workspace renders its editing view.
+        IngredientProfileSection.objects.create(ingredient=self.beta, field=FIELD, raw_text="Preview", summary_en="Preview")
+        response = self.client.get(reverse("data_quality_center:workspace", args=[self.beta.slug]), params)
+        self.assertEqual(response.context["previous_slug"], self.other_beta.slug)
+        self.assertIsNone(response.context["next_slug"])
+        html = unescape(response.content.decode())
+        self.assertIn(reverse("data_quality_center:queue") + "?" + urlencode(params), html)
+        self.assertIn("chapter=C07", html)
+        self.assertNotIn(reverse("data_quality_center:workspace", args=[self.antibiotic.slug]), html)
+
+    def test_submit_withdraw_discard_and_drug_review_preserve_the_selection(self):
+        from urllib.parse import parse_qs, urlencode, urlsplit
+
+        params = {**self.params, "q": "losartan", "show": "unreviewed"}
+        suffix = "?" + urlencode(params)
+        payload = {"summary_fa": FA, "summary_en": EN, "reason": REASON}
+        for action in ("submit", "withdraw", "discard"):
+            response = self.client.post(self.url(action) + suffix, payload)
+            self.assertEqual(response.status_code, 302)
+            returned = parse_qs(urlsplit(response["Location"]).query)
+            for key, value in params.items():
+                self.assertEqual(returned[key], [value], action)
+            self.assertEqual(returned["field"], [FIELD])
+        self.section.summary_en = EN
+        self.section.save()
+        response = self.as_user(self.superuser).post(
+            reverse("data_quality_center:confirm_drug_review", args=[self.ingredient.slug]) + suffix,
+            {"version": services.drug_review_version(self.ingredient)},
+        )
+        returned = parse_qs(urlsplit(response["Location"]).query)
+        self.assertEqual(returned["category"], [params["category"]])
+
+    def test_pagination_and_status_links_keep_catalog_search_and_review_state(self):
+        from html import unescape
+        from urllib.parse import parse_qs, urlsplit
+        import re
+
+        for index in range(26):
+            self.drug(f"catalog-{index:02}", f"browse-page-{index}", "C07AB02")
+        params = {"category": "cardio-blood", "topic": "cv-htn", "chapter": "C07", "q": "catalog-", "show": "unreviewed", "page": "2"}
+        response = self.browse(**params)
+        self.assertEqual(response.context["page"].number, 2)
+        self.assertEqual(response.context["page"].paginator.count, 26)
+        hrefs = re.findall(r'href="([^"]+)"', unescape(response.content.decode()))
+        workspace = next(url for url in hrefs if "/drugs/browse-page-" in url)
+        query = parse_qs(urlsplit(workspace).query)
+        for key, value in params.items():
+            self.assertEqual(query[key], [value])
+        status_url = next(url for url in hrefs if parse_qs(urlsplit(url).query).get("show") == ["reviewed"])
+        self.assertNotIn("page", parse_qs(urlsplit(status_url).query))
+        self.assertEqual(parse_qs(urlsplit(status_url).query)["chapter"], ["C07"])
+
+    def test_browsing_does_not_create_learner_progress(self):
+        from apps.lessons.models import ChapterProgress, ReadDrug
+
+        self.browse(**self.params)
+        self.assertFalse(ChapterProgress.objects.filter(user=self.staff).exists())
+        self.assertFalse(ReadDrug.objects.filter(user=self.staff).exists())

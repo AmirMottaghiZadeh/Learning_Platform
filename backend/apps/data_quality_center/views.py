@@ -21,6 +21,7 @@ from apps.drugs.models import CLINICAL_FIELD_KEYS, Ingredient, IngredientProfile
 from apps.drugs.review import with_review_status
 
 from . import access, services
+from .selectors import BROWSE_KEYS, QUEUE_FILTERS, browse_query, drug_catalog, filtered_ingredients, queue_rows
 from .checks import run_checks, warning_count, word_diff
 from .labels import FIELD_FA, section_state
 from .models import ReviewEvent, SectionEdit, SectionEditRequest
@@ -123,83 +124,41 @@ def _diffs(before_fa, after_fa, before_en, after_en):
 
 # -- edit queue -----------------------------------------------------------------
 
-QUEUE_FILTERS = {
-    "": "همه",
-    "missing": "بدون خلاصه",
-    "pending": "در انتظار تأیید",
-    "changes": "نیاز به اصلاح",
-    "mine": "پیش‌نویس‌های من",
-    "unreviewed": "بازبینی نشده",
-    "reviewed": "بازبینی شده",
-}
-
-
 @operator_required
 def queue(request):
-    search = request.GET.get("q", "").strip()
-    show = request.GET.get("show", "")
-    if show not in QUEUE_FILTERS:
-        show = ""
-
-    with_raw = Q(sections__raw_text__gt="")
-    qs = with_review_status(Ingredient.objects.all()).annotate(
-        total=Count("sections", filter=with_raw, distinct=True),
-        filled=Count(
-            "sections",
-            filter=with_raw & ~Q(sections__summary_fa="") & ~Q(sections__summary_en=""),
-            distinct=True,
-        ),
-        pending=Count(
-            "sections__edit_requests",
-            filter=Q(sections__edit_requests__status=SectionEditRequest.STATUS_PENDING),
-            distinct=True,
-        ),
-        changes=Count(
-            "sections__edit_requests",
-            filter=Q(sections__edit_requests__status=SectionEditRequest.STATUS_CHANGES_REQUESTED),
-            distinct=True,
-        ),
-    ).order_by("name")
-    if search:
-        qs = qs.filter(Q(name__icontains=search) | Q(rxcui=search))
-    if show in {"reviewed", "unreviewed"}:
-        qs = qs.filter(_is_reviewed=show == "reviewed")
-    if show == "missing":
-        qs = qs.filter(with_raw & (Q(sections__summary_fa="") | Q(sections__summary_en=""))).distinct()
-    elif show == "pending":
-        qs = qs.filter(sections__edit_requests__status=SectionEditRequest.STATUS_PENDING).distinct()
-    elif show == "changes":
-        qs = qs.filter(
-            sections__edit_requests__status=SectionEditRequest.STATUS_CHANGES_REQUESTED,
-            sections__edit_requests__requested_by=request.user,
-        ).distinct()
-    elif show == "mine":
-        qs = qs.filter(
-            sections__edit_requests__status=SectionEditRequest.STATUS_DRAFT,
-            sections__edit_requests__requested_by=request.user,
-        ).distinct()
-
-    page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
+    catalog = drug_catalog(request.GET)
+    query = browse_query(request.GET, catalog)
+    qs = queue_rows(filtered_ingredients(request.user, query, catalog["chapter_codes"]))
+    page = Paginator(qs, PAGE_SIZE).get_page(query.get("page"))
+    if page.number > 1:
+        query["page"] = str(page.number)
+    else:
+        query.pop("page", None)
     return _render(request, "queue.html", "queue", {
-        "page": page, "search": search, "show": show, "filters": QUEUE_FILTERS,
+        **catalog, "browse_query": query, "page": page, "search": query.get("q", ""),
+        "show": query.get("show", ""), "filters": QUEUE_FILTERS,
     })
 
 
 # -- workspace ----------------------------------------------------------------
 
-def _neighbours(ingredient):
-    before = Ingredient.objects.filter(name__lt=ingredient.name).order_by("-name").values_list("slug", flat=True).first()
-    after = Ingredient.objects.filter(name__gt=ingredient.name).order_by("name").values_list("slug", flat=True).first()
-    return before, after
+def _neighbours(ingredient, queryset):
+    before = queryset.filter(Q(name__lt=ingredient.name) | Q(name=ingredient.name, pk__lt=ingredient.pk))
+    after = queryset.filter(Q(name__gt=ingredient.name) | Q(name=ingredient.name, pk__gt=ingredient.pk))
+    return (before.order_by("-name", "-pk").values_list("slug", flat=True).first(),
+            after.order_by("name", "pk").values_list("slug", flat=True).first())
 
 
 @operator_required
 def workspace(request, slug):
     ingredient = get_object_or_404(with_review_status(Ingredient.objects.all()), slug=slug)
+    catalog = drug_catalog(request.GET) if any(request.GET.get(key) for key in BROWSE_KEYS) else None
+    query = browse_query(request.GET, catalog)
+    neighbours = filtered_ingredients(request.user, query, catalog["chapter_codes"] if catalog else ())
     by_field = {s.field: s for s in IngredientProfileSection.objects.filter(ingredient=ingredient)}
     sections = [by_field[f] for f in CLINICAL_FIELD_KEYS if f in by_field]
     if not sections:
-        return _render(request, "workspace.html", "queue", {"ingredient": ingredient, "sections": []})
+        return _render(request, "workspace.html", "queue", {"ingredient": ingredient, "sections": [], "browse_query": query})
 
     section_ids = [s.pk for s in sections]
     open_by_section = {
@@ -261,12 +220,16 @@ def workspace(request, slug):
     extra_en = current.after_other_sources_en if current else selected.other_sources_en
 
     last_edit = SectionEdit.objects.filter(section=selected).first()
-    previous_slug, next_slug = _neighbours(ingredient)
+    previous_slug, next_slug = _neighbours(ingredient, neighbours)
+    workspace_query = query.copy()
+    workspace_query["field"] = selected.field
     if not access.can_edit(request.user):
         mode = "readonly"
 
     return _render(request, "workspace.html", "queue", {
         "ingredient": ingredient,
+        "browse_query": query,
+        "workspace_query": workspace_query,
         "sections": rows,
         "done": done,
         "waiting": waiting,
@@ -299,8 +262,12 @@ def _section_or_404(slug, field):
     )
 
 
-def _workspace_url(slug, field):
-    return f"{reverse('data_quality_center:workspace', args=[slug])}?field={field}"
+def _workspace_url(slug, field, params=None):
+    query = browse_query(params or {})
+    if field:
+        query["field"] = field
+    url = reverse("data_quality_center:workspace", args=[slug])
+    return f"{url}?{query.urlencode()}" if query else url
 
 
 def _other_sources_diff(before_fa, after_fa, before_en, after_en):
@@ -323,7 +290,7 @@ def confirm_drug_review(request, slug):
         messages.error(request, str(exc))
     else:
         messages.success(request, "بازبینی کل دارو تأیید شد.")
-    return redirect("data_quality_center:workspace", slug=slug)
+    return redirect(_workspace_url(slug, request.GET.get("field", ""), request.GET))
 
 
 @require_POST
@@ -376,7 +343,7 @@ def submit(request, slug, field):
         messages.error(request, str(exc))
     else:
         messages.success(request, f"درخواست #{req.pk} برای تأیید نهایی فرستاده شد.")
-    return redirect(_workspace_url(slug, field))
+    return redirect(_workspace_url(slug, field, request.GET))
 
 
 @require_POST
@@ -392,7 +359,7 @@ def withdraw(request, slug, field):
         messages.error(request, str(exc))
     else:
         messages.info(request, "درخواست پس گرفته شد و دوباره قابل ویرایش است.")
-    return redirect(_workspace_url(slug, field))
+    return redirect(_workspace_url(slug, field, request.GET))
 
 
 @require_POST
@@ -401,14 +368,14 @@ def discard(request, slug, field):
     section = _section_or_404(slug, field)
     req = services.editable_request(section, request.user)
     if req is None:
-        return redirect(_workspace_url(slug, field))
+        return redirect(_workspace_url(slug, field, request.GET))
     try:
         services.discard(req, request.user, http_request=request)
     except WorkflowError as exc:
         messages.error(request, str(exc))
     else:
         messages.info(request, "تغییرات کنار گذاشته شد.")
-    return redirect(_workspace_url(slug, field))
+    return redirect(_workspace_url(slug, field, request.GET))
 
 
 # -- my requests ----------------------------------------------------------------

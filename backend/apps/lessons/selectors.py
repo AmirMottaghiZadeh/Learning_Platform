@@ -60,9 +60,13 @@ def _subgroup(code, category, slugs, read_slugs):
     }
 
 
-def lesson_groups(user):
+def lesson_groups(user=None):
+    """The shared catalog, optionally including one learner's read progress.
+
+    Management uses the same taxonomy without reading learning history.
+    """
     slug_index = _l2_slug_index()
-    read_slugs = read_slugs_for_user(user)
+    read_slugs = read_slugs_for_user(user) if user is not None else set()
     l2_categories = {c.code: c for c in AtcCategory.objects.filter(level=2)}
     l1_categories = {c.code: c for c in AtcCategory.objects.filter(level=1)}
 
