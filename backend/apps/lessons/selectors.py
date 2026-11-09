@@ -253,6 +253,7 @@ def get_lesson_drug(slug):
     text, most of each section row) is never part of a lesson -- not read."""
     return (
         with_review_status(Ingredient.objects.filter(slug=slug))
+        .select_related("chemistry")
         .prefetch_related(
             "atc_codes",
             Prefetch("sections", queryset=IngredientProfileSection.objects.defer("raw_text")),

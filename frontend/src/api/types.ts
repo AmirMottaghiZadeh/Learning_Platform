@@ -57,6 +57,7 @@ export interface AtcCode {
 }
 
 export interface IngredientListItem {
+  name_fa?: string;
   is_reviewed?: boolean;
   rxcui: string;
   name: string;
@@ -92,8 +93,17 @@ export interface LessonSection {
 
 /** One drug's lesson -- GET /lessons/drugs/<slug>/, fetched when it's opened. */
 export interface LessonDrug extends IngredientListItem {
+  chemistry?: DrugChemistry | null;
   sections: LessonDrugSection[];
   lesson_sections: LessonSection[];
+}
+
+export interface DrugChemistry {
+  molecular_formula: string;
+  structure_svg: string;
+  pubchem_cid: number;
+  source_url: string;
+  fetched_at: string;
 }
 
 /** The ATC level-4 class (N04BC) a drug is listed under within its chapter. */

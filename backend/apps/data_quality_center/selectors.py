@@ -1,6 +1,6 @@
 """Drug browsing with the app's clinical catalog and quality-desk filters."""
 
-from django.db.models import Count, Exists, OuterRef, Q
+from django.db.models import Count, Exists, F, OuterRef, Q
 from django.http import QueryDict
 
 from apps.drugs.models import Ingredient, IngredientProfileSection
@@ -17,6 +17,7 @@ QUEUE_FILTERS = {
     "mine": "پیش‌نویس‌های من",
     "unreviewed": "بازبینی نشده",
     "reviewed": "بازبینی شده",
+    "chemistry": "بازبینی اطلاعات شیمیایی",
 }
 BROWSE_KEYS = ("category", "topic", "chapter", "q", "show", "page")
 
@@ -82,6 +83,11 @@ def filtered_ingredients(user, params, chapter_codes=()):
     show = params.get("show", "")
     if show in {"reviewed", "unreviewed"}:
         qs = qs.filter(_is_reviewed=show == "reviewed")
+    elif show == "chemistry":
+        stale = Q(chemistry__status="approved") & (
+            ~Q(name=F("chemistry__ingredient_name")) | ~Q(rxcui=F("chemistry__ingredient_rxcui"))
+        )
+        qs = qs.filter(Q(chemistry__status__in=["pending", "ambiguous", "not_found"]) | stale)
     elif show == "missing":
         sections = IngredientProfileSection.objects.filter(ingredient_id=OuterRef("pk"), raw_text__gt="").filter(
             Q(summary_fa="") | Q(summary_en="")

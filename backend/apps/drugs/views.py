@@ -47,7 +47,7 @@ class IngredientDetailView(generics.RetrieveAPIView):
     lookup_field = "slug"
 
     def get_queryset(self):
-        return with_review_status(Ingredient.objects.all()).prefetch_related("atc_codes", "sections")
+        return with_review_status(Ingredient.objects.all()).select_related("chemistry").prefetch_related("atc_codes", "sections")
 
 
 class AtcCodeListView(generics.ListAPIView):

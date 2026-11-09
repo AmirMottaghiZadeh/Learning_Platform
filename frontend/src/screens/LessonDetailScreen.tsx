@@ -4,6 +4,7 @@ import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, TextInp
 
 import { lessonsApi } from "@/api/endpoints";
 import { DrugReviewBadge } from "@/components/DrugReviewBadge";
+import { DrugChemistryCard } from "@/components/DrugChemistryCard";
 import { LessonSection } from "@/api/types";
 import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
@@ -371,6 +372,8 @@ export function LessonDetailScreen() {
             text={isFa ? `${n(mins)} دقیقه` : `${mins} min`}
           />
         </View>
+
+        <DrugChemistryCard chemistry={drug?.chemistry} name={drugName(drug, isFa)} />
 
         {blocks.length === 0 ? (
           <AppText muted weight="600" size={13} style={{ marginTop: 24 }}>

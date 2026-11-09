@@ -3,12 +3,13 @@ before approvers apply them. Workflow and capability checks are shared with
 services.py and the management shell.
 """
 
+import base64
 from functools import wraps
 
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -519,3 +520,43 @@ def revert(request, pk):
         return redirect(f"{reverse('data_quality_center:history')}?tab=edits")
     messages.success(request, f"درخواست بازگردانی #{req.pk} ساخته شد؛ آن را در میز بررسی تأیید کنید.")
     return redirect(f"{reverse('data_quality_center:review')}?id={req.pk}")
+
+
+@operator_required
+def chemistry_workspace(request, slug):
+    from apps.drugs.chemistry import ChemistryError, enrich, review, version
+    from apps.drugs.models import IngredientChemistry
+
+    ingredient = get_object_or_404(Ingredient, slug=slug)
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+        allowed = access.can_approve(request.user) if action in ("approve", "reject") else (
+            access.can_edit(request.user) or access.can_approve(request.user)
+        )
+        if not allowed:
+            return HttpResponseForbidden("مجوز انجام این کار را ندارید.")
+        try:
+            expected = request.POST.get("version", "")
+            if action == "fetch":
+                raw_cid = request.POST.get("cid", "").strip()
+                if raw_cid and (not raw_cid.isascii() or not raw_cid.isdigit() or len(raw_cid) > 12):
+                    raise ChemistryError("شناسهٔ PubChem معتبر وارد کنید.")
+                enrich(ingredient, cid=int(raw_cid) if raw_cid else None,
+                       actor=request.user.get_username(), expected=expected)
+                messages.success(request, "اطلاعات دریافت شد؛ ساختار معتبر پیش‌فرض در اپ نمایش داده می‌شود. هویت ماده و شکل نمک را بازبینی کنید.")
+            else:
+                review(ingredient, request.user.get_username(), action, expected)
+                messages.success(request, "تصمیم بازبینی اطلاعات شیمیایی ثبت شد.")
+        except ChemistryError as exc:
+            messages.error(request, str(exc))
+        query = browse_query(request.GET).urlencode()
+        return redirect(reverse("data_quality_center:chemistry", args=[slug]) + (f"?{query}" if query else ""))
+    chemistry = IngredientChemistry.objects.filter(ingredient=ingredient).first()
+    return _render(request, "chemistry.html", "queue", {
+        "ingredient": ingredient, "chemistry": chemistry, "chemistry_version": version(chemistry),
+        "chemistry_identity_current": chemistry and (ingredient.name, ingredient.rxcui) == (chemistry.ingredient_name, chemistry.ingredient_rxcui),
+        "chemistry_image": base64.b64encode(chemistry.structure_svg.encode()).decode() if chemistry else "",
+        "can_fetch_chemistry": access.can_edit(request.user) or access.can_approve(request.user),
+        "browse_query": browse_query(request.GET),
+        "chemistry_reviews": ingredient.chemistry_reviews.order_by("-created_at")[:10],
+    })

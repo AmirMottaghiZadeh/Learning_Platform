@@ -61,6 +61,7 @@ class IngredientListSerializer(serializers.ModelSerializer):
         fields = [
             "rxcui",
             "name",
+            "name_fa",
             "slug",
             "n_products",
             "n_source_records",
@@ -116,7 +117,16 @@ class LessonSectionSerializer(serializers.Serializer):
     other_sources_en = serializers.CharField(required=False, allow_blank=True)
 
 
+class ChemistrySerializer(serializers.Serializer):
+    molecular_formula = serializers.CharField()
+    structure_svg = serializers.CharField()
+    pubchem_cid = serializers.IntegerField()
+    source_url = serializers.URLField()
+    fetched_at = serializers.DateTimeField()
+
+
 class IngredientDetailSerializer(IngredientListSerializer):
+    chemistry = serializers.SerializerMethodField()
     sections = serializers.SerializerMethodField()
     lesson_sections = serializers.SerializerMethodField()
 
@@ -125,7 +135,18 @@ class IngredientDetailSerializer(IngredientListSerializer):
     section_serializer_class = ProfileSectionSerializer
 
     class Meta(IngredientListSerializer.Meta):
-        fields = IngredientListSerializer.Meta.fields + ["sections", "lesson_sections"]
+        fields = IngredientListSerializer.Meta.fields + ["sections", "lesson_sections", "chemistry"]
+
+    @extend_schema_field(ChemistrySerializer(allow_null=True))
+    def get_chemistry(self, obj):
+        data = getattr(obj, "chemistry", None)
+        if not data or data.status not in {"pending", "approved"}:
+            return None
+        if not all((data.pubchem_cid, data.molecular_formula, data.smiles, data.structure_svg, data.fetched_at)):
+            return None
+        if (obj.name, obj.rxcui) != (data.ingredient_name, data.ingredient_rxcui):
+            return None
+        return ChemistrySerializer(data).data
 
     def _sections_by_field(self, obj):
         return {s.field: s for s in obj.sections.all()}

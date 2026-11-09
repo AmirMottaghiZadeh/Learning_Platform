@@ -81,7 +81,7 @@
             {% if not ing.total %}<span class="chip tone-muted">بدون متن منبع</span>{% endif %}
           </div>
         </td>
-        <td style="text-align: left"><a class="btn outline" style="padding: 5px 12px; font-size: 12.5px" href="{% url 'data_quality_center:workspace' ing.slug %}{% querystring browse_query %}">باز کردن</a></td>
+        <td style="text-align: left"><a class="btn outline" style="padding: 5px 12px; font-size: 12.5px" href="{% if show == 'chemistry' %}{% url 'data_quality_center:chemistry' ing.slug %}{% else %}{% url 'data_quality_center:workspace' ing.slug %}{% endif %}{% querystring browse_query %}">باز کردن</a></td>
       </tr>
     {% endfor %}
     </tbody>

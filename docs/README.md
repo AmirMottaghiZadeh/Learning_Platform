@@ -30,6 +30,9 @@
 | ۱۸ | [18-notifications-setup.fa.md](18-notifications-setup.fa.md) | راهنمای کامل Firebase، FCM، EAS، APK، VAPID، آزمون نهایی و کلید خاموش/روشن کردن اعلان | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | ۱۹ | [19-quiz-navigation-and-flashcard-removal.fa.md](19-quiz-navigation-and-flashcard-removal.fa.md) | آزمون با دسته و زیردسته، ناوبری سه‌گزینه‌ای و حذف سوابق فلش‌کارت | توسعه‌دهنده، مسئول انتشار |
 | ۲۰ | [20-pediatric-dose.fa.md](20-pediatric-dose.fa.md) | تنظیم دوز اطفال، طرح مرحله‌ای منتخب، API، موتور و همگام‌سازی منبع | توسعه‌دهنده، مسئول داده و انتشار |
+| ۲۱ | [21-drug-chemistry.fa.md](21-drug-chemistry.fa.md) | دریافت PubChem، نمایش پیش‌فرض فرمول و ساختار، بازبینی تطبیق، فایل‌ها و آزمون‌های نهایی | توسعه‌دهنده، بازبین، مسئول انتشار |
+| ۲۲ | [22-pubchem-sar-research.fa.md](22-pubchem-sar-research.fa.md) | نتیجهٔ بررسی SAR، دادهٔ قابل دریافت و مرز امکانات هنوز پیاده‌سازی‌نشده | مالک پروژه، مسئول داده، توسعه‌دهنده |
+| ۲۳ | [23-lexicomp-translation-cost.fa.md](23-lexicomp-translation-cost.fa.md) | منبع خواندن Lexicomp، حجم دو ستون و برآورد توکن و هزینهٔ ترجمه | مالک پروژه، مسئول داده |
 | — | [search/README.md](search/README.md) | وضعیت جست‌وجوی فعلی، فازهای توسعه، وظایف مالک پروژه، مجموعهٔ ارزیابی، [برنامهٔ دقت و جست‌وجوی برداری](search/plan-precision-and-vector-search-2026-11-01.fa.md) و [بازبینی پایلوت قبلی](search/phase-11-review-and-redesign-2026-10-31.fa.md) | مالک محصول، توسعه‌دهنده، مسئول داده |
 
 ## آرشیو طراحی رابط

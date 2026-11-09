@@ -271,3 +271,8 @@ CI جلوی دیپلوی را نمی‌گیرد؛ رانفلر مستقل از �
 این تغییر مهاجرت‌های `accounts`، `activity` و `support` دارد. کد سرور و وب باید با هم به‌روز شوند. وب Push به کلید ثابت VAPID و HTTPS نیاز دارد؛ اندروید به تنظیم Firebase/FCM v1 و APK تازه دارای `expo-notifications` نیاز دارد. مراحل دقیق و وضعیت فعلی در [سند ۱۷](17-sessions-activity-support.fa.md) آمده است. فایل service account در git ذخیره نشود.
 
 اعلان‌های پشتیبانی فعلاً با پیش‌فرض `SUPPORT_PUSH_NOTIFICATIONS_ENABLED=False` غیرفعال‌اند. راه‌اندازی Firebase/FCM، متغیر فایل EAS، امضای APK، mount کلید VAPID، اجرای worker و آزمون نهایی در [سند ۱۸](18-notifications-setup.fa.md) ثبت شده است. فقط پس از آماده شدن زیرساخت، پرچم را در بک‌اند و worker روشن و سرویس‌ها را دوباره اجرا کنید.
+
+
+## وابستگی نمایش ساختار شیمیایی
+
+`requirements.txt` شامل RDKit است. Dockerfile کتابخانه‌های `libxrender1`، `libxext6` و `libx11-6` را برای runtime رسم نصب و بارگذاری آن را هنگام build بررسی می‌کند. پس از انتشار، migrationهای جدید drugs اجرا و داده‌های PubChem در همان محیط دریافت و بازبینی می‌شوند؛ [راهنمای اطلاعات شیمیایی](21-drug-chemistry.fa.md).

@@ -10,12 +10,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client \
+    && apt-get install -y --no-install-recommends postgresql-client libxrender1 libxext6 libx11-6 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
+
+# Fail the build if the RDKit drawing runtime cannot load on the slim image.
+RUN python -c "from rdkit.Chem.Draw import rdMolDraw2D; rdMolDraw2D.MolDraw2DSVG(640, 360)"
 
 COPY backend/ .
 

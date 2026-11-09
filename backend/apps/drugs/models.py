@@ -140,6 +140,44 @@ class Ingredient(models.Model):
         return not self.sections.filter(updated_at__gt=self.reviewed_at).exists()
 
 
+class IngredientChemistry(models.Model):
+    """Validated PubChem chemistry, visible by default unless rejected or stale."""
+
+    ingredient = models.OneToOneField(Ingredient, on_delete=models.CASCADE, related_name="chemistry")
+    status = models.CharField(max_length=20, default="pending", choices=[
+        ("pending", "نیازمند بازبینی"), ("approved", "تأیید شده"),
+        ("rejected", "رد شده"), ("not_found", "یافت نشد"), ("ambiguous", "چند تطبیق"),
+    ])
+    pubchem_cid = models.PositiveBigIntegerField(null=True, blank=True)
+    matched_name = models.CharField(max_length=255, blank=True)
+    ingredient_name = models.CharField(max_length=255, blank=True, default="", db_default="")
+    ingredient_rxcui = models.CharField(max_length=16, blank=True, default="", db_default="")
+    molecular_formula = models.CharField(max_length=512, blank=True)
+    smiles = models.TextField(blank=True)
+    inchikey = models.CharField(max_length=64, blank=True)
+    structure_svg = models.TextField(blank=True)
+    candidates = models.JSONField(default=list, blank=True)
+    fetched_at = models.DateTimeField(null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.CharField(max_length=150, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def source_url(self):
+        return f"https://pubchem.ncbi.nlm.nih.gov/compound/{self.pubchem_cid}" if self.pubchem_cid else ""
+
+    def __str__(self):
+        return f"{self.ingredient.name}: {self.get_status_display()}"
+
+
+class ChemistryReview(models.Model):
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name="chemistry_reviews")
+    actor = models.CharField(max_length=150)
+    action = models.CharField(max_length=20)
+    snapshot = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class IngredientProfileSection(models.Model):
     """One clinical-label field for an ingredient, with its fa/en summaries."""
 

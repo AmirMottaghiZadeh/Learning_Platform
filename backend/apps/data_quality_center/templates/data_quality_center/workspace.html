@@ -68,9 +68,10 @@
 
 {% block content %}
 {% if not sections %}
-  <div class="main-col"><div class="main-scroll"><div class="empty"><b class="ltr">{{ ingredient.name }}</b>{% include "data_quality_center/drug_review_badge.html" %}<p>این ماده هنوز بخش بالینی ندارد.</p><a href="{% url 'data_quality_center:queue' %}{% querystring browse_query %}">بازگشت به فهرست داروها</a></div></div></div>
+  <div class="main-col"><div class="main-scroll"><a href="{% url 'data_quality_center:chemistry' ingredient.slug %}{% querystring browse_query %}">فرمول و ساختار شیمیایی · بازبینی تطبیق</a><div class="empty"><b class="ltr">{{ ingredient.name }}</b>{% include "data_quality_center/drug_review_badge.html" %}<p>این ماده هنوز بخش بالینی ندارد.</p><a href="{% url 'data_quality_center:queue' %}{% querystring browse_query %}">بازگشت به فهرست داروها</a></div></div></div>
 {% else %}
 <div class="sections-col">
+  <a href="{% url 'data_quality_center:chemistry' ingredient.slug %}{% querystring browse_query %}">فرمول و ساختار شیمیایی · بازبینی تطبیق</a>
   <div style="padding: 0 4px">
     <div class="ing-name">{{ ingredient.name }}</div>
     <div style="margin: 8px 0">{% include "data_quality_center/drug_review_badge.html" %}</div>
