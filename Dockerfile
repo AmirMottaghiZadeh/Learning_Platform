@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client libxrender1 libxext6 libx11-6 \
+    && apt-get install -y --no-install-recommends postgresql-client libexpat1 libxrender1 libxext6 libx11-6 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt .

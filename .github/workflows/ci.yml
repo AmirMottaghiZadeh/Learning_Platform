@@ -6,6 +6,19 @@ on:
   pull_request:
 
 jobs:
+  backend-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      # Build the actual Runflare image: Ubuntu's installed libraries can hide
+      # missing dependencies in python:3.11-slim (e.g. RDKit needs libexpat1).
+      # Use the same public mirror as the service images below to avoid
+      # Docker Hub's anonymous rate limit on shared GitHub runner IPs.
+      - run: docker pull public.ecr.aws/docker/library/python:3.11-slim
+      - run: docker tag public.ecr.aws/docker/library/python:3.11-slim python:3.11-slim
+      - run: docker build --tag pharmenta-backend-ci .
+
   backend:
     runs-on: ubuntu-latest
     timeout-minutes: 20

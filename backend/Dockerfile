@@ -10,12 +10,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client \
+    && apt-get install -y --no-install-recommends postgresql-client libexpat1 libxrender1 libxext6 libx11-6 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
+
+# Keep drawing dependencies and this check aligned with the root Dockerfile.
+RUN python -c "from rdkit.Chem.Draw import rdMolDraw2D; rdMolDraw2D.MolDraw2DSVG(640, 360)"
 
 COPY . .
 

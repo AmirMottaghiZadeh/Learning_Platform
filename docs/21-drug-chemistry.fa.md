@@ -14,6 +14,8 @@ RDKit باید فرمول ساختار دریافتی را از نظر تعدا�
 
 ## نصب و دریافت اطلاعات
 
+### محیط توسعهٔ محلی
+
 از پوشهٔ `backend`:
 
 ```bash
@@ -21,6 +23,43 @@ pip install -r requirements.txt
 python manage.py migrate
 python manage.py import_pubchem --workers 4
 ```
+
+### سرور: ابتدا احراز انتشار کد، سپس دریافت داده
+
+کامیت و push فقط کد مخزن را به‌روز می‌کنند. برای اجرای فرمان تازه، سرویس **بک‌اند** باید از شاخهٔ `main`، با کامیت `9da9c2d` یا نسخهٔ پس از آن که این فایل‌ها را دارد، دوباره build و deploy شود. انتشار وب‌اپ روی `deploy-web` مستقل است. restart همان تصویر قبلی، کد تازه را وارد کانتینر نمی‌کند.
+
+پس از موفق شدن build و rollout بک‌اند، ترمینال قبلی را ببندید و ترمینال کانتینر جدید را باز کنید. در تصویر استاندارد این پروژه، مسیر فعلی `/app` است و پوشهٔ `backend/` مستقیماً داخل آن کپی شده است:
+
+```bash
+python manage.py help import_pubchem
+python manage.py showmigrations drugs
+python -c "from rdkit.Chem.Draw import rdMolDraw2D; print('RDKit drawing: OK')"
+```
+
+فرمان باید شناخته شود، migrationهای `0010_chemistryreview_ingredientchemistry` و `0011_ingredientchemistry_ingredient_name_and_more` در فهرست باشند و import رسم RDKit موفق شود. سپس:
+
+```bash
+python manage.py migrate --noinput
+python manage.py import_pubchem --workers 4
+```
+
+entrypoint همین پروژه هنگام شروع کانتینر migrate را اجرا می‌کند؛ بنابراین اگر فایل‌های جدید حاضر باشند و migrationها قبلاً اجرا شده باشند، پاسخ «No migrations to apply» طبیعی است. این پیام بدون بررسی نسخهٔ کد، به‌روز بودن schema نسبت به کامیت جدید را ثابت نمی‌کند.
+
+**خطای گزارش‌شدهٔ `Unknown command: 'import_pubchem'`:** در رخداد بررسی‌شده، remote شاخهٔ `main` روی `9da9c2d` بود و وجود فایل فرمان و migrationها در همان کامیت تأیید شد. محیطی که فرمان را نمی‌شناخت، فرمان جدید را بارگذاری نمی‌کرد. لاگ بعدی علت این رخداد را مشخص کرد: Build کامیت جدید هنگام import RDKit به‌دلیل نبود libexpat.so.1 شکست خورده بود و نسخهٔ قبلی در حال اجرا مانده بود. بستهٔ libexpat1 به هر دو Dockerfile بک‌اند اضافه شده است؛ شرح کامل و بررسی اصلاح در [سند انتشار](08-deployment.md#علت-تأییدشدهٔ-شکست-build-کامیت-9da9c2d) آمده است. شاخه و کامیت انتشار بک‌اند، نتیجهٔ build/rollout و جدید بودن ترمینال کانتینر باید بررسی شوند. برای بررسی فایل‌های همان کانتینر:
+
+```bash
+ls apps/drugs/management/commands/import_pubchem.py
+ls apps/drugs/migrations/0010_chemistryreview_ingredientchemistry.py
+ls apps/drugs/migrations/0011_ingredientchemistry_ingredient_name_and_more.py
+```
+
+اگر فایل فرمان وجود دارد ولی هنوز شناخته نمی‌شود، مسیر اپ بارگذاری‌شده و کشف فرمان را بررسی کنید:
+
+```bash
+python manage.py shell -c "from django.apps import apps; from django.core.management import get_commands; print(apps.get_app_config('drugs').path); print(get_commands().get('import_pubchem'))"
+```
+
+فایل یا وابستگی را دستی داخل کانتینر قبلی کپی/نصب نکنید تا جای build جدید را بگیرد؛ تغییرات کانتینر با انتشار بعدی از دست می‌روند. RDKit و کتابخانه‌های رسم باید در تصویر ساخته‌شده نصب باشند. نتیجهٔ تشخیص بالا بدون نیاز به چاپ env یا اطلاعات اتصال دیتابیس قابل بررسی است.
 
 کتابخانهٔ RDKit از طریق requirements نصب می‌شود. برای نمونهٔ محدود:
 
@@ -121,3 +160,8 @@ python manage.py import_pubchem --limit 20
 اجرای ثبت‌شدهٔ مجموعه‌های ۸۸۴ و ۱۴۴ تایی از تنظیمات موقت تست با hasher سریع MD5 استفاده کرد؛ این تنظیم فقط برای تست بود و وارد تنظیمات برنامه یا محیط production نشده است. گزارش تصویری و داده‌های ورود پیش‌نمایش موقت‌اند و در مخزن ذخیره نمی‌شوند. دیتابیس اصلی، اطلاعات ورود، بسته‌های ساخته‌شده و خروجی dist نیز بخشی از کد قابل کامیت نیستند.
 
 قابلیت SAR در این تغییر پیاده‌سازی نشده؛ نتیجهٔ بررسی منبع و مرز کار بعدی در [سند ۲۲](22-pubchem-sar-research.fa.md) ثبت شده است.
+
+
+## اصلاح وابستگی Docker پس از دریافت لاگ رانفلر
+
+کتابخانهٔ رسم RDKit در تصویر slim به `libexpat.so.1` وابسته است؛ این فایل را بستهٔ Debian با نام `libexpat1` فراهم می‌کند. نصب موفق pip به‌تنهایی حضور این کتابخانهٔ سیستمی را تضمین نمی‌کند. اکنون Dockerfile ریشه و backend/Dockerfile هر دو بستهٔ لازم را نصب و بارگذاری rdMolDraw2D را در build بررسی می‌کنند. CI نیز job تازهٔ backend-image برای ساخت تصویر ریشه دارد. تست محلی رسم SVG موفق بود؛ ساخت کامل Docker در محیط محلی به‌دلیل دسترسی نداشتن به daemon تأیید نشده است. این اصلاح migration تازه یا تغییر در داده‌های دارویی لازم ندارد؛ دریافت سرور پس از انتشار موفق تصویر اصلاح‌شده انجام می‌شود.
