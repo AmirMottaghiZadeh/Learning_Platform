@@ -3,7 +3,7 @@ import re
 import time
 from collections import deque
 
-from .provider import MODELS, ProviderError, chat, deadline
+from .provider import MODEL_ALIASES, ProviderError, chat, deadline
 from .retrieval import MAX_ARTICLES, prioritize_topics, read_sections, search_articles, section_menu, selected_passages
 
 PLAN_PROMPT = """Prepare a reference search for ONE question. Return JSON only:
@@ -140,7 +140,7 @@ def _explain_batch(model, question, passages, stages, progress, previous=()):
 
 
 def answer(question, model, selected_sources, history, request, progress=lambda _: None, publish=lambda _: None, observe=lambda _: None):
-    if model not in MODELS:
+    if model not in MODEL_ALIASES:
         raise ProviderError("MODEL_NOT_SUPPORTED")
     if selected_sources != ["uptodate"]:
         raise ProviderError("SOURCE_NOT_SUPPORTED")

@@ -539,6 +539,10 @@ AI_LAB_ENABLED = config("AI_LAB_ENABLED", default=False, cast=bool)
 AI_LAB_PREWARM_ENABLED = config("AI_LAB_PREWARM_ENABLED", default=False, cast=bool)
 AI_LAB_USER_IDS = {s.strip() for s in config("AI_LAB_USER_IDS", default="").split(",") if s.strip()}
 AI_LAB_CREDENTIALS_FILE = config("AI_LAB_CREDENTIALS_FILE", default="")
+# Generic server configuration; the Luna-named variables remain legacy fallbacks.
+AI_LAB_MODEL = config("AI_LAB_MODEL", default="gpt-6-luna").strip()
+AI_LAB_API_KEY = config("AI_LAB_API_KEY", default="")
+AI_LAB_REASONING_EFFORT = config("AI_LAB_REASONING_EFFORT", default=None)
 AI_LAB_LUNA_API_KEY = config("AI_LAB_LUNA_API_KEY", default="")
 AI_LAB_LUNA_REASONING_EFFORT = config("AI_LAB_LUNA_REASONING_EFFORT", default="low").strip().lower()
 AI_LAB_BASE_URL = config("AI_LAB_BASE_URL", default="https://api.gapgpt.app/v1")

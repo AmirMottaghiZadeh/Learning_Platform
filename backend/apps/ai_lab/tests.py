@@ -28,7 +28,8 @@ def passage(n=1):
          "searchContentHash": "b" * 64}}, "b" * 64)
 
 
-@override_settings(AI_LAB_LUNA_API_KEY="test-placeholder",
+@override_settings(AI_LAB_MODEL="gpt-6-luna", AI_LAB_API_KEY="", AI_LAB_REASONING_EFFORT=None,
+                   AI_LAB_LUNA_API_KEY="test-placeholder",
                    AI_LAB_CREDENTIALS_FILE="", AI_LAB_BASE_URL="https://api.gapgpt.app/v1", AI_LAB_LUNA_REASONING_EFFORT="low")
 class ProviderTests(SimpleTestCase):
     def response(self, value):
@@ -173,6 +174,47 @@ class ProviderTests(SimpleTestCase):
                 provider.chat("luna", "Return JSON", {})
             opener.assert_not_called()
 
+    @override_settings(AI_LAB_MODEL="configured-model", AI_LAB_API_KEY="generic-credential",
+                       AI_LAB_REASONING_EFFORT=" HIGH ")
+    def test_server_configuration_controls_request_credentials_reasoning_and_metadata(self):
+        response = self.response({"model": "configured-model-2026-11-10", "choices": [
+            {"message": {"content": '{"ok":true}'}, "finish_reason": "stop"}]})
+        with patch.object(provider, "build_opener", return_value=response):
+            result, meta = provider.chat("luna", "Return JSON", {}, 700)
+        sent = response.open.call_args.args[0]
+        self.assertEqual(result, {"ok": True})
+        self.assertEqual(json.loads(sent.data)["model"], "configured-model")
+        self.assertEqual(json.loads(sent.data)["reasoning_effort"], "high")
+        self.assertEqual(sent.get_header("Authorization"), "Bearer generic-credential")
+        self.assertEqual(meta["model"], "configured-model")
+        self.assertEqual(meta["reported_model"], "configured-model-2026-11-10")
+
+    @override_settings(AI_LAB_MODEL="configured-model")
+    def test_custom_model_is_pinned_and_luna_is_no_longer_an_accepted_response(self):
+        response = self.response({"model": "configured-model"})
+        with patch.object(provider, "build_opener", return_value=response):
+            provider.call("luna", {"model": "gpt-6-luna"})
+        self.assertEqual(json.loads(response.open.call_args.args[0].data)["model"], "configured-model")
+        for reported in ("gpt-6-luna", "configured-model-other", "other/configured-model"):
+            with self.subTest(reported=reported), patch.object(provider, "build_opener", return_value=self.response({"model": reported})):
+                with self.assertRaisesMessage(provider.ProviderError, "MODEL_MISMATCH"):
+                    provider.chat("luna", "Return JSON", {})
+
+    def test_invalid_server_model_never_reaches_provider(self):
+        for model in ("", "bad model", "bad\nmodel", "x" * 121):
+            with self.subTest(model=model), override_settings(AI_LAB_MODEL=model), patch.object(provider, "build_opener") as opener:
+                with self.assertRaisesMessage(provider.ProviderError, "INVALID_MODEL_CONFIGURATION"):
+                    provider.call("luna", {})
+                opener.assert_not_called()
+
+    @override_settings(AI_LAB_REASONING_EFFORT="")
+    def test_empty_reasoning_setting_omits_parameter_instead_of_using_legacy_value(self):
+        response = self.response({"model": "gpt-6-luna", "choices": [
+            {"message": {"content": '{"ok":true}'}, "finish_reason": "stop"}]})
+        with patch.object(provider, "build_opener", return_value=response):
+            provider.chat("luna", "Return JSON", {})
+        self.assertNotIn("reasoning_effort", json.loads(response.open.call_args.args[0].data))
+
 
 class GroundingTests(SimpleTestCase):
     def setUp(self):
@@ -191,6 +233,33 @@ class GroundingTests(SimpleTestCase):
 
     def decision(self, supported=("P1",), sufficient=True, answer=("P1",)):
         return {"supported": list(supported), "sufficient": sufficient, "answer_source_ids": list(answer)}
+
+    @override_settings(AI_LAB_MODEL="configured-model", AI_LAB_API_KEY="test-placeholder",
+                       AI_LAB_REASONING_EFFORT="low", AI_LAB_CREDENTIALS_FILE="")
+    @patch.object(services, "read_sections")
+    @patch.object(services, "search_articles")
+    def test_all_search_stages_use_the_server_configured_model(self, search, read):
+        search.return_value = [{"id": "10", "title": "Reference title"}]
+        read.return_value = [self.section()]
+        outputs = [{"queries": ["treatment"]}, {"section_ids": ["T1"]},
+                   {"items": [self.item()]}, self.decision()]
+        responses = []
+        for output in outputs:
+            response = MagicMock()
+            response.__enter__.return_value.read.return_value = json.dumps({
+                "model": "configured-model", "choices": [{"message": {"content": json.dumps(output)},
+                                                            "finish_reason": "stop"}],
+            }).encode()
+            responses.append(response)
+        with patch.object(provider, "build_opener") as factory:
+            factory.return_value.open.side_effect = responses
+            result = services.answer("درمان بیماری چیست؟", "luna", ["uptodate"], [], None)
+        self.assertEqual(result["parts"][0]["status"], "answered")
+        calls = factory.return_value.open.call_args_list
+        self.assertEqual(len(calls), 4)
+        self.assertEqual([json.loads(call.args[0].data)["model"] for call in calls], ["configured-model"] * 4)
+        self.assertTrue(result["stages"])
+        self.assertTrue(all(stage["model"] == "configured-model" for stage in result["stages"]))
 
     def test_unknown_id_modified_quote_or_non_persian_summary_is_removed(self):
         good = self.item()
@@ -211,7 +280,7 @@ class GroundingTests(SimpleTestCase):
     def test_sufficient_first_article_stops_later_articles_queries_and_paragraph_batches(self, chat, search, read):
         search.return_value = [{"id": "10", "title": "First tagged article"}, {"id": "20", "title": "Second article"}]
         read.return_value = [self.section(count=13)]
-        for model in provider.MODELS:
+        for model in provider.MODEL_ALIASES:
             with self.subTest(model=model):
                 chat.reset_mock(); search.reset_mock(); read.reset_mock()
                 chat.side_effect = [({"queries": ["enuresis", "alternate"]}, {}), ({"section_ids": ["T1"]}, {}),
@@ -533,7 +602,7 @@ class TaggedSourceIntegrationTests(TestCase):
         self.assertIn(params["searchAnchor"], response.data["body_html"])
 
 
-@override_settings(AI_LAB_ENABLED=True, AI_LAB_USER_IDS=set())
+@override_settings(AI_LAB_ENABLED=True, AI_LAB_USER_IDS=set(), AI_LAB_MODEL="gpt-6-luna")
 class ApiTests(TestCase):
     def setUp(self):
         caches["throttle"].clear()
@@ -563,6 +632,15 @@ class ApiTests(TestCase):
         self.assertEqual(submit.call_args.args[3]["model"], "luna")
         active = self.client.get("/api/v1/ai-lab/active/").data["active_job"]
         self.assertEqual(active["model"], "luna")
+
+    @override_settings(AI_LAB_MODEL="configured-model")
+    @patch.object(views._executor, "submit")
+    def test_configured_upstream_model_does_not_require_a_new_frontend_alias(self, submit):
+        self.assertEqual(self.client.get("/api/v1/ai-lab/status/").data["models"], {"luna": "configured-model"})
+        response = self.client.post("/api/v1/ai-lab/ask/", self.payload, format="json")
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(submit.call_args.args[3]["model"], "luna")
+        self.assertEqual(self.client.get("/api/v1/ai-lab/active/").data["active_job"]["model"], "luna")
 
     @patch.object(views._executor, "submit")
     def test_job_is_private_no_store_and_single_active_request(self, submit):

@@ -2,7 +2,7 @@
 import time
 
 from django.core.cache import caches
-from .provider import MODELS
+from .provider import MODEL_ALIASES
 
 TTL = 900
 LEASE = 660
@@ -28,7 +28,7 @@ def read(job_id, user_id):
         now = time.time()
         heartbeat, created = record.get("heartbeat_at"), record.get("created_at")
         if (not heartbeat or not created or now - heartbeat > STALE_AFTER or now - created > MAX_AGE
-                or record.get("model") not in MODELS or record.get("sources") != ["uptodate"]):
+                or record.get("model") not in MODEL_ALIASES or record.get("sources") != ["uptodate"]):
             record = {**record, "status": "failed", "error": {"code": "EXPERIMENT_EXPIRED"}}
             cache.set(key, record, TTL)
             release(str(job_id), user_id)

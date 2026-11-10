@@ -17,7 +17,7 @@ from drf_spectacular.utils import extend_schema
 
 from apps.core.exceptions import PlatformAPIError
 from .access import allowed
-from .provider import MODELS, ProviderError
+from .provider import MODEL_ALIASES, ProviderError, configured_models
 from .retrieval import SOURCES
 from .services import answer
 from . import jobs
@@ -29,7 +29,7 @@ TTL = jobs.TTL
 
 class AskSerializer(serializers.Serializer):
     question = serializers.CharField(min_length=3, max_length=1500)
-    model = serializers.ChoiceField(choices=list(MODELS))
+    model = serializers.ChoiceField(choices=list(MODEL_ALIASES))
     sources = serializers.ListField(child=serializers.ChoiceField(choices=list(SOURCES)), min_length=1, max_length=1,
                                     default=lambda: ["uptodate"])
     history = serializers.ListField(child=serializers.CharField(max_length=1500), max_length=4, default=list)
@@ -51,7 +51,7 @@ class AskSerializer(serializers.Serializer):
 
 def require_lab(user):
     if not settings.AI_LAB_ENABLED or not allowed(user):
-        raise PlatformAPIError("این محیط آزمایشی برای حساب شما فعال نیست.", code="AI_LAB_DISABLED", status_code=403)
+        raise PlatformAPIError("سرچ هوشمند برای حساب شما فعال نیست.", code="AI_LAB_DISABLED", status_code=403)
 
 
 @sensitive_variables()
@@ -129,7 +129,7 @@ def _run(job_id, user, payload, slot):
     except ProviderError as exc:
         finish({"status": "failed", "error": {
             "code": exc.code, "provider_status": exc.status,
-            "model": getattr(exc, "model", MODELS.get(payload["model"])),
+            "model": getattr(exc, "model", configured_models().get(payload["model"])),
         }})
     except Exception:
         finish({"status": "failed", "error": {"code": "EXPERIMENT_FAILED"}})
@@ -144,7 +144,7 @@ class LabStatusView(APIView):
 
     @extend_schema(responses=dict)
     def get(self, request):
-        response = Response({"enabled": settings.AI_LAB_ENABLED and allowed(request.user), "models": MODELS,
+        response = Response({"enabled": settings.AI_LAB_ENABLED and allowed(request.user), "models": configured_models(),
                              "sources": SOURCES})
         response["Cache-Control"] = "private, no-store"
         return response
@@ -180,7 +180,7 @@ class AskView(APIView):
         previous = jobs.active(request.user.pk)
         if previous or not cache.add(user_lock, job_id, jobs.LEASE):
             cache.delete(f"ai-lab:job:{job_id}")
-            raise PlatformAPIError("آزمایش قبلی هنوز در حال اجراست.", code="AI_LAB_BUSY", status_code=429,
+            raise PlatformAPIError("جست‌وجوی قبلی هنوز در حال اجراست.", code="AI_LAB_BUSY", status_code=429,
                                    details={"job_id": previous["job_id"]} if previous else {})
         slot = None
         try:
@@ -198,12 +198,12 @@ class AskView(APIView):
                     slot = candidate
                     break
             if slot is None:
-                raise PlatformAPIError("ظرفیت آزمایش پر است؛ کمی بعد تلاش کنید.", code="AI_LAB_BUSY", status_code=429)
+                raise PlatformAPIError("ظرفیت جست‌وجوی هم‌زمان پر است؛ کمی بعد تلاش کنید.", code="AI_LAB_BUSY", status_code=429)
             from django.utils import timezone
             quota = f"ai-lab:budget:{request.user.pk}:{timezone.now():%Y%m%d%H}"
             cache.add(quota, 0, 3700)
             if cache.incr(quota) > 20:
-                raise PlatformAPIError("سقف ۲۰ آزمایش در ساعت پر شده است.", code="AI_LAB_LIMIT", status_code=429)
+                raise PlatformAPIError("سقف ۲۰ جست‌وجو در ساعت پر شده است.", code="AI_LAB_LIMIT", status_code=429)
             _executor.submit(_run, job_id, request.user, serializer.validated_data, slot)
         except Exception:
             cache.delete(f"ai-lab:job:{job_id}")
@@ -224,7 +224,7 @@ class ResultView(APIView):
         require_lab(request.user)
         record = jobs.read(str(job_id), request.user.pk)
         if not record:
-            raise PlatformAPIError("آزمایش پیدا نشد یا منقضی شده است.", code="NOT_FOUND", status_code=404)
+            raise PlatformAPIError("جست‌وجو پیدا نشد یا منقضی شده است.", code="NOT_FOUND", status_code=404)
         response = Response(jobs.public(record, request.query_params.get("after_revision")))
         response["Cache-Control"] = "private, no-store"
         return response

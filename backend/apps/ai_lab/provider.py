@@ -11,7 +11,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 from django.conf import settings
 from django.views.decorators.debug import sensitive_variables
 
-MODELS = {"luna": "gpt-6-luna"}
+# Stable wire alias for existing clients/jobs, independent of the upstream model.
+MODEL_ALIASES = ("luna",)
 deadline = ContextVar("ai_lab_deadline", default=None)
 
 
@@ -26,9 +27,13 @@ class NoRedirect(HTTPRedirectHandler):
         return None
 
 
+def configured_models():
+    return {alias: settings.AI_LAB_MODEL for alias in MODEL_ALIASES}
+
+
 @sensitive_variables()
 def credentials():
-    keys = {"luna": settings.AI_LAB_LUNA_API_KEY}
+    keys = {"luna": settings.AI_LAB_API_KEY or settings.AI_LAB_LUNA_API_KEY}
     if settings.AI_LAB_CREDENTIALS_FILE and not all(keys.values()):
         path = Path(settings.AI_LAB_CREDENTIALS_FILE)
         try:
@@ -41,7 +46,7 @@ def credentials():
         for line in text.splitlines():
             match = re.search(r"sk-[A-Za-z0-9_-]{16,}", line)
             if match:
-                alias = next((name for name in MODELS if name in label), None)
+                alias = next((name for name in MODEL_ALIASES if name in label), None)
                 if alias and not keys[alias]:
                     keys[alias] = match.group()
             elif line.strip():
@@ -51,8 +56,11 @@ def credentials():
 
 @sensitive_variables()
 def call(alias, payload):
-    if alias not in MODELS:
+    if alias not in MODEL_ALIASES:
         raise ProviderError("MODEL_NOT_SUPPORTED")
+    model = configured_models()[alias]
+    if not isinstance(model, str) or not re.fullmatch(r"[A-Za-z0-9_.:/-]{1,120}", model):
+        raise ProviderError("INVALID_MODEL_CONFIGURATION")
     key = credentials().get(alias)
     if not key:
         raise ProviderError("KEY_NOT_CONFIGURED")
@@ -60,7 +68,7 @@ def call(alias, payload):
     parsed = urlsplit(base)
     if parsed.scheme != "https" or parsed.username or parsed.password or parsed.query or parsed.fragment:
         raise ProviderError("INVALID_PROVIDER_URL")
-    payload = {**payload, "model": MODELS[alias]}
+    payload = {**payload, "model": model}
     request = Request(base + "/chat/completions", data=json.dumps(payload, ensure_ascii=False).encode(),
                       headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, method="POST")
     started = time.monotonic()
@@ -94,10 +102,10 @@ def call(alias, payload):
     reported = data.get("model")
     if reported is not None and (not isinstance(reported, str) or not re.fullmatch(r"[A-Za-z0-9_.:/-]{1,120}", reported)):
         raise ProviderError("INVALID_PROVIDER_RESPONSE")
-    # Keep the reported provider alias, and reject a different model family.
-    if reported and alias not in reported.lower():
+    # Accept the configured ID (or its dated snapshot), never a different family.
+    if reported and not re.fullmatch(re.escape(model) + r"(?:-\d{4}-\d{2}-\d{2})?", reported, re.IGNORECASE):
         raise ProviderError("MODEL_MISMATCH")
-    meta = {"model": MODELS[alias], "latency_ms": round((time.monotonic() - started) * 1000),
+    meta = {"model": model, "latency_ms": round((time.monotonic() - started) * 1000),
             "reported_model": reported,
             "usage": {k: v for k, v in usage.items() if k in {"prompt_tokens", "completion_tokens", "total_tokens", "input_tokens", "output_tokens"} and isinstance(v, int)}}
     return data, meta
@@ -121,13 +129,20 @@ def parse_json(text):
 
 
 def _chat_once(alias, system, payload, max_tokens):
-    effort = settings.AI_LAB_LUNA_REASONING_EFFORT
-    if effort not in {"none", "low", "medium", "high", "xhigh", "max"}:
+    effort = settings.AI_LAB_REASONING_EFFORT
+    if effort is None:
+        effort = settings.AI_LAB_LUNA_REASONING_EFFORT
+    effort = effort.strip().lower()
+    if effort not in {"", "none", "low", "medium", "high", "xhigh", "max"}:
         raise ProviderError("INVALID_REASONING_EFFORT")
-    request = {"model": MODELS[alias], "messages": [
+    request = {"messages": [
         {"role": "system", "content": system},
         {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-    ], "max_completion_tokens": max_tokens, "reasoning_effort": effort, "stream": False}
+    ], "max_completion_tokens": max_tokens, "stream": False}
+    # An explicitly empty setting omits the parameter for compatible models
+    # that do not support reasoning_effort. "none" still sends the literal value.
+    if effort:
+        request["reasoning_effort"] = effort
     data, meta = call(alias, request)
     try:
         choice = data["choices"][0]
@@ -146,13 +161,13 @@ def _chat_once(alias, system, payload, max_tokens):
 
 
 def chat(alias, system, payload, max_tokens=1000):
-    if alias not in MODELS:
+    if alias not in MODEL_ALIASES:
         raise ProviderError("MODEL_NOT_SUPPORTED")
     for attempt in range(2):
         try:
             return _chat_once(alias, system, payload, max_tokens)
         except ProviderError as exc:
-            exc.model = MODELS[alias]
+            exc.model = configured_models()[alias]
             if exc.code not in {"INVALID_MODEL_OUTPUT", "MODEL_OUTPUT_TRUNCATED"} or attempt:
                 raise
             if exc.code == "MODEL_OUTPUT_TRUNCATED":

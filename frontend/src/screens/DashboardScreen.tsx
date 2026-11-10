@@ -120,8 +120,8 @@ export function DashboardScreen() {
         <AnnouncementBox />
         {lab.data?.enabled ? <Pressable onPress={() => navigate("aiLab")} accessibilityRole="button"
           style={{ marginBottom: 18, padding: 16, borderRadius: 16, backgroundColor: colors.softBg, minHeight: 64 }}>
-          <AppText weight="800" size={15}>{isFa ? "آزمایش پرسش از منابع" : "Reference chat lab"}</AppText>
-          <AppText muted size={12} style={{ marginTop: 4 }}>{isFa ? "Gemma و DeepSeek با ارجاع به بند اصلی UpToDate" : "Gemma and DeepSeek with direct UpToDate references"}</AppText>
+          <AppText weight="800" size={15}>{isFa ? "سرچ هوشمند" : "Smart search"}</AppText>
+          <AppText muted size={12} style={{ marginTop: 4 }}>{isFa ? "پاسخ فارسی با ارجاع مستقیم به بند اصلی UpToDate" : "Answers with direct references to UpToDate"}</AppText>
         </Pressable> : null}
 
         {/* uptodate reference card */}

@@ -17,12 +17,12 @@ import { ReferenceSearchProgress } from "@/components/ReferenceSearchProgress";
 const SAMPLE = ["دارودرمانی شب ادراری در کودکان چیست؟", "خط اول درمان پسوریازیس و خط سوم درمان بیماران سایکوتیک"];
 
 function failure(code?: string, status?: number): string {
-  if (code === "EXPERIMENT_EXPIRED") return "آزمایش قبلی متوقف یا منقضی شد. می‌توانید دوباره سؤال بپرسید.";
-  if (code === "PROVIDER_HTTP_ERROR" || code === "PROVIDER_UNAVAILABLE") return "اتصال مدل پاسخ نداد. کمی بعد دوباره تلاش کنید.";
+  if (code === "EXPERIMENT_EXPIRED") return "جست‌وجوی قبلی متوقف یا منقضی شد. می‌توانید دوباره سؤال بپرسید.";
+  if (code === "PROVIDER_HTTP_ERROR" || code === "PROVIDER_UNAVAILABLE") return "ارتباط با سرویس جست‌وجو برقرار نشد. کمی بعد دوباره تلاش کنید.";
   if (code === "SOURCE_UNAVAILABLE") return "منبع UpToDate در سرور در دسترس نیست.";
-  if (code === "INVALID_MODEL_OUTPUT") return "خروجی مدل با قالب آزمایش سازگار نبود؛ پاسخی به منبع نسبت داده نشد.";
-  if (status === 401 || code === "KEY_NOT_CONFIGURED") return "اتصال مدل در سرور نیاز به تنظیم دارد.";
-  return "آزمایش کامل نشد. اتصال را بررسی کنید و دوباره تلاش کنید.";
+  if (code === "INVALID_MODEL_OUTPUT") return "پاسخ قابل استناد دریافت نشد. دوباره تلاش کنید.";
+  if (status === 401 || code === "KEY_NOT_CONFIGURED") return "سرویس سرچ هوشمند فعلاً در دسترس نیست.";
+  return "جست‌وجو کامل نشد. اتصال را بررسی کنید و دوباره تلاش کنید.";
 }
 
 export function AiLabScreen() {
@@ -113,7 +113,7 @@ export function AiLabScreen() {
           const previous = await restore();
           if (previous) {
             useAiLab.setState((s) => ({ turns: s.turns.filter((t) => t.id !== id), draft: previous.question === q ? "" : q }));
-            setRequestError("آزمایش قبلی بازیابی شد؛ نتیجه در همین گفت‌وگو نمایش داده می‌شود.");
+            setRequestError("جست‌وجوی قبلی بازیابی شد؛ نتیجه در همین گفت‌وگو نمایش داده می‌شود.");
             return;
           }
         } catch { /* Keep the submitted question available for retry. */ }
@@ -144,26 +144,25 @@ export function AiLabScreen() {
 
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: colors.appBg, paddingBottom: clearance }}>
     <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>
-      <ScreenChrome title={isFa ? "آزمایش پرسش از منابع" : "Reference chat lab"} onBack={goBack} />
-      <AppText size={12} muted>GPT Luna · UpToDate · توضیح فارسی و ارجاع مستقیم به بند منبع</AppText>
-      <AppText size={12} muted style={{ marginTop: 8 }}>جست‌وجو در مقاله‌ها و برچسب‌های UpToDate با GPT Luna</AppText>
+      <ScreenChrome title={isFa ? "سرچ هوشمند" : "Smart search"} onBack={goBack} />
+      <AppText size={12} muted>UpToDate · پاسخ فارسی و ارجاع مستقیم به بند منبع</AppText>
     </View>
     <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 18, flexGrow: 1 }}>
       {!turns.length ? <View style={{ gap: 12, paddingTop: 12 }}>
         <AppText weight="800" size={20}>سؤال شما، متن اصلی منبع</AppText>
-        <AppText size={14} muted>سؤال خود را بپرسید؛ نتیجه‌های بررسی‌شده در طول جست‌وجو نمایش داده می‌شوند. پرسش و گزیدهٔ منابع برای پردازش به ارائه‌دهندهٔ مدل فرستاده می‌شود. گفت‌وگو روی دستگاه ذخیره نمی‌شود.</AppText>
+        <AppText size={14} muted>پرسش خود را بنویسید؛ عنوان مقاله‌ها و بندهای مرتبط، همراه پاسخ فارسی و ارجاع منبع نمایش داده می‌شوند.</AppText>
         {SAMPLE.map((q) => <Pressable key={q} onPress={() => useAiLab.setState({ draft: q })} style={{ minHeight: 48, paddingVertical: 10 }}>
           <AppText size={14} color={colors.accent}>{q}</AppText>
         </Pressable>)}
       </View> : null}
-      {status.isError ? <AppText size={13} muted>دریافت وضعیت آزمایش ممکن نشد. <AppText color={colors.accent} onPress={() => void status.refetch()}>تلاش دوباره</AppText></AppText> : null}
-      {status.data && !status.data.enabled ? <AppText size={14} muted>این محیط آزمایشی برای حساب شما فعال نیست.</AppText> : null}
+      {status.isError ? <AppText size={13} muted>دریافت وضعیت سرچ هوشمند ممکن نشد. <AppText color={colors.accent} onPress={() => void status.refetch()}>تلاش دوباره</AppText></AppText> : null}
+      {status.data && !status.data.enabled ? <AppText size={14} muted>سرچ هوشمند برای حساب شما فعال نیست.</AppText> : null}
       {turns.map((turn) => {
         const finalIds = new Set(turn.result?.parts.flatMap((part, i) => part.items.map((item) => `${i}:${item.target.params.id}:${item.source_id}`)) ?? []);
         const findings = (turn.findings ?? []).filter((finding) => !finalIds.has(finding.id));
         return <View key={turn.id} onLayout={(event) => { turnPositions.current[turn.id] = event.nativeEvent.layout.y; }} style={{ gap: 12 }}>
         <View style={{ backgroundColor: colors.accent, borderRadius: 16, padding: 14 }}><AppText color={colors.onAccent} size={14}>{turn.question}</AppText></View>
-        <AppText weight="800" size={13}>پاسخ GPT Luna</AppText>
+        <AppText weight="800" size={13}>پاسخ</AppText>
         <ReferenceSearchProgress status={turn.status} stage={turn.stage} seen={turn.stages_seen} workflow={turn.workflow} />
         {turn.status === "failed" ? <AppText size={14} color={colors.denyLabel}>{failure(turn.error?.code, turn.error?.provider_status)}</AppText> : null}
         {turn.result?.parts.length === 0 ? <AppText size={14} muted>در محدودهٔ منابع انتخاب‌شده پاسخی پیدا نشد.</AppText> : null}
@@ -192,7 +191,7 @@ export function AiLabScreen() {
         </View> : null}
         {turn.findings_limited ? <AppText size={12} muted>سقف نمایش تدریجی پر شده است؛ بررسی ادامه یافته و نتیجهٔ نهایی جداگانه نمایش داده می‌شود.</AppText> : null}
         {turn.first_result_ms !== undefined ? <AppText size={12} muted>زمان اولین نتیجه: {(turn.first_result_ms / 1000).toFixed(1)} ثانیه</AppText> : null}
-        {turn.result ? <AppText muted size={12}>زمان آزمایش: {(turn.result.elapsed_ms / 1000).toFixed(1)} ثانیه · نتیجه با بررسی ماشینی منابع</AppText> : null}
+        {turn.result ? <AppText muted size={12}>زمان جست‌وجو: {(turn.result.elapsed_ms / 1000).toFixed(1)} ثانیه</AppText> : null}
         {turn.result?.warnings.length ? <AppText muted size={12}>برخی منابع یا توضیح‌ها قابل تأیید نبودند و کنار گذاشته شدند.</AppText> : null}
         {turn.status === "failed" ? <Pressable disabled={!!active} onPress={() => void send(turn.question)} style={{ minHeight: 44, justifyContent: "center" }}><AppText size={13} muted>تلاش دوباره</AppText></Pressable> : null}
       </View>; })}
@@ -201,13 +200,13 @@ export function AiLabScreen() {
     {recovering ? <AppText size={12} muted style={{ paddingHorizontal: 20 }}>بررسی درخواست قبلی…</AppText> : null}
     <View style={{ padding: 12, gap: 10, flexDirection: row, alignItems: "flex-end", backgroundColor: colors.cardBg }}>
       <TextInput value={state.draft} onChangeText={(draft) => useAiLab.setState({ draft })} multiline maxLength={1500} editable={!active}
-        accessibilityLabel="پرسش از منابع برنامه" placeholder="سؤال خود را بنویسید…" placeholderTextColor={colors.muted}
+        accessibilityLabel="پرسش برای سرچ هوشمند" placeholder="سؤال خود را بنویسید…" placeholderTextColor={colors.muted}
         style={{ flex: 1, minHeight: 48, maxHeight: 120, padding: 12, borderRadius: 12, backgroundColor: colors.softBg,
           fontFamily: fontFamily("500"), fontSize: 14, color: colors.ink, textAlign: isFa ? "right" : "left" }} />
       <Pressable accessibilityRole="button" onPress={() => void send()} disabled={recovering || !!active || !status.data?.enabled || !state.draft.trim()}
         style={{ minHeight: 48, paddingHorizontal: 18, justifyContent: "center", borderRadius: 12, backgroundColor: colors.accent,
           opacity: recovering || active || !status.data?.enabled || !state.draft.trim() ? 0.5 : 1 }}>
-        <AppText weight="800" color={colors.onAccent}>{active ? "…" : "آزمایش"}</AppText>
+        <AppText weight="800" color={colors.onAccent}>{active ? "…" : "جست‌وجو"}</AppText>
       </Pressable>
     </View>
   </KeyboardAvoidingView>;
