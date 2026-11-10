@@ -545,7 +545,7 @@ AI_LAB_API_KEY = config("AI_LAB_API_KEY", default="")
 AI_LAB_REASONING_EFFORT = config("AI_LAB_REASONING_EFFORT", default=None)
 AI_LAB_LUNA_API_KEY = config("AI_LAB_LUNA_API_KEY", default="")
 AI_LAB_LUNA_REASONING_EFFORT = config("AI_LAB_LUNA_REASONING_EFFORT", default="low").strip().lower()
-AI_LAB_BASE_URL = config("AI_LAB_BASE_URL", default="https://api.gapgpt.app/v1")
+AI_LAB_BASE_URL = config("AI_LAB_BASE_URL", default="https://api.gapgpt.app/v1").strip()
 AI_LAB_TIMEOUT_SECONDS = config("AI_LAB_TIMEOUT_SECONDS", default=90, cast=int)
 # The site's own hosts (and www.<host>, which redirects to it) are always valid
 # hosts and trusted origins for its forms.

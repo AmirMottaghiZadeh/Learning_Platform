@@ -53,6 +53,32 @@ class ProviderTests(SimpleTestCase):
             opener.assert_not_called()
         self.assertIsNone(provider.NoRedirect().redirect_request(None))
 
+    @override_settings(AI_LAB_MODEL="provider/model-name", AI_LAB_API_KEY="other-provider-credential",
+                       AI_LAB_REASONING_EFFORT="")
+    def test_custom_provider_base_url_controls_the_actual_chat_request(self):
+        for base in ("https://provider.example/custom/v1", " https://provider.example/custom/v1/ "):
+            response = self.response({"model": "provider/model-name", "choices": [
+                {"message": {"content": '{"ok":true}'}, "finish_reason": "stop"}]})
+            with self.subTest(base=base), override_settings(AI_LAB_BASE_URL=base), patch.object(provider, "build_opener", return_value=response):
+                result, meta = provider.chat("luna", "Return JSON", {})
+            sent = response.open.call_args.args[0]
+            self.assertEqual(sent.full_url, "https://provider.example/custom/v1/chat/completions")
+            self.assertEqual(sent.get_header("Authorization"), "Bearer other-provider-credential")
+            self.assertEqual(json.loads(sent.data)["model"], "provider/model-name")
+            self.assertNotIn("reasoning_effort", json.loads(sent.data))
+            self.assertEqual(result, {"ok": True})
+            self.assertEqual(meta["model"], "provider/model-name")
+
+    def test_invalid_provider_urls_are_rejected_before_sending_credentials(self):
+        for base in ("", "https:///v1", "https://provider.example:invalid/v1",
+                     "https://provider.example:0/v1", "https://provider.example:65536/v1",
+                     "https://user:password@provider.example/v1", "https://provider.example/v1?key=value",
+                     "https://provider.example/v1#fragment", "https://provider.example/\nv1"):
+            with self.subTest(base=base), override_settings(AI_LAB_BASE_URL=base), patch.object(provider, "build_opener") as opener:
+                with self.assertRaisesMessage(provider.ProviderError, "INVALID_PROVIDER_URL"):
+                    provider.call("luna", {})
+                opener.assert_not_called()
+
     def test_rejects_credential_echo_and_wrong_model(self):
         for value, code in [({"output": "test-placeholder"}, "UNSAFE_PROVIDER_RESPONSE"),
                             ({"model": "other-model"}, "MODEL_MISMATCH")]:

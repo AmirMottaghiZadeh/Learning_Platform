@@ -1,4 +1,4 @@
-"""Small server-only GapGPT adapter. Never expose upstream bodies or credentials."""
+"""Server-only Chat Completions adapter. Never expose bodies or credentials."""
 import json
 from contextvars import ContextVar
 from pathlib import Path
@@ -64,9 +64,14 @@ def call(alias, payload):
     key = credentials().get(alias)
     if not key:
         raise ProviderError("KEY_NOT_CONFIGURED")
-    base = settings.AI_LAB_BASE_URL.rstrip("/")
-    parsed = urlsplit(base)
-    if parsed.scheme != "https" or parsed.username or parsed.password or parsed.query or parsed.fragment:
+    base = settings.AI_LAB_BASE_URL.strip().rstrip("/")
+    try:
+        parsed = urlsplit(base)
+        invalid_port = parsed.port is not None and not 1 <= parsed.port <= 65535
+    except ValueError:
+        raise ProviderError("INVALID_PROVIDER_URL") from None
+    if (parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password
+            or parsed.query or parsed.fragment or invalid_port or re.search(r"\s", base)):
         raise ProviderError("INVALID_PROVIDER_URL")
     payload = {**payload, "model": model}
     request = Request(base + "/chat/completions", data=json.dumps(payload, ensure_ascii=False).encode(),
