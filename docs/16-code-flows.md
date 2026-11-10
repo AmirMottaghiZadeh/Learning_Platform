@@ -163,3 +163,13 @@ flowchart TD
 ## فرمول و ساختار شیمیایی دارو
 
 `import_pubchem` یا فرم کیفیت داده → `drugs/chemistry.py` → PubChem PUG REST → تطبیق فرمول و ساختار با RDKit → `IngredientChemistry` با وضعیت pending → نمایش پیش‌فرض دادهٔ معتبر؛ بازبینی اختیاری با ثبت `ChemistryReview` و امکان رد → `IngredientDetailSerializer` / `LessonDrugSerializer` → `DrugChemistryCard` در دارونامه. تصویر SVG محلی تولید و در PostgreSQL ذخیره می‌شود؛ اپ برای تصویر به PubChem متصل نمی‌شود. راهنمای کامل در [سند ۲۱](21-drug-chemistry.fa.md).
+
+## چت آزمایشی منابع برنامه
+
+`DashboardScreen` → `AiLabScreen` و حافظهٔ حساب → `api/aiLab.ts` → `ai_lab/views.py` و `jobs.py` برای شغل قابل بازیابی → مدل منتخب Luna در `provider.py` برای عبارت کوتاه → `retrieval.py` و همان `uptodate.services.search_page` معمول با tagging → مقالهٔ اول به ترتیب نتایج → `get_topic` و `extract_article` → انتخاب بخش‌های همان مقاله به ترتیب احتمال پاسخ → پاسخ و توضیح فارسی از دستهٔ شش‌بندی → بررسی وفاداری و کفایت پاسخ. پاسخ کافی، بررسی بعدی را متوقف می‌کند؛ پاسخ ناکافی به دستهٔ بعدی همان مقاله و سپس مقالهٔ بعدی می‌رود. ارجاع‌های پاسخ نهایی از یک مقاله به `uptodateArticle` با هش نسخه و شناسهٔ بند برای برجسته‌سازی می‌رسند. فعلاً هیچ منبع دیگری در چت خوانده نمی‌شود. جست‌وجوی معمول اپ تغییر نکرده است. [سند ۲۵](25-reference-chat-lab.fa.md).
+
+پس از تأیید هر دسته: `services.publish` → قفل مشترک heartbeat در `views._run` → ذخیرهٔ یافتهٔ یکتا در کش شغل → `ResultView` با نسخهٔ جدید → به‌روزرسانی تجمعی `store/aiLab` و نمایش کارت‌ها هنگام اجرا. در شروع سرویس: `gunicorn.post_worker_init` → `ai_lab.warmup.warm_search` → همان جست‌وجوی عادی برای آماده شدن کش‌های درون همان worker.
+
+مسیر روند قابل مشاهده: `services.observe` پس از دریافت عنوان‌ها و انتخاب بخش‌ها → `workflow.apply_event` → snapshot خصوصی شغل و `revision` → `ReferenceSearchProgress` در اپ. این مسیر پیش از نتیجهٔ فارسی کار می‌کند و reasoning داخلی مدل را حمل نمی‌کند.
+
+در سؤال داروی مشخص، نوع منبع بر نامزدهای همان سرچ اولویت می‌دهد؛ فهرست فرمولاسیون Drug information با لینک‌های داخلی منبع به متن کامل دارو هدایت می‌شود. تنظیم `AI_LAB_LUNA_REASONING_EFFORT` سطح thinking تمام مراحل را از محیط سرور می‌خواند.

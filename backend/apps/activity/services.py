@@ -9,6 +9,7 @@ from .models import ActivityEvent
 
 
 APP_SECTIONS = {
+    "aiLab": "پرسش آزمایشی از منابع",
     "dashboard": "خانه", "lessons": "دارونامه", "lessonList": "فهرست داروها", "lessonDetail": "جزئیات دارو",
     "quiz": "آزمون", "profile": "پروفایل", "mistakes": "اشتباهات", "statistics": "آمار",
     "planning": "برنامهٔ مطالعه", "planningSetup": "تنظیم برنامه", "uptodate": "جست‌وجوی آپتودیت",

@@ -34,6 +34,7 @@
 | ۲۲ | [22-pubchem-sar-research.fa.md](22-pubchem-sar-research.fa.md) | نتیجهٔ بررسی SAR، دادهٔ قابل دریافت و مرز امکانات هنوز پیاده‌سازی‌نشده | مالک پروژه، مسئول داده، توسعه‌دهنده |
 | ۲۳ | [23-lexicomp-translation-cost.fa.md](23-lexicomp-translation-cost.fa.md) | منبع خواندن Lexicomp، حجم دو ستون و برآورد توکن و هزینهٔ ترجمه | مالک پروژه، مسئول داده |
 | ۲۴ | [24-offline-smart-search-removal.fa.md](24-offline-smart-search-removal.fa.md) | حذف پایلوت هوشمند آفلاین با حفظ کامل جست‌وجوی فعال و tagging | توسعه‌دهنده، مسئول انتشار |
+| ۲۵ | [25-reference-chat-lab.fa.md](25-reference-chat-lab.fa.md) | چت فقط با Luna روی UpToDate، نمایش روند عنوان‌ها، زیربخش‌ها و بندها، همان جست‌وجوی معمول با tagging و ارجاع مستقیم به بند منبع | مالک پروژه، توسعه‌دهنده |
 | — | [search/README.md](search/README.md) | مسیر جست‌وجوی فعلی اپ؛ tagging، بستهٔ آفلاین و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
 
 ## آرشیو طراحی رابط

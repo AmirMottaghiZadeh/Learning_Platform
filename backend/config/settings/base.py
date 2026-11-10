@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.uptodate",
     # Same, for the Lexicomp drug-interactions snapshot.
     "apps.lexicomp",
+    "apps.ai_lab",
     # Encrypted UpToDate/Lexicomp packages the app downloads for offline use.
     "apps.offline",
     # Interactive clinical calculators (Medscape/QxMD snapshot).
@@ -532,6 +533,16 @@ SITE_DRUG_ATC_PREFIXES = [
 # Who the site names as the author of its drug pages and of articles that
 # have no named author.
 SITE_EDITORIAL_NAME = config("SITE_EDITORIAL_NAME", default="تیم علمی فارمنتا")
+
+# Opt-in reference-only model experiment. Credentials are never sent to the app.
+AI_LAB_ENABLED = config("AI_LAB_ENABLED", default=False, cast=bool)
+AI_LAB_PREWARM_ENABLED = config("AI_LAB_PREWARM_ENABLED", default=False, cast=bool)
+AI_LAB_USER_IDS = {s.strip() for s in config("AI_LAB_USER_IDS", default="").split(",") if s.strip()}
+AI_LAB_CREDENTIALS_FILE = config("AI_LAB_CREDENTIALS_FILE", default="")
+AI_LAB_LUNA_API_KEY = config("AI_LAB_LUNA_API_KEY", default="")
+AI_LAB_LUNA_REASONING_EFFORT = config("AI_LAB_LUNA_REASONING_EFFORT", default="low").strip().lower()
+AI_LAB_BASE_URL = config("AI_LAB_BASE_URL", default="https://api.gapgpt.app/v1")
+AI_LAB_TIMEOUT_SECONDS = config("AI_LAB_TIMEOUT_SECONDS", default=90, cast=int)
 # The site's own hosts (and www.<host>, which redirects to it) are always valid
 # hosts and trusted origins for its forms.
 _site_extra = [f"www.{h}" for h in SITE_HOSTS if not h.endswith("localhost")]

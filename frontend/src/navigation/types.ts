@@ -18,6 +18,7 @@ export type ScreenKey =
   | "downloads"
   | "settings"
   | "support"
+  | "aiLab"
   | "devices"
   | "notifications"
   | "plans"

@@ -25,6 +25,15 @@ class ActivityTests(TestCase):
         self.client.post("/api/v1/activity/events/", body, format="json")
         self.assertEqual(ActivityEvent.objects.count(), 1)
 
+    def test_ai_lab_events_do_not_block_other_queued_activity(self):
+        events = [{"id": str(uuid.uuid4()), "section": section, "action": "view"}
+                  for section in ["dashboard", "aiLab", "lessons", "aiLab"]]
+        response = self.client.post("/api/v1/activity/events/", {"events": events}, format="json")
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.data["accepted"], 4)
+        self.assertEqual(ActivityEvent.objects.filter(section="aiLab").count(), 2)
+        self.assertIn("aiLab", {row["key"] for row in report(source="app")["sections"]})
+
     def test_unknown_sections_and_invalid_click_coordinates_are_rejected(self):
         for event in [{"section": "private-user-search", "action": "view"}, {"section": "lessons", "action": "click", "x": 101, "y": 20}, {"section": "lessons", "action": "click"}]:
             self.assertEqual(self.client.post("/api/v1/activity/events/", {"events": [{"id": str(uuid.uuid4()), **event}]}, format="json").status_code, 400)

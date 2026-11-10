@@ -16,3 +16,10 @@ access_log_format = (
     '"request_id":"%({x-request-id}i)s","method":"%(m)s","path":"%(U)s",'
     '"status":%(s)s,"duration_us":%(D)s,"remote_addr":"%(h)s"}'
 )
+
+
+def post_worker_init(worker):
+    # Run after fork and Django initialization, before this worker accepts traffic.
+    from apps.ai_lab.warmup import warm_search
+
+    warm_search()

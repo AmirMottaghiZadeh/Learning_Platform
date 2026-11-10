@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { AiLabScreen } from "@/screens/AiLabScreen";
 import { SupportScreen } from "@/screens/SupportScreen";
 import { DevicesScreen } from "@/screens/DevicesScreen";
 import { NotificationsScreen } from "@/screens/NotificationsScreen";
@@ -157,6 +158,8 @@ function CurrentScreen() {
   const calculatorSlug = useNav((s) => s.params.slug);
 
   switch (screen) {
+    case "aiLab":
+      return <AiLabScreen />;
     case "support":
       return <SupportScreen />;
     case "devices":

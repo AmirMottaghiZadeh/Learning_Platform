@@ -3,6 +3,8 @@ import React from "react";
 import { Pressable, View } from "react-native";
 
 import { meApi } from "@/api/endpoints";
+import { aiLabApi } from "@/api/aiLab";
+import { useAuth } from "@/store/auth";
 import { HeaderMesh } from "@/components/HeaderMesh";
 import { ANNOUNCEMENTS_KEY, AnnouncementBox } from "@/components/announcements/AnnouncementBox";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
@@ -33,6 +35,8 @@ export function DashboardScreen() {
   const { toggle: toggleLang } = useLang();
   const navigate = useNav((s) => s.navigate);
   const setTab = useNav((s) => s.setTab);
+  const userId = useAuth((s) => s.user?.id);
+  const lab = useQuery({ queryKey: ["ai-lab-status", userId], queryFn: aiLabApi.status, retry: false, staleTime: 60_000 });
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["dashboard"],
@@ -114,6 +118,11 @@ export function DashboardScreen() {
       <View style={{ padding: 20, marginTop: -14 }}>
         {/* the admin's announcements: a card on top, dimmed around it the first time */}
         <AnnouncementBox />
+        {lab.data?.enabled ? <Pressable onPress={() => navigate("aiLab")} accessibilityRole="button"
+          style={{ marginBottom: 18, padding: 16, borderRadius: 16, backgroundColor: colors.softBg, minHeight: 64 }}>
+          <AppText weight="800" size={15}>{isFa ? "آزمایش پرسش از منابع" : "Reference chat lab"}</AppText>
+          <AppText muted size={12} style={{ marginTop: 4 }}>{isFa ? "Gemma و DeepSeek با ارجاع به بند اصلی UpToDate" : "Gemma and DeepSeek with direct UpToDate references"}</AppText>
+        </Pressable> : null}
 
         {/* uptodate reference card */}
         <TourTarget id="home.uptodate">
