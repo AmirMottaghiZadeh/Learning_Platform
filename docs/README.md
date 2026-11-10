@@ -23,7 +23,7 @@
 | ۱۱ | [11-admin-consoles.md](11-admin-consoles.md) | مدیریت یکپارچه (`/manage/`): ورود، دسترسی‌ها، خانه، فروش، کیفیت داده، ادمین Django | مدیر |
 | ۱۲ | [12-website.md](12-website.md) | سایت و بلاگ `pharmenta.ir`، پنل محتوا، نقش‌ها، خرید از سایت | مدیر، توسعه‌دهنده |
 | ۱۳ | [13-offline-storage.md](13-offline-storage.md) | مسیر دانلودهای UpToDate و Lexicomp، حفظ داده پس از آپدیت، مجوز و جایگزینی بسته‌ها | توسعه‌دهنده، مسئول دیپلوی |
-| ۱۴ | [14-search-architecture-proposal.fa.md](14-search-architecture-proposal.fa.md) | معماری هدف جست‌وجوی آفلاین: مفاهیم و embedding، بدون مدل زبانی مولد؛ Elasticsearch برای سرور و WebAssembly برای کلاینت در برنامهٔ مصوب | مالک محصول، توسعه‌دهنده |
+| ۱۴ | [14-search-architecture-proposal.fa.md](14-search-architecture-proposal.fa.md) | وضعیت لغو طرح پیشین جست‌وجوی هوشمند آفلاین و مرز آن با جست‌وجوی فعال اپ | مالک محصول، توسعه‌دهنده |
 | ۱۵ | [15-android-signing.fa.md](15-android-signing.fa.md) | ساخت keystore با EAS، دانلود کلید و رمزها داخل پروژه، قواعد ignore و بیلدهای بعدی | توسعه‌دهنده، مسئول انتشار |
 | ۱۶ | [16-code-flows.md](16-code-flows.md) | نقشهٔ فایل‌های فعلی و جریان شروع اپ، API، جست‌وجو، آفلاین، انتقال داده و انتشار | توسعه‌دهنده |
 | ۱۷ | [17-sessions-activity-support.fa.md](17-sessions-activity-support.fa.md) | سقف دو دستگاه، IP و سیستم‌عامل، heatmap، چت و راه‌اندازی اعلان وب و اندروید | توسعه‌دهنده، مدیر، مسئول انتشار |
@@ -33,7 +33,8 @@
 | ۲۱ | [21-drug-chemistry.fa.md](21-drug-chemistry.fa.md) | دریافت PubChem، نمایش پیش‌فرض فرمول و ساختار، بازبینی تطبیق، فایل‌ها و آزمون‌های نهایی | توسعه‌دهنده، بازبین، مسئول انتشار |
 | ۲۲ | [22-pubchem-sar-research.fa.md](22-pubchem-sar-research.fa.md) | نتیجهٔ بررسی SAR، دادهٔ قابل دریافت و مرز امکانات هنوز پیاده‌سازی‌نشده | مالک پروژه، مسئول داده، توسعه‌دهنده |
 | ۲۳ | [23-lexicomp-translation-cost.fa.md](23-lexicomp-translation-cost.fa.md) | منبع خواندن Lexicomp، حجم دو ستون و برآورد توکن و هزینهٔ ترجمه | مالک پروژه، مسئول داده |
-| — | [search/README.md](search/README.md) | وضعیت جست‌وجوی فعلی، فازهای توسعه، وظایف مالک پروژه، مجموعهٔ ارزیابی، [برنامهٔ دقت و جست‌وجوی برداری](search/plan-precision-and-vector-search-2026-11-01.fa.md) و [بازبینی پایلوت قبلی](search/phase-11-review-and-redesign-2026-10-31.fa.md) | مالک محصول، توسعه‌دهنده، مسئول داده |
+| ۲۴ | [24-offline-smart-search-removal.fa.md](24-offline-smart-search-removal.fa.md) | حذف پایلوت هوشمند آفلاین با حفظ کامل جست‌وجوی فعال و tagging | توسعه‌دهنده، مسئول انتشار |
+| — | [search/README.md](search/README.md) | مسیر جست‌وجوی فعلی اپ؛ tagging، بستهٔ آفلاین و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
 
 ## آرشیو طراحی رابط
 

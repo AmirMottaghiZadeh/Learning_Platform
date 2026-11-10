@@ -78,7 +78,6 @@
 | `import_study_content_db` | `--source --dry-run --prune` | ایمپورت فایل قابل‌حمل سؤال و نکتهٔ آموزشی | [07](07-data.md) |
 | `migrate_uptodate_to_mysql` | `--tables --checkpoint-file --reset` | کپی UpToDate به MySQL | [07](07-data.md) |
 | `ensure_uptodate_search_index` | — | ایندکس جست‌وجوی عنوان MySQL | [07](07-data.md) |
-| `build_search_lexicon` | `--pipeline --source` | نام فارسی داروها ← مفاهیم UpToDate برای جست‌وجوی هوشمند | [search](search/phase-1-concept-lexicon-2026-10-31.fa.md) |
 | `build_offline_package` | `uptodate\|lexicomp --out --source --part-size-mb` | ساخت بستهٔ آفلاین | [07](07-data.md) |
 | `prepare_offline_upload` | `uptodate\|lexicomp --out --source --part-size-mb --existing` | ساخت و بررسی فایل‌های قابل آپلود و راهنمای ترتیب آپلود | [07](07-data.md) |
 | `offline_bucket_cors` | `--origin --show` | تنظیم و بررسی CORS باکت | [07](07-data.md) |

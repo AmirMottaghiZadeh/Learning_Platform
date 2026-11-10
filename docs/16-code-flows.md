@@ -84,7 +84,7 @@ screens/UptodateScreen.tsx
 
 پاسخ صفحه‌بندی‌شده شامل نتایج، تعداد کل، تخصص‌ها، عبارت تصحیح‌شده و پیشنهادهاست. [UptodateSuggestionMenu.tsx](../frontend/src/components/UptodateSuggestionMenu.tsx) از همین پاسخ استفاده می‌کند؛ شمارندهٔ هر پیشنهاد تعداد مقاله‌های معتبر مربوط به همان مفهوم و مخاطب است. فیلتر تخصص می‌تواند با هرکدام از تخصص‌های مقاله تطبیق کند.
 
-در این مسیر بدنهٔ مقاله جست‌وجو نمی‌شود، embedding اجرا نمی‌شود و Elasticsearch فراخوانی نمی‌شود. فایل‌های [search_concepts.py](../backend/apps/uptodate/search_concepts.py)، [search_hierarchy.py](../backend/apps/uptodate/search_hierarchy.py) و [search_request.py](../backend/apps/uptodate/search_request.py) را با زنجیرهٔ عملیاتی بالا یکی نگیرید. آن‌ها زیرساخت واژه‌نامه، ساختار و عمق درخواست‌اند؛ طرح توسعه و فازهای متوقف‌شده در [search/README.md](search/README.md) مشخص است.
+در این مسیر بدنهٔ مقاله جست‌وجو نمی‌شود، embedding اجرا نمی‌شود و Elasticsearch فراخوانی نمی‌شود. موتور آزمایشی مستقل شامل search_concepts، search_hierarchy، search_request، واژه‌نامه‌ها و ابزارهای سنجش در ۲۰۲۶/۱۱/۱۰ حذف شد؛ زنجیرهٔ عملیاتی بالا و tagging آن تغییر نکرده‌اند. [مرز حذف و اعتبارسنجی](24-offline-smart-search-removal.fa.md) و [راهنمای فعلی جست‌وجو](search/README.md).
 
 ## باز کردن مقاله، مقصد جست‌وجو و جدول
 

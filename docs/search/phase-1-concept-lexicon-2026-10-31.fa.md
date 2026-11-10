@@ -1,5 +1,7 @@
 # فاز ۱: فرهنگ مفاهیم فارسی↔انگلیسی — ۲۰۲۶-۱۰-۳۱
 
+> **سند تاریخی؛ طرح لغوشده در ۲۰۲۶/۱۱/۱۰.** کد موتور آزمایشی، واژه‌نامه‌ها و ابزارهای ارزیابی این گزارش حذف شده‌اند. دستورهای این سند را اجرا نکنید و برنامهٔ آن را ادامه ندهید. وضعیت نهایی در [گزارش حذف](../24-offline-smart-search-removal.fa.md) است؛ جست‌وجوی فعال اپ تغییر نکرده است.
+
 وضعیت: **دور دوم ساخته و سنجیده شد؛ بازبینی مالک پروژه اختیاری است.** این فاز سؤال فارسی یا انگلیسی را بدون هیچ مدلی به مفاهیم UpToDate و نقش هر مفهوم تبدیل می‌کند. نقش‌ها این‌هاست: موضوع، هدف، زمینه، جمعیت و روش مصرف. انتخاب مقاله و بخش کار موتور جست‌وجو در فاز ۵ است (شماره‌گذاری ۲۰۲۶-۱۱-۰۱).
 
 - **دور اول (صبح ۲۰۲۶-۱۰-۳۱):** ۱۹۳ مفهوم پرکاربرد و ۶۷ کلید واژهٔ سؤال.
@@ -9,15 +11,15 @@
 
 | فایل | نقش |
 |---|---|
-| [`search_concepts.py`](../../backend/apps/uptodate/search_concepts.py) | نرمال‌سازی فارسی، اصلاح املا، آوانویسی، بارگذاری فرهنگ از `search.db` و فایل‌های واژه‌نامه، تشخیص مفاهیم در سؤال |
-| [`search_lexicon/terms.csv`](../../backend/apps/uptodate/search_lexicon/terms.csv) | واژه‌های سؤال: ۸۳ کلید و ۱٬۳۷۱ صورت فارسی و انگلیسی. نقش‌ها: هدف (۳۴)، روش مصرف (۱۶)، زمینه (۱۲)، شکل دارویی (۹)، کلمات بی‌اهمیت (۷، شامل ۲۰۰ واژهٔ رایج فارسی و صفت‌های شدت)، جمعیت (۵). دور اول ۶۷ کلید و ۵۵۲ صورت داشت. |
-| [`search_lexicon/concepts_fa.csv`](../../backend/apps/uptodate/search_lexicon/concepts_fa.csv) | ۱٬۹۹۷ مفهوم با ۶٬۰۱۵ صورت فارسی: ۱٬۴۹۵ بیماری و وضعیت، ۱۴۵ نام رایج دارو در ایران، ۱۲۷ آزمایش و تصویربرداری، ۱۱۷ دستهٔ دارویی، ۶۲ اندام و دستگاه بدن، ۳۳ علامت و ۱۸ میکروب. صورتی که با `+` شروع شود مشترک است (۱۸ مورد؛ توضیح پایین‌تر). دور اول ۱۹۳ مفهوم و ۴۷۱ صورت داشت. هر ردیف به یک مفهوم واقعی `search.db` وصل است. ستون `note` حوزهٔ تخصصی یا منبع ردیف است. |
-| [`search_lexicon/drugs_fa.csv`](../../backend/apps/uptodate/search_lexicon/drugs_fa.csv) | ۱٬۷۹۴ نام فارسی داروی خود پروژه (`ingredient_name_fa` در `pipeline_v2.db`) با مفهوم و مونوگراف UpToDate |
-| [`search_lexicon/monograph_sections.csv`](../../backend/apps/uptodate/search_lexicon/monograph_sections.csv) | ۶۰ نگاشت «هدف و جمعیت ← عنوان بخش مونوگراف» برای ۲۷ هدف یا زمینه، با رتبهٔ ۱ (اصلی) و ۲ (قابل قبول) |
-| [`build_search_lexicon`](../../backend/apps/uptodate/management/commands/build_search_lexicon.py) | ساخت دوبارهٔ `drugs_fa.csv`؛ ردیف‌های `reviewed` حفظ می‌شوند |
-| [`test_search_concepts.py`](../../backend/apps/uptodate/test_search_concepts.py) | ۲۷ تست روی snapshot ساختگی، به‌علاوهٔ کنترل یکپارچگی فایل‌های واژه‌نامه (نقش، نوع، و یکتا بودن هر صورت فارسی) |
-| [`eval/lexicon_coverage.py`](eval/lexicon_coverage.py) | سنجش پوشش روی سؤال‌های توسعه |
-| [`eval/lexicon_parallel.py`](eval/lexicon_parallel.py) | سنجش روی متن موازی انگلیسی و فارسی خود پروژه، و استخراج صورت‌های فارسی پیشنهادی (توضیح پایین‌تر) |
+| `search_concepts.py` (مسیر حذف‌شده: `backend/apps/uptodate/search_concepts.py`) | نرمال‌سازی فارسی، اصلاح املا، آوانویسی، بارگذاری فرهنگ از `search.db` و فایل‌های واژه‌نامه، تشخیص مفاهیم در سؤال |
+| `search_lexicon/terms.csv` (مسیر حذف‌شده: `backend/apps/uptodate/search_lexicon/terms.csv`) | واژه‌های سؤال: ۸۳ کلید و ۱٬۳۷۱ صورت فارسی و انگلیسی. نقش‌ها: هدف (۳۴)، روش مصرف (۱۶)، زمینه (۱۲)، شکل دارویی (۹)، کلمات بی‌اهمیت (۷، شامل ۲۰۰ واژهٔ رایج فارسی و صفت‌های شدت)، جمعیت (۵). دور اول ۶۷ کلید و ۵۵۲ صورت داشت. |
+| `search_lexicon/concepts_fa.csv` (مسیر حذف‌شده: `backend/apps/uptodate/search_lexicon/concepts_fa.csv`) | ۱٬۹۹۷ مفهوم با ۶٬۰۱۵ صورت فارسی: ۱٬۴۹۵ بیماری و وضعیت، ۱۴۵ نام رایج دارو در ایران، ۱۲۷ آزمایش و تصویربرداری، ۱۱۷ دستهٔ دارویی، ۶۲ اندام و دستگاه بدن، ۳۳ علامت و ۱۸ میکروب. صورتی که با `+` شروع شود مشترک است (۱۸ مورد؛ توضیح پایین‌تر). دور اول ۱۹۳ مفهوم و ۴۷۱ صورت داشت. هر ردیف به یک مفهوم واقعی `search.db` وصل است. ستون `note` حوزهٔ تخصصی یا منبع ردیف است. |
+| `search_lexicon/drugs_fa.csv` (مسیر حذف‌شده: `backend/apps/uptodate/search_lexicon/drugs_fa.csv`) | ۱٬۷۹۴ نام فارسی داروی خود پروژه (`ingredient_name_fa` در `pipeline_v2.db`) با مفهوم و مونوگراف UpToDate |
+| `search_lexicon/monograph_sections.csv` (مسیر حذف‌شده: `backend/apps/uptodate/search_lexicon/monograph_sections.csv`) | ۶۰ نگاشت «هدف و جمعیت ← عنوان بخش مونوگراف» برای ۲۷ هدف یا زمینه، با رتبهٔ ۱ (اصلی) و ۲ (قابل قبول) |
+| `build_search_lexicon` (مسیر حذف‌شده: `backend/apps/uptodate/management/commands/build_search_lexicon.py`) | ساخت دوبارهٔ `drugs_fa.csv`؛ ردیف‌های `reviewed` حفظ می‌شوند |
+| `test_search_concepts.py` (مسیر حذف‌شده: `backend/apps/uptodate/test_search_concepts.py`) | ۲۷ تست روی snapshot ساختگی، به‌علاوهٔ کنترل یکپارچگی فایل‌های واژه‌نامه (نقش، نوع، و یکتا بودن هر صورت فارسی) |
+| `eval/lexicon_coverage.py` (مسیر حذف‌شده: `docs/search/eval/lexicon_coverage.py`) | سنجش پوشش روی سؤال‌های توسعه |
+| `eval/lexicon_parallel.py` (مسیر حذف‌شده: `docs/search/eval/lexicon_parallel.py`) | سنجش روی متن موازی انگلیسی و فارسی خود پروژه، و استخراج صورت‌های فارسی پیشنهادی (توضیح پایین‌تر) |
 
 در مخزن فقط واژه‌های فارسی خودمان و شناسه‌ها ثبت می‌شود. مترادف‌های انگلیسی و رتبه‌بندی مقاله‌ها هنگام ساخت از `search.db` خوانده می‌شوند.
 

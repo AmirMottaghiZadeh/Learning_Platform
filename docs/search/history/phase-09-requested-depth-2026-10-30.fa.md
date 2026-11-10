@@ -1,5 +1,7 @@
 # تطبیق عمق جست‌وجو با درخواست کاربر — ۲۰۲۶-۱۰-۳۰
 
+> **سند تاریخی؛ طرح لغوشده در ۲۰۲۶/۱۱/۱۰.** کد موتور آزمایشی، واژه‌نامه‌ها و ابزارهای ارزیابی این گزارش حذف شده‌اند. دستورهای این سند را اجرا نکنید و برنامهٔ آن را ادامه ندهید. وضعیت نهایی در [گزارش حذف](../../24-offline-smart-search-removal.fa.md) است؛ جست‌وجوی فعال اپ تغییر نکرده است.
+
 > **سند تاریخی:** این گزارش مربوط به پایلوت کنارگذاشته‌شدهٔ ۲۰۲۶-۱۰-۲۷ تا ۳۰ است. وضعیت‌ها و دستورهای آن شرح همان زمان‌اند. فایل‌های حذف‌شده با مسیر آرشیوی، بدون پیوند اجرایی، آمده‌اند؛ محل آرشیو و برنامهٔ جایگزین در [راهنمای سابقه](README.md) است.
 
 هستهٔ `utd-hierarchy-v3` اکنون **در سطح درخواست‌شده متوقف می‌شود**. نسخهٔ قبلی، حتی برای نام دارو یا درخواست یک بخش، به جست‌وجوی پاراگراف می‌رسید؛ این تفاوت صرفاً با بهتر کردن embedding حل نمی‌شد. پیاده‌سازی حاضر مسیر پیش‌فرض هسته و ابزار ارزیابی را تغییر می‌دهد. endpoint عمومی و رابط کاربری هنوز به این هسته متصل نشده‌اند.
@@ -46,8 +48,8 @@
 
 ## فایل‌ها و بازتولید
 
-- [هستهٔ درخواست و توقف](../../../backend/apps/uptodate/search_request.py)، [انتخاب منبع و scope](../../../backend/apps/uptodate/search_hierarchy.py)، کنترل تفسیر مدل (`../../backend/apps/uptodate/search_query_planner.py`؛ مسیر آرشیوی)، کنترل نامزدهای reranker (`../../backend/apps/uptodate/search_reranker.py`؛ مسیر آرشیوی).
-- [تست رفتار پیش‌فرض](../../../backend/apps/uptodate/test_search_request.py)، تست کنترل مدل (`../../backend/apps/uptodate/test_search_query_planner.py`؛ مسیر آرشیوی)، تست گزارش (`test_requested_depth_evaluation.py`؛ مسیر آرشیوی). تست‌های تاریخی صریحاً در حالت benchmark باقی مانده‌اند.
+- هستهٔ درخواست و توقف (مسیر حذف‌شده: `backend/apps/uptodate/search_request.py`)، انتخاب منبع و scope (مسیر حذف‌شده: `backend/apps/uptodate/search_hierarchy.py`)، کنترل تفسیر مدل (`../../backend/apps/uptodate/search_query_planner.py`؛ مسیر آرشیوی)، کنترل نامزدهای reranker (`../../backend/apps/uptodate/search_reranker.py`؛ مسیر آرشیوی).
+- تست رفتار پیش‌فرض (مسیر حذف‌شده: `backend/apps/uptodate/test_search_request.py`)، تست کنترل مدل (`../../backend/apps/uptodate/test_search_query_planner.py`؛ مسیر آرشیوی)، تست گزارش (`test_requested_depth_evaluation.py`؛ مسیر آرشیوی). تست‌های تاریخی صریحاً در حالت benchmark باقی مانده‌اند.
 - ارزیاب و سازندهٔ گزارش خصوصی (`evaluate_requested_depth.py`؛ مسیر آرشیوی): سطرهای انتظار شامل `query_id,query,expected_level,expected_status,expected_entity,expected_section_terms` هستند. ورودی و نتایج هر سؤال و متن منبع خارج از مخزن نگه‌داری می‌شوند. گزارش HTML همهٔ متن‌ها را escape می‌کند و اجرای script با CSP بسته است.
 - گزارش قابل بازبینی: [نتایج عمق درخواست](/home/amir/.local/share/uptodate-search-audit/requested-depth-review-2026-10-30.html). بستهٔ ورودی، نتایج و تفسیرها در `/home/amir/.local/share/uptodate-search-audit/requested-depth-run-2026-10-30/` ذخیره شده است؛ اجراهای `verified-*` مرجع نهایی‌اند و اجراهای مقدماتی هم حفظ شده‌اند. فایل‌های حاوی سؤال/متن `0600` و پوشه‌ها `0700` هستند.
 
