@@ -111,6 +111,9 @@ git diff --stat main origin/deploy-web               # فقط Dockerfile بای�
    - اگر رانفلر health check می‌خواهد، مسیر `/api/v1/health/` را بدهید.
 3. **دیسک بک‌اند:** یک دیسک (volume) به سرویس وصل کنید و `interact.db` و `info.json` Lexicomp را در آن بگذارید. مسیرش را در `LEXICOMP_DB_DIR` بنویسید.
 4. **MySQL UpToDate:** دیتابیس MySQL را بسازید و `UPTODATE_MYSQL_URL` را تنظیم کنید. از لپ‌تاپ `migrate_uptodate_to_mysql` را اجرا کنید ([07-data.md](07-data.md#uptodate)). برای پیش‌پردازش سرچ هوشمند، پس از انتشار کد جدید و migration، فرمان `build_reference_index` را روی همان محیط سرور اجرا کنید؛ دادهٔ آمادهٔ لوکال با push کد منتقل نمی‌شود. ساخت کامل، بررسی و حالت‌های prefer/require در [سند ۲۷](27-smart-search-preprocessing.fa.md) آمده است. فاز دو migration دوم و ایندکس GIN واژگانی دارد؛ روی دادهٔ پرحجم برای اجرای concurrent آن قبل از rollout زمان کافی در نظر بگیرید؛ [سند ۲۸](28-smart-search-lexical.fa.md). فاز چهار migration تازه ندارد؛ کد و تنظیم‌های بودجه/کش را منتشر و workerها را restart کنید. کش پاسخ از Redis موجود با prefix جدا استفاده می‌کند؛ برای پیام خطای تازه خروجی وب/اپ هم منتشر شود. [سند ۳۰](30-smart-search-cache-runtime.fa.md).
+
+   اگر منبع UpToDate به‌صورت فایل در volume سرور، مثلاً `/sd/uptodate/`، موجود است، `UPTODATE_DB_DIR=/sd/uptodate` را در متغیرهای همان سرویس تنظیم کنید؛ این مسیر از SQLite منبع می‌خواند و ایندکس مشتق‌شده را در دیتابیس اصلی می‌سازد. `content.db` و `fts.db` ضروری و `info.json` اختیاری است. رفع خطای نسخهٔ اولیه که metadata را اجباری می‌دانست به انتشار کد اصلاح‌شده نیاز دارد؛ سپس فرمان ساخت و status را اجرا کنید. [توضیح خطا و دستورها](27-smart-search-preprocessing.fa.md#مسیر-منبع-روی-سرور-دارای-volume).
+
 5. **وب‌اپ:** سرویس را از شاخهٔ `deploy-web` بسازید. اگر شاخه هنوز نیست، workflow «Update deploy-web branch» را دستی اجرا کنید.
 6. **دامنه‌ها:** ترتیب مهم است تا اپ از دسترس خارج نشود.
    1. `app.pharmenta.ir` را به سرویس وب‌اپ اضافه کنید، رکورد DNS را بسازید و صبر کنید تا گواهی SSL صادر شود و باز شود.

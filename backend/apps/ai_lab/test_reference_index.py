@@ -1,5 +1,6 @@
 from io import StringIO
 import json
+import os
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -75,6 +76,111 @@ class ReferenceIndexTests(TestCase):
         self.assertEqual(audit["preprocessed_articles"], 1)
         self.assertLessEqual(len(queries), 5)
         self.assertTrue(all(query["sql"].lstrip().upper().startswith("SELECT") for query in queries))
+
+    def test_build_and_status_report_missing_snapshot_files_before_touching_index(self):
+        secret_directory = self.directory / "private-password-sk-placeholder"
+        for status in [False, True]:
+            with self.subTest(status=status), override_settings(UPTODATE_DB_DIR=str(secret_directory)), \
+                    patch.object(reference_index, "source_stamp") as stamp, \
+                    self.assertRaises(CommandError) as caught:
+                call_command("build_reference_index", status=status, stdout=StringIO())
+            message = str(caught.exception)
+            self.assertIn("SOURCE_FILES_MISSING: content.db, fts.db", message)
+            self.assertNotIn("info.json", message)
+            self.assertIn("UPTODATE_DB_DIR", message)
+            self.assertNotIn(str(secret_directory), message)
+            stamp.assert_not_called()
+        self.assertEqual(ReferenceGeneration.objects.count(), 0)
+
+    def test_build_and_status_accept_snapshot_without_optional_metadata(self):
+        (self.directory / "info.json").unlink()
+        utd.close_all()
+        output = StringIO()
+        call_command("build_reference_index", status=True, stdout=output)
+        self.assertIn("No compatible active generation", output.getvalue())
+        generation = self.build()
+        self.assertEqual(generation.status, "ready")
+        self.assertEqual(generation.snapshot_version, "")
+        self.assertEqual(reference_index.active_generation(reference_index.source_stamp()), generation.pk)
+        output = StringIO()
+        call_command("build_reference_index", status=True, stdout=output)
+        self.assertIn(f"Ready generation={generation.pk}", output.getvalue())
+        self.assertTrue(verify_article("3851", generation, 1)["reader_matches_legacy"])
+
+    def test_missing_metadata_revision_is_stable_and_detects_metadata_and_database_changes(self):
+        metadata = self.directory / "info.json"
+        saved = metadata.read_bytes()
+        metadata.unlink()
+        first = reference_index.source_stamp()
+        self.assertEqual(first, reference_index.source_stamp())
+        database = self.directory / "content.db"
+        previous = database.stat()
+        self.write_article("3851", html(text=TEXT + " A changed source without metadata."))
+        # Model a published snapshot with a new timestamp deterministically,
+        # including filesystems whose clock resolution merges rapid writes.
+        os.utime(database, ns=(previous.st_atime_ns, previous.st_mtime_ns + 1_000_000_000))
+        updated = reference_index.source_stamp()
+        self.assertNotEqual(first.revision, updated.revision)
+        self.assertEqual(first.identity, updated.identity)
+        metadata.write_bytes(saved)
+        restored = reference_index.source_stamp()
+        self.assertNotEqual(updated.revision, restored.revision)
+        metadata.unlink()
+        self.assertEqual(updated, reference_index.source_stamp())
+
+    def test_parallel_build_accepts_snapshot_without_optional_metadata(self):
+        (self.directory / "info.json").unlink()
+        call_command("build_reference_index", workers=2, batch_size=20, stdout=StringIO())
+        generation = ReferenceGeneration.objects.latest("started_at")
+        self.assertEqual(generation.status, "ready")
+        self.assertEqual(generation.built_articles, 1)
+        self.assertEqual(reference_index.active_generation(reference_index.source_stamp()), generation.pk)
+
+    def test_present_metadata_keeps_the_existing_revision_contract(self):
+        directory = self.directory.resolve()
+        stamps = {}
+        for name in ["content.db", "fts.db", "info.json"]:
+            info = (directory / name).stat()
+            stamps[name] = [info.st_size, info.st_mtime_ns, info.st_ino]
+        version = str(json.loads((directory / "info.json").read_text()).get("version", ""))
+        self.assertEqual(reference_index.source_stamp().revision, reference_index._hash([version, stamps]))
+
+    def test_invalid_present_metadata_is_not_treated_as_an_absent_file(self):
+        (self.directory / "info.json").write_text("invalid metadata")
+        with self.assertRaises(json.JSONDecodeError):
+            reference_index.source_stamp()
+
+    def test_unexpected_build_error_reports_stage_and_type_without_exception_message(self):
+        private_message = "mysql://private-user:private-password@private-host/private-db"
+        with patch.object(reference_index, "source_stamp", side_effect=ValueError(private_message)), \
+                self.assertRaises(CommandError) as caught:
+            call_command("build_reference_index", status=True, stdout=StringIO())
+        message = str(caught.exception)
+        self.assertIn("stage=source_stamp; error=ValueError", message)
+        self.assertNotIn(private_message, message)
+
+    def test_partial_build_without_metadata_can_resume_and_source_change_invalidates_it(self):
+        (self.directory / "info.json").unlink()
+        self.add_title("3852")
+        self.write_article("3852", html(text=TEXT + " Another source without metadata."))
+        stamp = reference_index.source_stamp()
+        ids = reference_index.source_article_ids()
+        generation = reference_index.begin_generation(stamp, ids)
+        blob = reference_index.source_blobs(["3851"], stamp.version)[0]
+        reference_index.persist_documents(generation, [document.prepare_blob(blob)])
+        complete = self.build(resume=generation.pk)
+        self.assertEqual(complete.built_articles, 2)
+        self.write_article("3852", html(text=TEXT + " Updated after indexing without metadata."))
+        self.assertIsNone(reference_index.active_generation(reference_index.source_stamp()))
+
+    def test_mysql_status_does_not_require_local_snapshot_files(self):
+        stamp = reference_index.SourceStamp("a" * 64, "b" * 64, "v1", "mysql")
+        with override_settings(UPTODATE_DB_DIR="/missing/local/snapshot", UPTODATE_MYSQL_URL="mysql://fixture:private@source.example/references"), \
+                patch.object(reference_index, "source_stamp", return_value=stamp), \
+                patch.object(reference_index, "active_generation", return_value=None):
+            output = StringIO()
+            call_command("build_reference_index", status=True, stdout=output)
+        self.assertIn("No compatible active generation", output.getvalue())
 
     def test_prepared_output_exactly_matches_legacy_sections_previews_ids_and_targets(self):
         with override_settings(AI_LAB_PREPROCESSED_MODE="off"):

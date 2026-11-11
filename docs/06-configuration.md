@@ -156,7 +156,7 @@
 | متغیر | پیش‌فرض | رانفلر | کار |
 |---|---|---|---|
 | `UPTODATE_MYSQL_URL` | خالی | **راز**؛ رشتهٔ اتصال MySQL نسخهٔ UpToDate | اگر باشد، UpToDate از MySQL خوانده می‌شود |
-| `UPTODATE_DB_DIR` | `/home/amir/Documents/UpToDate` | — (با MySQL استفاده نمی‌شود) | پوشهٔ SQLite |
+| `UPTODATE_DB_DIR` | `/home/amir/Documents/UpToDate` | — (با MySQL استفاده نمی‌شود) | پوشهٔ SQLite؛ برای volume سرور در `/sd/uptodate`، متغیر سرویس را صریحاً روی همان مسیر تنظیم کنید؛ [راهنما](27-smart-search-preprocessing.fa.md#مسیر-منبع-روی-سرور-دارای-volume) |
 | `LEXICOMP_DB_DIR` | `/home/amir/Documents/Lexicomp_Drug_Interactions` | مسیر پوشه روی دیسک سرویس بک‌اند | `interact.db` و `info.json` |
 
 ## بستهٔ آفلاین

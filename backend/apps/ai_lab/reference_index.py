@@ -87,9 +87,18 @@ def source_stamp():
     directory = Path(settings.UPTODATE_DB_DIR).resolve()
     stamps = {}
     for name in ["content.db", "fts.db", "info.json"]:
-        info = (directory / name).stat()
+        try:
+            info = (directory / name).stat()
+        except FileNotFoundError:
+            if name != "info.json":
+                raise
+            # The canonical reader accepts snapshots without optional metadata.
+            # Its absence is part of the revision, so adding/removing metadata
+            # invalidates a generation without inventing a source version.
+            stamps[name] = None
+            continue
         stamps[name] = [info.st_size, info.st_mtime_ns, info.st_ino]
-    metadata = json.loads((directory / "info.json").read_text())
+    metadata = json.loads((directory / "info.json").read_text()) if stamps["info.json"] is not None else {}
     if not isinstance(metadata, dict):
         raise ProviderError("SOURCE_REVISION_UNAVAILABLE")
     version = str(metadata.get("version", ""))
