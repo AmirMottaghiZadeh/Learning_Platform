@@ -1,6 +1,7 @@
 """Temporary job ownership, recovery and bounded worker leases."""
 import time
 
+from django.conf import settings
 from django.core.cache import caches
 from .provider import MODEL_ALIASES
 
@@ -13,7 +14,7 @@ MAX_FINDINGS = 48
 
 def release(job_id, user_id, slot=None):
     cache = caches["throttle"]
-    for key in [f"ai-lab:user:{user_id}", *([slot] if slot else [f"ai-lab:slot:{n}" for n in range(2)])]:
+    for key in [f"ai-lab:user:{user_id}", *([slot] if slot else [f"ai-lab:slot:{n}" for n in range(max(1, min(16, settings.AI_LAB_MAX_CONCURRENT_JOBS)))])]:
         if cache.get(key) == job_id:
             cache.delete(key)
 
@@ -27,7 +28,8 @@ def read(job_id, user_id):
     if record.get("status") == "running":
         now = time.time()
         heartbeat, created = record.get("heartbeat_at"), record.get("created_at")
-        if (not heartbeat or not created or now - heartbeat > STALE_AFTER or now - created > MAX_AGE
+        if (not heartbeat or not created or now - heartbeat > STALE_AFTER
+                or now - created > min(MAX_AGE, settings.AI_LAB_TOTAL_TIMEOUT_SECONDS + 5)
                 or record.get("model") not in MODEL_ALIASES or record.get("sources") != ["uptodate"]):
             record = {**record, "status": "failed", "error": {"code": "EXPERIMENT_EXPIRED"}}
             cache.set(key, record, TTL)
@@ -48,7 +50,7 @@ def active(user_id):
 
 
 def public(record, after_revision=None):
-    keys = {"status", "stage", "result", "error", "revision", "findings", "findings_limited", "first_result_ms", "workflow", "stages_seen"}
+    keys = {"status", "stage", "result", "error", "revision", "findings", "findings_limited", "first_result_ms", "workflow", "stages_seen", "metrics"}
     if record.get("status") == "running" and after_revision is not None and str(record.get("revision")) == after_revision:
         keys -= {"findings", "findings_limited", "workflow", "stages_seen"}
     return {k: v for k, v in record.items() if k in keys}

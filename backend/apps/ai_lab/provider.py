@@ -1,19 +1,26 @@
 """Server-only Chat Completions adapter. Never expose bodies or credentials."""
 import json
+from http.client import HTTPException
+from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path
 import re
 import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, Request, build_opener as _urllib_opener, getproxies
 
 from django.conf import settings
 from django.views.decorators.debug import sensitive_variables
 
+from . import telemetry
+from . import http_transport
+
 # Stable wire alias for existing clients/jobs, independent of the upstream model.
 MODEL_ALIASES = ("luna",)
 deadline = ContextVar("ai_lab_deadline", default=None)
+_evaluation_budget = ContextVar("reference_evaluation_budget", default=None)
+_request_budget = ContextVar("reference_request_budget", default=None)
 
 
 class ProviderError(Exception):
@@ -25,6 +32,42 @@ class ProviderError(Exception):
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):
         return None
+
+
+def build_opener(*handlers):
+    # Preserve explicitly configured HTTPS/ALL proxy routing. The direct pool
+    # never bypasses a proxy to send credentials along a different route.
+    proxies = getproxies()
+    pooled = settings.AI_LAB_HTTP_POOL_ENABLED and not (proxies.get("https") or proxies.get("all"))
+    return http_transport.opener() if pooled else _urllib_opener(*handlers)
+
+
+def check_deadline(*, minimum=0):
+    remaining = None if deadline.get() is None else deadline.get() - time.monotonic()
+    if remaining is not None and remaining <= minimum:
+        raise ProviderError("EXPERIMENT_TIMEOUT")
+    return remaining
+
+
+@contextmanager
+def request_budget():
+    token = _request_budget.set({"used": 0, "limit": settings.AI_LAB_MAX_PROVIDER_REQUESTS})
+    try:
+        yield
+    finally:
+        _request_budget.reset(token)
+
+
+@contextmanager
+def evaluation_budget(max_requests, max_seconds):
+    """Bound paid requests in an explicit benchmark; never enabled by app traffic."""
+    budget = {"max_requests": max_requests, "used": 0,
+              "deadline": time.monotonic() + max_seconds, "exhausted": False}
+    token = _evaluation_budget.set(budget)
+    try:
+        yield budget
+    finally:
+        _evaluation_budget.reset(token)
 
 
 def configured_models():
@@ -78,13 +121,27 @@ def call(alias, payload):
                       headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, method="POST")
     started = time.monotonic()
     timeout = settings.AI_LAB_TIMEOUT_SECONDS
-    if deadline.get() is not None:
-        timeout = min(timeout, deadline.get() - started)
-        if timeout <= 0:
-            raise ProviderError("EXPERIMENT_TIMEOUT")
+    remaining = check_deadline(minimum=settings.AI_LAB_MIN_CALL_BUDGET_SECONDS)
+    if remaining is not None:
+        timeout = min(timeout, remaining)
+    request_limit = _request_budget.get()
+    if request_limit is not None and request_limit["used"] >= request_limit["limit"]:
+        raise ProviderError("SEARCH_REQUEST_LIMIT")
+    budget = _evaluation_budget.get()
+    if budget is not None:
+        remaining = budget["deadline"] - time.monotonic()
+        if budget["used"] >= budget["max_requests"] or remaining <= 0:
+            budget["exhausted"] = True
+            raise ProviderError("EVALUATION_BUDGET_EXCEEDED")
+        timeout = min(timeout, remaining)
+        budget["used"] += 1
+    if request_limit is not None:
+        request_limit["used"] += 1
     try:
+        telemetry.provider_request_sent()
         with build_opener(NoRedirect).open(request, timeout=timeout) as response:
             raw = response.read(2_000_001)
+        check_deadline()
         if len(raw) > 2_000_000:
             raise ProviderError("RESPONSE_TOO_LARGE")
         # An upstream echo cannot leak keys through answers, usage, or debug metadata.
@@ -95,10 +152,13 @@ def call(alias, payload):
     except HTTPError as exc:
         # Deliberately do not read/log the provider error body or repr(request).
         raise ProviderError("PROVIDER_HTTP_ERROR", exc.code) from None
-    except (URLError, TimeoutError, OSError):
+    except (URLError, TimeoutError, OSError, HTTPException):
+        check_deadline()
         raise ProviderError("PROVIDER_UNAVAILABLE") from None
     except (ValueError, UnicodeError):
         raise ProviderError("INVALID_PROVIDER_RESPONSE") from None
+    finally:
+        telemetry.provider_transport_ms((time.monotonic() - started) * 1000)
     if not isinstance(data, dict):
         raise ProviderError("INVALID_PROVIDER_RESPONSE")
     usage = data.get("usage") or {}
@@ -149,6 +209,7 @@ def _chat_once(alias, system, payload, max_tokens):
     if effort:
         request["reasoning_effort"] = effort
     data, meta = call(alias, request)
+    telemetry.provider_usage(meta)
     try:
         choice = data["choices"][0]
         text = choice["message"]["content"]
@@ -170,7 +231,8 @@ def chat(alias, system, payload, max_tokens=1000):
         raise ProviderError("MODEL_NOT_SUPPORTED")
     for attempt in range(2):
         try:
-            return _chat_once(alias, system, payload, max_tokens)
+            with telemetry.model_attempt(max_completion_tokens=max_tokens):
+                return _chat_once(alias, system, payload, max_tokens)
         except ProviderError as exc:
             exc.model = configured_models()[alias]
             if exc.code not in {"INVALID_MODEL_OUTPUT", "MODEL_OUTPUT_TRUNCATED"} or attempt:

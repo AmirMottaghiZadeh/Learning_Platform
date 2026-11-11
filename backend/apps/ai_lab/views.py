@@ -21,9 +21,11 @@ from .provider import MODEL_ALIASES, ProviderError, configured_models
 from .retrieval import SOURCES
 from .services import answer
 from . import jobs
+from . import telemetry
 from .workflow import apply_event
 
-_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="reference-lab")
+_executor = ThreadPoolExecutor(max_workers=max(1, min(16, settings.AI_LAB_MAX_CONCURRENT_JOBS)), thread_name_prefix="reference-lab")
+_instance = uuid4().hex
 TTL = jobs.TTL
 
 
@@ -58,6 +60,10 @@ def require_lab(user):
 def _run(job_id, user, payload, slot):
     cache = caches["throttle"]
     key = f"ai-lab:job:{job_id}"
+    initial = cache.get(key) or {}
+    created = initial.get("created_at")
+    queue_wait_ms = max(0, (time.time() - created) * 1000) if isinstance(created, (int, float)) else 0
+    trace = telemetry.Trace(queue_wait_ms=queue_wait_ms)
     close_old_connections()
     stopped, state_lock = Event(), Lock()
     def touch(stage=None):
@@ -115,16 +121,21 @@ def _run(job_id, user, payload, slot):
                           heartbeat_at=time.time(), revision=record.get("revision", 0) + 1)
             cache.set(key, record, TTL)
     def finish(values):
+        result = values.get("result") or {}
+        parts = result.get("parts", [])
+        trace.finish(values["status"], answer_complete=bool(parts) and all(
+            part.get("status") == "answered" and part.get("items") for part in parts))
         with state_lock:
             stopped.set()
             record = jobs.read(job_id, user.pk)
             if record and record.get("status") == "running":
-                cache.set(key, {**record, **values, "revision": record.get("revision", 0) + 1}, TTL)
+                cache.set(key, {**record, **values, "metrics": trace.snapshot(), "revision": record.get("revision", 0) + 1}, TTL)
     try:
         progress("starting")
         Thread(target=heartbeat, daemon=True, name="reference-lab-heartbeat").start()
-        result = answer(payload["question"], payload["model"], payload["sources"], payload["history"],
-                        SimpleNamespace(user=user), progress, publish, observe)
+        with trace.activate():
+            result = answer(payload["question"], payload["model"], payload["sources"], payload["history"],
+                            SimpleNamespace(user=user), progress, publish, observe)
         finish({"status": "complete", "result": result})
     except ProviderError as exc:
         finish({"status": "failed", "error": {
@@ -134,6 +145,8 @@ def _run(job_id, user, payload, slot):
     except Exception:
         finish({"status": "failed", "error": {"code": "EXPERIMENT_FAILED"}})
     finally:
+        trace.finish("failed")
+        telemetry.log_summary(trace)
         stopped.set()
         jobs.release(job_id, user.pk, slot)
         close_old_connections()
@@ -146,6 +159,17 @@ class LabStatusView(APIView):
     def get(self, request):
         response = Response({"enabled": settings.AI_LAB_ENABLED and allowed(request.user), "models": configured_models(),
                              "sources": SOURCES})
+        if request.user.is_staff and request.query_params.get("diagnostics") == "1":
+            from .release import runtime_profile
+            from .evaluation import digest
+            try:
+                response.data["runtime"] = {"instance": _instance, "profile_digest": digest(runtime_profile()),
+                    "capacity": settings.AI_LAB_MAX_CONCURRENT_JOBS,
+                    "max_provider_requests": settings.AI_LAB_MAX_PROVIDER_REQUESTS,
+                    "job_cache_backend": settings.CACHES["throttle"]["BACKEND"],
+                    "answer_cache_backend": settings.CACHES["ai_lab"]["BACKEND"]}
+            except Exception:
+                response.data["runtime"] = {"available": False}
         response["Cache-Control"] = "private, no-store"
         return response
 
@@ -184,7 +208,7 @@ class AskView(APIView):
                                    details={"job_id": previous["job_id"]} if previous else {})
         slot = None
         try:
-            for n in range(2):
+            for n in range(max(1, min(16, settings.AI_LAB_MAX_CONCURRENT_JOBS))):
                 candidate = f"ai-lab:slot:{n}"
                 owner = cache.get(candidate)
                 if owner:

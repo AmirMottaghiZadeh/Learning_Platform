@@ -1,0 +1,699 @@
+{
+  "schema": 1,
+  "kind": "fixed_plan_lexical_retrieval",
+  "lexical_version": 2,
+  "selection_version": 1,
+  "scope": "fixed_authored_plans_and_expected_articles_not_end_to_end_answers",
+  "generation": "c18b82e2-a0a1-4195-a457-865f2daf7b7b",
+  "provider_requests": 0,
+  "clinical_quality_assessed": false,
+  "source_unchanged": true,
+  "dataset_digest": "778a27a583abd49b500548c260a65419c12c91699e4bfd840ec5331573afc6d8",
+  "plans_digest": "fec0a6a04696029671b788d560b26beb1b20e0c24172b7ff6c1e5dda5941d193",
+  "pipeline_code_digest": "4e8566fa2503dc2fba50302751463c8acf27ba2f4f162cb092bcdf75aa86d481",
+  "cases": [
+    {
+      "case_id": "topic-enuresis-treatment",
+      "sources": [
+        {
+          "article_id": "2863",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 3,
+          "expected_heading_ranks": [
+            4,
+            1,
+            15
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 7511,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": false,
+          "pooled_passages": 55,
+          "menu_characters": 4593,
+          "legacy_menu_characters": 8874,
+          "read_ms": [
+            265.603,
+            221.847,
+            239.205
+          ],
+          "median_read_ms": 239.205,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-enuresis-comparison",
+      "sources": [
+        {
+          "article_id": "2863",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 6746,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 72,
+          "menu_characters": 4714,
+          "legacy_menu_characters": 8874,
+          "read_ms": [
+            94.792,
+            84.969,
+            83.749
+          ],
+          "median_read_ms": 84.969,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-enuresis-hyponatremia",
+      "sources": [
+        {
+          "article_id": "2863",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 6539,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 74,
+          "menu_characters": 4717,
+          "legacy_menu_characters": 8874,
+          "read_ms": [
+            69.023,
+            71.446,
+            82.616
+          ],
+          "median_read_ms": 71.446,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-psoriasis-first-line",
+      "sources": [
+        {
+          "article_id": "5666",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 3,
+          "expected_heading_ranks": [
+            1,
+            4,
+            6
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 8143,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": false,
+          "pooled_passages": 51,
+          "menu_characters": 4984,
+          "legacy_menu_characters": 7257,
+          "read_ms": [
+            201.432,
+            215.617,
+            219.266
+          ],
+          "median_read_ms": 215.617,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-psoriasis-extent",
+      "sources": [
+        {
+          "article_id": "5666",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 2,
+          "expected_heading_ranks": [
+            2,
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 7891,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 53,
+          "menu_characters": 4909,
+          "legacy_menu_characters": 7257,
+          "read_ms": [
+            221.108,
+            213.727,
+            204.136
+          ],
+          "median_read_ms": 213.727,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-hypertension-initial",
+      "sources": [
+        {
+          "article_id": "3869",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 3,
+          "expected_heading_ranks": [
+            3,
+            6,
+            9
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 7916,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": false,
+          "pooled_passages": 76,
+          "menu_characters": 5095,
+          "legacy_menu_characters": 7389,
+          "read_ms": [
+            180.704,
+            215.083,
+            202.67
+          ],
+          "median_read_ms": 202.67,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-asthma-step-one",
+      "sources": [
+        {
+          "article_id": "527",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 2,
+          "expected_heading_ranks": [
+            11,
+            2
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 11882,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": false,
+          "pooled_passages": 55,
+          "menu_characters": 5231,
+          "legacy_menu_characters": 11207,
+          "read_ms": [
+            218.636,
+            235.099,
+            241.35
+          ],
+          "median_read_ms": 235.099,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-diabetes-cardiorenal",
+      "sources": [
+        {
+          "article_id": "1779",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 16601,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 53,
+          "menu_characters": 4935,
+          "legacy_menu_characters": 9519,
+          "read_ms": [
+            73.066,
+            67.361,
+            71.741
+          ],
+          "median_read_ms": 71.741,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-hypothyroidism-monitoring",
+      "sources": [
+        {
+          "article_id": "7855",
+          "canonical_candidate_rank": 2,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 12418,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 79,
+          "menu_characters": 4969,
+          "legacy_menu_characters": 11625,
+          "read_ms": [
+            71.805,
+            70.773,
+            71.357
+          ],
+          "median_read_ms": 71.357,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-h-pylori-test-of-cure",
+      "sources": [
+        {
+          "article_id": "140619",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 9782,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 66,
+          "menu_characters": 5001,
+          "legacy_menu_characters": 8874,
+          "read_ms": [
+            222.674,
+            258.305,
+            280.869
+          ],
+          "median_read_ms": 258.305,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-otitis-initial",
+      "sources": [
+        {
+          "article_id": "5959",
+          "canonical_candidate_rank": null,
+          "expected_heading_count": 2,
+          "expected_heading_ranks": [
+            2,
+            12
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 6562,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": false,
+          "pooled_passages": 61,
+          "menu_characters": 4766,
+          "legacy_menu_characters": 8074,
+          "read_ms": [
+            220.387,
+            224.858,
+            224.837
+          ],
+          "median_read_ms": 224.837,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "topic-anaphylaxis-epinephrine",
+      "sources": [
+        {
+          "article_id": "392",
+          "canonical_candidate_rank": 2,
+          "expected_heading_count": 2,
+          "expected_heading_ranks": [
+            1,
+            9
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 10077,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": false,
+          "pooled_passages": 53,
+          "menu_characters": 4869,
+          "legacy_menu_characters": 12433,
+          "read_ms": [
+            246.182,
+            250.345,
+            234.167
+          ],
+          "median_read_ms": 246.182,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "drug-aripiprazole-adverse",
+      "sources": [
+        {
+          "article_id": "8786",
+          "canonical_candidate_rank": null,
+          "expected_heading_count": 2,
+          "expected_heading_ranks": [
+            1,
+            2
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 8172,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 116,
+          "menu_characters": 4831,
+          "legacy_menu_characters": 10166,
+          "read_ms": [
+            297.256,
+            274.405,
+            285.073
+          ],
+          "median_read_ms": 285.073,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "drug-aripiprazole-mechanism",
+      "sources": [
+        {
+          "article_id": "8786",
+          "canonical_candidate_rank": null,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 6566,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 120,
+          "menu_characters": 4904,
+          "legacy_menu_characters": 10166,
+          "read_ms": [
+            93.243,
+            125.318,
+            82.466
+          ],
+          "median_read_ms": 93.243,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "drug-metformin-renal",
+      "sources": [
+        {
+          "article_id": "9621",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 4483,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 64,
+          "menu_characters": 4176,
+          "legacy_menu_characters": 8506,
+          "read_ms": [
+            241.945,
+            249.425,
+            256.572
+          ],
+          "median_read_ms": 249.425,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "drug-metformin-contraindications",
+      "sources": [
+        {
+          "article_id": "9621",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 11014,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 116,
+          "menu_characters": 4659,
+          "legacy_menu_characters": 8506,
+          "read_ms": [
+            59.803,
+            55.261,
+            57.867
+          ],
+          "median_read_ms": 57.867,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "drug-amoxicillin-pediatric",
+      "sources": [
+        {
+          "article_id": "8673",
+          "canonical_candidate_rank": 2,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            2
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 3736,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 90,
+          "menu_characters": 4074,
+          "legacy_menu_characters": 8245,
+          "read_ms": [
+            160.737,
+            150.91,
+            171.874
+          ],
+          "median_read_ms": 160.737,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "drug-warfarin-pregnancy",
+      "sources": [
+        {
+          "article_id": "10050",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 8504,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 100,
+          "menu_characters": 4837,
+          "legacy_menu_characters": 9523,
+          "read_ms": [
+            66.077,
+            65.129,
+            69.114
+          ],
+          "median_read_ms": 66.077,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "drug-sertraline-indications",
+      "sources": [
+        {
+          "article_id": "9886",
+          "canonical_candidate_rank": null,
+          "expected_heading_count": 1,
+          "expected_heading_ranks": [
+            1
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 7300,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 108,
+          "menu_characters": 4583,
+          "legacy_menu_characters": 9743,
+          "read_ms": [
+            211.436,
+            217.514,
+            247.109
+          ],
+          "median_read_ms": 217.514,
+          "engine": "postgresql_fts"
+        }
+      ]
+    },
+    {
+      "case_id": "drug-ibuprofen-adverse",
+      "sources": [
+        {
+          "article_id": "8547",
+          "canonical_candidate_rank": 1,
+          "expected_heading_count": 2,
+          "expected_heading_ranks": [
+            1,
+            2
+          ],
+          "any_expected_heading_available": true,
+          "all_expected_headings_available": true,
+          "source_anchors_valid": true,
+          "selected_sections": 16,
+          "local_evidence_passages": 18,
+          "local_evidence_characters": 8342,
+          "local_any_expected_heading_available": true,
+          "local_all_expected_headings_available": true,
+          "first_batch_any_expected_heading_available": true,
+          "first_batch_all_expected_headings_available": true,
+          "pooled_passages": 111,
+          "menu_characters": 4719,
+          "legacy_menu_characters": 9715,
+          "read_ms": [
+            331.635,
+            342.135,
+            346.273
+          ],
+          "median_read_ms": 342.135,
+          "engine": "postgresql_fts"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "cases": 20,
+    "any_expected_heading_available": 20,
+    "all_expected_headings_available": 20,
+    "all_source_anchors_valid": true,
+    "local_any_expected_heading_available": 20,
+    "local_all_expected_headings_available": 20,
+    "first_batch_any_expected_heading_available": 20,
+    "first_batch_all_expected_headings_available": 14,
+    "within_article_read_median_ms": 214.672
+  }
+}

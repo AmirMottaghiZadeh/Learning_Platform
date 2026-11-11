@@ -1,0 +1,525 @@
+{
+  "schema": 1,
+  "kind": "reference_search_baseline",
+  "created_at": "2026-11-10T21:27:24.396543+00:00",
+  "dataset_version": "phase0-2026-11-11-v1",
+  "dataset_digest": "778a27a583abd49b500548c260a65419c12c91699e4bfd840ec5331573afc6d8",
+  "suite_size": 100,
+  "configuration": {
+    "model": "gpt-6-luna",
+    "base_url": "https://api.gapgpt.app/v1",
+    "reasoning_effort": "none",
+    "cache_state": "warm",
+    "source_backend": "sqlite",
+    "snapshot_version": "1",
+    "pipeline": "uptodate-first-answer",
+    "prompt_digest": "2f78a79dd016c98a1bc64ae288fee88f67f0d6c5b83925526f5d95eaf1659fcd",
+    "pipeline_code_digest": "8bff5f37e254e4fab101e6344ffcb906830683859b3fa43295613f87bc7e87ad"
+  },
+  "transport": "direct_service",
+  "response_cache": "not_implemented",
+  "budget": {
+    "max_requests": 16,
+    "max_seconds": 180,
+    "used": 14,
+    "exhausted": false
+  },
+  "warmup_ms": 5239.9,
+  "summary": {
+    "scope": "service_baseline_not_browser_latency",
+    "target_ms": 20000,
+    "cases": 3,
+    "answerable_cases": 3,
+    "status_counts": {
+      "complete": 3
+    },
+    "machine_complete": 3,
+    "clinically_reviewed_complete": 0,
+    "machine_complete_under_target": 2,
+    "quality_verified_under_target": 0,
+    "quality_verified_success_rate": 0.0,
+    "pending_clinical_reviews": 3,
+    "abstention_cases": 0,
+    "structurally_correct_abstentions": 0,
+    "complete_answer_latency_ms": {
+      "p50": 16849.754,
+      "p95": 21908.791
+    },
+    "known_usage": {
+      "prompt_tokens": 16969,
+      "completion_tokens": 668,
+      "total_tokens": 17637
+    },
+    "unknown_usage_requests": 0,
+    "provider_requests": 14,
+    "provisional_service_target_met": false,
+    "full_suite_measured": false,
+    "release_slo_verified": false,
+    "categories": {
+      "adult_treatment": {
+        "cases": 1,
+        "failed": 0,
+        "machine_complete": 1
+      },
+      "drug_safety": {
+        "cases": 1,
+        "failed": 0,
+        "machine_complete": 1
+      },
+      "pediatric": {
+        "cases": 1,
+        "failed": 0,
+        "machine_complete": 1
+      }
+    }
+  },
+  "clinical_gold_status": "source_checked_not_clinically_approved",
+  "runs": [
+    {
+      "case_id": "drug-aripiprazole-adverse",
+      "category": "drug_safety",
+      "expect": "answerable",
+      "status": "complete",
+      "assessment": {
+        "machine_complete": true,
+        "citation_integrity": true,
+        "expected_sources_matched": true,
+        "source_matches": [
+          true
+        ],
+        "abstained": false,
+        "citation_count": 1,
+        "clinical_review": "pending",
+        "correct_and_sufficient": null
+      },
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 16849.754,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 16849.754,
+        "machine_answer_complete": true,
+        "final_answer_ms": 16849.754,
+        "first_titles_ms": 4182.291,
+        "first_sections_ms": 8252.973,
+        "first_citation_ms": 16849.127,
+        "model_attempts": 4,
+        "provider_requests": 4,
+        "provider_elapsed_ms": 16226.283,
+        "known_usage": {
+          "prompt_tokens": 6336,
+          "completion_tokens": 160,
+          "total_tokens": 6496
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4076.972
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 104.661
+          },
+          "source_read": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 9.202
+          },
+          "extraction": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 388.338
+          },
+          "section_selection": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3557.681
+          },
+          "answering": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3891.389
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4704.091
+          }
+        },
+        "attempts_limited": false,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 700,
+            "sequence": 1,
+            "transport_ms": 4075.775,
+            "usage": {
+              "prompt_tokens": 365,
+              "completion_tokens": 24,
+              "total_tokens": 389
+            },
+            "elapsed_ms": 4076.907
+          },
+          {
+            "stage": "section_selection",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 650,
+            "sequence": 2,
+            "transport_ms": 3556.265,
+            "usage": {
+              "prompt_tokens": 4609,
+              "completion_tokens": 20,
+              "total_tokens": 4629
+            },
+            "elapsed_ms": 3557.594
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 1800,
+            "sequence": 3,
+            "transport_ms": 3890.76,
+            "usage": {
+              "prompt_tokens": 892,
+              "completion_tokens": 93,
+              "total_tokens": 985
+            },
+            "elapsed_ms": 3891.321
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 650,
+            "sequence": 4,
+            "transport_ms": 4703.483,
+            "usage": {
+              "prompt_tokens": 470,
+              "completion_tokens": 23,
+              "total_tokens": 493
+            },
+            "elapsed_ms": 4704.03
+          }
+        ]
+      },
+      "response_digest": "8f839dad0d3c6e7f1fa8db1d5edf507ca61cb62522f17c5d71d29e45ecfbf889",
+      "evaluation_budget_exhausted": false,
+      "repetition": 1
+    },
+    {
+      "case_id": "topic-enuresis-treatment",
+      "category": "pediatric",
+      "expect": "answerable",
+      "status": "complete",
+      "assessment": {
+        "machine_complete": true,
+        "citation_integrity": true,
+        "expected_sources_matched": true,
+        "source_matches": [
+          true
+        ],
+        "abstained": false,
+        "citation_count": 2,
+        "clinical_review": "pending",
+        "correct_and_sufficient": null
+      },
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 13933.107,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 13933.107,
+        "machine_answer_complete": true,
+        "final_answer_ms": 13933.107,
+        "first_titles_ms": 3090.745,
+        "first_sections_ms": 7911.539,
+        "first_citation_ms": 13932.563,
+        "model_attempts": 4,
+        "provider_requests": 4,
+        "provider_elapsed_ms": 13843.833,
+        "known_usage": {
+          "prompt_tokens": 5159,
+          "completion_tokens": 242,
+          "total_tokens": 5401
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3082.706
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 7.766
+          },
+          "source_read": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3.204
+          },
+          "extraction": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 70.804
+          },
+          "section_selection": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4743.301
+          },
+          "answering": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3110.326
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 2910.139
+          }
+        },
+        "attempts_limited": false,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 700,
+            "sequence": 1,
+            "transport_ms": 3082.185,
+            "usage": {
+              "prompt_tokens": 363,
+              "completion_tokens": 25,
+              "total_tokens": 388
+            },
+            "elapsed_ms": 3082.641
+          },
+          {
+            "stage": "section_selection",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 650,
+            "sequence": 2,
+            "transport_ms": 4742.297,
+            "usage": {
+              "prompt_tokens": 3323,
+              "completion_tokens": 38,
+              "total_tokens": 3361
+            },
+            "elapsed_ms": 4743.238
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 1800,
+            "sequence": 3,
+            "transport_ms": 3109.762,
+            "usage": {
+              "prompt_tokens": 860,
+              "completion_tokens": 150,
+              "total_tokens": 1010
+            },
+            "elapsed_ms": 3110.27
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 650,
+            "sequence": 4,
+            "transport_ms": 2909.589,
+            "usage": {
+              "prompt_tokens": 613,
+              "completion_tokens": 29,
+              "total_tokens": 642
+            },
+            "elapsed_ms": 2910.075
+          }
+        ]
+      },
+      "response_digest": "c291ce4f74c97c4a41c343c3c6d42d2cdd380952a3c831d34c1cf472da550dd3",
+      "evaluation_budget_exhausted": false,
+      "repetition": 1
+    },
+    {
+      "case_id": "topic-psoriasis-first-line",
+      "category": "adult_treatment",
+      "expect": "answerable",
+      "status": "complete",
+      "assessment": {
+        "machine_complete": true,
+        "citation_integrity": true,
+        "expected_sources_matched": true,
+        "source_matches": [
+          true
+        ],
+        "abstained": false,
+        "citation_count": 1,
+        "clinical_review": "pending",
+        "correct_and_sufficient": null
+      },
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 21908.791,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 21908.791,
+        "machine_answer_complete": true,
+        "final_answer_ms": 21908.791,
+        "first_titles_ms": 4182.49,
+        "first_sections_ms": 8190.976,
+        "first_citation_ms": 21908.497,
+        "model_attempts": 6,
+        "provider_requests": 6,
+        "provider_elapsed_ms": 21772.564,
+        "known_usage": {
+          "prompt_tokens": 5474,
+          "completion_tokens": 266,
+          "total_tokens": 5740
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4093.214
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 89.048
+          },
+          "source_read": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 2.023
+          },
+          "extraction": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 38.103
+          },
+          "section_selection": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3965.899
+          },
+          "answering": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 6944.72
+          },
+          "verification": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 6772.384
+          }
+        },
+        "attempts_limited": false,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 700,
+            "sequence": 1,
+            "transport_ms": 4092.712,
+            "usage": {
+              "prompt_tokens": 366,
+              "completion_tokens": 26,
+              "total_tokens": 392
+            },
+            "elapsed_ms": 4093.156
+          },
+          {
+            "stage": "section_selection",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 650,
+            "sequence": 2,
+            "transport_ms": 3965.182,
+            "usage": {
+              "prompt_tokens": 2504,
+              "completion_tokens": 26,
+              "total_tokens": 2530
+            },
+            "elapsed_ms": 3965.834
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 1800,
+            "sequence": 3,
+            "transport_ms": 3279.062,
+            "usage": {
+              "prompt_tokens": 824,
+              "completion_tokens": 95,
+              "total_tokens": 919
+            },
+            "elapsed_ms": 3279.651
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 650,
+            "sequence": 4,
+            "transport_ms": 3084.625,
+            "usage": {
+              "prompt_tokens": 464,
+              "completion_tokens": 17,
+              "total_tokens": 481
+            },
+            "elapsed_ms": 3085.19
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 1800,
+            "sequence": 5,
+            "transport_ms": 3664.388,
+            "usage": {
+              "prompt_tokens": 843,
+              "completion_tokens": 79,
+              "total_tokens": 922
+            },
+            "elapsed_ms": 3664.894
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 650,
+            "sequence": 6,
+            "transport_ms": 3686.595,
+            "usage": {
+              "prompt_tokens": 473,
+              "completion_tokens": 23,
+              "total_tokens": 496
+            },
+            "elapsed_ms": 3687.054
+          }
+        ]
+      },
+      "response_digest": "696c10db5bcd6104a6770aed46fe188903575a7452d1a063953d9088e8be8c93",
+      "evaluation_budget_exhausted": false,
+      "repetition": 1
+    }
+  ],
+  "artifact_policy": "Metrics only. Full answers, source quotes and response-bound reviews remain in private reports outside version control."
+}

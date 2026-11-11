@@ -78,6 +78,15 @@
 | `import_study_content_db` | `--source --dry-run --prune` | ایمپورت فایل قابل‌حمل سؤال و نکتهٔ آموزشی | [07](07-data.md) |
 | `migrate_uptodate_to_mysql` | `--tables --checkpoint-file --reset` | کپی UpToDate به MySQL | [07](07-data.md) |
 | `ensure_uptodate_search_index` | — | ایندکس جست‌وجوی عنوان MySQL | [07](07-data.md) |
+| `evaluate_reference_search` | `--mode validate/run/summarize --output --case --limit --cache-state --max-requests --max-seconds` | فاز صفر سرچ هوشمند: اعتبارسنجی ۱۰۰ سؤال، اجرای محدود و گزارش زمان/توکن/ارجاع؛ حالت run مصرف API دارد | [26](26-smart-search-phase0.fa.md) |
+| `build_reference_index` | `--workers --batch-size --resume --status --limit --article --no-activate --force` | ساخت نسخهٔ آمادهٔ بخش‌ها و بندها؛ فعال‌سازی اتمی نسخهٔ کامل؛ بدون فراخوانی مدل | [27](27-smart-search-preprocessing.fa.md) |
+| `verify_reference_index` | `--output --repeat --article --dataset` | تطبیق دادهٔ آماده و خروجی خواننده با منبع اصلی و اندازه‌گیری هر دو مسیر؛ بدون فراخوانی مدل | [27](27-smart-search-preprocessing.fa.md) |
+| `evaluate_lexical_retrieval` | `--output --repeat --dataset --plans` | سنجش واژگانی و انتخاب محلی با برنامه و مقالهٔ معلوم، تطبیق ارجاع و حضور بخش مرجع در اولین دسته؛ بدون فراخوانی مدل | [28](28-smart-search-lexical.fa.md)، [29](29-smart-search-local-selection.fa.md) |
+| `benchmark_reference_cache` | `--output --case --limit --max-requests --max-seconds` | مقایسهٔ پاسخ تازه و hitِ دارای کنترل منبع با حساب تشخیصی موقت؛ cold مصرف API دارد و hit معتبر صفر درخواست است | [30](30-smart-search-cache-runtime.fa.md) |
+| `benchmark_reference_http` | `--accounts-file --api-base --output --limit --concurrency --poll --max-requests --case` | بار واقعی احراز هویت/ask/poll و cold/hit؛ مصرف API؛ preflight پیکربندی و سقف رزرو درخواست | [31](31-smart-search-release-evaluation.fa.md) |
+| `collect_reference_browser` | `--input --output` | اتصال زمان رندر واقعی Chrome و نتیجه به منبع و hash بازبینی؛ بدون فراخوانی مدل | [31](31-smart-search-release-evaluation.fa.md) |
+| `review_reference_release` | `--input` تکرارشونده، `--output` | کاربرگ آفلاین خصوصی برای نظر مستقل مالک؛ هیچ تأیید خودکار | [31](31-smart-search-release-evaluation.fa.md) |
+| `evaluate_reference_release` | `--suite --load --browser --reviews --output --approval-output --expires-hours` | گیت مجموعهٔ کامل، بار، مرورگر و بازبینی؛ مجوز امضاشده فقط پس از pass | [31](31-smart-search-release-evaluation.fa.md) |
 | `build_offline_package` | `uptodate\|lexicomp --out --source --part-size-mb` | ساخت بستهٔ آفلاین | [07](07-data.md) |
 | `prepare_offline_upload` | `uptodate\|lexicomp --out --source --part-size-mb --existing` | ساخت و بررسی فایل‌های قابل آپلود و راهنمای ترتیب آپلود | [07](07-data.md) |
 | `offline_bucket_cors` | `--origin --show` | تنظیم و بررسی CORS باکت | [07](07-data.md) |

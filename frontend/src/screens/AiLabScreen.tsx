@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
 import { aiLabApi, LAB_MODEL, LabCitation } from "@/api/aiLab";
 import { ApiError } from "@/api/client";
@@ -13,10 +13,13 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { useLang } from "@/i18n/LanguageProvider";
 import { fontFamily } from "@/theme/fonts";
 import { ReferenceSearchProgress } from "@/components/ReferenceSearchProgress";
+import { cancelReferenceTiming, noteReferenceRender, startReferenceTiming } from "@/api/referenceTiming";
 
 const SAMPLE = ["دارودرمانی شب ادراری در کودکان چیست؟", "خط اول درمان پسوریازیس و خط سوم درمان بیماران سایکوتیک"];
 
 function failure(code?: string, status?: number): string {
+  if (code === "EXPERIMENT_TIMEOUT") return "مهلت این جست‌وجو تمام شد. می‌توانید دوباره تلاش کنید.";
+  if (code === "SEARCH_REQUEST_LIMIT") return "این جست‌وجو به پاسخ کافی نرسید. می‌توانید دوباره تلاش کنید.";
   if (code === "EXPERIMENT_EXPIRED") return "جست‌وجوی قبلی متوقف یا منقضی شد. می‌توانید دوباره سؤال بپرسید.";
   if (code === "PROVIDER_HTTP_ERROR" || code === "PROVIDER_UNAVAILABLE") return "ارتباط با سرویس جست‌وجو برقرار نشد. کمی بعد دوباره تلاش کنید.";
   if (code === "SOURCE_UNAVAILABLE") return "منبع UpToDate در سرور در دسترس نیست.";
@@ -58,6 +61,18 @@ export function AiLabScreen() {
     return () => cancelAnimationFrame(frame);
   }, [latest?.id, latest?.status, latest?.findings?.length]);
   useEffect(() => { if (useAiLab.getState().owner !== userId) useAiLab.getState().reset(userId); }, [userId]);
+  useLayoutEffect(() => {
+    if (!latest) return;
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => noteReferenceRender(latest.id, {
+        status: latest.status, titles: !!latest.workflow?.some((part) => part.titles.length > 0),
+        citation: !!latest.findings?.length || !!latest.result?.parts.some((part) => part.items.length > 0),
+        answerComplete: !!latest.result?.parts.length && latest.result.parts.every((part) => part.status === "answered" && part.items.length > 0),
+      }));
+    });
+    return () => { cancelAnimationFrame(first); if (second) cancelAnimationFrame(second); };
+  }, [latest?.id, latest?.revision, latest?.status, latest?.result, latest?.findings, latest?.workflow]);
   const restore = useCallback(async () => {
     const job = await aiLabApi.active();
     if (!job || job.model !== LAB_MODEL || useAuth.getState().user?.id !== userId || useAiLab.getState().owner !== userId) return null;
@@ -102,6 +117,7 @@ export function AiLabScreen() {
     if (!q || active || recovering || sending.current) return;
     sending.current = true; setRequestError("");
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    startReferenceTiming(id);
     const history = turns.filter((t) => t.question !== q).slice(-4).map((t) => t.question);
     useAiLab.setState((s) => ({ turns: [...s.turns, { id, question: q, model: LAB_MODEL, status: "running", stage: "starting" }], draft: "" }));
     try {
@@ -112,6 +128,7 @@ export function AiLabScreen() {
         try {
           const previous = await restore();
           if (previous) {
+            cancelReferenceTiming(id);
             useAiLab.setState((s) => ({ turns: s.turns.filter((t) => t.id !== id), draft: previous.question === q ? "" : q }));
             setRequestError("جست‌وجوی قبلی بازیابی شد؛ نتیجه در همین گفت‌وگو نمایش داده می‌شود.");
             return;
@@ -128,7 +145,7 @@ export function AiLabScreen() {
     if (screen === "uptodateArticle") navigate("uptodateArticle", params);
   };
 
-  const citationCard = (citation: LabCitation, key: string, overview?: string) => <View key={key} style={{ backgroundColor: colors.softBg, padding: 14, borderRadius: 14, gap: 10 }}>
+  const citationCard = (citation: LabCitation, key: string, overview?: string) => <View testID="reference-citation" key={key} style={{ backgroundColor: colors.softBg, padding: 14, borderRadius: 14, gap: 10 }}>
     {!overview?.includes(citation.summary_fa) ? <AppText size={14}>{citation.summary_fa}</AppText> : null}
     <AppText weight="700" size={12} color={colors.accent}>UpToDate · {citation.section}</AppText>
     <Pressable accessibilityRole="button" accessibilityState={{ expanded: !!quotes[key] }}
@@ -160,7 +177,7 @@ export function AiLabScreen() {
       {turns.map((turn) => {
         const finalIds = new Set(turn.result?.parts.flatMap((part, i) => part.items.map((item) => `${i}:${item.target.params.id}:${item.source_id}`)) ?? []);
         const findings = (turn.findings ?? []).filter((finding) => !finalIds.has(finding.id));
-        return <View key={turn.id} onLayout={(event) => { turnPositions.current[turn.id] = event.nativeEvent.layout.y; }} style={{ gap: 12 }}>
+        return <View testID={turn.status === "complete" ? "reference-final-answer" : "reference-pending-answer"} key={turn.id} onLayout={(event) => { turnPositions.current[turn.id] = event.nativeEvent.layout.y; }} style={{ gap: 12 }}>
         <View style={{ backgroundColor: colors.accent, borderRadius: 16, padding: 14 }}><AppText color={colors.onAccent} size={14}>{turn.question}</AppText></View>
         <AppText weight="800" size={13}>پاسخ</AppText>
         <ReferenceSearchProgress status={turn.status} stage={turn.stage} seen={turn.stages_seen} workflow={turn.workflow} />
@@ -172,7 +189,7 @@ export function AiLabScreen() {
           {part.items.length ? <AppText size={12} muted>{part.items.length} ارجاع از {part.retrieval?.reviewed_passages ?? part.retrieval?.selected_passages ?? part.items.length} متن بررسی‌شده</AppText> : null}
           {part.retrieval?.early_stopped ? <AppText size={12} muted>{part.retrieval.reviewed_articles ?? 1} مقاله بررسی شد؛ پس از یافتن پاسخ کافی، بررسی مقاله‌های بعدی متوقف شد.</AppText> : null}
           {part.retrieval?.limited && !part.retrieval.early_stopped ? <AppText size={12} muted>نمایش نتایج بازیابی‌شده در محدودهٔ این جست‌وجو؛ پوشش منابع کامل نیست.</AppText> : null}
-          {part.status === "partial" ? <AppText size={13} muted>این مقاله فقط بخشی از سؤال را پوشش می‌دهد؛ پاسخ کامل تأیید نشد.</AppText> : null}
+          {part.status === "partial" ? <AppText size={13} muted>{part.clarification_fa || "این مقاله فقط بخشی از سؤال را پوشش می‌دهد؛ پاسخ کامل تأیید نشد."}</AppText> : null}
           {part.status === "needs_clarification" ? <AppText size={14}>{part.clarification_fa}</AppText> : null}
           {part.status === "not_found" ? <AppText size={14} muted>متن کافی برای پاسخ مستند پیدا نشد؛ پاسخی حدس زده نشد.</AppText> : null}
           {part.items.map((citation) => citationCard(citation, `${turn.id}:${i}:${citation.target.params.id}:${citation.source_id}`, part.overview_fa))}
@@ -199,11 +216,11 @@ export function AiLabScreen() {
     {requestError ? <AppText size={12} color={colors.denyLabel} style={{ paddingHorizontal: 20 }}>{requestError}</AppText> : null}
     {recovering ? <AppText size={12} muted style={{ paddingHorizontal: 20 }}>بررسی درخواست قبلی…</AppText> : null}
     <View style={{ padding: 12, gap: 10, flexDirection: row, alignItems: "flex-end", backgroundColor: colors.cardBg }}>
-      <TextInput value={state.draft} onChangeText={(draft) => useAiLab.setState({ draft })} multiline maxLength={1500} editable={!active}
+      <TextInput testID="reference-question" value={state.draft} onChangeText={(draft) => useAiLab.setState({ draft })} multiline maxLength={1500} editable={!active}
         accessibilityLabel="پرسش برای سرچ هوشمند" placeholder="سؤال خود را بنویسید…" placeholderTextColor={colors.muted}
         style={{ flex: 1, minHeight: 48, maxHeight: 120, padding: 12, borderRadius: 12, backgroundColor: colors.softBg,
           fontFamily: fontFamily("500"), fontSize: 14, color: colors.ink, textAlign: isFa ? "right" : "left" }} />
-      <Pressable accessibilityRole="button" onPress={() => void send()} disabled={recovering || !!active || !status.data?.enabled || !state.draft.trim()}
+      <Pressable testID="reference-send" accessibilityRole="button" onPress={() => void send()} disabled={recovering || !!active || !status.data?.enabled || !state.draft.trim()}
         style={{ minHeight: 48, paddingHorizontal: 18, justifyContent: "center", borderRadius: 12, backgroundColor: colors.accent,
           opacity: recovering || active || !status.data?.enabled || !state.draft.trim() ? 0.5 : 1 }}>
         <AppText weight="800" color={colors.onAccent}>{active ? "…" : "جست‌وجو"}</AppText>

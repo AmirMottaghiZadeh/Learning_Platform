@@ -303,6 +303,8 @@ python manage.py import_study_content_db --source <مسیر>/study_content.db
 
 ## UpToDate
 
+برای سرچ هوشمند، فاز یک یک ایندکس مشتق‌شدهٔ نسخه‌دار از بخش‌ها و بندها در PostgreSQL ایجاد می‌کند. snapshot اصلی همچنان SQLite یا mirror MySQL است و مسیر معمول جست‌وجو از آن استفاده می‌کند. پس از migration، `build_reference_index` باید در همان محیط هدف اجرا شود؛ دستور خودکار startup نیست. [ساخت، ادامه و تطبیق ایندکس آماده](27-smart-search-preprocessing.fa.md). migration دوم روی همین بندها GIN واژگانی می‌سازد و به استخراج دوبارهٔ نسل آماده نیاز ندارد؛ [فاز دو](28-smart-search-lexical.fa.md).
+
 ### `migrate_uptodate_to_mysql`
 
 نسخهٔ SQLite محلی را به MySQL که `UPTODATE_MYSQL_URL` نشان می‌دهد کپی می‌کند. یک بار بعد از ساخت MySQL، و دوباره هر بار که نسخهٔ محلی به‌روز شد اجرا می‌شود. پیشرفت هر جدول در یک فایل JSON نگه داشته می‌شود؛ اگر ارتباط قطع شد، همان دستور را دوباره اجرا کنید.

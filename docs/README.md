@@ -34,7 +34,14 @@
 | ۲۲ | [22-pubchem-sar-research.fa.md](22-pubchem-sar-research.fa.md) | نتیجهٔ بررسی SAR، دادهٔ قابل دریافت و مرز امکانات هنوز پیاده‌سازی‌نشده | مالک پروژه، مسئول داده، توسعه‌دهنده |
 | ۲۳ | [23-lexicomp-translation-cost.fa.md](23-lexicomp-translation-cost.fa.md) | منبع خواندن Lexicomp، حجم دو ستون و برآورد توکن و هزینهٔ ترجمه | مالک پروژه، مسئول داده |
 | ۲۴ | [24-offline-smart-search-removal.fa.md](24-offline-smart-search-removal.fa.md) | حذف پایلوت هوشمند آفلاین با حفظ کامل جست‌وجوی فعال و tagging | توسعه‌دهنده، مسئول انتشار |
-| ۲۵ | [25-reference-chat-lab.fa.md](25-reference-chat-lab.fa.md) | چت فقط با Luna روی UpToDate، نمایش روند عنوان‌ها، زیربخش‌ها و بندها، همان جست‌وجوی معمول با tagging و ارجاع مستقیم به بند منبع | مالک پروژه، توسعه‌دهنده |
+| ۲۵ | [25-reference-chat-lab.fa.md](25-reference-chat-lab.fa.md) | سرچ هوشمند UpToDate با مدل و ارائه‌دهندهٔ قابل تنظیم، روند جست‌وجو و ارجاع مستقیم به بند منبع | مالک پروژه، توسعه‌دهنده |
+| ۲۶ | [26-smart-search-phase0.fa.md](26-smart-search-phase0.fa.md) | فاز صفر بدون بردارسازی: مجموعهٔ ۱۰۰ سؤال، زمان‌سنجی، اجرای محدود، تطبیق ارجاع و بازبینی پاسخ | مالک پروژه، توسعه‌دهنده |
+| ۲۷ | [27-smart-search-preprocessing.fa.md](27-smart-search-preprocessing.fa.md) | فاز یک: ذخیرهٔ نسخه‌دار مقاله، سلسله‌مراتب بخش و بندها؛ ساخت، ادامه، بررسی و راه‌اندازی روی سرور | مالک پروژه، توسعه‌دهنده |
+| ۲۸ | [28-smart-search-lexical.fa.md](28-smart-search-lexical.fa.md) | فاز دو: رتبه‌بندی منظور سؤال، ایندکس واژگانی بندها و محدودسازی متن ورودی مدل؛ استقرار و ارزیابی | مالک پروژه، توسعه‌دهنده |
+| ۲۹ | [29-smart-search-local-selection.fa.md](29-smart-search-local-selection.fa.md) | فاز سه: انتخاب مستقیم بندها روی سرور، مسیر معمول سه فراخوانی، نمایش بخش‌ها و تنظیم برگشت | مالک پروژه، توسعه‌دهنده |
+| ۳۰ | [30-smart-search-cache-runtime.fa.md](30-smart-search-cache-runtime.fa.md) | فاز چهار: کش خصوصی پاسخ معتبر، اتصال پایدار HTTPS، بودجهٔ اجرا و بررسی cold/hit | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
+| ۳۱ | [31-smart-search-release-evaluation.fa.md](31-smart-search-release-evaluation.fa.md) | فاز پنج: آزمون کامل، بار واقعی، زمان نمایش، بازبینی خصوصی و شرط انتشار | مالک پروژه، بازبین، مسئول انتشار |
+| ۳۲ | [32-smart-search-first-line-regimens.fa.md](32-smart-search-first-line-regimens.fa.md) | اطلاعات مصرف دارو در پاسخ خط اول، شواهد مکمل و کنترل کفایت | مالک پروژه، بازبین، توسعه‌دهنده |
 | — | [search/README.md](search/README.md) | مسیر جست‌وجوی فعلی اپ؛ tagging، بستهٔ آفلاین و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
 
 ## آرشیو طراحی رابط

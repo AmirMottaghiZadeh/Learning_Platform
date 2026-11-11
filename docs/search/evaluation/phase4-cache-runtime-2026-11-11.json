@@ -1,0 +1,186 @@
+{
+  "schema": 1,
+  "kind": "phase4_cache_runtime_diagnostic",
+  "scope": "direct_service_ephemeral_account_not_browser_or_load_slo",
+  "configuration": {
+    "model": "gpt-6-luna",
+    "reasoning_effort": "none",
+    "http_pool_enabled": true,
+    "total_timeout_seconds": 18.0,
+    "max_provider_requests": 12,
+    "code_digest": "c96aa0fb437c4891a2aed7ea37735e8b4776e7be62742b5174d7f54f91e97a7c",
+    "cache_ttl_seconds": 300,
+    "source_version": "1"
+  },
+  "cases": [
+    {
+      "case_id": "drug-aripiprazole-adverse",
+      "cold": {
+        "status": "complete",
+        "error_code": null,
+        "server_elapsed_ms": 9877.797,
+        "response_cache": "miss",
+        "provider_requests": 3,
+        "known_usage": {
+          "prompt_tokens": 1850,
+          "completion_tokens": 166,
+          "total_tokens": 2016
+        },
+        "unknown_usage_requests": 0,
+        "reused_connections": 2,
+        "assessment": {
+          "machine_complete": true,
+          "citation_integrity": true,
+          "expected_sources_matched": true,
+          "source_matches": [
+            true
+          ],
+          "abstained": false,
+          "citation_count": 1,
+          "clinical_review": "pending",
+          "correct_and_sufficient": null
+        }
+      },
+      "warm": {
+        "status": "complete",
+        "error_code": null,
+        "server_elapsed_ms": 16.008,
+        "response_cache": "hit",
+        "provider_requests": 0,
+        "known_usage": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0
+        },
+        "unknown_usage_requests": 0,
+        "reused_connections": 0,
+        "assessment": {
+          "machine_complete": true,
+          "citation_integrity": true,
+          "expected_sources_matched": true,
+          "source_matches": [
+            true
+          ],
+          "abstained": false,
+          "citation_count": 1,
+          "clinical_review": "pending",
+          "correct_and_sufficient": null
+        }
+      }
+    },
+    {
+      "case_id": "topic-enuresis-treatment",
+      "cold": {
+        "status": "complete",
+        "error_code": null,
+        "server_elapsed_ms": 12463.978,
+        "response_cache": "miss",
+        "provider_requests": 3,
+        "known_usage": {
+          "prompt_tokens": 2391,
+          "completion_tokens": 303,
+          "total_tokens": 2694
+        },
+        "unknown_usage_requests": 0,
+        "reused_connections": 3,
+        "assessment": {
+          "machine_complete": true,
+          "citation_integrity": true,
+          "expected_sources_matched": true,
+          "source_matches": [
+            true
+          ],
+          "abstained": false,
+          "citation_count": 3,
+          "clinical_review": "pending",
+          "correct_and_sufficient": null
+        }
+      },
+      "warm": {
+        "status": "complete",
+        "error_code": null,
+        "server_elapsed_ms": 17.865,
+        "response_cache": "hit",
+        "provider_requests": 0,
+        "known_usage": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0
+        },
+        "unknown_usage_requests": 0,
+        "reused_connections": 0,
+        "assessment": {
+          "machine_complete": true,
+          "citation_integrity": true,
+          "expected_sources_matched": true,
+          "source_matches": [
+            true
+          ],
+          "abstained": false,
+          "citation_count": 3,
+          "clinical_review": "pending",
+          "correct_and_sufficient": null
+        }
+      }
+    },
+    {
+      "case_id": "topic-psoriasis-first-line",
+      "cold": {
+        "status": "complete",
+        "error_code": null,
+        "server_elapsed_ms": 11659.003,
+        "response_cache": "miss",
+        "provider_requests": 3,
+        "known_usage": {
+          "prompt_tokens": 2067,
+          "completion_tokens": 193,
+          "total_tokens": 2260
+        },
+        "unknown_usage_requests": 0,
+        "reused_connections": 3,
+        "assessment": {
+          "machine_complete": true,
+          "citation_integrity": true,
+          "expected_sources_matched": true,
+          "source_matches": [
+            true
+          ],
+          "abstained": false,
+          "citation_count": 2,
+          "clinical_review": "pending",
+          "correct_and_sufficient": null
+        }
+      },
+      "warm": {
+        "status": "complete",
+        "error_code": null,
+        "server_elapsed_ms": 15.233,
+        "response_cache": "hit",
+        "provider_requests": 0,
+        "known_usage": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0
+        },
+        "unknown_usage_requests": 0,
+        "reused_connections": 0,
+        "assessment": {
+          "machine_complete": true,
+          "citation_integrity": true,
+          "expected_sources_matched": true,
+          "source_matches": [
+            true
+          ],
+          "abstained": false,
+          "citation_count": 2,
+          "clinical_review": "pending",
+          "correct_and_sufficient": null
+        }
+      }
+    }
+  ],
+  "provider_requests": 9,
+  "budget_exhausted": false,
+  "clinical_quality_assessed": false,
+  "release_slo_verified": false
+}

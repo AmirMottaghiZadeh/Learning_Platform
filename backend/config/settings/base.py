@@ -148,6 +148,13 @@ CACHES = {
     },
     "throttle": _throttle_cache,
 }
+# Answer caching must not evict job leases or change authentication cache timeouts.
+_ai_lab_cache = {**_throttle_cache, "KEY_PREFIX": f"{CACHE_KEY_PREFIX}:ai-lab"}
+if _ai_lab_cache["BACKEND"] == "django.core.cache.backends.redis.RedisCache":
+    _ai_lab_cache["OPTIONS"] = {"socket_connect_timeout": 0.3, "socket_timeout": 0.3, "retry_on_timeout": False}
+else:
+    _ai_lab_cache["LOCATION"] = f"{CACHE_LOCATION}-ai-lab"
+CACHES["ai_lab"] = _ai_lab_cache
 
 # Background processing (Celery + Redis). Broker stays optional for local
 # development, but production settings enforce a real broker.
@@ -537,6 +544,10 @@ SITE_EDITORIAL_NAME = config("SITE_EDITORIAL_NAME", default="تیم علمی ف�
 # Opt-in reference-only model experiment. Credentials are never sent to the app.
 AI_LAB_ENABLED = config("AI_LAB_ENABLED", default=False, cast=bool)
 AI_LAB_PREWARM_ENABLED = config("AI_LAB_PREWARM_ENABLED", default=False, cast=bool)
+# Prepared sources are read when a compatible, complete generation is active.
+AI_LAB_PREPROCESSED_MODE = config("AI_LAB_PREPROCESSED_MODE", default="prefer").strip().lower()
+AI_LAB_LEXICAL_ENABLED = config("AI_LAB_LEXICAL_ENABLED", default=True, cast=bool)
+AI_LAB_LOCAL_SELECTION_ENABLED = config("AI_LAB_LOCAL_SELECTION_ENABLED", default=True, cast=bool)
 AI_LAB_USER_IDS = {s.strip() for s in config("AI_LAB_USER_IDS", default="").split(",") if s.strip()}
 AI_LAB_CREDENTIALS_FILE = config("AI_LAB_CREDENTIALS_FILE", default="")
 # Generic server configuration; the Luna-named variables remain legacy fallbacks.
@@ -547,6 +558,18 @@ AI_LAB_LUNA_API_KEY = config("AI_LAB_LUNA_API_KEY", default="")
 AI_LAB_LUNA_REASONING_EFFORT = config("AI_LAB_LUNA_REASONING_EFFORT", default="low").strip().lower()
 AI_LAB_BASE_URL = config("AI_LAB_BASE_URL", default="https://api.gapgpt.app/v1").strip()
 AI_LAB_TIMEOUT_SECONDS = config("AI_LAB_TIMEOUT_SECONDS", default=90, cast=int)
+# Worker time includes queue delay; provider calls and retries share this budget.
+AI_LAB_TOTAL_TIMEOUT_SECONDS = config("AI_LAB_TOTAL_TIMEOUT_SECONDS", default=18, cast=float)
+AI_LAB_MIN_CALL_BUDGET_SECONDS = config("AI_LAB_MIN_CALL_BUDGET_SECONDS", default=1, cast=float)
+AI_LAB_MAX_PROVIDER_REQUESTS = config("AI_LAB_MAX_PROVIDER_REQUESTS", default=12, cast=int)
+AI_LAB_HTTP_POOL_ENABLED = config("AI_LAB_HTTP_POOL_ENABLED", default=True, cast=bool)
+AI_LAB_HTTP_KEEPALIVE_SECONDS = config("AI_LAB_HTTP_KEEPALIVE_SECONDS", default=30, cast=float)
+AI_LAB_RESPONSE_CACHE_ENABLED = config("AI_LAB_RESPONSE_CACHE_ENABLED", default=True, cast=bool)
+AI_LAB_RESPONSE_CACHE_TTL_SECONDS = config("AI_LAB_RESPONSE_CACHE_TTL_SECONDS", default=300, cast=int)
+AI_LAB_MAX_CONCURRENT_JOBS = config("AI_LAB_MAX_CONCURRENT_JOBS", default=2, cast=int)
+AI_LAB_ROLLOUT_PERCENT = config("AI_LAB_ROLLOUT_PERCENT", default=0, cast=int)
+AI_LAB_RELEASE_APPROVAL_FILE = config("AI_LAB_RELEASE_APPROVAL_FILE", default="")
+AI_LAB_FRONTEND_BUNDLE_SHA256 = config("AI_LAB_FRONTEND_BUNDLE_SHA256", default="").strip()
 # The site's own hosts (and www.<host>, which redirects to it) are always valid
 # hosts and trusted origins for its forms.
 _site_extra = [f"www.{h}" for h in SITE_HOSTS if not h.endswith("localhost")]

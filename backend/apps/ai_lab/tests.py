@@ -242,6 +242,7 @@ class ProviderTests(SimpleTestCase):
         self.assertNotIn("reasoning_effort", json.loads(response.open.call_args.args[0].data))
 
 
+@override_settings(AI_LAB_LOCAL_SELECTION_ENABLED=False)
 class GroundingTests(SimpleTestCase):
     def setUp(self):
         network = patch.object(provider, "build_opener", side_effect=AssertionError("Unexpected live provider call"))
@@ -286,6 +287,13 @@ class GroundingTests(SimpleTestCase):
         self.assertEqual([json.loads(call.args[0].data)["model"] for call in calls], ["configured-model"] * 4)
         self.assertTrue(result["stages"])
         self.assertTrue(all(stage["model"] == "configured-model" for stage in result["stages"]))
+        metrics = result["metrics"]
+        self.assertEqual(metrics["provider_requests"], 4)
+        self.assertTrue(metrics["machine_answer_complete"])
+        self.assertLessEqual(metrics["first_titles_ms"], metrics["first_sections_ms"])
+        self.assertLessEqual(metrics["first_sections_ms"], metrics["first_citation_ms"])
+        self.assertLessEqual(metrics["first_citation_ms"], metrics["final_answer_ms"])
+        self.assertNotIn(QUOTE, json.dumps(metrics))
 
     def test_unknown_id_modified_quote_or_non_persian_summary_is_removed(self):
         good = self.item()
@@ -455,7 +463,7 @@ class GroundingTests(SimpleTestCase):
     def test_drug_directory_is_followed_before_patient_or_general_topics_without_extra_model_call(self, chat, search, read):
         search.return_value = [{"id": "112290", "title": "Aripiprazole formulations: Drug information"},
                                {"id": "14688", "title": "Unipolar depression in adults: Treatment"}]
-        def source(ids, request, audit):
+        def source(ids, request, audit, *, context=None):
             if ids == ["112290"]:
                 audit["related_topics"] = [{"id": "8786", "title": "Aripiprazole (Abilify)"}]
                 return []
@@ -524,6 +532,7 @@ class WarmupTests(SimpleTestCase):
         opener.assert_not_called()
 
 
+@override_settings(AI_LAB_PREPROCESSED_MODE="off")
 class CanonicalSearchTests(SimpleTestCase):
     def test_drug_priority_is_stable_and_pediatric_questions_keep_pediatric_information_first(self):
         articles = [{"id": "general", "title": "Depression in adults"},
@@ -702,6 +711,10 @@ class ApiTests(TestCase):
         views._run(job, self.admin, {**self.payload, "history": []}, "ai-lab:slot:0")
         result = cache.get(f"ai-lab:job:{job}")
         self.assertEqual(result["error"], {"code": "PROVIDER_HTTP_ERROR", "provider_status": 500, "model": "gpt-6-luna"})
+        self.assertEqual(result["metrics"]["outcome"], "failed")
+        self.assertIsNone(result["metrics"]["final_answer_ms"])
+        public = self.client.get(f"/api/v1/ai-lab/results/{job}/").data
+        self.assertEqual(public["metrics"], result["metrics"])
         self.assertIsNone(cache.get("ai-lab:slot:0"))
         self.assertIsNone(cache.get(f"ai-lab:user:{self.admin.pk}"))
 
