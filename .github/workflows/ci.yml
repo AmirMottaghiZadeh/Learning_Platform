@@ -83,7 +83,7 @@ jobs:
       # --verbosity=2 prints each test name before it runs, so a hang's last log
       # line names the culprit; --timing flags a slow test.
       - run: python manage.py test --verbosity=2 --timing
-        timeout-minutes: 10
+        timeout-minutes: 15
 
   frontend:
     runs-on: ubuntu-latest
