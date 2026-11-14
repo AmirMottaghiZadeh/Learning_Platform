@@ -14,12 +14,14 @@ from unittest import skipUnless
 class ContainerRoleTests(SimpleTestCase):
     def run_entrypoint(self, role, concurrency="2"):
         with TemporaryDirectory() as directory:
-            for command in ("python","celery"):
+            for command in ("python","celery","uvicorn","gunicorn"):
                 file=Path(directory)/command
                 file.write_text('#!/bin/sh\nprintf "%s\\n" "'+command+' $*"\n')
                 file.chmod(0o700)
             env={**os.environ,"PATH":directory+os.pathsep+os.environ["PATH"],
-                 "SERVICE_ROLE":role,"AI_LAB_WORKER_CONCURRENCY":concurrency}
+                 "SERVICE_ROLE":role,"AI_LAB_WORKER_CONCURRENCY":concurrency,
+                 "APP_SERVER":"asgi", "REFERENCE_SEARCH_DATABASE_URL":"fixture",
+                 "AI_LAB_FEEDBACK_DATABASE_URL":"fixture"}
             return subprocess.run([shutil.which("bash"),str(settings.BASE_DIR/"docker-start.sh")],
                 env=env,capture_output=True,text=True,timeout=5)
 
@@ -32,12 +34,30 @@ class ContainerRoleTests(SimpleTestCase):
 
     def test_invalid_role_or_concurrency_stops_before_migrations_or_worker(self):
         for role,concurrency in [("invalid","2"),("ai-search-worker","0"),("ai-search-worker","100"),
-                                 ("ai-search-worker","2; exit 0")]:
+                                 ("ai-search-worker","2; exit 0"), ("web-with-ai-worker","0"),
+                                 ("web-with-ai-worker","100"), ("web-with-ai-worker","2; exit 0")]:
             with self.subTest(role=role,concurrency=concurrency):
                 result=self.run_entrypoint(role,concurrency)
                 self.assertEqual(result.returncode,1)
                 self.assertNotIn("manage.py migrate",result.stdout)
                 self.assertNotIn("celery -A",result.stdout)
+
+    def test_combined_role_migrates_each_database_once_then_starts_manager(self):
+        result=self.run_entrypoint("web-with-ai-worker","1")
+        self.assertEqual(result.returncode,0,result.stderr)
+        for command in ("python manage.py migrate --no-input",
+                        "python manage.py migrate ai_feedback --database=ai_feedback --no-input",
+                        "python manage.py migrate --database=reference_search --no-input"):
+            self.assertEqual(result.stdout.splitlines().count(command),1)
+        self.assertIn("container_runtime.py",result.stdout)
+        self.assertNotIn("celery -A",result.stdout)
+
+    def test_web_role_still_starts_asgi_without_embedded_workers(self):
+        result=self.run_entrypoint("web")
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertIn("uvicorn config.asgi:create_application --factory",result.stdout)
+        self.assertNotIn("container_runtime.py",result.stdout)
+        self.assertNotIn("celery -A",result.stdout)
 
     def run_redis(self, password):
         with TemporaryDirectory() as directory:

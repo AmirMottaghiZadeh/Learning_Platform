@@ -17,16 +17,25 @@ python -c "import django, sys; print('[docker-start] django', django.get_version
     exit 1
 }
 
+validate_concurrency() {
+    if ! [[ "$concurrency" =~ ^[1-9][0-9]?$ ]] || [ "$concurrency" -gt 32 ]; then
+        echo "[docker-start] invalid AI_LAB_WORKER_CONCURRENCY"
+        exit 1
+    fi
+}
+
 # Runflare can deploy this same image as a separate queue consumer. A worker
 # never races the web/release service by applying migrations on its own boot.
 case "${SERVICE_ROLE:-web}" in
     web) ;;
+    web-with-ai-worker)
+        concurrency="${AI_LAB_WORKER_CONCURRENCY:-1}"
+        validate_concurrency
+        export AI_LAB_WORKER_CONCURRENCY="$concurrency"
+        ;;
     ai-search-worker)
         concurrency="${AI_LAB_WORKER_CONCURRENCY:-2}"
-        if ! [[ "$concurrency" =~ ^[1-9][0-9]?$ ]] || [ "$concurrency" -gt 32 ]; then
-            echo "[docker-start] invalid AI_LAB_WORKER_CONCURRENCY"
-            exit 1
-        fi
+        validate_concurrency
         echo "[docker-start] starting dedicated ai_search worker; concurrency=$concurrency"
         exec celery -A config worker -Q ai_search -c "$concurrency" \
             --prefetch-multiplier 1 --loglevel INFO
@@ -71,13 +80,7 @@ run python manage.py seed_website
 # has no manifest -> admin / browsable API / Swagger UI 500 without this).
 run python manage.py collectstatic --no-input
 
-if [ "${APP_SERVER:-asgi}" = "asgi" ]; then
-    echo "[docker-start] starting ASGI on 0.0.0.0:${PORT:-8000}"
-    exec uvicorn config.asgi:create_application --factory \
-        --host 0.0.0.0 --port "${PORT:-8000}" \
-        --workers "${WEB_CONCURRENCY:-2}" --no-access-log --timeout-keep-alive 5
+if [ "${SERVICE_ROLE:-web}" = "web-with-ai-worker" ]; then
+    exec python "$(dirname "$0")/container_runtime.py"
 fi
-echo "[docker-start] starting gunicorn on 0.0.0.0:${PORT:-8000}"
-exec gunicorn config.wsgi:application \
-    --config gunicorn.conf.py \
-    --bind "0.0.0.0:${PORT:-8000}"
+exec bash "$(dirname "$0")/web-start.sh"

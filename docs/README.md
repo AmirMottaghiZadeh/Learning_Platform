@@ -56,6 +56,7 @@
 | ۴۴ | [44-smart-search-connected-evidence.fa.md](44-smart-search-connected-evidence.fa.md) | تکمیل همان زیربخش، پیوند مستقیم دارونامه/جدول، حفظ زمینه و آزمون منابع | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | ۴۵ | [45-smart-search-question-understanding.fa.md](45-smart-search-question-understanding.fa.md) | فهم یکپارچهٔ سناریوی بالینی، اهداف دارویی/بیماری/تداخل، تگ چند موجودیت و بررسی هدف پاسخ | مالک پروژه، توسعه‌دهنده، بازبین |
 | ۴۶ | [46-smart-search-runflare-deployment.fa.md](46-smart-search-runflare-deployment.fa.md) | استقرار Docker در رانفلر، PostgreSQL/Redis/worker، snapshot مشترک و انتقال بدون API بردارها | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
+| ۴۷ | [47-smart-search-server-step-by-step.fa.md](47-smart-search-server-step-by-step.fa.md) | راهنمای واحد اجرای سرور با وضعیت فعلی، رفع کرش رمز، محل هر دستور و ادامه تا انتقال/آزمون | مالک پروژه، مسئول استقرار |
 | — | [search/README.md](search/README.md) | مسیر جست‌وجوی فعلی اپ؛ tagging، بستهٔ آفلاین و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
 
 ## آرشیو طراحی رابط

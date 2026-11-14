@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client libexpat1 libxrender1 libxext6 libx11-6 libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
+    && apt-get install -y --no-install-recommends tini postgresql-client libexpat1 libxrender1 libxext6 libx11-6 libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt .
@@ -26,11 +26,13 @@ COPY backend/ .
 # The executable bit can be lost depending on how the platform fetches the repo
 # (a zip archive drops Unix modes); set it here and invoke via bash so the entry
 # point runs regardless.
-RUN chmod +x docker-start.sh release.sh build.sh
+RUN chmod +x docker-start.sh web-start.sh release.sh build.sh
 
 RUN DJANGO_SETTINGS_MODULE=config.settings.local python manage.py collectstatic --no-input
 
 EXPOSE 8000
 
-# Runs migrations + ATC reference (both idempotent) on boot, then gunicorn.
+# Reap orphaned child processes and forward termination to the runtime manager.
+ENTRYPOINT ["/usr/bin/tini", "--"]
+# Run migrations once, then the selected web/worker service role.
 CMD ["bash", "docker-start.sh"]

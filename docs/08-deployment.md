@@ -1,12 +1,14 @@
 # ۸. دیپلوی
 
-راهنمای مرحله‌به‌مرحلهٔ کانتینرهای PostgreSQL/pgvector، Redis و worker سرچ هوشمند، انتقال بدون API بردارهای موجود و کنترل snapshot مشترک در [سند ۴۶](46-smart-search-runflare-deployment.fa.md) است. این زیرساخت افزوده به سرویس‌های فعلی است؛ دیتابیس کاربران با دیتابیس لوکال جایگزین نمی‌شود.
+راهنمای واحد اجرای سرچ هوشمند از وضعیت فعلی تا رفع کرش اتصال، PostgreSQL/pgvector، Redis، worker و انتقال بردارها در [سند ۴۷](47-smart-search-server-step-by-step.fa.md) است. [سند ۴۶](46-smart-search-runflare-deployment.fa.md) یادداشت‌های فنی آماده‌سازی را نگه می‌دارد. دیتابیس کاربران با دیتابیس لوکال جایگزین نمی‌شود.
+
+برای اجرای worker کنار Django در همان کانتینر، نقش `SERVICE_ROLE=web-with-ai-worker` اضافه شده است. راه‌اندازی اولیه یک بار انجام می‌شود؛ سپس مدیر پردازهٔ `container_runtime.py` وب، worker صف `ai_search` و worker وظایف کوتاه `default,events,maintenance` را اجرا می‌کند. Tini مسئول انتقال سیگنال و جمع‌کردن فرزندان یتیم است. خروج غیرمنتظرهٔ هر پردازه، بقیه را متوقف می‌کند و کانتینر ناموفق خارج می‌شود. تنظیم‌های کامل و آزمون واقعی صف در بخش ۷ سند ۴۷ آمده‌اند؛ این نقش باید پس از انتشار کد جدید انتخاب شود.
 
 ## سرویس‌های رانفلر
 
 | سرویس | منبع | چه چیزی |
 |---|---|---|
-| بک‌اند | شاخهٔ `main`، فایل `Dockerfile` ریشهٔ مخزن | Django + Gunicorn؛ دامنه‌های `api.pharmenta.ir`، `pharmenta.ir`، `www.pharmenta.ir` |
+| بک‌اند | شاخهٔ `main`، فایل `Dockerfile` ریشهٔ مخزن | Django با ASGI یا Gunicorn و workerهای اختیاری در حالت ترکیبی؛ دامنه‌های `api.pharmenta.ir`، `pharmenta.ir`، `www.pharmenta.ir` |
 | وب‌اپ | شاخهٔ `deploy-web` (ساختهٔ خودکار GitHub Actions) | nginx با خروجی وب Expo؛ دامنهٔ `app.pharmenta.ir` |
 | Postgres | سرویس دیتابیس رانفلر | دیتابیس اصلی |
 | MySQL | — | نسخهٔ کپی UpToDate (`UPTODATE_MYSQL_URL`) |
@@ -15,6 +17,8 @@
 | DNS | DNS رانفلر | رکوردهای `pharmenta.ir` |
 
 رانفلر سرویس را از `Dockerfile` ریشهٔ شاخهٔ انتخاب‌شده می‌سازد و نمی‌شود فایل دیگری را به آن معرفی کرد. برای همین وب‌اپ شاخهٔ جدای `deploy-web` دارد که در آن `Dockerfile.frontend` جای `Dockerfile` نشسته است.
+
+برای دیتابیس برداری نیز شاخهٔ مستقل `deploy-reference-db` با Dockerfile در ریشه آماده شده است؛ این شاخه PostgreSQL را روی پورت 8000 انتخاب‌شده در پنل اجرا می‌کند و Dockerfile بک‌اند در main را عوض نمی‌کند. تنظیم‌های آزمایشی متناسب با بودجهٔ ۵ GiB و روش اتصال شاخه در [سند ۴۶](46-smart-search-runflare-deployment.fa.md) ثبت شده‌اند.
 
 شروع خودکار انتشار بک‌اند بعد از push وابسته به اتصال معتبر GitHub و فعال بودن دریافت خودکار در **همان سرویس بک‌اند** رانفلر است. workflow گیت‌هاب `Update deploy-web branch` تنها شاخهٔ وب‌اپ را آماده می‌کند؛ هیچ دستور ارسال یا شروع انتشار بک‌اند در آن وجود ندارد. در CI کامیت 9da9c2d، Dockerfile بک‌اند build نمی‌شد. پس از اصلاح libexpat1، job مستقل backend-image برای ساخت تصویر اضافه شده است؛ موفقیت CI همچنان اثبات rollout در رانفلر نیست.
 
@@ -27,7 +31,7 @@ flowchart TD
   T -- خیر --> M[انتخاب و آغاز انتشار کامیت از پنل رانفلر]
   M --> B
   B --> S[docker-start.sh: migrate و بقیه]
-  S --> G[Gunicorn بالا می‌آید]
+  S --> G[وب و workerها مطابق SERVICE_ROLE بالا می‌آیند]
   P --> C{frontend/ تغییر کرده؟}
   C -- بله --> A[GitHub Actions: deploy-web-branch.yml]
   A --> D[شاخهٔ deploy-web از نو ساخته و force-push می‌شود]
@@ -38,13 +42,13 @@ flowchart TD
 ### بک‌اند
 
 `Dockerfile`:
-1. ایمیج پایه `python:3.11-slim` به‌علاوهٔ `postgresql-client` (برای `pg_dump`) و کتابخانه‌های RDKit: `libexpat1`، `libxrender1`، `libxext6` و `libx11-6`.
+1. ایمیج پایه `python:3.11-slim` به‌علاوهٔ Tini برای مدیریت فرزندان پردازه‌ها، `postgresql-client` (برای `pg_dump`) و کتابخانه‌های RDKit: `libexpat1`، `libxrender1`، `libxext6` و `libx11-6`.
 2. نصب `backend/requirements.txt`.
 3. کپی `backend/`.
 4. `collectstatic` زیر تنظیمات local.
 5. متغیرهای ایمیج: `DJANGO_SETTINGS_MODULE=config.settings.production`، `SECURE_SSL_REDIRECT=False` و `SECURE_HSTS_SECONDS=0`.
 
-هنگام شروع کانتینر، `backend/docker-start.sh` به ترتیب `migrate`، `ensure_uptodate_search_index`، `createcachetable`، `load_atc_reference`، `seed_website` و `collectstatic` را زیر تنظیمات production اجرا می‌کند و بعد Gunicorn را روی `0.0.0.0:$PORT` (پیش‌فرض 8000) بالا می‌آورد. هر قدم پیش از اجرا در لاگ اعلام می‌شود (`[docker-start] >>> ...`). اگر قدمی شکست بخورد، کانتینر با همان کد خطا خارج می‌شود و آخرین سطر لاگ قدم مقصر را نشان می‌دهد.
+هنگام شروع نقش وب، `backend/docker-start.sh` به ترتیب `migrate` (و migration اتصال‌های جدا در صورت تنظیم)، `ensure_uptodate_search_index`، `createcachetable`، `load_atc_reference`، `seed_website` و `collectstatic` را زیر تنظیمات production اجرا می‌کند. سپس `web-start.sh`، با پیش‌فرض ASGI، وب را روی `0.0.0.0:$PORT` (پیش‌فرض 8000) بالا می‌آورد. در نقش `web-with-ai-worker`، مدیر پردازه‌ها همین وب و workerها را پس از آماده‌سازی مشترک اجرا می‌کند. هر قدم پیش از اجرا در لاگ اعلام می‌شود (`[docker-start] >>> ...`). اگر قدمی شکست بخورد، کانتینر با همان کد خطا خارج می‌شود و آخرین سطر لاگ قدم مقصر را نشان می‌دهد.
 
 ### وب‌اپ
 

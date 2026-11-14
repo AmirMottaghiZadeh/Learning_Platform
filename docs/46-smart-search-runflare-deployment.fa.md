@@ -1,28 +1,36 @@
 # استقرار کانتینری سرچ هوشمند در رانفلر
 
+> **برای اجرای مرحله‌به‌مرحله فقط [راهنمای واحد ۴۷](47-smart-search-server-step-by-step.fa.md) را دنبال کنید.** این سند یادداشت‌های فنی و گزارش‌های متوالی آماده‌سازی را نگه می‌دارد. ترتیب اصلاح احراز هویت و رفع کرش startup در سند ۴۷ جایگزین مسیر قبلی ثبت URL پیش از آزمون رمز شده است.
+
 تاریخ: ۲۰۲۶-۱۱-۱۴. بک‌اند و فرانت‌اند فعلی حفظ می‌شوند. ابزار انتقال بردار اکنون در کد وجود دارد؛ برخلاف snapshot قدیمی [سند ۳۹](39-smart-search-status-deployment.fa.md)، انتقال دیگر به restore دیتابیس لوکال روی اطلاعات کاربران نیاز ندارد. اجرای زیرساخت و انتقال کامل روی رانفلر هنوز انجام نشده‌اند.
 
 ## ۱. سرویس‌ها
 
 برای محیط PaaS فعلی، سرویس‌های جدا در همان پروژهٔ رانفلر پیشنهاد می‌شود. مستندات رسمیِ در دسترس، اجرای Dockerfile و شبکهٔ خصوصی را توضیح می‌دهند؛ اجرای مستقیم Compose در این حساب تأیید نشده است. `docker compose` را داخل ترمینال کانتینر بک‌اند اجرا نکنید. Compose روی VPS دارای Docker Engine انتخاب دیگری است و با سرویس فعلی رانفلر یکسان نیست.
 
-جدول زیر مسیر فایل‌های آماده در مخزن را نشان می‌دهد. انتخاب Dockerfile غیر از ریشه، گزینهٔ build context و اتصال دیسک مشترک باید با امکانات واقعی پنل حساب تطبیق داده شوند؛ به پنل این حساب دسترسی مستقیم نداشته‌ایم. اگر پنل Dockerfile ریشه را ثابت می‌خواهد، برای سرویس DB یک پوشه/مخزن مستقل با محتوای همان Dockerfile به نام `Dockerfile` لازم است؛ برای Redis، Dockerfile و script باید با تنظیم COPY متناسب در همان context قرار بگیرند. تا مشخص‌شدن روش build پنل، سرویس جدید را اشتباهاً با Dockerfile وب راه‌اندازی نکنید.
+**اصلاح مطابق تنظیم فعلی حساب:** همان محدودیت Dockerfile ریشه که قبلاً برای شاخهٔ `deploy-web` ثبت شده بود، اینجا نیز مبناست. برای دیتابیس، شاخهٔ مستقل `deploy-reference-db` استفاده می‌شود که فقط `Dockerfile` در ریشه دارد و از template این مخزن ساخته می‌شود. سرویس دیتابیس باید آن شاخه را دنبال کند. در `main`، Dockerfile ریشه همچنان برای بک‌اند است. انتخاب آن برای سرویس دیتابیس، برنامهٔ بک‌اند را می‌سازد. اتصال دیسک مشترک و شبکهٔ خصوصی باید در پنل حساب نیز کنترل شوند.
+
+شاخهٔ `deploy-reference-db` ابتدا محلی آماده می‌شود؛ پس از push مالک، در فهرست شاخه‌های GitHub/رانفلر قابل انتخاب است. تغییر template در main به‌تنهایی شاخهٔ مستقل را به‌روز نمی‌کند. تغییرهای بعدی باید آگاهانه در شاخهٔ استقرار نیز ثبت شوند. برای Redis، تا رسیدن به مرحلهٔ آن سرویس، template آماده است و روش مشابه آماده‌کردن شاخه قابل استفاده است.
+
+شاخهٔ محلیِ آماده‌شده در این مرحله `212df0a` است و تنها فایلش `Dockerfile` است؛ Dockerfile بک‌اند در main تغییر نکرده است. برای انتشار خود شاخه، از لپ‌تاپ و ریشهٔ مخزن `git push origin deploy-reference-db` اجرا می‌شود. این کار، push شاخهٔ main یا انتقال دیتابیس نیست. مطابق درخواست مالک، تنظیم secrets و متغیرهای محیطی پس از انتخاب شاخه/پورت در پنل، مرحله‌به‌مرحله انجام می‌شود.
 
 | سرویس | Dockerfile از ریشهٔ همین مخزن | تنظیم اصلی | شبکه / فضای پایدار |
 |---|---|---|---|
 | بک‌اند موجود | `Dockerfile` | `SERVICE_ROLE=web` | پورت وب فعلی، همان دیتابیس کاربران |
 | worker جدید | همان `Dockerfile` و همان کامیت بک‌اند | `SERVICE_ROLE=ai-search-worker`، `AI_LAB_WORKER_CONCURRENCY=2` | مصرف صف `ai_search`؛ بدون دامنهٔ عمومی |
-| دیتابیس برداری جدید | `deploy/runflare/Dockerfile.reference-db` | PostgreSQL 17 + pgvector | پورت خصوصی 5432؛ دیسک `/var/lib/postgresql/data` |
+| دیتابیس برداری جدید | template: `deploy/runflare/Dockerfile.reference-db`؛ ریشهٔ شاخهٔ `deploy-reference-db` | PostgreSQL 17 + pgvector | پورت خصوصی 8000؛ دیسک `/var/lib/postgresql/data` |
 | Redis جدید | `deploy/runflare/Dockerfile.redis` | رمز زمان اجرا، AOF و `noeviction` | پورت خصوصی 6379؛ دیسک `/data` |
 | فرانت‌اند موجود | همان روند انتشار فعلی | نشانی API سرور | فعلاً تغییر زیرساخت ندارد |
 
-مقدار اولیهٔ پیشنهادی برای آزمایش: دیتابیس برداری ۴ vCPU، رم ۸ GiB و دیسک پایدار ۵۰ GiB؛ worker یک vCPU و رم ۲ GiB؛ Redis رم ۱ GiB و دیسک ۵ GiB. این‌ها تخمین شروع بر اساس اندازهٔ لوکال‌اند، نه تأیید ظرفیت ۱۰۰ کاربر یا حداقل قطعی. فضای PostgreSQL باید داده، HNSW، WAL و ساخت بعدی را پوشش دهد؛ HNSW لوکال به‌تنهایی حدود ۵٫۲ GB بود. فضای دیتابیس اصلیِ متن آماده و فایل‌های snapshot جداست. سرویس Redis این مخزن سقف دادهٔ ۵۱۲ MiB دارد؛ مصرف و اوج حافظهٔ AOF باید پایش شوند.
+**اصلاح برآورد منابع:** ۸ GiB حداقل لازم نبود و ظرفیت سرور نیز با آن عدد آزموده نشده بود. با فرض اینکه حدود ۵ GiB برای سرویس‌های جدید آزاد است، می‌توان آزمایشی از ۳ GiB برای دیتابیس، ۱ GiB برای worker تک‌پردازه و ۱ GiB برای Redis شروع کرد. این تخصیص، بودجهٔ آزمایشی است؛ پذیرش بار و سرعت باید اندازه‌گیری شوند. اگر این ۵ GiB شامل بک‌اند و فرانت‌اند موجود هم باشد، مصرف فعلی آن‌ها ابتدا از بودجه کم شود. فرکانس CPU به‌تنهایی تعداد vCPU/سهم قابل استفاده را تعیین نمی‌کند.
+
+اندازهٔ index روی دیسک، حداقل RAM نیست. pgvector می‌تواند با حافظهٔ محدودتر بسازد، با هزینهٔ زمان بیشتر؛ [راهنمای رسمی ساخت HNSW](https://github.com/pgvector/pgvector#index-build-time). فضای PostgreSQL باید داده، HNSW، WAL و ساخت بعدی را پوشش دهد؛ برآورد دیسک ۵۰ GiB برای برنامه‌ریزی بود و HNSW لوکال به‌تنهایی حدود ۵٫۲ GB بود. فضای دیتابیس اصلیِ متن آماده و فایل‌های snapshot جداست. سرویس Redis این مخزن سقف دادهٔ ۵۱۲ MiB دارد؛ مصرف و اوج حافظهٔ AOF باید پایش شوند.
 
 در رانفلر، برای DB/Redis از شبکهٔ خصوصی (`ClusterIP` در مستندات) و آدرس داخلی **واقعی پنل** استفاده کنید. نام سرویس در مثال‌ها تضمین DNS پلتفرم نیست؛ `localhost` از داخل worker به دیتابیسِ سرویس دیگری اشاره نمی‌کند. [راهنمای شبکهٔ رانفلر](https://runflare.com/docs/network/)، [دیسک پایدار](https://runflare.com/docs/add-disk-to-service/)، [ایمیج رسمی pgvector](https://github.com/pgvector/pgvector#docker).
 
 ## ۲. ساخت دیتابیس برداری
 
-یک سرویس Docker جدید با build context ریشهٔ مخزن و Dockerfile جدول بالا بسازید. نسخهٔ ایمیج را پس از نخستین استقرار موفق ثبت کنید؛ تغییر خودسرانهٔ major PostgreSQL روش ارتقا نیست.
+یک سرویس Docker جدید از همین مخزن، با شاخهٔ `deploy-reference-db` و پورت پنل `8000` بسازید. Dockerfile ریشهٔ همان شاخه، PostgreSQL را واقعاً با `postgres -p 8000` اجرا می‌کند و healthcheck نیز همان پورت را بررسی می‌کند. فقط انتخاب عدد 8000 در پنل، پورت پیش‌فرض PostgreSQL را تغییر نمی‌دهد. پروتکل این پورت PostgreSQL/TCP است؛ دامنه یا مسیریابی HTTP برای آن لازم نیست و اتصال خصوصی TCP باید قابل استفاده باشد. tag افزونه برای این سرویس جدید به `0.8.7-pg17` pin شده است؛ تغییر major PostgreSQL روش ارتقا نیست.
 
 متغیرهای سرویس:
 
@@ -36,11 +44,57 @@ POSTGRES_USER=pharmenta_reference
 در ترمینال همین سرویس جدید اجرا کنید:
 
 ```bash
-psql -U pharmenta_reference -d pharmenta_reference -c 'CREATE EXTENSION IF NOT EXISTS vector;'
-psql -U pharmenta_reference -d pharmenta_reference -c "SELECT extversion FROM pg_extension WHERE extname='vector';"
+psql -p 8000 -U pharmenta_reference -d pharmenta_reference -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+psql -p 8000 -U pharmenta_reference -d pharmenta_reference -c "SELECT extversion FROM pg_extension WHERE extname='vector';"
 ```
 
+اگر این مرحله با `database "pharmenta_reference" does not exist` روبه‌رو شد، سرور PostgreSQL پاسخ داده اما database منطقیِ مورد انتظار داخل آن موجود نیست؛ سرویس دیگری یا فایل آپلودی لازم نیست. ابتدا در **همان reference-db** نام‌های موجود را از دیتابیس مدیریتی ببینید:
+
+```bash
+psql -p 8000 -U pharmenta_reference -d postgres -c '\l'
+```
+
+فقط اگر `pharmenta_reference` در فهرست نبود، آن را داخل همین سرویس ایجاد کنید:
+
+```bash
+createdb -p 8000 -U pharmenta_reference pharmenta_reference
+```
+
+سپس دو دستور extension بالا را اجرا کنید. دیتابیس اصلی بک‌اند و سرویس PostgreSQL آن دست‌کاری نمی‌شوند. متغیرهای `POSTGRES_DB` و `POSTGRES_USER` فقط در initialization روی مسیر دادهٔ خالی دیتابیس/نقش را می‌سازند؛ تغییرشان پس از initialization، ایجاد خودکار مجدد انجام نمی‌دهد. مسیر داده برای رفع این خطا پاک یا reset نشود. [مرجع ایمیج PostgreSQL](https://hub.docker.com/_/postgres)، [مرجع createdb](https://www.postgresql.org/docs/17/app-createdb.html).
+
 آدرس و پورت داخلی را از پنل بردارید. `REFERENCE_SEARCH_DATABASE_URL` در بک‌اند و worker باید به **این دیتابیس جدید** اشاره کند. دیتابیس اصلی کاربران را جایگزین نکنید.
+
+در مرحلهٔ اتصال، در تنظیمات `reference-db` به **شبکه‌ها** بروید و شبکهٔ موجود `ClusterIP` را بررسی کنید؛ در این مسیر می‌توان `Port=8000` و `Target Port=8000` را یکسان تنظیم کرد. `Target Port` پورت واقعی PostgreSQL داخل کانتینر است؛ اتصال دیگر سرویس‌های همان پروژه از **نام شبکهٔ نمایش‌داده‌شده** و مقدار `Port` استفاده می‌کند، نه نام Pod و نه نام حدسی سرویس. اگر Port با Target Port متفاوت نگه داشته شد، URL اتصال باید Port شبکه را داشته باشد. زیردامنهٔ HTTP برای این اتصال لازم نیست. [مستند رسمی شبکهٔ رانفلر](https://docs.runflare.com/general/network-settings/).
+
+در خروجی گزارش‌شدهٔ مالک، ساخت database و نصب افزونه تأیید شد: `current_database=pharmenta_reference` و `extversion=0.8.7`. اتصال از بک‌اند، شبکهٔ داخلی و اتصال دیسک پایدار هنوز در این مرحله مستقلاً تأیید نشده‌اند؛ قبل از واردکردن URL اتصال، نام شبکه و پیش از انتقال حجیم، mount پایدار کنترل شود. رمز در گزارش یا گفتگو ثبت نمی‌شود.
+
+**گزارش بعدی مالک:** نام شبکهٔ داخلی `reference-db-xoc-service` است و اتصال دیسک پایدار به `/var/lib/postgresql/data` در پنل تأیید شده است. پیش از تغییر تنظیم اتصال بک‌اند، از ترمینال **سرویس بک‌اند اصلی** دسترسی شبکهٔ آن را بررسی کنید:
+
+```bash
+pg_isready -h reference-db-xoc-service -p 8000 -U pharmenta_reference -d pharmenta_reference -t 5
+```
+
+خروجی مورد انتظار `accepting connections` است. این بررسی رمز را نمی‌خواند و صحت احراز هویت را ثابت نمی‌کند؛ آزمون SQL از alias `reference_search` پس از تنظیم URL انجام می‌شود. پورت 8000 در این دستور، Port شبکهٔ توافق‌شده است؛ اگر Port پنل متفاوت است، ابتدا همان را تطبیق دهید. تنظیم جدید بک‌اند `REFERENCE_SEARCH_DATABASE_URL` خواهد بود و `DATABASE_URL` دیتابیس اصلی حفظ می‌شود. نام سرویس/دیسک گزارش مالک است؛ موفقیت اتصال از بک‌اند هنوز منتظر نتیجهٔ این آزمون است.
+
+**نتیجهٔ بعدی سرور:** اجرای دستور بالا از کانتینر بک‌اند، `reference-db-xoc-service:8000 - accepting connections` برگرداند؛ دسترسی شبکه تأیید شد. مرحلهٔ بعد ساخت secret مستقل `REFERENCE_SEARCH_DATABASE_URL` در سرویس بک‌اند است. مقدار آن از شکل زیر پیروی می‌کند؛ بخش رمز باید URL-encode شود:
+
+```text
+postgresql://pharmenta_reference:ENCODED_PASSWORD@reference-db-xoc-service:8000/pharmenta_reference
+```
+
+برای ساخت مقدار درست روی ترمینال خصوصی لپ‌تاپ، بدون ثبت رمز خام در history:
+
+```bash
+python3 -c 'from getpass import getpass; from urllib.parse import quote; print("postgresql://pharmenta_reference:" + quote(getpass("Reference DB password: "), safe="") + "@reference-db-xoc-service:8000/pharmenta_reference")'
+```
+
+رمز همان `POSTGRES_PASSWORD` سرویس reference-db است. خروجی این دستور حاوی رمز است و فقط باید در Secrets بک‌اند وارد شود، نه در گفتگو/گیت. `DATABASE_URL` قبلی حفظ می‌شود. پس از ذخیره و اجرای دوبارهٔ بک‌اند با کد دارای alias، آزمون احراز هویت/SQL از ترمینال بک‌اند:
+
+```bash
+python manage.py dbshell --database reference_search -- -c "SELECT current_database(), extversion FROM pg_extension WHERE extname='vector';"
+```
+
+خروجی مورد انتظار نام `pharmenta_reference` و نسخهٔ `0.8.7` است. این آزمون فقط‌خواندنی است و مقدار secret را چاپ نمی‌کند. موفقیت آن هنوز در سرور گزارش نشده است. دستور dbshell با همین آرگومان‌ها در محیط محلی بررسی شد؛ نتیجهٔ لوکال، تأیید احراز هویت سرور محسوب نمی‌شود.
 
 بازخورد نیز به `AI_LAB_FEEDBACK_DATABASE_URL` برای PostgreSQL جدا نیاز دارد. اگر از قبل وجود ندارد، آن را بسازید؛ حداقل نام database باید از اصلی و reference متفاوت باشد. database منطقی جدا می‌تواند روی یک PostgreSQL instance قرار بگیرد؛ این با instance فیزیکی مستقل تفاوت دارد. برای جداسازی فیزیکی، سرویس جدا لازم است.
 
