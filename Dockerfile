@@ -14,8 +14,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt .
+COPY backend/check_queue_dependencies.py .
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip check \
+    && python check_queue_dependencies.py
 
 # Fail the build if the RDKit drawing runtime cannot load on the slim image.
 RUN python -c "from rdkit.Chem.Draw import rdMolDraw2D; rdMolDraw2D.MolDraw2DSVG(640, 360)"

@@ -1,4 +1,5 @@
 import uuid
+from django.conf import settings
 from django.test import TestCase,SimpleTestCase
 from . import media
 from .models import RetrievalGeneration,ReferenceMedia
@@ -12,7 +13,9 @@ class MediaIntentTests(SimpleTestCase):
 
 
 class MediaSearchTests(TestCase):
-    databases={"default","reference_search"}
+    # CI/local runs can route retrieval to default; a dedicated alias exists
+    # only when REFERENCE_SEARCH_DATABASE_URL is configured.
+    databases={"default",settings.AI_RETRIEVAL_DATABASE_ALIAS}
 
     def setUp(self):
         self.generation=RetrievalGeneration.objects.create(source_identity="a"*64,source_revision="r",source_generation=uuid.uuid4(),

@@ -57,6 +57,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/pharmexa
       REDIS_URL: redis://127.0.0.1:6379/0
       CELERY_BROKER_URL: redis://127.0.0.1:6379/1
+      QUEUE_TEST_REDIS_URL: redis://127.0.0.1:6379/15
       CELERY_TASK_ALWAYS_EAGER: "True"
       ALLOWED_HOSTS: localhost,127.0.0.1
       CSRF_TRUSTED_ORIGINS: http://localhost:8000
@@ -72,6 +73,8 @@ jobs:
           cache-dependency-path: backend/requirements.txt
       - run: python -m pip install --upgrade pip
       - run: pip install -r requirements.txt
+      - run: pip check
+      - run: python check_queue_dependencies.py
       - run: python manage.py check
       # The production guard rejects an in-request task runner, so this step
       # must exercise the real broker configuration.

@@ -277,11 +277,17 @@ EAS کلید امضای اندروید (keystore) را نگه می‌دارد. �
 
 | کار | قدم‌ها |
 |---|---|
-| `backend-image` | ساخت Dockerfile ریشه با `docker build`؛ اجرای smoke check بارگذاری RDKit داخل ایمیج slim. ایمیج پایهٔ رسمی ابتدا از آینهٔ عمومی ECR دریافت و با نام همان پایه tag می‌شود تا محدودیت pull ناشناس Docker Hub روی runner مشترک کمتر شود |
-| `backend` | Postgres 16 و Redis 7؛ نصب وابستگی‌ها؛ `manage.py check`؛ `check --deploy --settings=config.settings.production`؛ `makemigrations --check --dry-run`؛ `backup_database --dry-run`؛ `manage.py test --verbosity=2 --timing` |
+| `backend-image` | ساخت Dockerfile ریشه با `docker build`؛ `pip check` و بررسی واقعی ساخت کلاینت transport در Kombu، به‌علاوهٔ smoke check بارگذاری RDKit داخل ایمیج slim. ایمیج پایهٔ رسمی ابتدا از آینهٔ عمومی ECR دریافت و با نام همان پایه tag می‌شود تا محدودیت pull ناشناس Docker Hub روی runner مشترک کمتر شود |
+| `backend` | Postgres 16 و Redis 7؛ نصب وابستگی‌ها؛ `pip check`؛ `check_queue_dependencies.py`؛ `manage.py check`؛ `check --deploy --settings=config.settings.production`؛ `makemigrations --check --dry-run`؛ `backup_database --dry-run`؛ `manage.py test --verbosity=2 --timing` |
 | `frontend` | Node 20؛ `npm ci`؛ `npm run typecheck`؛ `npm run build:web` |
 
 CI جلوی دیپلوی را نمی‌گیرد؛ رانفلر مستقل از نتیجهٔ CI می‌سازد. پیش از push خودتان تست‌ها را اجرا کنید.
+
+`REFERENCE_SEARCH_DATABASE_URL` در job فعلی CI تعریف نشده است؛ در این حالت router داده‌های جست‌وجو را روی `default` قرار می‌دهد. تست‌های رسانه نیز دیتابیس مجاز را از `AI_RETRIEVAL_DATABASE_ALIAS` می‌گیرند تا هم این مسیر و هم اتصال اختصاصی سرور پوشش داده شوند. ثابت‌نوشتن `reference_search` در فهرست دیتابیس‌های تست، پیش از اجرای تست‌ها باعث `ConnectionDoesNotExist` می‌شود؛ برای رفع آن نیازی به تغییر Secrets سرور نیست.
+
+ترکیب وابستگی‌های صف برای جلوگیری از تغییر ناخواستهٔ نسخه‌ها روی `redis==6.4.0`، `celery[redis]==5.6.3` و `kombu==5.6.2` تثبیت شده است. `check_queue_dependencies.py` بدون شبکه همان مسیر انتخاب کلاینت Kombu را اجرا می‌کند که هنگام شروع worker می‌تواند `VersionMismatch` بدهد. تست‌های integration با `QUEUE_TEST_REDIS_URL` و کلید/صف تصادفی مستقل، ارسال/دریافت/ack پیام، عملیات cache و Redis Streams همگام و async را نیز روی Redis واقعی بررسی می‌کنند؛ دیتابیس Redis پاک نمی‌شود و درخواست مدل ارسال نمی‌شود. این متغیر در CI به دیتابیس ۱۵ سرویس Redis آزمایشی اشاره می‌کند و برای production لازم نیست. [وابستگی‌های Redis در Celery](https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/redis.html)
+
+اعتبارسنجی محلی این اصلاح: `pip check` و بررسی transport موفق بودند؛ ۵ تست وابستگی/صف/cache/استریم با Redis واقعی و ۸۶ تست بازیابی/آماده‌سازی بدون alias اختصاصی موفق شدند (۲ گروه اختیاری بردار به دلیل نبود افزونه skip شدند). هر ۴ تست رسانه با اتصال اختصاصی هم موفق شدند. اجرای سراسری اولیه از stdin، ۱۱۹۷ تست اجرا کرد و فقط تست multiprocessing به مسیر `<stdin>` خطا داد؛ همان تست در اجرای بعدی از فایل، همراه مجموعهٔ ۸۶تایی، موفق شد. این نتایج، تأیید اجرای GitHub Actions یا image جدید روی رانفلر نیستند؛ پس از push باید نتیجهٔ آن‌ها و `check_search_runtime` سرور بررسی شود.
 
 ## پیکربندی‌های دیگر مخزن
 
