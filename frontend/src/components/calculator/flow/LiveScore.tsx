@@ -1,0 +1,82 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { View } from "react-native";
+
+import { CalculatorDetail } from "@/api/types";
+import { AppText } from "@/components/primitives/AppText";
+import { Card } from "@/components/primitives/Card";
+import { useLang } from "@/i18n/LanguageProvider";
+import {
+  CalculatorAnswers,
+  ResultRange,
+  computeCalculator,
+  computeResultRanges,
+  extractNumericValue,
+} from "@/utils/calculatorEngine";
+import { filled, primaryRow } from "@/utils/calculatorLive";
+
+import { Chip, TierBar, showTierBar, useTier } from "../common";
+
+/** The score the answers give so far, with the calculator's own tiers. */
+export function useLiveScore(data: CalculatorDetail, answers: CalculatorAnswers) {
+  const [range, setRange] = useState<ResultRange | null>(null);
+
+  const primary = useMemo(() => primaryRow(data), [data]);
+
+  // The tiers do not depend on the answers; sweeping them is the slow part,
+  // so it runs once, after the first paint.
+  useEffect(() => {
+    if (primary === null) return;
+    const id = setTimeout(() => {
+      const ranges = computeResultRanges(data.questions, data.results, filled(data, {}, true), data.formula_strings_fa);
+      setRange(ranges.get(primary) ?? null);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [data, primary]);
+
+  const { value, rows } = useMemo(() => {
+    if (primary === null) return { value: null, rows: [] };
+    const computed = computeCalculator(data.questions, data.results, filled(data, answers), { stringsFa: data.formula_strings_fa });
+    const text = computed.find((r) => r.position === primary)?.answerText;
+    return { value: text ? extractNumericValue(text) : null, rows: computed };
+  }, [data, answers, primary]);
+
+  // `rows` lets the tier be read off its own row where bands meet (see bandFor).
+  return { value, range, rows };
+}
+
+/** "Score so far": the number, the tier it is in (when the tier has a short
+ * name -- a sentence of interpretation waits for the result) and the bar of
+ * tiers with a marker, updating with every answer. */
+export function LiveScore({ data, answers }: { data: CalculatorDetail; answers: CalculatorAnswers }) {
+  const { t, isFa } = useLang();
+  const { value, range, rows } = useLiveScore(data, answers);
+  const tier = useTier(range ?? undefined, value, rows);
+  if (value === null) return null;
+  return (
+    <Card style={{ gap: 8 }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          <AppText weight="700" size={11.5} muted style={{ writingDirection: isFa ? "rtl" : "ltr" }}>
+            {t("calcLiveScore")}
+          </AppText>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6, direction: "ltr" }}>
+            <AppText weight="900" size={30} style={{ writingDirection: "ltr", textAlign: "left", lineHeight: 38 }}>
+              {Number(value.toFixed(2))}
+            </AppText>
+            {range && !range.maxOpen ? (
+              <AppText weight="700" size={13} muted>
+                {t("calcOutOf")} {range.max}
+              </AppText>
+            ) : null}
+          </View>
+        </View>
+        {tier?.style === "headline" ? (
+          <View style={{ maxWidth: "60%" }}>
+            <Chip text={tier.text} tone={tier.tone} />
+          </View>
+        ) : null}
+      </View>
+      {range && showTierBar(range) ? <TierBar value={value} range={range} active={tier?.band} isFa={isFa} showNames={false} /> : null}
+    </Card>
+  );
+}

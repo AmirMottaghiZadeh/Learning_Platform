@@ -1,0 +1,9 @@
+{% extends "manage/base.html" %}
+{% block title %}دسترسی ندارید{% endblock %}
+{% block module %}
+<div class="mg-panel" style="max-width:560px">
+  <h1 style="margin:0 0 8px;font-size:22px;font-weight:900">دسترسی ندارید</h1>
+  <p style="margin:0 0 14px;color:var(--mg-mut)">نقش شما اجازهٔ دیدن این بخش را نمی‌دهد. اگر لازم است، از مدیر کل بخواهید نقش شما را تغییر دهد.</p>
+  <a class="mg-b" href="{% url 'manage:home' %}">بازگشت به خانه</a>
+</div>
+{% endblock %}

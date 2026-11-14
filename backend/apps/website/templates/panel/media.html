@@ -1,0 +1,12 @@
+{% extends "panel/base.html" %}
+{% load billing_extras %}
+{% block title %}رسانه{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>رسانه</h1><div class="sub">{{ total|fa }} فایل · تصویر (PNG، JPG، WebP، GIF) و PDF تا ۵ مگابایت. فایل‌ها در پایگاه‌داده نگهداری می‌شوند.</div></div></div>
+<form method="post" action="{% url 'panel:media_upload' %}" enctype="multipart/form-data" class="drop" id="drop">{% csrf_token %}
+  <p style="margin:0 0 10px">فایل را اینجا رها کنید یا انتخاب کنید</p><input class="inp" type="file" name="files" accept="image/*,application/pdf" multiple required style="max-width:340px;display:inline-block"> <button class="btn p" type="submit">بارگذاری</button></form>
+<div class="toolbar"><form method="get"><label class="sr" for="q">جستجو</label><input class="inp" id="q" name="q" value="{{ q }}" placeholder="جستجو" style="width:220px"><select class="inp sel" name="type" style="width:140px" onchange="this.form.submit()" aria-label="نوع"><option value="">همه</option><option value="image"{% if type == "image" %} selected{% endif %}>تصویر</option><option value="pdf"{% if type == "pdf" %} selected{% endif %}>PDF</option></select><button class="btn" type="submit">اعمال</button></form></div>
+<div class="mgrid">{% for m in page.object_list %}<div class="mi"><a class="th" href="{% url 'panel:media_edit' m.pk %}">{% if m.is_image %}<img src="{{ m.url }}" alt="{{ m.alt }}" loading="lazy">{% else %}PDF{% endif %}</a>
+<div class="in"><b>{{ m.title|default:m.filename }}</b><span class="sm" style="color:var(--muted)">{{ m.size|filesizeformat }}{% if m.pk in used %} · در مطلب{% endif %}</span></div></div>{% empty %}<p class="empty" style="grid-column:1/-1">هنوز فایلی بارگذاری نشده است.</p>{% endfor %}</div>
+{% include "panel/_pagination.html" %}
+{% endblock %}

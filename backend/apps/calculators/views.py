@@ -1,0 +1,49 @@
+"""Read-only clinical-calculator API. Carries no per-user state.
+
+The list is unpaginated -- the client groups all ~500 calculators by clinical
+category (a calculator can belong to several) and filters by name/category
+client-side, so it always needs the full set rather than one page of it.
+"""
+
+from rest_framework import generics
+
+from apps.billing.enforcement import require_feature
+
+from .models import Calculator, CalculatorCategory
+from .serializers import CalculatorCategorySerializer, CalculatorDetailSerializer, CalculatorListSerializer
+
+
+class CalculatorCategoryListView(generics.ListAPIView):
+    """The full category tree (every node, main or sub, in both languages),
+    independent of which calculators currently reference each one -- the
+    client builds its domain grid by joining this against each calculator's
+    own (few) category ids, rather than trying to reconstruct the tree from
+    whichever parents happen to also be tagged directly on some calculator
+    in the current list."""
+
+    serializer_class = CalculatorCategorySerializer
+    pagination_class = None
+    queryset = CalculatorCategory.objects.all()
+
+
+class CalculatorListView(generics.ListAPIView):
+    serializer_class = CalculatorListSerializer
+    pagination_class = None
+    # Only the columns the list serializes: the formula/question JSON and the
+    # long texts are most of each row and only the detail view needs them.
+    queryset = (
+        Calculator.objects.order_by("name")
+        .only("id", "slug", "name", "name_fa", "description", "description_fa")
+        .prefetch_related("categories")
+    )
+
+
+class CalculatorDetailView(generics.RetrieveAPIView):
+    serializer_class = CalculatorDetailSerializer
+    lookup_field = "slug"
+    queryset = Calculator.objects.prefetch_related("categories", "tags")
+
+    def get_object(self):
+        calculator = super().get_object()
+        require_feature(self.request, "calculators", item=calculator.slug, consume=True)
+        return calculator

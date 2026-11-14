@@ -1,0 +1,33 @@
+{% extends "website/base.html" %}
+{% block content %}
+<div class="wrap"><div class="center-card auth-card">
+  <nav class="auth-modes" aria-label="ورود یا ثبت‌نام">
+    <a href="{% url 'site:login' %}?mode=login&amp;next={{ next|urlencode }}"{% if mode == 'login' %} aria-current="page"{% endif %}>ورود</a>
+    <a href="{% url 'site:login' %}?mode=signup&amp;next={{ next|urlencode }}"{% if mode == 'signup' %} aria-current="page"{% endif %}>ثبت‌نام</a>
+  </nav>
+  {% if mode == 'login' %}
+    <h1>ورود به فارمنتا</h1>
+    <p class="sub">با شمارهٔ موبایل یا ایمیل و رمز عبور حساب اپ وارد شوید.</p>
+  {% elif mode == 'signup' %}
+    <h1>ساخت حساب کاربری</h1>
+    <p class="sub">شمارهٔ موبایل خود را وارد کنید؛ پس از تأیید پیامکی، نام و رمز عبورتان را انتخاب می‌کنید.</p>
+  {% else %}
+    <h1>بازیابی رمز عبور</h1>
+    <p class="sub">شمارهٔ موبایل حساب خود را وارد کنید تا کد تأیید برای انتخاب رمز تازه ارسال شود.</p>
+  {% endif %}
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <input type="hidden" name="mode" value="{{ mode }}">
+    {% include "website/_auth_fields.html" %}
+    <button class="btn p block" type="submit">{% if mode == 'login' %}ورود{% else %}ارسال کد تأیید{% endif %}</button>
+  </form>
+  {% if mode == 'login' %}
+    <p class="auth-link"><a href="{% url 'site:login' %}?mode=reset&amp;next={{ next|urlencode }}">رمز عبور را فراموش کرده‌اید؟</a></p>
+    <p class="auth-link">حساب ندارید؟ <a href="{% url 'site:login' %}?mode=signup&amp;next={{ next|urlencode }}">ثبت‌نام کنید</a></p>
+  {% else %}
+    <p class="auth-link">حساب دارید؟ <a href="{% url 'site:login' %}?mode=login&amp;next={{ next|urlencode }}">وارد شوید</a></p>
+  {% endif %}
+  <p class="auth-note">حساب سایت و اپ فارمنتا مشترک است.</p>
+</div></div>
+{% endblock %}

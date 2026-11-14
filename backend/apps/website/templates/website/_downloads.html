@@ -1,0 +1,4 @@
+<div class="stores">
+{% for l in downloads %}<a class="store" href="{% url 'site:dl' l.pk %}" rel="nofollow"><b>{% if l.store == "play" %}G{% elif l.store == "appstore" %}A{% elif l.store == "web" %}W{% else %}↓{% endif %}</b><div><small>{% if l.store == "direct" %}دانلود مستقیم{% else %}دریافت از{% endif %}</small>{{ l.display_label }}</div></a>{% empty %}
+<a class="store" href="{{ site.app_url }}"><b>W</b><div><small>استفاده از</small>وب‌اپ</div></a>{% endfor %}
+</div>

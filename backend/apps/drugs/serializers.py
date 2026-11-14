@@ -1,0 +1,197 @@
+"""Read serializers for the drug-knowledge API.
+
+Two views of the same `IngredientProfileSection` rows:
+
+* `sections` — the raw field-keyed shape (all 13 clinical fields), used by any
+  client that wants the whole profile.
+* `lesson_sections` — the design's lesson-card shape: a curated, ordered subset
+  with bilingual titles, `tone` for colour, and `text_{fa,en}` taken from the
+  section summaries. Mirrors `FIELD_MAP` + `LESSON_EXTRA` in the design file.
+
+The lesson screen fetches one drug at a time with `LessonDrugSerializer`:
+`lesson_sections` unchanged, but `sections` cut down to the per-field flags
+the screen reads. The full shape repeats every summary already in
+`lesson_sections` and adds the raw label text.
+"""
+
+from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
+
+from .models import (
+    CLINICAL_FIELD_KEYS,
+    AtcCode,
+    Ingredient,
+    IngredientProfileSection,
+)
+
+
+# key -> (section field, fa title, en title, tone)
+LESSON_SECTION_MAP = [
+    ("mechanism", "clinical_pharmacology", "مکانیسم", "Mechanism", "info"),
+    ("indication", "indications_and_usage", "اندیکاسیون", "Indication", "info"),
+    ("dose", "dosage_and_administration", "دوز", "Dose", "info"),
+    ("food", "food_interactions", "تداخلات غذایی", "Food interactions", "caution"),
+    ("forms", "dosage_forms_and_strengths", "اشکال دارویی", "Dosage forms", "info"),
+    ("contraindications", "contraindications", "منع مطلق", "Contraindications", "deny"),
+    ("do_not_use", "do_not_use", "چه‌وقت مصرف نکنیم", "Do not use", "deny"),
+    ("boxed_warning", "boxed_warning", "جعبه‌سیاه", "Boxed warning", "boxed"),
+    ("warning", "warnings", "هشدار", "Warning", "caution"),
+    ("side", "adverse_reactions", "عوارض جانبی", "Side effects", "caution"),
+    ("interactions", "drug_interactions", "تداخلات", "Interactions", "caution"),
+    ("pregnancy", "pregnancy", "بارداری", "Pregnancy", "special"),
+    ("abuse", "abuse", "سوءمصرف و وابستگی", "Abuse & dependence", "special"),
+]
+
+
+class AtcCodeSerializer(serializers.ModelSerializer):
+    level = serializers.IntegerField(read_only=True)
+    ingredient_count = serializers.IntegerField(read_only=True, required=False)
+
+    class Meta:
+        model = AtcCode
+        fields = ["code", "name", "level", "ingredient_count"]
+
+
+class IngredientListSerializer(serializers.ModelSerializer):
+    atc_codes = AtcCodeSerializer(many=True, read_only=True)
+    is_reviewed = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = Ingredient
+        fields = [
+            "rxcui",
+            "name",
+            "name_fa",
+            "slug",
+            "n_products",
+            "n_source_records",
+            "pharm_classes",
+            "atc_codes",
+            "is_reviewed",
+        ]
+
+
+class ProfileSectionSerializer(serializers.ModelSerializer):
+    label = serializers.CharField(source="get_field_display", read_only=True)
+    has_content = serializers.BooleanField(read_only=True)
+    has_summary = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = IngredientProfileSection
+        fields = [
+            "field",
+            "label",
+            "has_content",
+            "has_summary",
+            "n_contributing_products",
+            "summary_fa",
+            "summary_en",
+            "other_sources_fa",
+            "other_sources_en",
+            "raw_text",
+        ]
+
+
+class LessonDrugSectionSerializer(serializers.ModelSerializer):
+    """Per-field flags only -- the lesson screen reads `field` + `has_summary`
+    (boxed-warning / abuse badges); the text itself is in `lesson_sections`."""
+
+    label = serializers.CharField(source="get_field_display", read_only=True)
+    has_summary = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = IngredientProfileSection
+        fields = ["field", "label", "has_summary"]
+
+
+class LessonSectionSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    field = serializers.CharField()
+    title_fa = serializers.CharField()
+    title_en = serializers.CharField()
+    tone = serializers.CharField()
+    text_fa = serializers.CharField()
+    text_en = serializers.CharField()
+    has_summary = serializers.BooleanField()
+    other_sources_fa = serializers.CharField(required=False, allow_blank=True)
+    other_sources_en = serializers.CharField(required=False, allow_blank=True)
+
+
+class ChemistrySerializer(serializers.Serializer):
+    molecular_formula = serializers.CharField()
+    structure_svg = serializers.CharField()
+    pubchem_cid = serializers.IntegerField()
+    source_url = serializers.URLField()
+    fetched_at = serializers.DateTimeField()
+
+
+class IngredientDetailSerializer(IngredientListSerializer):
+    chemistry = serializers.SerializerMethodField()
+    sections = serializers.SerializerMethodField()
+    lesson_sections = serializers.SerializerMethodField()
+
+    # The shape of each `sections` entry; LessonDrugSerializer swaps in the
+    # slim one.
+    section_serializer_class = ProfileSectionSerializer
+
+    class Meta(IngredientListSerializer.Meta):
+        fields = IngredientListSerializer.Meta.fields + ["sections", "lesson_sections", "chemistry"]
+
+    @extend_schema_field(ChemistrySerializer(allow_null=True))
+    def get_chemistry(self, obj):
+        data = getattr(obj, "chemistry", None)
+        if not data or data.status not in {"pending", "approved"}:
+            return None
+        if not all((data.pubchem_cid, data.molecular_formula, data.smiles, data.structure_svg, data.fetched_at)):
+            return None
+        if (obj.name, obj.rxcui) != (data.ingredient_name, data.ingredient_rxcui):
+            return None
+        return ChemistrySerializer(data).data
+
+    def _sections_by_field(self, obj):
+        return {s.field: s for s in obj.sections.all()}
+
+    @extend_schema_field(ProfileSectionSerializer(many=True))
+    def get_sections(self, obj):
+        by_field = self._sections_by_field(obj)
+        ordered = [by_field[f] for f in CLINICAL_FIELD_KEYS if f in by_field]
+        return self.section_serializer_class(ordered, many=True).data
+
+    @extend_schema_field(LessonSectionSerializer(many=True))
+    def get_lesson_sections(self, obj):
+        by_field = self._sections_by_field(obj)
+        rows = []
+        for key, field, title_fa, title_en, tone in LESSON_SECTION_MAP:
+            section = by_field.get(field)
+            if section is None:
+                continue
+            text_fa = (section.summary_fa or "").strip()
+            text_en = (section.summary_en or "").strip()
+            other_fa = section.other_sources_fa.strip()
+            other_en = section.other_sources_en.strip()
+            if not any((text_fa, text_en, other_fa, other_en)):
+                continue
+            row = {
+                "key": key,
+                "field": field,
+                "title_fa": title_fa,
+                "title_en": title_en,
+                "tone": tone,
+                "text_fa": text_fa,
+                "text_en": text_en,
+                "has_summary": bool(text_fa or text_en),
+            }
+            if other_fa or other_en:
+                row.update(other_sources_fa=other_fa, other_sources_en=other_en)
+            rows.append(row)
+        return rows
+
+
+class LessonDrugSerializer(IngredientDetailSerializer):
+    """One drug's lesson (GET /lessons/drugs/<slug>/): see the module docstring."""
+
+    section_serializer_class = LessonDrugSectionSerializer
+
+    @extend_schema_field(LessonDrugSectionSerializer(many=True))
+    def get_sections(self, obj):
+        return super().get_sections(obj)

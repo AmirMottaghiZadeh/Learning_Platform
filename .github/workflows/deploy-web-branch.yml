@@ -1,0 +1,42 @@
+name: Update deploy-web branch
+
+# Runflare builds a service from the repo-root `Dockerfile` of a chosen branch
+# and can't be pointed at another Dockerfile. The root `Dockerfile` is the
+# backend's, so the web app's Runflare service tracks the `deploy-web` branch
+# instead: a copy of main whose `Dockerfile` is `Dockerfile.frontend`.
+# Regenerated from main on every push -- never edit deploy-web by hand.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "Dockerfile.frontend"
+      - ".dockerignore"
+      - ".github/workflows/deploy-web-branch.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-web-branch
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the deploy-web tree
+        run: |
+          cp Dockerfile.frontend Dockerfile
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan deploy-web
+          git add -A
+          git commit -q -m "deploy-web: main@${GITHUB_SHA::7} with Dockerfile.frontend as Dockerfile"
+
+      - name: Publish
+        run: git push --force origin deploy-web

@@ -1,0 +1,31 @@
+{% load static %}<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>ورود · مدیریت فارمنتا</title>
+<script>try{var t=localStorage.getItem("manage-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="{% static 'manage/manage.css' %}">
+</head>
+<body class="mg">
+<main class="mg-login">
+  <form class="mg-login-card" method="post" action="{% url 'manage:login' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="brand"><span class="mg-logo" aria-hidden="true">ف</span><div><h1>مدیریت فارمنتا</h1><p>سایت، اپ، فروش و کیفیت داده در یک جا</p></div></div>
+    {% if error %}<div class="mg-error" role="alert">{{ error }}</div>{% endif %}
+    <div class="mg-field">
+      <label for="identifier">نام کاربری یا شمارهٔ موبایل</label>
+      <input id="identifier" name="identifier" value="{{ identifier }}" autocomplete="username" required autofocus dir="ltr">
+    </div>
+    <div class="mg-field">
+      <label for="password">رمز</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required dir="ltr">
+    </div>
+    <button class="mg-submit" type="submit">ورود</button>
+    <p>هر کس فقط بخش‌هایی را می‌بیند که نقشش اجازه می‌دهد.</p>
+  </form>
+</main>
+</body>
+</html>

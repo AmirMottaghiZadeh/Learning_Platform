@@ -1,0 +1,1359 @@
+{
+  "schema": 1,
+  "generation": "c18b82e2-a0a1-4195-a457-865f2daf7b7b",
+  "source_backend": "sqlite",
+  "snapshot_version": "1",
+  "indexed_articles": 22217,
+  "indexed_sections": 534502,
+  "indexed_blocks": 2526437,
+  "format_version": 1,
+  "extraction_version": "utd-blocks-v4",
+  "provider_requests": 0,
+  "repeat": 3,
+  "articles": [
+    {
+      "article_id": "1",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 42,
+      "blocks": 90,
+      "hierarchy_known_sections": 42,
+      "legacy_read_ms": [
+        41.621,
+        37.494,
+        37.596
+      ],
+      "prepared_read_ms": [
+        16.593,
+        14.596,
+        12.664
+      ],
+      "legacy_median_ms": 37.596,
+      "prepared_median_ms": 14.596
+    },
+    {
+      "article_id": "10050",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 40,
+      "blocks": 680,
+      "hierarchy_known_sections": 40,
+      "legacy_read_ms": [
+        209.74,
+        216.893,
+        225.968
+      ],
+      "prepared_read_ms": [
+        18.269,
+        17.082,
+        17.457
+      ],
+      "legacy_median_ms": 216.893,
+      "prepared_median_ms": 17.457
+    },
+    {
+      "article_id": "1022",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 51,
+      "blocks": 194,
+      "hierarchy_known_sections": 51,
+      "legacy_read_ms": [
+        70.249,
+        69.896,
+        70.882
+      ],
+      "prepared_read_ms": [
+        17.421,
+        18.451,
+        16.823
+      ],
+      "legacy_median_ms": 70.249,
+      "prepared_median_ms": 17.421
+    },
+    {
+      "article_id": "103888",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 25,
+      "blocks": 54,
+      "hierarchy_known_sections": 25,
+      "legacy_read_ms": [
+        19.605,
+        19.637,
+        22.295
+      ],
+      "prepared_read_ms": [
+        18.539,
+        15.842,
+        16.522
+      ],
+      "legacy_median_ms": 19.637,
+      "prepared_median_ms": 16.522
+    },
+    {
+      "article_id": "108265",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 39,
+      "blocks": 137,
+      "hierarchy_known_sections": 39,
+      "legacy_read_ms": [
+        51.159,
+        41.435,
+        41.886
+      ],
+      "prepared_read_ms": [
+        13.271,
+        11.494,
+        11.143
+      ],
+      "legacy_median_ms": 41.886,
+      "prepared_median_ms": 11.494
+    },
+    {
+      "article_id": "11099",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 14,
+      "blocks": 57,
+      "hierarchy_known_sections": 13,
+      "legacy_read_ms": [
+        26.859,
+        27.598,
+        26.906
+      ],
+      "prepared_read_ms": [
+        10.674,
+        11.385,
+        11.018
+      ],
+      "legacy_median_ms": 26.906,
+      "prepared_median_ms": 11.018
+    },
+    {
+      "article_id": "112290",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 1,
+      "blocks": 2,
+      "hierarchy_known_sections": 0,
+      "legacy_read_ms": [
+        2.346,
+        3.855,
+        2.113
+      ],
+      "prepared_read_ms": [
+        5.462,
+        6.143,
+        5.852
+      ],
+      "legacy_median_ms": 2.346,
+      "prepared_median_ms": 5.852
+    },
+    {
+      "article_id": "112292",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 1,
+      "blocks": 2,
+      "hierarchy_known_sections": 0,
+      "legacy_read_ms": [
+        3.393,
+        1.988,
+        2.234
+      ],
+      "prepared_read_ms": [
+        4.966,
+        6.064,
+        4.659
+      ],
+      "legacy_median_ms": 2.234,
+      "prepared_median_ms": 4.966
+    },
+    {
+      "article_id": "11343",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 14,
+      "blocks": 51,
+      "hierarchy_known_sections": 13,
+      "legacy_read_ms": [
+        26.47,
+        28.582,
+        26.426
+      ],
+      "prepared_read_ms": [
+        10.475,
+        12.025,
+        12.821
+      ],
+      "legacy_median_ms": 26.47,
+      "prepared_median_ms": 12.025
+    },
+    {
+      "article_id": "115553",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 26,
+      "blocks": 59,
+      "hierarchy_known_sections": 26,
+      "legacy_read_ms": [
+        26.636,
+        38.316,
+        38.363
+      ],
+      "prepared_read_ms": [
+        16.203,
+        18.189,
+        17.392
+      ],
+      "legacy_median_ms": 38.316,
+      "prepared_median_ms": 17.392
+    },
+    {
+      "article_id": "117888",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 36,
+      "blocks": 93,
+      "hierarchy_known_sections": 36,
+      "legacy_read_ms": [
+        36.217,
+        40.615,
+        37.051
+      ],
+      "prepared_read_ms": [
+        14.094,
+        11.433,
+        14.692
+      ],
+      "legacy_median_ms": 37.051,
+      "prepared_median_ms": 14.094
+    },
+    {
+      "article_id": "119941",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 5,
+      "blocks": 17,
+      "hierarchy_known_sections": 5,
+      "legacy_read_ms": [
+        9.797,
+        9.545,
+        7.473
+      ],
+      "prepared_read_ms": [
+        13.985,
+        13.335,
+        13.368
+      ],
+      "legacy_median_ms": 9.545,
+      "prepared_median_ms": 13.368
+    },
+    {
+      "article_id": "122212",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 4,
+      "blocks": 24,
+      "hierarchy_known_sections": 4,
+      "legacy_read_ms": [
+        12.757,
+        15.712,
+        12.976
+      ],
+      "prepared_read_ms": [
+        11.286,
+        12.849,
+        10.241
+      ],
+      "legacy_median_ms": 12.976,
+      "prepared_median_ms": 11.286
+    },
+    {
+      "article_id": "1261",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 28,
+      "blocks": 168,
+      "hierarchy_known_sections": 28,
+      "legacy_read_ms": [
+        49.729,
+        52.122,
+        60.099
+      ],
+      "prepared_read_ms": [
+        14.432,
+        14.376,
+        14.281
+      ],
+      "legacy_median_ms": 52.122,
+      "prepared_median_ms": 14.376
+    },
+    {
+      "article_id": "128410",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 34,
+      "blocks": 86,
+      "hierarchy_known_sections": 34,
+      "legacy_read_ms": [
+        39.689,
+        41.953,
+        36.04
+      ],
+      "prepared_read_ms": [
+        14.14,
+        11.051,
+        11.564
+      ],
+      "legacy_median_ms": 39.689,
+      "prepared_median_ms": 11.564
+    },
+    {
+      "article_id": "13056",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 34,
+      "blocks": 311,
+      "hierarchy_known_sections": 34,
+      "legacy_read_ms": [
+        92.987,
+        94.665,
+        114.579
+      ],
+      "prepared_read_ms": [
+        12.983,
+        13.208,
+        13.328
+      ],
+      "legacy_median_ms": 94.665,
+      "prepared_median_ms": 13.208
+    },
+    {
+      "article_id": "132376",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 12,
+      "blocks": 62,
+      "hierarchy_known_sections": 12,
+      "legacy_read_ms": [
+        22.849,
+        30.227,
+        32.38
+      ],
+      "prepared_read_ms": [
+        15.944,
+        18.374,
+        14.277
+      ],
+      "legacy_median_ms": 30.227,
+      "prepared_median_ms": 15.944
+    },
+    {
+      "article_id": "135094",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 50,
+      "blocks": 193,
+      "hierarchy_known_sections": 50,
+      "legacy_read_ms": [
+        58.218,
+        57.914,
+        64.328
+      ],
+      "prepared_read_ms": [
+        15.067,
+        17.142,
+        14.354
+      ],
+      "legacy_median_ms": 58.218,
+      "prepared_median_ms": 15.067
+    },
+    {
+      "article_id": "139887",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 12,
+      "blocks": 53,
+      "hierarchy_known_sections": 12,
+      "legacy_read_ms": [
+        27.066,
+        34.092,
+        51.513
+      ],
+      "prepared_read_ms": [
+        15.95,
+        19.865,
+        16.851
+      ],
+      "legacy_median_ms": 34.092,
+      "prepared_median_ms": 16.851
+    },
+    {
+      "article_id": "140619",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 40,
+      "blocks": 113,
+      "hierarchy_known_sections": 40,
+      "legacy_read_ms": [
+        90.8,
+        95.616,
+        127.721
+      ],
+      "prepared_read_ms": [
+        28.55,
+        21.307,
+        26.021
+      ],
+      "legacy_median_ms": 95.616,
+      "prepared_median_ms": 26.021
+    },
+    {
+      "article_id": "142235",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 8,
+      "blocks": 43,
+      "hierarchy_known_sections": 8,
+      "legacy_read_ms": [
+        14.601,
+        14.56,
+        18.813
+      ],
+      "prepared_read_ms": [
+        16.505,
+        18.344,
+        20.96
+      ],
+      "legacy_median_ms": 14.601,
+      "prepared_median_ms": 18.344
+    },
+    {
+      "article_id": "143752",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 1,
+      "blocks": 2,
+      "hierarchy_known_sections": 0,
+      "legacy_read_ms": [
+        3.585,
+        5.291,
+        5.791
+      ],
+      "prepared_read_ms": [
+        8.781,
+        9.868,
+        9.988
+      ],
+      "legacy_median_ms": 5.291,
+      "prepared_median_ms": 9.868
+    },
+    {
+      "article_id": "146089",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 5,
+      "blocks": 24,
+      "hierarchy_known_sections": 5,
+      "legacy_read_ms": [
+        13.845,
+        10.541,
+        10.603
+      ],
+      "prepared_read_ms": [
+        17.572,
+        16.442,
+        16.394
+      ],
+      "legacy_median_ms": 10.603,
+      "prepared_median_ms": 16.442
+    },
+    {
+      "article_id": "147516",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 1,
+      "blocks": 17,
+      "hierarchy_known_sections": 0,
+      "legacy_read_ms": [
+        8.293,
+        6.944,
+        6.836
+      ],
+      "prepared_read_ms": [
+        10.074,
+        7.899,
+        7.191
+      ],
+      "legacy_median_ms": 6.944,
+      "prepared_median_ms": 7.899
+    },
+    {
+      "article_id": "14984",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 24,
+      "blocks": 80,
+      "hierarchy_known_sections": 24,
+      "legacy_read_ms": [
+        52.842,
+        46.604,
+        43.229
+      ],
+      "prepared_read_ms": [
+        27.483,
+        21.618,
+        20.113
+      ],
+      "legacy_median_ms": 46.604,
+      "prepared_median_ms": 21.618
+    },
+    {
+      "article_id": "15219",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 31,
+      "blocks": 133,
+      "hierarchy_known_sections": 31,
+      "legacy_read_ms": [
+        83.311,
+        67.393,
+        54.15
+      ],
+      "prepared_read_ms": [
+        26.274,
+        12.586,
+        13.029
+      ],
+      "legacy_median_ms": 67.393,
+      "prepared_median_ms": 13.029
+    },
+    {
+      "article_id": "15908",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 31,
+      "blocks": 93,
+      "hierarchy_known_sections": 31,
+      "legacy_read_ms": [
+        41.541,
+        42.906,
+        40.243
+      ],
+      "prepared_read_ms": [
+        13.017,
+        13.39,
+        15.859
+      ],
+      "legacy_median_ms": 41.541,
+      "prepared_median_ms": 13.39
+    },
+    {
+      "article_id": "16616",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 47,
+      "blocks": 254,
+      "hierarchy_known_sections": 47,
+      "legacy_read_ms": [
+        81.574,
+        89.199,
+        81.935
+      ],
+      "prepared_read_ms": [
+        21.28,
+        17.413,
+        17.097
+      ],
+      "legacy_median_ms": 81.935,
+      "prepared_median_ms": 17.413
+    },
+    {
+      "article_id": "1666",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 34,
+      "blocks": 129,
+      "hierarchy_known_sections": 34,
+      "legacy_read_ms": [
+        57.66,
+        60.805,
+        60.414
+      ],
+      "prepared_read_ms": [
+        16.258,
+        12.767,
+        13.497
+      ],
+      "legacy_median_ms": 60.414,
+      "prepared_median_ms": 13.497
+    },
+    {
+      "article_id": "1779",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 42,
+      "blocks": 103,
+      "hierarchy_known_sections": 42,
+      "legacy_read_ms": [
+        59.104,
+        58.347,
+        57.576
+      ],
+      "prepared_read_ms": [
+        17.046,
+        15.735,
+        15.107
+      ],
+      "legacy_median_ms": 58.347,
+      "prepared_median_ms": 15.735
+    },
+    {
+      "article_id": "2258",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 40,
+      "blocks": 123,
+      "hierarchy_known_sections": 40,
+      "legacy_read_ms": [
+        52.337,
+        54.731,
+        54.759
+      ],
+      "prepared_read_ms": [
+        16.257,
+        16.539,
+        13.163
+      ],
+      "legacy_median_ms": 54.731,
+      "prepared_median_ms": 16.257
+    },
+    {
+      "article_id": "2373",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 31,
+      "blocks": 100,
+      "hierarchy_known_sections": 31,
+      "legacy_read_ms": [
+        50.034,
+        51.732,
+        48.176
+      ],
+      "prepared_read_ms": [
+        14.812,
+        13.377,
+        15.672
+      ],
+      "legacy_median_ms": 50.034,
+      "prepared_median_ms": 14.812
+    },
+    {
+      "article_id": "2863",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 44,
+      "blocks": 173,
+      "hierarchy_known_sections": 44,
+      "legacy_read_ms": [
+        67.128,
+        75.527,
+        65.975
+      ],
+      "prepared_read_ms": [
+        19.209,
+        16.929,
+        18.939
+      ],
+      "legacy_median_ms": 67.128,
+      "prepared_median_ms": 18.939
+    },
+    {
+      "article_id": "2953",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 28,
+      "blocks": 97,
+      "hierarchy_known_sections": 28,
+      "legacy_read_ms": [
+        40.805,
+        39.372,
+        46.033
+      ],
+      "prepared_read_ms": [
+        13.963,
+        13.268,
+        13.808
+      ],
+      "legacy_median_ms": 40.805,
+      "prepared_median_ms": 13.808
+    },
+    {
+      "article_id": "3347",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 41,
+      "blocks": 179,
+      "hierarchy_known_sections": 41,
+      "legacy_read_ms": [
+        129.863,
+        107.834,
+        117.382
+      ],
+      "prepared_read_ms": [
+        21.787,
+        13.6,
+        18.858
+      ],
+      "legacy_median_ms": 117.382,
+      "prepared_median_ms": 18.858
+    },
+    {
+      "article_id": "3579",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 41,
+      "blocks": 119,
+      "hierarchy_known_sections": 41,
+      "legacy_read_ms": [
+        42.252,
+        60.99,
+        45.381
+      ],
+      "prepared_read_ms": [
+        17.989,
+        16.323,
+        16.285
+      ],
+      "legacy_median_ms": 45.381,
+      "prepared_median_ms": 16.323
+    },
+    {
+      "article_id": "3869",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 31,
+      "blocks": 145,
+      "hierarchy_known_sections": 31,
+      "legacy_read_ms": [
+        68.114,
+        77.963,
+        69.516
+      ],
+      "prepared_read_ms": [
+        19.01,
+        16.981,
+        15.946
+      ],
+      "legacy_median_ms": 69.516,
+      "prepared_median_ms": 16.981
+    },
+    {
+      "article_id": "392",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 61,
+      "blocks": 150,
+      "hierarchy_known_sections": 61,
+      "legacy_read_ms": [
+        72.392,
+        98.259,
+        83.755
+      ],
+      "prepared_read_ms": [
+        19.481,
+        15.888,
+        14.834
+      ],
+      "legacy_median_ms": 83.755,
+      "prepared_median_ms": 15.888
+    },
+    {
+      "article_id": "441",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 42,
+      "blocks": 121,
+      "hierarchy_known_sections": 42,
+      "legacy_read_ms": [
+        39.269,
+        42.03,
+        44.544
+      ],
+      "prepared_read_ms": [
+        15.23,
+        13.422,
+        16.419
+      ],
+      "legacy_median_ms": 42.03,
+      "prepared_median_ms": 15.23
+    },
+    {
+      "article_id": "5010",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 53,
+      "blocks": 170,
+      "hierarchy_known_sections": 53,
+      "legacy_read_ms": [
+        67.96,
+        66.622,
+        84.703
+      ],
+      "prepared_read_ms": [
+        17.441,
+        106.603,
+        15.375
+      ],
+      "legacy_median_ms": 67.96,
+      "prepared_median_ms": 17.441
+    },
+    {
+      "article_id": "527",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 44,
+      "blocks": 199,
+      "hierarchy_known_sections": 44,
+      "legacy_read_ms": [
+        100.237,
+        94.347,
+        77.36
+      ],
+      "prepared_read_ms": [
+        20.18,
+        15.391,
+        10.767
+      ],
+      "legacy_median_ms": 94.347,
+      "prepared_median_ms": 15.391
+    },
+    {
+      "article_id": "5606",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 27,
+      "blocks": 118,
+      "hierarchy_known_sections": 27,
+      "legacy_read_ms": [
+        40.289,
+        42.423,
+        43.727
+      ],
+      "prepared_read_ms": [
+        16.08,
+        14.313,
+        15.272
+      ],
+      "legacy_median_ms": 42.423,
+      "prepared_median_ms": 15.272
+    },
+    {
+      "article_id": "5666",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 30,
+      "blocks": 133,
+      "hierarchy_known_sections": 30,
+      "legacy_read_ms": [
+        34.143,
+        35.962,
+        37.25
+      ],
+      "prepared_read_ms": [
+        12.187,
+        11.556,
+        12.143
+      ],
+      "legacy_median_ms": 35.962,
+      "prepared_median_ms": 12.143
+    },
+    {
+      "article_id": "5959",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 40,
+      "blocks": 176,
+      "hierarchy_known_sections": 40,
+      "legacy_read_ms": [
+        68.74,
+        64.808,
+        63.923
+      ],
+      "prepared_read_ms": [
+        14.749,
+        15.024,
+        16.736
+      ],
+      "legacy_median_ms": 64.808,
+      "prepared_median_ms": 15.024
+    },
+    {
+      "article_id": "6169",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 36,
+      "blocks": 125,
+      "hierarchy_known_sections": 36,
+      "legacy_read_ms": [
+        45.3,
+        44.334,
+        43.925
+      ],
+      "prepared_read_ms": [
+        15.396,
+        12.604,
+        13.192
+      ],
+      "legacy_median_ms": 44.334,
+      "prepared_median_ms": 13.192
+    },
+    {
+      "article_id": "6728",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 22,
+      "blocks": 86,
+      "hierarchy_known_sections": 22,
+      "legacy_read_ms": [
+        21.744,
+        22.438,
+        20.514
+      ],
+      "prepared_read_ms": [
+        10.841,
+        12.584,
+        11.82
+      ],
+      "legacy_median_ms": 21.744,
+      "prepared_median_ms": 11.82
+    },
+    {
+      "article_id": "7031",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 26,
+      "blocks": 98,
+      "hierarchy_known_sections": 26,
+      "legacy_read_ms": [
+        43.365,
+        38.532,
+        42.405
+      ],
+      "prepared_read_ms": [
+        11.299,
+        11.883,
+        12.031
+      ],
+      "legacy_median_ms": 42.405,
+      "prepared_median_ms": 11.883
+    },
+    {
+      "article_id": "7148",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 74,
+      "blocks": 396,
+      "hierarchy_known_sections": 74,
+      "legacy_read_ms": [
+        112.195,
+        116.242,
+        120.435
+      ],
+      "prepared_read_ms": [
+        20.596,
+        18.867,
+        18.164
+      ],
+      "legacy_median_ms": 116.242,
+      "prepared_median_ms": 18.867
+    },
+    {
+      "article_id": "7418",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 17,
+      "blocks": 53,
+      "hierarchy_known_sections": 17,
+      "legacy_read_ms": [
+        20.075,
+        20.429,
+        19.738
+      ],
+      "prepared_read_ms": [
+        12.444,
+        10.556,
+        10.467
+      ],
+      "legacy_median_ms": 20.075,
+      "prepared_median_ms": 10.556
+    },
+    {
+      "article_id": "7855",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 58,
+      "blocks": 163,
+      "hierarchy_known_sections": 58,
+      "legacy_read_ms": [
+        62.222,
+        67.761,
+        69.962
+      ],
+      "prepared_read_ms": [
+        13.44,
+        12.717,
+        12.606
+      ],
+      "legacy_median_ms": 67.761,
+      "prepared_median_ms": 12.717
+    },
+    {
+      "article_id": "8048",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 33,
+      "blocks": 101,
+      "hierarchy_known_sections": 33,
+      "legacy_read_ms": [
+        42.723,
+        45.647,
+        45.571
+      ],
+      "prepared_read_ms": [
+        13.633,
+        13.28,
+        13.452
+      ],
+      "legacy_median_ms": 45.571,
+      "prepared_median_ms": 13.452
+    },
+    {
+      "article_id": "83706",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 14,
+      "blocks": 75,
+      "hierarchy_known_sections": 14,
+      "legacy_read_ms": [
+        28.787,
+        26.655,
+        29.582
+      ],
+      "prepared_read_ms": [
+        11.469,
+        13.618,
+        14.9
+      ],
+      "legacy_median_ms": 28.787,
+      "prepared_median_ms": 13.618
+    },
+    {
+      "article_id": "8547",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 41,
+      "blocks": 793,
+      "hierarchy_known_sections": 41,
+      "legacy_read_ms": [
+        291.96,
+        359.634,
+        342.527
+      ],
+      "prepared_read_ms": [
+        32.393,
+        16.415,
+        16.399
+      ],
+      "legacy_median_ms": 342.527,
+      "prepared_median_ms": 16.415
+    },
+    {
+      "article_id": "8668",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 25,
+      "blocks": 135,
+      "hierarchy_known_sections": 25,
+      "legacy_read_ms": [
+        54.783,
+        38.217,
+        36.641
+      ],
+      "prepared_read_ms": [
+        17.712,
+        14.841,
+        17.166
+      ],
+      "legacy_median_ms": 38.217,
+      "prepared_median_ms": 17.166
+    },
+    {
+      "article_id": "8673",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 38,
+      "blocks": 507,
+      "hierarchy_known_sections": 38,
+      "legacy_read_ms": [
+        262.121,
+        264.394,
+        295.997
+      ],
+      "prepared_read_ms": [
+        25.778,
+        21.364,
+        20.267
+      ],
+      "legacy_median_ms": 264.394,
+      "prepared_median_ms": 21.364
+    },
+    {
+      "article_id": "8786",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 43,
+      "blocks": 899,
+      "hierarchy_known_sections": 43,
+      "legacy_read_ms": [
+        523.936,
+        469.471,
+        465.826
+      ],
+      "prepared_read_ms": [
+        28.338,
+        32.59,
+        19.449
+      ],
+      "legacy_median_ms": 469.471,
+      "prepared_median_ms": 28.338
+    },
+    {
+      "article_id": "89749",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 14,
+      "blocks": 89,
+      "hierarchy_known_sections": 13,
+      "legacy_read_ms": [
+        52.935,
+        52.378,
+        49.051
+      ],
+      "prepared_read_ms": [
+        14.014,
+        14.649,
+        16.253
+      ],
+      "legacy_median_ms": 52.378,
+      "prepared_median_ms": 14.649
+    },
+    {
+      "article_id": "936",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 42,
+      "blocks": 103,
+      "hierarchy_known_sections": 42,
+      "legacy_read_ms": [
+        41.519,
+        59.493,
+        48.848
+      ],
+      "prepared_read_ms": [
+        15.754,
+        19.216,
+        14.094
+      ],
+      "legacy_median_ms": 48.848,
+      "prepared_median_ms": 15.754
+    },
+    {
+      "article_id": "9621",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 40,
+      "blocks": 481,
+      "hierarchy_known_sections": 40,
+      "legacy_read_ms": [
+        262.34,
+        223.678,
+        296.308
+      ],
+      "prepared_read_ms": [
+        31.255,
+        20.402,
+        19.774
+      ],
+      "legacy_median_ms": 262.34,
+      "prepared_median_ms": 20.402
+    },
+    {
+      "article_id": "96629",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 13,
+      "blocks": 56,
+      "hierarchy_known_sections": 13,
+      "legacy_read_ms": [
+        29.991,
+        30.903,
+        30.649
+      ],
+      "prepared_read_ms": [
+        17.129,
+        15.565,
+        13.143
+      ],
+      "legacy_median_ms": 30.649,
+      "prepared_median_ms": 15.565
+    },
+    {
+      "article_id": "9886",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 40,
+      "blocks": 597,
+      "hierarchy_known_sections": 40,
+      "legacy_read_ms": [
+        360.467,
+        387.38,
+        325.814
+      ],
+      "prepared_read_ms": [
+        27.716,
+        17.317,
+        19.884
+      ],
+      "legacy_median_ms": 360.467,
+      "prepared_median_ms": 19.884
+    },
+    {
+      "article_id": "grades1.html",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 1,
+      "blocks": 9,
+      "hierarchy_known_sections": 0,
+      "legacy_read_ms": [
+        3.432,
+        3.409,
+        3.423
+      ],
+      "prepared_read_ms": [
+        13.192,
+        13.374,
+        15.108
+      ],
+      "legacy_median_ms": 3.423,
+      "prepared_median_ms": 13.374
+    },
+    {
+      "article_id": "grades2.html",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 1,
+      "blocks": 9,
+      "hierarchy_known_sections": 0,
+      "legacy_read_ms": [
+        3.579,
+        3.511,
+        3.001
+      ],
+      "prepared_read_ms": [
+        15.62,
+        15.401,
+        13.997
+      ],
+      "legacy_median_ms": 3.511,
+      "prepared_median_ms": 15.401
+    },
+    {
+      "article_id": "grades3.html",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 1,
+      "blocks": 9,
+      "hierarchy_known_sections": 0,
+      "legacy_read_ms": [
+        2.779,
+        2.773,
+        2.724
+      ],
+      "prepared_read_ms": [
+        12.819,
+        11.695,
+        12.661
+      ],
+      "legacy_median_ms": 2.773,
+      "prepared_median_ms": 12.661
+    },
+    {
+      "article_id": "grades4.html",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 1,
+      "blocks": 9,
+      "hierarchy_known_sections": 0,
+      "legacy_read_ms": [
+        3.74,
+        4.63,
+        4.165
+      ],
+      "prepared_read_ms": [
+        16.172,
+        13.562,
+        12.745
+      ],
+      "legacy_median_ms": 4.165,
+      "prepared_median_ms": 13.562
+    },
+    {
+      "article_id": "grades5.html",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 1,
+      "blocks": 9,
+      "hierarchy_known_sections": 0,
+      "legacy_read_ms": [
+        3.799,
+        3.443,
+        4.01
+      ],
+      "prepared_read_ms": [
+        12.239,
+        15.518,
+        13.182
+      ],
+      "legacy_median_ms": 3.799,
+      "prepared_median_ms": 13.182
+    },
+    {
+      "article_id": "grades6.html",
+      "storage_matches_source": true,
+      "reader_matches_legacy": true,
+      "sections": 1,
+      "blocks": 9,
+      "hierarchy_known_sections": 0,
+      "legacy_read_ms": [
+        3.015,
+        3.408,
+        3.027
+      ],
+      "prepared_read_ms": [
+        13.032,
+        13.345,
+        12.921
+      ],
+      "legacy_median_ms": 3.027,
+      "prepared_median_ms": 13.032
+    }
+  ],
+  "checked_articles": 67,
+  "failed_articles": 0,
+  "source_unchanged": true,
+  "compatible_generation": true
+}

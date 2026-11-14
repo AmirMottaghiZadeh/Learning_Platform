@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "created_at": "2026-11-10T21:19:22.284644+00:00",
+  "dataset_version": "phase0-2026-11-11-v1",
+  "dataset_digest": "778a27a583abd49b500548c260a65419c12c91699e4bfd840ec5331573afc6d8",
+  "suite_size": 100,
+  "clinical_gold_status": "source_checked_not_clinically_approved",
+  "kind": "reference_search_source_validation",
+  "invalid_cases": 0,
+  "provider_requests": 0,
+  "source_checked_cases": 100,
+  "unique_articles": 21,
+  "articles": [
+    {
+      "article_id": "2863",
+      "title": "Nocturnal enuresis in children: Management",
+      "content_hash": "36875287d9849c20a3bec4f6ff260ace0d6aa9c4ca51a1b159a2a74c42600563",
+      "source_version": "44.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "5666",
+      "title": "Chronic plaque psoriasis in adults: Overview of management",
+      "content_hash": "794af497220d1295601cba01e46cde6a6cbf750fd4f4b7790ab61cab297d5a93",
+      "source_version": "95.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "3869",
+      "title": "Hypertension in adults: Initial management",
+      "content_hash": "9a19d6f6fdf732555b47f1be602afde262d3cc70b8d58063168b57e762d8ebf9",
+      "source_version": "111.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "527",
+      "title": "Initiating asthma therapy and monitoring in adolescents and adults",
+      "content_hash": "9b3ae71e1690252f10f255d2c10d2cf18a5cf5a42da610376fd441f077b7fa64",
+      "source_version": "48.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "1779",
+      "title": "Initial management of hyperglycemia in adults with type 2 diabetes mellitus",
+      "content_hash": "52fdd7465709cbe286649a3e054261c2feff8bc4e4a930a901390c9a8f983065",
+      "source_version": "90.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "7855",
+      "title": "Treatment of primary hypothyroidism in adults",
+      "content_hash": "6b0b00ad6034588194e55c41db775b4c06899d6a5900f4b23996cc47d11fed41",
+      "source_version": "58.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "7148",
+      "title": "Treatment of iron deficiency and iron deficiency anemia in adults",
+      "content_hash": "9571de8d285dc82327a6d1baf51d9c8a2c4e0e69018ee88e36efcd4e49e49d76",
+      "source_version": "183.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "3347",
+      "title": "Acute treatment of migraine in adults",
+      "content_hash": "1ab8e3b1f6f1ff04cf280d0d618e6487fdd0ea59b38d32f81235fe94f9ea6626",
+      "source_version": "125.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "2258",
+      "title": "Initial management of gastroesophageal reflux disease in adults",
+      "content_hash": "439241019d80801e86f79b4e02697fb3d1c51547fbb19cec869e969c6a7c4e3d",
+      "source_version": "65.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "140619",
+      "title": "Treatment of Helicobacter pylori infection in adults",
+      "content_hash": "d2b4cd535de544eb6e9aa21a1d6747c677d1f496723d24d9a03ff2fe5cd65fed",
+      "source_version": "13.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "1022",
+      "title": "Atrial fibrillation: Overview of management",
+      "content_hash": "5b0211c7fc743bbdce375666ab3b403fdbea12a6dc5e8df3ffbd62c996947f69",
+      "source_version": "94.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "1666",
+      "title": "Gout: Treatment of flares",
+      "content_hash": "558ff276c6a4429f0a94deae90d323e635694f042a3716b7e8a7047599b1cfdf",
+      "source_version": "73.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "7031",
+      "title": "Treatment of community-acquired pneumonia in adults in the outpatient setting",
+      "content_hash": "65aa47cba7f96c9be5657afb9b337e8d6481407c7971bc88e7287d929a875c94",
+      "source_version": "83.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "5959",
+      "title": "Acute otitis media in children: Treatment",
+      "content_hash": "342a7e279ccfa0f76946062d42fc1a574bdcbe12e3aa90ed806c221ef1dc82d1",
+      "source_version": "73.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "392",
+      "title": "Anaphylaxis: Emergency treatment",
+      "content_hash": "cefd41813dc0acc70c1383ec43834f45e29ebf397254ce6889ce410475b8b891",
+      "source_version": "72.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "8786",
+      "title": "Aripiprazole (oral and long-acting injectable [Abilify Maintena]): Drug information",
+      "content_hash": "de21c250a5679764a005c14730d73baa61d6cf022fde28db4a4d157d9c808393",
+      "source_version": "913.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "9621",
+      "title": "Metformin: Drug information",
+      "content_hash": "4799faa335871801717f0bfeb0a804e82907d3fce97215237c76fa4adce08b3e",
+      "source_version": "1289.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "8673",
+      "title": "Amoxicillin: Drug information",
+      "content_hash": "9808f7b71a7c558b26064e695cdbbc5b82652187832142b100dfc3defa2db808",
+      "source_version": "841.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "10050",
+      "title": "Warfarin: Drug information",
+      "content_hash": "13053dda42413e47117e65472235950ed25b77f1555fb9c291e6e27a6b1d357d",
+      "source_version": "737.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "9886",
+      "title": "Sertraline: Drug information",
+      "content_hash": "28edfb69233b6e2429f3d62e6798df2b02ee84236a530ea752e6f86dcd8becbf",
+      "source_version": "908.0",
+      "extraction_version": "utd-blocks-v4"
+    },
+    {
+      "article_id": "8547",
+      "title": "Ibuprofen: Drug information",
+      "content_hash": "9fc090031a456aa2e1b7994cbde99cf4cfa727880defeba59af857ea2a6f3828",
+      "source_version": "1424.0",
+      "extraction_version": "utd-blocks-v4"
+    }
+  ]
+}

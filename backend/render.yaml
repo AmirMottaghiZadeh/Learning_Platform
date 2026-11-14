@@ -1,0 +1,109 @@
+# Render Blueprint for the free tier: one web service, no Redis, no worker.
+# Pair with an external Postgres (e.g. neon.tech's free tier never expires,
+# unlike Render's own free Postgres) — paste its connection string into
+# DATABASE_URL below once the service exists.
+#
+# Cache and background jobs use the same no-Redis setup validated on Runflare:
+# a Postgres-backed DatabaseCache, and CELERY_RUN_TASKS_IN_REQUEST=True so
+# nothing needs a broker or a separate worker process.
+#
+# preDeployCommand needs a paid plan, so release.sh (migrate, createcachetable,
+# load_atc_reference, bootstrap_superuser) runs at the front of startCommand
+# instead — same idempotent-on-every-boot idea as backend/docker-start.sh for
+# Runflare. Render sets $PORT itself; gunicorn.conf.py doesn't know about it,
+# so --bind passes it explicitly and wins over the config file's default.
+services:
+  - type: web
+    name: pharmexa-backend
+    env: python
+    plan: free
+    # render.yaml lives in backend/, but Render always clones the repo root
+    # and runs commands from there unless told otherwise — without this,
+    # `./build.sh` doesn't exist from where Render's shell actually sits, and
+    # it also can't find backend/.python-version, so it silently falls back
+    # to its own default Python instead of the one this project needs.
+    rootDir: backend
+    buildCommand: ./build.sh
+    startCommand: >-
+      ./release.sh &&
+      exec gunicorn config.wsgi:application --config gunicorn.conf.py --bind 0.0.0.0:$PORT
+    healthCheckPath: /api/v1/health/
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_FORMAT
+        value: json
+      - key: QUIZ_API_ENABLED
+        value: False
+      - key: FLASHCARDS_API_ENABLED
+        value: False
+      - key: DATA_QUALITY_CENTER_ENABLED
+        value: False
+      # Apply the feature access and quota rules configured in /ops/.
+      - key: BILLING_ENFORCEMENT_ENABLED
+        value: True
+
+      # Paste the external Postgres connection string here (e.g. from Neon).
+      - key: DATABASE_URL
+        sync: false
+
+      # Render's disk can't hold the ~2.8GB UpToDate snapshot, so the /uptodate/
+      # endpoints read it from this MySQL mirror instead of local SQLite files
+      # (see apps.uptodate.services). Populate it once with
+      # `python manage.py migrate_uptodate_to_mysql` from a machine that has
+      # the local snapshot (UPTODATE_DB_DIR) and can reach the mirror.
+      - key: UPTODATE_MYSQL_URL
+        sync: false
+
+      # No Redis on the free plan: cache lives in Postgres, and background
+      # jobs (just the password-reset email today) run inline.
+      - key: CACHE_BACKEND
+        value: django.core.cache.backends.db.DatabaseCache
+      - key: CACHE_LOCATION
+        value: pharmexa_cache
+      - key: CELERY_RUN_TASKS_IN_REQUEST
+        value: "True"
+      - key: ASYNC_EMAIL_ENABLED
+        value: "False"
+
+      # Render's free instance is small; cap gunicorn workers explicitly
+      # rather than let it size off the (shared, possibly many-core) host.
+      - key: WEB_CONCURRENCY
+        value: 2
+
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: PASSWORD_RESET_FRONTEND_URL
+        sync: false   # set to the deployed frontend URL
+
+      # Optional: set all three to get an admin account with no shell access
+      # (the free plan doesn't have one) — see bootstrap_superuser.
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        value: True
+      - key: DEFAULT_FROM_EMAIL
+        sync: false

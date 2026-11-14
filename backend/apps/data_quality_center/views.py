@@ -1,0 +1,567 @@
+"""The quality desk: operators draft summaries; authorized reviewers decide
+before approvers apply them. Workflow and capability checks are shared with
+services.py and the management shell.
+"""
+
+import base64
+from functools import wraps
+
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
+from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+
+from apps.manage.views import login_url as manage_login_url
+from apps.manage.views import logout_view as manage_logout
+from apps.manage.views import to_login
+from apps.accounts.access import platform_admin
+from apps.drugs.models import CLINICAL_FIELD_KEYS, Ingredient, IngredientProfileSection
+from apps.drugs.review import with_review_status
+
+from . import access, services
+from .selectors import BROWSE_KEYS, QUEUE_FILTERS, browse_query, drug_catalog, filtered_ingredients, queue_rows
+from .checks import run_checks, warning_count, word_diff
+from .labels import FIELD_FA, section_state
+from .models import ReviewEvent, SectionEdit, SectionEditRequest
+from .models import AISettings,AIPromptPreset
+from .services import WorkflowError
+
+PAGE_SIZE = 25
+
+
+# -- access -----------------------------------------------------------------
+
+def operator_required(view):
+    """Read access to the desk, including assigned platform permissions."""
+
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        user = request.user
+        if not access.can_view(user):
+            return redirect(manage_login_url(request.get_full_path()))
+        return view(request, *args, **kwargs)
+
+    return wrapper
+
+
+def capability_required(allowed):
+    def decorator(view):
+        @operator_required
+        @wraps(view)
+        def wrapper(request, *args, **kwargs):
+            if not allowed(request.user):
+                messages.error(request, "مجوز انجام این کار را ندارید.")
+                return redirect("data_quality_center:queue")
+            return view(request, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
+editor_required = capability_required(access.can_edit)
+reviewer_required = capability_required(access.can_review)
+revert_required = capability_required(access.can_revert)
+
+
+# Signing in and out is the admin's (apps.manage); these old addresses send there.
+login_view = to_login
+
+
+@require_POST
+def logout_view(request):
+    return manage_logout(request)
+
+
+# -- shared page data ---------------------------------------------------------
+
+def _shell(request, active):
+    """What every console page's top bar and sidebar show."""
+    user = request.user
+    mine = SectionEditRequest.objects.filter(requested_by=user)
+    today = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+    counts = mine.aggregate(
+        drafts=Count("pk", filter=Q(status=SectionEditRequest.STATUS_DRAFT)),
+        pending=Count("pk", filter=Q(status=SectionEditRequest.STATUS_PENDING)),
+        changes=Count("pk", filter=Q(status=SectionEditRequest.STATUS_CHANGES_REQUESTED)),
+    )
+    return {
+        "can_manage_ai": platform_admin(user),
+        "active": active,
+        "can_approve": access.can_approve(user),
+        "can_revert": access.can_revert(user),
+        "nav": {
+            "my_open": counts["drafts"] + counts["pending"] + counts["changes"],
+            "changes": counts["changes"],
+            "review": (
+                SectionEditRequest.objects.filter(status=SectionEditRequest.STATUS_PENDING).count()
+                if access.can_review(user) else 0
+            ),
+            "ingredients": Ingredient.objects.count(),
+        },
+        "today": {
+            "submitted": ReviewEvent.objects.filter(
+                actor=user, action__in=[ReviewEvent.SUBMITTED, ReviewEvent.RESUBMITTED], created_at__gte=today
+            ).count(),
+            "approved": ReviewEvent.objects.filter(
+                request__requested_by=user, action=ReviewEvent.APPROVED, created_at__gte=today
+            ).count(),
+        },
+    }
+
+
+def _render(request, template, active, context):
+    return render(request, f"data_quality_center/{template}", {**_shell(request, active), **context})
+
+
+def _diffs(before_fa, after_fa, before_en, after_en):
+    fa_html, fa_add, fa_del = word_diff(before_fa, after_fa)
+    en_html, en_add, en_del = word_diff(before_en, after_en)
+    return {
+        "fa": fa_html, "en": en_html,
+        "added": fa_add + en_add, "removed": fa_del + en_del,
+        "fa_added": fa_add, "fa_removed": fa_del, "en_added": en_add, "en_removed": en_del,
+    }
+
+
+# -- edit queue -----------------------------------------------------------------
+
+@operator_required
+def queue(request):
+    catalog = drug_catalog(request.GET)
+    query = browse_query(request.GET, catalog)
+    qs = queue_rows(filtered_ingredients(request.user, query, catalog["chapter_codes"]))
+    page = Paginator(qs, PAGE_SIZE).get_page(query.get("page"))
+    if page.number > 1:
+        query["page"] = str(page.number)
+    else:
+        query.pop("page", None)
+    return _render(request, "queue.html", "queue", {
+        **catalog, "browse_query": query, "page": page, "search": query.get("q", ""),
+        "show": query.get("show", ""), "filters": QUEUE_FILTERS,
+    })
+
+
+# -- workspace ----------------------------------------------------------------
+
+def _neighbours(ingredient, queryset):
+    before = queryset.filter(Q(name__lt=ingredient.name) | Q(name=ingredient.name, pk__lt=ingredient.pk))
+    after = queryset.filter(Q(name__gt=ingredient.name) | Q(name=ingredient.name, pk__gt=ingredient.pk))
+    return (before.order_by("-name", "-pk").values_list("slug", flat=True).first(),
+            after.order_by("name", "pk").values_list("slug", flat=True).first())
+
+
+@operator_required
+def workspace(request, slug):
+    ingredient = get_object_or_404(with_review_status(Ingredient.objects.all()), slug=slug)
+    catalog = drug_catalog(request.GET) if any(request.GET.get(key) for key in BROWSE_KEYS) else None
+    query = browse_query(request.GET, catalog)
+    neighbours = filtered_ingredients(request.user, query, catalog["chapter_codes"] if catalog else ())
+    by_field = {s.field: s for s in IngredientProfileSection.objects.filter(ingredient=ingredient)}
+    sections = [by_field[f] for f in CLINICAL_FIELD_KEYS if f in by_field]
+    if not sections:
+        return _render(request, "workspace.html", "queue", {"ingredient": ingredient, "sections": [], "browse_query": query})
+
+    section_ids = [s.pk for s in sections]
+    open_by_section = {
+        r.section_id: r
+        for r in SectionEditRequest.objects.filter(
+            section_id__in=section_ids, status__in=SectionEditRequest.OPEN_STATUSES
+        )
+    }
+    my_drafts = set(
+        SectionEditRequest.objects.filter(
+            section_id__in=section_ids, requested_by=request.user, status=SectionEditRequest.STATUS_DRAFT
+        ).values_list("section_id", flat=True)
+    )
+    applied = set(SectionEdit.objects.filter(section_id__in=section_ids).values_list("section_id", flat=True))
+
+    field = request.GET.get("field")
+    selected = by_field.get(field)
+    if selected is None:
+        # first section that still needs work, else the first one
+        selected = next(
+            (s for s in sections if s.raw_text and (not s.summary_fa or not s.summary_en)), sections[0]
+        )
+
+    rows = [
+        {
+            "section": s,
+            "label": FIELD_FA.get(s.field, s.get_field_display()),
+            "state": section_state(s, open_by_section.get(s.pk), s.pk in my_drafts, s.pk in applied, request.user),
+            "selected": s.pk == selected.pk,
+        }
+        for s in sections
+    ]
+    done = sum(1 for r in rows if r["state"]["key"] in ("approved", "unreviewed"))
+    waiting = sum(1 for r in rows if r["state"]["key"] == "pending")
+
+    held = open_by_section.get(selected.pk)
+    mine = services.editable_request(selected, request.user)
+    if held and held.requested_by_id != request.user.id:
+        mode, current = "locked", held
+    elif held and held.is_pending:
+        mode, current = "pending", held
+    else:
+        mode, current = "edit", mine
+
+    if mode == "edit":
+        draft_fa = current.after_fa if current else selected.summary_fa
+        draft_en = current.after_en if current else selected.summary_en
+        base_fa = current.before_fa if current else selected.summary_fa
+        base_en = current.before_en if current else selected.summary_en
+        checks = run_checks(selected.raw_text, base_fa, draft_fa, base_en, draft_en)
+    else:
+        draft_fa, draft_en = current.after_fa, current.after_en
+        base_fa, base_en = current.before_fa, current.before_en
+        checks = current.checks
+
+    extra_before_fa = current.before_other_sources_fa if current else selected.other_sources_fa
+    extra_before_en = current.before_other_sources_en if current else selected.other_sources_en
+    extra_fa = current.after_other_sources_fa if current else selected.other_sources_fa
+    extra_en = current.after_other_sources_en if current else selected.other_sources_en
+
+    last_edit = SectionEdit.objects.filter(section=selected).first()
+    previous_slug, next_slug = _neighbours(ingredient, neighbours)
+    workspace_query = query.copy()
+    workspace_query["field"] = selected.field
+    if not access.can_edit(request.user):
+        mode = "readonly"
+
+    return _render(request, "workspace.html", "queue", {
+        "ingredient": ingredient,
+        "browse_query": query,
+        "workspace_query": workspace_query,
+        "sections": rows,
+        "done": done,
+        "waiting": waiting,
+        "total": len(rows),
+        "section": selected,
+        "section_label": FIELD_FA.get(selected.field, selected.get_field_display()),
+        "mode": mode,
+        "current": current,
+        "draft_fa": draft_fa,
+        "draft_en": draft_en,
+        "checks": checks,
+        "warnings": warning_count(checks),
+        "diff": _diffs(base_fa, draft_fa, base_en, draft_en),
+        "events": current.events.all()[:20] if current else [],
+        "last_edit": last_edit,
+        "previous_slug": previous_slug,
+        "next_slug": next_slug,
+        "min_reason": services.min_reason_length(),
+        "ai_presets": AIPromptPreset.objects.filter(active=True),
+        "ai_enabled": AISettings.objects.filter(pk=1,enabled=True).exists(),
+        "other_sources_fa": extra_fa,
+        "other_sources_en": extra_en,
+        "other_sources_diff": _other_sources_diff(extra_before_fa, extra_fa, extra_before_en, extra_en),
+        "review_version": services.drug_review_version(ingredient, sections),
+        "drug_reviews": ingredient.drug_reviews.all()[:5],
+    })
+
+
+def _section_or_404(slug, field):
+    return get_object_or_404(
+        IngredientProfileSection.objects.select_related("ingredient"), ingredient__slug=slug, field=field
+    )
+
+
+def _workspace_url(slug, field, params=None):
+    query = browse_query(params or {})
+    if field:
+        query["field"] = field
+    url = reverse("data_quality_center:workspace", args=[slug])
+    return f"{url}?{query.urlencode()}" if query else url
+
+
+def _other_sources_diff(before_fa, after_fa, before_en, after_en):
+    return {**_diffs(before_fa, after_fa, before_en, after_en),
+            "has_content": any(v.strip() for v in (before_fa, after_fa, before_en, after_en))}
+
+
+def _request_extra_diff(req):
+    return _other_sources_diff(req.before_other_sources_fa, req.after_other_sources_fa,
+                               req.before_other_sources_en, req.after_other_sources_en)
+
+
+@require_POST
+@capability_required(access.can_approve)
+def confirm_drug_review(request, slug):
+    ingredient = get_object_or_404(Ingredient, slug=slug)
+    try:
+        services.confirm_drug_review(ingredient, request.user, request.POST.get("version", ""), http_request=request)
+    except WorkflowError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "بازبینی کل دارو تأیید شد.")
+    return redirect(_workspace_url(slug, request.GET.get("field", ""), request.GET))
+
+
+@require_POST
+@editor_required
+def save_draft(request, slug, field):
+    """Autosave: stores the editor's content as the operator's draft and
+    answers with the live checks and diff."""
+    section = _section_or_404(slug, field)
+    try:
+        req = services.save_draft(
+            section,
+            request.user,
+            summary_fa=request.POST.get("summary_fa", ""),
+            summary_en=request.POST.get("summary_en", ""),
+            reason=request.POST.get("reason", ""),
+            other_sources_fa=request.POST.get("other_sources_fa"),
+            other_sources_en=request.POST.get("other_sources_en"),
+        )
+    except WorkflowError as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=409)
+    checks = run_checks(section.raw_text, req.before_fa, req.after_fa, req.before_en, req.after_en)
+    return JsonResponse({
+        "ok": True,
+        "request_id": req.pk,
+        "status": req.status,
+        "saved_at": timezone.localtime(req.updated_at).strftime("%H:%M"),
+        "checks": checks,
+        "warnings": warning_count(checks),
+        "diff": _diffs(req.before_fa, req.after_fa, req.before_en, req.after_en),
+        "other_sources_diff": _request_extra_diff(req),
+    })
+
+
+@require_POST
+@editor_required
+def submit(request, slug, field):
+    section = _section_or_404(slug, field)
+    try:
+        req = services.save_draft(
+            section,
+            request.user,
+            summary_fa=request.POST.get("summary_fa", ""),
+            summary_en=request.POST.get("summary_en", ""),
+            reason=request.POST.get("reason", ""),
+            other_sources_fa=request.POST.get("other_sources_fa"),
+            other_sources_en=request.POST.get("other_sources_en"),
+        )
+        services.submit(req, request.user, http_request=request)
+    except WorkflowError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"درخواست #{req.pk} برای تأیید نهایی فرستاده شد.")
+    return redirect(_workspace_url(slug, field, request.GET))
+
+
+@require_POST
+@editor_required
+def withdraw(request, slug, field):
+    section = _section_or_404(slug, field)
+    req = get_object_or_404(
+        SectionEditRequest, section=section, requested_by=request.user, status=SectionEditRequest.STATUS_PENDING
+    )
+    try:
+        services.withdraw(req, request.user, http_request=request)
+    except WorkflowError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.info(request, "درخواست پس گرفته شد و دوباره قابل ویرایش است.")
+    return redirect(_workspace_url(slug, field, request.GET))
+
+
+@require_POST
+@editor_required
+def discard(request, slug, field):
+    section = _section_or_404(slug, field)
+    req = services.editable_request(section, request.user)
+    if req is None:
+        return redirect(_workspace_url(slug, field, request.GET))
+    try:
+        services.discard(req, request.user, http_request=request)
+    except WorkflowError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.info(request, "تغییرات کنار گذاشته شد.")
+    return redirect(_workspace_url(slug, field, request.GET))
+
+
+# -- my requests ----------------------------------------------------------------
+
+MINE_TABS = {
+    "open": ("باز", SectionEditRequest.EDITABLE_STATUSES + (SectionEditRequest.STATUS_PENDING,)),
+    "approved": ("تأییدشده", (SectionEditRequest.STATUS_APPROVED,)),
+    "closed": ("ردشده یا کنارگذاشته", (SectionEditRequest.STATUS_REJECTED, SectionEditRequest.STATUS_DISCARDED)),
+}
+
+
+@operator_required
+def my_requests(request):
+    tab = request.GET.get("tab", "open")
+    if tab not in MINE_TABS:
+        tab = "open"
+    qs = (
+        SectionEditRequest.objects.filter(requested_by=request.user, status__in=MINE_TABS[tab][1])
+        .select_related("section__ingredient")
+        .order_by("-updated_at")
+    )
+    page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
+    for req in page:
+        req.field_label = FIELD_FA.get(req.field, req.get_field_display())
+    return _render(request, "mine.html", "mine", {
+        "page": page, "tab": tab, "tabs": {k: v[0] for k, v in MINE_TABS.items()},
+    })
+
+
+# -- review desk ----------------------------------------------------------------
+
+@reviewer_required
+def review_desk(request):
+    pending = list(
+        SectionEditRequest.objects.filter(status=SectionEditRequest.STATUS_PENDING)
+        .select_related("section__ingredient")
+        .order_by("submitted_at", "pk")
+    )
+    for req in pending:
+        req.field_label = FIELD_FA.get(req.field, req.get_field_display())
+        _, req.added, req.removed = word_diff(
+            f"{req.before_fa} {req.before_en}", f"{req.after_fa} {req.after_en}"
+        )
+        req.warnings = warning_count(req.checks)
+
+    selected = None
+    wanted = request.GET.get("id")
+    if wanted and wanted.isdigit():
+        selected = next((r for r in pending if r.pk == int(wanted)), None)
+    if selected is None and pending:
+        selected = pending[0]
+
+    context = {"pending": pending, "selected": selected}
+    if selected:
+        section = selected.section
+        context.update({
+            "diff": _diffs(selected.before_fa, selected.after_fa, selected.before_en, selected.after_en),
+            "other_sources_diff": _request_extra_diff(selected),
+            "events": selected.events.all(),
+            "drifted": services.request_has_drifted(selected, section),
+            "workspace_url": _workspace_url(section.ingredient.slug, section.field),
+        })
+    return _render(request, "review.html", "review", context)
+
+
+@require_POST
+@reviewer_required
+def review_action(request, pk):
+    req = get_object_or_404(SectionEditRequest, pk=pk)
+    action = request.POST.get("action")
+    note = request.POST.get("note", "").strip()
+    label = f"#{req.pk} · {req.ingredient_name}"
+    try:
+        if action == "approve":
+            services.approve(req, request.user, note, http_request=request)
+            messages.success(request, f"{label} تأیید و در دیتابیس اعمال شد.")
+        elif action == "changes":
+            services.request_changes(req, request.user, note, http_request=request)
+            messages.info(request, f"{label} برای اصلاح به اپراتور برگشت.")
+        elif action == "reject":
+            services.reject(req, request.user, note, http_request=request)
+            messages.info(request, f"{label} رد شد.")
+        else:
+            messages.error(request, "اقدام نامعتبر.")
+    except WorkflowError as exc:
+        messages.error(request, str(exc))
+        return redirect(f"{reverse('data_quality_center:review')}?id={req.pk}")
+    return redirect("data_quality_center:review")
+
+
+# -- history & audit ----------------------------------------------------------
+
+@operator_required
+def history(request):
+    tab = request.GET.get("tab", "events")
+    search = request.GET.get("q", "").strip()
+    action = request.GET.get("action", "")
+    section_id = request.GET.get("section", "")
+
+    if tab == "edits":
+        qs = SectionEdit.objects.select_related("section__ingredient").prefetch_related("revert_requests")
+        if search:
+            qs = qs.filter(Q(ingredient_name__icontains=search) | Q(editor_username__icontains=search))
+        if section_id.isdigit():
+            qs = qs.filter(section_id=int(section_id))
+        page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
+        for edit in page:
+            edit.field_label = FIELD_FA.get(edit.field, edit.get_field_display())
+            edit.diff = _diffs(edit.before_fa, edit.after_fa, edit.before_en, edit.after_en)
+            edit.other_sources_diff = _request_extra_diff(edit)
+            edit.reverted = any(r.status == SectionEditRequest.STATUS_APPROVED for r in edit.revert_requests.all())
+            edit.revert_open = any(r.status in SectionEditRequest.OPEN_STATUSES for r in edit.revert_requests.all())
+    else:
+        tab = "events"
+        qs = ReviewEvent.objects.select_related("request__section__ingredient")
+        if search:
+            qs = qs.filter(Q(request__ingredient_name__icontains=search) | Q(actor_username__icontains=search))
+        if action in dict(ReviewEvent.ACTION_CHOICES):
+            qs = qs.filter(action=action)
+        if section_id.isdigit():
+            qs = qs.filter(request__section_id=int(section_id))
+        page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
+        for event in page:
+            event.field_label = FIELD_FA.get(event.request.field, event.request.get_field_display())
+
+    return _render(request, "history.html", "history", {
+        "tab": tab, "page": page, "search": search, "action": action, "section_id": section_id,
+        "actions": ReviewEvent.ACTION_CHOICES,
+        "min_reason": services.min_reason_length(),
+    })
+
+
+@require_POST
+@revert_required
+def revert(request, pk):
+    edit = get_object_or_404(SectionEdit, pk=pk)
+    try:
+        req = services.start_revert(edit, request.user, request.POST.get("reason", ""), http_request=request)
+    except WorkflowError as exc:
+        messages.error(request, str(exc))
+        return redirect(f"{reverse('data_quality_center:history')}?tab=edits")
+    messages.success(request, f"درخواست بازگردانی #{req.pk} ساخته شد؛ آن را در میز بررسی تأیید کنید.")
+    return redirect(f"{reverse('data_quality_center:review')}?id={req.pk}")
+
+
+@operator_required
+def chemistry_workspace(request, slug):
+    from apps.drugs.chemistry import ChemistryError, enrich, review, version
+    from apps.drugs.models import IngredientChemistry
+
+    ingredient = get_object_or_404(Ingredient, slug=slug)
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+        allowed = access.can_approve(request.user) if action in ("approve", "reject") else (
+            access.can_edit(request.user) or access.can_approve(request.user)
+        )
+        if not allowed:
+            return HttpResponseForbidden("مجوز انجام این کار را ندارید.")
+        try:
+            expected = request.POST.get("version", "")
+            if action == "fetch":
+                raw_cid = request.POST.get("cid", "").strip()
+                if raw_cid and (not raw_cid.isascii() or not raw_cid.isdigit() or len(raw_cid) > 12):
+                    raise ChemistryError("شناسهٔ PubChem معتبر وارد کنید.")
+                enrich(ingredient, cid=int(raw_cid) if raw_cid else None,
+                       actor=request.user.get_username(), expected=expected)
+                messages.success(request, "اطلاعات دریافت شد؛ ساختار معتبر پیش‌فرض در اپ نمایش داده می‌شود. هویت ماده و شکل نمک را بازبینی کنید.")
+            else:
+                review(ingredient, request.user.get_username(), action, expected)
+                messages.success(request, "تصمیم بازبینی اطلاعات شیمیایی ثبت شد.")
+        except ChemistryError as exc:
+            messages.error(request, str(exc))
+        query = browse_query(request.GET).urlencode()
+        return redirect(reverse("data_quality_center:chemistry", args=[slug]) + (f"?{query}" if query else ""))
+    chemistry = IngredientChemistry.objects.filter(ingredient=ingredient).first()
+    return _render(request, "chemistry.html", "queue", {
+        "ingredient": ingredient, "chemistry": chemistry, "chemistry_version": version(chemistry),
+        "chemistry_identity_current": chemistry and (ingredient.name, ingredient.rxcui) == (chemistry.ingredient_name, chemistry.ingredient_rxcui),
+        "chemistry_image": base64.b64encode(chemistry.structure_svg.encode()).decode() if chemistry else "",
+        "can_fetch_chemistry": access.can_edit(request.user) or access.can_approve(request.user),
+        "browse_query": browse_query(request.GET),
+        "chemistry_reviews": ingredient.chemistry_reviews.order_by("-created_at")[:10],
+    })

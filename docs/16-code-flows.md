@@ -1,0 +1,195 @@
+# ۱۶. نقشهٔ فایل‌ها و جریان اجرای پروژه
+
+مبنای این نقشه، کد محلی در ۲۰۲۶-۱۱-۰۷ با افزودن ابزار تنظیم دوز اطفالِ طرح ۲ است. مسیرها نسبت به ریشهٔ مخزن‌اند. این سند رفتار پیاده‌سازی‌شده را توضیح می‌دهد؛ وضعیت سرویس زنده و انتشار فایل‌های بیرون از Git باید جداگانه بررسی شود.
+
+## شروع اپ و انتخاب صفحه
+
+```text
+frontend/index.js
+  → App.tsx
+    → ثبت Service Worker و آماده‌سازی نصب PWA
+    → SafeAreaProvider → ThemeProvider → LanguageProvider
+    → PersistQueryClientProvider → Gate
+      → آماده‌سازی فونت، تم و زبان
+      → useAuth.hydrate() و useOfflineBoot()
+      → TourProvider → Navigator + TourOverlay + UpdatePrompt
+```
+
+[App.tsx](../frontend/App.tsx) شروع اپ را هماهنگ می‌کند. [store/auth.ts](../frontend/src/store/auth.ts) و [store/session.ts](../frontend/src/store/session.ts) نشست را بازیابی می‌کنند. [Navigator.tsx](../frontend/src/navigation/Navigator.tsx) به ترتیب وضعیت بارگذاری، خروج از حساب، نیاز به انتخاب رمز و آنبوردینگ را بررسی می‌کند و سپس صفحهٔ جاری را داخل `AppShell` با نوار پایین نشان می‌دهد.
+
+صفحه‌ها در [screens/](../frontend/src/screens/) هستند. وضعیت مسیرها در [store/nav.ts](../frontend/src/store/nav.ts)، نوع مسیرها در [navigation/types.ts](../frontend/src/navigation/types.ts) و رفتار برگشت در [navigation/back.ts](../frontend/src/navigation/back.ts) تعریف می‌شود. پیاده‌سازی فعلی ناوبری، ماشین حالت داخلی اپ است.
+
+## درخواست آنلاین و انتخاب مسیر در بک‌اند
+
+```mermaid
+flowchart TD
+  Screen[صفحهٔ Expo] --> Endpoint[api/endpoints.ts]
+  Endpoint --> Client[api/client.ts]
+  Client --> Host[website/middleware.py: SiteHostMiddleware]
+  Host -->|هاست API| Api[config/urls.py → config/api_urls.py]
+  Host -->|هاست سایت| Site[config/urls_site.py]
+  Api --> Routes[apps/*/urls.py → views.py یا api.py]
+  Routes --> Logic[اعتبارسنجی، دسترسی، services/selectors و منبع داده]
+  Logic --> Response[serializers.py → پاسخ]
+  Site --> Public[website/urls_public.py و مسیرهای پرداخت]
+```
+
+- [api/types.ts](../frontend/src/api/types.ts) قرارداد TypeScript و [api/endpoints.ts](../frontend/src/api/endpoints.ts) فراخوانی‌ها را نگه می‌دارند. [api/client.ts](../frontend/src/api/client.ts) هدر Bearer را اضافه می‌کند؛ در 401 تمدید توکن را میان درخواست‌های هم‌زمان مشترک می‌کند و درخواست را یک بار با توکن تازه تکرار می‌کند.
+- [api/queryClient.ts](../frontend/src/api/queryClient.ts) کش و ذخیرهٔ پاسخ‌ها را مدیریت می‌کند. پیش‌فرض تازگی ۵ دقیقه و حداکثر عمر ذخیره ۷ روز است؛ برخی کلیدها تنظیم اختصاصی دارند. داشتن پاسخ کش‌شده با نصب بستهٔ آفلاین یکسان نیست.
+- [SiteHostMiddleware](../backend/apps/website/middleware.py) درخواست‌های `SITE_HOSTS` را به [urls_site.py](../backend/config/urls_site.py) می‌فرستد. API نسخه‌دار از [urls.py](../backend/config/urls.py) به [api_urls.py](../backend/config/api_urls.py) و سپس روتر هر اپ می‌رسد.
+- ابزارهای مدیریت روی هاست API زیر `/manage/` قرار دارند: خانه و دسترسی در [apps/manage/](../backend/apps/manage/)، محتوا در [website/panel/](../backend/apps/website/panel/)، فروش در [billing/console/](../backend/apps/billing/console/)، اعلانات در [announcements/manage_urls.py](../backend/apps/announcements/manage_urls.py) و کیفیت داده در [data_quality_center/](../backend/apps/data_quality_center/).
+- احراز هویت API در [accounts/authentication.py](../backend/apps/accounts/authentication.py)، کنترل محتوای فروشی در [billing/enforcement.py](../backend/apps/billing/enforcement.py)، محدودیت نرخ در [core/throttling.py](../backend/apps/core/throttling.py) و تنظیم مدیریتی آن در [core/ratelimit.py](../backend/apps/core/ratelimit.py) است. قالب خطا در [core/exceptions.py](../backend/apps/core/exceptions.py) تعریف می‌شود.
+
+جزئیات قراردادها در [05-api.md](05-api.md) و تنظیمات در [06-configuration.md](06-configuration.md) است.
+
+## آزمون و دسته‌بندی داروها
+
+نوار پایین در [navigation/types.ts](../frontend/src/navigation/types.ts) فقط `dashboard`، `lessons` و `profile` دارد. [EducationScreen.tsx](../frontend/src/screens/EducationScreen.tsx) آزمون را با `navigate("quiz")` باز می‌کند. [QuizSetup.tsx](../frontend/src/components/quiz/QuizSetup.tsx) از `lessonsApi.groups` و `groupByCategory` برای شبکهٔ دسته‌ها و فهرست زیردسته‌ها استفاده می‌کند؛ پس از انتخاب موضوع، پیش‌نمایش و شروع از [quiz/views.py](../backend/apps/quiz/views.py) به [bank_selectors.py](../backend/apps/quiz/bank_selectors.py) و `BankQuestion` می‌رسد. [QuizScreen.tsx](../frontend/src/screens/QuizScreen.tsx) سؤال، پاسخ، نتیجه و مرور اشتباهات را نگه می‌دارد. سوابق فلش‌کارت حذف شده‌اند و نکته‌های مشترک منبع با `quiz.StudyFact` نگه‌داری می‌شوند؛ [سند ۱۹](19-quiz-navigation-and-flashcard-removal.fa.md).
+
+## ماشین‌حساب اختصاصی اطفال
+
+`CalculatorsScreen` و `CalculatorDomainScreen` دادهٔ snapshot را با [pediatricDose/catalog.ts](../frontend/src/pediatricDose/catalog.ts) ترکیب می‌کنند. ورودی «تنظیم دوز اطفال / Pediatric Dose Adjustment» در زیردستهٔ مستقل Pediatrics است. `Navigator` نشانی پایدار `calculatorDetail` با `slug=pediatric-dose` را به [PediatricDoseScreen.tsx](../frontend/src/screens/PediatricDoseScreen.tsx) می‌فرستد.
+
+```text
+pediatricDose/api.ts → GET /calculators/pediatric-dose/
+  → calculators/pediatric.py → مجوز/سهمیهٔ calculators → data/pediatric-dose.json
+  → بررسی schema_version و engine_sha256 در اپ
+  → patientInput → engine.js → انتخاب صریح رژیم/فرآورده/فاصله
+  → PediatricDoseResult + PediatricSource → خوانندهٔ فعلی UpToDate
+```
+
+اعداد بیمار وارد API، کش پایدار یا رویداد فعالیت نمی‌شوند. منبع کد/داده، ۵۰ مدخل و ۲۳۳ رژیم از مجموعهٔ کاربر است. همگام‌سازی و تست‌ها در [سند ۲۰](20-pediatric-dose.fa.md) آمده‌اند.
+
+## خرید از اپ و بازگشت درگاه
+
+[PlansScreen.tsx](../frontend/src/screens/PlansScreen.tsx) کاتالوگ، قیمت و پیش‌فاکتور را از API می‌گیرد. `CheckoutView` در [billing/views.py](../backend/apps/billing/views.py) سفارش حساب واردشده را می‌سازد و `payment_url` برمی‌گرداند. این نشانی به `pay_start` روی سایت می‌رسد؛ پرداخت در مرورگر و با درگاه انتخاب‌شده انجام می‌شود. بازگشت درگاه از مسیرهای [urls_site.py](../backend/config/urls_site.py) به `payment_callback` می‌رسد و منطق [billing/services.py](../backend/apps/billing/services.py) پرداخت و حق دسترسی را ثبت می‌کند. سفارش با مبلغ نهایی صفر همان‌جا در checkout پرداخت‌شده می‌شود و URL پرداخت ندارد.
+
+خرید پلن داخل اپ با پرداخت در مرورگر دو مرحلهٔ همین جریان‌اند؛ باز شدن مرورگر به معنی نیاز به خرید دوباره از صفحهٔ پلن‌های سایت نیست.
+
+## جست‌وجوی فعلی UpToDate
+
+```text
+screens/UptodateScreen.tsx
+  → offline/sources.ts: uptodateSource.searchPage
+    → بسته و مجوز معتبر: uptodateLocal.ts → uptodateSearchCatalog.ts
+    → مسیر آنلاین: api/endpoints.ts
+      → GET /api/v1/uptodate/topics/?search=...&paged=1
+      → uptodate/views.py: TopicSearchView
+      → uptodate/services.py: search_page
+      → uptodate/search_catalog.py: SearchCatalog
+      → مفهوم و ارتباط مقاله‌های snapshot، با مسیر پشتیبان عنوان
+```
+
+[search_catalog.py](../backend/apps/uptodate/search_catalog.py) و [uptodateSearchCatalog.ts](../frontend/src/offline/uptodateSearchCatalog.ts) مفهوم، نام‌های جایگزین، فهرست مقاله‌ها برای مخاطب عمومی/بزرگسال/کودک/آموزش بیمار و پیشنهادهای جست‌وجو را پیاده می‌کنند. مسیر پشتیبان عنوان و تصحیح املا در [services.py](../backend/apps/uptodate/services.py) و [uptodateLocal.ts](../frontend/src/offline/uptodateLocal.ts) است.
+
+پاسخ صفحه‌بندی‌شده شامل نتایج، تعداد کل، تخصص‌ها، عبارت تصحیح‌شده و پیشنهادهاست. [UptodateSuggestionMenu.tsx](../frontend/src/components/UptodateSuggestionMenu.tsx) از همین پاسخ استفاده می‌کند؛ شمارندهٔ هر پیشنهاد تعداد مقاله‌های معتبر مربوط به همان مفهوم و مخاطب است. فیلتر تخصص می‌تواند با هرکدام از تخصص‌های مقاله تطبیق کند.
+
+در این مسیر بدنهٔ مقاله جست‌وجو نمی‌شود، embedding اجرا نمی‌شود و Elasticsearch فراخوانی نمی‌شود. موتور آزمایشی مستقل شامل search_concepts، search_hierarchy، search_request، واژه‌نامه‌ها و ابزارهای سنجش در ۲۰۲۶/۱۱/۱۰ حذف شد؛ زنجیرهٔ عملیاتی بالا و tagging آن تغییر نکرده‌اند. [مرز حذف و اعتبارسنجی](24-offline-smart-search-removal.fa.md) و [راهنمای فعلی جست‌وجو](search/README.md).
+
+## باز کردن مقاله، مقصد جست‌وجو و جدول
+
+- مسیر عادی از صفحه‌های UpToDate به `uptodateSource.topic` و سپس بستهٔ محلی یا `TopicDetailView` می‌رود. سرور در [uptodate/services.py](../backend/apps/uptodate/services.py) MySQL را در صورت تنظیم `UPTODATE_MYSQL_URL` انتخاب می‌کند و در غیر این صورت SQLite را می‌خواند.
+- [TopicDetailView](../backend/apps/uptodate/views.py) دسترسی و مصرف سهمیهٔ مقاله را اعمال می‌کند. عنوان در پاسخ متن ساده است و بدنه و outline به شکل HTML حفظ می‌شوند.
+- `uptodateSource.topicAtAnchor` برای تطبیق نسخه و مقصد ابتدا API را صدا می‌زند. سرور hash بدنه و شناسهٔ پاراگراف را با [search_extraction.py](../backend/apps/uptodate/search_extraction.py) بررسی می‌کند و `matched`، `missing` یا `stale` می‌دهد. خطای شبکه یا 503 به خواندن عادی مقاله برمی‌گردد؛ این بازگشت تطبیق مقصد را تأیید نمی‌کند.
+- [UptodateArticleScreen.tsx](../frontend/src/screens/UptodateArticleScreen.tsx) و [MedscapeArticleScreen.tsx](../frontend/src/screens/MedscapeArticleScreen.tsx) wrapperهای [ClinicalArticleReader.tsx](../frontend/src/components/article/ClinicalArticleReader.tsx) هستند؛ خوانندهٔ مشترک HTML و پل ارتباطی iframe/WebView را نگه می‌دارد. ساختار Medscape از [medscapeReader.ts](../frontend/src/utils/medscapeReader.ts) تبدیل می‌شود. فهرست مشترک در [ClinicalArticleOutline.tsx](../frontend/src/components/article/ClinicalArticleOutline.tsx) است. [uptodateTables.ts](../frontend/src/utils/uptodateTables.ts) کنترل جدول را اضافه می‌کند. لمس جدول یا لینک جدول در Related مستقیماً نمایشگر تمام‌صفحه را باز می‌کند؛ بستن، به مقاله برمی‌گردد.
+- علاقه‌مندی‌ها و هایلایت‌ها در [store/library.ts](../frontend/src/store/library.ts) با کلید `pharmenta.library` روی دستگاه ذخیره می‌شوند و به سرور ارسال نمی‌شوند.
+
+## ساخت، انتشار و خواندن بستهٔ آفلاین
+
+```mermaid
+flowchart TD
+  Snapshot[SQLite منبع روی دستگاه توسعه] --> Prepare[prepare_offline_upload]
+  Prepare --> Build[build_offline_package → builders.py → pack.py]
+  Build --> Verify[upload.py: بررسی قطعه‌ها، manifest و index]
+  Verify --> Guide[UPLOAD.fa.md و فایل‌های آماده]
+  Guide --> Upload[آپلود دستی قطعه‌ها و manifest.json]
+  Upload --> Latest[جایگزینی latest.json در پایان]
+  Latest --> Storage[storage.py: کش manifest و لینک امضاشده]
+  Storage --> Device[downloader → files → نصب بسته]
+  License[services.py: صدور مجوز و کلید] --> Device
+  Device --> Reader[reader.ts → uptodateLocal / lexicompLocal]
+```
+
+[prepare_offline_upload.py](../backend/apps/offline/management/commands/prepare_offline_upload.py) دستور هماهنگ‌کننده و [upload.py](../backend/apps/offline/upload.py) بررسی‌کنندهٔ خروجی است. `--existing` مرحلهٔ ساخت را رد می‌کند. قالب و رمزنگاری در [pack.py](../backend/apps/offline/pack.py)، تبدیل منبع به رکورد و index در [builders.py](../backend/apps/offline/builders.py)، انتشار manifest و URL در [storage.py](../backend/apps/offline/storage.py)، و مجوز در [services.py](../backend/apps/offline/services.py) است. کش manifest سرور ۳۰۰ ثانیه است.
+
+در کلاینت، [store.ts](../frontend/src/offline/store.ts) وضعیت نصب، دانلود و مجوز را نگه می‌دارد؛ `files.ts`، `crypto.ts` و `downloader.ts` نسخهٔ بومی و فایل‌های هم‌نام `.web.ts` نسخهٔ مرورگرند. قطعه‌ها روی گوشی در فضای خصوصی اپ و در وب در OPFS قرار دارند.
+
+[sources.ts](../frontend/src/offline/sources.ts) ابتدا بستهٔ قابل استفاده را می‌خواند؛ شکست خواندن یا نبود رکورد به API منتقل می‌شود. مکمل [uptodateSearchSupplement.ts](../frontend/src/offline/uptodateSearchSupplement.ts) برای افزودن نگاشت جست‌وجو به بسته‌های قدیمی است. بسته‌های تازهٔ `search_schema: 1` این نگاشت را داخل index دارند.
+
+با عوض شدن build نصب‌شدهٔ UpToDate، `forgetUptodate()` و بی‌اعتبارسازی سه کوئری جست‌وجو، مقاله و HTML گرافیک در `sources.ts` باعث خواندن دادهٔ جدید می‌شوند. دریافت مکمل نیز کش جست‌وجو را بی‌اعتبار می‌کند. دانلود و مجوز هر dataset مستقل‌اند.
+
+دستور و ترتیب آپلود در [07-data.md](07-data.md) و [10-commands.md](10-commands.md)، و مسیر فایل‌ها و شرایط حفظ دانلودها در [13-offline-storage.md](13-offline-storage.md) آمده است.
+
+## سایر داده‌های مرجع و داده‌های کاربر
+
+| جریان | فایل‌های مسئول و مقصد |
+|---|---|
+| داروها و خلاصه‌ها | دستورهای `drugs/management/commands/`؛ انتقال قابل‌حمل در [drugs/reference_db.py](../backend/apps/drugs/reference_db.py)؛ مدل‌های Django در Postgres |
+| ماشین‌حساب، بیماری و گایدلاین | قالب انتقال مشترک در [core/reference_db.py](../backend/apps/core/reference_db.py)، پیاده‌سازی هر dataset در `reference_db.py` اپ مربوط؛ پس از ایمپورت از مدل‌های Django خوانده می‌شوند |
+| سؤال و نکتهٔ آموزشی مشترک | `import_study_content`، سپس `export_study_content_db` و `import_study_content_db`؛ منطق انتقال در [quiz/reference_db.py](../backend/apps/quiz/reference_db.py)، تطبیق داروها با RxCUI |
+| پیشرفت مطالعه | درخواست‌های دارونامه و آزمون؛ ثبت در مدل‌های Django و منطق [progress/services.py](../backend/apps/progress/services.py) و [progress/planning.py](../backend/apps/progress/planning.py) |
+| Lexicomp | [lexicomp/services.py](../backend/apps/lexicomp/services.py) منبع SQLite را مستقیم می‌خواند؛ نسخهٔ محلی کلاینت در [lexicompLocal.ts](../frontend/src/offline/lexicompLocal.ts) است |
+
+فایل قابل‌حمل ایمپورت (`*.db`) با بستهٔ دانلود کاربر (`part-*.bin`) متفاوت است. ترتیب ایمپورت‌ها و مسیر منبع‌ها در [07-data.md](07-data.md) ثبت شده است.
+
+## انتشار کد و انتشار داده
+
+| تغییر | مسیر انتشار |
+|---|---|
+| بک‌اند | `main` → [Dockerfile](../Dockerfile) → [backend/docker-start.sh](../backend/docker-start.sh) → Gunicorn |
+| وب‌اپ | workflow [deploy-web-branch.yml](../.github/workflows/deploy-web-branch.yml) در تغییر فایل‌های مشخص frontend/Docker → ساخت شاخهٔ `deploy-web` با جایگزینی Dockerfile → خروجی Expo و nginx |
+| نسخهٔ موبایل | [frontend/scripts/release.mjs](../frontend/scripts/release.mjs) برای افزایش نسخه و ثبت changelog/کامیت/تگ محلی → EAS طبق [eas.json](../frontend/eas.json) → انتشار فایل و اعلام نسخه در مدیریت |
+| دادهٔ آفلاین | ساخت و بررسی محلی → آپلود دستی → `latest.json`؛ کلاینت باید الگوریتم و قالب داده را پشتیبانی کند |
+
+افزایش نسخهٔ اپ، build بستهٔ داده و تمدید مجوز سه کار مستقل‌اند. مستند کامل انتشار در [08-deployment.md](08-deployment.md) است.
+
+## دستگاه، فعالیت و پشتیبانی
+
+`api/device.ts` → هدر نصب/OS → `accounts/services.py` و قفل کاربر → `UserSession` و `SessionAddress`؛ ورود سایت/مدیریت از `accounts/signals.py` و middleware همین سقف دو دستگاه را با پذیرش ورود تازه و ابطال قدیمی‌ترین نشست اعمال می‌کند.
+
+`ActivityCapture` و `useActivity` → صف محلی هر حساب → `/activity/events/` → `ActivityEvent`؛ سایت از middleware و `website/activity.js` → `/events/activity/` استفاده می‌کند. گزارش‌ها از `activity/services.py` به `manage/user_activity.py` و قالب‌های devices/usage می‌روند.
+
+`SupportScreen` → `api/support.ts` → `support/views.py` → `support/services.py` → Conversation/Message؛ صفحهٔ مدیریت در `support/admin_views.py` به همان سرویس متصل است. پاسخ مدیر → فقط با پرچم `SUPPORT_PUSH_NOTIFICATIONS_ENABLED=True`: NotificationDelivery → task → Expo یا Web Push → `notifications/` و `public/sw.js` → باز شدن گفت‌وگو. [سند ۱۷](17-sessions-activity-support.fa.md) تنظیم کلید و مراحل باقی‌ماندهٔ Firebase را شرح می‌دهد.
+
+## استفاده از گراف و نگهداری نقشه
+
+گراف محلی در [graphify-out/](../graphify-out/) شامل `graph.json`، `manifest.json` و `GRAPH_REPORT.md` است. شناسهٔ `built_at_commit` به‌تنهایی معیار تازگی نیست؛ تغییر فایل‌ها و هش‌های manifest را هم بررسی کنید. پس از تغییر کد یا مستندات، دستور `graphify update .` از ریشهٔ مخزن، خروجی تولیدشده را به‌روز می‌کند. این گراف با نمایهٔ سرویس Code Cortex یکی نیست؛ وضعیت هرکدام جداگانه بررسی می‌شود.
+
+هنگام تغییر مسیر درخواست، منبع داده، کلید کش یا فایل مسئول، علاوه بر سند تخصصی، همین نقشه را هم اصلاح کنید. گزارش‌های `search/history/` سابقهٔ پایلوت کنارگذاشته‌شده‌اند؛ سند اجرایی فعلی محسوب نمی‌شوند.
+
+اعلان‌های پشتیبانی فعلاً خاموش‌اند. فرانت پرچم `push_enabled` را از summary می‌خواند؛ ماژول ثبت اعلان فقط در حالت روشن بارگذاری می‌شود. شمارندهٔ پیام خوانده‌نشده و چت مستقل‌اند. راهنمای کامل زیرساخت و روشن کردن بعدی در [سند ۱۸](18-notifications-setup.fa.md) است.
+
+
+## فرمول و ساختار شیمیایی دارو
+
+`import_pubchem` یا فرم کیفیت داده → `drugs/chemistry.py` → PubChem PUG REST → تطبیق فرمول و ساختار با RDKit → `IngredientChemistry` با وضعیت pending → نمایش پیش‌فرض دادهٔ معتبر؛ بازبینی اختیاری با ثبت `ChemistryReview` و امکان رد → `IngredientDetailSerializer` / `LessonDrugSerializer` → `DrugChemistryCard` در دارونامه. تصویر SVG محلی تولید و در PostgreSQL ذخیره می‌شود؛ اپ برای تصویر به PubChem متصل نمی‌شود. راهنمای کامل در [سند ۲۱](21-drug-chemistry.fa.md).
+
+## سرچ هوشمند
+
+در موتور فعال لوکال (`AI_LAB_SEARCH_ENGINE=hybrid`): `AiLabScreen` ← job خصوصی ← `hybrid_agent.answer_hybrid` ← اولین ابزار مدل با `question_profile` برای **تمام سؤال** ← `ai_retrieval.retrieval` و بازیابی هم‌زمان واژگانی/برداری با تگ‌های دارو و بیماری ← `evidence.focus_passages` و `source_context` برای بندهای مجاور و لینک واقعی ← پاسخ فارسی و تأیید جمله‌ها/پوشش هدف ← ارجاع اصلی و بازخورد. پروفایل در جست‌وجوهای تکمیلی ثابت است؛ سابقهٔ درمان به‌تنهایی الزام دوز نمی‌سازد. مسیر ساخت و فعال‌سازی نسل در [سند ۳۶](36-smart-search-hybrid-implementation.fa.md)، تکمیل شواهد در [سند ۴۴](44-smart-search-connected-evidence.fa.md) و فهم سناریو در [سند ۴۵](45-smart-search-question-understanding.fa.md) است. شرح انتخاب مقاله در بند بعد مربوط به مسیر قدیمی‌تر است، نه انتخاب مستقیم قطعات در موتور hybrid.
+
+انتقال به سرور: `export_hybrid_vectors` ← بردارهای نسل کامل و profile، بدون دادهٔ کاربران و متن ← آرشیو خصوصی دارای checksum ← `build_hybrid_index` روی متن آمادهٔ مقصد ← `import_hybrid_vectors` و تطبیق ترتیب قطعه/hash با شناسه‌های خود سرور ← HNSW مقصد ← فعال‌سازی جداگانه. image بک‌اند در `docker-start.sh` با `SERVICE_ROLE=ai-search-worker` فقط صف جست‌وجو را مصرف می‌کند؛ Dockerfileهای دیتابیس و Redis در `deploy/runflare/` هستند. [راهنمای استقرار](46-smart-search-runflare-deployment.fa.md).
+
+`DashboardScreen` → `AiLabScreen` و حافظهٔ حساب → `api/aiLab.ts` → `ai_lab/views.py` و `jobs.py` برای شغل قابل بازیابی → مدل تنظیم‌شدهٔ سرور در `provider.py` برای عبارت کوتاه → `retrieval.py` و همان `uptodate.services.search_page` معمول با tagging → `lexical.rank_topics` برای اولویت نوع منبع، مخاطب و منظور سؤال در همان نامزدها → بررسی مجوز → `reference_index` و `lexical.prepared_sections` برای جست‌وجوی واژگانی بندها و رتبه‌بندی عنوان‌ها در مقالهٔ جاری → `selection.select_evidence` برای انتخاب محلی از حداکثر ۱۶ بخش و بودجهٔ ۱۸ بند/۲۴ هزار نویسه، بدون درخواست مدل → پاسخ و توضیح فارسی از دستهٔ شش‌بندی → بررسی وفاداری و کفایت پاسخ. در حالت prefer و نبود ایندکس سازگار، همان `get_topic` و `extract_article` قبلی استفاده می‌شوند. پاسخ کافی، بررسی بعدی را متوقف می‌کند؛ پاسخ ناکافی به دستهٔ بعدی همان مقاله و سپس مقالهٔ بعدی می‌رود. ارجاع‌های پاسخ نهایی از یک مقاله به `uptodateArticle` با هش نسخه و شناسهٔ بند برای برجسته‌سازی می‌رسند. جست‌وجوی معمول اپ تغییر نکرده است. [سند ۲۵](25-reference-chat-lab.fa.md)، [فاز سه](29-smart-search-local-selection.fa.md).
+
+پیش از مسیر مدل: `response_cache.prepare/load` → فضای خصوصی سؤال/تاریخچهٔ همان حساب → امضای پاسخ و تطبیق بندهای منبع/نسخه → بررسی سهمیه → `replay` همان callbackهای عنوان/بخش/ارجاع. miss به مسیر سه‌مرحله‌ای می‌رود و فقط پاسخ کامل دوباره ذخیره می‌شود. `provider.build_opener` → `http_transport` برای HTTPS پایدار؛ deadline و سقف درخواست بین تمام مرحله‌ها و retry مشترک‌اند. [فاز چهار](30-smart-search-cache-runtime.fa.md).
+
+ساخت دادهٔ آماده، خارج از درخواست: `build_reference_index` → منبع فقط‌خواندنی → `document.prepare_blob` و استخراج نسخه‌دار اصلی → مدل‌های Reference در PostgreSQL → کنترل کامل بودن و ثابت ماندن منبع → تغییر اتمی اشاره‌گر نسل فعال. `verify_reference_index` ساختار ذخیره‌شده و خروجی خواننده را با منبع و مسیر قبلی تطبیق می‌دهد. migration دوم GIN واژگانی را به‌صورت concurrent می‌سازد؛ `evaluate_lexical_retrieval` بازیابی با برنامهٔ ثابت را می‌سنجد. [فاز یک](27-smart-search-preprocessing.fa.md)، [فاز دو](28-smart-search-lexical.fa.md).
+
+پس از تأیید هر دسته: `services.publish` → قفل مشترک heartbeat در `views._run` → ذخیرهٔ یافتهٔ یکتا در کش شغل → `ResultView` با نسخهٔ جدید → به‌روزرسانی تجمعی `store/aiLab` و نمایش کارت‌ها هنگام اجرا. در شروع سرویس: `gunicorn.post_worker_init` → `ai_lab.warmup.warm_search` → همان جست‌وجوی عادی برای آماده شدن کش‌های درون همان worker.
+
+مسیر دریافت تدریجی: انتشار شاهد → findings خصوصی job → NDJSON در `AiLabScreen` (polling پشتیبان) → رسانهٔ اصلی، پاسخ فارسی و منابع مرتبط. `ReferenceAnswerSkeleton` **بین رسانه و منابع** جای پاسخ فارسی را رزرو می‌کند؛ `result.parts[].overview_fa` در همان محل جای اسکلت را می‌گیرد. باکس بندهای مرتبط پیش‌فرض بسته است. پیش‌نویس استریم تا تأیید نهایی نتیجهٔ قطعی نیست. پنل مراحل حذف شده و metadata تشخیصی/نام مدل در رابط نمایش داده نمی‌شود. در موتور hybrid، درخواست جدول/تصویر به `ai_retrieval.media.search` و سپس endpoint اصلی رسانه متصل است؛ شرح مسیرها در [سند ۴۲](42-search-media-pdf-email-clinical.fa.md).
+
+در سؤال داروی مشخص، نوع منبع بر نامزدهای همان سرچ اولویت می‌دهد؛ فهرست فرمولاسیون Drug information با لینک‌های داخلی منبع به متن کامل دارو هدایت می‌شود. تنظیم `AI_LAB_LUNA_REASONING_EFFORT` سطح thinking تمام مراحل را از محیط سرور می‌خواند.
+
+## ارزیابی و rollout سرچ هوشمند، فاز پنج
+
+`benchmark_reference_http` ← نشست واقعی حساب اختصاصی ← ask/poll ← workerهای مشترک و Redis؛ `benchmark-reference-browser.cjs` ← فرم واقعی اپ ← Performance measure پس از رندر ← `collect_reference_browser`. گزارش‌ها به منبع و hash پاسخ متصل می‌شوند؛ `review_reference_release` برگهٔ آفلاین می‌سازد و مالک نظر صریح می‌دهد. `evaluate_reference_release` مجموعهٔ کامل/کیفیت/زمان/بار/build را کنترل می‌کند؛ فقط pass می‌تواند مجوز دارای HMAC و انقضا بسازد. `access.allowed` مدیر/فهرست آزمایشی یا cohort ثابت دارای مجوز معتبر را می‌پذیرد. وضعیت فعلی blocked و rollout صفر است. [جزئیات و نتیجهٔ واقعی](31-smart-search-release-evaluation.fa.md).
+
+## مسیر جاری سرچ هوشمند و بازخورد
+
+اعتبار هر حساب: `SmartSearchWallet` در بالای `AiLabScreen` ← `api/searchWallet.ts` ← `ai_wallet.views` و `services` ← مدل‌های `Credit*` در دیتابیس اصلی. `runner.submit` شرط ماندهٔ مثبت و snapshot تعرفه را با job اتمی ثبت می‌کند؛ telemetry فقط usage عددی تلاش‌ها را می‌گیرد و پس از پایان، مصرف قطعی بدون رزرو یا سقف از مانده کسر می‌شود. ماندهٔ منفی، سؤال بعدی را متوقف می‌کند. رابط کاربر و API کیف تعداد توکن ندارند. قیمت بستهٔ دلاری از `ai_wallet.fx` و نرخ دستی یا آخرین اعلام TGJU می‌آید؛ quote خرید در سفارش ثابت می‌شود. سفارش از نوع `billing.Order.search_credit` است و پرداخت تأییدشده به‌جای Entitlement، اعتبار اضافه می‌کند. مدیریت تعرفه و بسته در `/manage/app/search-credit/` است؛ تنظیم لوکال با هدیهٔ ۱۰۰ و مصرف فعال آمادهٔ آزمون است. [سند ۴۱](41-smart-search-credits.fa.md).
+
+`plan_question` ← سؤال و الزامات؛ سرچ canonical با tagging ← مدل و سه عنوان؛ `OutlineReader.headings` بدون جدول پاراگراف ← مدل و سه زیربخش در مجموع؛ `OutlineReader.passages` فقط شناسه‌های منتخب ← بررسی تمام بندهای واجد شرایط ← پوشش الزامات و پاسخ فارسی مستند. worker پاسخ را در alias مستقل `ai_feedback` ثبت می‌کند؛ کاربر در انتهای پاسخ از `SearchFeedback` رأی می‌دهد و endpoint مالکیت UUID را با HMAC حساب بررسی می‌کند. سقف ۱۸ثانیه‌ای برای job جدید اعمال نمی‌شود. [سند ۳۳](33-smart-search-outline-feedback.fa.md).
+
+ویرایش AI کیفیت داده: تنظیم مستقل و رمزگذاری کلید ← انتخاب preset/پرامپت و ستون ← `AIEditRun` و پیش‌نمایش ← انتخاب اپراتور برای درج در فرم ← autosave و بررسی خودکار فعلی ← تأیید مجاز. متن منتشرشده تا تأیید تغییر نمی‌کند. [سند ۴۳](43-smart-search-postpay-quality-ai.fa.md).

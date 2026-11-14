@@ -1,0 +1,7 @@
+# Build as its own Runflare Docker service; no application secrets in the image.
+# PostgreSQL 17 matches the local reference database. Mount persistent storage
+# at /var/lib/postgresql/data and set POSTGRES_* using Runflare secrets.
+FROM pgvector/pgvector:pg17
+ENV PGDATA=/var/lib/postgresql/data/pgdata
+HEALTHCHECK --interval=10s --timeout=5s --retries=10 \
+    CMD pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"

@@ -1,0 +1,335 @@
+# ۸. دیپلوی
+
+راهنمای مرحله‌به‌مرحلهٔ کانتینرهای PostgreSQL/pgvector، Redis و worker سرچ هوشمند، انتقال بدون API بردارهای موجود و کنترل snapshot مشترک در [سند ۴۶](46-smart-search-runflare-deployment.fa.md) است. این زیرساخت افزوده به سرویس‌های فعلی است؛ دیتابیس کاربران با دیتابیس لوکال جایگزین نمی‌شود.
+
+## سرویس‌های رانفلر
+
+| سرویس | منبع | چه چیزی |
+|---|---|---|
+| بک‌اند | شاخهٔ `main`، فایل `Dockerfile` ریشهٔ مخزن | Django + Gunicorn؛ دامنه‌های `api.pharmenta.ir`، `pharmenta.ir`، `www.pharmenta.ir` |
+| وب‌اپ | شاخهٔ `deploy-web` (ساختهٔ خودکار GitHub Actions) | nginx با خروجی وب Expo؛ دامنهٔ `app.pharmenta.ir` |
+| Postgres | سرویس دیتابیس رانفلر | دیتابیس اصلی |
+| MySQL | — | نسخهٔ کپی UpToDate (`UPTODATE_MYSQL_URL`) |
+| دیسک سرویس بک‌اند | — | فایل‌های Lexicomp (`LEXICOMP_DB_DIR`) |
+| Object Storage | باکت `pharmenta-dl` روی `https://s3-pish.runflare.cloud`؛ دانلود اپ از `https://s3.pharmenta.ir` | بسته‌های آفلاین |
+| DNS | DNS رانفلر | رکوردهای `pharmenta.ir` |
+
+رانفلر سرویس را از `Dockerfile` ریشهٔ شاخهٔ انتخاب‌شده می‌سازد و نمی‌شود فایل دیگری را به آن معرفی کرد. برای همین وب‌اپ شاخهٔ جدای `deploy-web` دارد که در آن `Dockerfile.frontend` جای `Dockerfile` نشسته است.
+
+شروع خودکار انتشار بک‌اند بعد از push وابسته به اتصال معتبر GitHub و فعال بودن دریافت خودکار در **همان سرویس بک‌اند** رانفلر است. workflow گیت‌هاب `Update deploy-web branch` تنها شاخهٔ وب‌اپ را آماده می‌کند؛ هیچ دستور ارسال یا شروع انتشار بک‌اند در آن وجود ندارد. در CI کامیت 9da9c2d، Dockerfile بک‌اند build نمی‌شد. پس از اصلاح libexpat1، job مستقل backend-image برای ساخت تصویر اضافه شده است؛ موفقیت CI همچنان اثبات rollout در رانفلر نیست.
+
+## جریان دیپلوی
+
+```mermaid
+flowchart TD
+  P[push به main] --> T{اتصال رانفلر و دریافت خودکار فعال است؟}
+  T -- بله --> B[رانفلر: ساخت ایمیج بک‌اند از Dockerfile]
+  T -- خیر --> M[انتخاب و آغاز انتشار کامیت از پنل رانفلر]
+  M --> B
+  B --> S[docker-start.sh: migrate و بقیه]
+  S --> G[Gunicorn بالا می‌آید]
+  P --> C{frontend/ تغییر کرده؟}
+  C -- بله --> A[GitHub Actions: deploy-web-branch.yml]
+  A --> D[شاخهٔ deploy-web از نو ساخته و force-push می‌شود]
+  D --> W[رانفلر: ساخت ایمیج وب‌اپ و nginx]
+  P --> CI[GitHub Actions: ci.yml تست‌ها]
+```
+
+### بک‌اند
+
+`Dockerfile`:
+1. ایمیج پایه `python:3.11-slim` به‌علاوهٔ `postgresql-client` (برای `pg_dump`) و کتابخانه‌های RDKit: `libexpat1`، `libxrender1`، `libxext6` و `libx11-6`.
+2. نصب `backend/requirements.txt`.
+3. کپی `backend/`.
+4. `collectstatic` زیر تنظیمات local.
+5. متغیرهای ایمیج: `DJANGO_SETTINGS_MODULE=config.settings.production`، `SECURE_SSL_REDIRECT=False` و `SECURE_HSTS_SECONDS=0`.
+
+هنگام شروع کانتینر، `backend/docker-start.sh` به ترتیب `migrate`، `ensure_uptodate_search_index`، `createcachetable`، `load_atc_reference`، `seed_website` و `collectstatic` را زیر تنظیمات production اجرا می‌کند و بعد Gunicorn را روی `0.0.0.0:$PORT` (پیش‌فرض 8000) بالا می‌آورد. هر قدم پیش از اجرا در لاگ اعلام می‌شود (`[docker-start] >>> ...`). اگر قدمی شکست بخورد، کانتینر با همان کد خطا خارج می‌شود و آخرین سطر لاگ قدم مقصر را نشان می‌دهد.
+
+### وب‌اپ
+
+با هر push به `main` که یکی از `frontend/**`، `Dockerfile.frontend`، `.dockerignore` یا خود فایل workflow را تغییر دهد، `.github/workflows/deploy-web-branch.yml` اجرا می‌شود:
+
+1. `Dockerfile.frontend` را روی `Dockerfile` کپی می‌کند.
+2. یک کامیت بی‌والد (orphan) با پیام `deploy-web: main@<sha> with Dockerfile.frontend as Dockerfile` می‌سازد.
+3. آن را با `git push --force` روی `deploy-web` می‌فرستد.
+
+شاخهٔ `deploy-web` را **هرگز دستی ویرایش نکنید**؛ با push بعدی بازنویسی می‌شود. برای ساخت دوباره بدون تغییر کد، workflow را از تب Actions گیت‌هاب دستی اجرا کنید (`workflow_dispatch`).
+
+`Dockerfile.frontend`:
+1. با Node 20 `npm ci` و `npx expo export --platform web` را اجرا می‌کند. `EXPO_PUBLIC_API_BASE_URL` پیش‌فرض `https://api.pharmenta.ir/api/v1` است.
+2. خروجی را در `nginx:1.27-alpine` با `frontend/nginx.conf` قرار می‌دهد.
+
+برای بررسی اینکه `deploy-web` به‌روز است:
+
+```bash
+git fetch origin
+git log -1 --format='%h %s' origin/deploy-web        # باید main@<آخرین کامیت main که frontend را تغییر داده> باشد
+git diff --stat main origin/deploy-web               # فقط Dockerfile باید فرق کند
+```
+
+## چک‌لیست هر دیپلوی
+
+### وقتی انتشار اصلاً آغاز نمی‌شود
+
+پیش از بررسی Dockerfile، وجود درخواست انتشار برای SHA هدف را بررسی کنید. اگر کامیت در پنل رانفلر دیده می‌شود اما هیچ Build/انتشار جدیدی آغاز نشده، رانفلر فهرست مخزن را دریافت کرده است؛ هنوز شواهدی از خطای ساخت همان کامیت نداریم. بررسی باید روی اقدام انتشار دستی، تنظیم دریافت خودکار و رویدادهای پنل متمرکز باشد.
+
+1. در **سرویس بک‌اند**، مخزن و شاخهٔ `main` را بررسی کنید؛ سرویس وب‌اپ روی `deploy-web` مستقل است.
+2. برای کامیت هدف از گزینهٔ اعمال/انتشار همان کامیت در پنل درخواست ساخت بدهید؛ فقط دیدن کامیت یا restart کانتینر قبلی این درخواست را جایگزین نمی‌کند. راهنمای رسمی قدیمی رانفلر دکمهٔ اعمال یک کامیت را `Revert` می‌نامد؛ نام و ظاهر رابط جاری ممکن است متفاوت باشد. منظور اجرای `git revert` در مخزن نیست.
+3. برای pushهای بعدی، تنظیم دریافت خودکار (auto pull) را در همان سرویس بررسی کنید. طبق راهنمای رانفلر، ساخت وب‌هوک به دسترسی مناسب اتصال نیاز دارد و انقضای توکن این قابلیت را متوقف می‌کند. نمایش کامیت‌ها به‌تنهایی سلامت وب‌هوک را اثبات نمی‌کند.
+4. اگر اقدام دستی هم هیچ Build یا رویداد انتشار ایجاد نمی‌کند، نتیجهٔ دکمه/خطای پنل و رویدادهای سرویس لازم است؛ از نبود Build نمی‌توان خرابی RDKit، migration یا Dockerfile را نتیجه گرفت. این وضعیت با «Build شروع شده و خطا داده» متفاوت است.
+
+منبع اتصال و دریافت خودکار: [راهنمای رسمی GitHub رانفلر](https://runflare.com/docs/ci-cd-setup/how-to-add-github/). در بررسی اولیهٔ رخداد مربوط به کامیت `9da9c2d`، بر اساس گزارش مالک چنین برداشت شد که انتشار آغاز نمی‌شود؛ لاگ بعدی این برداشت را اصلاح کرد و شکست واقعی Build به‌دلیل نبود libexpat.so.1 را نشان داد. برای این رخداد، بخش «علت تأییدشدهٔ شکست Build» در انتهای همین سند مبناست. راهنمای این بخش فقط برای حالتی است که واقعاً هیچ Build یا رویداد انتشاری ایجاد نمی‌شود.
+
+### بررسی کد و نتیجهٔ انتشار
+
+پیش از push:
+- [ ] تست‌های بک‌اند و `npm run typecheck` سبزند.
+- [ ] مایگریشن‌های تازه کامیت شده‌اند (`makemigrations --check`).
+- [ ] اگر متغیر محیطی تازه لازم است، **پیش از push** در env سرویس بک‌اند رانفلر گذاشته شده است. بک‌اند بدون آن ممکن است بالا نیاید.
+- [ ] اگر مایگریشن جدولی را حذف یا ستونی را اجباری می‌کند، بکاپ گرفته شده است.
+
+بعد از دیپلوی:
+- [ ] `curl -s https://api.pharmenta.ir/api/v1/ready/` پاسخ `"status": "ok"` می‌دهد.
+- [ ] لاگ شروع کانتینر بدون `!!! FAILED` تمام شده است.
+- [ ] `https://pharmenta.ir/` و `https://app.pharmenta.ir/` باز می‌شوند.
+- [ ] اگر داده‌ای باید وارد شود (سؤال‌ها، مقاله‌ها)، دستورش در کنسول سرویس اجرا شده است ([07-data.md](07-data.md)).
+- [ ] اگر اپ موبایل تغییر کرده، بیلد تازه ساخته و منتشر شده است (پایین‌تر).
+
+## برگرداندن یک دیپلوی خراب
+
+1. اگر پنل رانفلر برگشت به دیپلوی قبلی را دارد، سریع‌ترین راه همان است.
+2. وگرنه کامیت خراب را برگردانید و push کنید: `git revert <sha> && git push`. شاخهٔ `deploy-web` هم خودکار از نو ساخته می‌شود.
+3. **مایگریشن‌ها خودکار برنمی‌گردند.** اگر کامیت خراب مایگریشن داشت، پیش از revert در کنسول سرویس `python manage.py migrate <app> <مایگریشن قبلی>` را اجرا کنید، یا بکاپ را برگردانید.
+
+## راه‌اندازی از صفر (یک بار)
+
+این ترتیب برای ساختن دوبارهٔ کل زیرساخت است، مثلاً روی حساب تازه.
+
+1. **Postgres:** سرویس دیتابیس را بسازید و رشتهٔ اتصال **داخلی** را بردارید (میزبان `<name>-service`، درگاه 5432). رشتهٔ **خارجی** برای کار از لپ‌تاپ است.
+2. **بک‌اند:**
+   - سرویس را از شاخهٔ `main` بسازید.
+   - متغیرهای ستون «رانفلر» در [06-configuration.md](06-configuration.md) را بگذارید. دست‌کم این‌ها لازم‌اند: `SECRET_KEY`، `DATABASE_URL`، `CACHE_BACKEND`، `CACHE_LOCATION`، `CELERY_RUN_TASKS_IN_REQUEST`، `ASYNC_EMAIL_ENABLED`، `ALLOWED_HOSTS`، `CORS_ALLOWED_ORIGINS`، `CSRF_TRUSTED_ORIGINS`، `SMSIR_*`، `QUIZ_API_ENABLED`.
+   - اگر رانفلر health check می‌خواهد، مسیر `/api/v1/health/` را بدهید.
+3. **دیسک بک‌اند:** یک دیسک (volume) به سرویس وصل کنید و `interact.db` و `info.json` Lexicomp را در آن بگذارید. مسیرش را در `LEXICOMP_DB_DIR` بنویسید.
+4. **MySQL UpToDate:** دیتابیس MySQL را بسازید و `UPTODATE_MYSQL_URL` را تنظیم کنید. از لپ‌تاپ `migrate_uptodate_to_mysql` را اجرا کنید ([07-data.md](07-data.md#uptodate)). برای پیش‌پردازش سرچ هوشمند، پس از انتشار کد جدید و migration، فرمان `build_reference_index` را روی همان محیط سرور اجرا کنید؛ دادهٔ آمادهٔ لوکال با push کد منتقل نمی‌شود. ساخت کامل، بررسی و حالت‌های prefer/require در [سند ۲۷](27-smart-search-preprocessing.fa.md) آمده است. فاز دو migration دوم و ایندکس GIN واژگانی دارد؛ روی دادهٔ پرحجم برای اجرای concurrent آن قبل از rollout زمان کافی در نظر بگیرید؛ [سند ۲۸](28-smart-search-lexical.fa.md). فاز چهار migration تازه ندارد؛ کد و تنظیم‌های بودجه/کش را منتشر و workerها را restart کنید. کش پاسخ از Redis موجود با prefix جدا استفاده می‌کند؛ برای پیام خطای تازه خروجی وب/اپ هم منتشر شود. [سند ۳۰](30-smart-search-cache-runtime.fa.md).
+
+   اگر منبع UpToDate به‌صورت فایل در volume سرور، مثلاً `/sd/uptodate/`، موجود است، `UPTODATE_DB_DIR=/sd/uptodate` را در متغیرهای همان سرویس تنظیم کنید؛ این مسیر از SQLite منبع می‌خواند و ایندکس مشتق‌شده را در دیتابیس اصلی می‌سازد. `content.db` و `fts.db` ضروری و `info.json` اختیاری است. رفع خطای نسخهٔ اولیه که metadata را اجباری می‌دانست به انتشار کد اصلاح‌شده نیاز دارد؛ سپس فرمان ساخت و status را اجرا کنید. [توضیح خطا و دستورها](27-smart-search-preprocessing.fa.md#مسیر-منبع-روی-سرور-دارای-volume).
+
+5. **وب‌اپ:** سرویس را از شاخهٔ `deploy-web` بسازید. اگر شاخه هنوز نیست، workflow «Update deploy-web branch» را دستی اجرا کنید.
+6. **دامنه‌ها:** ترتیب مهم است تا اپ از دسترس خارج نشود.
+   1. `app.pharmenta.ir` را به سرویس وب‌اپ اضافه کنید، رکورد DNS را بسازید و صبر کنید تا گواهی SSL صادر شود و باز شود.
+   2. `api.pharmenta.ir`، `pharmenta.ir` و `www.pharmenta.ir` را به سرویس بک‌اند اضافه کنید.
+   3. `ALLOWED_HOSTS` را برای هاست‌های سایت تغییر ندهید؛ آن‌ها خودکار اضافه می‌شوند.
+   4. بعد از اضافه کردن هر دامنه، صادرکنندهٔ گواهی SSL آن را بررسی کنید: `echo | openssl s_client -connect <دامنه>:443 -servername <دامنه> 2>/dev/null | openssl x509 -noout -issuer`. اگر صادرکننده `cert-manager.local` است، گواهی واقعی هنوز صادر نشده است ([09-operations.md](09-operations.md)، بخش «عیب‌یابی»).
+7. **مدیر:** در کنسول سرویس بک‌اند، `python manage.py createsuperuser` را اجرا کنید.
+8. **داده:** داروها، ماشین‌حساب، مقاله و سؤال را طبق [07-data.md](07-data.md) وارد کنید.
+9. **فروش:** در کنسول `/manage/sales/`، پلن رایگان، پلن‌های پولی و درگاه پرداخت را بسازید ([11-admin-consoles.md](11-admin-consoles.md)).
+10. **سایت:** متن برگه‌های «قوانین» و «حریم خصوصی» را در پنل بنویسید و منتشر کنید ([12-website.md](12-website.md)).
+11. **بستهٔ آفلاین:**
+    1. در Object Storage باکت خصوصی بسازید.
+    2. متغیرهای `OFFLINE_*` را بگذارید.
+    3. CORS را با `offline_bucket_cors` تنظیم کنید.
+    4. بسته‌ها را بسازید و آپلود کنید ([07-data.md](07-data.md)، بخش «بستهٔ آفلاین UpToDate و Lexicomp»).
+12. **IP خروجی:** اگر کلید sms.ir یا درگاه پرداخت به IP محدود است، IP خروجی سرور را در پنل آن‌ها ثبت کنید. کنسول فروش در «درگاه پرداخت ← IP خروجی» آن را نشان می‌دهد.
+
+## اپ اندروید و iOS
+
+اپ بومی با Expo EAS ساخته می‌شود (`frontend/eas.json`). اپ `expo-updates` ندارد، یعنی **هر تغییری در کد اپ به بیلد و انتشار تازه نیاز دارد**؛ نسخهٔ نصب‌شده روی گوشی‌ها خودش به‌روز نمی‌شود. وب‌اپ با هر دیپلوی فوراً به‌روز می‌شود.
+
+| پروفایل | خروجی | کاربرد |
+|---|---|---|
+| `development` | development client، توزیع داخلی | توسعه روی گوشی (`npx expo start --dev-client`) |
+| `preview` | APK، توزیع داخلی | آزمایش پیش از انتشار، روی API اصلی |
+| `production` | APK برای arm64-v8a و armeabi-v7a | بازار، مایکت و دانلود مستقیم |
+| `production-arm64` | APK فقط arm64-v8a | APK کوچک‌تر، اختیاری. روی گوشی‌هایی که اندروید ۳۲بیتی دارند (بعضی گوشی‌های ارزان) نصب نمی‌شود |
+| `play` | app bundle (AAB) | Google Play؛ Play برای هر گوشی فقط بخش لازمش را می‌فرستد |
+
+```bash
+cd frontend
+npx eas-cli login                                          # یک بار
+npx eas-cli build --platform android --profile production
+npx eas-cli build --platform android --profile play        # برای Google Play
+npx eas-cli build --platform android --profile preview     # آزمایشی
+```
+
+**iOS:** فعلاً منتشر نمی‌شود (حساب Apple Developer هنوز گرفته نشده). کاربران iPhone از وب‌اپ (PWA) استفاده می‌کنند.
+
+### خطای «Blocked by Play Protect» هنگام نصب APK
+
+Google Play Protect اپی را که از Google Play نصب نشده و نام بسته و کلید امضایش را تا حالا ندیده، هنگام نصب هشدار می‌دهد یا مسدود می‌کند. این خطا بیشتر از کد نیست و از «شناخته نبودن» اپ است.
+- **کارهای انجام‌شده در اپ:**
+  - بیلدهای `preview` و `production` با کلید انتشار EAS امضا می‌شوند، نه کلید debug.
+  - دسترسی‌های بلااستفادهٔ کتابخانه‌ها با `blockedPermissions` حذف شده‌اند، از جمله «دانلود بی‌اعلان».
+  - HTTP ساده بسته است.
+- **کار مالک پروژه:** فرم Play Protect Appeals گوگل را با ایمیل، نام توسعه‌دهنده، نام بسته (`com.pharmenta.learning`) و فایل APK پر کند تا گوگل اپ را بررسی و تأیید کند. این کار با هویت توسعه‌دهنده انجام می‌شود.
+- **کلید امضا:** بستهٔ جدید در اولین بیلد EAS کلید تازه‌ای می‌گیرد. همان کلید باید برای همیشه بماند، و از آن در EAS پشتیبان بگیرید (`npx eas-cli credentials`). هر به‌روزرسانی با کلید دیگر نصب نمی‌شود و دوباره هشدار Play Protect می‌آورد.
+- **بررسی APK ۲۰۲۶-۱۱-۰۱:** `Pharmenta.apk` (0.1.0، پیش از تغییر نام بسته) از نظر فنی سالم بود:
+  - targetSdk ۳۶
+  - بدون دسترسی پیامک، دسترس‌پذیری (accessibility) یا خواندن اعلان‌ها
+  - debuggable نیست و HTTP ساده بسته است
+  - امضا با کلید انتشار EAS است، نه کلید debug (v2، اثرانگشت SHA-256 `E3:32:67:06:A7:9E:B3:DF:F6:29:D1:99:AC:1B:ED:27:12:D8:E3:8B:2F:51:7A:D1:0D:A3:18:8E:41:AC:8C:9D`)
+
+  پس هشدار از ناشناخته بودن اپ و کلید برای گوگل است، نه از ایراد فنی.
+- **راه رفع، بسته به متن پنجره** ([راهنمای گوگل](https://developers.google.com/android/play-protect/warning-dev-guidance)):
+
+  | متن پنجره | معنی | کار |
+  |---|---|---|
+  | «Play Protect hasn't seen this app before» / «Send app for a security check» | اپ برای گوگل ناشناخته است | در همان پنجره «Scan app» یا «Send» را بزنید. پس از بررسی گوگل، این هشدار برای کاربران دیگر هم نمی‌آید. فرم اعتراض برای این حالت کاری نمی‌کند |
+  | «Harmful app blocked» | گوگل اپ را مضر طبقه‌بندی کرده | فرم [Play Protect Appeals](https://support.google.com/googleplay/android-developer/contact/protectappeals) با نام بسته، اثرانگشت کلید و فایل APK |
+  | «App blocked to protect your device» | دسترسی پیامک، دسترس‌پذیری یا خواندن اعلان | اپ ما این دسترسی‌ها را ندارد؛ اگر آمد، همان فرم اعتراض |
+  | «built for an older version of Android» | targetSdk پایین | اپ ما ۳۶ دارد |
+- **بعد از تغییر نام بسته:** بستهٔ `com.pharmenta.learning` برای گوگل اپ تازه‌ای است. اولین APK آن را روی یک گوشی نصب کنید و در پنجرهٔ Play Protect «Scan app» را بزنید.
+
+### حجم APK
+
+APK نسخهٔ 0.1.0 ‏80.7 MB بود و ۳۷ مگابایتش کتابخانه‌های x86 و x86_64 بود که فقط در شبیه‌ساز به کار می‌آیند. `frontend/app.config.js` با پلاگین `expo-build-properties` این‌ها را تنظیم می‌کند:
+
+- **معماری‌ها:** فقط معماری‌های ARM گوشی‌ها ساخته می‌شوند. فهرست از متغیر `ANDROID_ARCHS` در `env` هر پروفایل خوانده می‌شود و پیش‌فرضش `arm64-v8a,armeabi-v7a` است.
+- **فشرده‌سازی کتابخانه‌ها:** با `ANDROID_COMPRESS_NATIVE_LIBS=1` کتابخانه‌های بومی فشرده داخل APK قرار می‌گیرند. این متغیر برای پروفایل‌های APK روشن است. پروفایل `play` آن را ندارد، چون Google Play خودش بسته را فشرده می‌کند.
+- **R8 و منابع:** در بیلد release، ‏R8 کد Java/Kotlin استفاده‌نشده را حذف و کوچک می‌کند و منابع بی‌استفاده هم حذف می‌شوند.
+
+**R8 را روی گوشی امتحان کنید.** R8 ممکن است کلاسی را که فقط با reflection صدا زده می‌شود حذف کند. اولین بیلد با این تنظیمات، و بعد از آن هر بیلدی که کتابخانهٔ بومی تازه‌ای دارد، باید پیش از انتشار روی یک گوشی واقعی امتحان شود:
+
+- ورود
+- دانلود و باز کردن بستهٔ آفلاین
+- خواندن مقاله و باز کردن عکس
+- ماشین‌حساب
+
+اگر بیلدی در شروع بسته شد یا بخشی کار نکرد ولی همان کد در development درست بود، علت به احتمال زیاد R8 است. قاعدهٔ keep لازم را با `extraProguardRules` در همان پلاگین اضافه کنید.
+
+### نسخه و انتشار
+
+- **تنها منبع نسخه:** `version` در `frontend/app.json` است و به شکل SemVer نوشته می‌شود (`MAJOR.MINOR.PATCH`، مثل 1.4.2). عدد دوم و سوم باید کمتر از ۱۰۰ باشند.
+- **versionCode:** `app.config.js` آن را از همان نسخه می‌سازد: `major×10000 + minor×100 + patch`. یعنی 0.1.0 می‌شود 100 و 1.4.2 می‌شود 10402. buildNumber در iOS هم همان رشتهٔ نسخه است.
+- **بیلدهای قدیمی:** versionCode آن‌ها ۱ تا ۵ بود. چون 100 بزرگ‌تر است، نسخهٔ تازه روی آن‌ها نصب می‌شود.
+- **بیلد دوباره:** بیلد دوبارهٔ یک نسخه همان versionCode را دارد و اندروید و فروشگاه‌ها آن را به‌روزرسانی حساب نمی‌کنند. برای رفع اشکال، یک patch تازه منتشر کنید.
+
+```bash
+cd frontend
+npm run release -- patch --dry-run   # نسخهٔ بعدی و متن CHANGELOG را فقط نشان می‌دهد
+npm run release -- patch             # یا minor یا major
+```
+
+`scripts/release.mjs`:
+
+1. اگر تغییر کامیت‌نشده‌ای باشد، کار را شروع نمی‌کند.
+2. نسخه را در `app.json`، `package.json` و `package-lock.json` بالا می‌برد.
+3. از عنوان کامیت‌هایی که بعد از آخرین تگ `app-v*` آمده‌اند، یک بخش تازه بالای `frontend/CHANGELOG.md` می‌نویسد.
+4. کامیت `Release app vX.Y.Z` و تگ `app-vX.Y.Z` را می‌سازد.
+5. هیچ چیزی را push یا بیلد نمی‌کند و قدم‌های بعدی را چاپ می‌کند.
+
+**انتشار اندروید، به این ترتیب:**
+
+1. `npm run release -- patch` (یا minor یا major). اگر خواستید متن CHANGELOG را اصلاح کنید و کامیت را amend کنید (دستورش چاپ می‌شود).
+2. `git push && git push origin app-vX.Y.Z`.
+3. بیلد `production` (و `play` برای Google Play).
+4. APK را روی گوشی امتحان کنید (بالا، بخش R8).
+5. APK را در بازار و مایکت بارگذاری کنید. در پنل سایت، «پیوندهای دانلود» را به‌روز کنید: لینک مستقیم APK یا لینک فروشگاه. خود APK را در «رسانه» بارگذاری نکنید؛ رسانه در دیتابیس ذخیره می‌شود و حداکثر ۵ مگابایت می‌گیرد.
+6. وقتی نسخه از همهٔ لینک‌ها در دسترس شد، در پنل سایت، «نسخه‌ها و دانلود ← نسخه‌های اپ»، نسخهٔ تازه را با تغییراتش ثبت کنید و «پیشنهاد به‌روزرسانی در اپ» را بزنید.
+
+### پیام به‌روزرسانی داخل اپ
+
+اپ هنگام باز شدن، و هنگام برگشتن به آن (حداکثر هر ۳۰ دقیقه یک بار)، `GET /api/v1/app/release/` را می‌پرسد ([05-api.md](05-api.md#نسخهٔ-اپ--app)). کد: `frontend/src/components/UpdatePrompt.tsx` و `backend/apps/website/api.py`.
+
+- **کدام نسخه‌ها حساب می‌شوند:** فقط نسخه‌های پنل که پایدار و منتشرشده‌اند و «پیشنهاد به‌روزرسانی در اپ» دارند. ردیف‌های قدیمی و نسخهٔ نمونه‌ای که `seed_website` می‌سازد (1.2.0) به اپ نمی‌رسند.
+- **اختیاری:** برگه‌ای پایین صفحه با شمارهٔ نسخه و تغییرات و دو دکمهٔ «به‌روزرسانی» و «بعداً». «بعداً» پیشنهاد همان نسخه را ۲۴ ساعت ساکت می‌کند.
+- **اجباری:** «کمترین نسخهٔ قابل استفاده» را روی یک نسخه پر کنید. نسخه‌های قدیمی‌تر از آن روی صفحه‌ای می‌مانند که فقط دکمهٔ به‌روزرسانی دارد. سخت‌ترین حداقلِ همهٔ نسخه‌های اعلام‌شده حساب می‌شود؛ پس نسخهٔ بعدی که این فیلد را خالی می‌گذارد اجبار قبلی را برنمی‌دارد. برای برداشتن اجبار، فیلد را روی همان نسخه‌ای که آن را گذاشته خالی کنید.
+- **دکمهٔ به‌روزرسانی:** به `https://pharmenta.ir/download/` (`SITE_PUBLIC_URL`) می‌رود که لینک همهٔ فروشگاه‌ها و APK را دارد.
+- **نسخه‌های قدیمی:** نسخهٔ 0.1.0 و قبل از آن این پیام را ندارند. کاربرانشان را با اطلاعیه یا پیامک از نسخهٔ تازه باخبر کنید.
+- **وب‌اپ:** وب‌اپ از این مسیر استفاده نمی‌کند. هنگام برگشتن به تب و هر ۳۰ دقیقه، فایل‌های اسکریپتی را که `index.html` روی سرور نام می‌برد با فایل‌های بارشده مقایسه می‌کند. اگر فرق داشتند، نوار «نسخهٔ تازهٔ فارمنتا آماده است» با دکمهٔ «بارگذاری دوباره» نشان داده می‌شود (`UpdatePrompt.web.tsx`).
+
+### امنیت و هشدار نصب
+
+تنظیم‌های `app.json` و `app.config.js`:
+
+- **`allowBackup: false`:** داده‌های اپ در بکاپ گوگل و `adb backup` کپی نمی‌شوند. توکن‌های ورود به هر حال در `expo-secure-store` هستند.
+- **`usesCleartextTraffic: false`:** بیلد release درخواست `http` ساده نمی‌فرستد؛ همهٔ نشانی‌ها `https` هستند. بیلد debug با manifest خودش اجازهٔ `http` دارد تا به Metro وصل شود.
+- **`blockedPermissions`:** مجوزهایی که کتابخانه‌ها اضافه می‌کردند ولی اپ لازمشان ندارد حذف شده‌اند:
+  - `SYSTEM_ALERT_WINDOW`
+  - `READ_EXTERNAL_STORAGE` و `WRITE_EXTERNAL_STORAGE`
+  - `RECORD_AUDIO`
+  - `USE_BIOMETRIC` و `USE_FINGERPRINT`
+  - `DUMP`
+
+  مجوزهای مانده:
+  - `INTERNET` و `VIBRATE`
+  - دانلود پس‌زمینهٔ بستهٔ آفلاین: `ACCESS_NETWORK_STATE`، `FOREGROUND_SERVICE` و `FOREGROUND_SERVICE_DATA_SYNC`، `WAKE_LOCK`، `RUN_USER_INITIATED_JOBS`، `DOWNLOAD_WITHOUT_NOTIFICATION`
+
+  اگر فروشگاهی برای سرویس پیش‌زمینه توضیح خواست، کاربردش «همگام‌سازی داده (data sync) برای دانلود محتوای آفلاین» است.
+- **هشدار Play Protect:** گوگل برای APKی که بیرون از Google Play نصب می‌شود و امضای ناشناخته یا نصب کمی دارد، گاهی هشدار «اپ ناشناخته» یا «ناامن» نشان می‌دهد. با بیشتر شدن نصب‌ها و انتشار در Google Play این هشدار معمولاً برطرف می‌شود. اگر هشدار «مضر» ماند، از فرم اعتراض Play Protect گوگل درخواست بررسی بدهید. امضای ثابت، مجوزهای کم و `targetSdk` به‌روز (36، پیش‌فرض Expo SDK 57) هم احتمال هشدار را کم می‌کنند.
+
+### کلید امضا
+
+EAS کلید امضای اندروید (keystore) را نگه می‌دارد. همهٔ نسخه‌های بعدی باید با همین کلید امضا شوند. **بدون آن، به‌روزرسانی اپ در بازار و مایکت منتشر نمی‌شود و روی نسخهٔ نصب‌شدهٔ کاربران هم نصب نمی‌شود.**
+
+روش ساخت کلید، دانلود آن به `frontend/credentials/android/keystore.jks` همراه با `frontend/credentials.json`، قواعد `.gitignore` و `.easignore` و بیلدهای بعدی در [راهنمای اختصاصی کلید امضای اندروید](15-android-signing.fa.md) آمده است. تنظیم فعلی از کلید روی Expo استفاده می‌کند و نسخهٔ داخل پروژه پشتیبان آن است.
+
+**Google Play:** Play App Signing به‌طور پیش‌فرض یک کلید تازهٔ گوگل می‌سازد. در آن صورت APK گوگل‌پلی و APK بازار امضای متفاوت دارند و کاربر نمی‌تواند نسخهٔ یکی را روی دیگری به‌روز کند. هنگام ثبت اپ، گزینهٔ استفاده از کلید موجود را بزنید و همین keystore را بدهید (Play برای این کار ابزار PEPK را می‌دهد).
+
+## CI
+
+`.github/workflows/ci.yml` روی هر push به `main` و هر Pull Request اجرا می‌شود:
+
+| کار | قدم‌ها |
+|---|---|
+| `backend-image` | ساخت Dockerfile ریشه با `docker build`؛ اجرای smoke check بارگذاری RDKit داخل ایمیج slim. ایمیج پایهٔ رسمی ابتدا از آینهٔ عمومی ECR دریافت و با نام همان پایه tag می‌شود تا محدودیت pull ناشناس Docker Hub روی runner مشترک کمتر شود |
+| `backend` | Postgres 16 و Redis 7؛ نصب وابستگی‌ها؛ `manage.py check`؛ `check --deploy --settings=config.settings.production`؛ `makemigrations --check --dry-run`؛ `backup_database --dry-run`؛ `manage.py test --verbosity=2 --timing` |
+| `frontend` | Node 20؛ `npm ci`؛ `npm run typecheck`؛ `npm run build:web` |
+
+CI جلوی دیپلوی را نمی‌گیرد؛ رانفلر مستقل از نتیجهٔ CI می‌سازد. پیش از push خودتان تست‌ها را اجرا کنید.
+
+## پیکربندی‌های دیگر مخزن
+
+این فایل‌ها در دیپلوی فعلی استفاده نمی‌شوند، ولی نگه داشته شده‌اند:
+
+| فایل | کاربرد |
+|---|---|
+| `docker-compose.yml` | اجرای کامل محلی با Redis و worker ([02-local-setup.md](02-local-setup.md#اجرای-کامل-با-docker)) |
+| `backend/Dockerfile` | همان ایمیج بک‌اند با `backend/` به‌عنوان context (برای `docker-compose`) |
+| `backend/render.yaml`، `backend/build.sh`، `backend/release.sh`، `backend/Procfile` | میزبان‌هایی که مرحلهٔ build و release جدا دارند (Render، Heroku-مانند). بک‌اند قبلاً مدتی روی Render بود |
+| `EXPO_BASE_URL` در `app.config.js` | سرو وب‌اپ زیر یک زیرمسیر، مثل GitHub Pages |
+
+## انتشار چت، نشست و اعلان پاسخ
+
+این تغییر مهاجرت‌های `accounts`، `activity` و `support` دارد. کد سرور و وب باید با هم به‌روز شوند. وب Push به کلید ثابت VAPID و HTTPS نیاز دارد؛ اندروید به تنظیم Firebase/FCM v1 و APK تازه دارای `expo-notifications` نیاز دارد. مراحل دقیق و وضعیت فعلی در [سند ۱۷](17-sessions-activity-support.fa.md) آمده است. فایل service account در git ذخیره نشود.
+
+اعلان‌های پشتیبانی فعلاً با پیش‌فرض `SUPPORT_PUSH_NOTIFICATIONS_ENABLED=False` غیرفعال‌اند. راه‌اندازی Firebase/FCM، متغیر فایل EAS، امضای APK، mount کلید VAPID، اجرای worker و آزمون نهایی در [سند ۱۸](18-notifications-setup.fa.md) ثبت شده است. فقط پس از آماده شدن زیرساخت، پرچم را در بک‌اند و worker روشن و سرویس‌ها را دوباره اجرا کنید.
+
+
+## وابستگی نمایش ساختار شیمیایی
+
+`requirements.txt` شامل RDKit است. هر دو Dockerfile بک‌اند کتابخانه‌های `libexpat1`، `libxrender1`، `libxext6` و `libx11-6` را برای runtime رسم نصب و بارگذاری آن را هنگام build بررسی می‌کند. پس از انتشار، migrationهای جدید drugs اجرا و داده‌های PubChem در همان محیط دریافت و بازبینی می‌شوند؛ [راهنمای اطلاعات شیمیایی](21-drug-chemistry.fa.md).
+
+پیش از اجرای `import_pubchem` در ترمینال سرور، موفق شدن build و rollout نسخهٔ جدید **بک‌اند** روی `main` را بررسی و ترمینال را روی کانتینر جدید باز کنید. `python manage.py help import_pubchem` باید فرمان را بشناسد و `showmigrations drugs` باید 0010 و 0011 را نشان دهد. push موفق یا پاسخ «No migrations to apply» به‌تنهایی اثبات انتشار کد جدید نیست؛ راهنمای گام‌به‌گام و تشخیص `Unknown command` در بخش سرور [سند ۲۱](21-drug-chemistry.fa.md#سرور-ابتدا-احراز-انتشار-کد-سپس-دریافت-داده) آمده است. restart تصویر قبلی جای build و deploy نسخهٔ جدید را نمی‌گیرد.
+
+
+### علت تأییدشدهٔ شکست Build کامیت 9da9c2d
+
+لاگ واقعی رانفلر نشان داد مخزن دریافت و Build وارد صف و سپس اجرا شده بود. شکست در smoke check بارگذاری `rdkit.Chem.Draw.rdMolDraw2D` رخ داد:
+
+```text
+ImportError: libexpat.so.1: cannot open shared object file: No such file or directory
+```
+
+علت، نبود بستهٔ سیستمی `libexpat1` در تصویر `python:3.11-slim` بود. بنابراین برداشت اولیهٔ «انتشار اصلاً آغاز نمی‌شود» با لاگ جدید اصلاح شد؛ در این رخداد، Build واقعاً آغاز شده و پیش از ساخت کامل ایمیج متوقف شده است. ماندن نسخهٔ قدیمی کانتینر، نشناختن import_pubchem و دیده‌نشدن migrationهای تازه با این شکست سازگار است. اسکن آسیب‌پذیریِ ابتدای لاگ این Build را متوقف نکرده بود؛ خطای خاتمه‌دهنده همان import ناموفق RDKit بود.
+
+اصلاح: نصب `libexpat1` کنار کتابخانه‌های X در Dockerfile ریشه و `backend/Dockerfile`، حفظ smoke check در ریشه و اضافه شدن همان check در Dockerfile با context بک‌اند. job تازهٔ `backend-image` در CI، برخلاف CI کامیت معیوب که فقط وابستگی‌ها و تست‌ها را روی Ubuntu اجرا می‌کرد، خود ایمیج را می‌سازد. این job به تنظیمات خصوصی رانفلر یا دیتابیس production نیاز ندارد و تصویر را منتشر نمی‌کند؛ انتشار رانفلر همچنان مستقل است.
+
+تأیید محلی: مالکیت فایل libexpat.so.1 توسط libexpat1 با dpkg-query و رسم SVG واقعی مولکول با RDKit موفق بود. اجرای کامل Docker در محیط توسعه به socket daemon دسترسی نداشت؛ موفقیت ساخت اصلاح‌شده باید با job backend-image و Build تازهٔ رانفلر تأیید شود. پس از commit و push اصلاح، نسخهٔ جدید را build/deploy کنید؛ بعد در ترمینال کانتینر جدید `python manage.py help import_pubchem` و `python manage.py showmigrations drugs` را بررسی و دریافت داده را طبق سند ۲۱ اجرا کنید. نصب دستی بسته داخل کانتینر قدیمی این Dockerfile را اصلاح نمی‌کند.
+
+## شرط انتشار سرچ هوشمند
+
+زیرساخت اعتبار عددی به migrationهای دیتابیس اصلی `ai_wallet.0001` تا `0004` و `billing.0013` نیاز دارد؛ `python manage.py migrate` را پس از انتشار کد اجرا و API/worker را راه‌اندازی مجدد کنید. خروجی اپ/وب هم باید منتشر شود. هدیهٔ ۱۰۰ و بسته‌های ۱۰۰/۵۰۰/۱۰۰۰ پیش‌فرض‌اند؛ بستهٔ پیش‌فرض قدیمی ۲۰۰۰ غیرفعال می‌شود و سابقه باقی می‌ماند. تنظیم قبلی تعرفه بازنویسی نمی‌شود. در `/manage/app/search-credit/` تعرفه و درگاه را بررسی و با دکمهٔ «به‌روزرسانی قیمت بسته‌ها از TGJU» نرخ و قیمت‌ها را تازه کنید. شکست دریافت، نرخ دستی را تغییر نمی‌دهد؛ نرخ خودکار نامعتبر فروش بستهٔ دلاری را متوقف می‌کند. [راهنمای کامل](41-smart-search-credits.fa.md).
+
+برای جدول/تصویر سرچ، migration `ai_retrieval.0005` روی `reference_search` و سپس `python manage.py build_reference_media --workers 2` لازم است. این ساخت قابل ادامه است و API embedding ندارد. ورود ایمیلی به `accounts.0009` و تنظیم SMTP خصوصی نیاز دارد. PDF وابستگی WeasyPrint/Pango دارد و ساخت Docker آن را با تولید PDF آزمایشی کنترل می‌کند. جزئیات دستورها و ساخت native در [سند ۴۲](42-search-media-pdf-email-clinical.fa.md) است.
+
+نسخهٔ ۲۰۲۶-۱۱-۱۴: `ai_wallet.0005` رزرو را حذف و کسر پس از مصرف با ماندهٔ منفی را فعال می‌کند. پیش از migration، کارهای فعال تمام و API/worker متوقف شوند؛ سپس کد تازه و کلاینت سازگار منتشر شود. ابزار کیفیت داده به `data_quality_center.0008` و `0009`، `collectstatic` برای اسکریپت و تنظیم اتصال از `/manage/data/ai-settings/` نیاز دارد. کلید در دیتابیس رمز می‌شود و `SECRET_KEY` پایدار لازم است. [راهنمای نسخه](43-smart-search-postpay-quality-ai.fa.md).
+
+فاز پنج migration تازه ندارد. برای زمان رندر، export تازهٔ frontend و برای گیت، backend تازه لازم است. `AI_LAB_ROLLOUT_PERCENT=0` بماند تا مجموعهٔ کامل، بازبینی مالک، بار دو worker با Redis مشترک و build واقعی محیط از گیت بگذرند. مجوز `AI_LAB_RELEASE_APPROVAL_FILE` باید در همان محیط با SECRET_KEY همان سرویس امضا و با مجوز `600` قرار گیرد. `AI_LAB_FRONTEND_BUNDLE_SHA256` باید hash فایل اصلی JS همان export اندازه‌گیری‌شده باشد؛ بک‌اند Docker به export frontend دسترسی محلی ندارد. فایل گزارش لوکال مجوز سرور نیست؛ تغییر منبع، مدل، runtime یا build، تطبیق مجوز را باطل می‌کند. مجوز حداکثر ۷۲ ساعت اعتبار دارد؛ درصدهای ۵، ۲۵ و ۱۰۰ بعد از کنترل هر مرحله دستی تنظیم می‌شوند. نتیجهٔ فعلی blocked است و هیچ تغییر سرور یا rollout عمومی انجام نشده است. [سند ۳۱](31-smart-search-release-evaluation.fa.md).
+
+## انتشار انتخاب عنوان و بازخورد
+
+کد backend و frontend هر دو منتشر شوند. ایندکس کامل فعلی UpToDate قابل استفاده است؛ `UPTODATE_DB_DIR=/sd/uptodate` در محیط سرویس بماند. دیتابیس مستقل PostgreSQL بازخورد را پیش از تنظیم `AI_LAB_FEEDBACK_DATABASE_URL` ایجاد و نقش آن را آماده کنید؛ entrypoint سپس `migrate ai_feedback --database=ai_feedback` را اجرا می‌کند. مدل‌های بازخورد وارد دیتابیس اصلی نمی‌شوند. سقف قدیمی ۱۸ ثانیه روی job جدید اعمال نمی‌شود؛ timeout فنی هر ارتباط مدل باقی است. راه‌اندازی، endpoint و راستی‌آزمایی در [سند ۳۳](33-smart-search-outline-feedback.fa.md) آمده است.
+
+برای انتشار موتور ترکیبی، [راهنمای سند ۳۶](36-smart-search-hybrid-implementation.fa.md) ملاک است. entrypoint اکنون به‌صورت پیش‌فرض ASGI/Uvicorn را اجرا می‌کند؛ `APP_SERVER=wsgi` مسیر Gunicorn قبلی را نگه می‌دارد، اما اتصال استریم در WSGI یک worker را مشغول می‌کند. migration دیتابیس `reference_search` در صورت تنظیم URL آن اجرا می‌شود؛ ساخت chunk/embedding داخل startup وب انجام نمی‌شود. worker صف‌های `ai_search` و `ai_indexing` جدا از سرویس وب اجرا شود. نسل کامل سالم باید پیش از انتخاب `hybrid` فعال شود؛ rollout قبلی اعتبار خودکار برای موتور جدید ندارد.
