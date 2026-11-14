@@ -291,7 +291,7 @@ def mark_paid(order_id, *, gateway, ref_id="", card_pan="", gateway_ref=""):
     """Settle a verified payment: idempotent -- a second call (the gateway
     retrying the callback, a double click) changes nothing."""
     with transaction.atomic():
-        order = Order.objects.select_for_update().select_related("plan").get(pk=order_id)
+        order = Order.objects.select_for_update(of=("self",)).select_related("plan").get(pk=order_id)
         if order.status == Order.STATUS_PAID:
             return order
         order.status = Order.STATUS_PAID
@@ -305,7 +305,11 @@ def mark_paid(order_id, *, gateway, ref_id="", card_pan="", gateway_ref=""):
         if order.discount_id:
             DiscountCode.objects.filter(pk=order.discount_id).update(used_count=F("used_count") + 1)
         if order.user_id:  # the buyer may have been deleted mid-payment
-            grant(order.user, order.plan, days=order.duration_days, source=Entitlement.SOURCE_PURCHASE, order=order)
+            if order.is_search_credit:
+                from apps.ai_wallet.services import credit_order
+                credit_order(order)
+            else:
+                grant(order.user, order.plan, days=order.duration_days, source=Entitlement.SOURCE_PURCHASE, order=order)
     return order
 
 

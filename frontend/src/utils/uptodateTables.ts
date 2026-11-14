@@ -19,7 +19,7 @@ type TableColors = { ink: string; prose: string; muted: string; bg: string; acce
 export function tableStyles(c: TableColors, dark: boolean) {
   return `
   :root { --utd-table-paper:${c.bg}; --utd-table-ink:${c.ink}; --utd-table-muted:${c.muted};
-    --utd-table-line:${dark ? "#3a4640" : "#dde5e0"}; --utd-table-soft:${dark ? "#202823" : "#f6f8f7"}; }
+    --utd-table-line:${dark ? "#85998b" : "#26382e"}; --utd-table-soft:${dark ? "#303d34" : "#d4dcd3"}; }
   .utd-table-box { margin:18px 0; }
   .utd-table-tools { display:flex; justify-content:flex-end; margin-bottom:8px; }
   .utd-table-button { font:600 13px/1.4 -apple-system,"Segoe UI",sans-serif; min-height:44px;
@@ -37,8 +37,6 @@ export function tableStyles(c: TableColors, dark: boolean) {
   .utd-reference-table > :is(thead,tbody,tfoot) > tr > :is(td,th) {
     border:0; border-right:1px solid var(--utd-table-line); border-bottom:1px solid var(--utd-table-line);
     padding:14px 16px; vertical-align:top; background:var(--utd-table-paper); overflow-wrap:break-word; }
-  .utd-reference-table > :is(thead,tbody,tfoot) > tr > :last-child { border-right:0; }
-  .utd-reference-table > :is(thead,tbody,tfoot) > tr:last-child > :is(td,th) { border-bottom:0; }
   .utd-reference-table > :is(thead,tbody,tfoot) > .utd-table-heading > :is(td,th) {
     color:var(--utd-table-muted); font-size:.87rem; font-weight:600; border-bottom:2px solid ${c.accent}; }
   .utd-reference-table > :is(thead,tbody,tfoot) > .utd-table-top > :is(td,th) {
@@ -104,6 +102,7 @@ function __utdTablesInit(options) {
       Array.prototype.forEach.call(Array.from(row.cells), function (original) {
         while (occupied[r][col]) col++;
         var cell = original, span = cell.colSpan || 1, down = cell.rowSpan || 1;
+        ["border","border-width","border-style","border-color","border-right","border-bottom","border-left","border-top"].forEach(function(name){cell.style.removeProperty(name);});
         if (heading && cell.tagName !== "TH") {
           cell = document.createElement("th");
           Array.prototype.forEach.call(original.attributes, function (a) { cell.setAttribute(a.name, a.value); });

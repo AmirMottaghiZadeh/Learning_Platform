@@ -12,7 +12,7 @@
 
 export type MediaContent =
   | { kind: "image"; src: string; alt: string; caption: string }
-  | { kind: "table"; headers: string[] | null; rows: string[][]; caption: string };
+  | { kind: "table"; headers: string[] | null; rows: string[][]; caption: string; html?: string };
 
 export interface MediaPageColors {
   background: string;
@@ -21,6 +21,7 @@ export interface MediaPageColors {
   headerBg: string;
   line: string;
   cellBg: string;
+  firstColumnBg?: string;
 }
 
 const escape = (text: string) =>
@@ -129,16 +130,32 @@ function page(kind: MediaContent["kind"], body: string, c: MediaPageColors): str
   table { border-collapse: collapse; background: ${c.cellBg}; font-size: 14px; line-height: 1.45; margin: 12px; }
   th, td { border: 1px solid ${c.line}; padding: 8px 10px; text-align: left; vertical-align: top; max-width: 320px; }
   th { background: ${c.headerBg}; font-weight: 800; }
+  ${c.firstColumnBg ? `.media-first-column { background:${c.firstColumnBg}; font-weight:600; }` : ""}
   caption { caption-side: bottom; color: ${c.muted}; font-size: 12px; padding: 8px 2px; text-align: left; }
 </style></head>
 <body data-kind="${kind}"><div id="stage"><div id="content">${body}</div></div>
-<script>${ZOOM_SCRIPT}</script></body></html>`;
+<script>
+document.querySelectorAll('table').forEach(function(table){
+  var occupied=[];
+  Array.from(table.rows).forEach(function(row){
+    var column=0;
+    Array.from(row.cells).forEach(function(cell){
+      while(occupied[column]>0)column++;
+      if(column===0)cell.classList.add('media-first-column');
+      for(var i=0;i<cell.colSpan;i++)occupied[column+i]=cell.rowSpan||1;
+      column+=cell.colSpan;
+    });
+    occupied=occupied.map(function(count){return Math.max(0,count-1);});
+  });
+});
+${ZOOM_SCRIPT}</script></body></html>`;
 }
 
 export function mediaPage(media: MediaContent, colors: MediaPageColors): string {
   if (media.kind === "image") {
     return page("image", `<img src="${media.src}" alt="${escape(media.alt)}">`, colors);
   }
+  if(media.html) return page("table",media.html,colors);
   const head = media.headers
     ? `<thead><tr>${media.headers.map((h) => `<th>${escape(h)}</th>`).join("")}</tr></thead>`
     : "";

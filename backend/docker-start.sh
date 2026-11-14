@@ -30,6 +30,12 @@ run() {
 }
 
 run python manage.py migrate --no-input
+if [ -n "${AI_LAB_FEEDBACK_DATABASE_URL:-}" ]; then
+    run python manage.py migrate ai_feedback --database=ai_feedback --no-input
+fi
+if [ -n "${REFERENCE_SEARCH_DATABASE_URL:-}" ]; then
+    run python manage.py migrate --database=reference_search --no-input
+fi
 # Existing MySQL mirrors need a title-only index before serving searches.
 # No-op when UpToDate uses the read-only SQLite snapshot.
 run python manage.py ensure_uptodate_search_index
@@ -45,6 +51,12 @@ run python manage.py seed_website
 # has no manifest -> admin / browsable API / Swagger UI 500 without this).
 run python manage.py collectstatic --no-input
 
+if [ "${APP_SERVER:-asgi}" = "asgi" ]; then
+    echo "[docker-start] starting ASGI on 0.0.0.0:${PORT:-8000}"
+    exec uvicorn config.asgi:create_application --factory \
+        --host 0.0.0.0 --port "${PORT:-8000}" \
+        --workers "${WEB_CONCURRENCY:-2}" --no-access-log --timeout-keep-alive 5
+fi
 echo "[docker-start] starting gunicorn on 0.0.0.0:${PORT:-8000}"
 exec gunicorn config.wsgi:application \
     --config gunicorn.conf.py \

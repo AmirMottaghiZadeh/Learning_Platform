@@ -24,6 +24,9 @@ from .serializers import (
     OtpRequestResponseSerializer,
     OtpRequestSerializer,
     OtpVerifySerializer,
+    EmailOtpRequestSerializer,
+    EmailOtpVerifySerializer,
+    EmailOtpRequestResponseSerializer,
     PasswordResetConfirmSerializer,
     PasswordSetSerializer,
     PasswordResetRequestSerializer,
@@ -144,6 +147,43 @@ class LoginView(APIView):
 
 def _otp_error(exc):
     return PlatformAPIError(str(exc), code=exc.code, details=exc.details, status_code=exc.status)
+
+
+class EmailOtpRequestView(APIView):
+    permission_classes = [AllowAny]
+    throttle_scope = "auth_otp_request"
+
+    @extend_schema(request=EmailOtpRequestSerializer,responses=EmailOtpRequestResponseSerializer)
+    def post(self,request):
+        from . import email_otp
+        serializer=EmailOtpRequestSerializer(data=request.data);serializer.is_valid(raise_exception=True)
+        email=email_otp.normalized(serializer.validated_data["email"])
+        try:email_otp.request_code(email,request=request)
+        except otp.OtpError as exc:raise _otp_error(exc) from None
+        response=Response({"email":email,"code_length":max(6,settings.EMAIL_OTP_CODE_LENGTH),
+            "expires_in":settings.EMAIL_OTP_TTL_SECONDS,"resend_in":ratelimit.otp_limit("resend_seconds")})
+        response["Cache-Control"]="no-store"
+        return response
+
+
+class EmailOtpVerifyView(APIView):
+    permission_classes = [AllowAny]
+    throttle_scope = "auth_otp_verify"
+
+    @extend_schema(request=EmailOtpVerifySerializer,responses=AuthTokenResponseSerializer)
+    def post(self,request):
+        from . import email_otp
+        serializer=EmailOtpVerifySerializer(data=request.data);serializer.is_valid(raise_exception=True)
+        data=serializer.validated_data
+        try:user,created=email_otp.verify_code(data["email"],data["code"],request=request)
+        except otp.OtpError as exc:raise _otp_error(exc) from None
+        issued=issue_user_session(user,request=request,device_name=data.get("device_name",""))
+        verify_session_step_up(issued.session,request=request)
+        record_security_event(SecurityAuditEvent.OTP_VERIFIED,user=user,actor=user,session=issued.session,
+            request=request,metadata={"channel":"email","created":created})
+        response=Response(_session_response(issued),status=201 if created else 200)
+        response["Cache-Control"]="no-store"
+        return response
 
 
 class OtpRequestView(APIView):

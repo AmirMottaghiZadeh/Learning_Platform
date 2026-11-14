@@ -157,3 +157,44 @@ class ImageDetailView(APIView):
         if image is None:
             raise PlatformAPIError("No such image.", code="NOT_FOUND", status_code=404)
         return Response(UptodateImageSerializer(image).data)
+
+
+class TopicPdfView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses={(200,"application/pdf"):bytes})
+    def get(self,request,content_id):
+        _require_available()
+        article=services.get_topic(content_id)
+        if article is None:raise PlatformAPIError("No such topic.",code="NOT_FOUND",status_code=404)
+        require_feature(request,"uptodate",item=content_id,consume=True)
+        from .pdf import article_pdf
+        payload=article_pdf(article)
+        response=HttpResponse(payload,content_type="application/pdf")
+        safe_id=re.sub(r"[^A-Za-z0-9_-]","",str(content_id))[:80]
+        response["Content-Disposition"]=f'attachment; filename="uptodate-{safe_id}.pdf"'
+        response["Cache-Control"]="private, no-store"
+        return response
+
+
+class TopicMediaView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=dict)
+    def get(self,request,content_id,media_key):
+        _require_available()
+        require_feature(request,"uptodate",item=content_id,consume=True)
+        article=services.get_topic(content_id)
+        if article is None:raise PlatformAPIError("No such topic.",code="NOT_FOUND",status_code=404)
+        content_hash=request.query_params.get("content_hash","")
+        if content_hash and sha256(article["body_html"].encode()).hexdigest()!=content_hash:
+            raise PlatformAPIError("The source has changed.",code="REFERENCE_INDEX_STALE",status_code=409)
+        from .media import resolve_one,viewer_payload
+        item=resolve_one(article,media_key)
+        graphic_hash=request.query_params.get("graphic_hash","")
+        if item and graphic_hash and item.get("graphic_hash")!=graphic_hash:
+            raise PlatformAPIError("The graphic has changed.",code="REFERENCE_INDEX_STALE",status_code=409)
+        data=viewer_payload(item) if item else None
+        if data is None:raise PlatformAPIError("No such media.",code="NOT_FOUND",status_code=404)
+        response=Response(data);response["Cache-Control"]="private, no-store"
+        return response

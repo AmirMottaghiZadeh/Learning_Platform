@@ -393,6 +393,22 @@ class OtpVerifySerializer(serializers.Serializer):
     device_name = serializers.CharField(required=False, allow_blank=True, max_length=120)
 
 
+class EmailOtpRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254)
+
+
+class EmailOtpVerifySerializer(EmailOtpRequestSerializer):
+    code = serializers.CharField(min_length=6,max_length=10,write_only=True)
+    device_name = serializers.CharField(required=False,allow_blank=True,max_length=120)
+
+
+class EmailOtpRequestResponseSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code_length = serializers.IntegerField()
+    expires_in = serializers.IntegerField()
+    resend_in = serializers.IntegerField()
+
+
 class PasswordSetSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True)
     new_password_confirm = serializers.CharField(write_only=True)

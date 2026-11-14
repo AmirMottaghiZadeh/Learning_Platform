@@ -41,6 +41,7 @@ if settings.DATA_QUALITY_CENTER_ENABLED:
     urlpatterns.append(path("manage/data/", include("apps.data_quality_center.urls")))
 if settings.BILLING_CONSOLE_ENABLED:
     urlpatterns.append(path("manage/sales/", include("apps.billing.console.urls")))
+    urlpatterns.append(path("manage/app/search-credit/", include("apps.ai_wallet.console_urls")))
 
 # Where the tools used to be.
 urlpatterns += [

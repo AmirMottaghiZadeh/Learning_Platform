@@ -102,6 +102,8 @@
 |---|---|---|
 | POST | `/auth/otp/request/` — عمومی | `{phone, purpose: "signup"\|"reset"}` ← `{phone, code_length, expires_in, resend_in}`. خطاها: 409 `PHONE_REGISTERED` (ثبت‌نام با شماره‌ای که رمز دارد)، 404 `PHONE_NOT_REGISTERED` (بازیابی)، 429 `OTP_TOO_SOON` (`details.retry_after`) یا `OTP_DAILY_LIMIT`، 503 `SMS_SEND_FAILED` |
 | POST | `/auth/otp/verify/` — عمومی | `{phone, purpose, code, device_name?}` ← `AuthTokenResponse` (201 اگر حساب همین الان ساخته شد). خطاها: 400 `OTP_INVALID` (`details.attempts_left`)، `OTP_EXPIRED`، `OTP_LOCKED` |
+| POST | `/auth/email-otp/request/` — عمومی | `{email}` ← `{email,code_length,expires_in,resend_in}`؛ SMTP مستقیم با timeout. کد در پاسخ نیست. 429 محدودیت ارسال، 503 `EMAIL_SEND_FAILED` یا `EMAIL_OTP_DISABLED` |
+| POST | `/auth/email-otp/verify/` — عمومی | `{email,code,device_name?}` ← `AuthTokenResponse`؛ 201 حساب تازه یا 200 حساب موجود، با قوانین فعلی نشست‌ها. کد یک‌بارمصرف، منقضی/اشتباه/قفل‌شده رد می‌شود |
 | POST | `/auth/password/set/` | `{new_password, new_password_confirm, name?, current_password?}` ← `User`. `current_password` فقط وقتی لازم است که حساب رمز دارد و نشست تازه با کد پیامکی تأیید نشده. نشست‌های دیگر بسته می‌شوند |
 | POST | `/auth/login/` — عمومی | `{username, password, device_name?}` ← `AuthTokenResponse`. `username` شمارهٔ موبایل (هر نوشتار)، ایمیل یا نام کاربری. 400 `INVALID_CREDENTIALS` |
 | POST | `/auth/refresh/` — عمومی | `{refresh_token}` ← `AuthTokenResponse`. 401 `INVALID_REFRESH_TOKEN` |
@@ -240,9 +242,13 @@
 | GET | `/uptodate/topics/?search=&limit=` | مفهوم‌ها، نام‌های جایگزین و ارتباط مقاله‌ها از نگاشت snapshot؛ تطبیق عنوان و تصحیح غلط املایی مسیر پشتیبان است ([03-backend.md](03-backend.md#uptodate-و-lexicomp)). بدون `paged`: صفحهٔ اول به شکل فهرست سازگار با کلاینت قبلی؛ `limit` پیش‌فرض ۲۵ و حداکثر ۵۰. با `paged=1&offset=&limit=&section=`: ← `{total, all, sections[{name,count}], terms[], corrected, suggestions[{query,label,kind,count}], results[]}`؛ `limit` تا ۱۰۰. هر نتیجه: `{id,title,section,sections[],version,updated,terms[],corrected,snippet}`. فیلتر `section` با هر تخصص مقاله تطبیق می‌دهد؛ مقاله در هر تخصص یک بار شمرده می‌شود و جمع شمارنده‌ها می‌تواند بیشتر از `all` باشد. `title` متن ساده و `snippet` خالی است. از سهمیه کم نمی‌کند |
 | GET | `/uptodate/topics/{id}/` | ← `{id, title, section, sections[], version, updated, contributors[], outline_html, body_html}`. `title` متن ساده است و HTML بدنه و outline حفظ می‌شود. یک بار از سهمیه کم می‌کند |
 | GET | `/uptodate/images/{id}/` | تصویر یا جدول مقاله |
+| GET | `/uptodate/topics/{id}/pdf/` | فایل واقعی `application/pdf` با disposition ضمیمه، نیازمند احراز هویت و مجوز منبع؛ مقاله و گرافیک‌های محلی مرتبط، `private,no-store` |
+| GET | `/uptodate/topics/{id}/media/{key}/?content_hash=&graphic_hash=` | جدول اصلی با HTML پاک‌سازی‌شده و حفظ ادغام سلول‌ها، یا تصویر اصلی به‌شکل data URI؛ کلید باید متعلق به همان مقاله باشد. تغییر هش مقاله/گرافیک → 409؛ دسترسی منبع کنترل می‌شود |
 | GET | `/uptodate/search-metadata/?build=&version=` | مکمل جست‌وجوی بستهٔ قدیمی، پاسخ باینری `application/octet-stream`: JSON فشرده با zlib در رکورد AES-GCM با کلید همان build. شامل `{schema:1,version,memberships,search}`؛ `search.queries` ردیف‌های `[word,conceptId,weight]` و `search.topics` نگاشت مفهوم به چهار CSV شناسه‌های عمومی/بزرگسال/کودک/آموزش بیمار است. فقط حساب دارای دسترسی پولی آفلاین؛ بدون مصرف سهمیه. نسخهٔ متفاوت → 409، کاتالوگ یا راز بستهٔ ناموجود → 503. مجوز آفلاین را صادر یا تمدید نمی‌کند |
 
 اگر منبع داده (MySQL یا SQLite) نباشد، 503 `FEATURE_NOT_AVAILABLE`.
+
+ترتیب نمایش سرچ فعلی رسانهٔ اصلی، توضیح فارسی و سپس منابع است. کیف اعتبار پس از پایان سرچ کسر می‌کند؛ ماندهٔ صفر/منفی شروع بعدی را با ۴۰۲ رد می‌کند و پاسخ کیف `exhausted` دارد؛ فیلدهای رزرو حذف شده‌اند. ابزار AI کیفیت داده از نشست مدیریت و CSRF در `POST /manage/data/drugs/{slug}/{field}/ai/` استفاده می‌کند و فقط پیشنهاد می‌سازد. [قرارداد و تنظیمات کامل](43-smart-search-postpay-quality-ai.fa.md).
 
 برای مقصد نتیجهٔ جست‌وجوی آینده، درخواست جزئیات می‌تواند هر دو پارامتر `search_content_hash` (SHA-256 بدنهٔ اصلی، ۶۴ نویسهٔ hex کوچک) و `search_anchor` (شناسهٔ پاراگراف با قالب `utd-` و ۳۲ نویسهٔ hex کوچک) را بدهد. پاسخ فیلد اختیاری `search_anchor_status` دارد: `matched` یعنی نسخه و پاراگراف منطبق است و HTML ویژگی مقصد دارد؛ `missing` یعنی نسخه منطبق است اما مقصد پیدا یا آماده نشد؛ `stale` یعنی بدنه تغییر کرده است و HTML اصلی برگردانده می‌شود. دادهٔ نامعتبر 400 می‌دهد. همهٔ این حالت‌ها مشمول همان احراز هویت و کنترل دسترسی و سهمیهٔ جزئیات مقاله هستند؛ بدون دو پارامتر، رفتار قبلی حفظ می‌شود. این قرارداد به‌تنهایی endpoint جست‌وجوی هوشمند نیست.
 
@@ -324,6 +330,7 @@ endpoint جداگانهٔ جست‌وجوی برداری و سلسله‌مرا�
 | `/manage/sales/` | کنسول فروش (superuser، `platform_admin`، `billing_admin`؛ عملیات امنیتی فقط مدیر سامانه) |
 | `/manage/site/` | پنل محتوای سایت (نقش سایت یا نقش حساب متناظر) |
 | `/manage/data/` | مرکز کیفیت داده (staff یا مجوزهای کیفیت داده؛ تأیید و بازگردانی مجوز جدا دارند) |
+| `/manage/app/search-credit/` | تعرفه، بسته‌ها و گردش اعتبار سرچ هوشمند؛ مجوز `billing_admin` |
 
 ## تغییر دادن API
 
@@ -346,6 +353,8 @@ endpoint جداگانهٔ جست‌وجوی برداری و سلسله‌مرا�
 
 ## چت آزمایشی منابع
 
+اعتبار سرچ هوشمند: `GET /api/v1/ai-lab/wallet/` موجودی، رزرو، مصرف ۳۰ روز به اعتبار و بسته‌ها را برای حساب جاری می‌دهد؛ `GET /ai-lab/wallet/history/?offset=0` گردش صفحه‌بندی‌شده و رزروهای باز؛ این دو مسیر تعداد توکن ندارند. `POST /ai-lab/wallet/topups/` با `{package_id, request_id, gateway?, client?, expected_price_toman?}` سفارش شارژ و لینک پرداخت می‌سازد. مبلغ/اعتبار از سرور می‌آید و پس از تأیید پرداخت افزوده می‌شود. تغییر قیمت پیش از سفارش `409 AI_CREDIT_PRICE_CHANGED` می‌دهد؛ سفارش ایجادشده با تغییر ارز تغییر قیمت ندارد. پاسخ‌های مالی `private, no-store` هستند. ماندهٔ مثبت تا صفر قابل استفاده است؛ اعتبار آزاد صفر هنگام ask خطای `402 AI_CREDIT_INSUFFICIENT` می‌دهد. هدیهٔ ۱۰۰ و بسته‌های ۵۰۰/۱۰۰۰/۲۰۰۰ در migration پیش‌فرض ثبت می‌شوند. [قرارداد، نرخ‌ها و تسویه](41-smart-search-credits.fa.md).
+
 `GET /api/v1/ai-lab/status/`، `POST /api/v1/ai-lab/ask/` با پاسخ `202 {job_id}` و `GET /api/v1/ai-lab/results/<uuid>/` اضافه شده‌اند. تمام مسیرها ورود می‌خواهند؛ ارسال و دریافت نتیجه علاوه بر پرچم فعال، مجوز حساب را کنترل می‌کند. نتیجهٔ دیگران `404` و ظرفیت یا سقف درخواست `429` است. وضعیت هر بخش `answered`، `partial` یا `not_found` است؛ `retrieval.early_stopped`، `reviewed_articles` و `stop_reason` توقف روی پاسخ کافی و تعداد مقاله‌های بررسی‌شده را مشخص می‌کنند. [بدنه‌ها، مدل‌ها و وضعیت‌های کامل](25-reference-chat-lab.fa.md#api-و-وضعیت-اجرا).
 
 در فاز صفر، نتیجهٔ نهایی و رکورد job در پایان یا خطا، `metrics` دارند: زمان صف و worker، اولین عنوان/بخش/ارجاع، زمان پاسخ ماشینی کامل، زمان عملیات، تمام تلاش‌های مدل و مجموع usage گزارش‌شده. `final_answer_ms` برای نتیجهٔ جزئی یا خطا `null` است. این فیلدها خصوصی و تابع همان کنترل مالکیت‌اند؛ معیار زمان سرور هستند و تأیید بالینی یا زمان نمایش در مرورگر محسوب نمی‌شوند. [تعریف دقیق و ابزار ارزیابی](26-smart-search-phase0.fa.md).
@@ -367,3 +376,9 @@ endpoint جداگانهٔ جست‌وجوی برداری و سلسله‌مرا�
 هر بخش پاسخ شامل `lookup_kind` و `audience` برنامه‌ریزی‌شده است؛ مسیر تاپیک‌های اطلاعات دارویی مرتبط در `retrieval.related_topic_paths` و رابطهٔ عنوان‌ها در `workflow.titles[].related_to` ثبت می‌شود.
 
 تشخیص آزمون بار سرچ هوشمند: `GET /api/v1/ai-lab/status/?diagnostics=1` فقط برای staff، فیلد `runtime` شامل شناسهٔ تصادفی worker، profile digest، ظرفیت، سقف درخواست provider و backend کش job/پاسخ را اضافه می‌کند. کاربران معمول این اطلاعات را دریافت نمی‌کنند. دسترسی cohort عمومی به مجوز امضاشدهٔ گیت و درصد rollout وابسته است؛ قرارداد ask/results تغییر نکرده است. [فاز پنج](31-smart-search-release-evaluation.fa.md).
+
+بازخورد سرچ: `GET/POST /api/v1/ai-lab/results/<uuid>/feedback/` برای مالکِ دارای مجوز فعال؛ POST فقط `{ "value": 1 }` یا `{ "value": -1 }` می‌پذیرد. متن سؤال و جواب از snapshot سروری در دیتابیس مستقل خوانده می‌شوند. `LabJob.feedback_available` آماده بودن ثبت برای همان پاسخ را مشخص می‌کند. رأی تکراری idempotent و تغییر نظر مجاز است؛ ۴۰۴ برای پاسخ دیگران و ۵۰۳ برای عدم دسترسی ذخیره‌سازی است. [قرارداد و ذخیره](33-smart-search-outline-feedback.fa.md).
+
+در موتور `hybrid`، بدنهٔ `POST /ai-lab/ask/` شناسهٔ اختیاری `request_id` را نیز می‌پذیرد. تکرار همان شناسه/بدنه توسط همان مالک، همان job را برمی‌گرداند؛ تغییر بدنه با همان شناسه → 409. `GET /ai-lab/results/<uuid>/stream/?after_sequence=N` جریان احرازهویت‌شدهٔ NDJSON با رویدادهای `snapshot`، `sources`، `heartbeat` و `complete` است. sequence یکنواخت و replay محدود به TTL است؛ شکاف replay با snapshot ترمیم می‌شود. دریافت مجدد هیچ سؤال پولی جدیدی نمی‌سازد. نقل‌قول `verification=retrieved` شاهد اولیه است؛ `verified` منبع پذیرفته‌شده در جمع‌بندی نهایی است. `POST /ai-lab/results/<uuid>/cancel/` توقف صریح همان job را درخواست می‌کند. `LabJob.cancellable` قابلیت لغو را مشخص می‌کند؛ مسیر outline از این قابلیت پشتیبانی نمی‌کند. deltaهای پیش‌نویس فقط با تنظیم صریح سرور فعال‌اند. [راه‌اندازی و محدودیت‌ها](36-smart-search-hybrid-implementation.fa.md).
+
+استناد hybrid می‌تواند آرایهٔ اختیاری `context`، حداکثر چهار برچسب کوتاهِ اصلیِ پیش از بند، داشته باشد. هر ورودی شامل `quote`، `source_anchor` و `ordinal` است؛ ترتیب منبع حفظ می‌شود. این زمینه همراه بند بازشده نمایش داده می‌شود و شاهد مستقل پزشکی نیست. در نبود زمینه، باکس اضافی نمایش داده نمی‌شود. اصالت زمینه در کش پاسخ و ارزیابی منبع کنترل می‌شود.

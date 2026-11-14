@@ -42,11 +42,16 @@ class ResponseCacheTests(TestCase):
     def model(self, alias, prompt, data, limit):
         if prompt == services.PLAN_PROMPT:
             return {"queries": ["reference"], "intent": "treatment"}, {}
+        if prompt == services.ARTICLE_PROMPT:
+            return {"article_ids": [a["id"] for a in data["articles"][:3]]}, {}
+        if prompt == services.TITLE_PROMPT:
+            return {"section_ids": [s["id"] for s in data["sections"][:3]]}, {}
         if prompt == services.ANSWER_PROMPT:
             return {"items": [{"source_id": data["paragraphs"][0]["id"], "summary_fa": "توضیح فارسی مطابق متن اصلی منبع"}]}, {}
         self.assertEqual(prompt, services.VERIFY_PROMPT)
         identifier = data["items"][0]["id"]
-        return {"supported": [identifier], "sufficient": True, "answer_source_ids": [identifier]}, {}
+        return {"supported": [identifier], "sufficient": True, "answer_source_ids": [identifier],
+                "coverage": [{"requirement":r,"status":"supported","source_ids":[identifier]} for r in data["requirements"]]}, {}
 
     def answer(self, **kwargs):
         with patch.object(services, "chat", side_effect=self.model) as chat, \
@@ -60,7 +65,7 @@ class ResponseCacheTests(TestCase):
 
     def test_repeat_is_a_zero_request_hit_with_fresh_metrics_and_workflow(self):
         cold, count = self.answer()
-        self.assertEqual(count, 3)
+        self.assertEqual(count, 5)
         self.assertEqual(cold["metrics"]["response_cache"], "miss")
         observed, published = [], []
         warm, count = self.answer(observe=observed.append, publish=published.append)
@@ -100,7 +105,7 @@ class ResponseCacheTests(TestCase):
         record["result"]["parts"][0]["items"][0]["summary_fa"] = "یک توضیح فارسی تغییر کرده و تأیید نشده"
         caches["ai_lab"].set(lookup.key, record)
         _, calls = self.answer()
-        self.assertEqual(calls, 3)
+        self.assertEqual(calls, 5)
 
     def test_source_change_and_active_generation_replacement_reject_old_cached_results(self):
         self.answer()
@@ -158,7 +163,7 @@ class ResponseCacheTests(TestCase):
         backend.set.side_effect = RuntimeError("private connection string")
         with patch.object(response_cache, "caches", {"ai_lab": backend}):
             result, calls = self.answer()
-        self.assertEqual(calls, 3)
+        self.assertEqual(calls, 5)
         self.assertEqual(result["parts"][0]["status"], "answered")
         self.assertNotIn("private connection string", json.dumps(result))
 
@@ -178,7 +183,7 @@ class ResponseCacheTests(TestCase):
         with override_settings(AI_LAB_RESPONSE_CACHE_ENABLED=False):
             first, count = self.answer()
             second, second_count = self.answer()
-        self.assertEqual((count, second_count), (3, 3))
+        self.assertEqual((count, second_count), (5, 5))
         self.assertEqual(first["metrics"]["response_cache"], "disabled")
 
     def test_benchmark_uses_ephemeral_account_and_writes_private_cold_hit_report(self):
@@ -376,13 +381,11 @@ class RuntimeBudgetTests(SimpleTestCase):
         finally:
             provider.deadline.reset(token)
 
-    def test_expired_queue_budget_prevents_planning_and_restores_parent_context(self):
+    def test_old_queue_budget_does_not_prevent_planning(self):
         trace = telemetry.Trace(queue_wait_ms=19000)
-        with patch.object(services, "chat") as chat:
-            with self.assertRaisesMessage(provider.ProviderError, "EXPERIMENT_TIMEOUT"):
-                services.answer("درمان مرجع", "luna", ["uptodate"], [], None, trace=trace)
-        chat.assert_not_called()
-        self.assertEqual(trace.snapshot()["provider_requests"], 0)
+        with patch.object(services, "chat", return_value=({"queries":[]},{})) as chat:
+            services.answer("پرسش", "luna", ["uptodate"], [], None, trace=trace)
+        chat.assert_called_once()
         self.assertIsNone(provider.deadline.get())
 
     def test_existing_outer_deadline_is_not_extended(self):

@@ -50,8 +50,13 @@ async function main() {
       if (data.method === 'Network.loadingFinished' && pendingBodies.delete(data.params.requestId)) {
         const responseEpoch = epoch;
         try { const response = await send('Network.getResponseBody', { requestId: data.params.requestId });
-          const value = JSON.parse(response.base64Encoded ? Buffer.from(response.body, 'base64').toString() : response.body);
-          if (responseEpoch === epoch && ['complete', 'failed'].includes(value.status)) job = value;
+          const body = response.base64Encoded ? Buffer.from(response.body, 'base64').toString() : response.body;
+          let value;
+          try { value = JSON.parse(body); } catch {
+            const events = body.split('\n').filter(Boolean).map(line => JSON.parse(line));
+            value = [...events].reverse().find(event => event.type === 'complete' || event.type === 'snapshot' && event.job?.status !== 'running')?.job;
+          }
+          if (responseEpoch === epoch && ['complete', 'failed'].includes(value?.status)) job = value;
         } catch { /* A missing body is recorded as missing evidence, never fabricated. */ }
       }
     });
@@ -65,6 +70,7 @@ async function main() {
     const runtimeResponse = await fetch(api.href.replace(/\/$/, '') + '/ai-lab/status/?diagnostics=1', { headers: { Authorization: `Bearer ${account.access_token}` }, redirect: 'error' });
     const runtime = (await runtimeResponse.json()).runtime;
     const reservation = runtime?.max_provider_requests ?? 12;
+    if (reservation === 0) throw Error('EXPLICIT_BENCHMARK_REQUEST_CAP_REQUIRED');
     if (!Number.isInteger(reservation) || reservation < 1 || reservation > 1000) throw Error('INVALID_SERVER_BUDGET');
     const runs = []; const journal = args['--output'] + '.progress.jsonl'; let coldAnswered = false; let used = 0; let bundleDigest;
     fs.writeFileSync(journal, '', { flag: 'wx', mode: 0o600 });
@@ -93,7 +99,7 @@ async function main() {
       if (args['--probe-only'] === 'true') { console.log('REFERENCE_BROWSER_UI_READY'); return; }
       await evaluate(`performance.clearMeasures('pharmenta.reference.finished');document.querySelector('[data-testid=reference-send]').click()`);
       stage = 'WAIT_RESULT';
-      const measurement = await until(async () => evaluate(`(()=>{const m=performance.getEntriesByName('pharmenta.reference.finished').at(-1);return m?{elapsed:m.duration,detail:m.detail,citations:document.querySelectorAll('[data-testid=reference-final-answer] [data-testid=reference-citation]').length}:null;})()`), 40000);
+      const measurement = await until(async () => evaluate(`(()=>{const m=performance.getEntriesByName('pharmenta.reference.finished').at(-1);return m?{elapsed:m.duration,detail:m.detail,citations:document.querySelectorAll('[data-testid=reference-final-answer] [data-testid=reference-source]').length}:null;})()`), 40000);
       await until(() => job, 3000).catch(() => null);
       runs.push({ case_id: test.id, scenario, browser_elapsed_ms: measurement.elapsed,
         rendered_answer_complete: measurement.detail.answer_complete === true && measurement.citations > 0,

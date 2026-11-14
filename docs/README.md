@@ -42,6 +42,17 @@
 | ۳۰ | [30-smart-search-cache-runtime.fa.md](30-smart-search-cache-runtime.fa.md) | فاز چهار: کش خصوصی پاسخ معتبر، اتصال پایدار HTTPS، بودجهٔ اجرا و بررسی cold/hit | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | ۳۱ | [31-smart-search-release-evaluation.fa.md](31-smart-search-release-evaluation.fa.md) | فاز پنج: آزمون کامل، بار واقعی، زمان نمایش، بازبینی خصوصی و شرط انتشار | مالک پروژه، بازبین، مسئول انتشار |
 | ۳۲ | [32-smart-search-first-line-regimens.fa.md](32-smart-search-first-line-regimens.fa.md) | اطلاعات مصرف دارو در پاسخ خط اول، شواهد مکمل و کنترل کفایت | مالک پروژه، بازبین، توسعه‌دهنده |
+| ۳۳ | [33-smart-search-outline-feedback.fa.md](33-smart-search-outline-feedback.fa.md) | انتخاب عنوان‌ها پیش از متن، تکمیل خواسته‌ها و بازخورد در PostgreSQL مستقل | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
+| ۳۴ | [34-smart-search-observed-uptogpt.fa.md](34-smart-search-observed-uptogpt.fa.md) | تحلیل trace و آزمایش زندهٔ UpToGPT، بازیابی ترکیبی، استریم متن و مقایسهٔ زمان‌ها | مالک پروژه، توسعه‌دهنده |
+| ۳۵ | [35-smart-search-hybrid-redesign-plan.fa.md](35-smart-search-hybrid-redesign-plan.fa.md) | برنامهٔ تأییدشدهٔ بازطراحی و معیار عبور: قطعات متن، embedding، بازیابی ترکیبی، حلقهٔ مدل و زیرساخت استریم | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
+| ۳۶ | [36-smart-search-hybrid-implementation.fa.md](36-smart-search-hybrid-implementation.fa.md) | اجرای موتور ترکیبی، تنظیم PostgreSQL/Redis/worker، ساخت بودجه‌دار و نتایج آزمون | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
+| ۳۷ | [37-embedding-model-review.fa.md](37-embedding-model-review.fa.md) | بررسی small، هزینهٔ رسمی، بازیابی مدل و کش قدیمی EmbeddingGemma و محدودیت بازاستفاده | مالک پروژه، توسعه‌دهنده |
+| ۳۸ | [38-purchased-small-embedding-build.fa.md](38-purchased-small-embedding-build.fa.md) | اجرای API خریداری‌شدهٔ small، سقف مصرف، تخمین زمان، نظارت و ادامهٔ امن | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
+| ۳۹ | [39-smart-search-status-deployment.fa.md](39-smart-search-status-deployment.fa.md) | وضعیت تأییدشدهٔ نسل کامل، فاصله تا پاسخ زیر ۲۰ ثانیه، کارهای باقی‌مانده و انتقال امن به سرور | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
+| ۴۰ | [40-smart-search-evidence-focus.fa.md](40-smart-search-evidence-focus.fa.md) | حذف شواهد کم‌ارتباط پیش از مدل، فشرده‌سازی تاریخچه و حفظ رژیم/قیود درمان | مالک پروژه، توسعه‌دهنده |
+| ۴۱ | [41-smart-search-credits.fa.md](41-smart-search-credits.fa.md) | هدیهٔ ۱۰۰ اعتباری، بسته‌های شارژ، نرخ دلاری/تومانی، تعرفه و مدیریت یکپارچه؛ ظرفیت هم‌زمان | مالک پروژه، مدیر فروش، توسعه‌دهنده |
+| ۴۲ | [42-search-media-pdf-email-clinical.fa.md](42-search-media-pdf-email-clinical.fa.md) | طرح ۲ سرچ، رسانه‌های اصلی آپتودیت، خروجی PDF، ورود ایمیلی، TGJU و مسیر بالینی | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
+| ۴۳ | [43-smart-search-postpay-quality-ai.fa.md](43-smart-search-postpay-quality-ai.fa.md) | ترتیب رسانه/پاسخ/منابع، حذف رزرو و اعتبار پس از سرچ، طرح‌های منتخب ورود و ابزار AI کیفیت داده | مالک پروژه، مدیر داده، توسعه‌دهنده |
 | — | [search/README.md](search/README.md) | مسیر جست‌وجوی فعلی اپ؛ tagging، بستهٔ آفلاین و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
 
 ## آرشیو طراحی رابط

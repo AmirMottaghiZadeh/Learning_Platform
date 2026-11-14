@@ -35,6 +35,7 @@ module.exports = ({ config }) => {
     plugins: [
       ...(config.plugins || []),
       "expo-notifications",
+      "expo-sharing",
       [
         "expo-build-properties",
         {

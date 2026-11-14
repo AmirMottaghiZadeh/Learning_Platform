@@ -245,7 +245,7 @@ def _user_summary(user, now):
     ents = list(_active_entitlements_qs(now).filter(user=user))
     events = []
     for order in Order.objects.filter(user=user, status=Order.STATUS_PAID).select_related("plan")[:3]:
-        events.append({"when": order.paid_at, "text": f"خرید {order.plan.name_fa}", "tone": "spec" if order.plan.kind == Plan.KIND_PRODUCT else "accent"})
+        events.append({"when": order.paid_at, "text": f"خرید {order.item_name}", "tone": "spec" if order.plan and order.plan.kind == Plan.KIND_PRODUCT else "accent"})
     for action in AdminAction.objects.filter(target_user=user)[:3]:
         events.append({"when": action.created_at, "text": action.summary, "tone": "muted"})
     events.sort(key=lambda e: e["when"], reverse=True)

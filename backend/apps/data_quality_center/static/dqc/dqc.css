@@ -1,3 +1,12 @@
+.dqc-ai {border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--surface)}
+.dqc-ai summary {cursor:pointer;min-height:32px;color:var(--accent);font-weight:800;font-size:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.dqc-ai-body {display:flex;flex-direction:column;gap:12px;padding-top:14px}
+.dqc-ai-controls,.dqc-ai-preview {display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dqc-ai label {font-size:12px;font-weight:700;line-height:2}
+.dqc-ai select,.dqc-ai textarea {display:block;width:100%;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+.dqc-ai .ai-help {font-size:12px;line-height:2;color:var(--muted);white-space:pre-wrap}
+.dqc-ai-preview textarea {resize:vertical;min-height:180px;font-weight:400}
+@media(max-width:700px){.dqc-ai-controls,.dqc-ai-preview{grid-template-columns:1fr}}
 /* The data-quality desk's pieces (chips, buttons, fields, diffs, the
    timeline), inside the admin shell (apps.manage). Its colours are the
    shell's tokens, so dark mode follows the admin's switch. */

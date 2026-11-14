@@ -17,6 +17,7 @@ import { CalculatorDomainScreen } from "@/screens/CalculatorDomainScreen";
 import { CalculatorsScreen } from "@/screens/CalculatorsScreen";
 import { DashboardScreen } from "@/screens/DashboardScreen";
 import { EducationScreen } from "@/screens/EducationScreen";
+import { ClinicalScreen } from "@/screens/ClinicalScreen";
 import { LessonDetailScreen } from "@/screens/LessonDetailScreen";
 import { LessonListScreen } from "@/screens/LessonListScreen";
 import { LessonsScreen } from "@/screens/LessonsScreen";
@@ -200,6 +201,8 @@ function CurrentScreen() {
       return <PlansScreen />;
     case "education":
       return <EducationScreen />;
+    case "clinical":
+      return <ClinicalScreen />;
     case "guidelines":
       return <MedscapeGuidelinesScreen />;
     case "diseasesConditions":

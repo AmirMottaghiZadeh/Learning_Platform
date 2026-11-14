@@ -16,7 +16,7 @@
   {% if order %}
   <dl>
     <dt>سفارش</dt><dd>{{ order.pk|fa }}</dd>
-    <dt>خرید</dt><dd>{{ order.plan.name_fa }}</dd>
+    <dt>خرید</dt><dd>{{ order.item_name }}</dd>
     <dt>مبلغ</dt><dd>{{ order.payable_toman|toman }}</dd>
     <dt>زمان</dt><dd>{{ order.created_at|jdate:"time" }}</dd>
   </dl>

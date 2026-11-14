@@ -442,7 +442,7 @@ def start_payment(order, callback_for, *, kind=None, description, mobile="", ema
             logger.warning("gateway would not start", extra={"order": order.pk, "gateway": name, "error": str(exc)})
             error = exc
             continue
-        order.gateway, order.authority = gateway.name, authority
-        order.save(update_fields=["gateway", "authority"])
+        order.gateway, order.authority, order.gateway_payment_url = gateway.name, authority, url
+        order.save(update_fields=["gateway", "authority", "gateway_payment_url"])
         return url
     raise error

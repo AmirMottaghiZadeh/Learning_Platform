@@ -23,6 +23,7 @@ export type ScreenKey =
   | "notifications"
   | "plans"
   | "education"
+  | "clinical"
   | "guidelines"
   | "diseasesConditions"
   | "calculator"

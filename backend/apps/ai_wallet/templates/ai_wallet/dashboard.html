@@ -1,0 +1,60 @@
+{% extends "ai_wallet/base.html" %}{% load billing_extras %}
+{% block title %}اعتبار سرچ هوشمند{% endblock %}
+{% block content %}
+<header class="credit-heading">
+  <div><span class="eyebrow">اپ / سرچ هوشمند</span><h1>مدیریت اعتبار</h1><p class="sub">اعتبار کاربران، بسته‌های شارژ و تعرفهٔ مصرف در یک‌جا.</p></div>
+  <span class="chip {% if config.enabled %}accent{% else %}warn{% endif %}">{% if config.enabled %}کسر اعتبار فعال{% else %}کسر اعتبار غیرفعال{% endif %}</span>
+</header>
+{% if not pricing_matches %}<div class="flash error">تنظیم مدل یا ارائه‌دهنده تغییر کرده است. تعرفه را بررسی و دوباره ذخیره کنید.</div>{% endif %}
+<div class="grid g3">
+  <div class="card credit-stat"><span class="sub">اعتبار اولیهٔ هر کاربر</span><b>{{ config.initial_credits|floatformat:"0"|fa }}</b><span class="sub">هدیهٔ شروع، فقط یک بار</span></div>
+  <div class="card credit-stat"><span class="sub">بسته‌های قابل خرید</span><b>{{ package_count|fa }}</b><span class="sub">قیمت ثابت یا وابسته به نرخ دلار</span></div>
+  <div class="card credit-stat"><span class="sub">کیف‌های ایجادشده</span><b>{{ wallet_count|fa }}</b><span class="sub">موجودی مستقل برای هر حساب</span></div>
+</div>
+<form method="post" class="card stack credit-section" data-testid="credit-settings-form">
+  {% csrf_token %}
+  <div class="credit-section-head"><h2>تنظیم اعتبار و فروش</h2><span class="chip accent">واحد نمایش کاربر: اعتبار</span></div>
+  {% if form.non_field_errors %}<div class="flash error">{{ form.non_field_errors }}</div>{% endif %}
+  {% include "ai_wallet/field.html" with field=form.enabled %}
+  <div class="credit-fields">{% include "ai_wallet/field.html" with field=form.initial_credits %}</div>
+  <hr class="credit-divider">
+  <div class="stack" style="gap:8px"><h2>قیمت بسته و نرخ دلار</h2><p class="credit-note">قیمت بسته = اعتبار بسته ÷ ۱۰۰۰ × قیمت دلاری هر ۱۰۰۰ اعتبار × نرخ دلار به تومان. قیمت سفارشِ ایجادشده بعداً تغییر نمی‌کند.</p></div>
+  <div class="credit-fields">{% include "ai_wallet/field.html" with field=form.usd_per_1000_credits %}{% include "ai_wallet/field.html" with field=form.usd_to_toman %}{% include "ai_wallet/field.html" with field=form.fx_mode %}</div>
+  <div class="credit-summary">
+    <b>نرخ فعلی: {{ config.usd_to_toman|toman }} برای هر دلار</b><br>
+    <span class="sub">منبع: {% if config.fx_source == 'tgju' %}آخرین اعلام دلار آزاد TGJU{% else %}مقدار دستی مدیر{% endif %} · زمان نرخ: {{ config.fx_quoted_at|jdate:"time" }}</span>
+    {% if not fx_ready %}<p class="credit-note">در حالت خودکار، خرید بستهٔ دلاری تا دریافت نرخ معتبر در دسترس نیست. برای تعیین نرخ دستی، روش را تغییر و ذخیره کنید.</p>{% endif %}
+  </div>
+  <details class="credit-details" {% if form.errors %}open{% endif %}>
+    <summary>تعرفهٔ مصرف و هزینهٔ مدل — فقط برای مدیریت</summary>
+    <div class="stack credit-detail-body" style="gap:20px">
+      <p class="credit-note">انتخاب فعلی محصول: یک میلیون توکن ورودی یا خروجی، هر کدام ۱۰۰۰ اعتبار. این اعداد تعرفهٔ اعتبار محصول‌اند؛ کاربر هیچ شمارش توکن یا مشخصات مدلی نمی‌بیند.</p>
+      <div class="credit-fields">{% include "ai_wallet/field.html" with field=form.input_per_million %}{% include "ai_wallet/field.html" with field=form.output_per_million %}{% include "ai_wallet/field.html" with field=form.cached_input_per_million %}{% include "ai_wallet/field.html" with field=form.embedding_per_million %}{% include "ai_wallet/field.html" with field=form.cache_write_per_million %}{% include "ai_wallet/field.html" with field=form.cache_write_12h_per_million %}</div>
+      {% if reference_luna %}
+      <div class="credit-summary"><b>هزینهٔ مرجع رسمی GPT-6 Luna، دلار برای یک میلیون توکن</b>
+        <div class="scroll-x"><table class="list"><thead><tr><th>ورودی</th><th>خروجی</th><th>خواندن کش</th><th>نوشتن کش ۳۰ دقیقه</th><th>نوشتن کش ۱۲ ساعت</th></tr></thead><tbody><tr><td class="ltr">$0.10</td><td class="ltr">$0.50</td><td class="ltr">$0.01</td><td class="ltr">$0.125</td><td class="ltr">$0.25</td></tr></tbody></table></div>
+        <p class="credit-note">تعرفهٔ استاندارد متن کوتاه؛ نرخ واقعی واسطه و قرارداد حساب ممکن است متفاوت باشد. فهرست مدل‌های GapGPT نرخ حساب را برنمی‌گرداند. <a href="https://developers.openai.com/api/docs/models/gpt-6-luna" target="_blank" rel="noopener">منبع رسمی مدل</a> · <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">جدول قیمت</a></p>
+        {% if reference_small %}<p class="credit-note">مرجع text-embedding-3-small: ورودی ۰٫۰۲ دلار برای یک میلیون توکن؛ فقط بردارسازی پرسش در هزینهٔ همان جست‌وجو حساب می‌شود.</p>{% endif %}
+      </div>
+      {% endif %}
+      <p class="credit-note">ورودی کش‌شده و نوشتن کش فقط با usage واقعی محاسبه می‌شوند. توکن thinking داخل خروجی گزارش‌شده است و دوباره حساب نمی‌شود. پاسخ آمادهٔ کشِ برنامه درخواست مدل و کسر مصرف ندارد.</p>
+    </div>
+  </details>
+  <div class="credit-actions"><button class="btn primary" type="submit">ذخیرهٔ تنظیمات</button><span class="sub">تعرفهٔ درخواست‌های در حال اجرا تغییر نمی‌کند.</span></div>
+</form>
+<section class="card stack credit-section"><div><h2>به‌روزرسانی قیمت با TGJU</h2><p class="credit-note">آخرین نرخ دلار آزاد سایت دریافت، از ریال به تومان تبدیل و قیمت بسته‌های دلاری با همان نرخ محاسبه می‌شود. مبلغ سفارش‌های قبلی و اعتبار خریداری‌شده تغییر نمی‌کنند.</p></div><form method="post" action="{% url 'ai_wallet_admin:refresh_rate' %}" class="credit-actions">{% csrf_token %}<button type="submit" class="btn primary">به‌روزرسانی قیمت بسته‌ها از TGJU</button><span class="sub">با دریافت موفق، به‌روزرسانی خودکار حداکثر هر ۵ دقیقه نیز فعال می‌شود.</span></form></section>
+<section class="card stack credit-section">
+  <div class="credit-section-head"><div class="stack" style="gap:4px"><h2>بسته‌های شارژ</h2><span class="sub">کاربر یک بسته انتخاب می‌کند و پس از تأیید پرداخت اعتبار می‌گیرد.</span></div><a class="btn primary" href="{% url 'ai_wallet_admin:package_new' %}">بستهٔ جدید</a></div>
+  <div class="credit-packages">{% for package in packages %}
+    <article class="credit-package"><div class="row" style="justify-content:space-between"><b>{{ package.name }}</b><span class="chip {% if package.active %}accent{% else %}warn{% endif %}">{{ package.active|yesno:"فعال,غیرفعال" }}</span></div><div><strong>{{ package.credits|floatformat:"0"|fa }}</strong> اعتبار</div><b>{{ package.price_toman|toman }}</b><span class="sub">{% if package.dollar_priced %}بر اساس نرخ دلار{% else %}قیمت ثابت{% endif %}</span><a class="btn outline small" href="{% url 'ai_wallet_admin:package' package.pk %}">ویرایش بسته</a></article>
+    {% empty %}<p class="empty">هنوز بسته‌ای تعریف نشده است.</p>{% endfor %}</div>
+</section>
+<section class="card stack credit-section"><div class="credit-section-head"><h2>اعتبار کاربران</h2><span class="sub">{{ wallet_count|fa }} حساب</span></div>
+  <form method="get" class="credit-query"><label class="lbl" for="credit-user-query" style="width:100%;margin:0">نام، موبایل یا ایمیل</label><input class="fld" id="credit-user-query" name="q" value="{{ q }}" placeholder="جست‌وجوی کاربر"><button class="btn outline" type="submit">جست‌وجو</button></form>
+  <div class="scroll-x"><table class="list"><thead><tr><th>کاربر</th><th>موجودی</th><th>قابل استفاده</th><th></th></tr></thead><tbody>{% for wallet in wallets %}<tr><td>{{ wallet.owner.learner_profile.display_name|default:wallet.owner.username }}</td><td>{{ wallet.balance|floatformat:"0"|fa }}</td><td>{{ wallet.available|floatformat:"0"|fa }}</td><td><a class="btn outline small" href="{% url 'ai_wallet_admin:user' wallet.owner_id %}">مدیریت اعتبار</a></td></tr>{% empty %}<tr><td class="empty" colspan="5">کیف هر حساب با اولین مراجعه ساخته می‌شود.</td></tr>{% endfor %}</tbody></table></div>
+  <nav class="pager">{% if wallets.has_previous %}<a href="?q={{ q|urlencode }}&page={{ wallets.previous_page_number }}">قبلی</a>{% endif %}<span>صفحهٔ {{ wallets.number|fa }}</span>{% if wallets.has_next %}<a href="?q={{ q|urlencode }}&page={{ wallets.next_page_number }}">بعدی</a>{% endif %}</nav>
+</section>
+<section class="card stack credit-section"><div><h2>مصرف‌های نیازمند بررسی</h2><p class="credit-note">usage ارائه‌دهنده نامشخص بوده است. پس از بررسی، مجموع مصرف نهایی را تعیین کنید؛ موجودی کاربر در مدت بررسی قفل نیست.</p></div>
+  {% for reservation in pending %}<div class="credit-summary stack"><b>{{ reservation.wallet.owner|default:"حساب حذف‌شده" }}</b><span>مصرف قطعی ثبت‌شده: {{ reservation.charged|floatformat:"0"|fa }}؛ بخش نامشخص بدون قفل موجودی بررسی می‌شود.</span><form method="post" action="{% url 'ai_wallet_admin:review' reservation.pk %}" class="stack">{% csrf_token %}<div class="credit-fields">{% for field in review_form %}{% include "ai_wallet/field.html" %}{% endfor %}</div><button class="btn outline" type="submit">ثبت تسویه</button></form></div>{% empty %}<p class="empty">موردی در انتظار بررسی نیست.</p>{% endfor %}
+</section>
+{% endblock %}

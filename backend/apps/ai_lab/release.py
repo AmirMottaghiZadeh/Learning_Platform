@@ -15,6 +15,11 @@ from django.utils.crypto import constant_time_compare, salted_hmac
 from . import evaluation, reference_index, response_cache
 
 GATE_VERSION = 1
+HYBRID_CONFIGURATION_KEYS = (
+    "engine", "hybrid_generation", "embedding_profile", "semantic_ready", "local_lexical_pilot",
+    "top_k", "candidates", "context_tokens", "max_search_rounds", "regimen_enrichment", "answer_drafts", "executor",
+    "evidence_focus", "evidence_max_passages",
+)
 
 
 def frontend_digest():
@@ -34,14 +39,31 @@ def runtime_profile():
     effort = settings.AI_LAB_REASONING_EFFORT
     if effort is None:
         effort = settings.AI_LAB_LUNA_REASONING_EFFORT
-    return {"schema": GATE_VERSION, "code_digest": response_cache.code_signature(),
+    profile = {"schema": GATE_VERSION, "code_digest": response_cache.code_signature(),
         "model": settings.AI_LAB_MODEL, "base_url": base,
         "reasoning_effort": effort.strip().lower(), "source_identity": stamp.identity,
         "source_revision": stamp.revision, "generation": str(reference_index.active_generation(stamp)),
         "lexical": settings.AI_LAB_LEXICAL_ENABLED, "local_selection": settings.AI_LAB_LOCAL_SELECTION_ENABLED,
         "preprocessed_mode": settings.AI_LAB_PREPROCESSED_MODE, "cache": settings.AI_LAB_RESPONSE_CACHE_ENABLED,
-        "http_pool": settings.AI_LAB_HTTP_POOL_ENABLED, "timeout": settings.AI_LAB_TOTAL_TIMEOUT_SECONDS,
-        "max_requests": settings.AI_LAB_MAX_PROVIDER_REQUESTS, "capacity": settings.AI_LAB_MAX_CONCURRENT_JOBS}
+        "http_pool": settings.AI_LAB_HTTP_POOL_ENABLED, "timeout": None,
+        "max_requests": settings.AI_LAB_OUTLINE_MAX_PROVIDER_REQUESTS, "capacity": settings.AI_LAB_MAX_CONCURRENT_JOBS, "pipeline": "outline-v1"}
+    profile["engine"] = settings.AI_LAB_SEARCH_ENGINE
+    if settings.AI_LAB_SEARCH_ENGINE == "hybrid":
+        from apps.ai_retrieval import embeddings
+        from apps.ai_retrieval.models import RetrievalHead
+        head = RetrievalHead.objects.filter(source_identity=stamp.identity).select_related("active").first()
+        profile.update(pipeline="hybrid-v1", hybrid_generation=str(head.active_id) if head else None,
+            semantic_ready=bool(head and head.active and head.active.embedding_ready),
+            local_lexical_pilot=settings.AI_LAB_LOCAL_LEXICAL_PILOT,
+            embedding_profile=embeddings.profile(), top_k=settings.AI_LAB_HYBRID_TOP_K,
+            candidates=settings.AI_LAB_HYBRID_CANDIDATES,
+            context_tokens=settings.AI_LAB_HYBRID_CONTEXT_TOKENS,
+            max_search_rounds=settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS, executor=settings.AI_LAB_EXECUTOR,
+            regimen_enrichment=settings.AI_LAB_HYBRID_REGIMEN_ENRICHMENT,
+            evidence_focus=settings.AI_LAB_HYBRID_EVIDENCE_FOCUS,
+            evidence_max_passages=settings.AI_LAB_HYBRID_EVIDENCE_MAX_PASSAGES,
+            answer_drafts=settings.AI_LAB_STREAM_ANSWER_DRAFTS)
+    return profile
 
 
 def _sign(payload):
@@ -122,11 +144,22 @@ def configuration_current(configuration, profile):
     for key in ["base_url", "reasoning_effort"]:
         if key in profile and str(configuration.get(key, "")).strip().rstrip("/") != str(profile[key]).strip().rstrip("/"):
             return False
+    if profile.get("engine") == "hybrid" and any(configuration.get(key) != profile.get(key)
+            for key in HYBRID_CONFIGURATION_KEYS):
+        return False
     if "pipeline_code_digest" in configuration:
-        from . import document, http_transport, lexical, provider, retrieval, selection, services
+        from . import document, outline, http_transport, lexical, provider, retrieval, selection, services
         modules = [services, provider, http_transport, response_cache, retrieval, document, reference_index, lexical,
-                   selection, evaluation, evaluation.telemetry]
-        current = evaluation.digest({Path(module.__file__).name: Path(module.__file__).read_text() for module in modules})
+                   selection, evaluation, evaluation.telemetry, outline]
+        if profile.get("engine") == "hybrid":
+            from . import hybrid_agent, streaming, transport_pool
+            from apps.ai_retrieval import embeddings, chunking, vectors, indexing, evidence, retrieval as hybrid_retrieval
+            if (configuration.get("engine") != "hybrid" or configuration.get("hybrid_generation") != profile.get("hybrid_generation")
+                    or configuration.get("embedding_profile") != profile.get("embedding_profile")):
+                return False
+            modules += [hybrid_agent, streaming, transport_pool, embeddings, chunking, vectors, indexing, evidence, hybrid_retrieval]
+        current = evaluation.digest({(module.__name__ if profile.get("engine") == "hybrid" else Path(module.__file__).name):
+            Path(module.__file__).read_text() for module in modules})
         return configuration["pipeline_code_digest"] == current
     return configuration.get("code_digest") == profile.get("code_digest")
 
@@ -146,6 +179,11 @@ def evaluate_gate(suite, load, browser, reviews, *, dataset=None, evidence=None,
     profile = runtime_profile()
     if profile.get("generation") == "None":
         blockers.append("PREPARED_INDEX_REQUIRED")
+    if profile.get("engine") == "hybrid":
+        if not profile.get("semantic_ready"):
+            blockers.append("HYBRID_EMBEDDINGS_REQUIRED")
+        if profile.get("local_lexical_pilot"):
+            blockers.append("LOCAL_PILOT_NOT_RELEASABLE")
     if not configuration_current(suite["configuration"], profile):
         blockers.append("SUITE_RUNTIME_CHANGED")
     suite_rows = checked_rows(suite["runs"], dataset, suite["configuration"], evidence, reviews)

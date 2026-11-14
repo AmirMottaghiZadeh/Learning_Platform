@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { deviceHeaders } from "./device";
+import { fetch as expoFetch } from "expo/fetch";
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
@@ -53,6 +54,34 @@ let refreshPromise: Promise<string> | null = null;
 export function configureAuth(controller: AuthController | null) {
   auth = controller;
   refreshPromise = null;
+}
+
+/** GET-only stream transport; shares refresh state with the regular API. */
+export async function authenticatedStream(path: string, signal: AbortSignal) {
+  const controller = auth;
+  const headers: Record<string, string> = { ...await deviceHeaders(), Accept: "application/x-ndjson" };
+  const request = () => {
+    const token = controller?.getAccessToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return expoFetch(`${API_BASE_URL.replace(/\/$/, "")}${path}`, { headers, signal });
+  };
+  let response = await request();
+  if (response.status === 401 && controller && controller === auth) {
+    try {
+      refreshPromise ??= controller.refreshAccessToken();
+      await refreshPromise;
+      refreshPromise = null;
+    } catch (error) {
+      refreshPromise = null;
+      await controller.onAuthFailed();
+      throw error;
+    }
+    if (controller !== auth || signal.aborted) throw new Error("Stream cancelled");
+    response = await request();
+    if (response.status === 401) await controller.onAuthFailed();
+  }
+  if (!response.ok) throw new ApiError(response.status, await response.json().catch(() => ({})));
+  return response;
 }
 
 apiClient.interceptors.request.use(async (request) => {

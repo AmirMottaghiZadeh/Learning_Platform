@@ -49,9 +49,32 @@ def check_deadline(*, minimum=0):
     return remaining
 
 
+def reserve_request():
+    """Shared accounting for buffered and streamed paid requests; never replay."""
+    timeout = settings.AI_LAB_TIMEOUT_SECONDS
+    remaining = check_deadline(minimum=settings.AI_LAB_MIN_CALL_BUDGET_SECONDS)
+    if remaining is not None:
+        timeout = min(timeout, remaining)
+    request_limit = _request_budget.get()
+    if request_limit is not None and request_limit["used"] >= request_limit["limit"]:
+        raise ProviderError("SEARCH_REQUEST_LIMIT")
+    budget = _evaluation_budget.get()
+    if budget is not None:
+        remaining = budget["deadline"] - time.monotonic()
+        if budget["used"] >= budget["max_requests"] or remaining <= 0:
+            budget["exhausted"] = True
+            raise ProviderError("EVALUATION_BUDGET_EXCEEDED")
+        timeout = min(timeout, remaining)
+        budget["used"] += 1
+    if request_limit is not None:
+        request_limit["used"] += 1
+    return timeout
+
+
 @contextmanager
-def request_budget():
-    token = _request_budget.set({"used": 0, "limit": settings.AI_LAB_MAX_PROVIDER_REQUESTS})
+def request_budget(*, limit=None):
+    limit = settings.AI_LAB_MAX_PROVIDER_REQUESTS if limit is None else limit
+    token = _request_budget.set({"used": 0, "limit": limit} if limit > 0 else None)
     try:
         yield
     finally:
@@ -86,14 +109,27 @@ def credentials():
         except OSError:
             raise ProviderError("CREDENTIAL_FILE_UNAVAILABLE") from None
         label = ""
+        file_keys = {}
+        labelled_key = ""
         for line in text.splitlines():
+            # The private file may use the same dotenv format as server settings.
+            # Read only credential fields: model, URL and reasoning still come
+            # exclusively from Django settings, with environment keys first.
+            setting = re.fullmatch(r"\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=\s*(.*?)\s*", line)
+            if setting:
+                if setting[1] in {"AI_LAB_API_KEY", "AI_LAB_LUNA_API_KEY"}:
+                    match = re.fullmatch(r"(['\"]?)(sk-[A-Za-z0-9_-]{16,})\1(?:\s+#.*)?", setting[2])
+                    file_keys[setting[1]] = match[2] if match else ""
+                continue
             match = re.search(r"sk-[A-Za-z0-9_-]{16,}", line)
             if match:
                 alias = next((name for name in MODEL_ALIASES if name in label), None)
-                if alias and not keys[alias]:
-                    keys[alias] = match.group()
+                if alias and not labelled_key:
+                    labelled_key = match.group()
             elif line.strip():
                 label = line.lower()
+        keys["luna"] = (keys["luna"] or file_keys.get("AI_LAB_API_KEY")
+                        or file_keys.get("AI_LAB_LUNA_API_KEY") or labelled_key)
     return keys
 
 
@@ -120,23 +156,7 @@ def call(alias, payload):
     request = Request(base + "/chat/completions", data=json.dumps(payload, ensure_ascii=False).encode(),
                       headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, method="POST")
     started = time.monotonic()
-    timeout = settings.AI_LAB_TIMEOUT_SECONDS
-    remaining = check_deadline(minimum=settings.AI_LAB_MIN_CALL_BUDGET_SECONDS)
-    if remaining is not None:
-        timeout = min(timeout, remaining)
-    request_limit = _request_budget.get()
-    if request_limit is not None and request_limit["used"] >= request_limit["limit"]:
-        raise ProviderError("SEARCH_REQUEST_LIMIT")
-    budget = _evaluation_budget.get()
-    if budget is not None:
-        remaining = budget["deadline"] - time.monotonic()
-        if budget["used"] >= budget["max_requests"] or remaining <= 0:
-            budget["exhausted"] = True
-            raise ProviderError("EVALUATION_BUDGET_EXCEEDED")
-        timeout = min(timeout, remaining)
-        budget["used"] += 1
-    if request_limit is not None:
-        request_limit["used"] += 1
+    timeout = reserve_request()
     try:
         telemetry.provider_request_sent()
         with build_opener(NoRedirect).open(request, timeout=timeout) as response:
@@ -164,6 +184,7 @@ def call(alias, payload):
     usage = data.get("usage") or {}
     if not isinstance(usage, dict):
         usage = {}
+    telemetry.provider_usage({"usage":usage})
     reported = data.get("model")
     if reported is not None and (not isinstance(reported, str) or not re.fullmatch(r"[A-Za-z0-9_.:/-]{1,120}", reported)):
         raise ProviderError("INVALID_PROVIDER_RESPONSE")

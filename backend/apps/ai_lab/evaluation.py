@@ -101,8 +101,24 @@ class SourceEvidence:
             _, extracted = self.article(identifier)
             if citation["content_hash"] != extracted.content_hash or params["searchContentHash"] != extracted.content_hash:
                 return False
-            return any(block.paragraph_id == params["searchAnchor"] and block.text == citation["quote"]
-                       and block.section_id == params.get("sectionId", "") for block in extracted.blocks)
+            blocks = {block.paragraph_id: (ordinal, block) for ordinal, block in enumerate(extracted.blocks)}
+            main = blocks.get(params["searchAnchor"])
+            if main is None or main[1].text != citation["quote"] or main[1].section_id != params.get("sectionId", ""):
+                return False
+            context = citation.get("context", [])
+            if not isinstance(context, list) or len(context) > 4:
+                return False
+            previous = -1
+            for label in context:
+                if not isinstance(label, dict) or type(label.get("ordinal")) is not int:
+                    return False
+                original = blocks.get(label.get("source_anchor"))
+                if (original is None or original[1].text != label.get("quote")
+                        or original[1].section_id != main[1].section_id or original[0] != label["ordinal"]
+                        or not previous < original[0] < main[0]):
+                    return False
+                previous = original[0]
+            return True
         except (KeyError, TypeError, EvaluationError):
             return False
 
@@ -131,7 +147,7 @@ def clinical_digest(case, bindings, configuration, result=None, error_code=None)
     """Bind reviews to clinical content, not timing/cache/traffic metadata."""
     profile = {key: configuration.get(key) for key in ["model", "base_url", "reasoning_effort", "snapshot_version",
         "source_version", "pipeline_code_digest", "code_digest", "prompt_digest", "lexical_version", "selection_version"]}
-    parts = [{key: part.get(key) for key in ["question_fa", "status", "clarification_fa", "overview_fa", "items"]}
+    parts = [{key: part.get(key) for key in ["question_fa", "status", "clarification_fa", "overview_fa", "items", "requirements", "coverage"]}
              for part in (result or {}).get("parts", [])]
     return digest({"schema": 2, "case": case, "bindings": bindings, "configuration": profile,
                    "parts": parts, "error_code": error_code})

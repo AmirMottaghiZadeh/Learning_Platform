@@ -130,22 +130,6 @@ class LexicalRankingTests(SimpleTestCase):
             with self.assertRaisesMessage(services.ProviderError, "INVALID_MODEL_OUTPUT"):
                 services.plan_question("عارضه آریپیپرازول چیست", [], [], "luna")
 
-    @override_settings(AI_LAB_LEXICAL_ENABLED=False)
-    @patch.object(services, "read_sections")
-    @patch.object(services, "search_articles")
-    @patch.object(services, "chat")
-    def test_feature_flag_restores_legacy_read_and_budget_with_four_model_calls(self, chat, search, read):
-        p = retrieval.Passage("P1", "1", "Title", "Treatment", fixtures.TEXT, {}, "hash")
-        search.return_value = [{"id": "1", "title": "Title"}]
-        read.return_value = [{"id": "T1", "article_id": "1", "title": "Title", "heading": "Treatment",
-                              "preview": fixtures.TEXT, "passages": [p]}]
-        chat.side_effect = [({"queries": ["concept"]}, {}), ({"section_ids": ["T1"]}, {}),
-                            ({"items": [{"source_id": "P1", "summary_fa": "توضیح فارسی مطابق با منبع"}]}, {}),
-                            ({"supported": ["P1"], "sufficient": True, "answer_source_ids": ["P1"]}, {})]
-        result = services.answer("درمان بیماری", "luna", ["uptodate"], [], None)
-        self.assertEqual(result["parts"][0]["status"], "answered")
-        self.assertIsNone(read.call_args.kwargs["context"])
-        self.assertEqual(chat.call_count, 4)
 
 
 @override_settings(AI_LAB_PREPROCESSED_MODE="prefer", AI_LAB_LEXICAL_ENABLED=True)

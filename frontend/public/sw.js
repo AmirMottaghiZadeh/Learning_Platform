@@ -12,7 +12,7 @@
  *   when offline.
  */
 
-const CACHE = "pharmenta-shell-v1";
+const CACHE = "pharmenta-shell-v2";
 const SCOPE = new URL(self.registration.scope);
 const INDEX = new URL("index.html", SCOPE).href;
 const MAX_HASHED = 400;
@@ -76,6 +76,10 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (!inScope(url)) return;
+  // API may share the app origin behind a reverse proxy. Authenticated
+  // responses and long-lived streams must never be copied into shell cache.
+  if (url.pathname.startsWith("/api/") || request.headers.has("authorization")
+      || request.headers.get("accept")?.includes("application/x-ndjson")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(

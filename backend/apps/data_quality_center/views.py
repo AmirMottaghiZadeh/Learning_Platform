@@ -18,6 +18,7 @@ from django.views.decorators.http import require_POST
 from apps.manage.views import login_url as manage_login_url
 from apps.manage.views import logout_view as manage_logout
 from apps.manage.views import to_login
+from apps.accounts.access import platform_admin
 from apps.drugs.models import CLINICAL_FIELD_KEYS, Ingredient, IngredientProfileSection
 from apps.drugs.review import with_review_status
 
@@ -26,6 +27,7 @@ from .selectors import BROWSE_KEYS, QUEUE_FILTERS, browse_query, drug_catalog, f
 from .checks import run_checks, warning_count, word_diff
 from .labels import FIELD_FA, section_state
 from .models import ReviewEvent, SectionEdit, SectionEditRequest
+from .models import AISettings,AIPromptPreset
 from .services import WorkflowError
 
 PAGE_SIZE = 25
@@ -86,6 +88,7 @@ def _shell(request, active):
         changes=Count("pk", filter=Q(status=SectionEditRequest.STATUS_CHANGES_REQUESTED)),
     )
     return {
+        "can_manage_ai": platform_admin(user),
         "active": active,
         "can_approve": access.can_approve(user),
         "can_revert": access.can_revert(user),
@@ -249,6 +252,8 @@ def workspace(request, slug):
         "previous_slug": previous_slug,
         "next_slug": next_slug,
         "min_reason": services.min_reason_length(),
+        "ai_presets": AIPromptPreset.objects.filter(active=True),
+        "ai_enabled": AISettings.objects.filter(pk=1,enabled=True).exists(),
         "other_sources_fa": extra_fa,
         "other_sources_en": extra_en,
         "other_sources_diff": _other_sources_diff(extra_before_fa, extra_fa, extra_before_en, extra_en),

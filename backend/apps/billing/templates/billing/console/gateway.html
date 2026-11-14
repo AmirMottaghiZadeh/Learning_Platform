@@ -28,7 +28,7 @@
 
   <div class="grid g3">
     <div class="card stack stat" style="gap:4px"><span class="sub">درگاه‌های فعال</span><b>{% with n=cfg.gateways|length %}{% if env_gateway %}{{ env_gateway.name }} (از تنظیمات سرور){% else %}{% for g in cfg.gateways %}{% if g.enabled %}{{ g.name }}{% if not forloop.last %}، {% endif %}{% endif %}{% empty %}هیچ{% endfor %}{% endif %}{% endwith %}</b></div>
-    <div class="card stack stat" style="gap:4px"><span class="sub">آخرین پرداخت موفق</span><b>{% if last_paid %}{{ last_paid.paid_at|ago }}{% else %}هنوز نه{% endif %}</b><span class="sub" style="font-size:12px">{% if last_paid %}{{ last_paid.plan.name_fa }} · {{ last_paid.payable_toman|toman }}{% endif %}</span></div>
+    <div class="card stack stat" style="gap:4px"><span class="sub">آخرین پرداخت موفق</span><b>{% if last_paid %}{{ last_paid.paid_at|ago }}{% else %}هنوز نه{% endif %}</b><span class="sub" style="font-size:12px">{% if last_paid %}{{ last_paid.item_name }} · {{ last_paid.payable_toman|toman }}{% endif %}</span></div>
     <div class="card stack stat" style="gap:4px"><span class="sub">آخرین خطای پرداخت</span><b style="font-size:14px">{% if last_failed %}{{ last_failed.error|truncatechars:70 }}{% else %}—{% endif %}</b><span class="sub" style="font-size:12px">{% if last_failed %}{{ last_failed.created_at|jdate:"time" }}{% endif %}</span></div>
   </div>
 

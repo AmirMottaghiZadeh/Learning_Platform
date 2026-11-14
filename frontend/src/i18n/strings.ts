@@ -179,6 +179,7 @@ export const strings = {
     statsLabel: "آمار",
 
     educationLabel: "آموزش",
+    clinicalLabel: "بالینی",
     guidelinesLabel: "راهنماهای بالینی",
     diseasesConditionsLabel: "بیماری‌ها و شرایط",
     calculatorLabel: "ماشین‌حساب بالینی",
@@ -624,6 +625,7 @@ export const strings = {
     statsLabel: "Stats",
 
     educationLabel: "Education",
+    clinicalLabel: "Clinical",
     guidelinesLabel: "Guidelines",
     diseasesConditionsLabel: "Diseases & Conditions",
     calculatorLabel: "Calculator",

@@ -14,7 +14,7 @@
     <h2>فروش این ماه به تفکیک پلن</h2>
     {% for r in by_plan %}
       <div class="row" style="gap:12px">
-        <b style="flex:0 1 200px">{{ r.plan__name_fa }}</b>
+        <b style="flex:0 1 200px">{{ r.plan__name_fa|default:"اعتبار سرچ هوشمند" }}</b>
         <span class="bar grow" style="height:12px;border-radius:6px;flex:1 1 200px"><i style="width:{{ r.pct }}%"></i></span>
         <span style="flex:0 1 220px;font-weight:700">{{ r.total|toman }} · {{ r.n|fa }} خرید</span>
       </div>
@@ -31,7 +31,7 @@
             <tr>
               <td>{{ o.created_at|jdate:"time" }}</td>
               <td>{% if o.user_id %}<a href="{% url 'console:user' o.user_id %}">{{ labels|get_item:o.pk }}</a>{% else %}<span class="sub">{{ labels|get_item:o.pk }}</span>{% endif %}</td>
-              <td>{{ o.plan.name_fa }}</td>
+              <td>{{ o.item_name }}</td>
               <td>{{ o.payable_toman|toman }}</td>
               <td>{% if o.discount %}<span class="ltr mono">{{ o.discount.code }}</span>{% else %}—{% endif %}</td>
               <td><span class="chip {% if o.status == 'paid' %}accent{% elif o.status == 'failed' %}deny{% elif o.status == 'pending' %}warn{% endif %}">{{ o.get_status_display }}</span>{% if o.error %}<br><span class="sub" style="font-size:12px">{{ o.error|truncatechars:60 }}</span>{% endif %}</td>

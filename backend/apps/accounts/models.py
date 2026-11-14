@@ -358,3 +358,25 @@ class OneTimeCode(models.Model):
 
     def __str__(self):
         return f"OneTimeCode<{self.purpose} {self.phone[:4]}…>"
+
+
+class EmailLoginIdentity(models.Model):
+    # A stable lock target even for the first request to a new email.
+    email = models.EmailField(primary_key=True, max_length=254)
+    created_at = models.DateTimeField(auto_now_add=True)
+    verified_at = models.DateTimeField(null=True,blank=True)
+
+
+class EmailOneTimeCode(models.Model):
+    identity = models.ForeignKey(EmailLoginIdentity,on_delete=models.CASCADE,related_name="codes")
+    code_hash = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    consumed_at = models.DateTimeField(null=True,blank=True)
+    ip_address = models.GenericIPAddressField(null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["identity","-created_at"],name="accounts_email_otp_idx"),
+                   models.Index(fields=["ip_address","-created_at"],name="accounts_email_otp_ip")]

@@ -11,7 +11,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 
 /** The signed-out screens' frame: the brand on the teal header mesh, and a
  * sheet below it holding the form. */
-export function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+export function AuthLayout({ title, subtitle, children, panel=false }: { title: string; subtitle: string; children: React.ReactNode; panel?:boolean }) {
   const { t } = useLang();
   const { colors } = useTheme();
   return (
@@ -42,6 +42,8 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
               paddingHorizontal: 26,
               paddingTop: 28,
               paddingBottom: 34,
+              maxHeight:"78%",
+              flexShrink:1,
             }}
           >
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -51,7 +53,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
               <AppText muted weight="600" size={13} style={{ marginTop: 4, marginBottom: 20, lineHeight: 21 }}>
                 {subtitle}
               </AppText>
-              {children}
+              {panel ? <View style={{padding:18,borderRadius:20,backgroundColor:colors.cardBg}}>{children}</View> : children}
             </ScrollView>
           </View>
         </View>

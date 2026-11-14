@@ -91,6 +91,7 @@ MODULES = (
         Page("gateway", "درگاه پرداخت", "console:gateway", access.billing_admin, ("console:gateway*",)),
     )),
     Module("app", "اپ", ICONS["app"], (
+        Page("search_credit", "اعتبار سرچ هوشمند", "ai_wallet_admin:dashboard", access.billing_admin, ("ai_wallet_admin:*",)),
         Page("support", "پشتیبانی کاربران", "support_admin:inbox", access.support, ("support_admin:*",)),
         Page("devices", "دستگاه‌ها و نشست‌ها", "manage:devices", access.platform_admin, ("manage:devices", "manage:device_revoke")),
         Page("usage", "نقشهٔ فعالیت کاربران", "manage:usage", access.platform_admin, ("manage:usage",)),
@@ -123,6 +124,8 @@ MODULES = (
              ("data_quality_center:review*",), _pending_reviews),
         Page("history", "سابقه و ممیزی", "data_quality_center:history", access.is_operator,
              ("data_quality_center:history", "data_quality_center:revert")),
+        Page("ai_settings", "تنظیمات ویرایش با AI", "data_quality_center:ai_settings", access.platform_admin,
+             ("data_quality_center:ai_settings",)),
     )),
     Module("system", "سیستم", ICONS["system"], (
         Page("activity", "گزارش فعالیت", "manage:activity", lambda u: access.billing_admin(u) or access.site_admin(u),

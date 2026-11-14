@@ -666,7 +666,7 @@ def search_topics(query: str, limit: int = 25) -> list[dict]:
     return search_page(query, limit=limit)["results"]
 
 
-def get_topic(content_id: str) -> dict | None:
+def get_topic(content_id: str, *, include_memberships: bool = True) -> dict | None:
     content_id = str(content_id)
     if _using_mysql():
         with _mysql_conn().cursor() as cur:
@@ -678,8 +678,8 @@ def get_topic(content_id: str) -> dict | None:
         ).fetchone()
     if not row:
         return None
-    article = article_from_row(content_id, row["gzip"], row["version"], _section_for(content_id))
-    if article is not None:
+    article = article_from_row(content_id, row["gzip"], row["version"], _section_for(content_id) if include_memberships else "")
+    if article is not None and include_memberships:
         article["sections"] = _section_memberships_for([content_id])[content_id]
     return article
 

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 
-import { includePediatricDose } from "@/pediatricDose/catalog";
+import { includePediatricDose, PEDIATRIC_DOSE_SLUG } from "@/pediatricDose/catalog";
 import { calculatorsApi } from "@/api/endpoints";
 import { CalculatorListItem } from "@/api/types";
 import { ScreenChrome } from "@/components/ScreenChrome";
@@ -75,6 +75,9 @@ export function CalculatorsScreen() {
   }, [items, query]);
 
   const mainGroups = useMemo(() => groupByMainCategory(items, allCategories), [items, allCategories]);
+  const frequentlyUsed = useMemo(() => [PEDIATRIC_DOSE_SLUG, "crcl-cockroft-gault-51",
+    "egfr-using-ckd-epi-2021-update-251"]
+    .map(slug => items.find(item => item.slug === slug)).filter((item): item is CalculatorListItem => !!item), [items]);
   useTour("calculator", mainGroups.length > 0);
 
   if (isLoading || categoriesLoading) return <LoadingState />;
@@ -86,6 +89,11 @@ export function CalculatorsScreen() {
         {items.length} {t("calculatorCountSuffix")} {t("calculatorInLabel")} {mainGroups.length}{" "}
         {t("calculatorDomainCountSuffix")}
       </AppText>
+
+      {!query && frequentlyUsed.length ? <View testID="frequent-calculators" style={{ gap: 10, marginBottom: spacing.xl }}>
+        <AppText weight="800" size={14}>{isFa ? "پرکاربردها" : "Frequently used"}</AppText>
+        {frequentlyUsed.map(calc => <CalculatorRow key={calc.slug} calc={calc} onPress={() => navigate("calculatorDetail", { slug: calc.slug })} />)}
+      </View> : null}
 
       <TourTarget id="calc.search" style={{ marginBottom: spacing.lg }}>
       <View

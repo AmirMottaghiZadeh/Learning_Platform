@@ -1,3 +1,7 @@
+import os
+import subprocess
+import sys
+
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import Client, SimpleTestCase
@@ -24,6 +28,19 @@ class ProductionSecretKeyTests(SimpleTestCase):
         secret = "Prod-2026!Saffron_River+Atlas#Quartz$Nimbus%Orbit&Harbor"
 
         self.assertEqual(validate_production_secret_key(secret), secret)
+
+
+class ProductionSearchSettingsTests(SimpleTestCase):
+    def test_production_module_rejects_local_search_pilot_even_with_local_environment_label(self):
+        script = (
+            "from django.core.exceptions import ImproperlyConfigured\n"
+            "try:\n import config.settings.production\n"
+            "except ImproperlyConfigured as error:\n print(str(error))\n raise SystemExit(2)\n"
+        )
+        result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, timeout=20,
+            env={**os.environ, "ENVIRONMENT": "local", "AI_LAB_LOCAL_LEXICAL_PILOT": "True"})
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("Lexical pilot mode cannot run with production settings.", result.stdout)
 
 
 class CorsPreflightTests(SimpleTestCase):

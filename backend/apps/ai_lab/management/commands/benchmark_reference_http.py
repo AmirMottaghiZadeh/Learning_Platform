@@ -25,6 +25,8 @@ class Command(BaseCommand):
                 raise evaluation.EvaluationError("OUTPUT_ALREADY_EXISTS")
             if not 1 <= options["limit"] <= 100 or not 1 <= options["max_requests"] <= 1000:
                 raise evaluation.EvaluationError("INVALID_RUN_BUDGET")
+            if settings.AI_LAB_OUTLINE_MAX_PROVIDER_REQUESTS < 1:
+                raise evaluation.EvaluationError("EXPLICIT_BENCHMARK_REQUEST_CAP_REQUIRED")
             accounts = http_evaluation.load_accounts(options["accounts_file"])
             status, remote = http_evaluation.Client(options["api_base"], accounts[0]["access_token"]).json("/ai-lab/status/?diagnostics=1")
             if status != 200 or remote.get("runtime", {}).get("profile_digest") != evaluation.digest(release.runtime_profile()):
@@ -45,7 +47,10 @@ class Command(BaseCommand):
             config = {"model": settings.AI_LAB_MODEL, "base_url": settings.AI_LAB_BASE_URL,
                 "reasoning_effort": settings.AI_LAB_REASONING_EFFORT, "code_digest": response_cache.code_signature(),
                 "source_version": release.runtime_profile()["source_revision"],
-                "max_provider_requests": settings.AI_LAB_MAX_PROVIDER_REQUESTS}
+                "max_provider_requests": settings.AI_LAB_OUTLINE_MAX_PROVIDER_REQUESTS}
+            if settings.AI_LAB_SEARCH_ENGINE == "hybrid":
+                profile = release.runtime_profile()
+                config.update({key: profile[key] for key in release.HYBRID_CONFIGURATION_KEYS})
             measured = http_evaluation.run_load(selected, accounts, options["api_base"], config, evaluation.SourceEvidence(),
                 concurrency=options["concurrency"], poll=options["poll"], max_requests=options["max_requests"])
             runtime = measured.pop("runtime")

@@ -92,7 +92,7 @@
         <thead><tr><th>تاریخ</th><th>پلن</th><th>مبلغ</th><th>تخفیف</th><th>وضعیت</th><th>کد پیگیری</th></tr></thead>
         <tbody>
           {% for o in orders %}
-            <tr><td>{{ o.created_at|jdate:"time" }}</td><td>{{ o.plan.name_fa }}</td><td>{{ o.payable_toman|toman }}</td><td>{% if o.discount %}{{ o.discount.code }} ({{ o.discount_toman|num }}){% else %}—{% endif %}</td>
+            <tr><td>{{ o.created_at|jdate:"time" }}</td><td>{{ o.item_name }}</td><td>{{ o.payable_toman|toman }}</td><td>{% if o.discount %}{{ o.discount.code }} ({{ o.discount_toman|num }}){% else %}—{% endif %}</td>
             <td><span class="chip {% if o.status == 'paid' %}accent{% elif o.status == 'failed' %}deny{% elif o.status == 'pending' %}warn{% endif %}">{{ o.get_status_display }}</span></td><td class="ltr mono">{{ o.ref_id|default:"—" }}</td></tr>
           {% empty %}<tr><td colspan="6" class="empty">پرداختی ثبت نشده.</td></tr>{% endfor %}
         </tbody>

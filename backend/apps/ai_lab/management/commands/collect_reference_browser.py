@@ -23,6 +23,9 @@ class Command(BaseCommand):
             config = {"model": settings.AI_LAB_MODEL, "base_url": settings.AI_LAB_BASE_URL,
                 "reasoning_effort": settings.AI_LAB_REASONING_EFFORT, "code_digest": response_cache.code_signature(),
                 "source_version": release.runtime_profile()["source_revision"]}
+            if settings.AI_LAB_SEARCH_ENGINE == "hybrid":
+                profile = release.runtime_profile()
+                config.update({key: profile[key] for key in release.HYBRID_CONFIGURATION_KEYS})
             evidence, rows = evaluation.SourceEvidence(), []
             for sample in raw["runs"]:
                 case, job = cases[sample["case_id"]], sample["job"]

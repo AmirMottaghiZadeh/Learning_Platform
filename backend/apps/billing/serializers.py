@@ -130,7 +130,7 @@ class CheckoutSerializer(serializers.Serializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    plan_name_fa = serializers.CharField(source="plan.name_fa")
+    plan_name_fa = serializers.CharField(source="item_name")
 
     class Meta:
         model = Order

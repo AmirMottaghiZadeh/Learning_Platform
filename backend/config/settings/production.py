@@ -8,6 +8,8 @@ from config.security import (
 )
 
 DEBUG = False
+if AI_LAB_LOCAL_LEXICAL_PILOT:
+    raise ImproperlyConfigured("Lexical pilot mode cannot run with production settings.")
 
 # Plan features and quotas must be enforced in the deployed application. The
 # console can still override this value explicitly through BillingSettings.
@@ -76,3 +78,11 @@ STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStati
 # anyway, so the simplest fix is to never offer it there; local dev (using
 # base.py's defaults) keeps it for convenience.
 REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = ["rest_framework.renderers.JSONRenderer"]
+
+if AI_LAB_ENABLED and AI_LAB_SEARCH_ENGINE == "hybrid":
+    if not REFERENCE_SEARCH_DATABASE_URL:
+        raise ImproperlyConfigured("Hybrid search requires REFERENCE_SEARCH_DATABASE_URL.")
+    if AI_LAB_EXECUTOR != "celery" or CELERY_TASK_ALWAYS_EAGER:
+        raise ImproperlyConfigured("Hybrid search requires a separate Celery worker; eager execution is unsupported.")
+    if not AI_LAB_EVENT_REDIS_URL or any("redis" not in CACHES[name]["BACKEND"].lower() for name in ["throttle", "ai_lab"]):
+        raise ImproperlyConfigured("Hybrid search requires shared Redis for event delivery, leases and cache.")

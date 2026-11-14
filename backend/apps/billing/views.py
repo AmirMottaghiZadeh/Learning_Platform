@@ -5,6 +5,7 @@ payment with the gateway before granting anything."""
 from django.conf import settings
 from django.core import signing
 from django.db.models import Prefetch
+from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import NoReverseMatch, reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -184,11 +185,23 @@ def pay_start(request, token):
     kinds = [g.kind for g in config.enabled_gateways()]
     profile = getattr(order.user, "learner_profile", None) if order.user else None
     try:
-        url = start_payment(
-            order, lambda kind: callback_url(request, kind), kind=chosen if chosen in kinds else None,
-            description=f"خرید {order.plan.name_fa}" + (f" · {order.price.duration_label}" if order.price else ""),
-            mobile=getattr(profile, "phone", None) or "", email=(order.user.email if order.user else "") or "",
-        )
+        with transaction.atomic():
+            order = Order.objects.select_for_update(of=("self",)).select_related("plan", "price").get(pk=order.pk)
+            if order.status != Order.STATUS_PENDING:
+                return redirect(result_url(order))
+            if order.is_search_credit and order.authority and order.gateway_payment_url:
+                url = order.gateway_payment_url
+            else:
+                if order.is_search_credit:
+                    from apps.ai_wallet.services import current_settings, pricing_ready
+                    credit_config = current_settings()
+                    if not credit_config.enabled or not pricing_ready(credit_config):
+                        return _failed(request, order, "شارژ اعتبار سرچ هوشمند فعلاً فعال نیست.")
+                url = start_payment(
+                    order, lambda kind: callback_url(request, kind), kind=chosen if chosen in kinds else None,
+                    description=f"خرید {order.item_name}" + (f" · {order.price.duration_label}" if order.price else ""),
+                    mobile=getattr(profile, "phone", None) or "", email=(order.user.email if order.user else "") or "",
+                )
     except GatewayError as exc:
         services.mark_failed(order, str(exc))
         return _failed(request, order, "درگاه پرداخت الان در دسترس نیست؛ کمی بعد از اپ دوباره امتحان کنید.")
@@ -289,7 +302,7 @@ def payment_result(request, token):
     if order.status == Order.STATUS_PENDING:
         return _failed(request, order, (
             "پاسخ درگاه هنوز به ما نرسیده و وضعیت پرداخت روشن نیست. اگر مبلغ از حساب شما کم شده، "
-            "یا تا چند دقیقهٔ دیگر اشتراک فعال می‌شود یا بانک ظرف ۷۲ ساعت آن را برمی‌گرداند."
+            "یا تا چند دقیقهٔ دیگر خرید شما ثبت می‌شود یا بانک ظرف ۷۲ ساعت آن را برمی‌گرداند."
         ))
     return _failed(request, order, order.error if _is_persian(order.error) else "")
 

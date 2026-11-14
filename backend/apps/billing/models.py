@@ -227,6 +227,16 @@ class DiscountCode(models.Model):
 
 
 class Order(models.Model):
+    PURPOSE_ACCESS = "access"
+    PURPOSE_SEARCH_CREDIT = "search_credit"
+    purpose = models.CharField(max_length=16, default=PURPOSE_ACCESS,
+        choices=[(PURPOSE_ACCESS, "اشتراک و محصول"), (PURPOSE_SEARCH_CREDIT, "اعتبار سرچ هوشمند")])
+    credit_package = models.ForeignKey("ai_wallet.CreditPackage", null=True, blank=True, on_delete=models.SET_NULL, related_name="purchases")
+    credit_amount = models.DecimalField(max_digits=22, decimal_places=6, default=0)
+    item_label = models.CharField(max_length=120, blank=True)
+    credit_request_id = models.CharField(max_length=128, blank=True)
+    credit_request_fingerprint = models.CharField(max_length=64, blank=True)
+    gateway_payment_url = models.URLField(max_length=1000, blank=True)
     STATUS_PENDING = "pending"
     STATUS_PAID = "paid"
     STATUS_FAILED = "failed"
@@ -250,7 +260,7 @@ class Order(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="billing_orders"
     )
     deleted_user_label = models.CharField(max_length=160, blank=True)
-    plan = models.ForeignKey(Plan, on_delete=models.PROTECT, related_name="orders")
+    plan = models.ForeignKey(Plan, null=True, blank=True, on_delete=models.PROTECT, related_name="orders")
     price = models.ForeignKey(PlanPrice, on_delete=models.SET_NULL, null=True, related_name="orders")
     duration_days = models.PositiveIntegerField(null=True, blank=True)
     amount_toman = models.PositiveBigIntegerField()
@@ -273,6 +283,10 @@ class Order(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [models.CheckConstraint(condition=(Q(purpose="access", plan__isnull=False, credit_amount=0)
+            | Q(purpose="search_credit", plan__isnull=True, credit_amount__gt=0)), name="billing_order_valid_purpose"),
+            models.UniqueConstraint(fields=["user", "credit_request_id"],
+                condition=Q(purpose="search_credit") & ~Q(credit_request_id=""), name="billing_credit_checkout_once")]
         indexes = [
             models.Index(fields=["status", "-paid_at"], name="billing_order_paid_idx"),
             models.Index(fields=["user", "-created_at"], name="billing_order_user_idx"),
@@ -280,6 +294,14 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order<{self.pk}>"
+
+    @property
+    def is_search_credit(self):
+        return self.purpose == self.PURPOSE_SEARCH_CREDIT
+
+    @property
+    def item_name(self):
+        return self.item_label if self.is_search_credit else self.plan.name_fa
 
 
 class Entitlement(models.Model):

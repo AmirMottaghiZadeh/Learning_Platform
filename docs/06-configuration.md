@@ -75,6 +75,8 @@
 | `AUTH_STEP_UP_TTL_MINUTES` | `10` | — | اعتبار تأیید دوباره (و انتخاب رمز بعد از کد پیامکی) |
 | `AUTH_PASSWORD_MIN_LENGTH` | `6` | — | تنها قاعدهٔ رمز عبور |
 | `AUTH_EMAIL_REGISTRATION_ENABLED` | `False` | — | ثبت‌نام قدیمی با ایمیل |
+| `AUTH_EMAIL_OTP_ENABLED` | `True` | `True` همراه SMTP | ورود/ساخت حساب پس از اثبات مالکیت ایمیل؛ مستقل از ثبت‌نام قدیمی |
+| `EMAIL_OTP_CODE_LENGTH` / `EMAIL_OTP_TTL_SECONDS` | `6` / `300` | — | حداقل شش رقم، پنج دقیقه اعتبار؛ محدودیت تلاش از `OTP_MAX_ATTEMPTS` |
 | `PASSWORD_RESET_TIMEOUT` | `86400` | — | اعتبار لینک بازیابی ایمیلی (ثانیه) |
 | `PASSWORD_RESET_FRONTEND_URL` | `http://localhost:8081` | `https://app.pharmenta.ir/reset-password` | لینک ایمیل بازیابی |
 | `DJANGO_SUPERUSER_USERNAME` / `_EMAIL` / `_PASSWORD` | خالی | معمولاً خالی؛ رمز **راز** است | فقط `bootstrap_superuser` (در `release.sh`) می‌خواند. روی رانفلر مدیر با `createsuperuser` از کنسول ساخته می‌شود |
@@ -104,9 +106,11 @@
 
 | متغیر | پیش‌فرض | رانفلر | کار |
 |---|---|---|---|
-| `EMAIL_BACKEND` | کنسول | در صورت نیاز `django.core.mail.backends.smtp.EmailBackend` | فقط برای بازیابی رمز حساب‌های قدیمی ایمیلی |
+| `EMAIL_BACKEND` | کنسول | `django.core.mail.backends.smtp.EmailBackend` | کد ورود و بازیابی رمز؛ OTP با backend کنسول/فایل ارسال نمی‌شود تا کد چاپ نشود |
+| `EMAIL_CREDENTIALS_FILE` | خالی | مسیر فایل راز با مجوز `600` | JSON با کلیدهای مجاز SMTP؛ جایگزین اختیاری env و خارج از گیت/ایمیج؛ تنظیم محیطی اولویت دارد |
 | `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_USE_TLS` | خالی / `587` / `True` | | |
 | `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | خالی | رمز **راز** است | |
+| `EMAIL_USE_SSL` / `EMAIL_TIMEOUT` | `False` / `10` | بر اساس سرویس SMTP | SSL و STARTTLS هم‌زمان فعال نشوند؛ ارسال کد مستقیم و محدود به timeout است |
 | `DEFAULT_FROM_EMAIL` | `no-reply@pharmexa.local` | | |
 
 ## محدودیت نرخ (throttling)
@@ -262,3 +266,13 @@
 پس از تغییر متغیرها سرویس بک‌اند را restart کنید؛ تغییر مدل نیازی به ساخت دوبارهٔ اپ ندارد. مدل باید با endpoint چت، خروجی JSON و `max_completion_tokens` این اتصال سازگار باشد؛ سطح reasoning نیز باید توسط مدل پشتیبانی شود. در اجرای چندپردازه کش `throttle` باید مشترک باشد. هیچ متغیر فرانت‌اندی برای کلیدها تعریف نشده است. [تنظیم محلی و سرور](25-reference-chat-lab.fa.md).
 
 برای عوض کردن ارائه‌دهنده، `AI_LAB_BASE_URL`، `AI_LAB_MODEL` و `AI_LAB_API_KEY` را مطابق همان سرویس تنظیم کنید؛ reasoning نیز متناسب با مدل باشد. آدرس پایه، خود endpoint کامل نیست: مثلاً `https://provider.example/custom/v1` به درخواست `https://provider.example/custom/v1/chat/completions` تبدیل می‌شود. نام میزبان بالا نمونه است. کلید فقط در `AI_LAB_API_KEY` قرار می‌گیرد و نباید در URL نوشته شود. APIهای دارای قرارداد متفاوت، علاوه بر تغییر آدرس به آداپتور جداگانه نیاز دارند.
+
+### سرچ بر اساس عنوان و ذخیرهٔ بازخورد
+
+مسیر جدید `outline-v1` سقف کل `AI_LAB_TOTAL_TIMEOUT_SECONDS` و انتخاب محلی lexical را اجرا نمی‌کند. `AI_LAB_TIMEOUT_SECONDS` مهلت هر اتصال مدل است. `AI_LAB_OUTLINE_MAX_PROVIDER_REQUESTS=0` سقف تعداد تلاش را غیرفعال می‌کند؛ مقدار مثبت سقف صریح هزینه است. `AI_LAB_FEEDBACK_DATABASE_URL` رازِ اتصال PostgreSQL مستقل و `AI_LAB_FEEDBACK_ENABLED` فعال‌سازی ثبت پاسخ/رأی است؛ URL باید به دیتابیس جدا اشاره کند. alias آن `ai_feedback` است و migration مستقل لازم دارد. [جزئیات](33-smart-search-outline-feedback.fa.md).
+
+موتور جایگزین با `AI_LAB_SEARCH_ENGINE=hybrid` انتخاب می‌شود؛ پیش‌فرض تا تکمیل ارزیابی `outline` است. `REFERENCE_SEARCH_DATABASE_URL` اتصال PostgreSQL مستقل بازیابی را تعریف می‌کند. embedding تنظیم‌های مستقل `AI_LAB_EMBEDDING_BASE_URL/MODEL/API_KEY/DIMENSIONS/REVISION` دارد؛ استفاده از کلید چت تنها با `AI_LAB_EMBEDDING_USE_CHAT_KEY=True` و base URL یکسان مجاز است. `AI_LAB_EXECUTOR=celery`، `AI_LAB_EVENT_REDIS_URL` و cache/lease مشترک برای production لازم‌اند. `AI_LAB_STREAM_ANSWER_DRAFTS=False` اسکلت پاسخ را تا جمع‌بندی نهایی حفظ می‌کند. بودجه‌های ساخت و راه‌اندازی در [سند ۳۶](36-smart-search-hybrid-implementation.fa.md) آمده‌اند؛ کلیدها فقط در محیط بک‌اند قرار می‌گیرند.
+
+`AI_LAB_HYBRID_EVIDENCE_FOCUS=True` بندهای تکراری/کم‌ارتباط را پیش از ورودی مدل فیلتر می‌کند. `AI_LAB_HYBRID_EVIDENCE_MAX_PASSAGES=12` هدف نرم تعداد بند است؛ جزئیات ضروری رژیم و قیود منبع می‌توانند بیشتر از آن باشند. این تنظیم‌ها با محدودیت توکن زمینه یکسان نیستند و تغییرشان کش پاسخ و تأیید قبلی انتشار را معتبر نگه نمی‌دارد. خاموش‌کردن فیلتر فقط برای مقایسهٔ کنترل‌شده است. [رفتار و آزمون‌ها](40-smart-search-evidence-focus.fa.md).
+
+مسیر embedding با `AI_LAB_EMBEDDING_BACKEND=openai|onnx` انتخاب می‌شود. درخواست خارجی به opt-in صریح `AI_LAB_EMBEDDING_REMOTE_ENABLED=True` نیاز دارد؛ پیش‌فرض False است و این گزینه ارتباطی با پاسخ‌گویی Luna ندارد. مسیر ONNX، فایل‌های `AI_LAB_LOCAL_EMBEDDING_DIR` و وابستگی‌های `backend/requirements-embedding-local.txt` را مصرف می‌کند و fallback خارجی ندارد. اجرای فعلی با کلید اختصاصی small، ابعاد ۱۵۳۶ و سقف مصرف در [سند ۳۸](38-purchased-small-embedding-build.fa.md) ثبت شده است.

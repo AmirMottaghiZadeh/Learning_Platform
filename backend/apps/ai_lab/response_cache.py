@@ -25,8 +25,11 @@ MAX_PAYLOAD_BYTES = 512000
 def code_signature():
     directory = Path(__file__).parent
     names = ["services.py", "provider.py", "http_transport.py", "retrieval.py", "lexical.py", "selection.py",
-             "reference_index.py", "document.py", "response_cache.py"]
-    return sha256(b"".join((directory / name).read_bytes() for name in names)).hexdigest()
+             "reference_index.py", "document.py", "response_cache.py", "outline.py", "hybrid_agent.py", "streaming.py", "transport_pool.py"]
+    retrieval = directory.parent / "ai_retrieval"
+    return sha256(b"".join((directory / name).read_bytes() for name in names) + b"".join(
+        (retrieval / name).read_bytes() for name in ["retrieval.py", "evidence.py", "media.py", "embeddings.py", "local_embeddings.py", "chunking.py", "vectors.py"])
+        +(directory.parent/"uptodate"/"media.py").read_bytes()).hexdigest()
 
 
 def state(value):
@@ -69,6 +72,19 @@ def prepare(question, alias, sources, history, request):
             "generation": str(generation), "code": code_signature(), "lexical": settings.AI_LAB_LEXICAL_ENABLED,
             "preprocessed": settings.AI_LAB_PREPROCESSED_MODE, "selection": selection.enabled(),
             "lexical_version": lexical.LEXICAL_VERSION, "selection_version": selection.SELECTION_VERSION}
+        inputs["engine"] = settings.AI_LAB_SEARCH_ENGINE
+        if settings.AI_LAB_SEARCH_ENGINE == "hybrid":
+            from apps.ai_retrieval.retrieval import HybridRetriever
+            from apps.ai_retrieval.embeddings import profile
+            hybrid = HybridRetriever(request)
+            inputs.update(hybrid_generation=str(hybrid.generation.pk), embedding_profile=profile(),
+                semantic_ready=hybrid.generation.embedding_ready,
+                top_k=settings.AI_LAB_HYBRID_TOP_K, candidates=settings.AI_LAB_HYBRID_CANDIDATES,
+                context_tokens=settings.AI_LAB_HYBRID_CONTEXT_TOKENS,
+                search_rounds=settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS)
+            inputs["regimen_enrichment"] = settings.AI_LAB_HYBRID_REGIMEN_ENRICHMENT
+            inputs["evidence_focus"] = settings.AI_LAB_HYBRID_EVIDENCE_FOCUS
+            inputs["evidence_max_passages"] = settings.AI_LAB_HYBRID_EVIDENCE_MAX_PASSAGES
         digest = salted_hmac("ai-lab-private-answer", json.dumps(inputs, ensure_ascii=False, sort_keys=True), algorithm="sha256").hexdigest()
         state("miss")
         return Lookup(f"answer:v{CACHE_VERSION}:{digest}", stamp, generation)
@@ -109,7 +125,7 @@ def validate(result, lookup):
         target, summary = item.get("target", {}), item.get("summary_fa")
         if (not isinstance(target, dict) or target.get("screen") != "uptodateArticle"
                 or not isinstance(target.get("params"), dict) or not isinstance(summary, str)
-                or not 8 <= len(summary) <= 1200 or not re.search(r"[\u0600-\u06ff]", summary)):
+                or not 8 <= len(summary) <= 4000 or not re.search(r"[\u0600-\u06ff]", summary)):
             return None
         params = target["params"]
         identifier, anchor = params.get("id"), params.get("searchAnchor")
@@ -117,8 +133,16 @@ def validate(result, lookup):
             return None
         identifiers.add(identifier)
         anchors.add(anchor)
-    if any(len({item["target"]["params"]["id"] for item in part["items"]}) != 1
-           or len({item.get("source_id") for item in part["items"]}) != len(part["items"]) for part in result["parts"]):
+        context=item.get("context",[])
+        if not isinstance(context,list) or len(context)>4:
+            return None
+        for label in context:
+            if (not isinstance(label,dict) or not isinstance(label.get("source_anchor"),str)
+                    or not 1<=len(label["source_anchor"])<=80 or not isinstance(label.get("quote"),str)
+                    or not 1<=len(label["quote"])<=180 or type(label.get("ordinal")) is not int):
+                return None
+            anchors.add(label["source_anchor"])
+    if any(len({item.get("source_id") for item in part["items"]}) != len(part["items"]) for part in result["parts"]):
         return None
     articles = {article.source_id: article for article in ReferenceArticle.objects.filter(
         generation_id=lookup.generation, source_id__in=identifiers)}
@@ -132,16 +156,24 @@ def validate(result, lookup):
         if any(hashes.get(identifier) != article.blob_hash for identifier, article in articles.items()):
             return None
     blocks = {(str(block.article_id), block.source_anchor): block for block in ReferenceParagraph.objects.filter(
-        article_id__in=[article.pk for article in articles.values()], source_anchor__in=anchors,
-        retrieval_number__isnull=False).select_related("section")}
+        article_id__in=[article.pk for article in articles.values()], source_anchor__in=anchors).select_related("section")}
     for item in citations:
         params = item["target"]["params"]
         article = articles[params["id"]]
         block = blocks.get((str(article.pk), params["searchAnchor"]))
-        if (block is None or item.get("quote") != block.text or item.get("content_hash") != article.content_hash
+        if (block is None or block.retrieval_number is None or item.get("quote") != block.text or item.get("content_hash") != article.content_hash
                 or params.get("searchContentHash") != article.content_hash or params.get("sectionId") != block.section.source_id
                 or item.get("title") != article.title or item.get("section") != block.section.heading):
             return None
+        if "section_path" in item and item["section_path"] != block.section.heading_path:
+            return None
+        previous=-1
+        for label in item.get("context",[]):
+            original=blocks.get((str(article.pk),label["source_anchor"]))
+            if (original is None or original.section_id!=block.section_id or original.text!=label["quote"]
+                    or original.ordinal!=label["ordinal"] or not previous<original.ordinal<block.ordinal):
+                return None
+            previous=original.ordinal
     if reference_index.source_stamp() != lookup.stamp or reference_index.active_generation(lookup.stamp) != lookup.generation:
         return None
     check_deadline()
@@ -180,10 +212,10 @@ def load(lookup, request):
     state("hit")
     result.update(stages=[])
     for part in result["parts"]:
-        article_id = part["items"][0]["target"]["params"]["id"]
+        identifiers = list(dict.fromkeys(item["target"]["params"]["id"] for item in part["items"]))
         part["retrieval"] = {"cache_hit": True, "search_engine": "verified_response_cache", "reviewed_articles": 0,
-            "reviewed_passages": 0, "selected_articles": 1, "answer_article_id": article_id,
-            "early_stopped": True, "stop_reason": "validated_cache_hit", "limited": part.get("retrieval", {}).get("limited", False)}
+            "reviewed_passages": 0, "selected_articles": len(identifiers),
+            "early_stopped": True, "stop_reason": "validated_cache_hit", "limited": False}
     return result
 
 
@@ -210,16 +242,18 @@ def replay(result, progress, publish, observe):
     progress("retrieving")
     for number, part in enumerate(result["parts"]):
         check_deadline()
-        items = part["items"]
-        article_id = items[0]["target"]["params"]["id"]
-        article = {"id": article_id, "title": items[0]["title"]}
         def event(value):
             observe({"part_index": number, "question_fa": part["question_fa"], **value})
+        items = part["items"]
+        articles = list({item["target"]["params"]["id"]: {"id": item["target"]["params"]["id"], "title": item["title"]} for item in items}.values())
         event({"type": "question"})
-        event({"type": "titles", "query": part["queries"][0], "articles": [article]})
-        event({"type": "article", "article_id": article_id, "title": article["title"]})
-        headings = list(dict.fromkeys(item["section"] for item in items))
-        event({"type": "sections", "article_id": article_id, "sections": [
-            {"id": f"T{index + 1}", "heading": heading} for index, heading in enumerate(headings)], "paragraph_count": len(items)})
-        publish({"part_index": number, "question_fa": part["question_fa"], "article_id": article_id, "citations": items})
-        event({"type": "article_done", "article_id": article_id, "outcome": "answered"})
+        event({"type": "titles", "query": part["queries"][0], "articles": articles})
+        for article in articles:
+            article_id = article["id"]
+            current = [item for item in items if item["target"]["params"]["id"] == article_id]
+            event({"type": "article", "article_id": article_id, "title": article["title"]})
+            headings = list(dict.fromkeys(item["section"] for item in current))
+            event({"type": "sections", "article_id": article_id, "sections": [
+                {"id": f"T{index + 1}", "heading": heading} for index, heading in enumerate(headings)], "paragraph_count": len(current)})
+            publish({"part_index": number, "question_fa": part["question_fa"], "article_id": article_id, "citations": current})
+            event({"type": "article_done", "article_id": article_id, "outcome": "answered"})

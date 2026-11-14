@@ -48,8 +48,8 @@ class Command(BaseCommand):
             request = SimpleNamespace(user=SimpleNamespace(pk=f"diagnostic-{uuid4()}", is_authenticated=True, is_staff=True))
             evidence = evaluation.SourceEvidence()
             configuration = {"model": settings.AI_LAB_MODEL, "reasoning_effort": settings.AI_LAB_REASONING_EFFORT,
-                "http_pool_enabled": settings.AI_LAB_HTTP_POOL_ENABLED, "total_timeout_seconds": settings.AI_LAB_TOTAL_TIMEOUT_SECONDS,
-                "max_provider_requests": settings.AI_LAB_MAX_PROVIDER_REQUESTS, "code_digest": response_cache.code_signature(),
+                "http_pool_enabled": settings.AI_LAB_HTTP_POOL_ENABLED, "total_timeout_seconds": None,
+                "max_provider_requests": settings.AI_LAB_OUTLINE_MAX_PROVIDER_REQUESTS, "code_digest": response_cache.code_signature(),
                 "cache_ttl_seconds": settings.AI_LAB_RESPONSE_CACHE_TTL_SECONDS, "source_version": utd.snapshot_version()}
             rows = []
             utd.search_page("nocturnal enuresis", limit=30, offset=0, section="")

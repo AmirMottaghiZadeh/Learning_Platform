@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     # Same, for the Lexicomp drug-interactions snapshot.
     "apps.lexicomp",
     "apps.ai_lab",
+    "apps.ai_retrieval",
+    "apps.ai_wallet",
+    "apps.ai_feedback",
     # Encrypted UpToDate/Lexicomp packages the app downloads for offline use.
     "apps.offline",
     # Interactive clinical calculators (Medscape/QxMD snapshot).
@@ -173,7 +176,7 @@ CELERY_TASK_EAGER_PROPAGATES = config(
 CELERY_TASK_DEFAULT_QUEUE = "default"
 # Declared outside the CELERY_ namespace: Celery expects ``task_queues`` to hold
 # kombu Queue objects, which config/celery.py builds from these names.
-PLATFORM_TASK_QUEUES = ("default", "events", "maintenance")
+PLATFORM_TASK_QUEUES = ("default", "events", "maintenance", "ai_search", "ai_indexing")
 CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = config(
@@ -304,13 +307,23 @@ OTP_MAX_PER_IP_PER_WINDOW = config("OTP_MAX_PER_IP_PER_WINDOW", default=10, cast
 # stays off unless switched back on.
 AUTH_EMAIL_REGISTRATION_ENABLED = config("AUTH_EMAIL_REGISTRATION_ENABLED", default=False, cast=bool)
 PASSWORD_RESET_FRONTEND_URL = config("PASSWORD_RESET_FRONTEND_URL", default="http://localhost:8081")
-EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
-EMAIL_HOST = config("EMAIL_HOST", default="")
-EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
-EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
-EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="no-reply@pharmexa.local")
+AUTH_EMAIL_OTP_ENABLED = config("AUTH_EMAIL_OTP_ENABLED", default=True, cast=bool)
+EMAIL_OTP_CODE_LENGTH = config("EMAIL_OTP_CODE_LENGTH", default=6, cast=int)
+EMAIL_OTP_TTL_SECONDS = config("EMAIL_OTP_TTL_SECONDS", default=300, cast=int)
+EMAIL_CREDENTIALS_FILE = config("EMAIL_CREDENTIALS_FILE", default="")
+from config.email_config import private_email_settings
+_private_mail = private_email_settings(EMAIL_CREDENTIALS_FILE)
+EMAIL_BACKEND = config("EMAIL_BACKEND", default=_private_mail.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"))
+EMAIL_HOST = config("EMAIL_HOST", default="") or _private_mail.get("EMAIL_HOST", "")
+EMAIL_PORT = config("EMAIL_PORT", default=_private_mail.get("EMAIL_PORT", 587), cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="") or _private_mail.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="") or _private_mail.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=_private_mail.get("EMAIL_USE_SSL", False), cast=bool)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=_private_mail.get("EMAIL_USE_TLS", not EMAIL_USE_SSL), cast=bool)
+EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=10, cast=int)
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=_private_mail.get("DEFAULT_FROM_EMAIL", "no-reply@pharmexa.local"))
+if RUNNING_TESTS:
+    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 # Data Quality Center governance
 DATA_QUALITY_MIN_REASON_LENGTH = config(
     "DATA_QUALITY_MIN_REASON_LENGTH",
@@ -558,7 +571,7 @@ AI_LAB_LUNA_API_KEY = config("AI_LAB_LUNA_API_KEY", default="")
 AI_LAB_LUNA_REASONING_EFFORT = config("AI_LAB_LUNA_REASONING_EFFORT", default="low").strip().lower()
 AI_LAB_BASE_URL = config("AI_LAB_BASE_URL", default="https://api.gapgpt.app/v1").strip()
 AI_LAB_TIMEOUT_SECONDS = config("AI_LAB_TIMEOUT_SECONDS", default=90, cast=int)
-# Worker time includes queue delay; provider calls and retries share this budget.
+# Retained for old jobs and diagnostics; not a deadline for outline-v1 searches.
 AI_LAB_TOTAL_TIMEOUT_SECONDS = config("AI_LAB_TOTAL_TIMEOUT_SECONDS", default=18, cast=float)
 AI_LAB_MIN_CALL_BUDGET_SECONDS = config("AI_LAB_MIN_CALL_BUDGET_SECONDS", default=1, cast=float)
 AI_LAB_MAX_PROVIDER_REQUESTS = config("AI_LAB_MAX_PROVIDER_REQUESTS", default=12, cast=int)
@@ -577,3 +590,79 @@ ALLOWED_HOSTS = list(dict.fromkeys([*ALLOWED_HOSTS, *SITE_HOSTS, *_site_extra]))
 CSRF_TRUSTED_ORIGINS = list(dict.fromkeys([
     *CSRF_TRUSTED_ORIGINS, *[f"https://{h}" for h in SITE_HOSTS if not h.endswith("localhost")],
 ]))
+
+# Outline search completes its selected evidence; no total wall-clock cutoff.
+AI_LAB_OUTLINE_MAX_PROVIDER_REQUESTS = config("AI_LAB_OUTLINE_MAX_PROVIDER_REQUESTS", default=0, cast=int)
+
+# A separate physical database: never place feedback tables in the application DB.
+from copy import deepcopy
+from django.core.exceptions import ImproperlyConfigured
+AI_LAB_FEEDBACK_DATABASE_URL = config("AI_LAB_FEEDBACK_DATABASE_URL", default="")
+AI_LAB_FEEDBACK_ENABLED = config("AI_LAB_FEEDBACK_ENABLED", default=bool(AI_LAB_FEEDBACK_DATABASE_URL) or ENVIRONMENT == "local", cast=bool)
+if AI_LAB_FEEDBACK_DATABASE_URL:
+    _feedback_db = dj_database_url.parse(AI_LAB_FEEDBACK_DATABASE_URL, conn_max_age=0 if RUNNING_TESTS else 600)
+else:
+    _feedback_db = deepcopy(DATABASES["default"])
+    if _feedback_db["ENGINE"].endswith("postgresql"):
+        _feedback_db["NAME"] = str(_feedback_db["NAME"]) + "_ai_feedback"
+    else:
+        _feedback_db["NAME"] = str(BASE_DIR / "ai_feedback.sqlite3")
+if AI_LAB_FEEDBACK_DATABASE_URL and not _feedback_db["ENGINE"].endswith("postgresql"):
+    raise ImproperlyConfigured("AI feedback server storage must use PostgreSQL.")
+def _feedback_identity(db):
+    if db["ENGINE"].endswith("sqlite3"):
+        return (db["ENGINE"], str(Path(db["NAME"]).resolve()))
+    host = str(db.get("HOST") or "localhost").lower()
+    host = "localhost" if host in {"127.0.0.1", "::1"} else host
+    return (db["ENGINE"], host, str(db.get("PORT") or 5432), str(db["NAME"]))
+if _feedback_identity(_feedback_db) == _feedback_identity(DATABASES["default"]):
+    raise ImproperlyConfigured("AI feedback requires a separate database.")
+_feedback_db["CONN_HEALTH_CHECKS"] = True
+DATABASES["ai_feedback"] = _feedback_db
+DATABASE_ROUTERS = ["apps.ai_retrieval.router.RetrievalRouter", "apps.ai_feedback.router.FeedbackRouter"]
+
+if _feedback_db["ENGINE"].endswith("postgresql"):
+    _feedback_db.setdefault("OPTIONS", {})["connect_timeout"] = 3
+    _feedback_db["OPTIONS"]["options"] = _feedback_db["OPTIONS"].get("options", "") + " -c statement_timeout=5000 -c lock_timeout=3000"
+
+# Hybrid retrieval remains isolated from the ordinary app search and its snapshots.
+REFERENCE_SEARCH_DATABASE_URL = config("REFERENCE_SEARCH_DATABASE_URL", default="")
+AI_RETRIEVAL_DATABASE_ALIAS = "reference_search" if REFERENCE_SEARCH_DATABASE_URL else "default"
+if REFERENCE_SEARCH_DATABASE_URL:
+    DATABASES["reference_search"] = dj_database_url.parse(REFERENCE_SEARCH_DATABASE_URL, conn_max_age=0)
+    if not DATABASES["reference_search"]["ENGINE"].endswith("postgresql"):
+        raise ImproperlyConfigured("Reference search storage must use PostgreSQL.")
+    if any(_feedback_identity(DATABASES["reference_search"]) == _feedback_identity(DATABASES[name])
+           for name in ["default", "ai_feedback"]):
+        raise ImproperlyConfigured("Reference search requires its own database, separate from application and feedback data.")
+    DATABASES["reference_search"].setdefault("OPTIONS", {})["connect_timeout"] = 5
+AI_LAB_SEARCH_ENGINE = config("AI_LAB_SEARCH_ENGINE", default="outline").strip()
+AI_LAB_LOCAL_LEXICAL_PILOT = config("AI_LAB_LOCAL_LEXICAL_PILOT", default=False, cast=bool)
+if AI_LAB_LOCAL_LEXICAL_PILOT and ENVIRONMENT != "local":
+    raise ImproperlyConfigured("Lexical pilot mode is restricted to the local environment.")
+AI_LAB_VERIFY_MAX_OUTPUT_TOKENS = config("AI_LAB_VERIFY_MAX_OUTPUT_TOKENS", default=2400, cast=int)
+AI_LAB_EMBEDDING_BACKEND = config("AI_LAB_EMBEDDING_BACKEND", default="openai").strip()
+AI_LAB_EMBEDDING_REMOTE_ENABLED = config("AI_LAB_EMBEDDING_REMOTE_ENABLED", default=False, cast=bool)
+AI_LAB_LOCAL_EMBEDDING_DIR = config("AI_LAB_LOCAL_EMBEDDING_DIR", default="")
+AI_LAB_LOCAL_EMBEDDING_THREADS = config("AI_LAB_LOCAL_EMBEDDING_THREADS", default=3, cast=int)
+AI_LAB_LOCAL_EMBEDDING_BATCH_SIZE = config("AI_LAB_LOCAL_EMBEDDING_BATCH_SIZE", default=4, cast=int)
+AI_LAB_EMBEDDING_BASE_URL = config("AI_LAB_EMBEDDING_BASE_URL", default=AI_LAB_BASE_URL).strip()
+AI_LAB_EMBEDDING_MODEL = config("AI_LAB_EMBEDDING_MODEL", default="text-embedding-3-small").strip()
+AI_LAB_EMBEDDING_API_KEY = config("AI_LAB_EMBEDDING_API_KEY", default="")
+AI_LAB_EMBEDDING_USE_CHAT_KEY = config("AI_LAB_EMBEDDING_USE_CHAT_KEY", default=False, cast=bool)
+AI_LAB_EMBEDDING_DIMENSIONS = config("AI_LAB_EMBEDDING_DIMENSIONS", default=768, cast=int)
+AI_LAB_EMBEDDING_REVISION = config("AI_LAB_EMBEDDING_REVISION", default="1")
+AI_LAB_EMBEDDING_TIMEOUT_SECONDS = config("AI_LAB_EMBEDDING_TIMEOUT_SECONDS", default=30, cast=int)
+AI_LAB_EMBEDDING_PRICE_PER_MILLION = config("AI_LAB_EMBEDDING_PRICE_PER_MILLION", default="")
+AI_LAB_HYBRID_TOP_K = config("AI_LAB_HYBRID_TOP_K", default=8, cast=int)
+AI_LAB_HYBRID_CANDIDATES = config("AI_LAB_HYBRID_CANDIDATES", default=40, cast=int)
+AI_LAB_HYBRID_CONTEXT_TOKENS = config("AI_LAB_HYBRID_CONTEXT_TOKENS", default=6000, cast=int)
+AI_LAB_HYBRID_MAX_SEARCH_ROUNDS = config("AI_LAB_HYBRID_MAX_SEARCH_ROUNDS", default=3, cast=int)
+AI_LAB_HYBRID_EVIDENCE_FOCUS = config("AI_LAB_HYBRID_EVIDENCE_FOCUS", default=True, cast=bool)
+AI_LAB_HYBRID_EVIDENCE_MAX_PASSAGES = config("AI_LAB_HYBRID_EVIDENCE_MAX_PASSAGES", default=12, cast=int)
+AI_LAB_HYBRID_REGIMEN_ENRICHMENT = config("AI_LAB_HYBRID_REGIMEN_ENRICHMENT", default=True, cast=bool)
+AI_LAB_EVENT_REDIS_URL = config("AI_LAB_EVENT_REDIS_URL", default=REDIS_URL)
+AI_LAB_EXECUTOR = config("AI_LAB_EXECUTOR", default="thread" if ENVIRONMENT == "local" else "celery")
+AI_LAB_STREAM_ANSWER_DRAFTS = config("AI_LAB_STREAM_ANSWER_DRAFTS", default=False, cast=bool)
+AI_LAB_RETRIEVAL_CACHE_TTL_SECONDS = config("AI_LAB_RETRIEVAL_CACHE_TTL_SECONDS", default=120, cast=int)
+AI_LAB_PLAN_CACHE_TTL_SECONDS = config("AI_LAB_PLAN_CACHE_TTL_SECONDS", default=300, cast=int)

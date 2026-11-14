@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Q
 
 from apps.drugs.models import CLINICAL_FIELDS
+from .ai_models import AISettings, AIPromptPreset, AIEditRun
 
 
 class SectionEdit(models.Model):

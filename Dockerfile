@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client libexpat1 libxrender1 libxext6 libx11-6 \
+    && apt-get install -y --no-install-recommends postgresql-client libexpat1 libxrender1 libxext6 libx11-6 libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt .
@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 # Fail the build if the RDKit drawing runtime cannot load on the slim image.
 RUN python -c "from rdkit.Chem.Draw import rdMolDraw2D; rdMolDraw2D.MolDraw2DSVG(640, 360)"
+RUN python -c "from weasyprint import HTML; assert HTML(string='<p>PDF runtime check</p>').write_pdf().startswith(b'%PDF')"
 
 COPY backend/ .
 

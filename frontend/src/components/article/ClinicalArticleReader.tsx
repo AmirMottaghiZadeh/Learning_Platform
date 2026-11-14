@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
 import { WebView } from "react-native-webview";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -33,6 +33,8 @@ import { loadMedscapeReader } from "@/utils/medscapeReader";
 import { MediaViewer } from "@/components/article/MediaViewer";
 import type { MediaContent } from "@/components/article/mediaPage";
 import { recordClick } from "@/activity/useActivity";
+import { exportReferencePdf } from "@/utils/exportReferencePdf";
+import { referenceMediaApi } from "@/api/referenceMedia";
 
 type FindResult = { count: number; current: number };
 
@@ -765,6 +767,15 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
   const [find, setFind] = useState<FindResult>({ count: 0, current: 0 });
   const [graphicId, setGraphicId] = useState<string | null>(null);
   const [media, setMedia] = useState<MediaContent | null>(null);
+  const [exporting,setExporting] = useState(false);
+  const [exportError,setExportError] = useState("");
+  const mediaKey=useNav(s => s.params.mediaKey) as string|undefined;
+  const mediaContentHash=String(useNav(s => s.params.mediaContentHash)??"");
+  const mediaGraphicHash=String(useNav(s => s.params.mediaGraphicHash)??"");
+  const requestedMedia=useQuery({queryKey:["uptodate-requested-media",id,mediaKey,mediaContentHash,mediaGraphicHash],enabled:source==="utd" && !!mediaKey,
+    queryFn:() => referenceMediaApi.get({article_id:id,key:mediaKey!,kind:"image",title:"",caption:"",content_hash:mediaContentHash,graphic_hash:mediaGraphicHash}),retry:false});
+  useEffect(() => {if(requestedMedia.data)setMedia(requestedMedia.data);},[requestedMedia.data]);
+  const exportPdf=async() => {if(exporting)return;setExporting(true);setExportError("");try{await exportReferencePdf(id);}catch{setExportError(isFa ? "دریافت PDF انجام نشد؛ دوباره تلاش کنید." : "Could not export PDF. Please retry.");}finally{setExporting(false);}};
   const [tableView, setTableView] = useState<{ html: string; index: number; title: string } | null>(null);
   const closeAuxiliary = () => { setTableView(null); setGraphicId(null); };
   const [tocOpen, setTocOpen] = useState(false);
@@ -1056,6 +1067,9 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
           <AppText weight="700" size={12} muted numberOfLines={1} style={{ flex: 1, textAlign: "left", writingDirection: "ltr" }}>
             {stripHtml(data?.title || titleParam)}
           </AppText>
+          {source==="utd" ? <ChromeButton onPress={() => void exportPdf()} size={34} accessibilityLabel={isFa ? "خروجی PDF مقاله" : "Export article as PDF"}>
+            <AppText weight="800" size={10} color={exporting ? colors.muted : colors.accent}>{exporting ? "…" : "PDF"}</AppText>
+          </ChromeButton> : null}
           <ChromeButton
             onPress={() =>
               toggleFavorite({ source, id, kind: data?.reference_kind, title: stripHtml(data?.title || titleParam), section: data?.section ?? "" })
@@ -1083,6 +1097,8 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
             </AppText>
           </ChromeButton>
         </View>
+        {exportError ? <AppText size={12} color={colors.denyLabel}>{exportError}</AppText> : null}
+        {requestedMedia.isError ? <AppText size={12} color={colors.denyLabel}>{isFa ? "رسانهٔ ارجاع‌شده در دسترس نیست یا نسخهٔ منبع تغییر کرده؛ جست‌وجو را دوباره انجام دهید." : "The referenced media is unavailable or its source changed. Please search again."}</AppText> : null}
         <View style={{ height: 3, borderRadius: 2, backgroundColor: colors.trackBg, marginBottom: 2, overflow: "hidden" }}>
           <View style={{ width: `${Math.round(progress * 100)}%`, height: 3, borderRadius: 2, backgroundColor: colors.accent }} />
         </View>
@@ -1376,7 +1392,7 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
           </View>
         </SafeAreaView>
       </Modal>
-      <MediaViewer media={media} onClose={() => setMedia(null)} />
+      <MediaViewer reference={source==="utd"} media={media} onClose={() => setMedia(null)} />
     </View>
   );
 }

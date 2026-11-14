@@ -27,10 +27,10 @@ class ActivityTests(TestCase):
 
     def test_ai_lab_events_do_not_block_other_queued_activity(self):
         events = [{"id": str(uuid.uuid4()), "section": section, "action": "view"}
-                  for section in ["dashboard", "aiLab", "lessons", "aiLab"]]
+                  for section in ["dashboard", "aiLab", "lessons", "aiLab", "clinical"]]
         response = self.client.post("/api/v1/activity/events/", {"events": events}, format="json")
         self.assertEqual(response.status_code, 202)
-        self.assertEqual(response.data["accepted"], 4)
+        self.assertEqual(response.data["accepted"], 5)
         self.assertEqual(ActivityEvent.objects.filter(section="aiLab").count(), 2)
         self.assertIn("aiLab", {row["key"] for row in report(source="app")["sections"]})
 

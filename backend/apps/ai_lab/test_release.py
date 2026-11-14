@@ -144,6 +144,24 @@ class ReleaseTests(TestCase):
         with self.assertRaisesMessage(evaluation.EvaluationError, "RELEASE_GATE_NOT_PASSED"):
             release.approval(self.gate(reviews={"schema": 1, "reviews": []}))
 
+    def test_hybrid_evaluation_cannot_survive_changed_retrieval_or_answer_settings(self):
+        profile = {**self.profile, "engine": "hybrid", "hybrid_generation": "fixture-generation",
+            "embedding_profile": {"id": "fixture-profile"}, "semantic_ready": True,
+            "local_lexical_pilot": False, "top_k": 8, "candidates": 40, "context_tokens": 6000,
+            "max_search_rounds": 3, "regimen_enrichment": True, "answer_drafts": False, "executor": "celery"}
+        configuration = deepcopy(profile)
+        self.assertTrue(release.configuration_current(configuration, profile))
+        for key in release.HYBRID_CONFIGURATION_KEYS:
+            with self.subTest(key=key):
+                changed = {**configuration, key: "changed-setting"}
+                self.assertFalse(release.configuration_current(changed, profile))
+
+    def test_local_lexical_pilot_and_missing_vectors_block_public_release(self):
+        self.profile.update(engine="hybrid", semantic_ready=False, local_lexical_pilot=True)
+        blockers = self.gate()["blockers"]
+        self.assertIn("HYBRID_EMBEDDINGS_REQUIRED", blockers)
+        self.assertIn("LOCAL_PILOT_NOT_RELEASABLE", blockers)
+
     def test_compound_missing_part_is_not_a_complete_answer(self):
         case = deepcopy(self.cases[0])
         case["expected"].append({**case["expected"][0], "part_index": 1})
@@ -164,9 +182,11 @@ class ReleaseTests(TestCase):
     def test_review_html_escapes_untrusted_text_and_never_preapproves(self):
         row = deepcopy(self.rows[0]); row["question"] = '<script>alert("question")</script>'
         row["result"]["parts"][0]["overview_fa"] = "توضیح اصلی که باید بازبینی شود"
+        row["result"]["parts"][0]["items"][0]["context"] = [{"quote": '<script>alert("label")</script>'}]
         html = review.worksheet([{"runs": [row, row]}])
         self.assertIn('&lt;script&gt;', html)
         self.assertNotIn('<script>alert', html)
+        self.assertIn('&lt;script&gt;alert(&quot;label&quot;)&lt;/script&gt;', html)
         self.assertEqual(html.count('data-case="case-1"'), 1)
         self.assertIn('value="" checked', html)
         self.assertIn("connect-src 'none'", html)

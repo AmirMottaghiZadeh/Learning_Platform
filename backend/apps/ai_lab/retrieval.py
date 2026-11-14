@@ -48,6 +48,10 @@ class Passage:
     text: str
     target: dict
     content_hash: str
+    heading_path: tuple = ()
+    context: tuple = ()
+    ordinal: int | None = None
+    media: tuple = ()
 
 
 def search_articles(queries, request, audit):

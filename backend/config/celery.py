@@ -1,7 +1,7 @@
 import os
 
 from celery import Celery
-from kombu import Queue
+from kombu import Exchange, Queue
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
@@ -28,12 +28,18 @@ def configure_runtime(sender, **kwargs):
         "max_retries": 3,
     }
     conf.task_default_queue = settings.CELERY_TASK_DEFAULT_QUEUE
-    conf.task_queues = tuple(Queue(name) for name in settings.PLATFORM_TASK_QUEUES)
+    conf.task_queues = tuple(
+        Queue(name, exchange=Exchange(name, type="direct"), routing_key=name)
+        if name in {"ai_search", "ai_indexing"} else Queue(name)
+        for name in settings.PLATFORM_TASK_QUEUES
+    )
     conf.timezone = settings.TIME_ZONE
     conf.enable_utc = True
 
     conf.task_routes = {
         "accounts.send_password_reset_email": {"queue": "default"},
+        "ai_lab.run_search": {"queue": "ai_search"},
+        "ai_retrieval.build_index": {"queue": "ai_indexing"},
     }
 
 

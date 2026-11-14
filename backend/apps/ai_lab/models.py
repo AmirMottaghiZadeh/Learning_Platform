@@ -1,5 +1,6 @@
 """Rebuildable reference data, separate from licensed source snapshots."""
 import uuid
+from django.conf import settings
 
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVector
@@ -83,3 +84,26 @@ class ReferenceParagraph(models.Model):
         indexes = [models.Index(fields=["article", "ordinal"], name="ref_paragraph_order_idx")]
         indexes += [GinIndex(SearchVector("text", config="english"),
                             condition=models.Q(retrieval_number__isnull=False), name="ref_paragraph_fts_idx")]
+
+
+class SearchRun(models.Model):
+    """Short-lived durable admission/state; final feedback stays in its own DB."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    client_id = models.CharField(max_length=128)
+    payload_digest = models.CharField(max_length=64)
+    encrypted_payload = models.TextField()
+    encrypted_result = models.TextField(blank=True)
+    status = models.CharField(max_length=16, default="admitting")
+    slot = models.CharField(max_length=100, blank=True)
+    cancel_requested = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    heartbeat_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["owner", "client_id"], name="ai_search_request_once"),
+                       models.UniqueConstraint(fields=["owner"], condition=models.Q(status__in=["admitting","queued","running"]), name="ai_search_one_active_owner"),
+                       models.UniqueConstraint(fields=["slot"], condition=models.Q(status__in=["admitting","queued","running"]) & ~models.Q(slot=""), name="ai_search_one_active_slot")]
+        indexes = [models.Index(fields=["status", "heartbeat_at"], name="ai_search_heartbeat_idx")]

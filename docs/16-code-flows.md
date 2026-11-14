@@ -174,10 +174,18 @@ flowchart TD
 
 پس از تأیید هر دسته: `services.publish` → قفل مشترک heartbeat در `views._run` → ذخیرهٔ یافتهٔ یکتا در کش شغل → `ResultView` با نسخهٔ جدید → به‌روزرسانی تجمعی `store/aiLab` و نمایش کارت‌ها هنگام اجرا. در شروع سرویس: `gunicorn.post_worker_init` → `ai_lab.warmup.warm_search` → همان جست‌وجوی عادی برای آماده شدن کش‌های درون همان worker.
 
-مسیر روند قابل مشاهده: `services.observe` پس از دریافت عنوان‌ها و انتخاب بخش‌ها → `workflow.apply_event` → snapshot خصوصی شغل و `revision` → `ReferenceSearchProgress` در اپ. این مسیر پیش از نتیجهٔ فارسی کار می‌کند و reasoning داخلی مدل را حمل نمی‌کند.
+مسیر دریافت تدریجی: انتشار شاهد → findings خصوصی job → NDJSON در `AiLabScreen` (polling پشتیبان) → رسانهٔ اصلی، پاسخ فارسی و منابع مرتبط. `ReferenceAnswerSkeleton` **بین رسانه و منابع** جای پاسخ فارسی را رزرو می‌کند؛ `result.parts[].overview_fa` در همان محل جای اسکلت را می‌گیرد. باکس بندهای مرتبط پیش‌فرض بسته است. پیش‌نویس استریم تا تأیید نهایی نتیجهٔ قطعی نیست. پنل مراحل حذف شده و metadata تشخیصی/نام مدل در رابط نمایش داده نمی‌شود. در موتور hybrid، درخواست جدول/تصویر به `ai_retrieval.media.search` و سپس endpoint اصلی رسانه متصل است؛ شرح مسیرها در [سند ۴۲](42-search-media-pdf-email-clinical.fa.md).
 
 در سؤال داروی مشخص، نوع منبع بر نامزدهای همان سرچ اولویت می‌دهد؛ فهرست فرمولاسیون Drug information با لینک‌های داخلی منبع به متن کامل دارو هدایت می‌شود. تنظیم `AI_LAB_LUNA_REASONING_EFFORT` سطح thinking تمام مراحل را از محیط سرور می‌خواند.
 
 ## ارزیابی و rollout سرچ هوشمند، فاز پنج
 
 `benchmark_reference_http` ← نشست واقعی حساب اختصاصی ← ask/poll ← workerهای مشترک و Redis؛ `benchmark-reference-browser.cjs` ← فرم واقعی اپ ← Performance measure پس از رندر ← `collect_reference_browser`. گزارش‌ها به منبع و hash پاسخ متصل می‌شوند؛ `review_reference_release` برگهٔ آفلاین می‌سازد و مالک نظر صریح می‌دهد. `evaluate_reference_release` مجموعهٔ کامل/کیفیت/زمان/بار/build را کنترل می‌کند؛ فقط pass می‌تواند مجوز دارای HMAC و انقضا بسازد. `access.allowed` مدیر/فهرست آزمایشی یا cohort ثابت دارای مجوز معتبر را می‌پذیرد. وضعیت فعلی blocked و rollout صفر است. [جزئیات و نتیجهٔ واقعی](31-smart-search-release-evaluation.fa.md).
+
+## مسیر جاری سرچ هوشمند و بازخورد
+
+اعتبار هر حساب: `SmartSearchWallet` در بالای `AiLabScreen` ← `api/searchWallet.ts` ← `ai_wallet.views` و `services` ← مدل‌های `Credit*` در دیتابیس اصلی. `runner.submit` شرط ماندهٔ مثبت و snapshot تعرفه را با job اتمی ثبت می‌کند؛ telemetry فقط usage عددی تلاش‌ها را می‌گیرد و پس از پایان، مصرف قطعی بدون رزرو یا سقف از مانده کسر می‌شود. ماندهٔ منفی، سؤال بعدی را متوقف می‌کند. رابط کاربر و API کیف تعداد توکن ندارند. قیمت بستهٔ دلاری از `ai_wallet.fx` و نرخ دستی یا آخرین اعلام TGJU می‌آید؛ quote خرید در سفارش ثابت می‌شود. سفارش از نوع `billing.Order.search_credit` است و پرداخت تأییدشده به‌جای Entitlement، اعتبار اضافه می‌کند. مدیریت تعرفه و بسته در `/manage/app/search-credit/` است؛ تنظیم لوکال با هدیهٔ ۱۰۰ و مصرف فعال آمادهٔ آزمون است. [سند ۴۱](41-smart-search-credits.fa.md).
+
+`plan_question` ← سؤال و الزامات؛ سرچ canonical با tagging ← مدل و سه عنوان؛ `OutlineReader.headings` بدون جدول پاراگراف ← مدل و سه زیربخش در مجموع؛ `OutlineReader.passages` فقط شناسه‌های منتخب ← بررسی تمام بندهای واجد شرایط ← پوشش الزامات و پاسخ فارسی مستند. worker پاسخ را در alias مستقل `ai_feedback` ثبت می‌کند؛ کاربر در انتهای پاسخ از `SearchFeedback` رأی می‌دهد و endpoint مالکیت UUID را با HMAC حساب بررسی می‌کند. سقف ۱۸ثانیه‌ای برای job جدید اعمال نمی‌شود. [سند ۳۳](33-smart-search-outline-feedback.fa.md).
+
+ویرایش AI کیفیت داده: تنظیم مستقل و رمزگذاری کلید ← انتخاب preset/پرامپت و ستون ← `AIEditRun` و پیش‌نمایش ← انتخاب اپراتور برای درج در فرم ← autosave و بررسی خودکار فعلی ← تأیید مجاز. متن منتشرشده تا تأیید تغییر نمی‌کند. [سند ۴۳](43-smart-search-postpay-quality-ai.fa.md).

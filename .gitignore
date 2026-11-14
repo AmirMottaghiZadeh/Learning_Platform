@@ -103,3 +103,6 @@ celerybeat.pid
 
 # Local support Web Push signing keys
 backend/.private/
+
+# Local independent feedback store
+backend/ai_feedback.sqlite3*

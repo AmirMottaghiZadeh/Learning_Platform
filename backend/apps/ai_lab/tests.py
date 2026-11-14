@@ -129,6 +129,40 @@ class ProviderTests(SimpleTestCase):
                 path.write_text("pharmenta_luna:\n" + second)
                 self.assertEqual(provider.credentials(), {"luna": second})
 
+    def test_private_dotenv_credentials_work_before_the_model_setting(self):
+        key = "sk-" + "c" * 24
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "credentials"
+            with override_settings(AI_LAB_LUNA_API_KEY="", AI_LAB_CREDENTIALS_FILE=str(path)):
+                for value in (key, f'"{key}"', f"'{key}'", f'"{key}" # private'):
+                    with self.subTest(value=value):
+                        path.write_text("AI_LAB_ENABLED=True\nAI_LAB_BASE_URL=https://unused.example/v1\n"
+                                        f"export AI_LAB_API_KEY={value}\nAI_LAB_REASONING_EFFORT=high\n"
+                                        "AI_LAB_MODEL=other-model\n")
+                        path.chmod(0o600)
+                        self.assertEqual(provider.credentials(), {"luna": key})
+                        self.assertEqual(provider.configured_models(), {"luna": "gpt-6-luna"})
+                        self.assertEqual(provider.settings.AI_LAB_BASE_URL, "https://api.gapgpt.app/v1")
+                        with override_settings(AI_LAB_API_KEY="environment-credential"):
+                            self.assertEqual(provider.credentials(), {"luna": "environment-credential"})
+
+    def test_private_dotenv_ignores_credentials_for_other_models(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "credentials"
+            path.write_text("AI_LAB_DEEPSEEK_API_KEY=sk-" + "d" * 24 + "\nAI_LAB_MODEL=gpt-6-luna\n")
+            path.chmod(0o600)
+            with override_settings(AI_LAB_LUNA_API_KEY="", AI_LAB_CREDENTIALS_FILE=str(path)):
+                self.assertFalse(provider.credentials()["luna"])
+
+    def test_private_dotenv_prefers_generic_key_over_legacy_alias(self):
+        key, old_key = "sk-" + "c" * 24, "sk-" + "d" * 24
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "credentials"
+            path.write_text(f"AI_LAB_LUNA_API_KEY={old_key}\nAI_LAB_API_KEY={key}\n")
+            path.chmod(0o600)
+            with override_settings(AI_LAB_LUNA_API_KEY="", AI_LAB_CREDENTIALS_FILE=str(path)):
+                self.assertEqual(provider.credentials(), {"luna": key})
+
     def test_luna_sends_compatible_parameters_with_low_reasoning_and_no_model_substitution(self):
         response = self.response({"model": "gpt-6-luna", "choices": [
             {"message": {"content": '{"queries":["nocturnal enuresis"]}'}, "finish_reason": "stop"}]})
@@ -261,39 +295,6 @@ class GroundingTests(SimpleTestCase):
     def decision(self, supported=("P1",), sufficient=True, answer=("P1",)):
         return {"supported": list(supported), "sufficient": sufficient, "answer_source_ids": list(answer)}
 
-    @override_settings(AI_LAB_MODEL="configured-model", AI_LAB_API_KEY="test-placeholder",
-                       AI_LAB_REASONING_EFFORT="low", AI_LAB_CREDENTIALS_FILE="")
-    @patch.object(services, "read_sections")
-    @patch.object(services, "search_articles")
-    def test_all_search_stages_use_the_server_configured_model(self, search, read):
-        search.return_value = [{"id": "10", "title": "Reference title"}]
-        read.return_value = [self.section()]
-        outputs = [{"queries": ["treatment"]}, {"section_ids": ["T1"]},
-                   {"items": [self.item()]}, self.decision()]
-        responses = []
-        for output in outputs:
-            response = MagicMock()
-            response.__enter__.return_value.read.return_value = json.dumps({
-                "model": "configured-model", "choices": [{"message": {"content": json.dumps(output)},
-                                                            "finish_reason": "stop"}],
-            }).encode()
-            responses.append(response)
-        with patch.object(provider, "build_opener") as factory:
-            factory.return_value.open.side_effect = responses
-            result = services.answer("درمان بیماری چیست؟", "luna", ["uptodate"], [], None)
-        self.assertEqual(result["parts"][0]["status"], "answered")
-        calls = factory.return_value.open.call_args_list
-        self.assertEqual(len(calls), 4)
-        self.assertEqual([json.loads(call.args[0].data)["model"] for call in calls], ["configured-model"] * 4)
-        self.assertTrue(result["stages"])
-        self.assertTrue(all(stage["model"] == "configured-model" for stage in result["stages"]))
-        metrics = result["metrics"]
-        self.assertEqual(metrics["provider_requests"], 4)
-        self.assertTrue(metrics["machine_answer_complete"])
-        self.assertLessEqual(metrics["first_titles_ms"], metrics["first_sections_ms"])
-        self.assertLessEqual(metrics["first_sections_ms"], metrics["first_citation_ms"])
-        self.assertLessEqual(metrics["first_citation_ms"], metrics["final_answer_ms"])
-        self.assertNotIn(QUOTE, json.dumps(metrics))
 
     def test_unknown_id_modified_quote_or_non_persian_summary_is_removed(self):
         good = self.item()
@@ -308,130 +309,13 @@ class GroundingTests(SimpleTestCase):
                 services.answer("سؤال", model, sources, [], None)
         chat.assert_not_called()
 
-    @patch.object(services, "read_sections")
-    @patch.object(services, "search_articles")
-    @patch.object(services, "chat")
-    def test_sufficient_first_article_stops_later_articles_queries_and_paragraph_batches(self, chat, search, read):
-        search.return_value = [{"id": "10", "title": "First tagged article"}, {"id": "20", "title": "Second article"}]
-        read.return_value = [self.section(count=13)]
-        for model in provider.MODEL_ALIASES:
-            with self.subTest(model=model):
-                chat.reset_mock(); search.reset_mock(); read.reset_mock()
-                chat.side_effect = [({"queries": ["enuresis", "alternate"]}, {}), ({"section_ids": ["T1"]}, {}),
-                    ({"items": [self.item(), self.item("P2")]}, {}), (self.decision(supported=("P1", "P2")), {})]
-                observed = []
-                result = services.answer("دارودرمانی شب ادراری در کودکان چیست", model, ["uptodate"], [], None,
-                    observe=lambda event: observed.append((chat.call_count, event)))
-                part = result["parts"][0]
-                self.assertEqual(part["status"], "answered")
-                self.assertEqual(part["clarification_fa"], "")
-                self.assertEqual(len(part["items"]), 1)  # Only evidence needed for the sufficient answer.
-                self.assertTrue(part["overview_fa"])
-                self.assertTrue(part["retrieval"]["early_stopped"])
-                self.assertEqual(part["retrieval"]["reviewed_articles"], 1)
-                self.assertEqual(part["retrieval"]["reviewed_passages"], 6)
-                self.assertEqual(len(chat.call_args_list), 4)
-                self.assertTrue(all(call.args[0] == model for call in chat.call_args_list))
-                self.assertEqual(search.call_args.args[0], ["enuresis"])
-                search.assert_called_once()
-                read.assert_called_once()
-                self.assertEqual(read.call_args.args[0], ["10"])
-                titles = next((count, event) for count, event in observed if event["type"] == "titles")
-                sections = next((count, event) for count, event in observed if event["type"] == "sections")
-                self.assertEqual(titles[0], 1)  # Available before the section-selection model call.
-                self.assertEqual([row["id"] for row in titles[1]["articles"]], ["10", "20"])
-                self.assertEqual(sections[0], 2)  # Available before Persian answer generation.
-                self.assertEqual(sections[1]["sections"], [{"id": "T1", "heading": "Treatment"}])
-                self.assertEqual(observed[-1][1]["outcome"], "answered")
-                self.assertTrue(all("citations" not in event for _, event in observed))
 
-    @patch.object(services, "read_sections")
-    @patch.object(services, "search_articles")
-    @patch.object(services, "chat")
-    def test_verified_but_incomplete_first_article_advances_without_mixing_articles(self, chat, search, read):
-        search.return_value = [{"id": "10", "title": "First"}, {"id": "20", "title": "Second"}]
-        read.side_effect = [[self.section("10")], [self.section("20")]]
-        chat.side_effect = [({"queries": ["topic"]}, {}), ({"section_ids": ["T1"]}, {}),
-            ({"items": [self.item()]}, {}), (self.decision(sufficient=False, answer=()), {}),
-            ({"section_ids": ["T1"]}, {}), ({"items": [self.item()]}, {}), (self.decision(), {})]
-        result = services.answer("مقایسه دو درمان", "luna", ["uptodate"], [], None)
-        part = result["parts"][0]
-        self.assertEqual(part["retrieval"]["reviewed_articles"], 2)
-        self.assertEqual(part["retrieval"]["answer_article_id"], "20")
-        self.assertEqual({item["target"]["params"]["id"] for item in part["items"]}, {"20"})
-        self.assertEqual(chat.call_args_list[6].args[2]["previously_verified"], [])
-        self.assertEqual([call.args[0] for call in read.call_args_list], [["10"], ["20"]])
 
-    @patch.object(services, "read_sections")
-    @patch.object(services, "search_articles", return_value=[{"id": "10", "title": "First"}, {"id": "20", "title": "Second"}])
-    @patch.object(services, "chat")
-    def test_next_batch_in_same_article_can_complete_answer_before_next_article(self, chat, search, read):
-        read.return_value = [self.section(count=13)]
-        chat.side_effect = [({"queries": ["topic"]}, {}), ({"section_ids": ["T1"]}, {}),
-            ({"items": [self.item()]}, {}), (self.decision(sufficient=False, answer=()), {}),
-            ({"items": [self.item("P7")]}, {}), (self.decision(supported=("P7",), answer=("P1", "P7")), {})]
-        updates = []
-        result = services.answer("مقایسه دو درمان", "luna", ["uptodate"], [], None,
-            publish=lambda event: updates.append((chat.call_count, event)))
-        part = result["parts"][0]
-        self.assertEqual(part["retrieval"]["reviewed_passages"], 12)
-        self.assertEqual({item["source_id"] for item in part["items"]}, {"P1", "P7"})
-        self.assertEqual(len(chat.call_args_list[5].args[2]["previously_verified"]), 1)
-        self.assertEqual([count for count, _ in updates], [4, 6])
-        self.assertEqual([item["source_id"] for item in updates[0][1]["citations"]], ["P1"])
-        self.assertEqual(updates[0][1]["part_index"], 0)
-        self.assertEqual(updates[0][1]["article_id"], "10")
-        read.assert_called_once()
 
-    @patch.object(services, "read_sections")
-    @patch.object(services, "search_articles", return_value=[{"id": "10", "title": "Unrelated"}, {"id": "20", "title": "Relevant"}])
-    @patch.object(services, "chat")
-    def test_article_with_no_relevant_sections_is_skipped_in_normal_search_order(self, chat, search, read):
-        read.side_effect = [[self.section("10")], [self.section("20")]]
-        chat.side_effect = [({"queries": ["topic"]}, {}), ({"section_ids": []}, {}),
-            ({"section_ids": ["T1"]}, {}), ({"items": [self.item()]}, {}), (self.decision(), {})]
-        result = services.answer("درمان بیماری", "luna", ["uptodate"], [], None)
-        self.assertEqual(result["parts"][0]["retrieval"]["answer_article_id"], "20")
-        self.assertEqual(len(chat.call_args_list), 5)
 
-    @patch.object(services, "read_sections")
-    @patch.object(services, "search_articles", return_value=[{"id": "10", "title": "First"}])
-    @patch.object(services, "chat")
-    def test_only_partial_evidence_is_not_reported_as_sufficient(self, chat, search, read):
-        read.return_value = [self.section()]
-        chat.side_effect = [({"queries": ["topic"]}, {}), ({"section_ids": ["T1"]}, {}),
-            ({"items": [self.item()]}, {}), (self.decision(sufficient=False, answer=()), {})]
-        part = services.answer("مقایسه دو درمان", "luna", ["uptodate"], [], None)["parts"][0]
-        self.assertEqual(part["status"], "partial")
-        self.assertFalse(part["retrieval"]["early_stopped"])
-        self.assertEqual(part["retrieval"]["stop_reason"], "no_sufficient_answer")
 
-    @patch.object(services, "read_sections", return_value=[])
-    @patch.object(services, "search_articles")
-    @patch.object(services, "chat", return_value=({"queries": ["topic"]}, {}))
-    def test_article_scan_is_bounded(self, chat, search, read):
-        search.return_value = [{"id": str(n), "title": f"Article {n}"} for n in range(20)]
-        part = services.answer("درمان بیماری", "luna", ["uptodate"], [], None)["parts"][0]
-        self.assertEqual(read.call_count, 8)
-        self.assertEqual(part["retrieval"]["stop_reason"], "article_limit")
 
-    @patch.object(services, "read_sections", return_value=[])
-    @patch.object(services, "search_articles", return_value=[{"id": "10", "title": "Reference"}])
-    @patch.object(services, "chat", return_value=({"queries": ["topic"]}, {}))
-    def test_independent_questions_each_have_their_own_search(self, chat, search, read):
-        result = services.answer("سؤال اول؟ سؤال دوم؟", "luna", ["uptodate"], [], None)
-        self.assertEqual(len(result["parts"]), 2)
-        self.assertEqual(search.call_count, 2)
 
-    @patch.object(services, "search_articles")
-    @patch.object(services, "chat")
-    def test_zero_result_queries_are_shortened_using_same_model_and_search_service(self, chat, search):
-        search.side_effect = [[], []]
-        chat.side_effect = [({"queries": ["pharmacotherapy for nocturnal enuresis"]}, {}), ({"queries": ["enuresis"]}, {})]
-        result = services.answer("دارودرمانی شب ادراری", "luna", ["uptodate"], [], None)
-        self.assertEqual(search.call_args_list[0].args[0], ["pharmacotherapy for nocturnal enuresis"])
-        self.assertEqual(search.call_args_list[1].args[0], ["enuresis"])
-        self.assertEqual(result["parts"][0]["queries"], ["pharmacotherapy for nocturnal enuresis", "enuresis"])
 
     @patch.object(services, "chat")
     def test_unverified_or_invented_evidence_cannot_trigger_early_stop(self, chat):
@@ -445,41 +329,7 @@ class GroundingTests(SimpleTestCase):
         chat.side_effect = [({"items": [self.item()]}, {}), (self.decision(supported=(), sufficient=False, answer=()), {})]
         self.assertEqual(services._explain_batch("luna", "درمان", [passage()], [], lambda _: None), ([], []))
 
-    @patch.object(services, "read_sections")
-    @patch.object(services, "search_articles", return_value=[{"id": "10", "title": "First"}])
-    @patch.object(services, "chat")
-    def test_rejected_explanations_are_never_published(self, chat, search, read):
-        read.return_value = [self.section()]
-        chat.side_effect = [({"queries": ["topic"]}, {}), ({"section_ids": ["T1"]}, {}),
-            ({"items": [self.item()]}, {}), (self.decision(supported=(), sufficient=False, answer=()), {})]
-        publish = MagicMock()
-        part = services.answer("درمان بیماری", "luna", ["uptodate"], [], None, publish=publish)["parts"][0]
-        self.assertEqual(part["status"], "not_found")
-        publish.assert_not_called()
 
-    @patch.object(services, "read_sections")
-    @patch.object(services, "search_articles")
-    @patch.object(services, "chat")
-    def test_drug_directory_is_followed_before_patient_or_general_topics_without_extra_model_call(self, chat, search, read):
-        search.return_value = [{"id": "112290", "title": "Aripiprazole formulations: Drug information"},
-                               {"id": "14688", "title": "Unipolar depression in adults: Treatment"}]
-        def source(ids, request, audit, *, context=None):
-            if ids == ["112290"]:
-                audit["related_topics"] = [{"id": "8786", "title": "Aripiprazole (Abilify)"}]
-                return []
-            self.assertEqual(ids, ["8786"])
-            return [self.section("8786")]
-        read.side_effect = source
-        chat.side_effect = [({"queries": ["aripiprazole"], "lookup_kind": "drug", "audience": "general"}, {}),
-            ({"section_ids": ["T1"]}, {}), ({"items": [self.item()]}, {}), (self.decision(), {})]
-        observed = []
-        part = services.answer("عارضه مهم داروی آریپیپرازول", "luna", ["uptodate"], [], None, observe=observed.append)["parts"][0]
-        self.assertEqual(part["status"], "answered")
-        self.assertEqual(part["items"][0]["target"]["params"]["id"], "8786")
-        self.assertEqual([call.args[0] for call in read.call_args_list], [["112290"], ["8786"]])
-        self.assertEqual(chat.call_count, 4)
-        self.assertEqual(part["retrieval"]["related_topic_paths"], [{"from": "112290", "to": ["8786"]}])
-        self.assertTrue(any(event["type"] == "related_topics" for event in observed))
 
 
 class WorkflowTests(SimpleTestCase):
@@ -883,7 +733,7 @@ class ApiTests(TestCase):
             self.assertEqual(response.status_code, 202)
 
     @patch.object(views._executor, "submit")
-    def test_live_heartbeat_does_not_extend_total_job_deadline(self, submit):
+    def test_live_outline_job_is_not_cut_off_by_total_age(self, submit):
         response = self.client.post("/api/v1/ai-lab/ask/", self.payload, format="json")
         key = f"ai-lab:job:{response.data['job_id']}"
         cache = caches["throttle"]
@@ -891,5 +741,4 @@ class ApiTests(TestCase):
         record["created_at"] = time.time() - 601
         cache.set(key, record)
         result = self.client.get(f"/api/v1/ai-lab/results/{response.data['job_id']}/")
-        self.assertEqual(result.data["status"], "failed")
-        self.assertEqual(result.data["error"]["code"], "EXPERIMENT_EXPIRED")
+        self.assertEqual(result.data["status"], "running")

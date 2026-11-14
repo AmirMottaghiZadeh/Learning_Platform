@@ -15,7 +15,7 @@ import { MediaContent, mediaPage } from "./mediaPage";
  * (mediaPage) where it zooms and pans: an image on a dark ground, at the
  * quality it is stored in; a table at its natural width. Closed by its ×,
  * or by Back (Android's or the browser's). */
-export function MediaViewer({ media, onClose }: { media: MediaContent | null; onClose: () => void }) {
+export function MediaViewer({ media, onClose,reference=false }: { media: MediaContent | null; onClose: () => void;reference?:boolean }) {
   const { colors, isDark } = useTheme();
   const { t, row } = useLang();
   const insets = useSafeAreaInsets();
@@ -29,8 +29,9 @@ export function MediaViewer({ media, onClose }: { media: MediaContent | null; on
     ink: colors.ink,
     muted: colors.muted,
     headerBg: colors.softBg,
-    line: colors.trackBg,
+    line: reference ? isDark ? "#85998b" : "#26382e" : colors.trackBg,
     cellBg: colors.cardBg,
+    firstColumnBg:reference ? isDark ? "#303d34" : "#d4dcd3" : undefined,
   });
   const onDark = image || isDark;
   const title = media.caption || (image ? t("mediaImage") : t("mediaTable"));

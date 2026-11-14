@@ -1,4 +1,4 @@
-"""Deterministic evidence selection after lexical retrieval, without model calls."""
+"""Historical lexical benchmark selector. Active searches use outline.py and model title selection."""
 from django.conf import settings
 
 from . import lexical

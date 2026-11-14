@@ -20,3 +20,4 @@ backend/backups
 backend/data
 backend/staticfiles
 backend/db.sqlite3*
+backend/ai_feedback.sqlite3*

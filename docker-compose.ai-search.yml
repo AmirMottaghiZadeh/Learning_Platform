@@ -1,0 +1,36 @@
+# Optional, isolated local retrieval services; does not replace the app database.
+services:
+  reference-db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: pharmenta_reference
+      POSTGRES_USER: pharmenta_reference
+      POSTGRES_PASSWORD: ${REFERENCE_POSTGRES_PASSWORD:?Use the private ai-search.env file}
+    ports:
+      - "127.0.0.1:5544:5432"
+    volumes:
+      - reference_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pharmenta_reference -d pharmenta_reference"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  ai-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "127.0.0.1:6391:6379"
+    volumes:
+      - ai_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  reference_pgdata:
+  ai_redis_data:

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from . import ai_views
 
 app_name = "data_quality_center"
 
@@ -9,6 +10,8 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
     path("mine/", views.my_requests, name="mine"),
+    path("ai-settings/", ai_views.settings_view, name="ai_settings"),
+    path("drugs/<slug:slug>/<str:field>/ai/", ai_views.suggest_view, name="ai_suggest"),
     path("review/", views.review_desk, name="review"),
     path("review/<int:pk>/", views.review_action, name="review_action"),
     path("history/", views.history, name="history"),

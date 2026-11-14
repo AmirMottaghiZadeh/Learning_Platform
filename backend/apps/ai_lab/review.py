@@ -29,9 +29,13 @@ def worksheet(reports):
             for source in row.get("expected_sources", []))
         sources = []
         for item in items:
+            context = item.get("context", [])
+            labels = ('<p class="meta">برچسب‌های پیش از این بند در متن اصلی</p><pre dir="ltr">'
+                + escape('\n'.join(str(label.get("quote", "")) for label in context if isinstance(label, dict)))
+                + '</pre>') if context else ''
             sources.append('<section class="source"><h3 dir="auto">' + escape(str(item.get("title", "")))
                 + '</h3><p dir="auto">' + escape(str(item.get("section", ""))) + '</p><p>'
-                + escape(str(item.get("summary_fa", ""))) + '</p><blockquote dir="ltr" lang="en">'
+                + escape(str(item.get("summary_fa", ""))) + '</p>' + labels + '<blockquote dir="ltr" lang="en">'
                 + escape(str(item.get("quote", ""))) + '</blockquote><details><summary>شناسه و مقصد منبع</summary><pre dir="ltr">'
                 + escape(json.dumps(item.get("target", {}), ensure_ascii=False, indent=2)) + '</pre></details></section>')
         cards.append(f'<article data-case="{escape(row["case_id"], quote=True)}" data-digest="{escape(row["response_digest"], quote=True)}" data-match="{str(bool(expected)).lower()}">'

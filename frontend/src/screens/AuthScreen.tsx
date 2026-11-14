@@ -5,6 +5,8 @@ import { ApiError } from "@/api/client";
 import { authApi } from "@/api/endpoints";
 import { OtpPurpose } from "@/api/types";
 import { AuthLayout } from "@/components/AuthLayout";
+import { EmailOtpForm } from "@/components/EmailOtpForm";
+import { AuthMethodSelector } from "@/components/AuthMethodSelector";
 import { LegalSheet, LegalSlug } from "@/components/LegalSheet";
 import { AppText } from "@/components/primitives/AppText";
 import { Button } from "@/components/primitives/Button";
@@ -24,7 +26,7 @@ type Step = "phone" | "code";
  * - reset (forgotten password): mobile number -> SMS code -> signed in,
  *   then a new password. */
 export function AuthScreen() {
-  const { t, n, row } = useLang();
+  const { t, n, row, isFa } = useLang();
   const { colors } = useTheme();
   const applyAuth = useAuth((s) => s.applyAuth);
 
@@ -40,6 +42,7 @@ export function AuthScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [legal, setLegal] = useState<LegalSlug | null>(null);
+  const [emailMode,setEmailMode] = useState(false);
 
   const purpose: OtpPurpose = mode === "reset" ? "reset" : "signup";
 
@@ -48,6 +51,7 @@ export function AuthScreen() {
     setStep("phone");
     setCode("");
     setError(null);
+    setEmailMode(false);
   };
   // Back walks toward the signup page the screen opens on: from the code to
   // the number, from a forgotten password to login, from login to signup.
@@ -175,12 +179,14 @@ export function AuthScreen() {
           ? t("phoneSignupSubtitle")
           : t("resetSubtitle");
 
+  if(emailMode) return <EmailOtpForm mode={mode==="login"?"login":"signup"} onBack={() => setEmailMode(false)} />;
   return (
-    <AuthLayout title={step === "code" && mode !== "login" ? t("otpTitle") : title} subtitle={subtitle}>
+    <AuthLayout panel title={step === "code" && mode !== "login" ? t("otpTitle") : title} subtitle={subtitle}>
+      {step === "phone" && mode !== "reset" ? <AuthMethodSelector value="mobile" onChange={method=>setEmailMode(method==="email")} /> : null}
       {mode === "login" ? (
         <View style={{ gap: 12 }}>
           <Input
-            placeholder={t("phoneOrEmailLabel")}
+            placeholder={isFa ? "شمارهٔ موبایل" : "Mobile number"}
             autoCapitalize="none"
             autoComplete="username"
             textContentType="username"

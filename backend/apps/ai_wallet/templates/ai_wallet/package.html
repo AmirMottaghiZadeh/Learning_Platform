@@ -1,0 +1,6 @@
+{% extends "ai_wallet/base.html" %}
+{% block title %}بستهٔ شارژ سرچ هوشمند{% endblock %}
+{% block content %}
+<header class="credit-heading"><div><span class="eyebrow">اپ / اعتبار سرچ هوشمند</span><h1>{% if package %}ویرایش بسته{% else %}بستهٔ جدید{% endif %}</h1></div><a class="btn outline" href="{% url 'ai_wallet_admin:dashboard' %}">بازگشت</a></header>
+<form method="post" class="card stack credit-section">{% csrf_token %}{% if form.non_field_errors %}<div class="flash error">{{ form.non_field_errors }}</div>{% endif %}<div class="credit-fields">{% for field in form %}{% include "ai_wallet/field.html" %}{% endfor %}</div><div class="credit-actions"><button type="submit" class="btn primary">ذخیرهٔ بسته</button></div></form>
+{% endblock %}

@@ -36,10 +36,10 @@ def apply_event(workflow, event):
         if article is None:
             raise ValueError("Missing current article")
         if kind == "sections":
-            article.update(phase="sections", paragraph_count=min(48, event["paragraph_count"]),
+            article.update(phase="sections", paragraph_count=event["paragraph_count"],
                            sections=[{"id": item["id"], "heading": item["heading"]} for item in event["sections"][:60]])
         elif kind == "paragraphs":
-            article.update(phase="paragraphs", reviewed_passages=min(48, event["reviewed_passages"]),
+            article.update(phase="paragraphs", reviewed_passages=event["reviewed_passages"],
                            reviewing_count=min(6, event["reviewing_count"]))
         else:
             article.update(phase=event["outcome"], reviewing_count=0)

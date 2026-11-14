@@ -51,6 +51,8 @@ import {
 // --- auth ---------------------------------------------------------------
 
 export const authApi = {
+  requestEmailOtp: (email: string) => apiClient.post<{email: string; code_length: number; expires_in: number; resend_in: number}>("/auth/email-otp/request/", {email}).then(r => r.data),
+  verifyEmailOtp: (email: string, code: string) => apiClient.post<AuthTokenResponse>("/auth/email-otp/verify/", {email,code}).then(r => r.data),
   login: (body: { username: string; password: string; device_name?: string }) =>
     apiClient.post<AuthTokenResponse>("/auth/login/", body).then((r) => r.data),
   refresh: (refresh_token: string) =>

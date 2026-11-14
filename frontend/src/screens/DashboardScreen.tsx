@@ -24,9 +24,7 @@ import { spacing } from "@/theme/tokens";
 
 const QUICK_ACCESS: { screen: ScreenKey; icon: IconName; labelKey: StringKey }[] = [
   { screen: "education", icon: "entry-education", labelKey: "educationLabel" },
-  { screen: "guidelines", icon: "entry-guidelines", labelKey: "guidelinesLabel" },
-  { screen: "diseasesConditions", icon: "entry-diseases", labelKey: "diseasesConditionsLabel" },
-  { screen: "calculator", icon: "entry-calculator", labelKey: "calculatorLabel" },
+  { screen: "clinical", icon: "entry-guidelines", labelKey: "clinicalLabel" },
 ];
 
 export function DashboardScreen() {
@@ -119,9 +117,13 @@ export function DashboardScreen() {
         {/* the admin's announcements: a card on top, dimmed around it the first time */}
         <AnnouncementBox />
         {lab.data?.enabled ? <Pressable onPress={() => navigate("aiLab")} accessibilityRole="button"
-          style={{ marginBottom: 18, padding: 16, borderRadius: 16, backgroundColor: colors.softBg, minHeight: 64 }}>
-          <AppText weight="800" size={15}>{isFa ? "سرچ هوشمند" : "Smart search"}</AppText>
-          <AppText muted size={12} style={{ marginTop: 4 }}>{isFa ? "پاسخ فارسی با ارجاع مستقیم به بند اصلی UpToDate" : "Answers with direct references to UpToDate"}</AppText>
+          testID="home-smart-search" style={{ marginBottom: 18, padding: 16, borderRadius: 18, borderWidth:1,borderColor:colors.accent+"30",backgroundColor:colors.leitnerActiveBg, gap:14 }}>
+          <View style={{flexDirection:row,alignItems:"center",gap:12}}>
+            <View style={{width:44,height:44,borderRadius:13,backgroundColor:colors.cardBg,alignItems:"center",justifyContent:"center"}}><AppText size={25} color={colors.accent}>⌕</AppText></View>
+            <View style={{flex:1,gap:4}}><AppText weight="800" size={15}>{isFa ? "سرچ هوشمند" : "Smart search"}</AppText>
+              <AppText muted size={12}>{isFa ? "پرسش از منابع معتبر بالینی" : "Ask trusted clinical references"}</AppText></View>
+          </View>
+          <View style={{flexDirection:row,alignItems:"center",gap:8,backgroundColor:colors.cardBg,borderRadius:12,padding:12}}><AppText muted size={12} style={{flex:1}}>{isFa ? "سؤال بالینی خود را بپرسید…" : "Ask your clinical question…"}</AppText><AppText color={colors.accent} size={17}>{isFa ? "←" : "→"}</AppText></View>
         </Pressable> : null}
 
         {/* uptodate reference card */}
@@ -236,8 +238,7 @@ export function DashboardScreen() {
 
         </TourTarget>
 
-        {/* quick-access grid: Education + the Medscape reference sections,
-            as four compact tiles (2x2) */}
+        {/* Two gateways; clinical references live together in Clinical. */}
         <AppText weight="800" size={13} style={{ marginBottom: 10 }}>
           {t("pathsTitle")}
         </AppText>
@@ -246,6 +247,8 @@ export function DashboardScreen() {
           {QUICK_ACCESS.map((p) => (
             <Pressable
               key={p.screen}
+              testID={`home-path-${p.screen}`}
+              accessibilityRole="button"
               onPress={() => navigate(p.screen)}
               style={[
                 {

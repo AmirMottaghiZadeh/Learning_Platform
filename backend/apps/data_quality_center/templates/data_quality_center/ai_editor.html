@@ -1,0 +1,10 @@
+<details class="dqc-ai" id="ai-editor" data-url="{% url 'data_quality_center:ai_suggest' ingredient.slug section.field %}">
+<summary>ویرایش با AI <span class="faint" style="font-size:11px;font-weight:400">ساختار، تطبیق و ترجمهٔ خلاصه‌ها</span></summary>
+{% if ai_enabled %}<div class="dqc-ai-body">
+<div class="dqc-ai-controls"><label>دستور آماده<select class="input" id="ai-preset"><option value="">پرامپت دلخواه</option>{% for preset in ai_presets %}<option value="{{ preset.pk }}" data-action="{{ preset.action }}">{{ preset.name }}</option>{% endfor %}</select></label>
+<label>ستون مقصد<select class="input" id="ai-target"><option value="both">هر دو ستون</option><option value="fa">خلاصهٔ فارسی</option><option value="en">خلاصهٔ انگلیسی</option></select></label></div>
+<label class="field-label" for="ai-instruction">دستور دلخواه یا توضیح تکمیلی</label><textarea id="ai-instruction" class="input" rows="3" maxlength="6000" placeholder="مثلاً: جمله‌بندی را روان‌تر کن و تمام مقادیر و هشدارها را حفظ کن."></textarea>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn outline" type="button" id="ai-run" disabled>ایجاد پیشنهاد ویرایش</button><span id="ai-status" class="muted" role="status" style="font-size:12px"></span></div>
+<div id="ai-preview" hidden><p class="ai-help">پیشنهاد را بررسی کنید؛ اعمال روی پیش‌نویس با انتخاب شما انجام می‌شود و تأیید نهایی همان روند فعلی را دارد.</p><div class="dqc-ai-preview"><label>پیشنهاد فارسی<textarea readonly id="ai-preview-fa" dir="rtl" rows="7"></textarea></label><label>پیشنهاد انگلیسی<textarea readonly id="ai-preview-en" dir="ltr" rows="7"></textarea></label></div><p id="ai-notes" class="ai-help"></p><button class="btn" type="button" id="ai-apply">استفاده در پیش‌نویس</button><button class="btn outline" type="button" id="ai-discard">کنار گذاشتن پیشنهاد</button></div>
+</div>{% else %}<p class="ai-help">سرویس ویرایش هنوز تنظیم یا فعال نشده است.{% if can_manage_ai %} <a href="{% url 'data_quality_center:ai_settings' %}">تنظیمات اتصال و دستورها</a>{% endif %}</p>{% endif %}
+</details>
