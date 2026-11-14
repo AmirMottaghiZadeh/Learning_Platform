@@ -53,6 +53,8 @@
 | ۴۱ | [41-smart-search-credits.fa.md](41-smart-search-credits.fa.md) | هدیهٔ ۱۰۰ اعتباری، بسته‌های شارژ، نرخ دلاری/تومانی، تعرفه و مدیریت یکپارچه؛ ظرفیت هم‌زمان | مالک پروژه، مدیر فروش، توسعه‌دهنده |
 | ۴۲ | [42-search-media-pdf-email-clinical.fa.md](42-search-media-pdf-email-clinical.fa.md) | طرح ۲ سرچ، رسانه‌های اصلی آپتودیت، خروجی PDF، ورود ایمیلی، TGJU و مسیر بالینی | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | ۴۳ | [43-smart-search-postpay-quality-ai.fa.md](43-smart-search-postpay-quality-ai.fa.md) | ترتیب رسانه/پاسخ/منابع، حذف رزرو و اعتبار پس از سرچ، طرح‌های منتخب ورود و ابزار AI کیفیت داده | مالک پروژه، مدیر داده، توسعه‌دهنده |
+| ۴۴ | [44-smart-search-connected-evidence.fa.md](44-smart-search-connected-evidence.fa.md) | تکمیل همان زیربخش، پیوند مستقیم دارونامه/جدول، حفظ زمینه و آزمون منابع | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
+| ۴۵ | [45-smart-search-question-understanding.fa.md](45-smart-search-question-understanding.fa.md) | فهم یکپارچهٔ سناریوی بالینی، اهداف دارویی/بیماری/تداخل، تگ چند موجودیت و بررسی هدف پاسخ | مالک پروژه، توسعه‌دهنده، بازبین |
 | — | [search/README.md](search/README.md) | مسیر جست‌وجوی فعلی اپ؛ tagging، بستهٔ آفلاین و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
 
 ## آرشیو طراحی رابط

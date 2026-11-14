@@ -103,6 +103,38 @@ class HybridRetrievalTests(TestCase):
         passages,_=self.retriever().search("ibuprofen adverse effects",lookup_kind="drug",intent="adverse_effects")
         self.assertEqual({p.article_id for p in passages},{"3851"})
 
+    def test_case_tags_include_both_drug_and_disease_even_if_the_short_query_names_only_one(self):
+        from apps.ai_lab.test_question_profile import profile
+        for alias, identifier in [("nitroglycerin","3851"),("myocardial infarction","3852")]:
+            concept=SearchConcept.objects.create(generation=self.generation,source_id=alias,topic_lists=[identifier,"","",""])
+            SearchAlias.objects.create(generation=self.generation,concept=concept,alias=alias,weight=10)
+        retriever=self.retriever()
+        identifiers=retriever.catalog_ids("nitroglycerin precautions","general","contraindications","topic",profile())
+        self.assertEqual(identifiers,["3852","3851"])
+        # Without a typed relationship, preserve the canonical single-tag route.
+        self.assertEqual(retriever.catalog_ids("nitroglycerin precautions","general","contraindications"),["3851"])
+
+    def test_excluded_condition_is_not_used_as_a_positive_case_tag(self):
+        from apps.ai_lab.test_question_profile import profile
+        concept=SearchConcept.objects.create(generation=self.generation,source_id="excluded",topic_lists=["3852","","",""])
+        SearchAlias.objects.create(generation=self.generation,concept=concept,alias="pulmonary embolism",weight=10)
+        value=profile(conditions=[{"name":"pulmonary embolism","status":"excluded"}])
+        self.assertEqual(self.retriever().catalog_ids("nitroglycerin precautions","general",question_profile=value),[])
+
+    def test_default_drug_lookup_uses_the_canonical_monograph_and_explicit_children_keep_theirs(self):
+        for identifier,title in [("3851","Fixturemed: Drug information"),("3852","Fixturemed: Pediatric drug information")]:
+            self.write_article(identifier,fixtures.html("Adverse Reactions",
+                "Fixturemed has original adverse reactions and important source qualifications for this population."),title=title)
+        self.build_reference(force=True)
+        call_command("build_hybrid_index",stdout=StringIO())
+        self.generation=RetrievalGeneration.objects.latest("created_at")
+        ordinary,_=self.retriever().search("Fixturemed adverse effects",lookup_kind="drug",intent="adverse_effects")
+        pediatric,_=self.retriever().search("Fixturemed adverse effects",lookup_kind="drug",intent="adverse_effects",audience="pediatric")
+        self.assertTrue(ordinary)
+        self.assertTrue(pediatric)
+        self.assertEqual({p.article_id for p in ordinary},{"3851"})
+        self.assertEqual(pediatric[0].article_id,"3852")
+
     def test_regimen_enrichment_only_reads_a_source_named_medicine_for_the_same_population(self):
         self.write_article("3851",fixtures.html("Summary and Recommendations",
             "For pediatric ConditionY management we suggest Fixturemed with these original source qualifications."),title="Condition reference")

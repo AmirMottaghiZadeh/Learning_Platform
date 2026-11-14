@@ -62,6 +62,11 @@ class Command(BaseCommand):
                             "all_headings": all(h in found for h in binding["headings"])})
                     anchors_valid = True
                     for p in passages:
+                        if p.media:
+                            from apps.ai_retrieval.media import citation_valid
+                            from apps.ai_lab.hybrid_agent import _citation
+                            anchors_valid &= citation_valid(_citation(p))
+                            continue
                         _, doc = evidence.article(p.article_id)
                         block = next((b for b in doc.blocks if b.paragraph_id == p.target["params"]["searchAnchor"]), None)
                         anchors_valid &= block is not None and block.text == p.text and doc.content_hash == p.content_hash
@@ -69,7 +74,8 @@ class Command(BaseCommand):
                                  "anchors_valid": anchors_valid, "audit": audit,
                                  "retrieved": [{"article_id": p.article_id, "title": p.title,
                                     "heading": p.section, "heading_path": list(p.heading_path),
-                                    "anchor": p.target["params"]["searchAnchor"]} for p in passages]})
+                                    "anchor": p.target["params"].get("searchAnchor"),
+                                    "media_key": p.target["params"].get("mediaKey")} for p in passages]})
                     self.stdout.write(f"Checked {case['id']}; retrieval_ms={elapsed:.1f}; anchors={anchors_valid}")
                     if budget["exhausted"]:
                         break

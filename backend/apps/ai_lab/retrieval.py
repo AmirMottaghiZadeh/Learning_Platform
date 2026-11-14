@@ -52,6 +52,7 @@ class Passage:
     context: tuple = ()
     ordinal: int | None = None
     media: tuple = ()
+    relations: tuple = ()
 
 
 def search_articles(queries, request, audit):

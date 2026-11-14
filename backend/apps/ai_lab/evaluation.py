@@ -98,6 +98,9 @@ class SourceEvidence:
             identifier = str(params["id"])
             if target["screen"] != "uptodateArticle" or citation["source"] != "uptodate":
                 return False
+            if citation.get("media"):
+                from apps.ai_retrieval.media import citation_valid
+                return citation_valid(citation)
             _, extracted = self.article(identifier)
             if citation["content_hash"] != extracted.content_hash or params["searchContentHash"] != extracted.content_hash:
                 return False

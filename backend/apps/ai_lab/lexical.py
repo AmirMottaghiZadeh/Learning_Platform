@@ -9,7 +9,7 @@ from django.db import connection
 from django.db.models import F, Window
 from django.db.models.functions import RowNumber
 
-LEXICAL_VERSION = 3
+LEXICAL_VERSION = 4
 MAX_TERMS = 24
 MAX_LEXICAL_HITS = 96
 MAX_RANKED_SECTIONS = 16
@@ -36,6 +36,10 @@ INTENTS = {
     "drug_therapy": (r"دارودرمانی|دارو درمانی|درمان دارویی|drug therapy|pharmacotherap", r"pharmacologic|pharmacotherap|drug therapy|medication|drug treatment"),
     "treatment": (r"درمان|treat|management|therapy", r"treatment|management|therapy|therapies|recommendations|suggested approach"),
     "diagnosis": (r"تشخیص|diagnos|evaluation", r"diagnos|evaluation|clinical manifestations|differential"),
+    "differential": (r"تشخیص افتراقی|differential", r"differential|diagnos|clinical manifestations|evaluation"),
+    "interaction": (r"تداخل|interact", r"interactions?|concurrent|concomitant|coadministration"),
+    "emergency_care": (r"پیش.?بیمارستان|احیا|کمک.?های اولیه|prehospital|resuscitation|first aid",
+                       r"initial (?:approach|assessment|management)|immediate|emergency|prehospital|resuscitation|basic life support|cardiac arrest|unresponsive|airway"),
     "general": (r"(?!)", r"summary|overview"),
 }
 HINTS = {
@@ -52,6 +56,9 @@ HINTS = {
     "drug_therapy": "pharmacologic pharmacotherapy medication drug therapy",
     "treatment": "treatment therapy management recommendations",
     "diagnosis": "diagnosis evaluation differential",
+    "differential": "differential diagnosis evaluation clinical manifestations",
+    "interaction": "drug interactions contraindications precautions management",
+    "emergency_care": "prehospital initial management resuscitation basic life support emergency",
     "general": "",
 }
 
@@ -83,9 +90,17 @@ def regimen_score(text, heading=""):
     return (4 if re.search(REGIMEN_NUMBER, text, re.I) else 0) + (2 if re.search(REGIMEN_SCHEDULE, text, re.I) else 0) + (1 if re.search(REGIMEN_HEADING, heading, re.I) else 0)
 
 
-def search_context(question, queries=(), *, lookup_kind="topic", audience="general", intent="general", keywords=()):
-    first_line = first_line_treatment(question)
-    detected = [name for name, (pattern, _) in INTENTS.items() if re.search(pattern, question, re.I)]
+def search_context(question, queries=(), *, lookup_kind="topic", audience="general", intent="general", keywords=(), question_profile=None):
+    # A case's historical therapy or renal disease does not change a diagnostic
+    # question into a dosing request. Typed goals replace incidental regex hits.
+    if question_profile:
+        detected = list(question_profile["objectives"])
+        first_line = first_line_treatment(question) and bool({"treatment", "drug_therapy"} & set(detected))
+        from .question_profile import keywords as profile_keywords
+        keywords = profile_keywords(question_profile, keywords)
+    else:
+        first_line = first_line_treatment(question)
+        detected = [name for name, (pattern, _) in INTENTS.items() if re.search(pattern, question, re.I)]
     if first_line and "treatment" not in detected:
         detected.append("treatment")
     if intent in INTENTS and intent != "general" and intent not in detected:
@@ -102,6 +117,8 @@ def search_context(question, queries=(), *, lookup_kind="topic", audience="gener
     terms = tuple(dict.fromkeys(word for word in words if word not in STOP_WORDS))[:MAX_TERMS]
     specific_scope = re.search(r"موضعی|سیستمیک|شدید|خفیف|مقاوم|شکست|باردار|کلیوی|کلیه|حساسیت|آلرژی|topical|systemic|severe|mild|refractory|failure|pregnan|renal|allerg", question, re.I)
     broad = lookup_kind == "topic" and bool({"treatment", "drug_therapy"} & set(detected)) and not specific_scope
+    if question_profile and not question_profile["regimen_requested"]:
+        broad = False
     return SearchContext(tuple(detected), terms, tuple(concepts), aspects, lookup_kind, audience, broad, first_line)
 
 

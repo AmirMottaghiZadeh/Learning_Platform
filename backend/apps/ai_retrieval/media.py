@@ -17,6 +17,48 @@ def requested_kinds(question):
     return {"table","image"} if table==image else {"table"} if table else {"image"}
 
 
+def passage(row):
+    descriptor={**row.descriptor,"key":row.media_key,"kind":row.kind,"title":row.title,
+        "caption":row.caption[:1500],"article_id":row.source_id,"content_hash":row.content_hash}
+    return Passage("M"+str(row.pk),row.source_id,row.article_title,row.title,row.evidence_text,
+        {"screen":"uptodateArticle","params":{"id":row.source_id,"title":row.article_title,"mediaKey":row.media_key,
+            "mediaContentHash":row.content_hash,"mediaGraphicHash":row.descriptor.get("graphic_hash","")}},
+        row.content_hash,heading_path=(row.title,),media=(descriptor,))
+
+
+def citation_valid(citation):
+    """Validate an original linked graphic/table without trusting model metadata."""
+    from . import media_catalog
+    from apps.uptodate import services
+    from hashlib import sha256
+    try:
+        params=citation["target"]["params"]
+        if citation.get("source")!="uptodate" or citation["target"].get("screen")!="uptodateArticle":
+            return False
+        article=services.get_topic(params["id"],include_memberships=False)
+        if article is None or sha256(article["body_html"].encode()).hexdigest()!=citation["content_hash"]:
+            return False
+        if params.get("mediaContentHash")!=citation["content_hash"]:
+            return False
+        record=next((r for r in media_catalog.catalog_media(article) if r["key"]==params["mediaKey"]),None)
+        if record is None or record.get("graphic_hash","")!=params.get("mediaGraphicHash",""):
+            return False
+        match=re.match(r"graphic-(\d+)-",record["key"])
+        if match:
+            graphic=services.get_topic(match[1],include_memberships=False)
+            if graphic is None or sha256(graphic["body_html"].encode()).hexdigest()!=record.get("graphic_hash"):
+                return False
+        complete=len(record["text"])<=12000
+        text=record["text"] if complete else record["caption"] or record["title"]
+        expected="\n".join(dict.fromkeys(filter(None,[record["title"],record["caption"],text])))
+        return citation.get("quote")==expected and bool(citation.get("media")) and all(
+            item.get("key")==record["key"] and item.get("article_id")==str(params["id"])
+            and item.get("content_hash")==citation["content_hash"] and item.get("kind")==record["kind"]
+            and item.get("content_complete")==complete for item in citation.get("media",[]))
+    except (KeyError,TypeError,ValueError):
+        return False
+
+
 def search(generation,query,*,article_ids=(),audience="general",limit=3,kinds=None):
     kinds=kinds or requested_kinds(query)
     skip={"show","find","display","table","tables","figure","figures","image","images","picture","pictures","please","give","chart","diagram"}
@@ -43,11 +85,6 @@ def search(generation,query,*,article_ids=(),audience="general",limit=3,kinds=No
         title=normalize(f"{row.article_title} {row.title} {row.caption}")
         if sum(term in title for term in topic)/len(topic)<0.5:continue
         if rank(row)[0]<min(0.6,2/len(terms)):continue
-        descriptor={**row.descriptor,"key":row.media_key,"kind":row.kind,"title":row.title,
-            "caption":row.caption[:1500],"article_id":row.source_id,"content_hash":row.content_hash}
-        result.append(Passage("M"+str(row.pk),row.source_id,row.article_title,row.title,row.evidence_text,
-            {"screen":"uptodateArticle","params":{"id":row.source_id,"title":row.article_title,"mediaKey":row.media_key,
-                "mediaContentHash":row.content_hash,"mediaGraphicHash":row.descriptor.get("graphic_hash","")}},
-            row.content_hash,heading_path=(row.title,),media=(descriptor,)))
+        result.append(passage(row))
         if len(result)>=limit:break
     return result

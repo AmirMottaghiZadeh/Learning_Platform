@@ -37,15 +37,25 @@ def retain_with_context(passages, identifiers):
     neither retrieval rank nor paragraph-ID proximity proves adjacency.
     """
     selected = set(identifiers)
+    by_id = {p.id:p for p in passages}
     groups = {}
     for passage in passages:
         if passage.ordinal is not None:
             groups.setdefault(section_key(passage), []).append(passage)
     for group in groups.values():
         group.sort(key=lambda passage: passage.ordinal)
-        changed = True
-        while changed:
-            changed = False
+    changed = True
+    while changed:
+        changed = False
+        for identifier in list(selected):
+            passage = by_id.get(identifier)
+            if passage is not None:
+                for relation in passage.relations:
+                    parent = relation["source_id"]
+                    if parent in by_id and parent not in selected:
+                        selected.add(parent)
+                        changed = True
+        for group in groups.values():
             for left, right in zip(group, group[1:]):
                 if left.id not in selected and right.id not in selected:
                     continue
@@ -57,10 +67,18 @@ def retain_with_context(passages, identifiers):
                     if candidate.id not in selected and (DEPENDENT.search(candidate.text) or QUALIFIER.search(candidate.text)):
                         selected.add(candidate.id)
                         changed = True
+    # A filtered/missing parent cannot leave a linked dose without its source
+    # recommendation/negation. Iterate to cover dependencies of dependencies.
+    while True:
+        broken = {p.id for p in passages if p.id in selected
+                  and any(r["source_id"] not in selected for r in p.relations)}
+        if not broken:
+            break
+        selected -= broken
     return [passage for passage in passages if passage.id in selected]
 
 
-def focus_passages(passages, question, query, *, lookup_kind="topic", audience="general", intent="general", keywords=()):
+def focus_passages(passages, question, query, *, lookup_kind="topic", audience="general", intent="general", keywords=(), question_profile=None):
     """Rank relevance, retain required roles and prune whole original paragraphs.
 
     The passage target is soft: required treatment details and attached source
@@ -73,7 +91,7 @@ def focus_passages(passages, question, query, *, lookup_kind="topic", audience="
                           "selected_passages": len(passages), "input_text_tokens": before_tokens,
                           "selected_text_tokens": before_tokens, "duplicate_passages": 0, "off_scope_passages": 0}
     context = lexical.search_context(question + " " + query, [query], lookup_kind=lookup_kind,
-                                     audience=audience, intent=intent, keywords=keywords)
+        audience=audience, intent=intent, keywords=keywords, question_profile=question_profile)
     if "adverse_effects" in context.intents and re.search(r"\b(?:important|major|serious|significant)\b", query, re.I):
         context = replace(context, aspects=tuple(dict.fromkeys([*context.aspects, "important"])))
     therapy_intents = {"treatment", "drug_therapy", "dose", "renal_dose"}
@@ -109,7 +127,7 @@ def focus_passages(passages, question, query, *, lookup_kind="topic", audience="
                 roles.add("treatment_goal")
         # Only exclude clearly unrelated headings for a specific request.
         # Semantic/tag-only matches with an unfamiliar heading remain eligible.
-        unwanted_background = (specific and not ({"diagnosis", "mechanism"} & specific)
+        unwanted_background = (specific and not ({"diagnosis", "differential", "mechanism"} & specific)
                                 and BACKGROUND.search(path) and not wanted_heading
                                 and not (roles & {"recommendation", "restriction"}))
         unwanted_alternative = ("drug_therapy" in specific and "comparison" not in specific

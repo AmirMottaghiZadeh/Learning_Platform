@@ -25,10 +25,10 @@ MAX_PAYLOAD_BYTES = 512000
 def code_signature():
     directory = Path(__file__).parent
     names = ["services.py", "provider.py", "http_transport.py", "retrieval.py", "lexical.py", "selection.py",
-             "reference_index.py", "document.py", "response_cache.py", "outline.py", "hybrid_agent.py", "streaming.py", "transport_pool.py"]
+             "reference_index.py", "document.py", "response_cache.py", "outline.py", "hybrid_agent.py", "question_profile.py", "streaming.py", "transport_pool.py"]
     retrieval = directory.parent / "ai_retrieval"
     return sha256(b"".join((directory / name).read_bytes() for name in names) + b"".join(
-        (retrieval / name).read_bytes() for name in ["retrieval.py", "evidence.py", "media.py", "embeddings.py", "local_embeddings.py", "chunking.py", "vectors.py"])
+        (retrieval / name).read_bytes() for name in ["retrieval.py", "evidence.py", "media.py", "embeddings.py", "local_embeddings.py", "chunking.py", "vectors.py", "source_links.py", "source_context.py"])
         +(directory.parent/"uptodate"/"media.py").read_bytes()).hexdigest()
 
 
@@ -85,6 +85,10 @@ def prepare(question, alias, sources, history, request):
             inputs["regimen_enrichment"] = settings.AI_LAB_HYBRID_REGIMEN_ENRICHMENT
             inputs["evidence_focus"] = settings.AI_LAB_HYBRID_EVIDENCE_FOCUS
             inputs["evidence_max_passages"] = settings.AI_LAB_HYBRID_EVIDENCE_MAX_PASSAGES
+            inputs["source_context"] = {key:getattr(settings,key) for key in [
+                "AI_LAB_SOURCE_CONTEXT_ENABLED","AI_LAB_SOURCE_CONTEXT_START_ARTICLES",
+                "AI_LAB_SOURCE_CONTEXT_NEIGHBORS","AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES",
+                "AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES"]}
         digest = salted_hmac("ai-lab-private-answer", json.dumps(inputs, ensure_ascii=False, sort_keys=True), algorithm="sha256").hexdigest()
         state("miss")
         return Lookup(f"answer:v{CACHE_VERSION}:{digest}", stamp, generation)
