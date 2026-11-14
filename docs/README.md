@@ -55,6 +55,7 @@
 | ۴۳ | [43-smart-search-postpay-quality-ai.fa.md](43-smart-search-postpay-quality-ai.fa.md) | ترتیب رسانه/پاسخ/منابع، حذف رزرو و اعتبار پس از سرچ، طرح‌های منتخب ورود و ابزار AI کیفیت داده | مالک پروژه، مدیر داده، توسعه‌دهنده |
 | ۴۴ | [44-smart-search-connected-evidence.fa.md](44-smart-search-connected-evidence.fa.md) | تکمیل همان زیربخش، پیوند مستقیم دارونامه/جدول، حفظ زمینه و آزمون منابع | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | ۴۵ | [45-smart-search-question-understanding.fa.md](45-smart-search-question-understanding.fa.md) | فهم یکپارچهٔ سناریوی بالینی، اهداف دارویی/بیماری/تداخل، تگ چند موجودیت و بررسی هدف پاسخ | مالک پروژه، توسعه‌دهنده، بازبین |
+| ۴۶ | [46-smart-search-runflare-deployment.fa.md](46-smart-search-runflare-deployment.fa.md) | استقرار Docker در رانفلر، PostgreSQL/Redis/worker، snapshot مشترک و انتقال بدون API بردارها | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | — | [search/README.md](search/README.md) | مسیر جست‌وجوی فعلی اپ؛ tagging، بستهٔ آفلاین و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
 
 ## آرشیو طراحی رابط

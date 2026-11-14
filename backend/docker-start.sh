@@ -17,6 +17,26 @@ python -c "import django, sys; print('[docker-start] django', django.get_version
     exit 1
 }
 
+# Runflare can deploy this same image as a separate queue consumer. A worker
+# never races the web/release service by applying migrations on its own boot.
+case "${SERVICE_ROLE:-web}" in
+    web) ;;
+    ai-search-worker)
+        concurrency="${AI_LAB_WORKER_CONCURRENCY:-2}"
+        if ! [[ "$concurrency" =~ ^[1-9][0-9]?$ ]] || [ "$concurrency" -gt 32 ]; then
+            echo "[docker-start] invalid AI_LAB_WORKER_CONCURRENCY"
+            exit 1
+        fi
+        echo "[docker-start] starting dedicated ai_search worker; concurrency=$concurrency"
+        exec celery -A config worker -Q ai_search -c "$concurrency" \
+            --prefetch-multiplier 1 --loglevel INFO
+        ;;
+    *)
+        echo "[docker-start] invalid SERVICE_ROLE"
+        exit 1
+        ;;
+esac
+
 run() {
     echo "[docker-start] >>> $*"
     # Capture the status directly: inside `if ! cmd; then`, $? is the negated

@@ -13,8 +13,10 @@ class Command(BaseCommand):
         parser.add_argument("--lexical-pilot", action="store_true", help="Local platform-admin-only QA before bulk embeddings; never a public release.")
 
     def handle(self, *args, **options):
+        lock = None
         try:
             generation = RetrievalGeneration.objects.get(pk=options["generation"])
+            lock = indexing.reference_index.acquire_build_lock("hybrid-embed:"+str(generation.pk))
             if options["lexical_pilot"]:
                 if settings.ENVIRONMENT != "local" or not settings.AI_LAB_LOCAL_LEXICAL_PILOT:
                     raise ProviderError("LOCAL_PILOT_MODE_REQUIRED")
@@ -29,3 +31,5 @@ class Command(BaseCommand):
             self.stdout.write(f"Active hybrid generation={generation.pk}; chunks={generation.chunk_count}.")
         except Exception as exc:
             raise CommandError(f"HYBRID_ACTIVATION_FAILED code={getattr(exc, 'code', 'INTERNAL_ERROR')} type={type(exc).__name__}") from None
+        finally:
+            indexing.reference_index.release_build_lock(lock)
