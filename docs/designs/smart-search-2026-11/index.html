@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>فارمنتا — مقایسهٔ طرح‌های سرچ هوشمند</title>
+  <link rel="stylesheet" href="preview.css">
+</head>
+<body>
+  <header class="review-header">
+    <div><p class="eyebrow">فارمنتا · پیش‌نمایش تعاملی</p><h1>انتخاب ظاهر سرچ هوشمند</h1>
+    <p>۵ کارت خانه، ۵ صفحهٔ جست‌وجو و ۴ روش نمایش محتوای غیرمقاله‌ای. متن‌ها و اعتبارِ این پیش‌نمایش، نمونهٔ طراحی هستند.</p></div>
+    <button class="secondary" id="theme">تغییر تم</button>
+  </header>
+  <nav class="review-nav" aria-label="گروه طرح‌ها">
+    <button data-group="home" aria-pressed="true">کارت خانه · ۵ طرح</button>
+    <button data-group="search" aria-pressed="false">صفحهٔ سرچ · ۵ طرح</button>
+    <button data-group="content" aria-pressed="false">غیرمقاله‌ای · ۴ طرح</button>
+    <button data-group="table" aria-pressed="false">پیش‌نمایش جدول</button>
+  </nav>
+  <div class="review-tools">
+    <label id="search-state-label" hidden>حالت صفحه
+      <select id="search-state"><option value="empty">قبل از پرسش</option><option value="answer">پاسخ نمونه</option><option value="loading">دریافت تدریجی</option></select>
+    </label>
+    <label id="content-state-label" hidden>نوع محتوا
+      <select id="content-state"><option value="directory">فهرست زیرموضوع‌ها</option><option value="calculator">ابزار محاسبه</option></select>
+    </label>
+    <span id="group-hint">روی هر کارت بزنید تا صفحهٔ پرسش باز شود.</span>
+  </div>
+  <main id="gallery" aria-label="طرح‌های قابل مقایسه"></main>
+  <dialog id="preview-dialog"><div id="dialog-content"></div><button class="secondary" id="close-dialog">بستن پیش‌نمایش</button></dialog>
+  <div id="announcement" role="status" aria-live="polite"></div>
+  <script src="preview.js"></script>
+</body>
+</html>

@@ -25,12 +25,15 @@ export function tableStyles(c: TableColors, dark: boolean) {
   .utd-table-button { font:600 13px/1.4 -apple-system,"Segoe UI",sans-serif; min-height:44px;
     padding:8px 12px; border:1px solid var(--utd-table-line); border-radius:6px; cursor:pointer;
     color:var(--utd-table-ink); background:var(--utd-table-paper); white-space:nowrap; }
-  .utd-table-button:focus-visible, .utd-table-stage:focus-visible { outline:3px solid ${c.accent}; outline-offset:-3px; }
+  .utd-table-button:focus-visible, .utd-table-stage:focus-visible, .utd-table-preview:focus-visible { outline:3px solid ${c.accent}; outline-offset:-3px; }
   .utd-table-button[aria-pressed="true"] { background:var(--utd-table-ink); color:var(--utd-table-paper); }
   .utd-table-button:disabled { opacity:.5; cursor:default; }
   .utd-table-scroll { overflow:auto; max-width:100%; max-height:620px; overscroll-behavior:contain;
     border:1px solid var(--utd-table-line); border-radius:6px; }
   .utd-table-scroll > table { cursor:zoom-in; }
+  .utd-table-preview { position:relative; overflow:hidden; max-height:none; min-height:44px; direction:ltr; cursor:zoom-in; }
+  .utd-table-preview > table.utd-reference-table { position:absolute; top:0; max-width:none; transform-origin:0 0; }
+  .utd-table-preview > .utd-reference-table > :is(thead,tbody,tfoot) > tr > :is(td,th) { position:static; }
   table.utd-reference-table { display:table; border-collapse:separate; border-spacing:0; width:100%;
     min-width:var(--utd-table-min,0px); overflow:visible; table-layout:fixed; direction:ltr; text-align:left;
     font-size:1rem; line-height:1.6; color:${c.prose}; }
@@ -141,6 +144,8 @@ function __utdTablesInit(options) {
     var scroll = document.createElement("div"); scroll.className = "utd-table-scroll"; scroll.tabIndex = 0;
     scroll.setAttribute("role", "region"); scroll.setAttribute("aria-label", labels.open);
     if (!options.viewer) {
+      scroll.classList.add("utd-table-preview"); scroll.setAttribute("role", "button");
+      scroll.setAttribute("aria-haspopup", "dialog");
       table.addEventListener("click", function (e) {
         if (e.defaultPrevented || e.target.closest("a,button,input,select,textarea") || String(window.getSelection() || "").trim()) return;
         open.click();
@@ -153,6 +158,29 @@ function __utdTablesInit(options) {
     function offsets() { var top = 0; heads.forEach(function (row) { row.style.setProperty("--utd-head-top", top + "px"); top += row.offsetHeight; }); }
     if (typeof ResizeObserver !== "undefined") new ResizeObserver(offsets).observe(table);
     offsets();
+    if (!options.viewer) {
+      // Scale the original DOM, not a clone/image: source text, merged cells,
+      // highlights and the full-screen table index remain the same.
+      table.style.width = Math.max(width, 320) + "px";
+      function fitPreview() {
+        var available = scroll.clientWidth;
+        if (!available) return;
+        var naturalWidth = Math.max(table.offsetWidth, table.scrollWidth, 1);
+        var naturalHeight = Math.max(table.offsetHeight, table.scrollHeight, 1);
+        var scale = Math.min(1, available / naturalWidth, 560 / naturalHeight);
+        table.style.transform = "scale(" + scale + ")";
+        table.style.left = Math.max(0, (available - naturalWidth * scale) / 2) + "px";
+        scroll.style.height = Math.max(44, Math.ceil(naturalHeight * scale)) + "px";
+      }
+      if (typeof ResizeObserver !== "undefined") {
+        var previewObserver = new ResizeObserver(fitPreview);
+        previewObserver.observe(box); previewObserver.observe(table);
+      }
+      window.addEventListener("resize", fitPreview);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitPreview);
+      Array.prototype.forEach.call(table.querySelectorAll("img"), function (img) { img.addEventListener("load", fitPreview); });
+      fitPreview();
+    }
     return { table:table, width:width };
   }
   var prepared = tables.map(prepare);

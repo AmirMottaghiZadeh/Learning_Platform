@@ -21,6 +21,7 @@ import { ScreenKey } from "@/navigation/types";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
+import { SmartSearchHomeCard } from "@/components/SmartSearchHomeCard";
 
 const QUICK_ACCESS: { screen: ScreenKey; icon: IconName; labelKey: StringKey }[] = [
   { screen: "education", icon: "entry-education", labelKey: "educationLabel" },
@@ -116,15 +117,7 @@ export function DashboardScreen() {
       <View style={{ padding: 20, marginTop: -14 }}>
         {/* the admin's announcements: a card on top, dimmed around it the first time */}
         <AnnouncementBox />
-        {lab.data?.enabled ? <Pressable onPress={() => navigate("aiLab")} accessibilityRole="button"
-          testID="home-smart-search" style={{ marginBottom: 18, padding: 16, borderRadius: 18, borderWidth:1,borderColor:colors.accent+"30",backgroundColor:colors.leitnerActiveBg, gap:14 }}>
-          <View style={{flexDirection:row,alignItems:"center",gap:12}}>
-            <View style={{width:44,height:44,borderRadius:13,backgroundColor:colors.cardBg,alignItems:"center",justifyContent:"center"}}><AppText size={25} color={colors.accent}>⌕</AppText></View>
-            <View style={{flex:1,gap:4}}><AppText weight="800" size={15}>{isFa ? "سرچ هوشمند" : "Smart search"}</AppText>
-              <AppText muted size={12}>{isFa ? "پرسش از منابع معتبر بالینی" : "Ask trusted clinical references"}</AppText></View>
-          </View>
-          <View style={{flexDirection:row,alignItems:"center",gap:8,backgroundColor:colors.cardBg,borderRadius:12,padding:12}}><AppText muted size={12} style={{flex:1}}>{isFa ? "سؤال بالینی خود را بپرسید…" : "Ask your clinical question…"}</AppText><AppText color={colors.accent} size={17}>{isFa ? "←" : "→"}</AppText></View>
-        </Pressable> : null}
+        {lab.data?.enabled ? <SmartSearchHomeCard onPress={() => navigate("aiLab")} /> : null}
 
         {/* uptodate reference card */}
         <TourTarget id="home.uptodate">

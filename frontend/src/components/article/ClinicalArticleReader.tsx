@@ -35,6 +35,8 @@ import type { MediaContent } from "@/components/article/mediaPage";
 import { recordClick } from "@/activity/useActivity";
 import { exportReferencePdf } from "@/utils/exportReferencePdf";
 import { referenceMediaApi } from "@/api/referenceMedia";
+import { classifyReferenceContent } from "@/utils/referenceContent";
+import { ReferenceContentSheet } from "@/components/article/ReferenceContentSheet";
 
 type FindResult = { count: number; current: number };
 
@@ -800,6 +802,7 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
   });
 
   const outline = useMemo(() => numberedOutline(data?.outline_html ?? ""), [data]);
+  const content = useMemo(() => source === "utd" && data ? classifyReferenceContent(data) : { kind: "article" as const }, [source, data]);
   const tops = useMemo(() => outlineTops(outline), [outline]);
   const related = useMemo(() => parseRelated(data?.outline_html ?? ""), [data]);
 
@@ -815,7 +818,7 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
   };
   const html = useMemo(
     () =>
-      data
+      data && content.kind === "article"
         ? wrap(data.body_html, wrapColors, {
             levels: headingLevels(outline),
             tops: tops.map((top) => top.id),
@@ -827,7 +830,7 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
           })
         : "",
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data, outline, tops, related, colors, isFa],
+    [data, content, outline, tops, related, colors, isFa],
   );
 
   // -- a table/figure/algorithm graphic opened from a reference link -------
@@ -1054,6 +1057,8 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
     return () => window.removeEventListener("message", onMessage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (data && content.kind !== "article") return <ReferenceContentSheet article={data} content={content} onClose={goBack} />;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>

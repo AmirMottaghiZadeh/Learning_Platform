@@ -19,6 +19,8 @@ import { useBleedTop } from "@/components/AppShell";
 
 import { medscapeApi } from "@/api/endpoints";
 import { medscapeDocument } from "@/utils/medscapeReader";
+import { classifyReferenceContent } from "@/utils/referenceContent";
+import { ReferenceContentSheet } from "@/components/article/ReferenceContentSheet";
 
 const LTR = { textAlign: "left" as const, writingDirection: "ltr" as const };
 
@@ -52,6 +54,7 @@ export function ClinicalArticleOutline({ source = "utd" }: { source?: "utd" | "m
   });
 
   const tops = useMemo(() => outlineTops(numberedOutline(data?.outline_html ?? "")), [data]);
+  const content = useMemo(() => source === "utd" && data ? classifyReferenceContent(data) : { kind: "article" as const }, [source, data]);
   const related = useMemo(() => parseRelated(data?.outline_html ?? ""), [data]);
   const minutes = useMemo(() => (data ? readingMinutes(countWords(stripHtml(data.body_html))) : 0), [data]);
   const lastTop = lastIndex !== undefined && lastIndex > 0 ? tops[lastIndex] : undefined;
@@ -64,6 +67,8 @@ export function ClinicalArticleOutline({ source = "utd" }: { source?: "utd" | "m
 
   const version = source === "utd" && data?.version ? `v${data.version.replace(/\.0+$/, "")}` : "";
   const chips = [version, data?.updated ? shortDate(data.updated) : "", minutes ? `${minutes} min read` : ""].filter(Boolean);
+
+  if (data && content.kind !== "article") return <ReferenceContentSheet article={data} content={content} onClose={goBack} />;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.softBg }}>

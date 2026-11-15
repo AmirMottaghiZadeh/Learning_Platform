@@ -46,13 +46,19 @@ export function ChromeButton({
 
 /** The EN/FA switch -- the only place the app's language changes, so every
  * screen that shows language-dependent content carries it in its header. */
-export function LangToggleButton() {
+export function LangToggleButton({ size }: { size?: number } = {}) {
   const { colors } = useTheme();
   const { t, toggle } = useLang();
   return (
     <Pressable
       onPress={toggle}
+      accessibilityRole="button"
+      accessibilityLabel={t("langSwitch")}
       style={{
+        minWidth: size,
+        minHeight: size,
+        alignItems: "center",
+        justifyContent: "center",
         backgroundColor: colors.softBg,
         borderRadius: 999,
         paddingHorizontal: 10,
