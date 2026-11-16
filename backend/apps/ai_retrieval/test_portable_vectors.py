@@ -143,6 +143,101 @@ class PortableVectorTests(TransactionTestCase):
             with self.assertRaisesMessage(ProviderError,"VECTOR_ARCHIVE_PROFILE_OR_CORPUS_MISMATCH"):
                 portable.import_vectors(target,self.path)
 
+    def test_skip_verify_scans_once_and_resumes_without_decoding_existing_vector_values(self):
+        exported=self.archive();target=self.target()
+        saved=list(target.chunks.filter(ordinal__in=[0,2]).order_by("ordinal"))
+        vectors.store(target,self.profile,saved,[[1,0,0],[0,0,1]])
+        events=[]
+        with patch.object(portable,"_scan",wraps=portable._scan) as scan:
+            with patch.object(portable,"_decode",wraps=portable._decode) as decode:
+                with patch.object(vectors,"store",wraps=vectors.store) as store:
+                    result=portable.import_vectors(target,self.path,batch_size=1,skip_verify=True,progress=events.append)
+        self.assertEqual(scan.call_count,1)
+        # Header, missing middle vector, footer; saved values are not decoded.
+        self.assertEqual(decode.call_count,3)
+        self.assertEqual(store.call_count,1)
+        self.assertEqual((result["imported"],result["reused"]),(1,2))
+        self.assertEqual(result["payload_sha256"],exported["payload_sha256"])
+        self.assertEqual(events[-1]["imported"],1)
+        self.assertEqual(events[-1]["reused"],2)
+        self.assertEqual({event["stage"] for event in events},{"import"})
+        self.assertFalse(result["index_ready"])
+        self.paid.assert_not_called()
+
+    def test_skip_verify_interrupted_batches_resume_and_build_index_without_reinserting(self):
+        self.archive();target=self.target()
+        actual=vectors.store
+        def interrupted(generation,profile,rows,values):
+            if rows[0].ordinal==1:
+                raise RuntimeError("interrupted")
+            return actual(generation,profile,rows,values)
+        with patch.object(vectors,"store",side_effect=interrupted):
+            with self.assertRaisesMessage(RuntimeError,"interrupted"):
+                portable.import_vectors(target,self.path,batch_size=1,skip_verify=True)
+        self.assertEqual(vectors.count(target,self.profile["id"]),1)
+        result=portable.import_vectors(target,self.path,batch_size=2,skip_verify=True,build_index=True)
+        self.assertEqual((result["imported"],result["reused"]),(2,1))
+        target.refresh_from_db()
+        self.assertTrue(target.embedding_ready)
+        self.assertFalse(RetrievalHead.objects.exists())
+        self.paid.assert_not_called()
+
+    def test_skip_verify_still_rejects_invalid_footer_and_never_marks_index_ready(self):
+        self.archive();target=self.target()
+        lines=gzip.decompress(self.path.read_bytes()).splitlines()
+        lines[-1]=json.dumps({"end":3,"sha256":"f"*64}).encode()
+        self.path.write_bytes(gzip.compress(b"\n".join(lines)+b"\n"))
+        with patch.object(vectors,"create_index") as create:
+            with self.assertRaisesMessage(ProviderError,"VECTOR_ARCHIVE_CHECKSUM_MISMATCH"):
+                portable.import_vectors(target,self.path,skip_verify=True,build_index=True)
+        create.assert_not_called()
+        target.refresh_from_db()
+        self.assertFalse(target.embedding_ready)
+        # One-pass mode commits batches before the footer, leaving them resumable.
+        self.assertEqual(vectors.count(target,self.profile["id"]),3)
+
+    def test_skip_verify_still_validates_new_vectors_and_header(self):
+        self.archive();target=self.target()
+        original=gzip.decompress(self.path.read_bytes()).splitlines()
+        lines=list(original)
+        header=json.loads(lines[0]);header["chunks"]=4
+        lines[0]=json.dumps(header).encode()
+        self.path.write_bytes(gzip.compress(b"\n".join(lines)+b"\n"))
+        with self.assertRaisesMessage(ProviderError,"VECTOR_ARCHIVE_PROFILE_OR_CORPUS_MISMATCH"):
+            portable.import_vectors(target,self.path,skip_verify=True)
+        self.assertEqual(vectors.count(target,self.profile["id"]),0)
+        lines=list(original)
+        record=json.loads(lines[1]);record[4]=[0,0,0]
+        lines[1]=json.dumps(record).encode()
+        self.path.write_bytes(gzip.compress(b"\n".join(lines)+b"\n"))
+        with self.assertRaises(ProviderError):
+            portable.import_vectors(target,self.path,skip_verify=True)
+        self.assertEqual(vectors.count(target,self.profile["id"]),0)
+
+    def test_skip_verify_rejects_mismatched_reused_input_prefix_and_saved_metadata(self):
+        self.archive();target=self.target()
+        first=target.chunks.get(ordinal=0)
+        vectors.store(target,self.profile,[first],[[1,0,0]])
+        SearchChunk.objects.filter(pk=first.pk).update(content_hash="f"*64)
+        with self.assertRaisesMessage(ProviderError,"VECTOR_ARCHIVE_INPUT_MISMATCH"):
+            portable.import_vectors(target,self.path,skip_verify=True)
+        SearchChunk.objects.filter(pk=first.pk).update(content_hash=first.content_hash,input_hash="e"*64)
+        with self.assertRaisesMessage(ProviderError,"VECTOR_IMPORT_EXISTING_MISMATCH"):
+            portable.import_vectors(target,self.path,skip_verify=True)
+
+    def test_skip_verify_command_and_exclusive_flags(self):
+        self.archive();target=self.target()
+        output=StringIO()
+        call_command("import_hybrid_vectors",str(target.pk),input=str(self.path),skip_verify=True,stdout=output)
+        self.assertNotIn('"stage": "verify"',output.getvalue())
+        self.assertIn('"imported": 3',output.getvalue())
+        self.assertIn('"provider_requests": 0',output.getvalue())
+        with self.assertRaises(CommandError):
+            call_command("import_hybrid_vectors",str(target.pk),input=str(self.path),
+                skip_verify=True,verify_only=True,stdout=StringIO())
+        with self.assertRaises(ValueError):
+            portable.import_vectors(target,self.path,skip_verify=True,verify_only=True)
+
     def test_existing_conflicting_vector_is_not_silently_reused(self):
         self.archive();target=self.target()
         row=target.chunks.get(ordinal=0)

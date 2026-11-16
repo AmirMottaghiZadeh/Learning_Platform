@@ -49,14 +49,23 @@ def _encoded(value):
     return (json.dumps(value, separators=(",", ":"), ensure_ascii=True, allow_nan=False)+"\n").encode()
 
 
-def _read(stream):
+def _read_line(stream):
     line = stream.readline(MAX_LINE+1)
     if not line or len(line) > MAX_LINE or not line.endswith(b"\n"):
         raise ProviderError("VECTOR_ARCHIVE_INVALID")
+    return line
+
+
+def _decode(line):
     try:
-        return line, json.loads(line)
+        return json.loads(line)
     except (ValueError, UnicodeError):
         raise ProviderError("VECTOR_ARCHIVE_INVALID") from None
+
+
+def _read(stream):
+    line = _read_line(stream)
+    return line, _decode(line)
 
 
 def export_vectors(generation, output, *, batch_size=256, progress=lambda _:None):
@@ -116,7 +125,7 @@ def export_vectors(generation, output, *, batch_size=256, progress=lambda _:None
         indexing.reference_index.release_build_lock(lock)
 
 
-def _scan(generation, path, profile, batch_size, consume, progress):
+def _scan(generation, path, profile, batch_size, consume, progress, prepare=lambda rows:()):
     count, digest = 0, sha256()
     with gzip.open(path, "rb") as stream:
         raw, header = _read(stream)
@@ -128,17 +137,31 @@ def _scan(generation, path, profile, batch_size, consume, progress):
         digest.update(raw)
         for batch in _chunks(generation, batch_size):
             _source(generation)
+            reused = prepare(batch)
             values = []
             for row in batch:
-                raw, record = _read(stream)
-                if (not isinstance(record, list) or len(record)!=5
-                        or record[:4] != [row.source_id,row.ordinal,row.content_hash,row.input_hash]):
-                    raise ProviderError("VECTOR_ARCHIVE_INPUT_MISMATCH")
-                values.append(embeddings.validate_vector(record[4],profile["dimensions"]))
+                raw = _read_line(stream)
+                if row.pk in reused:
+                    # --skip-verify trusts previously committed vectors. Match
+                    # the canonical export's source/hash prefix without parsing
+                    # thousands of floats or fetching their values from Postgres.
+                    prefix = _encoded([row.source_id,row.ordinal,row.content_hash,row.input_hash])[:-2]
+                    if not raw.startswith(prefix+b",[") or not raw.endswith(b"]]\n"):
+                        raise ProviderError("VECTOR_ARCHIVE_INPUT_MISMATCH")
+                    values.append(None)
+                else:
+                    record = _decode(raw)
+                    if (not isinstance(record, list) or len(record)!=5
+                            or record[:4] != [row.source_id,row.ordinal,row.content_hash,row.input_hash]):
+                        raise ProviderError("VECTOR_ARCHIVE_INPUT_MISMATCH")
+                    values.append(embeddings.validate_vector(record[4],profile["dimensions"]))
                 digest.update(raw); count += 1
             consume(batch, values)
-            progress({"stage":"verify" if consume is _discard else "import","checked":count,
-                      "expected":generation.chunk_count})
+            event = {"stage":"verify" if consume is _discard else "import","checked":count,
+                     "expected":generation.chunk_count}
+            if reused:
+                event["reused_batch"] = len(reused)
+            progress(event)
         _, footer = _read(stream)
         if (count != generation.chunk_count or not isinstance(footer, dict)
                 or footer != {"end":count,"sha256":digest.hexdigest()} or stream.read(1)):
@@ -151,7 +174,10 @@ def _discard(rows, values):
     pass
 
 
-def import_vectors(generation, path, *, batch_size=256, verify_only=False, build_index=False, progress=lambda _:None):
+def import_vectors(generation, path, *, batch_size=256, verify_only=False, build_index=False,
+                   skip_verify=False, progress=lambda _:None):
+    if skip_verify and verify_only:
+        raise ValueError("skip_verify and verify_only are mutually exclusive")
     _source(generation)
     profile = vectors._configuration(generation)
     if not verify_only and RetrievalHead.objects.filter(active=generation).exists():
@@ -160,40 +186,55 @@ def import_vectors(generation, path, *, batch_size=256, verify_only=False, build
     try:
         if not verify_only and RetrievalHead.objects.filter(active=generation).exists():
             raise ProviderError("VECTOR_IMPORT_TARGET_IS_ACTIVE")
-        # Validate the entire archive BEFORE storing a single vector. The
-        # second pass checks it again, including a mutation/truncation in flight.
-        digest = _scan(generation,path,profile,batch_size,_discard,progress)
+        # Strict mode preflights before any writes. An explicit --skip-verify
+        # imports in a single pass; inline checks still gate index readiness.
+        digest = None if skip_verify else _scan(generation,path,profile,batch_size,_discard,progress)
         if verify_only:
             return {"verified":generation.chunk_count,"payload_sha256":digest,"provider_requests":0}
         vectors.ensure_schema()
         generation.embedding_ready = False
         generation.embedding_profile = profile
         generation.save(update_fields=["embedding_ready","embedding_profile"])
-        imported, reused = 0, 0
-        def store(rows, values):
-            nonlocal imported, reused
+        imported, reused, existing = 0, 0, {}
+        def prepare(rows):
+            nonlocal existing
             ids = [row.pk for row in rows]
             with connections[indexing.alias()].cursor() as cursor:
-                cursor.execute(f"SELECT chunk_id,input_hash,vector_dims(embedding),embedding::text FROM {vectors.TABLE} "
+                value_column = "" if skip_verify else ",embedding::text"
+                cursor.execute(f"SELECT chunk_id,input_hash,vector_dims(embedding){value_column} FROM {vectors.TABLE} "
                     "WHERE generation_id=%s AND profile_id=%s AND chunk_id=ANY(%s)",
                     [generation.pk,profile["id"],ids])
                 existing = {row[0]:row[1:] for row in cursor.fetchall()}
+            if skip_verify:
+                for row in rows:
+                    if row.pk in existing and existing[row.pk][:2] != (row.input_hash,profile["dimensions"]):
+                        raise ProviderError("VECTOR_IMPORT_EXISTING_MISMATCH")
+                return existing
+            return ()
+
+        def store(rows, values):
+            nonlocal imported, reused
             fresh, fresh_values = [], []
             for row,value in zip(rows,values):
                 if row.pk in existing:
                     previous = existing[row.pk]
                     if (previous[:2] != (row.input_hash,profile["dimensions"])
-                            or any(abs(a-b)>1e-6 for a,b in zip(json.loads(previous[2]),value))):
+                            or not skip_verify and any(abs(a-b)>1e-6 for a,b in zip(json.loads(previous[2]),value))):
                         raise ProviderError("VECTOR_IMPORT_EXISTING_MISMATCH")
                     reused += 1
                 else:
                     fresh.append(row); fresh_values.append(value)
-            with transaction.atomic(using=indexing.alias()):
-                vectors.store(generation,profile,fresh,fresh_values)
+            if fresh:
+                with transaction.atomic(using=indexing.alias()):
+                    vectors.store(generation,profile,fresh,fresh_values)
             imported += len(fresh)
-        second = _scan(generation,path,profile,batch_size,store,progress)
-        if second != digest or vectors.count(generation,profile["id"]) != generation.chunk_count:
+        def import_progress(event):
+            progress({**event,"imported":imported,"reused":reused})
+        second = _scan(generation,path,profile,batch_size,store,import_progress,prepare)
+        if (digest is not None and second != digest
+                or vectors.count(generation,profile["id"]) != generation.chunk_count):
             raise ProviderError("VECTOR_ARCHIVE_CHECKSUM_MISMATCH")
+        digest = second
         if build_index:
             progress({"stage":"hnsw","vectors":generation.chunk_count})
             vectors.create_index(generation,profile)

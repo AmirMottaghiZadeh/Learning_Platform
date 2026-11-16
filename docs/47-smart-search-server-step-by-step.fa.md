@@ -571,13 +571,55 @@ python manage.py build_hybrid_index --status
 
 ```bash
 cd '/home/amir/Documents/Learning Platform/backend'
-.venv/bin/python manage.py export_hybrid_vectors 73f89df9-d447-4cb7-a32c-f8296b81fa4b --output .private/uptodate-small-1536.jsonl.gz
+.venv/bin/python manage.py export_hybrid_vectors 73f89df9-d447-4cb7-a32c-f8296b81fa4b --output .private/uptodate-small-1536.jsonl.gz --parts 10
 sha256sum .private/uptodate-small-1536.jsonl.gz
 ```
 
 نسل کامل فعلی ۶۷۰٬۹۹۱ بردار small با ۱۵۳۶ بُعد دارد. export به‌صورت batch و foreground است، API صدا نمی‌زند و فایل 0600 تولید می‌کند. آرشیو، کاربران، متن مقاله، کلید API یا شناسهٔ paragraph لوکال را منتقل نمی‌کند.
 
 فایل موجود بازنویسی نمی‌شود. پس از خطای کنترل‌شده/Ctrl+C فایل ناقص پاک می‌شود؛ قطع اجباری سیستم ممکن است فایل ناقص باقی بگذارد. فایل بدون پایان معتبر منتقل نشود و برای export دوباره نام تازه انتخاب شود. هیچ دستور ساختی با `&`، `nohup` یا اجرای مخفی در این روند نیست.
+
+### تقسیم فایل بزرگ به ۱۰ قطعه برای upload
+
+گزینهٔ `--parts 10` پس از پایان موفق export، فایل فشردهٔ کامل را به ۱۰ قطعهٔ تقریباً هم‌اندازه تقسیم می‌کند. فایل اصلی حفظ می‌شود؛ مجموع فضای قطعه‌ها تقریباً برابر حجم فایل اصلی است. هنگام خروجی‌گیری یا تقسیم/اتصال، پیشرفت در همان ترمینال چاپ می‌شود. این عملیات API، دیتابیس یا بردارسازی تازه ندارد.
+
+**برای خروجی‌گیری فعلی که از قبل شروع شده، بعد از پایان موفق آن، فقط این فرمان در لپ‌تاپ اجرا شود؛ export را تکرار نکنید:**
+
+```bash
+python3 apps/ai_retrieval/archive_parts.py split --input .private/uptodate-small-1536.jsonl.gz --parts 10
+```
+
+پوشهٔ `.private/uptodate-small-1536.jsonl.gz.parts/` شامل این فایل‌هاست:
+
+- ۱۰ قطعه با پسوندهای `.part-001-of-010` تا `.part-010-of-010`؛
+- `manifest.json`، شامل ترتیب، اندازه و SHA-256 هر قطعه و کل فایل؛
+- `archive_parts.py`، ابزار مستقل اتصال فایل با کتابخانهٔ استاندارد Python.
+
+فایل‌ها 0600 و پوشه 0700 ساخته می‌شوند. مسیرهای مطلق و کلیدها در manifest نیستند. منبعی که هنگام تقسیم تغییر کند رد می‌شود؛ خروجی ناقص حذف و منبع حفظ می‌شود. پوشهٔ قطعه‌های موجود بازنویسی نمی‌شود. در صورت خطای تقسیم پس از export خودکار، فایل export کامل حفظ می‌شود و می‌توان فقط تقسیم را دوباره اجرا کرد. قطعه‌ها باید از یک اجرای کامل و همان manifest باشند.
+
+**محل: ترمینال بک‌اند سرور؛ آماده کردن پوشهٔ upload**
+
+```bash
+mkdir -p /sd/ai-transfer/vector-parts
+```
+
+تمام فایل‌های داخل پوشهٔ لوکال، یعنی **۱۰ قطعه به‌همراه manifest و ابزار Python**، به `/sd/ai-transfer/vector-parts/` منتقل شوند. ابزار همراه قطعه‌ها مستقل است؛ اتصال روی image قدیمی هم به Deploy، نصب بسته یا Django نیاز ندارد.
+
+**محل: ترمینال بک‌اند سرور؛ اتصال و بررسی فایل**
+
+```bash
+python /sd/ai-transfer/vector-parts/archive_parts.py join --manifest /sd/ai-transfer/vector-parts/manifest.json --output /sd/ai-transfer/uptodate-small-1536.jsonl.gz
+```
+
+ابزار ترتیب را از manifest می‌خواند و هش هر قطعه و کل فایل نهایی را بررسی می‌کند. قطعهٔ ناقص/خراب، نبودن قطعه، نام مسیر نامعتبر یا تفاوت هش، اتصال را متوقف می‌کند و فایل نهایی ناقص حذف می‌شود؛ قطعه‌ها و فایل نهاییِ قبلی پاک یا بازنویسی نمی‌شوند. پس از اتصال موفق، مسیر خروجی همان ورودی مرحلهٔ ۱۱ است. بررسی کامل جداگانه با `import_hybrid_vectors --verify-only` اختیاری است؛ برای ادامهٔ import آرشیو تأییدشده، روش تک‌مرحله‌ای پایین استفاده شود.
+
+تعداد قطعه‌ها با `--parts` قابل تنظیم است. این ابزار در `backend/apps/ai_retrieval/archive_parts.py` است؛ ۱۲ آزمونِ بدون دیتابیس در `test_archive_parts.py`، اتصال بایت‌به‌بایت، خرابی/نبودن قطعه، حفظ منبع، توقف اجرا، مسیر نامعتبر، جلوگیری از بازنویسی، اجرا با تنها فایل Python همراه و گزینهٔ خودکار export را پوشش می‌دهند.
+
+اجرای واقعی لوکال در ۲۰۲۶-۱۱-۱۵: آرشیو کامل نسل `73f89df9-d447-4cb7-a32c-f8296b81fa4b` با ۶۷۰٬۹۹۱ بردار، پایان معتبر gzip و هش payload صحیح بررسی شد. فایل **۵٬۵۱۵٬۹۳۸٬۵۹۱ بایتی** به ۱۰ قطعه تقسیم شد؛ قطعهٔ اول ۵۵۱٬۵۹۳٬۸۶۰ بایت و ۹ قطعهٔ دیگر هرکدام ۵۵۱٬۵۹۳٬۸۵۹ بایت هستند. هش همهٔ قطعه‌های نوشته‌شده و هش الحاق آن‌ها با بازخوانی مستقل تأیید شد؛ فایل اصلی حفظ شد. SHA-256 فایل فشردهٔ کامل:
+
+```text
+ac530b27ca626bccdcd64983de7b9728827785ca06e905536e25847ff9fea213
+```
 
 ## ۱۱ ـ انتقال فایل و import بردارها
 
@@ -597,7 +639,7 @@ sha256sum /sd/ai-transfer/uptodate-small-1536.jsonl.gz
 
 checksum باید دقیقاً با لپ‌تاپ برابر باشد. فضای فایل انتقال را جدا از فضای داده/WAL/index PostgreSQL حساب کن.
 
-### فقط بررسی، بدون درج بردار
+### فقط بررسی، بدون درج بردار (اختیاری)
 
 ```bash
 python manage.py import_hybrid_vectors SERVER_GENERATION_UUID --input /sd/ai-transfer/uptodate-small-1536.jsonl.gz --verify-only
@@ -614,6 +656,63 @@ PGOPTIONS='-c max_parallel_maintenance_workers=0 -c maintenance_work_mem=512MB' 
 ساخت سریالی برای محدودیت shared memory انتخاب شده است. RAM هشت‌گیگابایتی پیش‌نیاز نیست، ولی زمان ساخت و کارایی روی ظرفیت فعلی باید سنجیده شوند. این مرحله هزینهٔ API embedding ندارد؛ مصرف دیسک/CPU و زمان دارد.
 
 import قبل از اولین write کل آرشیو را بررسی می‌کند و هنگام درج دوباره اعتبار آن را می‌سنجد. batchها commit می‌شوند؛ اجرای دوبارهٔ همان فرمان پس از قطع، بردارهای مطابق را reuse می‌کند. نسل فعال عوض نمی‌شود. در خطا، نسل کامل و آماده علامت نمی‌خورد. **برای انتقال، `embed_hybrid_index` اجرا نمی‌شود**؛ آن فرمان می‌تواند API پولی را صدا بزند.
+
+### ادامهٔ import بدون تکرار مرحلهٔ verify
+
+با دیپلوی کدی که گزینهٔ `--skip-verify` را اضافه می‌کند، برای آرشیو تأییدشده از این فرمان استفاده کن؛ migration جدید لازم نیست:
+
+```bash
+PGOPTIONS='-c max_parallel_maintenance_workers=0 -c maintenance_work_mem=512MB' python -u manage.py import_hybrid_vectors SERVER_GENERATION_UUID --input /sd/ai-transfer/uptodate-small-1536.jsonl.gz --skip-verify --build-index
+```
+
+این گزینه مرحلهٔ کامل `stage=verify` را حذف می‌کند: فایل فقط یک بار برای import خوانده می‌شود. بردارهای قبلاً commit‌شده بر اساس شناسهٔ قطعه، hash ورودی، profile و تعداد ابعاد reuse می‌شوند؛ آرایهٔ اعداد این رکوردها دوباره از PostgreSQL دریافت یا از JSON فایل پردازش نمی‌شود. فقط بردارهای مفقود درج می‌شوند؛ حتی اگر میان داده‌های موجود فاصله باشد. مقایسهٔ دوبارهٔ مقدار عددی بردارهای قبلی در این حالت عمداً انجام نمی‌شود. حالت پیش‌فرضِ بدون این گزینه همچنان بررسی کامل پیش از درج و مقایسهٔ عددی بردارهای موجود را دارد.
+
+gzip تک‌جریانی است؛ برای رسیدن به رکوردهای باقی‌مانده باید از ابتدای فایل فشرده عبور کرد. بنابراین `checked` از ابتدا افزایش می‌یابد، اما به معنی درج دوباره نیست: `reused` تعداد رکوردهای استفاده‌شده از دیتابیس و `imported` تعداد درج‌های جدید در همین اجراست. این روش نقطهٔ شروع تصادفی در فایل gzip ایجاد نمی‌کند و تضمین زمان مشخصی ندارد.
+
+`verify` برای تطبیق کل آرشیو با متن/قطعات مقصد، profile مدل، ابعاد و checksum پیش از اولین درج است؛ به‌تنهایی هیچ برداری وارد نمی‌کند. با `--skip-verify` بررسی header، اتصال هر رکورد به قطعهٔ صحیح، اعتبار بردارهای جدید و checksum پایانی هنگام import حفظ می‌شود. خطای انتهای فایل ممکن است پس از commit برخی batchها کشف شود؛ در این صورت HNSW ساخته و نسل آماده/فعال نمی‌شود، ولی batchهای سالم برای ادامه باقی می‌مانند. این گزینه با `--verify-only` قابل ترکیب نیست و قفل `BUSY` اجرای زنده را دور نمی‌زند. هیچ API فراخوانی نمی‌شود.
+
+### وضعیت تأییدشدهٔ سرور، ۲۰۲۶-۱۱-۱۶
+
+بر اساس خروجی ترمینال مالک:
+
+- اتصال `reference_search` به دیتابیس `pharmenta_reference` روی `reference-db-xoc-service:8000` است.
+- فایل `/sd/ai-transfer/uptodate-small-1536.jsonl.gz` از تمام ۱۰ قطعه با موفقیت بازسازی شد: **۵٬۵۱۵٬۹۳۸٬۵۹۱ بایت** و SHA-256 برابر `ac530b27ca626bccdcd64983de7b9728827785ca06e905536e25847ff9fea213`. انتقال فایل با نسخهٔ لوکال منطبق است؛ هنوز به معنی درج بردارها در PostgreSQL نیست.
+- نسل `b9bbb29c-bada-4f94-803f-54cfce8f5058` دارای `status=ready`، تعداد مقالهٔ ساخته‌شده و موردانتظار هر دو **۲۱٬۲۷۳** و **۶۷۰٬۹۹۱ قطعه** است. نسل `03699763-7632-4e94-8943-19a18fa69a06` نیز با همین تعداد آماده گزارش شد؛ ادامهٔ این روند روی نسل `b9bbb29c-bada-4f94-803f-54cfce8f5058` است.
+- `LOCK_HOLDERS: []` گزارش شد؛ قفل ساخت این منبع آزاد است. آماده بودن شمارنده‌ها در دو نمونهٔ ۲۰ ثانیه‌ای ثابت ماند و ساخت متن/قطعه پایان یافته است. در این مرحله ادامهٔ `build_hybrid_index --resume` لازم نیست.
+
+گام بعد، import و ساخت HNSW برای همان نسل سرور است. مالک حذف مرحلهٔ تکراری verify را درخواست کرده است. **پس از دیپلوی نسخهٔ دارای `--skip-verify`**، فرمان زیر مستقیماً import را ادامه می‌دهد:
+
+```bash
+PGOPTIONS='-c max_parallel_maintenance_workers=0 -c maintenance_work_mem=512MB' python -u manage.py import_hybrid_vectors b9bbb29c-bada-4f94-803f-54cfce8f5058 --input /sd/ai-transfer/uptodate-small-1536.jsonl.gz --skip-verify --build-index
+```
+
+پس از خروجی موفق با `index_ready=true`، فعال‌سازی:
+
+```bash
+python -u manage.py activate_hybrid_index b9bbb29c-bada-4f94-803f-54cfce8f5058
+```
+
+تا دریافت خروجی موفق مرحله‌های بالا، درج بردار، ساخت HNSW و فعال‌سازی این نسل روی سرور تأیید نشده‌اند. `-u` پیشرفت را بدون بافر چاپ می‌کند؛ تمام عملیات در همان ترمینال انجام می‌شود و درخواست API embedding ندارد.
+
+### توقف import گیرکرده و اجرای دوباره با همان نسل
+
+در گزارش بعدی سرور، **۲۴۷٬۰۴۰ بردار از ۶۷۰٬۹۹۱** ثبت شده و `embedding_ready=false` بود. مالک توقف اجرای قبلی و شروع مجدد فرمان را خواسته است. قفل این مرحله با قفل ساخت قطعات فرق دارد: روی دیتابیس اصلی و کلید مشتق از `hybrid-embed:b9bbb29c-bada-4f94-803f-54cfce8f5058` نگه داشته می‌شود. اجرای دوبارهٔ فرمان با `--skip-verify` مرحلهٔ مستقل بررسی کامل را تکرار نمی‌کند و بردارهای موجودِ سازگار را reuse می‌کند؛ حذف رکوردها، تغییر مصنوعی وضعیت نسل یا تولید embedding دوباره لازم نیست.
+
+**محل: ترمینال بک‌اند سرور.** فرمان زیر فقط پردازهٔ `manage.py import_hybrid_vectors` مربوط به همین UUID را در کانتینر فعلی با SIGTERM متوقف می‌کند و PIDهای هدف را با `STOP_REQUESTED` چاپ می‌کند؛ پردازه‌های سایر نسل‌ها هدف نیستند. فرمان روی پردازه‌های ساختگی تست شده و هیچ توقفی از محیط لوکال روی سرور اعمال نشده است:
+
+```bash
+python -c 'import os,signal,time; from pathlib import Path; target="b9bbb29c-bada-4f94-803f-54cfce8f5058".encode(); stopped=[]; exec("for p in Path(\"/proc\").glob(\"[0-9]*/cmdline\"):\n try:\n  a=p.read_bytes().split(bytes([0]))\n  if b\"import_hybrid_vectors\" in a and target in a and (b\"manage.py\" in a or b\"/app/manage.py\" in a):\n   pid=int(p.parent.name)\n   os.kill(pid,signal.SIGTERM)\n   stopped.append(pid)\n except (OSError,ValueError):\n  pass"); time.sleep(2); print("STOP_REQUESTED:",stopped)'
+```
+
+پس از توقف، همان فرمان import با `--build-index` و همان UUID دوباره اجرا شود. اگر فهرست PID خالی است و `BUSY` باقی می‌ماند، اجرای قبلی ممکن است در کانتینر قبلی باشد؛ Restart سرویس بک‌اند، پردازه‌های داخل آن و ترمینال جاری را می‌بندد و موقتاً درخواست‌های جاری بک‌اند را قطع می‌کند. پس از بالا آمدن سرویس، ترمینال تازه باز و همان import اجرا شود. batchهای commit‌شده در PostgreSQL باقی می‌مانند. از آزادسازی عمومی قفل‌ها یا کشتن اتصال‌های نامرتبط استفاده نشود. فعال‌سازی فقط پس از پایان موفق import و `index_ready=true` انجام شود.
+
+اگر `BUSY` تکرار شد، پس از Restart کامل بک‌اند و **پیش از شروع import تازه**، نشست باقی‌ماندهٔ صاحب قفل همین نسل را می‌توان با فرمان زیر پایان داد. این فرمان فقط قفل advisory دقیق `hybrid-embed:b9bbb29c-bada-4f94-803f-54cfce8f5058` را در دیتابیس اصلی هدف می‌گیرد. اجرای آن روی پردازهٔ زندهٔ متوقف‌نشده جایگزین توقف پردازه نیست؛ ابتدا Restart بالا انجام شود. اتصال فعلی و قفل‌های نسل‌های دیگر هدف نیستند؛ هیچ جدول یا برداری حذف نمی‌شود. پرس‌وجو با یک نشست آزمایشی محلی بررسی شد و نشست نامرتبط زنده ماند؛ هنوز روی سرور مالک اجرا نشده است:
+
+```bash
+python manage.py shell -c 'import time; from django.db import connection; from apps.ai_lab.reference_index import _hash; k=int(_hash(["ai_lab_reference_build","hybrid-embed:b9bbb29c-bada-4f94-803f-54cfce8f5058"])[:15],16); w=" FROM pg_locks WHERE locktype=%s AND granted AND objsubid=1 AND classid::bigint=%s AND objid::bigint=%s AND database=(SELECT oid FROM pg_database WHERE datname=current_database()) AND pid<>pg_backend_pid()"; p=["advisory",k>>32,k&4294967295]; c=connection.cursor(); c.execute("SELECT pg_terminate_backend(pid)"+w,p); print("CANCELLED:",c.fetchall(),flush=True); time.sleep(2); c.execute("SELECT count(*)"+w,p); print("REMAINING_IMPORT_LOCKS:",c.fetchone()[0])'
+```
+
+پس از `REMAINING_IMPORT_LOCKS: 0` و دیپلوی نسخهٔ جدید، فرمان import بالا با همان UUID و `--skip-verify --build-index` اجرا شود؛ مرحلهٔ verify حذف و بردارهای ثبت‌شده reuse می‌شوند. آخرین پیشرفت گزارش‌شدهٔ مالک `stage=import, checked=621312, expected=670991` بود؛ این عدد به‌تنهایی پایان import یا آماده بودن HNSW را ثابت نمی‌کند.
 
 ## ۱۲ ـ فعال‌سازی، رسانه و آزمون مدیر
 
@@ -660,9 +759,12 @@ python manage.py check_embedding_provider
 | `SOURCE_FILES_MISSING` | مسیر واقعی snapshot یا تنظیم MySQL بررسی شود |
 | `REFERENCE_INDEX_STALE` یا mismatch پروفایل/ورودی | pin منبع، profile و hashها بررسی شوند؛ کنترل سازگاری حذف نمی‌شود |
 | worker پاسخ نمی‌دهد | صف `ai_search`، broker، رمزهای مشترک و وضعیت پردازه بررسی شوند |
+| `REFERENCE_INDEX_BUILD_BUSY` هنگام `build_hybrid_index --resume` | یک session PostgreSQL قفل ساخت همین منبع را نگه داشته است؛ این قفل TTL ندارد و به‌تنهایی پیشرفت کار را ثابت نمی‌کند. شمارندهٔ نسل‌ها و صاحب دقیق قفل بررسی شوند؛ وضعیت `idle` اتصال اصلی به‌تنهایی توقف کار را ثابت نمی‌کند چون نوشتن قطعات روی اتصال `reference_search` انجام می‌شود. برای توقف اجرای قبلی از Ctrl+C در همان ترمینال استفاده و سپس همان UUID را با `python -u manage.py build_hybrid_index --resume ...` ادامه دهید. ساخت تازه یا حذف عمومی قفل‌ها لازم نیست |
+| «پیش از فعال‌سازی اعتبار، موتور جدید سرچ هوشمند را فعال کنید» | `AI_LAB_ENABLED=True` کافی نیست؛ مقدار `AI_LAB_SEARCH_ENGINE` باید پس از آماده‌سازی و فعال‌سازی نسل برداری روی `hybrid` تنظیم و سرویس Redeploy شود. سپس تعرفه در مدیریت ذخیره شود |
+| «تنظیم مدل یا ارائه‌دهنده تغییر کرده است» | پیام قدیمی، موتور ناسازگار را هم شامل می‌شد. موتور را بررسی کنید؛ اگر hybrid است، نرخ‌ها را با پیکربندی فعلی بررسی و در مدیریت دوباره ذخیره کنید. راهنمای تشخیص تفکیک‌شده در [سند اعتبار](41-smart-search-credits.fa.md#فعال‌سازی-کسر-اعتبار-و-تشخیص-خطای-تنظیمات) آمده است |
 
 تغییر رمز با `\password` در [مستند psql](https://www.postgresql.org/docs/17/app-psql.html) و رفتار initialization در [مستند image PostgreSQL](https://hub.docker.com/_/postgres) توضیح داده شده‌اند. شبکهٔ داخلی در [مستند رانفلر](https://docs.runflare.com/general/network-settings/) آمده است.
 
 ### حدود تأیید این فایل
 
-ساخت دیتابیس، نصب vector، نام شبکه، تست شبکه، اتصال `psql` با رمز، اتصال alias خود Django، اعمال هر پنج migration اپ جست‌وجو و ساخت/اتصال/migration دیتابیس بازخورد بر اساس خروجی‌های مالک ثبت شدند. مسیر داخلی Redis روی `ai-redis-yum-service:6379` از بک‌اند با کاربر `default` و رمز پاسخ `PONG` داد و نسخهٔ `8.4.0` گزارش شد. رفع override برابر `CACHE_LOCATION` و کارکرد هر سه cache در Django نیز پس از Redeploy تأیید شدند. آزمون مستقل broker و استریم، تنظیم‌های persistence/حافظه/eviction و راه‌اندازی worker هنوز تأیید نشده‌اند. شاخهٔ Docker قبلی با کامیت `0ae2460` فقط برای سابقه محفوظ است و در مسیر جاری استفاده نمی‌شود. آزمون عملی ثبت بازخورد، سلامت HTTP، تنظیم و اجرای Redis و worker، اشتراک snapshot، روش upload حجیم و انتقال کامل هنوز روی این سرور انجام/تأیید نشده‌اند. حالت اجرای worker کنار بک‌اند در کد آماده شده و آزمون‌های مدیریت پردازهٔ آن موفق‌اند؛ ساخت image جدید و اجرای واقعی این حالت روی رانفلر هنوز تأیید نشده‌اند. آزمون‌های محلی قبلیِ ابزار انتقال و سرچ، تأیید خودکار این مراحل روی رانفلر نیستند. به‌روزرسانی این فایل هیچ تغییری روی سرور اعمال نکرده است.
+ساخت دیتابیس، نصب vector، نام شبکه، تست شبکه، اتصال `psql` با رمز، اتصال alias خود Django، اعمال هر پنج migration اپ جست‌وجو و ساخت/اتصال/migration دیتابیس بازخورد بر اساس خروجی‌های مالک ثبت شدند. مسیر داخلی Redis روی `ai-redis-yum-service:6379` از بک‌اند با کاربر `default` و رمز پاسخ `PONG` داد و نسخهٔ `8.4.0` گزارش شد. رفع override برابر `CACHE_LOCATION` و کارکرد هر سه cache در Django نیز پس از Redeploy تأیید شدند. آزمون مستقل broker و استریم، تنظیم‌های persistence/حافظه/eviction و راه‌اندازی worker هنوز تأیید نشده‌اند. شاخهٔ Docker قبلی با کامیت `0ae2460` فقط برای سابقه محفوظ است و در مسیر جاری استفاده نمی‌شود. در ۲۰۲۶-۱۱-۱۶، ساخت کامل متن/قطعات hybrid در سرور، آزاد بودن قفل، upload ده قطعه و بازسازی فایل کامل با checksum منطبق تأیید شدند؛ درج بردارها در PostgreSQL، ساخت HNSW مقصد و فعال‌سازی نسل هنوز در انتظار خروجی موفق سرور هستند. آزمون عملی ثبت بازخورد، سلامت HTTP، اجرای Redis و worker و دسترسی worker به snapshot هنوز روی این سرور تأیید نشده‌اند. حالت اجرای worker کنار بک‌اند در کد آماده شده و آزمون‌های مدیریت پردازهٔ آن موفق‌اند؛ اجرای واقعی این حالت روی رانفلر هنوز تأیید نشده است. آزمون‌های محلی قبلیِ ابزار انتقال و سرچ، تأیید خودکار این مراحل روی رانفلر نیستند. به‌روزرسانی این فایل هیچ تغییری روی سرور اعمال نکرده است.
