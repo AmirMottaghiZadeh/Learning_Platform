@@ -38,6 +38,11 @@ def dashboard(request):
             record(request,"search_credit_settings","تغییر تعرفه و اعتبار اولیهٔ سرچ هوشمند",details={"revision":locked.revision})
         messages.success(request,"تنظیمات اعتبار سرچ هوشمند ذخیره شد.")
         return redirect("ai_wallet_admin:dashboard")
+    if request.method == "POST":
+        # ModelForm validation mutates its instance even when the save fails.
+        # Status banners must describe persisted settings, not rejected input.
+        config.refresh_from_db()
+    pricing_issue = services.pricing_issue(config)
     query = request.GET.get("q", "").strip()[:150]
     wallets = CreditWallet.objects.select_related("owner").filter(owner__isnull=False)
     if query:
@@ -50,7 +55,9 @@ def dashboard(request):
         "fx_ready":fx.quote_ready(config),
         "wallets":Paginator(wallets.order_by("-created_at"),25).get_page(request.GET.get("page")),"q":query,
         "pending":CreditReservation.objects.filter(status="pending").select_related("wallet__owner")[:30],
-        "pricing_matches":not config.enabled or services.pricing_ready(config),"review_form":ReviewForm()})
+        "pricing_matches":not config.enabled or not pricing_issue,
+        "pricing_issue":pricing_issue,"engine_ready":settings.AI_LAB_SEARCH_ENGINE == "hybrid",
+        "review_form":ReviewForm()})
 
 
 @require_POST

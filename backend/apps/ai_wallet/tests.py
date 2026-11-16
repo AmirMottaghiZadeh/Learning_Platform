@@ -337,3 +337,70 @@ class WalletTests(TestCase):
         response=self.client.post(reverse("ai_wallet_admin:dashboard"),body)
         self.assertEqual(response.status_code,200)
         self.assertTrue(response.context["form"].errors)
+
+    def settings_body(self):
+        from .forms import SettingsForm
+        return {key: ("on" if self.config.enabled else "") if key == "enabled"
+                else "" if getattr(self.config, key) is None else str(getattr(self.config, key))
+                for key in SettingsForm.Meta.fields}
+
+    @override_settings(AI_LAB_SEARCH_ENGINE="outline")
+    def test_legacy_engine_reports_its_prerequisite_without_claiming_model_changed(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("ai_wallet_admin:dashboard"))
+        self.assertContains(response, 'data-testid="credit-engine-required"')
+        self.assertContains(response, "AI_LAB_SEARCH_ENGINE=hybrid")
+        self.assertNotContains(response, 'data-testid="credit-tariff-review-required"')
+        self.assertNotContains(response, "کسر اعتبار فعال")
+        self.assertEqual(services.pricing_issue(self.config), "engine")
+
+    @override_settings(AI_LAB_SEARCH_ENGINE="outline")
+    def test_rejected_activation_keeps_saved_billing_state_and_tariff(self):
+        self.config.enabled = False
+        self.config.save()
+        original_signature = self.config.model_signature
+        body = self.settings_body()
+        body["enabled"] = "on"
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse("ai_wallet_admin:dashboard"), body)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors)
+        self.assertFalse(response.context["config"].enabled)
+        self.assertContains(response, "کسر اعتبار غیرفعال")
+        self.assertNotContains(response, 'data-testid="credit-tariff-review-required"')
+        self.config.refresh_from_db()
+        self.assertFalse(self.config.enabled)
+        self.assertEqual(self.config.model_signature, original_signature)
+
+    def test_missing_rates_are_reported_separately_from_model_review(self):
+        for key in services.RATES:
+            setattr(self.config, key, 0)
+        self.config.save()
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("ai_wallet_admin:dashboard"))
+        self.assertContains(response, 'data-testid="credit-rates-required"')
+        self.assertNotContains(response, 'data-testid="credit-tariff-review-required"')
+        self.assertFalse(services.pricing_ready(self.config))
+
+    @override_settings(AI_LAB_MODEL="changed-fixture-model")
+    def test_tariff_review_is_shown_for_the_actual_model_mismatch(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("ai_wallet_admin:dashboard"))
+        self.assertContains(response, 'data-testid="credit-tariff-review-required"')
+        self.assertNotContains(response, 'data-testid="credit-engine-required"')
+        self.assertFalse(services.pricing_ready(self.config))
+
+    @override_settings(AI_LAB_MODEL="changed-fixture-model")
+    def test_saving_reviewed_tariff_enables_billing_for_current_model(self):
+        self.config.enabled = False
+        self.config.save()
+        body = self.settings_body()
+        body["enabled"] = "on"
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse("ai_wallet_admin:dashboard"), body)
+        self.assertEqual(response.status_code, 302)
+        self.config.refresh_from_db()
+        self.assertTrue(self.config.enabled)
+        self.assertTrue(services.pricing_ready(self.config))
+        reservation = self.reserve()
+        self.assertEqual(reservation.pricing["model_signature"], services.model_signature())

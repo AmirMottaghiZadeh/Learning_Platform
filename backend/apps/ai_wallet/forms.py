@@ -42,7 +42,10 @@ class SettingsForm(ConsoleFields, forms.ModelForm):
                 self.add_error(name, "مقدار نمی‌تواند منفی باشد.")
         if values.get("enabled"):
             if settings.AI_LAB_SEARCH_ENGINE != "hybrid":
-                raise forms.ValidationError("پیش از فعال‌سازی اعتبار، موتور جدید سرچ هوشمند را فعال کنید.")
+                raise forms.ValidationError(
+                    "کسر اعتبار به موتور hybrid نیاز دارد. پس از آماده‌سازی نمایهٔ سرور، "
+                    "AI_LAB_SEARCH_ENGINE=hybrid را در متغیرهای محیطی بک‌اند تنظیم و سرویس را دوباره دیپلوی کنید؛ سپس این فرم را ذخیره کنید."
+                )
             if not any((values.get(key) or 0) > 0 for key in ["input_per_million", "output_per_million", "embedding_per_million"]):
                 raise forms.ValidationError("برای فعال‌سازی، تعرفهٔ مصرف را تعیین کنید.")
         for key in ["usd_to_toman", "usd_per_1000_credits"]:

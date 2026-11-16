@@ -30,10 +30,19 @@ def model_signature():
     return sha256(json.dumps(values).encode()).hexdigest()
 
 
+def pricing_issue(config):
+    """First unmet prerequisite, without treating every failure as model drift."""
+    if settings.AI_LAB_SEARCH_ENGINE != "hybrid":
+        return "engine"
+    if not any((getattr(config, key) or 0) > 0 for key in RATES):
+        return "rates"
+    if config.model_signature != model_signature():
+        return "signature"
+    return ""
+
+
 def pricing_ready(config):
-    return (settings.AI_LAB_SEARCH_ENGINE == "hybrid"
-            and any((getattr(config, key) or 0) > 0 for key in RATES)
-            and config.model_signature == model_signature())
+    return not pricing_issue(config)
 
 
 def billing_enabled():

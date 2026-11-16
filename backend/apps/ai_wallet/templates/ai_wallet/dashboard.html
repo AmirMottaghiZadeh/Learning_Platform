@@ -3,9 +3,15 @@
 {% block content %}
 <header class="credit-heading">
   <div><span class="eyebrow">اپ / سرچ هوشمند</span><h1>مدیریت اعتبار</h1><p class="sub">اعتبار کاربران، بسته‌های شارژ و تعرفهٔ مصرف در یک‌جا.</p></div>
-  <span class="chip {% if config.enabled %}accent{% else %}warn{% endif %}">{% if config.enabled %}کسر اعتبار فعال{% else %}کسر اعتبار غیرفعال{% endif %}</span>
+  <span class="chip {% if config.enabled and not pricing_issue %}accent{% else %}warn{% endif %}">{% if config.enabled and not pricing_issue %}کسر اعتبار فعال{% elif config.enabled %}اعتبار نیازمند تنظیم{% else %}کسر اعتبار غیرفعال{% endif %}</span>
 </header>
-{% if not pricing_matches %}<div class="flash error">تنظیم مدل یا ارائه‌دهنده تغییر کرده است. تعرفه را بررسی و دوباره ذخیره کنید.</div>{% endif %}
+{% if not engine_ready %}
+<div class="flash warn" data-testid="credit-engine-required">موتور فعلی سرچ هوشمند، کسر اعتبار را پشتیبانی نمی‌کند. پس از آماده‌سازی و فعال‌سازی نمایهٔ hybrid، متغیر <code dir="ltr">AI_LAB_SEARCH_ENGINE=hybrid</code> را در محیط بک‌اند تنظیم و سرویس را دوباره دیپلوی کنید. سپس تعرفه را بررسی و این فرم را ذخیره کنید.</div>
+{% elif config.enabled and pricing_issue == 'rates' %}
+<div class="flash error" data-testid="credit-rates-required">تعرفهٔ مصرف تعیین نشده است. پیش از کسر اعتبار، نرخ مصرف را وارد و تنظیمات را ذخیره کنید.</div>
+{% elif config.enabled and pricing_issue == 'signature' %}
+<div class="flash error" data-testid="credit-tariff-review-required">تعرفه برای پیکربندی فعلی مدل و ارائه‌دهنده تأیید نشده است. نرخ‌ها را بررسی و تنظیمات را دوباره ذخیره کنید.</div>
+{% endif %}
 <div class="grid g3">
   <div class="card credit-stat"><span class="sub">اعتبار اولیهٔ هر کاربر</span><b>{{ config.initial_credits|floatformat:"0"|fa }}</b><span class="sub">هدیهٔ شروع، فقط یک بار</span></div>
   <div class="card credit-stat"><span class="sub">بسته‌های قابل خرید</span><b>{{ package_count|fa }}</b><span class="sub">قیمت ثابت یا وابسته به نرخ دلار</span></div>
