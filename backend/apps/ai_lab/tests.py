@@ -30,7 +30,8 @@ def passage(n=1):
 
 @override_settings(AI_LAB_MODEL="gpt-6-luna", AI_LAB_API_KEY="", AI_LAB_REASONING_EFFORT=None,
                    AI_LAB_LUNA_API_KEY="test-placeholder",
-                   AI_LAB_CREDENTIALS_FILE="", AI_LAB_BASE_URL="https://api.gapgpt.app/v1", AI_LAB_LUNA_REASONING_EFFORT="low")
+                   AI_LAB_CREDENTIALS_FILE="", AI_LAB_BASE_URL="https://api.gapgpt.app/v1", AI_LAB_LUNA_REASONING_EFFORT="low",
+                   AI_LAB_RESPONSE_MODEL_ALIASES=())
 class ProviderTests(SimpleTestCase):
     def response(self, value):
         opener = MagicMock()
@@ -92,6 +93,31 @@ class ProviderTests(SimpleTestCase):
             _, meta = provider.call("luna", {})
         self.assertEqual(meta["reported_model"], "gpt-6-luna")
         self.assertEqual(meta["usage"], {"prompt_tokens": 12})
+
+    @override_settings(AI_LAB_MODEL="GPT-6-Luna", AI_LAB_RESPONSE_MODEL_ALIASES=("openai/gpt-6-luna",))
+    def test_explicit_gateway_alias_preserves_outbound_model_and_rejects_other_families(self):
+        for reported in ("openai/gpt-6-luna", "openai/gpt-6-luna-2026-11-10", "GPT-6-Luna"):
+            response = self.response({"model": reported})
+            with self.subTest(reported=reported), patch.object(provider, "build_opener", return_value=response):
+                _, meta = provider.call("luna", {})
+            self.assertEqual(json.loads(response.open.call_args.args[0].data)["model"], "GPT-6-Luna")
+            self.assertEqual(meta["reported_model"], reported)
+        for reported in ("openai/other-model", "other/gpt-6-luna", "openai/gpt-6-luna-other"):
+            with self.subTest(reported=reported), patch.object(provider, "build_opener", return_value=self.response({"model": reported})):
+                with self.assertRaisesMessage(provider.ProviderError, "MODEL_MISMATCH"):
+                    provider.call("luna", {})
+
+    def test_gateway_alias_requires_explicit_configuration(self):
+        with patch.object(provider, "build_opener", return_value=self.response({"model": "openai/gpt-6-luna"})):
+            with self.assertRaisesMessage(provider.ProviderError, "MODEL_MISMATCH"):
+                provider.call("luna", {})
+
+    def test_invalid_response_alias_configuration_never_sends_a_paid_request(self):
+        for aliases in ("openai/gpt-6-luna", (None,), ("bad model",), ("*",), ("x" * 121,), tuple(str(i) for i in range(17))):
+            with self.subTest(aliases=aliases), override_settings(AI_LAB_RESPONSE_MODEL_ALIASES=aliases), patch.object(provider, "build_opener") as opener:
+                with self.assertRaisesMessage(provider.ProviderError, "INVALID_RESPONSE_MODEL_CONFIGURATION"):
+                    provider.call("luna", {})
+            opener.assert_not_called()
 
     def test_external_credentials_require_private_permissions(self):
         with tempfile.TemporaryDirectory() as directory:

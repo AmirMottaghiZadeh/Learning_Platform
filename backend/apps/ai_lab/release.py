@@ -13,6 +13,7 @@ from django.conf import settings
 from django.utils.crypto import constant_time_compare, salted_hmac
 
 from . import evaluation, reference_index, response_cache
+from .provider import response_model_aliases
 
 GATE_VERSION = 1
 HYBRID_CONFIGURATION_KEYS = (
@@ -41,6 +42,7 @@ def runtime_profile():
         effort = settings.AI_LAB_LUNA_REASONING_EFFORT
     profile = {"schema": GATE_VERSION, "code_digest": response_cache.code_signature(),
         "model": settings.AI_LAB_MODEL, "base_url": base,
+        "response_model_aliases": response_model_aliases(),
         "reasoning_effort": effort.strip().lower(), "source_identity": stamp.identity,
         "source_revision": stamp.revision, "generation": str(reference_index.active_generation(stamp)),
         "lexical": settings.AI_LAB_LEXICAL_ENABLED, "local_selection": settings.AI_LAB_LOCAL_SELECTION_ENABLED,

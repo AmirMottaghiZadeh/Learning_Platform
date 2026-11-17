@@ -94,7 +94,8 @@ class ResponseCacheTests(TestCase):
     def test_changed_model_provider_reasoning_and_selection_mode_invalidate_keys(self):
         first = self.lookup().key
         for setting in [{"AI_LAB_MODEL": "different"}, {"AI_LAB_BASE_URL": "https://other.example/v1"},
-                        {"AI_LAB_REASONING_EFFORT": "high"}, {"AI_LAB_LOCAL_SELECTION_ENABLED": False}]:
+                        {"AI_LAB_REASONING_EFFORT": "high"}, {"AI_LAB_LOCAL_SELECTION_ENABLED": False},
+                        {"AI_LAB_RESPONSE_MODEL_ALIASES": ("gateway/model",)}]:
             with override_settings(**setting):
                 self.assertNotEqual(first, self.lookup().key)
 

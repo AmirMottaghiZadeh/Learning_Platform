@@ -49,6 +49,7 @@ def stream_chat(messages, *, tools=(), tool_choice="auto", max_tokens=2400,
     model = settings.AI_LAB_MODEL
     if not re.fullmatch(r"[A-Za-z0-9_.:/-]{1,120}", model):
         raise ProviderError("INVALID_MODEL_CONFIGURATION")
+    accepted = (model, *provider.response_model_aliases())
     secret = provider.credentials().get("luna")
     if not secret:
         raise ProviderError("KEY_NOT_CONFIGURED")
@@ -95,8 +96,7 @@ def stream_chat(messages, *, tools=(), tool_choice="auto", max_tokens=2400,
                             raise ProviderError("INVALID_PROVIDER_RESPONSE")
                         if "model" in value:
                             reported = value["model"]
-                            if not isinstance(reported,str) or not re.fullmatch(re.escape(model)+r"(?:-\d{4}-\d{2}-\d{2})?",reported,re.I):
-                                raise ProviderError("MODEL_MISMATCH")
+                            provider.validate_reported_model(reported, accepted)
                         if isinstance(value.get("usage"),dict):
                             usage = {k:v for k,v in value["usage"].items() if k in {"prompt_tokens","completion_tokens","total_tokens"} and type(v) is int and v>=0}
                             telemetry.provider_usage({"usage":value["usage"]})

@@ -57,6 +57,7 @@
 | ۴۵ | [45-smart-search-question-understanding.fa.md](45-smart-search-question-understanding.fa.md) | فهم یکپارچهٔ سناریوی بالینی، اهداف دارویی/بیماری/تداخل، تگ چند موجودیت و بررسی هدف پاسخ | مالک پروژه، توسعه‌دهنده، بازبین |
 | ۴۶ | [46-smart-search-runflare-deployment.fa.md](46-smart-search-runflare-deployment.fa.md) | استقرار Docker در رانفلر، PostgreSQL/Redis/worker، snapshot مشترک و انتقال بدون API بردارها | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | ۴۷ | [47-smart-search-server-step-by-step.fa.md](47-smart-search-server-step-by-step.fa.md) | راهنمای واحد اجرای سرور با وضعیت فعلی، رفع کرش رمز، محل هر دستور و ادامه تا انتقال/آزمون | مالک پروژه، مسئول استقرار |
+| ۴۸ | [48-smart-search-runflare-incidents.fa.md](48-smart-search-runflare-incidents.fa.md) | گزارش رخدادهای رانفلر: رمز و Redis/worker، import کامل، شکست‌های HNSW، سهمیهٔ دیسک، ری‌استارت و ناهماهنگی کاتالوگ PostgreSQL | مالک پروژه، مسئول استقرار و نگهداری |
 | — | [search/README.md](search/README.md) | مسیر جست‌وجوی فعلی اپ؛ tagging، بستهٔ آفلاین و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
 
 ## آرشیو طراحی رابط

@@ -5,7 +5,7 @@ from . import provider, streaming, telemetry
 
 
 @override_settings(AI_LAB_API_KEY="test-private-key",AI_LAB_MODEL="gpt-6-luna",AI_LAB_REASONING_EFFORT="low",
-                   AI_LAB_BASE_URL="https://provider.example/v1")
+                   AI_LAB_BASE_URL="https://provider.example/v1", AI_LAB_RESPONSE_MODEL_ALIASES=())
 class StreamingProviderTests(SimpleTestCase):
     def mock_client(self, deltas, *, finish="stop", done=True, model="gpt-6-luna", status=200):
         lines=[]
@@ -55,6 +55,41 @@ class StreamingProviderTests(SimpleTestCase):
             with patch.object(streaming.httpx,"Client",client):
                 with self.assertRaisesMessage(provider.ProviderError,code):streaming.stream_chat([])
             client.return_value.__enter__.return_value.stream.assert_called_once()
+
+    @override_settings(AI_LAB_MODEL="GPT-6-Luna", AI_LAB_RESPONSE_MODEL_ALIASES=("openai/gpt-6-luna",))
+    def test_gateway_alias_supports_streamed_tools_without_changing_the_request_model(self):
+        tool = {"index": 0, "id": "call_1", "type": "function",
+                "function": {"name": "search_references", "arguments": '{"query":"enuresis"}'}}
+        client = self.mock_client([{"tool_calls": [tool]}], finish="tool_calls", model="openai/gpt-6-luna")
+        with patch.object(streaming.httpx, "Client", client):
+            message, meta = streaming.stream_chat([])
+        self.assertEqual(message["tool_calls"][0]["function"]["name"], "search_references")
+        self.assertEqual(meta["reported_model"], "openai/gpt-6-luna")
+        sent = client.return_value.__enter__.return_value.stream.call_args.kwargs["json"]
+        self.assertEqual(sent["model"], "GPT-6-Luna")
+        self.assertEqual(sent["reasoning_effort"], "low")
+
+    def test_unconfigured_gateway_alias_is_rejected_before_emitting_text(self):
+        output = []
+        client = self.mock_client([{"content": "private answer" * 30}], model="openai/gpt-6-luna")
+        with patch.object(streaming.httpx, "Client", client):
+            with self.assertRaisesMessage(provider.ProviderError, "MODEL_MISMATCH"):
+                streaming.stream_chat([], on_delta=output.append)
+        self.assertEqual(output, [])
+
+    @override_settings(AI_LAB_RESPONSE_MODEL_ALIASES=("openai/gpt-6-luna",))
+    def test_explicit_alias_does_not_allow_an_unrelated_streamed_model(self):
+        client = self.mock_client([{"content": "answer"}], model="openai/other-model")
+        with patch.object(streaming.httpx, "Client", client):
+            with self.assertRaisesMessage(provider.ProviderError, "MODEL_MISMATCH"):
+                streaming.stream_chat([])
+
+    @override_settings(AI_LAB_RESPONSE_MODEL_ALIASES=("*",))
+    def test_invalid_alias_never_opens_a_stream(self):
+        with patch.object(streaming.httpx, "Client") as client:
+            with self.assertRaisesMessage(provider.ProviderError, "INVALID_RESPONSE_MODEL_CONFIGURATION"):
+                streaming.stream_chat([])
+        client.assert_not_called()
 
     def test_non_200_never_reads_error_body(self):
         client=self.mock_client([],status=401)

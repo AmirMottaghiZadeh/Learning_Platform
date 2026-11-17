@@ -97,6 +97,24 @@ def configured_models():
     return {alias: settings.AI_LAB_MODEL for alias in MODEL_ALIASES}
 
 
+def response_model_aliases():
+    """Only operator-approved IDs; never infer aliases from an upstream response."""
+    aliases = settings.AI_LAB_RESPONSE_MODEL_ALIASES
+    if (not isinstance(aliases, (list, tuple)) or len(aliases) > 16
+            or any(not isinstance(alias, str) or not re.fullmatch(r"[A-Za-z0-9_.:/-]{1,120}", alias)
+                   for alias in aliases)):
+        raise ProviderError("INVALID_RESPONSE_MODEL_CONFIGURATION")
+    return tuple(sorted(set(aliases)))
+
+
+def validate_reported_model(reported, accepted):
+    if not isinstance(reported, str) or not re.fullmatch(r"[A-Za-z0-9_.:/-]{1,120}", reported):
+        raise ProviderError("INVALID_PROVIDER_RESPONSE")
+    if not any(re.fullmatch(re.escape(model) + r"(?:-\d{4}-\d{2}-\d{2})?", reported, re.IGNORECASE)
+               for model in accepted):
+        raise ProviderError("MODEL_MISMATCH")
+
+
 @sensitive_variables()
 def credentials():
     keys = {"luna": settings.AI_LAB_API_KEY or settings.AI_LAB_LUNA_API_KEY}
@@ -140,6 +158,7 @@ def call(alias, payload):
     model = configured_models()[alias]
     if not isinstance(model, str) or not re.fullmatch(r"[A-Za-z0-9_.:/-]{1,120}", model):
         raise ProviderError("INVALID_MODEL_CONFIGURATION")
+    accepted = (model, *response_model_aliases())
     key = credentials().get(alias)
     if not key:
         raise ProviderError("KEY_NOT_CONFIGURED")
@@ -186,11 +205,8 @@ def call(alias, payload):
         usage = {}
     telemetry.provider_usage({"usage":usage})
     reported = data.get("model")
-    if reported is not None and (not isinstance(reported, str) or not re.fullmatch(r"[A-Za-z0-9_.:/-]{1,120}", reported)):
-        raise ProviderError("INVALID_PROVIDER_RESPONSE")
-    # Accept the configured ID (or its dated snapshot), never a different family.
-    if reported and not re.fullmatch(re.escape(model) + r"(?:-\d{4}-\d{2}-\d{2})?", reported, re.IGNORECASE):
-        raise ProviderError("MODEL_MISMATCH")
+    if reported is not None:
+        validate_reported_model(reported, accepted)
     meta = {"model": model, "latency_ms": round((time.monotonic() - started) * 1000),
             "reported_model": reported,
             "usage": {k: v for k, v in usage.items() if k in {"prompt_tokens", "completion_tokens", "total_tokens", "input_tokens", "output_tokens"} and isinstance(v, int)}}

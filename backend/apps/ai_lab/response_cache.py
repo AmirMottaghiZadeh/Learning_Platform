@@ -15,7 +15,7 @@ from django.utils.crypto import constant_time_compare, salted_hmac
 from apps.billing.enforcement import require_feature
 from . import lexical, reference_index, selection, telemetry
 from .models import ReferenceArticle, ReferenceParagraph
-from .provider import check_deadline
+from .provider import check_deadline, response_model_aliases
 
 CACHE_VERSION = 1
 MAX_PAYLOAD_BYTES = 512000
@@ -68,6 +68,7 @@ def prepare(question, alias, sources, history, request):
         inputs = {"v": CACHE_VERSION, "user": str(user.pk), "question": unicodedata.normalize("NFC", question.strip()),
             "history": [unicodedata.normalize("NFC", item.strip()) for item in history], "alias": alias, "sources": sources,
             "model": settings.AI_LAB_MODEL, "base_url": settings.AI_LAB_BASE_URL.strip().rstrip("/"),
+            "response_model_aliases": response_model_aliases(),
             "effort": effort.strip().lower(), "source": stamp.identity, "revision": stamp.revision,
             "generation": str(generation), "code": code_signature(), "lexical": settings.AI_LAB_LEXICAL_ENABLED,
             "preprocessed": settings.AI_LAB_PREPROCESSED_MODE, "selection": selection.enabled(),
