@@ -121,7 +121,9 @@ def create_index(generation, profile):
                        f"WHERE generation_id='{generation.pk}'::uuid AND profile_id='{digest}'")
 
 
-def search(generation, vector, limit, *, audience="general"):
+def search(generation, vector, limit, *, audience="general", source_ids=None):
+    if source_ids is not None and not source_ids:
+        return []
     configuration = _configuration(generation)
     if not generation.embedding_ready or not available():
         raise ProviderError("HYBRID_EMBEDDINGS_NOT_READY")
@@ -131,13 +133,24 @@ def search(generation, vector, limit, *, audience="general"):
     excluded = "adult" if audience == "pediatric" else "pediatric" if audience == "adult" else ""
     with transaction.atomic(using=indexing.alias()):
         with connections[indexing.alias()].cursor() as cursor:
-            cursor.execute("SET LOCAL hnsw.ef_search = 120")
-            cursor.execute("SELECT extversion FROM pg_extension WHERE extname='vector'")
-            version = tuple(int(v) for v in cursor.fetchone()[0].split(".")[:2])
-            if version >= (0, 8):
-                cursor.execute("SET LOCAL hnsw.iterative_scan = 'strict_order'")
-            cursor.execute(f"SELECT v.chunk_id FROM {TABLE} v JOIN ai_retrieval_searchchunk c ON c.id=v.chunk_id "
-                           f"WHERE v.generation_id=%s AND v.profile_id=%s AND c.audience<>%s "
+            if source_ids is not None:
+                # Rank the small, indexed article set exactly. Filtering a global
+                # HNSW scan down to a few articles can otherwise visit thousands
+                # of unrelated vectors (or return too few scoped matches).
+                cursor.execute(f"WITH scoped AS MATERIALIZED (SELECT v.chunk_id,v.embedding FROM {TABLE} v "
+                    "JOIN ai_retrieval_searchchunk c ON c.id=v.chunk_id "
+                    "WHERE v.generation_id=%s AND v.profile_id=%s AND c.generation_id=%s "
+                    "AND c.audience<>%s AND c.source_id=ANY(%s)) SELECT chunk_id FROM scoped "
+                    f"ORDER BY embedding::vector({configuration['dimensions']}) <=> %s::vector({configuration['dimensions']}) LIMIT %s",
+                    [generation.pk,configuration["id"],generation.pk,excluded,list(source_ids),value,limit])
+            else:
+                cursor.execute("SET LOCAL hnsw.ef_search = 120")
+                cursor.execute("SELECT extversion FROM pg_extension WHERE extname='vector'")
+                version = tuple(int(v) for v in cursor.fetchone()[0].split(".")[:2])
+                if version >= (0, 8):
+                    cursor.execute("SET LOCAL hnsw.iterative_scan = 'strict_order'")
+                cursor.execute(f"SELECT v.chunk_id FROM {TABLE} v JOIN ai_retrieval_searchchunk c ON c.id=v.chunk_id "
+                           "WHERE v.generation_id=%s AND v.profile_id=%s AND c.audience<>%s "
                            f"ORDER BY v.embedding::vector({configuration['dimensions']}) <=> %s::vector({configuration['dimensions']}) LIMIT %s",
                            [generation.pk, configuration["id"], excluded, value, limit])
             return [row[0] for row in cursor.fetchall()]

@@ -76,6 +76,17 @@ class EvidenceFocusTests(SimpleTestCase):
         selected,_=focus_passages([adverse,dose],"عارضهٔ Fixturemed چیست؟","Fixturemed adverse effects",lookup_kind="drug",intent="adverse_effects")
         self.assertEqual(selected,[adverse])
 
+    def test_explicit_regimen_is_preserved_when_emergency_care_is_the_primary_objective(self):
+        from apps.ai_lab.question_profile import validate
+        profile=validate({"kind":"disease_question","focus":"Condition emergency treatment and regimen",
+            "objectives":["emergency_care","treatment"],"regimen_requested":True})
+        rows=[paragraph(1,"Condition emergency initial treatment sequence with the original qualifications.",heading="Emergency treatment")]
+        rows += [paragraph(2,"The usual intravenous dose is 10 mg over three minutes.",heading="Fixturemed"),
+                 paragraph(3,"However, avoid this regimen in the source-defined excluded population.",heading="Fixturemed")]
+        selected,_=focus_passages(rows,"اقدام و درمان اورژانسی چیست؟","Condition emergency treatment sequence",
+            intent="emergency_care",question_profile=profile)
+        self.assertEqual({p.id for p in selected},{"P1","P2","P3"})
+
     def test_flag_can_restore_full_evidence_for_a_controlled_comparison(self):
         rows=[paragraph(i,str(i),heading="Definition") for i in range(1,20)]
         with override_settings(AI_LAB_HYBRID_EVIDENCE_FOCUS=False):

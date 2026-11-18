@@ -59,7 +59,7 @@ def citation_valid(citation):
         return False
 
 
-def search(generation,query,*,article_ids=(),audience="general",limit=3,kinds=None):
+def search(generation,query,*,article_ids=(),audience="general",limit=3,kinds=None,scoped=False):
     kinds=kinds or requested_kinds(query)
     skip={"show","find","display","table","tables","figure","figures","image","images","picture","pictures","please","give","chart","diagram"}
     terms=[word for word in normalize(query).split() if word not in skip and len(word)>2][:12]
@@ -69,6 +69,8 @@ def search(generation,query,*,article_ids=(),audience="general",limit=3,kinds=No
     topic=[word for word in terms if word not in aspects] or terms
     query=SearchQuery(" OR ".join(terms),config="english",search_type="websearch")
     rows=ReferenceMedia.objects.filter(generation=generation).annotate(document=SearchVector("search_text",config="english"))
+    if scoped:
+        rows=rows.filter(source_id__in=article_ids)
     rows=rows.filter(kind__in=kinds)
     if audience=="pediatric":rows=rows.exclude(audience="adult")
     elif audience=="adult":rows=rows.exclude(audience="pediatric")

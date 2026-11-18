@@ -22,7 +22,7 @@ def release(job_id, user_id, slot=None):
             return  # Leases expire; never discard a durable final answer.
 
 
-def read(job_id, user_id):
+def read(job_id, user_id, *, verify_sql=True):
     cache = caches["throttle"]
     key = f"ai-lab:job:{job_id}"
     try:
@@ -41,12 +41,14 @@ def read(job_id, user_id):
                 pass
     if not record or record.get("user_id") != user_id:
         return None
-    if record.get("pipeline") == "hybrid-v1" and record.get("status") == "running":
+    queued = record.get("stage") == "queued"
+    if verify_sql and record.get("pipeline") == "hybrid-v1" and record.get("status") == "running":
         # Redis can return an older value after an outage. SQL terminal state
         # wins, and a healthy worker's persisted heartbeat prevents false expiry.
         from .models import SearchRun
         from .job_store import snapshot
         run = SearchRun.objects.filter(pk=job_id, owner_id=user_id).first()
+        queued = bool(run and run.status in {"admitting", "queued"})
         if run and run.status not in {"admitting", "queued", "running"}:
             record = snapshot(run)
             try:
@@ -58,7 +60,9 @@ def read(job_id, user_id):
     if record.get("status") == "running":
         now = time.time()
         heartbeat, created = record.get("heartbeat_at"), record.get("created_at")
-        if (not heartbeat or not created or now - heartbeat > STALE_AFTER
+        expired = (now - created > settings.AI_LAB_QUEUE_MAX_WAIT_SECONDS if queued and created
+                   else not heartbeat or now - heartbeat > STALE_AFTER)
+        if (not created or expired
                 or (record.get("pipeline") not in {"outline-v1","hybrid-v1"} and now - created > min(MAX_AGE, settings.AI_LAB_TOTAL_TIMEOUT_SECONDS + 5))
                 or record.get("model") not in MODEL_ALIASES or record.get("sources") != ["uptodate"]):
             record = {**record, "status": "failed", "error": {"code": "EXPERIMENT_EXPIRED"}}

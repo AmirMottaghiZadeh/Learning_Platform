@@ -65,6 +65,8 @@ def runtime_profile():
             evidence_focus=settings.AI_LAB_HYBRID_EVIDENCE_FOCUS,
             evidence_max_passages=settings.AI_LAB_HYBRID_EVIDENCE_MAX_PASSAGES,
             answer_drafts=settings.AI_LAB_STREAM_ANSWER_DRAFTS)
+        profile["tag_scoped_search"] = settings.AI_LAB_TAG_SCOPED_SEARCH
+        profile["initial_search_fallback"] = settings.AI_LAB_INITIAL_SEARCH_FALLBACK
     return profile
 
 

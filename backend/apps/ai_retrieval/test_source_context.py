@@ -9,16 +9,20 @@ from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from apps.ai_lab import hybrid_agent, test_reference_index as fixtures
-from apps.ai_lab.models import ReferenceArticle, ReferenceParagraph
+from apps.ai_lab.models import ReferenceArticle, ReferenceParagraph, ReferenceSection
 from apps.ai_lab.provider import ProviderError
 from apps.ai_lab.retrieval import Passage
 from apps.uptodate.search_extraction import extract_article
 from . import source_links, source_context, media
 from .evidence import retain_with_context
-from .models import RetrievalGeneration
+from .models import RetrievalGeneration, SourceLinkMap
 from .retrieval import HybridRetriever
 
 
+@override_settings(CACHES={
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "source-link-parser-default"},
+    "ai_lab": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "source-link-parser-fixtures"},
+})
 class SourceLinkParserTests(SimpleTestCase):
     def parse(self, body):
         extracted = extract_article("10", body)
@@ -119,6 +123,40 @@ class SourceContextIntegrationTests(TestCase):
             row=ReferenceParagraph.objects.get(pk=int(passage.id[1:]))
             self.assertEqual(passage.text,row.text)
             self.assertEqual(passage.target["params"]["searchAnchor"],row.source_anchor)
+
+    def test_prepared_links_survive_cache_loss_without_parsing_original_articles(self):
+        call_command("build_reference_links",workers=1,batch_size=1,stdout=StringIO())
+        self.assertEqual(SourceLinkMap.objects.filter(source_generation=self.generation.source_generation).count(),2)
+        for article in ReferenceArticle.objects.filter(generation_id=self.generation.source_generation):
+            key=f"source-links:{source_links.VERSION}:{source_links.EXTRACTION_VERSION}:{article.source_id}:{article.content_hash}"
+            caches["ai_lab"].delete(key)
+        with patch.object(source_links.services,"get_topic",side_effect=AssertionError("Prepared maps must survive a cache miss")):
+            passages,audit=self.expand()
+        self.assertTrue(any(p.article_id=="3852" and "10 mg" in p.text for p in passages))
+        with patch.object(source_links,"parse",side_effect=AssertionError("Resume must skip completed maps")):
+            call_command("build_reference_links",workers=1,stdout=StringIO())
+
+    def test_duplicate_empty_outline_anchor_cannot_hide_the_real_section_body(self):
+        article=ReferenceArticle.objects.get(generation_id=self.generation.source_generation,source_id="3852")
+        body=ReferenceSection.objects.get(article=article,source_id="H1")
+        first=body.ordinal
+        body.ordinal=999
+        body.save(update_fields=["ordinal"])
+        ReferenceSection.objects.create(article=article,source_id="H1",heading="Empty outline",ordinal=first)
+        reader=source_context.SourceContext(self.r,"ConditionY dosing","دوز دارو چیست؟",
+            audience="adult",intent="dose",concepts=["conditiony"])
+        rows=reader.section_rows(article,"H1")
+        self.assertTrue(any("10 mg" in row.text for row in rows))
+
+    def test_general_question_keeps_the_linked_dose_in_the_parent_articles_population(self):
+        ReferenceArticle.objects.filter(generation_id=self.generation.source_generation,source_id="3851").update(
+            title="ConditionY treatment in adults")
+        seeds=self.seed()
+        passages,_=source_context.expand(self.r,seeds,"دارودرمانی چیست؟","ConditionY treatment",
+            audience="general",intent="drug_therapy",concepts=["conditiony"])
+        doses=[p for p in passages if p.article_id=="3852"]
+        self.assertTrue(any("10 mg" in p.text for p in doses))
+        self.assertFalse(any("777 mg" in p.text for p in doses))
 
     def test_denied_linked_article_is_not_read_or_exposed(self):
         allowed=self.r.permitted

@@ -122,7 +122,7 @@ class ProfileValidationTests(SimpleTestCase):
         self.assertEqual(audit["off_scope_passages"], 0)
 
 
-@override_settings(AI_LAB_HYBRID_MAX_SEARCH_ROUNDS=3, AI_LAB_HYBRID_CONTEXT_TOKENS=6000)
+@override_settings(AI_LAB_HYBRID_MAX_SEARCH_ROUNDS=3, AI_LAB_HYBRID_CONTEXT_TOKENS=6000, AI_LAB_TAG_SCOPED_SEARCH=False)
 class ProfileAgentTests(SimpleTestCase):
     retriever = agent_fixtures.HybridAgentTests.retriever
 

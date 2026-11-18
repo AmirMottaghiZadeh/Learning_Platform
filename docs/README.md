@@ -58,7 +58,9 @@
 | ۴۶ | [46-smart-search-runflare-deployment.fa.md](46-smart-search-runflare-deployment.fa.md) | استقرار Docker در رانفلر، PostgreSQL/Redis/worker، snapshot مشترک و انتقال بدون API بردارها | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | ۴۷ | [47-smart-search-server-step-by-step.fa.md](47-smart-search-server-step-by-step.fa.md) | راهنمای واحد اجرای سرور با وضعیت فعلی، رفع کرش رمز، محل هر دستور و ادامه تا انتقال/آزمون | مالک پروژه، مسئول استقرار |
 | ۴۸ | [48-smart-search-runflare-incidents.fa.md](48-smart-search-runflare-incidents.fa.md) | گزارش رخدادهای رانفلر: رمز و Redis/worker، import کامل، شکست‌های HNSW، سهمیهٔ دیسک، ری‌استارت و ناهماهنگی کاتالوگ PostgreSQL | مالک پروژه، مسئول استقرار و نگهداری |
-| — | [search/README.md](search/README.md) | مسیر جست‌وجوی فعلی اپ؛ tagging، بستهٔ آفلاین و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
+| — | [search/README.md](search/README.md) | مسیر جست‌وجوی عادی و هوشمند، گزارش‌های زمان‌گیری و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
+| — | [اجرای معماری tagging و پیوندها](search/smart-search-tag-scoped-implementation-2026-11-18.fa.md) | اصلاح مسیر بحرانی، دامنهٔ محدود منابع، نقشهٔ پیوند آماده، استریم و فرمان‌های استقرار | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
+| — | [گلوگاه‌های پیاده‌سازی سرچ هوشمند](search/smart-search-implementation-latency-issues-2026-11-18.fa.md) | فراخوانی‌های سریالی، FTS کند، نگهداشت اتصال، هزینهٔ انتشار استریم و ترتیب اصلاح با شواهد ۱۸ نوامبر | مالک پروژه، توسعه‌دهنده، مسئول نگهداری |
 
 ## آرشیو طراحی رابط
 

@@ -13,6 +13,7 @@ from .streaming import stream_chat
 from apps.ai_retrieval.chunking import token_count
 from apps.ai_retrieval.retrieval import HybridRetriever
 from apps.ai_retrieval.evidence import retain_with_context
+from apps.ai_retrieval.query_terms import question_key
 
 SEARCH_TOOL = {"type":"function","function":{"name":"search_references",
     "description":"Search ONLY indexed UpToDate paragraphs and, for media requests, tables/figure captions. Returns original source IDs and text. Use a focused English medical query.",
@@ -190,7 +191,7 @@ def _plan_key(question, history, request, generation):
         return None
     from .response_cache import code_signature
     return "hybrid-plan:" + salted_hmac("hybrid-private-plan", json.dumps([
-        str(user.pk), question, history, str(generation.pk), settings.AI_LAB_MODEL, settings.AI_LAB_BASE_URL,
+        str(user.pk), question_key(question), [question_key(q) for q in history], str(generation.pk), settings.AI_LAB_MODEL, settings.AI_LAB_BASE_URL,
         settings.AI_LAB_REASONING_EFFORT, settings.AI_LAB_LUNA_REASONING_EFFORT, code_signature()], ensure_ascii=False)).hexdigest()
 
 
@@ -319,7 +320,7 @@ def _evidence_payload(passages):
             "notice":"Use only this current evidence; earlier tool results are superseded. Report missing requested details explicitly."}
 
 
-def _admit_evidence(evidence, short_ids, passages):
+def _admit_evidence(evidence, short_ids, passages, *, token_budget=None):
     """Apply the model-input ceiling without separating attached qualifiers."""
     fresh = []
     for passage in passages:
@@ -341,7 +342,8 @@ def _admit_evidence(evidence, short_ids, passages):
         additions = [replace(p, relations=tuple({**r, "source_id":mapping.get(r["source_id"], r["source_id"])}
                      for r in p.relations)) for p in additions]
         payload = _evidence_payload([*evidence.values(),*additions])
-        if token_count(json.dumps(payload,ensure_ascii=False)) > settings.AI_LAB_HYBRID_CONTEXT_TOKENS:
+        budget = settings.AI_LAB_HYBRID_CONTEXT_TOKENS if token_budget is None else token_budget
+        if token_count(json.dumps(payload,ensure_ascii=False)) > budget:
             continue
         short_ids.update(bindings)
         for addition in additions:
@@ -352,6 +354,16 @@ def _admit_evidence(evidence, short_ids, passages):
 
 @pooled
 def answer_hybrid(question, history, request, *, progress=lambda _:None,publish=lambda _:None,
+                  observe=lambda _:None,on_event=lambda _:None,check_cancelled=lambda:None,retriever=None):
+    if settings.AI_LAB_TAG_SCOPED_SEARCH:
+        from .structured_agent import answer_scoped
+        return answer_scoped(question, history, request, progress=progress, publish=publish,
+            observe=observe, on_event=on_event, check_cancelled=check_cancelled, retriever=retriever)
+    return _answer_agent_loop(question, history, request, progress=progress, publish=publish,
+        observe=observe, on_event=on_event, check_cancelled=check_cancelled, retriever=retriever)
+
+
+def _answer_agent_loop(question, history, request, *, progress=lambda _:None,publish=lambda _:None,
                   observe=lambda _:None,on_event=lambda _:None,check_cancelled=lambda:None,retriever=None):
     retriever = retriever or HybridRetriever(request, check_cancelled=check_cancelled)
     retriever.check_cancelled = check_cancelled

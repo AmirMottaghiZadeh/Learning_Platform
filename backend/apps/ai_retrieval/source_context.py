@@ -28,10 +28,12 @@ class SourceContext:
         self.audience, self.intent = audience, intent
         self.context = lexical.search_context(question + " " + query, [query], audience=audience, intent=intent,
                                               question_profile=question_profile)
+        self.regimen = (intent in {"treatment", "drug_therapy", "dose", "renal_dose"}
+                        or bool(question_profile and question_profile.get("regimen_requested")))
         self.drug_intents = [name for name in self.context.intents if name in {
             "treatment", "drug_therapy", "dose", "renal_dose", "adverse_effects", "contraindications",
             "interaction", "pregnancy", "monitoring", "mechanism", "indications"}]
-        if question_profile and intent in {"treatment","drug_therapy","dose","renal_dose"}:
+        if question_profile and self.regimen:
             conditions = [row["name"] for row in question_profile["conditions"] if row["status"] != "excluded"]
             if conditions:
                 concepts = [word for word in lexical.tokens(conditions[0]) if word not in lexical.STOP_WORDS]
@@ -50,6 +52,13 @@ class SourceContext:
         self.visited = set()
         self.articles = {}
 
+    def sections(self, article):
+        cached = self.r._section_cache.get(article.pk)
+        if cached is None:
+            cached = list(ReferenceSection.objects.filter(article=article).order_by("ordinal"))
+            self.r._section_cache[article.pk] = cached
+        return cached
+
     def article(self, identifier):
         self.r.check_cancelled()
         if identifier in self.articles:
@@ -58,24 +67,29 @@ class SourceContext:
             self.stats["denied_links"] += 1
             self.articles[identifier] = None
             return None
-        article = ReferenceArticle.objects.filter(generation_id=self.r.generation.source_generation,
-                                                  source_id=identifier).first()
+        article = self.r._article_cache.get(identifier)
+        if article is None:
+            article = ReferenceArticle.objects.filter(generation_id=self.r.generation.source_generation,
+                                                      source_id=identifier).first()
+            if article is not None:
+                self.r._article_cache[identifier] = article
         self.articles[identifier] = article
         return article
 
-    def passages(self, rows):
+    def passages(self, rows, *, audience=None):
+        audience = audience or self.audience
         grouped = {}
         for row in rows:
             if row.retrieval_number is not None:
                 actual, _ = source_metadata(row.article.title, row.section.heading_path or [row.section.heading])
-                if ((self.audience == "pediatric" and actual == "adult")
-                        or (self.audience == "adult" and actual == "pediatric")):
+                if ((audience == "pediatric" and actual == "adult")
+                        or (audience == "adult" and actual == "pediatric")):
                     continue
                 grouped.setdefault(row.article_id, []).append(row)
         chunks = [SimpleNamespace(source_id=items[0].article.source_id,
                   content_hash=items[0].article.content_hash, block_ids=[row.pk for row in items])
                   for items in grouped.values()]
-        return self.r.passages(chunks, consume=False)
+        return self.r.passages(chunks, consume=False, prefetched=[row for items in grouped.values() for row in items])
 
     def add(self, passage, parent, kind, label=""):
         if passage.id in self.original or passage.id == parent.id:
@@ -150,11 +164,13 @@ class SourceContext:
         return sorted(selected.values(), key=lambda row:row.ordinal)[:24]
 
     def section_rows(self, article, identifier):
-        sections = list(ReferenceSection.objects.filter(article=article).order_by("ordinal"))
-        root = next((row for row in sections if row.source_id == identifier), None)
-        if root is None:
+        sections = self.sections(article)
+        # Some snapshots repeat an anchor in an empty outline node and the
+        # actual body. Resolve all occurrences in this same article, rather
+        # than silently choosing the empty outline and missing its regimen.
+        allowed = {row.pk for row in sections if row.source_id == identifier}
+        if not allowed:
             return []
-        allowed = {root.pk}
         for row in sections:
             if row.parent_id in allowed:
                 allowed.add(row.pk)
@@ -162,12 +178,19 @@ class SourceContext:
             retrieval_number__isnull=False).select_related("article", "section").order_by("ordinal")[:16]
 
     def linked_article(self, article, parent, link, *, depth=0):
+        audience = self.audience
+        if audience == "general":
+            inherited, _ = source_metadata(parent.title, parent.heading_path or [parent.section])
+            if inherited in {"adult", "pediatric"}:
+                audience = inherited
         if article.is_directory:
             if depth >= 1:
                 return
             for child in article.related_topics[:3]:
                 identifier = str(child.get("id", ""))
                 if not source_links.IDENTIFIER.fullmatch(identifier):
+                    continue
+                if not self.r.register_related(article.source_id, identifier, kind="directory_link"):
                     continue
                 target = self.article(identifier)
                 if target is not None:
@@ -180,15 +203,15 @@ class SourceContext:
         if identifier:
             rows = list(self.section_rows(article, identifier))
         else:
-            sections = list(ReferenceSection.objects.filter(article=article).order_by("ordinal"))
-            pattern = (lexical.REGIMEN_HEADING if drug and self.intent in {"treatment", "drug_therapy"}
+            sections = self.sections(article)
+            pattern = (lexical.REGIMEN_HEADING if drug and self.regimen
                        else "|".join(lexical.INTENTS[name][1] for name in self.drug_intents) if drug
                        else lexical.INTENTS[self.intent][1])
             selected = [s for s in sections if re.search(pattern, " > ".join(s.heading_path) or s.heading, re.I)]
             def correct_population(section):
                 actual, _ = source_metadata(article.title, section.heading_path or [section.heading])
-                return not ((self.audience == "pediatric" and actual == "adult")
-                            or (self.audience == "adult" and actual == "pediatric"))
+                return not ((audience == "pediatric" and actual == "adult")
+                            or (audience == "adult" and actual == "pediatric"))
             selected = [s for s in selected if correct_population(s)]
             selected.sort(key=lambda s: -lexical.heading_score(s.heading, s.heading_path, self.context))
             base = ReferenceParagraph.objects.filter(article=article, section__in=selected[:8])
@@ -197,7 +220,7 @@ class SourceContext:
                 expression = reduce(operator.and_, [SearchQuery(word, config="english") for word in self.concepts])
                 matches = list(base.annotate(document=SearchVector("text", config="english"))
                     .filter(document=expression).select_related("article", "section").order_by("ordinal")[:8])
-            if drug and self.intent in {"treatment", "drug_therapy"} and not matches:
+            if drug and self.regimen and not matches:
                 # A link proves a mention, not an indication or recommendation.
                 # Do not borrow another condition's dose when the indication is absent.
                 return
@@ -206,7 +229,7 @@ class SourceContext:
             else:
                 rows = list(base.filter(retrieval_number__isnull=False)
                     .select_related("article", "section").order_by("ordinal")[:8])
-        self.add_group(self.passages(rows), parent, "article_links", link["label"])
+        self.add_group(self.passages(rows,audience=audience), parent, "article_links", link["label"])
 
     def follow(self, parent, link, counts):
         kind = link["kind"]
@@ -217,6 +240,10 @@ class SourceContext:
         if identity in self.visited:
             return
         self.visited.add(identity)
+        if kind != "graphic" and identifier != parent.article_id:
+            if not self.r.register_related(parent.article_id, identifier):
+                self.stats["limited"] = True
+                return
         if kind == "graphic":
             if counts[kind] >= 2:
                 self.stats["limited"] = True
@@ -285,7 +312,7 @@ class SourceContext:
                     same_article = link.get("target_id",parent.article_id) == parent.article_id
                     if link["kind"] == "section" or (same_article and link.get("section_id")):
                         label_score = lexical.heading_score(link["label"],[link["label"]],self.context)
-                        if self.intent in {"treatment","drug_therapy","dose","renal_dose"} and re.search(
+                        if self.regimen and re.search(
                                 r"dosing|dosage|selection|regimen|medical|medication|pharmacolog",link["label"],re.I):
                             label_score += 8
                         local.append((-label_score,-score,len(local),parent,link))
@@ -300,7 +327,7 @@ class SourceContext:
         targets = {row[4].get("target_id") for row in pending if row[4]["kind"] == "article"}
         drug_ids = set(ReferenceArticle.objects.filter(generation_id=self.r.generation.source_generation,
             source_id__in=targets, title__icontains="drug information").values_list("source_id", flat=True))
-        if self.intent in {"treatment", "drug_therapy", "dose", "renal_dose"}:
+        if self.regimen:
             pending = [(0 if link.get("target_id") in drug_ids else priority, score, order, parent, link)
                        for priority, score, order, parent, link in pending]
         # Cover distinct source sections/families before spending every slot

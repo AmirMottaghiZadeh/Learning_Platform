@@ -25,10 +25,10 @@ MAX_PAYLOAD_BYTES = 512000
 def code_signature():
     directory = Path(__file__).parent
     names = ["services.py", "provider.py", "http_transport.py", "retrieval.py", "lexical.py", "selection.py",
-             "reference_index.py", "document.py", "response_cache.py", "outline.py", "hybrid_agent.py", "question_profile.py", "streaming.py", "transport_pool.py"]
+             "reference_index.py", "document.py", "response_cache.py", "outline.py", "hybrid_agent.py", "structured_agent.py", "question_profile.py", "streaming.py", "transport_pool.py"]
     retrieval = directory.parent / "ai_retrieval"
     return sha256(b"".join((directory / name).read_bytes() for name in names) + b"".join(
-        (retrieval / name).read_bytes() for name in ["retrieval.py", "evidence.py", "media.py", "embeddings.py", "local_embeddings.py", "chunking.py", "vectors.py", "source_links.py", "source_context.py"])
+        (retrieval / name).read_bytes() for name in ["retrieval.py", "query_terms.py", "scope.py", "evidence.py", "media.py", "embeddings.py", "local_embeddings.py", "chunking.py", "vectors.py", "source_links.py", "source_context.py"])
         +(directory.parent/"uptodate"/"media.py").read_bytes()).hexdigest()
 
 
@@ -90,6 +90,8 @@ def prepare(question, alias, sources, history, request):
                 "AI_LAB_SOURCE_CONTEXT_ENABLED","AI_LAB_SOURCE_CONTEXT_START_ARTICLES",
                 "AI_LAB_SOURCE_CONTEXT_NEIGHBORS","AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES",
                 "AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES"]}
+            inputs["tag_scoped_search"]=settings.AI_LAB_TAG_SCOPED_SEARCH
+            inputs["initial_search_fallback"]=settings.AI_LAB_INITIAL_SEARCH_FALLBACK
         digest = salted_hmac("ai-lab-private-answer", json.dumps(inputs, ensure_ascii=False, sort_keys=True), algorithm="sha256").hexdigest()
         state("miss")
         return Lookup(f"answer:v{CACHE_VERSION}:{digest}", stamp, generation)

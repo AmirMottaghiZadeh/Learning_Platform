@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 from django.core.management import call_command
 from django.test import TestCase, override_settings
+from django.db import connections
+from django.test.utils import CaptureQueriesContext
 from apps.core.exceptions import PlatformAPIError
 from apps.ai_lab import test_reference_index as fixtures
 from apps.ai_lab.models import ReferenceParagraph
@@ -65,6 +67,62 @@ class HybridRetrievalTests(TestCase):
         self.assertTrue(passages)
         self.assertEqual(passages[0].article_id, "3851")
         self.assertGreater(audit["tagging_candidates"], 0)
+
+    def test_tagging_binds_the_scope_before_any_paragraph_ranking(self):
+        concept=SearchConcept.objects.create(generation=self.generation,source_id="scope",topic_lists=["3851","","",""])
+        SearchAlias.objects.create(generation=self.generation,concept=concept,alias="scoped synonym",weight=100)
+        with CaptureQueriesContext(connections[indexing.alias()]) as queries:
+            _,audit=self.retriever().search("scoped synonym",audience="pediatric",intent="dose")
+        ranked=[q["sql"] for q in queries if "ts_rank" in q["sql"]]
+        self.assertTrue(ranked)
+        self.assertTrue(all("source_id" in sql and "3851" in sql for sql in ranked))
+        self.assertEqual(audit["scope"]["roots"],["3851"])
+        self.assertFalse(audit["scope"]["initial_fallback"])
+
+    def test_followup_cannot_reopen_global_search_or_reinterpret_the_roots(self):
+        concept=SearchConcept.objects.create(generation=self.generation,source_id="scope",topic_lists=["3851","","",""])
+        SearchAlias.objects.create(generation=self.generation,concept=concept,alias="scoped synonym",weight=100)
+        retriever=self.retriever()
+        retriever.search("scoped synonym",intent="dose")
+        with patch.object(retriever,"catalog_ids",side_effect=AssertionError("Do not reselect roots")), \
+                patch.object(retriever,"semantic_ids",side_effect=AssertionError("Do not repeat paid semantic search")):
+            passages,audit=retriever.search("adult reference unrelated condition",intent="dose")
+        self.assertTrue(all(p.article_id=="3851" for p in passages))
+        self.assertEqual(audit["scope"]["roots"],["3851"])
+        self.assertEqual(audit["scope"]["global_followup_searches"],0)
+
+    @override_settings(AI_LAB_SOURCE_CONTEXT_START_ARTICLES=1)
+    def test_named_condition_outweighs_generic_intent_words_in_root_titles(self):
+        self.write_article("3851",fixtures.html(),title="ConditionY treatment")
+        self.write_article("3852",fixtures.html(),title="Emergency sequence initial actions in another condition")
+        self.build_reference(force=True)
+        call_command("build_hybrid_index",stdout=StringIO())
+        self.generation=RetrievalGeneration.objects.latest("created_at")
+        from apps.ai_lab.question_profile import validate
+        profile=validate({"kind":"disease_question","focus":"ConditionY emergency care",
+            "objectives":["emergency_care"],"conditions":[{"name":"severe ConditionY","status":"reported"}]})
+        roots=self.retriever()._choose_roots(["3852","3851"],"ConditionY emergency sequence initial actions",
+            "general","topic","emergency_care",profile)
+        self.assertEqual(roots,["3851"])
+
+    @override_settings(AI_LAB_INITIAL_SEARCH_FALLBACK=False)
+    def test_an_empty_initial_scope_never_falls_back_on_a_later_query(self):
+        retriever=self.retriever()
+        first,_=retriever.search("no matching tagging")
+        with patch.object(retriever,"catalog_ids",side_effect=AssertionError("Initial selection is already complete")), \
+                patch.object(retriever,"semantic_ids",side_effect=AssertionError("No paid embedding on an empty scope")):
+            second,_=retriever.search("nocturnal enuresis")
+        self.assertEqual(first,[])
+        self.assertEqual(second,[])
+
+    def test_initial_fallback_is_scoped_after_its_first_result(self):
+        retriever=self.retriever()
+        first,audit=retriever.search("nocturnal enuresis",audience="pediatric",intent="dose")
+        self.assertTrue(first)
+        self.assertTrue(audit["scope"]["initial_fallback"])
+        with patch.object(retriever,"_choose_roots",side_effect=AssertionError("No repeated corpus selection")):
+            second,_=retriever.search("additional regimen",audience="pediatric",intent="dose")
+        self.assertTrue(all(p.article_id in retriever.scope.ids for p in second))
 
     def test_revoked_article_access_never_exposes_a_passage(self):
         def permission(request, feature, **kwargs):

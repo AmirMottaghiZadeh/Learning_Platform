@@ -111,3 +111,16 @@ class ReferenceMedia(models.Model):
         constraints = [models.UniqueConstraint(fields=["generation","source_id","media_key"],name="hybrid_media_once")]
         indexes = [models.Index(fields=["generation","source_id"],name="hybrid_media_article_idx"),
             GinIndex(SearchVector("search_text",config="english"),name="hybrid_media_fts_idx")]
+
+
+class SourceLinkMap(models.Model):
+    """Prepared source-owned links; source_generation lives in the main DB."""
+    source_generation = models.UUIDField()
+    source_id = models.CharField(max_length=32)
+    content_hash = models.CharField(max_length=64)
+    parser_version = models.CharField(max_length=128)
+    links = models.JSONField(default=dict)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["source_generation","source_id","content_hash","parser_version"],
+            name="source_link_map_once")]

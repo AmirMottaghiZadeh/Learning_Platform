@@ -8,6 +8,7 @@ import json
 import operator
 import uuid
 import re
+from types import SimpleNamespace
 
 from django.conf import settings
 from django.contrib.postgres.search import SearchQuery, SearchRank
@@ -29,6 +30,8 @@ from apps.uptodate.search_catalog import SearchCatalog, normalize
 from . import embeddings, evidence, indexing, vectors
 from .models import RetrievalHead, SearchAlias, SearchChunk
 from .chunking import token_count
+from .query_terms import query_text
+from .scope import SourceScope
 
 
 def reciprocal_rank_fusion(rankings):
@@ -46,7 +49,7 @@ def concept_terms(query, intent):
                "medication", "medications", "pediatric", "paediatric", "pharmacologic", "pharmacological"}
     if intent == "adverse_effects":
         generic.update({"serious", "severe", "key", "main", "principal"})
-    return [w for w in lexical.tokens(query) if w not in lexical.STOP_WORDS and w not in hints and w not in generic][:24]
+    return [w for w in dict.fromkeys(lexical.tokens(query)) if w not in lexical.STOP_WORDS and w not in hints and w not in generic][:24]
 
 
 def query_context(query, **kwargs):
@@ -72,6 +75,11 @@ def drug_name_catalog(source_generation):
 class HybridRetriever:
     def __init__(self, request, *, generation=None, check_cancelled=lambda:None):
         self.request, self.consumed = request, set()
+        self.scope = SourceScope()
+        self.search_count = 0
+        self._article_cache = {}
+        self._section_cache = {}
+        self._label_cache = {}
         self.check_cancelled = check_cancelled
         require_feature(request, "uptodate")
         self.stamp = reference_index.source_stamp()
@@ -98,6 +106,74 @@ class HybridRetriever:
         except PlatformAPIError:
             return False
 
+    def register_related(self, parent, target, *, kind="source_link"):
+        if not settings.AI_LAB_TAG_SCOPED_SEARCH or not self.scope.established:
+            return True
+        return self.scope.follow(parent, target, limit=max(1, settings.AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES), kind=kind)
+
+    def _choose_roots(self, identifiers, query, audience, lookup_kind, intent, profile):
+        rows = list(ReferenceArticle.objects.filter(generation_id=self.generation.source_generation,
+            source_id__in=list(dict.fromkeys(identifiers))[:200], is_directory=False).only(
+                "source_id", "title", "content_hash", "related_topics", "is_directory", "generation_id"))
+        order = {identifier: n for n, identifier in enumerate(identifiers)}
+        concepts = set(concept_terms(query, intent))
+        entities = [set(lexical.tokens(entity)) - lexical.STOP_WORDS - {"history", "severe", "previous", "prior"}
+                    for entity in profiles.entities(profile or {})]
+        entities = [words for words in entities if words]
+        context = query_context(query, lookup_kind=lookup_kind, audience=audience,
+                                intent=intent, question_profile=profile)
+        def rank(article):
+            words = set(lexical.tokens(article.title))
+            drug = "drug information" in article.title.lower()
+            pediatric = bool(words & {"pediatric", "paediatric", "children"})
+            exact_drug = set(lexical.tokens(article.title.split(":", 1)[0].split("(", 1)[0])) == concepts
+            # A word such as "sequence", "monitoring" or "prevention" must
+            # not outweigh the actual condition/drug in a tagged title.
+            overlap = [len(words & entity)/len(entity) for entity in entities]
+            return (lookup_kind == "drug" and not drug, lookup_kind == "drug" and not exact_drug,
+                audience == "pediatric" and not pediatric, audience in {"adult", "general"} and pediatric,
+                -max(overlap, default=0), -sum(overlap),
+                -lexical.heading_score(article.title, [article.title], context), order.get(article.source_id, 999))
+        rows.sort(key=rank)
+        chosen = []
+        for article in rows:
+            if self.permitted(article.source_id):
+                chosen.append(article.source_id)
+                self._article_cache[article.source_id] = article
+            if len(chosen) >= max(1, settings.AI_LAB_SOURCE_CONTEXT_START_ARTICLES):
+                break
+        return chosen
+
+    def _bind_scope(self, query, audience, intent, lookup_kind, profile):
+        if self.scope.established:
+            return
+        identifiers = self.catalog_ids(query, audience, intent, lookup_kind, profile)
+        roots = self._choose_roots(identifiers, query, audience, lookup_kind, intent, profile)
+        fallback = not roots and settings.AI_LAB_INITIAL_SEARCH_FALLBACK
+        if fallback:
+            # Cheap title metadata first. Never OR/rank the complete paragraph corpus.
+            terms = concept_terms(query, intent)
+            terms = sorted(set(terms), key=lambda word: -len(word))[:4]
+            title_filter = reduce(operator.or_, [Q(title__icontains=word) for word in terms], Q(pk__in=[]))
+            identifiers = list(ReferenceArticle.objects.filter(title_filter,
+                generation_id=self.generation.source_generation, is_directory=False)
+                .values_list("source_id", flat=True)[:120])
+            roots = self._choose_roots(identifiers, query, audience, lookup_kind, intent, profile)
+            if not roots:
+                expression = SearchQuery(query, config="english", search_type="websearch")
+                base = SearchChunk.objects.filter(generation=self.generation, search_document=expression)
+                if audience in {"adult", "pediatric"}:
+                    base = base.exclude(audience="pediatric" if audience == "adult" else "adult")
+                identifiers = list(base.annotate(score=SearchRank(F("search_document"), expression))
+                    .order_by("-score", "pk").values_list("source_id", flat=True)[:40])
+                if not identifiers and self.generation.embedding_ready:
+                    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="reference-initial") as pool:
+                        ids, _ = pool.submit(copy_context().run, self.semantic_ids, query, audience).result()
+                    rows = dict(SearchChunk.objects.filter(pk__in=ids).values_list("pk", "source_id"))
+                    identifiers = [rows[i] for i in ids if i in rows]
+                roots = self._choose_roots(identifiers, query, audience, lookup_kind, intent, profile)
+        self.scope.bind(roots, fallback=fallback)
+
     def catalog_ids(self, query, audience, intent="general", lookup_kind="topic", question_profile=None):
         words = normalize(query).split()[:12]
         phrases = [" ".join(words[start:start + size]) for size in range(1, len(words)+1)
@@ -109,7 +185,25 @@ class HybridRetriever:
                 entity_phrases.append([" ".join(parts[start:start+size]) for size in range(1,len(parts)+1)
                                        for start in range(len(parts)-size+1)])
             phrases += [phrase for group in entity_phrases for phrase in group]
-        matches = list(SearchAlias.objects.filter(generation=self.generation, alias__in=phrases).select_related("concept"))
+        cache_key = "source-tag-metadata:v1:" + salted_hmac("source-tag-metadata", json.dumps([
+            str(self.generation.pk), sorted(set(phrases))], ensure_ascii=False)).hexdigest()
+        try: saved = caches["ai_lab"].get(cache_key)
+        except Exception: saved = None
+        if (isinstance(saved,list) and len(saved)<=300 and all(isinstance(row,dict)
+                and set(row)=={"alias","weight","source_id","topic_lists"}
+                and isinstance(row["alias"],str) and type(row["weight"]) is int
+                and isinstance(row["source_id"],str) and isinstance(row["topic_lists"],list)
+                and all(isinstance(value,str) for value in row["topic_lists"]) for row in saved)):
+            matches = [SimpleNamespace(alias=row["alias"],weight=row["weight"],
+                concept=SimpleNamespace(source_id=row["source_id"],topic_lists=row["topic_lists"])) for row in saved]
+        else:
+            matches = list(SearchAlias.objects.filter(generation=self.generation, alias__in=phrases).select_related("concept"))
+            # Only immutable catalog metadata is shared, never a patient's
+            # question, facts, permissions, passages or generated answer.
+            saved = [{"alias":row.alias,"weight":row.weight,"source_id":row.concept.source_id,
+                      "topic_lists":row.concept.topic_lists} for row in matches]
+            try: caches["ai_lab"].set(cache_key,saved,86400)
+            except Exception: pass
         if not matches:
             return []
         all_matches = matches
@@ -143,6 +237,9 @@ class HybridRetriever:
             raise ProviderError("HYBRID_REQUIRES_POSTGRESQL")
         count = settings.AI_LAB_HYBRID_CANDIDATES
         base = SearchChunk.objects.filter(generation=self.generation)
+        scoped = settings.AI_LAB_TAG_SCOPED_SEARCH and self.scope.established
+        if scoped:
+            base = base.filter(source_id__in=self.scope.ids)
         excluded = "adult" if audience == "pediatric" else "pediatric" if audience == "adult" else None
         if excluded:
             base = base.exclude(audience=excluded)
@@ -161,7 +258,7 @@ class HybridRetriever:
             # never over ubiquitous words such as "adverse effects" or "dose".
             fallback_query = reduce(operator.or_, [SearchQuery(word, config="english") for word in terms])
             relaxed = list(dict.fromkeys([*relaxed, *ranked(base, fallback_query)]))[:count]
-        sources = self.catalog_ids(query, audience, intent, lookup_kind, question_profile)
+        sources = list(self.scope.ids) if scoped else self.catalog_ids(query, audience, intent, lookup_kind, question_profile)
         curated = []
         if sources:
             tagged = base.filter(source_id__in=sources)
@@ -214,8 +311,9 @@ class HybridRetriever:
                 except Exception:
                     pass
             value = embeddings.validate_vector(value, configuration["dimensions"])
+            scope = {"source_ids": self.scope.ids} if settings.AI_LAB_TAG_SCOPED_SEARCH and self.scope.established else {}
             return vectors.search(self.generation, value, settings.AI_LAB_HYBRID_CANDIDATES,
-                                  audience=audience), metadata
+                                  audience=audience, **scope), metadata
         finally:
             connections.close_all()
 
@@ -226,11 +324,20 @@ class HybridRetriever:
         if not isinstance(query, str) or not 2 <= len(query.strip()) <= 240:
             raise ProviderError("INVALID_SEARCH_TOOL_ARGUMENTS")
         query = query.strip()
+        if settings.AI_LAB_TAG_SCOPED_SEARCH:
+            query = query_text(query)
+            self._bind_scope(query, audience, intent, lookup_kind, question_profile)
+        followup = self.search_count > 0
+        self.search_count += 1
+        if settings.AI_LAB_TAG_SCOPED_SEARCH and not self.scope.ids:
+            return [], {"engine":"scoped", "scope":self.scope.audit(), "selected_passages":0,
+                "selected_chunks":0,"context_tokens":0,"embedding":{"requests":0},"degraded":None}
         cache = caches["ai_lab"]
         cache_key = "hybrid-ranking:v5:" + salted_hmac("hybrid-ranking", json.dumps([
             str(getattr(getattr(self.request, "user", None), "pk", "diagnostic")), str(self.generation.pk),
             self.generation.embedding_profile, self.generation.embedding_ready, query, lookup_kind, audience, intent,
-            list(keywords), question_profile, settings.AI_LAB_HYBRID_CANDIDATES], sort_keys=True)).hexdigest()
+            list(keywords), question_profile, settings.AI_LAB_HYBRID_CANDIDATES,
+            self.scope.audit() if settings.AI_LAB_TAG_SCOPED_SEARCH else None, followup], sort_keys=True)).hexdigest()
         try:
             cached = cache.get(cache_key)
         except Exception:
@@ -249,7 +356,7 @@ class HybridRetriever:
             lexical_ids, semantic, curated = cached_rankings
             degraded = cached.get("degraded")
             embedding_metadata = {"requests": 0, "retrieval_cache_hit": True}
-        elif self.generation.embedding_ready:
+        elif self.generation.embedding_ready and not (settings.AI_LAB_TAG_SCOPED_SEARCH and followup):
             with ThreadPoolExecutor(max_workers=1, thread_name_prefix="reference-vector") as pool:
                 future = pool.submit(copy_context().run, self.semantic_ids, query, audience)
                 lexical_ids, curated = self.lexical_ids(query, audience, intent, lookup_kind, question_profile)
@@ -259,7 +366,7 @@ class HybridRetriever:
                     degraded = exc.code  # Keyword evidence still requires all source/quality checks.
         else:
             lexical_ids, curated = self.lexical_ids(query, audience, intent, lookup_kind, question_profile)
-            degraded = "HYBRID_EMBEDDINGS_NOT_READY"
+            degraded = None if self.generation.embedding_ready else "HYBRID_EMBEDDINGS_NOT_READY"
         if cached is None and degraded is None:
             try:
                 cache.set(cache_key, {"rankings": [[str(item) for item in ranking] for ranking in [lexical_ids, semantic, curated]],
@@ -370,7 +477,8 @@ class HybridRetriever:
         from . import media
         media_count=0
         if media.requested(question or query):
-            selected=media.search(self.generation,query,article_ids={p.article_id for p in passages},audience=audience,kinds=media.requested_kinds(question or query))
+            selected=media.search(self.generation,query,article_ids=self.scope.ids if settings.AI_LAB_TAG_SCOPED_SEARCH else {p.article_id for p in passages},
+                audience=audience,kinds=media.requested_kinds(question or query), scoped=settings.AI_LAB_TAG_SCOPED_SEARCH)
             allowed=[]
             for passage in selected:
                 try:require_feature(self.request,"uptodate",item=passage.article_id,consume=False)
@@ -388,7 +496,8 @@ class HybridRetriever:
             "selected_passages":len(passages), "context_tokens":sum(token_count(p.text) for p in passages),
             "chunk_context_tokens":total_tokens,"evidence_focus":focus,
             "regimen_supplement_chunks":supplemented,"selected_media":media_count,"source_context":source_audit,
-            "generation":str(self.generation.pk), "degraded":degraded, "embedding":embedding_metadata}
+            "generation":str(self.generation.pk), "degraded":degraded, "embedding":embedding_metadata,
+            "scope":self.scope.audit() if settings.AI_LAB_TAG_SCOPED_SEARCH else None}
 
     def regimen_supplements(self, chunks, query, audience, intent):
         names = drug_name_catalog(self.generation.source_generation)
@@ -412,6 +521,9 @@ class HybridRetriever:
         # the medication is recommended, contraindicated or only an alternative.
         for name in mentioned[:3]:
             sources = [identifier for identifier,_ in names[name]]
+            if settings.AI_LAB_TAG_SCOPED_SEARCH and self.scope.established:
+                parent = next((row.source_id for row in chunks if " ".join(name) in normalize(row.text)), None)
+                sources = [identifier for identifier in sources if parent and self.register_related(parent, identifier, kind="source_mention")]
             rows=list(SearchChunk.objects.filter(generation=self.generation,source_id__in=sources)
                 .exclude(audience=excluded).exclude(pk__in=selected_ids)
                 .annotate(path_text=Cast("heading_path",TextField()))
@@ -479,16 +591,20 @@ class HybridRetriever:
         if needed - self.consumed:
             raise ProviderError("REFERENCE_INDEX_STALE")
 
-    def passages(self, chunks, *, consume=True):
+    def passages(self, chunks, *, consume=True, prefetched=None):
         wanted = {identifier: chunk for chunk in chunks for identifier in chunk.block_ids}
-        rows = {row.pk: row for row in ReferenceParagraph.objects.filter(pk__in=list(wanted),
-            article__generation_id=self.generation.source_generation).select_related("article", "section")}
+        rows = ({row.pk:row for row in prefetched} if prefetched is not None else
+            {row.pk: row for row in ReferenceParagraph.objects.filter(pk__in=list(wanted),
+            article__generation_id=self.generation.source_generation).select_related("article", "section")})
         if len(rows) != len(wanted):
             raise ProviderError("REFERENCE_INDEX_STALE")
-        labels={}
-        for label in ReferenceParagraph.objects.filter(section_id__in={r.section_id for r in rows.values()},text__endswith=":") \
+        missing = {r.section_id for r in rows.values()} - set(self._label_cache)
+        for identifier in missing:
+            self._label_cache[identifier] = []
+        for label in ReferenceParagraph.objects.filter(section_id__in=missing,text__endswith=":") \
                 .annotate(size=Length("text")).filter(size__lte=180).order_by("section_id","ordinal"):
-            labels.setdefault(label.section_id,[]).append(label)
+            self._label_cache[label.section_id].append(label)
+        labels=self._label_cache
         result, seen = [], set()
         for chunk in chunks:
             for identifier in chunk.block_ids:

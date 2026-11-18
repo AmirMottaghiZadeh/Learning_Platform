@@ -67,6 +67,15 @@ class NativeVectorTests(TransactionTestCase):
         self.assertEqual(result, [self.rows[1].pk, self.rows[2].pk])
         self.assertEqual(len(vectors.reuse(self.profile["id"], [r.input_hash for r in self.rows])), 3)
 
+    def test_scoped_vector_rank_cannot_return_a_closer_unrelated_article(self):
+        self.rows[1].source_id="20"
+        self.rows[1].save(update_fields=["source_id"])
+        vectors.store(self.generation,self.profile,self.rows,[[1,0,0],[.99,.01,0],[0,1,0]])
+        self.generation.embedding_ready=True
+        self.generation.save(update_fields=["embedding_ready"])
+        self.assertEqual(vectors.search(self.generation,[1,0,0],3,audience="pediatric",source_ids=["10"]),[self.rows[2].pk])
+        self.assertEqual(vectors.search(self.generation,[1,0,0],3,source_ids=[]),[])
+
     def test_budget_reservation_precedes_paid_call_and_uncertain_calls_are_not_replayed(self):
         def unavailable(texts):
             self.generation.refresh_from_db()

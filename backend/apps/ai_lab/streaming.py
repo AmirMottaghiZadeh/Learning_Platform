@@ -42,6 +42,23 @@ def sse_events(lines):
         yield "\n".join(parts)
 
 
+def response_events(response):
+    events = iter(sse_events(response.iter_lines()))
+    for value in events:
+        yield value
+        if value == "[DONE]":
+            # A logical SSE terminator is not the HTTP body's EOF. Drain the
+            # bounded tail so httpcore can return the connection to its pool.
+            with transport_pool.response_drain(response) as supported:
+                if supported:
+                    try:
+                        for _ in events:
+                            pass
+                    except (httpx.HTTPError, OSError, TimeoutError):
+                        pass  # The complete logical response was already read.
+            return
+
+
 @sensitive_variables()
 def stream_chat(messages, *, tools=(), tool_choice="auto", max_tokens=2400,
                 on_delta=lambda _: None, check_cancelled=lambda: None, response_format=None):
@@ -81,11 +98,11 @@ def stream_chat(messages, *, tools=(), tool_choice="auto", max_tokens=2400,
                 with client.stream("POST",url,json=payload,headers={"Authorization":"Bearer "+secret}, timeout=timeout) as response:
                     if response.status_code != 200:
                         raise ProviderError("PROVIDER_HTTP_ERROR",response.status_code)
-                    for raw in sse_events(response.iter_lines()):
+                    for raw in response_events(response):
                         check_cancelled(); provider.check_deadline()
                         if raw == "[DONE]":
                             completed = True
-                            break
+                            continue
                         if secret in raw or re.search(r"sk-[A-Za-z0-9_-]{16,}",raw):
                             raise ProviderError("UNSAFE_PROVIDER_RESPONSE")
                         try:

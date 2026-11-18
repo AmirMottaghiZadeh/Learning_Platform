@@ -69,6 +69,8 @@ def _run(job_id, user, payload, slot, *, durable=False):
     close_old_connections()
     stopped, state_lock = Event(), Lock()
     cancelled = Event()
+    last_cancel_check = 0
+    draft_buffer = None
     delivery_failed = False
     def journal(event):
         nonlocal delivery_failed
@@ -80,8 +82,15 @@ def _run(job_id, user, payload, slot, *, durable=False):
                 # A transport outage must not discard a completed, durable
                 # clinical result or replay a paid provider request.
                 delivery_failed=True
-    def check_cancelled():
+    def check_cancelled(*, force=False):
+        nonlocal last_cancel_check
+        if cancelled.is_set():
+            raise ProviderError("SEARCH_CANCELLED")
         if durable:
+            now=time.monotonic()
+            if not force and now-last_cancel_check < max(.02,settings.AI_LAB_CANCEL_POLL_SECONDS):
+                return
+            last_cancel_check=now
             try:
                 requested = cache.get(f"ai-lab:cancel:{job_id}")
             except Exception:
@@ -90,7 +99,7 @@ def _run(job_id, user, payload, slot, *, durable=False):
             if cancelled.is_set() or requested:
                 raise ProviderError("SEARCH_CANCELLED")
     def touch(stage=None):
-        record = jobs.read(job_id, user.pk)
+        record = jobs.read(job_id, user.pk, verify_sql=not durable)
         if not record or record.get("status") != "running":
             raise ProviderError("EXPERIMENT_EXPIRED")
         record["heartbeat_at"] = time.time()
@@ -100,12 +109,15 @@ def _run(job_id, user, payload, slot, *, durable=False):
             if stage not in seen:
                 seen.append(stage)
             record["revision"] = record.get("revision", 0) + 1
+            journal({"type":"progress","stage":stage})
         cache.set(key, record, TTL)
         for lease in [f"ai-lab:user:{user.pk}", slot]:
             if lease and cache.get(lease) == job_id:
                 cache.touch(lease, jobs.LEASE)
     def progress(stage):
         check_cancelled()
+        if draft_buffer is not None:
+            draft_buffer.flush()
         with state_lock:
             touch(stage)
     def heartbeat():
@@ -129,7 +141,7 @@ def _run(job_id, user, payload, slot, *, durable=False):
     def publish(event):
         check_cancelled()
         with state_lock:
-            record = jobs.read(job_id, user.pk)
+            record = jobs.read(job_id, user.pk, verify_sql=not durable)
             if not record or record.get("status") != "running":
                 raise ProviderError("EXPERIMENT_EXPIRED")
             findings = list(record.get("findings", []))
@@ -159,13 +171,17 @@ def _run(job_id, user, payload, slot, *, durable=False):
                 journal({"type":"sources","findings":changed})
     def observe(event):
         with state_lock:
-            record = jobs.read(job_id, user.pk)
+            record = jobs.read(job_id, user.pk, verify_sql=not durable)
             if not record or record.get("status") != "running":
                 raise ProviderError("EXPERIMENT_EXPIRED")
             record.update(workflow=apply_event(record.get("workflow", []), event),
                           heartbeat_at=time.time(), revision=record.get("revision", 0) + 1)
             cache.set(key, record, TTL)
     def finish(values):
+        trace.mark("answer_ready_ms")
+        if draft_buffer is not None:
+            if values.get("status") == "complete":draft_buffer.flush()
+            else:draft_buffer.discard()
         result = values.get("result") or {}
         if values.get("status") == "complete":
             from apps.ai_feedback.services import save_answer
@@ -179,9 +195,10 @@ def _run(job_id, user, payload, slot, *, durable=False):
         if durable:
             from apps.ai_wallet.services import settle
             settle(job_id,outcome=values["status"])
+        trace.mark("credit_settled_ms")
         with state_lock:
             stopped.set()
-            record = jobs.read(job_id, user.pk)
+            record = jobs.read(job_id, user.pk, verify_sql=not durable)
             if record and record.get("status") == "running":
                 record={**record, **values, "metrics": trace.snapshot(), "revision": record.get("revision", 0) + 1}
                 if durable:
@@ -189,19 +206,19 @@ def _run(job_id, user, payload, slot, *, durable=False):
                     from .job_store import encode
                     SearchRun.objects.filter(pk=job_id).update(status=values["status"],finished_at=timezone.now(),
                         heartbeat_at=timezone.now(),encrypted_result=encode(jobs.public(record)))
+                trace.mark("result_persisted_ms")
+                record["metrics"]=trace.snapshot()
                 try:
                     cache.set(key,record,TTL)
                 except Exception:
                     if not durable:
                         raise
                 journal({"type":"complete","job":jobs.public(record)})
-    def stream_event(event):
-        check_cancelled()
-        if not durable:
-            return
-        if event["type"] in {"answer_delta","answer_reset"} and settings.AI_LAB_STREAM_ANSWER_DRAFTS:
+                trace.mark("complete_published_ms")
+    def write_draft(event):
+        if settings.AI_LAB_STREAM_ANSWER_DRAFTS:
             with state_lock:
-                record=jobs.read(job_id,user.pk)
+                record=jobs.read(job_id,user.pk,verify_sql=False)
                 if not record or record.get("status")!="running":
                     raise ProviderError("EXPERIMENT_EXPIRED")
                 drafts=record.setdefault("answer_drafts",{})
@@ -209,6 +226,12 @@ def _run(job_id, user, payload, slot, *, durable=False):
                 drafts[index]="" if event["type"]=="answer_reset" else drafts.get(index,"")+event["text"]
                 cache.set(key,record,TTL)
             journal(event)
+    from .draft_buffer import DraftBuffer
+    draft_buffer=DraftBuffer(write_draft,interval=settings.AI_LAB_STREAM_FLUSH_SECONDS)
+    def stream_event(event):
+        check_cancelled()
+        if durable and event["type"] in {"answer_delta","answer_reset"} and settings.AI_LAB_STREAM_ANSWER_DRAFTS:
+            draft_buffer.add(event)
     try:
         progress("starting")
         Thread(target=heartbeat, daemon=True, name="reference-lab-heartbeat").start()
@@ -216,7 +239,7 @@ def _run(job_id, user, payload, slot, *, durable=False):
             kwargs={"on_event":stream_event,"check_cancelled":check_cancelled} if durable else {}
             result = answer(payload["question"], payload["model"], payload["sources"], payload["history"],
                             SimpleNamespace(user=user), progress, publish, observe,**kwargs)
-            check_cancelled()
+            check_cancelled(force=True)
         finish({"status": "complete", "result": result})
     except ProviderError as exc:
         finish({"status": "failed", "error": {

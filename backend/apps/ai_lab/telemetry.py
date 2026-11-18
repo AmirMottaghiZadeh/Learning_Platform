@@ -65,7 +65,8 @@ class Trace:
             _current.reset(token)
 
     def mark(self, name):
-        if name in {"first_titles_ms", "first_sections_ms", "first_citation_ms", "first_source_ms", "first_answer_delta_ms"}:
+        if name in {"first_titles_ms", "first_sections_ms", "first_citation_ms", "first_source_ms", "first_answer_delta_ms",
+                    "answer_ready_ms", "credit_settled_ms", "result_persisted_ms", "complete_published_ms"}:
             self.milestones.setdefault(name, self.elapsed())
 
     def finish(self, outcome, *, answer_complete=False):

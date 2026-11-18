@@ -126,6 +126,7 @@ export function AiLabScreen() {
             const turn = useAiLab.getState().turns.find((t) => t.id === active.id);
             if (!turn) return;
             if (event.type === "snapshot" || event.type === "complete") useAiLab.getState().patch(active.id, event.job);
+            else if (event.type === "progress") useAiLab.getState().patch(active.id, { stage: event.stage });
             else if (event.type === "sources") {
               const findings = new Map((turn.findings ?? []).map((item) => [item.id, item]));
               for (const item of event.findings) findings.set(item.id, item);

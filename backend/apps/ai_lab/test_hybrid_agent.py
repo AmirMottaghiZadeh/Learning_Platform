@@ -29,7 +29,7 @@ def approved(*args, **kwargs):
         "coverage":[{"requirement":r,"status":"supported","source_ids":source_ids} for r in payload["requirements"]]}, {"latency_ms":1}
 
 
-@override_settings(AI_LAB_HYBRID_MAX_SEARCH_ROUNDS=3,AI_LAB_HYBRID_CONTEXT_TOKENS=6000)
+@override_settings(AI_LAB_HYBRID_MAX_SEARCH_ROUNDS=3,AI_LAB_HYBRID_CONTEXT_TOKENS=6000,AI_LAB_TAG_SCOPED_SEARCH=False)
 class HybridAgentTests(SimpleTestCase):
     def retriever(self, batches):
         r=MagicMock();r.generation=SimpleNamespace(pk=uuid.uuid4())

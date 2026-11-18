@@ -96,6 +96,7 @@ def focus_passages(passages, question, query, *, lookup_kind="topic", audience="
         context = replace(context, aspects=tuple(dict.fromkeys([*context.aspects, "important"])))
     therapy_intents = {"treatment", "drug_therapy", "dose", "renal_dose"}
     therapy = (intent in therapy_intents or context.first_line_regimen
+               or bool(question_profile and question_profile.get("regimen_requested"))
                or (intent == "general" and bool(therapy_intents & set(context.intents))))
     specific = set(context.intents) - {"general"}
     maximum = max(1, min(48, settings.AI_LAB_HYBRID_EVIDENCE_MAX_PASSAGES))

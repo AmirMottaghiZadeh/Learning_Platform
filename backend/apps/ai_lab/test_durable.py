@@ -137,6 +137,25 @@ class DurableSearchTests(TestCase):
         self.assertEqual(response.data["status"], "complete")
         self.assertNotIn("error", response.data)
 
+    @override_settings(AI_LAB_QUEUE_MAX_WAIT_SECONDS=600)
+    def test_queue_wait_does_not_use_the_running_worker_heartbeat_timeout(self):
+        identifier = self.submit().data["job_id"]
+        created = caches["throttle"].get(f"ai-lab:job:{identifier}")["created_at"]
+        with patch.object(jobs.time, "time", return_value=created+60):
+            self.assertEqual(jobs.read(identifier, self.user.pk)["status"], "running")
+        self.assertEqual(SearchRun.objects.get(pk=identifier).status, "queued")
+        with patch.object(jobs.time, "time", return_value=created+601):
+            self.assertEqual(jobs.read(identifier, self.user.pk)["error"]["code"], "EXPERIMENT_EXPIRED")
+        self.assertEqual(SearchRun.objects.get(pk=identifier).status, "failed")
+
+    def test_healthy_worker_cache_read_skips_sql_while_client_still_checks_final_state(self):
+        identifier = self.submit().data["job_id"]
+        with self.assertNumQueries(0):
+            self.assertEqual(jobs.read(identifier, self.user.pk, verify_sql=False)["status"], "running")
+        SearchRun.objects.filter(pk=identifier).update(status="complete",
+            encrypted_result=job_store.encode({"status":"complete","result":{"parts":[]}}))
+        self.assertEqual(jobs.read(identifier, self.user.pk)["status"], "complete")
+
     @override_settings(AI_LAB_FEEDBACK_ENABLED=True)
     def test_feedback_database_is_not_on_the_answer_delivery_path(self):
         identifier = self.submit().data["job_id"]

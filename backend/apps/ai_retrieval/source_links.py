@@ -106,7 +106,29 @@ def load(article):
                 return saved["links"]
     except Exception:
         pass
+    links = None
+    if getattr(article, "generation_id", None) is not None:
+        from .models import SourceLinkMap
+        links = SourceLinkMap.objects.filter(source_generation=article.generation_id,
+            source_id=article.source_id,content_hash=article.content_hash,
+            parser_version=f"{VERSION}:{EXTRACTION_VERSION}").values_list("links",flat=True).first()
+    if not isinstance(links, dict):
+        links = prepare(article)
+    try:
+        saved = {"links": links, "signature": _signature(key, links)}
+        cache.set(key, saved, settings.AI_LAB_SOURCE_LINK_CACHE_TTL_SECONDS)
+    except Exception:
+        pass
+    return links
+
+
+def prepare(article):
+    """Build-time parsing; runtime can read the same exact-hash prepared map."""
     raw = services.get_topic(article.source_id, include_memberships=False)
+    return parse(article, raw)
+
+
+def parse(article, raw):
     if raw is None:
         raise ProviderError("REFERENCE_INDEX_STALE")
     extracted = extract_article(article.source_id, raw["body_html"])
@@ -115,9 +137,4 @@ def load(article):
     parser = ParagraphLinks()
     parser.feed(extracted.html)
     parser.close()
-    try:
-        saved = {"links": parser.links, "signature": _signature(key, parser.links)}
-        cache.set(key, saved, settings.AI_LAB_SOURCE_LINK_CACHE_TTL_SECONDS)
-    except Exception:
-        pass
     return parser.links

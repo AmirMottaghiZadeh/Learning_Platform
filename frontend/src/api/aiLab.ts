@@ -43,6 +43,7 @@ export type LabEvent = { sequence: number } & (
   | { type: "sources"; findings: LabFinding[] }
   | { type: "answer_delta"; part_index: number; text: string }
   | { type: "answer_reset"; part_index: number }
+  | { type: "progress"; stage: string }
   | { type: "heartbeat" }
 );
 
