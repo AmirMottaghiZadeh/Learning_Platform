@@ -9,11 +9,12 @@ from types import SimpleNamespace
 from django.conf import settings
 from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.db.models import Q
+from django.db.models.functions import Length
 
 from apps.ai_lab import lexical, telemetry
 from apps.ai_lab.models import ReferenceArticle, ReferenceParagraph, ReferenceSection
 from apps.ai_lab.provider import ProviderError
-from . import media, source_links
+from . import evidence, media, source_links
 from .chunking import source_metadata
 from .models import ReferenceMedia
 
@@ -33,6 +34,8 @@ class SourceContext:
         self.drug_intents = [name for name in self.context.intents if name in {
             "treatment", "drug_therapy", "dose", "renal_dose", "adverse_effects", "contraindications",
             "interaction", "pregnancy", "monitoring", "mechanism", "indications"}]
+        if self.regimen and "drug_therapy" not in self.drug_intents:
+            self.drug_intents.append("drug_therapy")
         if question_profile and self.regimen:
             conditions = [row["name"] for row in question_profile["conditions"] if row["status"] != "excluded"]
             if conditions:
@@ -163,6 +166,33 @@ class SourceContext:
                     selected[row.pk] = row
         return sorted(selected.values(), key=lambda row:row.ordinal)[:24]
 
+    def source_indication_labels(self, base, parent):
+        """Match original indication labels to the linking source's own words.
+
+        A subtype need not be repeated in a monograph (e.g. the source says
+        seizure types, while the dosing label says seizures). No medical
+        synonym/indication is invented here; the writer still sees both the
+        source relationship and the original label and must verify applicability.
+        """
+        generic = {"drug", "drugs", "dose", "doses", "dosing", "dosage", "therapy", "treatment",
+            "initial", "maintenance", "monotherapy", "adjunctive", "oral", "intravenous", "note",
+            "adult", "adults", "children", "infants", "patients", "patient", "daily", "guidance",
+            "type", "types", "first", "line", "most", "best", "general", "efficacy", "established",
+            "evidence", "data", "available", "limited", "clinical", "study", "studies", "results",
+            "variable", "optimal", "effective", "effectiveness", "formulation", "preparation"}
+        def words(text):
+            return {word.rstrip("s") for word in lexical.tokens(text)
+                    if word not in lexical.STOP_WORDS and word not in generic and len(word)>3}
+        # Reference titles and evidence-quality wording do not identify an
+        # indication ("efficacy not established" must not outrank "seizures").
+        source_words = words(re.sub(r"\(See\b[^)]*\)","",parent.text,flags=re.I))
+        condition_words = words(" ".join(self.concepts))
+        labels = list(base.filter(text__endswith=":").annotate(size=Length("text"))
+            .filter(size__lte=180).select_related("article","section").order_by("ordinal"))
+        scored = [(4*len(words(row.text) & condition_words)+len(words(row.text) & source_words), row) for row in labels]
+        best = max((score for score,_ in scored), default=0)
+        return [row for score,row in scored if score == best][:2] if best else []
+
     def section_rows(self, article, identifier):
         sections = self.sections(article)
         # Some snapshots repeat an anchor in an empty outline node and the
@@ -220,6 +250,8 @@ class SourceContext:
                 expression = reduce(operator.and_, [SearchQuery(word, config="english") for word in self.concepts])
                 matches = list(base.annotate(document=SearchVector("text", config="english"))
                     .filter(document=expression).select_related("article", "section").order_by("ordinal")[:8])
+            if drug and self.regimen and not matches and link.get("drug"):
+                matches = self.source_indication_labels(base,parent)
             if drug and self.regimen and not matches:
                 # A link proves a mention, not an indication or recommendation.
                 # Do not borrow another condition's dose when the indication is absent.
@@ -239,7 +271,12 @@ class SourceContext:
         identity = (kind, identifier, link.get("section_id", ""))
         if identity in self.visited:
             return
+        if kind == "article" and identifier != parent.article_id \
+                and counts["article"] >= settings.AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES:
+            self.stats["limited"] = True
+            return
         self.visited.add(identity)
+        new_related = (settings.AI_LAB_TAG_SCOPED_SEARCH and identifier not in self.r.scope.ids)
         if kind != "graphic" and identifier != parent.article_id:
             if not self.r.register_related(parent.article_id, identifier):
                 self.stats["limited"] = True
@@ -269,16 +306,18 @@ class SourceContext:
                                parent, "section_links", link["label"])
                 counts["section"] += int(len(self.result) > before)
             return
-        if counts["article"] >= settings.AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES:
-            self.stats["limited"] = True
-            return
         article = self.article(identifier)
+        before = len(self.result)
         if article is not None:
-            before = len(self.result)
             self.linked_article(article, parent, link)
             counts["article"] += int(len(self.result) > before)
         else:
             self.stats["unavailable_links"] += 1
+        if len(self.result) == before:
+            self.visited.discard(identity)
+        if new_related and not any(p.article_id == identifier for p in self.result.values()) \
+                and not any(row["parent"] == identifier for row in self.r.scope.related.values()):
+            self.r.scope.related.pop(identifier,None)
 
     def expand(self, seeds):
         self.result = {p.id:p for p in seeds}
@@ -308,6 +347,9 @@ class SourceContext:
                         self.links[parent.article_id] = source_links.load(article)
                 anchor = parent.target.get("params", {}).get("searchAnchor")
                 for link in self.links[parent.article_id].get(anchor, []):
+                    if self.regimen and link.get("drug") and re.search(
+                            r"\b(?:to avoid|contraindicat\w*)\b", " > ".join(parent.heading_path) or parent.section,re.I):
+                        continue
                     score = lexical.heading_score(parent.section, parent.heading_path, self.context)
                     same_article = link.get("target_id",parent.article_id) == parent.article_id
                     if link["kind"] == "section" or (same_article and link.get("section_id")):
@@ -328,16 +370,30 @@ class SourceContext:
         drug_ids = set(ReferenceArticle.objects.filter(generation_id=self.r.generation.source_generation,
             source_id__in=targets, title__icontains="drug information").values_list("source_id", flat=True))
         if self.regimen:
-            pending = [(0 if link.get("target_id") in drug_ids else priority, score, order, parent, link)
+            def drug_priority(priority, parent, link):
+                if link.get("target_id") not in drug_ids:
+                    return priority+2
+                label = set(lexical.tokens(link["label"]))
+                heading = set(lexical.tokens(parent.section))
+                direct = bool(label) and label == heading
+                # The source's dedicated medication/recommendation section
+                # outranks its incidental mentions or comparator paragraphs.
+                recommended = bool(evidence.RECOMMENDATION.search(parent.text))
+                if direct and recommended:
+                    return 0
+                if recommended:
+                    return 1
+                return 2 if direct else 3
+            pending = [(drug_priority(priority,parent,link), score, order, parent, link)
                        for priority, score, order, parent, link in pending]
         # Cover distinct source sections/families before spending every slot
         # on interchangeable options listed in one paragraph.
-        balanced, depths, seen_targets = [], {}, set()
+        balanced, depths, seen_targets = [], {}, {}
         for priority, score, order, parent, link in sorted(pending,key=lambda row:row[:3]):
             identity = (link["kind"],link.get("target_id"),link.get("section_id", ""))
-            if identity in seen_targets:
+            if seen_targets.get(identity,0) >= 2:
                 continue
-            seen_targets.add(identity)
+            seen_targets[identity] = seen_targets.get(identity,0)+1
             group = (parent.article_id, parent.target.get("params",{}).get("sectionId"), priority)
             depth = depths.get(group,0)
             depths[group] = depth+1

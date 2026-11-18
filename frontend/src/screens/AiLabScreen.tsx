@@ -20,6 +20,8 @@ import { SmartSearchWallet } from "@/components/SmartSearchWallet";
 import { ReferenceMediaCards } from "@/components/ReferenceMediaCards";
 import { HeaderMesh } from "@/components/HeaderMesh";
 import { ReferenceAnswerSkeleton, ReferenceSearchLoading } from "@/components/ReferenceSearchLoading";
+import { ReferenceAnswerText } from "@/components/ReferenceAnswerText";
+import { answerFollowOffset } from "@/utils/referenceAnswer";
 import { cancelReferenceTiming, noteReferenceRender, startReferenceTiming } from "@/api/referenceTiming";
 import { pickClinicalSearchSuggestions } from "@/data/clinicalSearchSuggestions";
 import { radius as radii, spacing } from "@/theme/tokens";
@@ -48,9 +50,13 @@ export function AiLabScreen() {
   const clearance = useNavClearance();
   const scroll = useRef<ScrollView>(null);
   const followResults = useRef(true);
+  const [followingAnswer, setFollowingAnswer] = useState(true);
   const turnPositions = useRef<Record<string, number>>({});
   const answerPositions = useRef<Record<string, number>>({});
-  const mediaPositions = useRef<Record<string, number>>({});
+  const answerHeights = useRef<Record<string, number>>({});
+  const viewport = useRef({ height: 0, y: 0 });
+  const followFrame = useRef<number | null>(null);
+  const autoScrollUntil = useRef(0);
   const sending = useRef(false);
   const [requestError, setRequestError] = useState("");
   const [suggestions] = useState(() => pickClinicalSearchSuggestions());
@@ -65,20 +71,36 @@ export function AiLabScreen() {
   const turns = state.owner === userId ? state.turns : [];
   const active = turns.find((t) => t.status === "running");
   const latest = turns[turns.length - 1];
+  const latestRef = useRef(latest);
+  latestRef.current = latest;
+  const scheduleFollow = useCallback(() => {
+    if (!followResults.current || followFrame.current !== null) return;
+    followFrame.current = requestAnimationFrame(() => {
+      followFrame.current = null;
+      const turn = latestRef.current;
+      if (!turn || !followResults.current || !viewport.current.height) return;
+      const top = (turnPositions.current[turn.id] ?? 0) + (answerPositions.current[turn.id] ?? 0);
+      const y = answerFollowOffset(top, answerHeights.current[turn.id] ?? 0, viewport.current.height);
+      autoScrollUntil.current = Date.now() + 200;
+      scroll.current?.scrollTo({ y, animated: false });
+    });
+  }, []);
+  const pauseFollow = useCallback(() => {
+    if (latestRef.current?.status !== "running") return;
+    followResults.current = false;
+    setFollowingAnswer(false);
+  }, []);
+  useEffect(() => () => { if (followFrame.current !== null) cancelAnimationFrame(followFrame.current); }, []);
   useEffect(() => {
     if (!latest) return;
     const previous = lastVisible.current;
     lastVisible.current = { id: latest.id };
-    const frame = requestAnimationFrame(() => {
-      if (latest.status === "running" && previous.id !== latest.id) {
-        followResults.current = true;
-        scroll.current?.scrollToEnd({ animated: true });
-      } else if (latest.status !== "running" && followResults.current) {
-        scroll.current?.scrollTo({ y: Math.max(0, (turnPositions.current[latest.id] ?? 0) + (mediaPositions.current[latest.id] ?? answerPositions.current[latest.id] ?? 0) - 8), animated: true });
-      }
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [latest?.id, latest?.status, latest?.findings?.length]);
+    if (latest.status === "running" && previous.id !== latest.id) {
+      followResults.current = true;
+      setFollowingAnswer(true);
+    }
+    scheduleFollow();
+  }, [latest?.id, latest?.status, latest?.answer_drafts, scheduleFollow]);
   useEffect(() => { if (useAiLab.getState().owner !== userId) useAiLab.getState().reset(userId); }, [userId]);
   useLayoutEffect(() => {
     if (!latest) return;
@@ -100,6 +122,7 @@ export function AiLabScreen() {
       id: `recovered-${job.job_id}`, jobId: job.job_id, question: job.question, model: job.model, status: "running", stage: job.stage,
       findings: job.findings, revision: job.revision, findings_limited: job.findings_limited, first_result_ms: job.first_result_ms,
       workflow: job.workflow, stages_seen: job.stages_seen,
+      answer_drafts: job.answer_drafts, cancellable: job.cancellable,
     }] }));
     return job;
   }, [userId]);
@@ -235,11 +258,16 @@ export function AiLabScreen() {
       <SmartSearchWallet compact refreshKey={`${latest?.jobId ?? ""}:${latest?.status ?? ""}`} running={!!active} />
     </View>
     <ScrollView ref={scroll} scrollEventThrottle={100}
+      {...(Platform.OS === "web" ? { onWheel: pauseFollow } : {})}
+      onScrollBeginDrag={pauseFollow}
+      onLayout={({ nativeEvent }) => { viewport.current.height = nativeEvent.layout.height; scheduleFollow(); }}
       onScroll={({ nativeEvent }) => {
-        followResults.current = nativeEvent.contentSize.height - nativeEvent.contentOffset.y - nativeEvent.layoutMeasurement.height < 96;
+        const previousY = viewport.current.y;
+        viewport.current.y = nativeEvent.contentOffset.y;
+        if (Date.now() > autoScrollUntil.current && nativeEvent.contentOffset.y < previousY - 12) pauseFollow();
       }}
       onContentSizeChange={() => {
-        if (latest?.status === "running" && followResults.current) scroll.current?.scrollToEnd({ animated: true });
+        if (latestRef.current?.status === "running") scheduleFollow();
       }} contentContainerStyle={{ padding: 20, gap: 18, flexGrow: 1 }}>
       {!turns.length ? <View style={{ gap: 20, paddingTop: 12 }}>
         <View style={{ gap: 8 }}>
@@ -264,6 +292,7 @@ export function AiLabScreen() {
       {status.isError ? <AppText size={13} muted>دریافت وضعیت سرچ هوشمند ممکن نشد. <AppText color={colors.accent} onPress={() => void status.refetch()}>تلاش دوباره</AppText></AppText> : null}
       {status.data && !status.data.enabled ? <AppText size={14} muted>سرچ هوشمند برای حساب شما فعال نیست.</AppText> : null}
       {turns.map((turn) => {
+        const draft = Object.values(turn.answer_drafts ?? {}).join("\n\n");
         const hasFinalSources = !!turn.result?.parts.some((part) => part.items.length);
         const citations = turn.result?.parts.flatMap((part) => part.items)
           ?? (turn.status === "running" ? (turn.findings ?? []).map((finding) => finding.citation) : []);
@@ -273,18 +302,22 @@ export function AiLabScreen() {
           if (!articles.has(articleId)) articles.set(articleId, citation);
         }
         const hasSources = articles.size > 0;
-        return <View testID={turn.status === "complete" ? "reference-final-answer" : "reference-pending-answer"} key={turn.id} onLayout={(event) => { turnPositions.current[turn.id] = event.nativeEvent.layout.y; }} style={{ gap: 12 }}>
+        return <View testID={turn.status === "complete" ? "reference-final-answer" : "reference-pending-answer"} key={turn.id} onLayout={(event) => { turnPositions.current[turn.id] = event.nativeEvent.layout.y; scheduleFollow(); }} style={{ gap: 12 }}>
         <View style={{backgroundColor:colors.accent,borderRadius:18,padding:14,maxWidth:"95%",alignSelf:isFa ? "flex-end" : "flex-start"}}><AppText color={colors.onAccent} size={14}>{turn.question}</AppText></View>
-        {citations.some(c => c.media?.length) ? <View testID="reference-primary-media" onLayout={event=>{mediaPositions.current[turn.id]=event.nativeEvent.layout.y;}} style={{padding:16,borderRadius:18,backgroundColor:colors.cardBg}}>
+        {citations.some(c => c.media?.length) ? <View testID="reference-primary-media" style={{padding:16,borderRadius:18,backgroundColor:colors.cardBg}}>
           <ReferenceMediaCards items={[...new Map(citations.flatMap(c => c.media??[]).map(item => [item.article_id+":"+item.key,item])).values()]} />
         </View> : null}
-        <View testID="reference-answer-summary" onLayout={(event) => { answerPositions.current[turn.id] = event.nativeEvent.layout.y; }}
+        <View testID="reference-answer-summary" onLayout={(event) => {
+          answerPositions.current[turn.id] = event.nativeEvent.layout.y;
+          answerHeights.current[turn.id] = event.nativeEvent.layout.height;
+          scheduleFollow();
+        }}
           style={{ backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.card, padding: spacing.lg, gap: 14 }}>
           <AppText weight="800" size={14}>{isFa ? "پاسخ فارسی" : "Answer"}</AppText>
-          {turn.status === "running" ? <ReferenceAnswerSkeleton /> : null}
-          {turn.status === "running" && Object.values(turn.answer_drafts ?? {}).some(Boolean) ? <View style={{ gap: 8 }}>
+          {turn.status === "running" && !draft ? <ReferenceAnswerSkeleton /> : null}
+          {turn.status === "running" && draft ? <View style={{ gap: 8 }}>
             <AppText muted size={12}>{isFa ? "پیش‌نویس در حال بررسی" : "Draft under review"}</AppText>
-            <AppText selectable size={14}>{Object.values(turn.answer_drafts ?? {}).join("\n\n")}</AppText>
+            <ReferenceAnswerText text={draft} testID="reference-answer-draft" />
           </View> : null}
           {turn.status === "failed" ? <AppText size={14} color={colors.denyLabel}>{failure(turn.error?.code, turn.error?.provider_status)}</AppText> : null}
           {turn.result?.parts.length === 0 ? <AppText size={14} muted>در محدودهٔ منابع انتخاب‌شده پاسخی پیدا نشد.</AppText> : null}
@@ -292,13 +325,19 @@ export function AiLabScreen() {
             const summary = part.overview_fa || [...new Set(part.items.map((item) => item.summary_fa))].join("\n\n");
             return <View key={i} style={{ gap: 10 }}>
               {turn.result!.parts.length > 1 ? <AppText weight="700" size={14}>{part.question_fa}</AppText> : null}
-              {summary ? <AppText testID="reference-answer-text" selectable size={14}>{summary}</AppText> : null}
+              {summary ? <ReferenceAnswerText testID="reference-answer-text" text={summary} /> : null}
               {part.retrieval?.limited && !part.retrieval.early_stopped ? <AppText size={12} muted>نمایش نتایج بازیابی‌شده در محدودهٔ این جست‌وجو؛ پوشش منابع کامل نیست.</AppText> : null}
               {part.status === "partial" ? <AppText size={13} muted>{part.clarification_fa || "این منابع فقط بخشی از سؤال را پوشش می‌دهند؛ پاسخ کامل تأیید نشد."}</AppText> : null}
               {part.status === "needs_clarification" ? <AppText size={14}>{part.clarification_fa}</AppText> : null}
               {part.status === "not_found" ? <AppText size={14} muted>متن کافی برای پاسخ مستند پیدا نشد؛ پاسخی حدس زده نشد.</AppText> : null}
             </View>;
           })}
+          {turn.status === "running" ? <View style={{ gap: 8 }}>
+            <ReferenceSearchLoading hasResults={hasSources} stage={turn.stage} />
+            {turn.jobId && turn.cancellable ? <Pressable accessibilityRole="button" onPress={() => {
+              void aiLabApi.cancel(turn.jobId!).catch(() => setRequestError("لغو درخواست انجام نشد؛ دوباره تلاش کنید."));
+            }} style={{ minHeight: 44, justifyContent: "center" }}><AppText size={13} color={colors.denyLabel}>{isFa ? "توقف جست‌وجو" : "Stop search"}</AppText></Pressable> : null}
+          </View> : null}
         </View>
         {hasSources ? <View testID="reference-source-results" style={{ gap: 12 }}>
           <AppText weight="800" size={13}>{isFa ? turn.status === "running" ? "منابع در حال بررسی" : "منابع اصلی" : turn.status === "running" ? "Sources under review" : "Sources"}</AppText>
@@ -328,18 +367,17 @@ export function AiLabScreen() {
             </View> : null}
           </View> : null}
         </View> : null}
-        {turn.status === "running" ? <View style={{ gap: 12 }}>
-          <ReferenceSearchLoading hasResults={hasSources} />
-          {turn.jobId && turn.cancellable ? <Pressable accessibilityRole="button" onPress={() => {
-            void aiLabApi.cancel(turn.jobId!).catch(() => setRequestError("لغو درخواست انجام نشد؛ دوباره تلاش کنید."));
-          }} style={{ minHeight: 44, justifyContent: "center" }}><AppText size={13} color={colors.denyLabel}>{isFa ? "توقف جست‌وجو" : "Stop search"}</AppText></Pressable> : null}
-        </View> : null}
         {turn.status === "complete" && turn.result && turn.jobId ? <SearchFeedback jobId={turn.jobId} available={!!turn.feedback_available} /> : null}
         {turn.status === "running" && turn.findings_limited ? <AppText size={12} muted>سقف نمایش تدریجی پر شده است؛ بررسی ادامه یافته و نتیجهٔ نهایی جداگانه نمایش داده می‌شود.</AppText> : null}
         {turn.result?.warnings.length ? <AppText muted size={12}>برخی منابع یا توضیح‌ها قابل تأیید نبودند و کنار گذاشته شدند.</AppText> : null}
         {turn.status === "failed" ? <Pressable disabled={!!active} onPress={() => void send(turn.question)} style={{ minHeight: 44, justifyContent: "center" }}><AppText size={13} muted>تلاش دوباره</AppText></Pressable> : null}
       </View>; })}
     </ScrollView>
+    {active && !followingAnswer ? <Pressable testID="reference-follow-answer" accessibilityRole="button"
+      onPress={() => { followResults.current = true; setFollowingAnswer(true); scheduleFollow(); }}
+      style={{ minHeight: 44, paddingHorizontal: 20, alignItems: "center", justifyContent: "center", backgroundColor: colors.cardBg }}>
+      <AppText size={13} weight="700" color={colors.accent}>{isFa ? "دنبال‌کردن پاسخ" : "Follow the answer"}</AppText>
+    </Pressable> : null}
     {requestError ? <AppText size={12} color={colors.denyLabel} style={{ paddingHorizontal: 20 }}>{requestError}</AppText> : null}
     {recovering ? <AppText size={12} muted style={{ paddingHorizontal: 20 }}>بررسی درخواست قبلی…</AppText> : null}
     <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, gap: 8, flexDirection: row, alignItems: "flex-end", backgroundColor: colors.cardBg, borderTopWidth: 1, borderTopColor: colors.border }}>

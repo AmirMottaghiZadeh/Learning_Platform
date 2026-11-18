@@ -61,6 +61,11 @@ class StructuredAgentTests(SimpleTestCase):
         model.assert_called_once();verify.assert_not_called()
         self.assertEqual(result["parts"][0]["status"],"not_found")
 
+    def test_numeric_formulation_fact_does_not_satisfy_a_requested_treatment_regimen(self):
+        rows=[reference(10,"We recommend Fixturemed. The available solution contains 10 mg/mL.")]
+        value=profile(kind="disease_question",objectives=["drug_therapy","dose"],regimen_requested=True)
+        self.assertIn("dose",scoped.missing_facets(rows,value))
+
     def test_writer_cannot_trigger_a_new_search(self):
         r=self.retriever([reference(10,"Original adverse effects with the source-defined constraints.")])
         with patch.object(scoped,"stream_chat",side_effect=[(self.plan(),{}),(tool("unrelated corpus search"),{})]):

@@ -217,6 +217,20 @@ class HybridRetrievalTests(TestCase):
         core[0].text="No medicine is named in this original source paragraph."
         self.assertEqual(self.retriever().regimen_supplements(core,"ConditionY treatment","pediatric","treatment"),[])
 
+    def test_failed_regimen_candidate_does_not_reserve_source_link_capacity(self):
+        self.write_article("3851",fixtures.html("First-line treatment",
+            "We recommend Fixturemed for ConditionY with the original restrictions."),title="ConditionY treatment")
+        self.write_article("3852",fixtures.html("Dosing: Adult",
+            "ConditionY: oral 10 mg daily with source-defined qualifications."),title="Fixturemed: Drug information")
+        self.build_reference(force=True)
+        call_command("build_hybrid_index",stdout=StringIO())
+        self.generation=RetrievalGeneration.objects.latest("created_at")
+        retriever=self.retriever()
+        retriever.scope.bind(["3851"])
+        core=list(SearchChunk.objects.filter(generation=self.generation,source_id="3851"))
+        self.assertEqual(retriever.regimen_supplements(core,"unmatched condition dosing","adult","drug_therapy"),[])
+        self.assertEqual(retriever.scope.related,{})
+
     def test_short_indication_and_route_labels_lead_to_the_adjacent_dose_and_remain_verifiable(self):
         from apps.ai_lab import response_cache, hybrid_agent, evaluation
         self.write_article("3851",fixtures.html("Summary and Recommendations",

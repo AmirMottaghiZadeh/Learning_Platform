@@ -505,6 +505,8 @@ class HybridRetriever:
         for chunk in chunks:
             if chunk.source_kind == "drug":
                 continue
+            if re.search(r"\b(?:to avoid|contraindicat\w*)\b", " > ".join(chunk.heading_path) or chunk.heading,re.I):
+                continue
             words = normalize(chunk.text).split()[:800]
             for position in range(len(words)):
                 for size in range(min(6,len(words)-position),0,-1):
@@ -521,9 +523,11 @@ class HybridRetriever:
         # the medication is recommended, contraindicated or only an alternative.
         for name in mentioned[:3]:
             sources = [identifier for identifier,_ in names[name]]
+            parent = None
             if settings.AI_LAB_TAG_SCOPED_SEARCH and self.scope.established:
                 parent = next((row.source_id for row in chunks if " ".join(name) in normalize(row.text)), None)
-                sources = [identifier for identifier in sources if parent and self.register_related(parent, identifier, kind="source_mention")]
+                if parent is None:
+                    continue
             rows=list(SearchChunk.objects.filter(generation=self.generation,source_id__in=sources)
                 .exclude(audience=excluded).exclude(pk__in=selected_ids)
                 .annotate(path_text=Cast("heading_path",TextField()))
@@ -543,6 +547,10 @@ class HybridRetriever:
                 try:
                     require_feature(self.request,"uptodate",item=row.source_id,consume=False)
                 except PlatformAPIError:
+                    continue
+                # Failed candidate lookups must not reserve every related
+                # article slot before literal source links are expanded.
+                if parent and not self.register_related(parent,row.source_id,kind="source_mention"):
                     continue
                 permitted.append(row)
                 if len(permitted)>=2:

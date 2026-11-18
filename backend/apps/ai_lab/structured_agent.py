@@ -71,7 +71,11 @@ def missing_facets(passages, profile):
             present = bool(re.search(pattern, text, re.I))
         if not present:
             missing.append(objective)
-    if profile["regimen_requested"] and not evidence.DOSE_NUMBER.search(text):
+    regimen = any(evidence.DOSE_NUMBER.search(p.text) and (
+        re.search(lexical.REGIMEN_HEADING, " > ".join(p.heading_path) or p.section,re.I)
+        or re.search(r"\b(?:dose|initial|titration|daily|divided doses|mg/kg/day)\b",p.text,re.I))
+        for p in passages)
+    if profile["regimen_requested"] and not regimen:
         missing.append("dose")
     return list(dict.fromkeys(missing))
 
@@ -133,8 +137,9 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
     if missing and passages and settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS>1:
         suffix=" ".join(lexical.HINTS.get(name,name) for name in missing[:2])
         supplement=query_text(query+" "+suffix)[:240]
+        supplement_arguments = {**arguments, **({"intent":"dose"} if "dose" in missing else {})}
         with telemetry.operation("retrieval"):
-            extra,details=retriever.search(supplement,question=original,question_profile=profile,**arguments)
+            extra,details=retriever.search(supplement,question=original,question_profile=profile,**supplement_arguments)
         details["supplement_for"]=missing
         searches.append(details);queries.append(supplement)
         passages=list({p.id:p for p in [*passages,*extra]}.values())

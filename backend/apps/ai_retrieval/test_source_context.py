@@ -165,6 +165,69 @@ class SourceContextIntegrationTests(TestCase):
         self.assertFalse(any(p.article_id=="3852" for p in passages))
         self.assertGreater(audit["denied_links"],0)
 
+    def test_subtype_query_can_read_the_source_linked_monographs_original_indication_label(self):
+        self.write_article("3851",'''<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">First-line treatment</span>
+            We recommend <a class="drug" data-topicid="3852">Fixturemed</a> for the seizure types, with the best established efficacy.
+            (See "Mechanism of action and adverse effects".)</p></div>''',title="Subtype reference in adults")
+        self.write_article("3852",'''<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">Dosing: Adult</span></p>
+            <p>Seizures:</p><p>Note: observe the source-defined formulation restriction.</p><p>Oral:</p>
+            <p>Adults: initial 10 mg daily with the source-defined titration and maximum.</p>
+            <p>However, do not use in the source-defined excluded population.</p>
+            <p>DifferentCondition, efficacy not established:</p><p>DifferentCondition: oral 999 mg daily.</p></div>''',title="Fixturemed: Drug information")
+        self.build_reference(force=True)
+        call_command("build_hybrid_index",stdout=StringIO())
+        self.generation=RetrievalGeneration.objects.latest("created_at")
+        self.r=HybridRetriever(self.r.request,generation=self.generation)
+        self.r.scope.bind(["3851"])
+        from apps.ai_lab.question_profile import validate
+        profile=validate({"kind":"disease_question","focus":"Treatment and dose of myoclonic epilepsy",
+            "objectives":["drug_therapy","dose"],"regimen_requested":True,
+            "conditions":[{"name":"myoclonic epilepsy","status":"reported"}]})
+        with patch.object(self.r,"lexical_ids",side_effect=AssertionError("No global search")), \
+                patch("apps.ai_retrieval.embeddings.embed",side_effect=AssertionError("No paid embedding")):
+            passages,audit=source_context.expand(self.r,self.seed(),"دارودرمانی و دوز چیست؟","myoclonic epilepsy treatment dosing",
+                audience="general",intent="drug_therapy",concepts=["myoclonic","epilepsy"],question_profile=profile)
+        doses=[p for p in passages if p.article_id=="3852"]
+        self.assertTrue(any("10 mg" in p.text for p in doses))
+        self.assertFalse(any("999 mg" in p.text for p in doses))
+        self.assertTrue(all(p.relations for p in doses))
+        self.assertTrue(any(any(label["quote"]=="Seizures:" for label in p.context) for p in doses))
+        self.assertEqual(list(self.r.scope.related),["3852"])
+
+    def test_failed_link_context_does_not_block_a_later_matching_source_context(self):
+        self.write_article("3851",'''<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">Treatment</span>
+            We recommend <a class="drug" data-topicid="3852">Fixturemed</a> for ConditionQ with source-defined qualifications.</p>
+            <p class="headingAnchor" id="H2"><span class="h1">Fixturemed</span>
+            We prefer <a class="drug" data-topicid="3852">Fixturemed</a> for ConditionY with the original restrictions.</p></div>''',title="Condition subtype treatment")
+        self.build_reference(force=True)
+        call_command("build_hybrid_index",stdout=StringIO())
+        self.generation=RetrievalGeneration.objects.latest("created_at")
+        self.r=HybridRetriever(self.r.request,generation=self.generation)
+        self.r.scope.bind(["3851"])
+        rows=list(ReferenceParagraph.objects.filter(article__generation_id=self.generation.source_generation,
+            article__source_id="3851",retrieval_number__isnull=False).select_related("article","section").order_by("ordinal"))
+        chunk=SimpleNamespace(source_id="3851",content_hash=rows[0].article.content_hash,block_ids=[p.pk for p in rows])
+        parents=self.r.passages([chunk],consume=False)
+        reader=source_context.SourceContext(self.r,"unmatched subtype","دارودرمانی و دوز چیست؟",
+            audience="adult",intent="drug_therapy",concepts=["unmatched","subtype"])
+        reader.result={p.id:p for p in parents};reader.original=set(reader.result)
+        link={"kind":"article","target_id":"3852","section_id":"","label":"Fixturemed","drug":True}
+        counts={"article":0,"section":0,"graphic":0}
+        reader.follow(parents[0],link,counts)
+        self.assertEqual(self.r.scope.related,{})
+        reader.follow(parents[1],link,counts)
+        self.assertTrue(any(p.article_id=="3852" and "10 mg" in p.text for p in reader.result.values()))
+        self.assertEqual(counts["article"],1)
+
+    def test_full_article_budget_does_not_register_an_unread_target(self):
+        self.r.scope.bind(["3851"])
+        reader=source_context.SourceContext(self.r,"ConditionY treatment","دارودرمانی چیست؟",
+            audience="adult",intent="drug_therapy",concepts=["conditiony"])
+        counts={"article":6,"section":0,"graphic":0}
+        with override_settings(AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES=6):
+            reader.follow(self.seed()[0],{"kind":"article","target_id":"3852","label":"Fixturemed","drug":True},counts)
+        self.assertEqual(self.r.scope.related,{})
+
     def test_flag_returns_the_unchanged_original_selection(self):
         seeds=self.seed()
         with override_settings(AI_LAB_SOURCE_CONTEXT_ENABLED=False),patch.object(source_links,"load") as read:

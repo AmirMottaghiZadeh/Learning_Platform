@@ -51,11 +51,13 @@ export function ReferenceAnswerSkeleton() {
 }
 
 /** Source results load independently from the final Persian answer above them. */
-export function ReferenceSearchLoading({ hasResults = false }: { hasResults?: boolean }) {
+export function ReferenceSearchLoading({ hasResults = false, stage }: { hasResults?: boolean; stage?: string }) {
   const { colors } = useTheme();
   const { row, isFa } = useLang();
   const { pulse, reducedMotion } = useLoadingPulse();
-  const label = isFa ? hasResults ? "در حال بررسی منابع بیشتر…" : "در حال یافتن بخش‌های مرتبط…"
+  const label = stage === "answering" ? (isFa ? "در حال نوشتن پاسخ…" : "Writing your answer…")
+    : stage === "verifying" ? (isFa ? "در حال بررسی پاسخ…" : "Checking your answer…")
+    : isFa ? hasResults ? "در حال بررسی منابع بیشتر…" : "در حال یافتن بخش‌های مرتبط…"
     : hasResults ? "Checking more sources…" : "Finding relevant passages…";
   return <View testID="reference-streaming-loading" accessible accessibilityRole="progressbar"
     accessibilityLabel={label} accessibilityState={{ busy: true }} aria-busy
