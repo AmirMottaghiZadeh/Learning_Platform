@@ -58,6 +58,30 @@ class DurableSearchTests(TestCase):
         self.assertEqual(self.client.get(f"/api/v1/ai-lab/results/{identifier}/stream/").status_code, 404)
         self.assertEqual(self.client.post(f"/api/v1/ai-lab/results/{identifier}/cancel/").status_code, 404)
 
+    @override_settings(AI_LAB_PUBLIC_ENABLED=True)
+    def test_plan_is_rechecked_when_queued_search_starts_before_any_model_call(self):
+        from apps.billing import config
+        from apps.billing.models import BillingSettings, PlanFeature
+        from apps.ai_wallet.models import CreditReservation
+        BillingSettings.objects.update_or_create(pk=1, defaults={"enforcement_enabled": True})
+        self.addCleanup(config.clear_cache)
+        learner = get_user_model().objects.create_user("queued-plan-learner")
+        self.client.force_authenticate(learner)
+        response = self.submit()
+        self.assertEqual(response.status_code, 202)
+        identifier = response.data["job_id"]
+        PlanFeature.objects.filter(plan__is_free=True, feature__key="smart_search").delete()
+        with patch.object(views, "answer") as answer, patch.object(views, "close_old_connections"), \
+                patch.object(runner, "close_old_connections"):
+            runner.execute(identifier)
+        answer.assert_not_called()
+        result = jobs.read(identifier, learner.pk)
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["error"]["code"], "PREMIUM_REQUIRED")
+        reservation = CreditReservation.objects.get(pk=identifier)
+        self.assertEqual(reservation.charged, 0)
+        self.assertEqual(reservation.status, "settled")
+
     def test_broker_messages_only_contain_job_ids(self):
         with override_settings(AI_LAB_EXECUTOR="celery", CELERY_TASK_ALWAYS_EAGER=False), patch("apps.ai_lab.tasks.run_search.apply_async") as queued:
             response = self.submit()

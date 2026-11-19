@@ -47,7 +47,7 @@ class SeedTests(TestCase):
     def test_free_plan_holds_every_builtin_feature_uncapped(self):
         free = Plan.objects.get(is_free=True)
         rows = {pf.feature.key: pf.limit for pf in free.plan_features.select_related("feature")}
-        self.assertEqual(set(rows), {"lessons", "uptodate", "lexicomp", "medscape", "calculators", "quiz", "stats"})
+        self.assertEqual(set(rows), {"lessons", "uptodate", "smart_search", "lexicomp", "medscape", "calculators", "quiz", "stats"})
         self.assertTrue(all(limit is None for limit in rows.values()))
 
 

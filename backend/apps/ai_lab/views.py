@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema
 
 from apps.core.exceptions import PlatformAPIError
-from .access import allowed
+from .access import allowed, require_search_plan
 from .provider import MODEL_ALIASES, ProviderError, configured_models
 from .retrieval import SOURCES
 from .services import answer
@@ -233,6 +233,7 @@ def _run(job_id, user, payload, slot, *, durable=False):
         if durable and event["type"] in {"answer_delta","answer_reset"} and settings.AI_LAB_STREAM_ANSWER_DRAFTS:
             draft_buffer.add(event)
     try:
+        require_search_plan(user)
         progress("starting")
         Thread(target=heartbeat, daemon=True, name="reference-lab-heartbeat").start()
         with trace.activate():
@@ -246,6 +247,8 @@ def _run(job_id, user, payload, slot, *, durable=False):
             "code": exc.code, "provider_status": exc.status,
             "model": getattr(exc, "model", configured_models().get(payload["model"])),
         }})
+    except PlatformAPIError as exc:
+        finish({"status": "failed", "error": {"code": exc.code}})
     except Exception:
         finish({"status": "failed", "error": {"code": "EXPERIMENT_FAILED"}})
     finally:
@@ -299,6 +302,7 @@ class AskView(APIView):
     @extend_schema(request=AskSerializer, responses={202: dict})
     def post(self, request):
         require_lab(request.user)
+        require_search_plan(request.user)
         serializer = AskSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         from apps.ai_wallet.services import billing_enabled

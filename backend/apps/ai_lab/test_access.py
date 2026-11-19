@@ -65,3 +65,47 @@ class PublicAccessTests(TestCase):
             self.assertTrue(access.allowed(self.user))
         admin = get_user_model().objects.create_user("public-search-admin", is_superuser=True)
         self.assertTrue(access.allowed(admin))
+
+    @override_settings(AI_LAB_PUBLIC_ENABLED=True)
+    def test_plan_denial_precedes_job_admission_and_keeps_search_discoverable(self):
+        from apps.billing import config
+        from apps.billing.models import BillingSettings, PlanFeature
+        BillingSettings.objects.update_or_create(pk=1, defaults={"enforcement_enabled": True})
+        self.addCleanup(config.clear_cache)
+        PlanFeature.objects.filter(plan__is_free=True, feature__key="smart_search").delete()
+        self.assertTrue(self.client.get("/api/v1/ai-lab/status/").data["enabled"])
+        with patch("apps.ai_lab.runner.submit") as submit, patch("apps.ai_lab.views._executor.submit") as enqueue:
+            response = self.client.post("/api/v1/ai-lab/ask/", {
+                "question": "پرسش از منابع", "model": "luna", "sources": ["uptodate"],
+            }, format="json")
+        self.assertEqual(response.status_code, 402)
+        self.assertEqual(response.data["code"], "PREMIUM_REQUIRED")
+        self.assertEqual(response.data["details"]["feature"], "smart_search")
+        self.assertIn("پلن فعلی", response.data["message"])
+        submit.assert_not_called()
+        enqueue.assert_not_called()
+
+    def test_subscriptions_and_products_grant_search_access_independently_of_credits(self):
+        from apps.billing import config, services
+        from apps.billing.models import BillingSettings, Entitlement, Feature, Plan, PlanFeature
+        from apps.core.exceptions import PlatformAPIError
+        BillingSettings.objects.update_or_create(pk=1, defaults={"enforcement_enabled": True})
+        self.addCleanup(config.clear_cache)
+        PlanFeature.objects.filter(plan__is_free=True, feature__key="smart_search").delete()
+        feature = Feature.objects.get(key="smart_search")
+        for kind in [Plan.KIND_PLAN, Plan.KIND_PRODUCT]:
+            with self.subTest(kind=kind):
+                with self.assertRaises(PlatformAPIError):
+                    access.require_search_plan(self.user)
+                plan = Plan.objects.create(slug="search-" + kind, name_fa="سرچ هوشمند", kind=kind)
+                PlanFeature.objects.create(plan=plan, feature=feature)
+                entitlement = services.grant(self.user, plan, days=30, source=Entitlement.SOURCE_ADMIN)
+                access.require_search_plan(self.user)
+                self.assertEqual(entitlement.features["smart_search"], {"limit": None, "period": ""})
+                services.revoke(entitlement)
+                with self.assertRaises(PlatformAPIError):
+                    access.require_search_plan(self.user)
+        with override_settings(BILLING_ENFORCEMENT_ENABLED=False):
+            BillingSettings.objects.update(enforcement_enabled=None)
+            config.clear_cache()
+            access.require_search_plan(self.user)

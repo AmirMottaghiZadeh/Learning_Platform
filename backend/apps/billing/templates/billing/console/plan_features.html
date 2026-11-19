@@ -36,6 +36,7 @@
             <span class="stack" style="gap:2px">
               <b style="font-size:14.5px">{{ c.f.name_fa }}</b>
               <span class="sub" style="font-size:12px">{{ c.f.get_kind_display }}{% if c.f.kind == 'content' %} · {{ c.f.scope_value }}{% endif %}</span>
+              {% if c.f.description_fa %}<span class="sub" style="font-size:12px">{{ c.f.description_fa }}</span>{% endif %}
               {% if not c.f.is_wired %}<span class="chip warn" style="align-self:flex-start">در انتظار اتصال در کد</span>{% endif %}
             </span>
           </label>

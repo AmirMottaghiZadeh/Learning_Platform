@@ -10,6 +10,7 @@ from apps.lessons.data.study_topics import CATEGORIES
 BUILTIN_FEATURES = [
     ("lessons", "درس‌نامه‌های دارویی", "Drug lessons", False, ""),
     ("uptodate", "UpToDate", "UpToDate articles", True, "مقاله"),
+    ("smart_search", "سرچ هوشمند", "Smart search", False, ""),
     ("lexicomp", "اطلاعات و تداخل‌های Lexicomp", "Lexicomp interactions", True, "بررسی تداخل"),
     ("medscape", "بیماری‌ها و گایدلاین‌های Medscape", "Medscape diseases and guidelines", True, "مقاله"),
     ("calculators", "ماشین‌حساب‌های بالینی", "Clinical calculators", True, "ماشین‌حساب"),

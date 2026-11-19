@@ -112,6 +112,29 @@ class UsersPageTests(ConsoleTestCase):
 
 
 class PlanBuilderTests(ConsoleTestCase):
+    def test_smart_search_is_selectable_and_advertised_for_plans_and_products(self):
+        from .serializers import PlanSerializer
+        feature = Feature.objects.get(key="smart_search")
+        self.assertTrue(feature.is_wired)
+        self.assertFalse(feature.countable)
+        for kind in [Plan.KIND_PLAN, Plan.KIND_PRODUCT]:
+            with self.subTest(kind=kind):
+                plan = Plan.objects.create(slug="ai-" + kind, name_fa="سرچ هوشمند", kind=kind)
+                url = reverse("console:plan_features", args=[plan.pk])
+                response = self.client.get(url)
+                self.assertContains(response, f'name="f_{feature.pk}"')
+                self.assertContains(response, "سرچ هوشمند")
+                self.assertContains(response, "اعتبار جداگانه")
+                response = self.client.post(url, {f"f_{feature.pk}": "on", f"shown_{feature.pk}": "1",
+                    f"listed_{feature.pk}": "on", f"label_{feature.pk}": "دسترسی به سرچ هوشمند"})
+                self.assertEqual(response.status_code, 302)
+                card = PlanSerializer(plan).data
+                self.assertEqual([row["key"] for row in card["features"]], ["smart_search"])
+                self.assertEqual(card["features"][0]["label_fa"], "دسترسی به سرچ هوشمند")
+                self.assertIsNone(card["features"][0]["limit"])
+                self.client.post(url, {})
+                self.assertFalse(plan.plan_features.exists())
+
     def test_wizard_end_to_end(self):
         res = self.client.post(reverse("console:plan_new") + "?kind=plan", {
             "kind": "plan", "name_fa": "دانشجویی", "name_en": "Student", "slug": "", "tagline_fa": "", "audience": "pharmacy", "order": "5",
