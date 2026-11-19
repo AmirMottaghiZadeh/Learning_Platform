@@ -43,6 +43,21 @@ class DurableSearchTests(TestCase):
         self.assertNotIn(self.payload["question"], run.encrypted_payload)
         self.assertEqual(job_store.decode(run.encrypted_payload)["question"], self.payload["question"])
 
+    @override_settings(AI_LAB_PUBLIC_ENABLED=True, AI_LAB_USER_IDS=set(), AI_LAB_ROLLOUT_PERCENT=0)
+    def test_public_learners_can_submit_but_cannot_read_each_others_jobs(self):
+        learner = get_user_model().objects.create_user("public-stream-owner")
+        other = get_user_model().objects.create_user("public-stream-other")
+        self.client.force_authenticate(learner)
+        response = self.submit()
+        self.assertEqual(response.status_code, 202)
+        identifier = response.data["job_id"]
+        self.assertEqual(SearchRun.objects.get(pk=identifier).owner_id, learner.pk)
+        self.enqueue.assert_called_once()
+        self.client.force_authenticate(other)
+        self.assertEqual(self.client.get(f"/api/v1/ai-lab/results/{identifier}/").status_code, 404)
+        self.assertEqual(self.client.get(f"/api/v1/ai-lab/results/{identifier}/stream/").status_code, 404)
+        self.assertEqual(self.client.post(f"/api/v1/ai-lab/results/{identifier}/cancel/").status_code, 404)
+
     def test_broker_messages_only_contain_job_ids(self):
         with override_settings(AI_LAB_EXECUTOR="celery", CELERY_TASK_ALWAYS_EAGER=False), patch("apps.ai_lab.tasks.run_search.apply_async") as queued:
             response = self.submit()

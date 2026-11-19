@@ -9,4 +9,9 @@ def allowed(user):
         return False
     if settings.AI_LAB_LOCAL_LEXICAL_PILOT:
         return settings.ENVIRONMENT == "local" and platform_admin(user)
-    return platform_admin(user) or str(user.pk) in settings.AI_LAB_USER_IDS or cohort(user)
+    return (
+        platform_admin(user)
+        or str(user.pk) in settings.AI_LAB_USER_IDS
+        or (settings.AI_LAB_PUBLIC_ENABLED and not hasattr(user, "guest_account"))
+        or cohort(user)
+    )

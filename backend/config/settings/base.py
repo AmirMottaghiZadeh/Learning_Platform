@@ -555,8 +555,10 @@ SITE_DRUG_ATC_PREFIXES = [
 # have no named author.
 SITE_EDITORIAL_NAME = config("SITE_EDITORIAL_NAME", default="تیم علمی فارمنتا")
 
-# Opt-in reference-only model experiment. Credentials are never sent to the app.
+# Reference-only smart search. Credentials are never sent to the app.
 AI_LAB_ENABLED = config("AI_LAB_ENABLED", default=False, cast=bool)
+# Explicit public access for registered accounts; independent of pilot cohorts.
+AI_LAB_PUBLIC_ENABLED = config("AI_LAB_PUBLIC_ENABLED", default=False, cast=bool)
 AI_LAB_PREWARM_ENABLED = config("AI_LAB_PREWARM_ENABLED", default=False, cast=bool)
 # Prepared sources are read when a compatible, complete generation is active.
 AI_LAB_PREPROCESSED_MODE = config("AI_LAB_PREPROCESSED_MODE", default="prefer").strip().lower()

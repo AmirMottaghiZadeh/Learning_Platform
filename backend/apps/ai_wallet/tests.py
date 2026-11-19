@@ -96,6 +96,18 @@ class WalletTests(TestCase):
         services.adjust(self.alice,2,actor=self.admin,note="شارژ کافی",key=uuid.uuid4())
         self.assertTrue(services.summary(self.alice)["can_search"])
 
+    @override_settings(AI_LAB_PUBLIC_ENABLED=True, AI_LAB_USER_IDS=set(), AI_LAB_EVENT_REDIS_URL="")
+    def test_public_search_keeps_credit_enforcement_for_ordinary_accounts(self):
+        self.config.initial_credits=0;self.config.save()
+        self.assertTrue(self.api.get("/api/v1/ai-lab/status/").data["enabled"])
+        with patch("apps.ai_lab.views._executor.submit") as enqueue:
+            response=self.api.post("/api/v1/ai-lab/ask/",{"question":"پرسش از منابع",
+                "model":"luna","sources":["uptodate"]},format="json")
+        self.assertEqual(response.status_code,402)
+        self.assertEqual(response.data["code"],"AI_CREDIT_INSUFFICIENT")
+        enqueue.assert_not_called()
+        self.assertFalse(SearchRun.objects.filter(owner=self.alice).exists())
+
     def test_token_accounting_is_not_exposed_by_wallet_endpoints(self):
         res=self.reserve();self.attempt(res);services.settle(res.pk)
         for url in ["ai-credit-wallet","ai-credit-history"]:

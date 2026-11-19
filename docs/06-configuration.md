@@ -237,14 +237,15 @@
 
 | متغیر | پیش‌فرض و کاربرد |
 |---|---|
-| `AI_LAB_ENABLED` | `False`؛ فعال کردن آزمایش |
+| `AI_LAB_ENABLED` | `False`؛ کلید اصلی سرچ هوشمند برای همهٔ روش‌های دسترسی |
+| `AI_LAB_PUBLIC_ENABLED` | `False`؛ با `True` و روشن‌بودن کلید اصلی، همهٔ حساب‌های ثبت‌نام‌شدهٔ فعال دسترسی دارند؛ حساب موقت مهمان خودکار مجاز نمی‌شود. اعتبار، سهمیه و مجوز منابع مستقل اعمال می‌شوند؛ تغییر نقش کاربر لازم نیست |
 | `AI_LAB_PREWARM_ENABLED` | `False`؛ آماده‌سازی جست‌وجوی UpToDate در هر worker پیش از پذیرش درخواست، بدون فراخوانی مدل |
 | `AI_LAB_PREPROCESSED_MODE` | `prefer`؛ خواندن زیربخش و بند آماده از نسخهٔ کامل PostgreSQL؛ `off` برای مسیر قبلی، `require` برای الزام نسخهٔ آمادهٔ معتبر؛ نیازمند migration و ساخت روی محیط هدف؛ [سند ۲۷](27-smart-search-preprocessing.fa.md) |
 | `AI_LAB_LEXICAL_ENABLED` | `True`؛ رتبه‌بندی هوشمند نامزدها و بندها بر اساس منظور سؤال، حداکثر ۱۶ بخش و ۱۸ بند/۲۴ هزار نویسه؛ `False` برای بودجه و خواندن قبلی؛ [سند ۲۸](28-smart-search-lexical.fa.md) |
 | `AI_LAB_LOCAL_SELECTION_ENABLED` | `True`؛ انتخاب مستقیم شواهد بدون فراخوانی مدل برای بخش‌ها؛ همراه lexical فعال است؛ `False` برای مسیر فاز دو؛ [سند ۲۹](29-smart-search-local-selection.fa.md) |
 | `AI_LAB_USER_IDS` | خالی؛ شناسه‌های کاربران آزمایشی با کاما، علاوه بر مدیر سامانه |
 | `AI_LAB_MAX_CONCURRENT_JOBS` | `2`؛ ظرفیت مشترک job و executor، محدودهٔ عملیاتی ۱ تا ۱۶ |
-| `AI_LAB_ROLLOUT_PERCENT` | `0`؛ cohort عمومی فقط با مجوز امضاشدهٔ معتبر؛ دسترسی مدیر و حساب‌های صریح آزمایشی مستقل است |
+| `AI_LAB_ROLLOUT_PERCENT` | `0`؛ مسیر انتشار درصدی با مجوز امضاشدهٔ معتبر؛ دسترسی مدیر، حساب‌های صریح آزمایشی و تنظیم مستقل `AI_LAB_PUBLIC_ENABLED` به این درصد وابسته نیست |
 | `AI_LAB_RELEASE_APPROVAL_FILE` | خالی؛ فایل خصوصی `600` مجوز گیت کیفیت/زمان، وابسته به runtime و build، حداکثر ۷۲ ساعت |
 | `AI_LAB_FRONTEND_BUNDLE_SHA256` | خالی؛ SHA-256 فایل اصلی JS اندازه‌گیری‌شده؛ برای تطبیق build در سرور فاقد export وب؛ [سند ۳۱](31-smart-search-release-evaluation.fa.md) |
 | `AI_LAB_BASE_URL` | `https://api.gapgpt.app/v1`؛ آدرس پایهٔ قابل تغییر برای ارائه‌دهندهٔ سازگار با Chat Completions، شامل پیشوند مسیر/نسخه؛ فقط HTTPS؛ سرور `/chat/completions` را اضافه می‌کند |
