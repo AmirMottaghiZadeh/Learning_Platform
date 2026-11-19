@@ -37,11 +37,11 @@
     var opts=card.querySelectorAll("[data-opt]"),price=card.querySelector("[data-price]"),buy=card.querySelector("[data-buy]");
     opts.forEach(function(o){o.addEventListener("click",function(e){
       e.preventDefault();
-      opts.forEach(function(x){x.classList.toggle("on",x===o)});
+      opts.forEach(function(x){x.classList.toggle("on",x===o);x.setAttribute("aria-current",String(x===o))});
       if(price){
         price.textContent="";
         if(o.dataset.was){var was=document.createElement("s");was.className="was";was.textContent=o.dataset.was;price.appendChild(was);price.appendChild(document.createTextNode(" "))}
-        price.appendChild(document.createTextNode(o.dataset.amount+" "));
+        var amount=document.createElement("b");amount.textContent=o.dataset.amount;price.appendChild(amount);price.appendChild(document.createTextNode(" "));
         var unit=document.createElement("small");unit.textContent="تومان / "+o.dataset.label;price.appendChild(unit);
         if(o.dataset.tag){var tag=document.createElement("span");tag.className="plabel";tag.textContent=o.dataset.tag;price.appendChild(document.createTextNode(" "));price.appendChild(tag)}
       }

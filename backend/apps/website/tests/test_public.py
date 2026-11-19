@@ -5,6 +5,7 @@ from django.core import mail
 from .base import SiteTestCase as TestCase
 from django.utils import timezone
 
+from apps.billing.models import PERIOD_MONTH, Feature, Plan, PlanFeature
 from apps.website.models import (
     Announcement, Category, Comment, ContactMessage, DailyStat, DownloadLink, Media, Page, Post, Redirect, SiteSettings, Subscriber,
 )
@@ -47,6 +48,21 @@ class HostRoutingTests(TestCase):
         self.assertNotContains(response, "hidden-homepage-article")
         self.assertContains(response, f'href="/dl/{download.pk}/"')
         self.assertContains(response, 'class="ft home-footer"')
+
+    def test_plan_features_isolate_english_names_on_home_and_plans(self):
+        free = Plan.objects.get(is_free=True)
+        interactions = Feature.objects.create(
+            key="test-lexicomp-copy", countable=True, unit_fa="بررسی", name_fa="اطلاعات و تداخل‌های Lexicomp",
+        )
+        conditions = Feature.objects.create(key="test-medscape-copy", name_fa="Medscape")
+        PlanFeature.objects.create(plan=free, feature=interactions, limit=5, period=PERIOD_MONTH)
+        PlanFeature.objects.create(plan=free, feature=conditions, label_fa="بیماری‌ها و گایدلاین‌های Medscape · ۵ مقاله در ماه")
+
+        for path in ("/", "/plans/"):
+            with self.subTest(path=path):
+                response = self.client.get(path, **HOST)
+                self.assertContains(response, 'اطلاعات و تداخل‌های <bdi dir="ltr" lang="en">Lexicomp</bdi> <bdi dir="rtl">· ۵ بررسی در ماه</bdi>')
+                self.assertContains(response, 'بیماری‌ها و گایدلاین‌های <bdi dir="ltr" lang="en">Medscape</bdi> · ۵ مقاله در ماه')
 
     def test_api_host_keeps_api(self):
         res = self.client.get("/api/v1/health/", HTTP_HOST="testserver")

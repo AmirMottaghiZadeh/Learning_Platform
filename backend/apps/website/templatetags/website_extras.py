@@ -1,8 +1,24 @@
+import re
+
 from django import template
+from django.utils.html import format_html, format_html_join
 
 from apps.drugs.data.atc_reference import ATC_L1
 
 register = template.Library()
+
+LATIN_RUN = re.compile(r"([A-Za-z][A-Za-z0-9]*(?:[ \t.&+/’'–-]+[A-Za-z0-9]+)*)")
+
+
+@register.filter
+def isolate_latin(value):
+    """Keep English names in their own directional context within Persian copy."""
+    parts = LATIN_RUN.split(str(value or ""))
+    return format_html_join(
+        "", "{}",
+        ((format_html('<bdi dir="ltr" lang="en">{}</bdi>', part) if index % 2 else part,)
+         for index, part in enumerate(parts)),
+    )
 
 
 @register.filter
