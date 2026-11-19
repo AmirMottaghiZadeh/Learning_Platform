@@ -385,6 +385,21 @@ class AdminTests(PanelCase):
         self.assertEqual(SiteSettings.get().site_name, "نام تازه")
         self.assertContains(self.client.get("/", **SITE), "نام تازه")
 
+    def test_home_settings_control_public_hero_motion(self):
+        home_settings = url("settings") + "?tab=home"
+        self.assertContains(self.client.get(home_settings, **HOST), 'name="hero_motion_enabled"')
+        site = SiteSettings.get()
+        values = {field: getattr(site, field) for field in ("hero_title", "hero_text", "hero_primary_label", "hero_primary_url")}
+
+        self.assertEqual(self.client.post(home_settings, values, **HOST).status_code, 302)
+        self.assertFalse(SiteSettings.get().hero_motion_enabled)
+        self.assertContains(self.client.get("/", **SITE), 'class="home-story" data-motion="off"')
+
+        values["hero_motion_enabled"] = "on"
+        self.assertEqual(self.client.post(home_settings, values, **HOST).status_code, 302)
+        self.assertTrue(SiteSettings.get().hero_motion_enabled)
+        self.assertContains(self.client.get("/", **SITE), 'class="home-story" data-motion="on"')
+
     def test_analytics_field_only_for_superuser(self):
         res = self.client.get(url("settings") + "?tab=seo", **HOST)
         self.assertNotContains(res, "analytics_head")

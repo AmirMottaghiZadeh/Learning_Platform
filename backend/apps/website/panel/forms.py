@@ -207,7 +207,7 @@ class MediaMetaForm(PanelForm):
 
 SETTINGS_TABS = [
     ("general", "عمومی", ["site_name", "tagline", "description", "default_og_image", "footer_note", "copyright_text"]),
-    ("home", "صفحهٔ اصلی", ["hero_title", "hero_highlight", "hero_text", "hero_primary_label", "hero_primary_url",
+    ("home", "صفحهٔ اصلی", ["hero_title", "hero_highlight", "hero_text", "hero_motion_enabled", "hero_primary_label", "hero_primary_url",
                            "hero_secondary_label", "hero_secondary_url", "featured_plan_slug"]),
     ("bar", "نوار اطلاعیه", ["bar_enabled", "bar_text", "bar_link_text", "bar_url"]),
     ("contact", "تماس و شبکه‌ها", ["contact_email", "contact_phone", "address", "telegram_url", "instagram_url", "linkedin_url", "youtube_url", "x_url"]),

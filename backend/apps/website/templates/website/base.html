@@ -55,7 +55,7 @@
 </header>
 {% if messages %}<div class="flash" role="status">{% for m in messages %}<div class="{{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
 <main id="main"{% if nav != "home" %} class="inner"{% endif %}>{% block content %}{% endblock %}</main>
-<footer class="ft">
+<footer class="ft{% if nav == 'home' %} home-footer{% endif %}">
   <div class="wrap">
     <div>
       <a class="logo" href="{% url 'site:home' %}"><img src="{% static 'website/img/app-logo.png' %}" width="40" height="40" alt="" loading="lazy">{{ site.site_name }}</a>
@@ -76,7 +76,7 @@
     {% endif %}
     <div class="dis"><span>{{ site.footer_note }}</span><span>© {{ site.copyright_text }}</span></div>
   </div>
-  <div class="ft-name" aria-hidden="true">{{ site.site_name }}</div>
+  {% if nav != "home" %}<div class="ft-name" aria-hidden="true">{{ site.site_name }}</div>{% endif %}
 </footer>
 <script src="{% static 'website/site.js' %}" defer></script>
 <script src="{% static 'website/activity.js' %}" defer></script>

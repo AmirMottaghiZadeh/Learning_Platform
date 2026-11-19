@@ -31,6 +31,23 @@ class HostRoutingTests(TestCase):
         self.assertContains(self.client.get("/", **HOST), "8214551")
         self.assertNotContains(self.client.get("/plans/", **HOST), "8214551")
 
+    def test_home_uses_automatic_motion_without_visitor_controls(self):
+        response = self.client.get("/", **HOST)
+        self.assertContains(response, 'class="home-story" data-motion="on"')
+        for control in ("home-motion-enable", "home-motion-replay", "home-motion-stop"):
+            self.assertNotContains(response, control)
+
+    def test_home_end_links_to_published_articles_and_active_downloads(self):
+        post = make_post("مقالهٔ صفحهٔ اصلی", slug="homepage-article")
+        make_post("مقالهٔ پنهان", slug="hidden-homepage-article", status=Post.DRAFT)
+        download = DownloadLink.objects.create(store="web", label="نسخهٔ وب", url="https://app.example.com/")
+        response = self.client.get("/", **HOST)
+        self.assertContains(response, 'id="articles"')
+        self.assertContains(response, post.get_absolute_url())
+        self.assertNotContains(response, "hidden-homepage-article")
+        self.assertContains(response, f'href="/dl/{download.pk}/"')
+        self.assertContains(response, 'class="ft home-footer"')
+
     def test_api_host_keeps_api(self):
         res = self.client.get("/api/v1/health/", HTTP_HOST="testserver")
         self.assertEqual(res.status_code, 200)

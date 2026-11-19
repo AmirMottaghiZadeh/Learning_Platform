@@ -1,7 +1,7 @@
 {% load billing_extras %}
 <div class="plans">
 {% for card in cards %}{% with plan=card.plan %}
-<article class="pl{% if plan.slug == site.featured_plan_slug %} f{% endif %}" data-plan>
+<article class="pl{% if plan.slug == site.featured_plan_slug %} f{% endif %}" data-plan{% if homepage %} data-plan-tier="{{ plan.slug }}"{% endif %}>
   {% if plan.badge_fa %}<span class="badge">{{ plan.badge_fa }}</span>{% elif plan.slug == site.featured_plan_slug %}<span class="badge">پیشنهادی</span>{% endif %}
   <h3>{{ plan.name_fa }}</h3>
   {% if plan.tagline_fa %}<p class="tag">{{ plan.tagline_fa }}</p>{% endif %}
@@ -9,7 +9,7 @@
   {% if plan.is_free %}
     <div class="price num">۰ <small>تومان</small></div>
   {% elif card.prices %}
-    {% with first=card.prices.0 %}<div class="price num" data-price>{% if first.compare_at_toman and first.compare_at_toman > first.price_toman %}<s class="was">{{ first.compare_at_toman|num }}</s> {% endif %}{{ first.price_toman|num }} <small>تومان / {{ first.duration_label }}</small>{% if first.label_fa %} <span class="plabel">{{ first.label_fa }}</span>{% endif %}</div>{% endwith %}
+    {% with first=card.prices.0 %}<div class="price num" data-price{% if homepage %} aria-live="polite"{% endif %}>{% if first.compare_at_toman and first.compare_at_toman > first.price_toman %}<s class="was">{{ first.compare_at_toman|num }}</s> {% endif %}{{ first.price_toman|num }} <small>تومان / {{ first.duration_label }}</small>{% if first.label_fa %} <span class="plabel">{{ first.label_fa }}</span>{% endif %}</div>{% endwith %}
     {% if card.prices|length > 1 %}
     <div class="chips" role="group" aria-label="مدت اشتراک">
       {% for pr in card.prices %}<a class="chip{% if forloop.first %} on{% endif %}" href="{% url 'site:checkout' pr.pk %}" data-opt data-amount="{{ pr.price_toman|num }}" data-label="{{ pr.duration_label }}"{% if pr.compare_at_toman and pr.compare_at_toman > pr.price_toman %} data-was="{{ pr.compare_at_toman|num }}"{% endif %}{% if pr.label_fa %} data-tag="{{ pr.label_fa }}"{% endif %}>{{ pr.duration_label }}</a>{% endfor %}

@@ -8,9 +8,6 @@
     const controls = stage.querySelector('.home-scene-controls');
     const tabs = [...controls.querySelectorAll('nav a')];
     const next = controls.querySelector('.home-scene-next');
-    const enableButton = stage.querySelector('.home-motion-enable');
-    const replayButton = controls.querySelector('.home-motion-replay');
-    const stopButton = controls.querySelector('.home-motion-stop');
     const libraryField = stage.querySelector('.home-field-library');
     const referenceField = stage.querySelector('.home-field-references');
     const gallery = stage.querySelector('.home-reference-gallery');
@@ -29,9 +26,8 @@
         dialog.showModal();
     });
 
-    if (!window.matchMedia || !window.CSS?.supports('position', 'sticky')) return;
+    if (story.dataset.motion !== 'on' || !window.matchMedia || !window.CSS?.supports('position', 'sticky')) return;
 
-    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
     const mobileScreen = matchMedia('(max-width: 720px)');
     const shortScreen = matchMedia('(max-width: 365px), (max-width: 720px) and (max-height: 690px)');
     const supportsInert = 'inert' in HTMLElement.prototype;
@@ -53,8 +49,6 @@
     let progress = 0;
     let lastFrame = 0;
     let active = -1;
-    let playing = false;
-    let motionOverride = null;
 
     screen.append(libraryImage);
     artwork.append(device);
@@ -190,76 +184,21 @@
     }
 
     function syncScroll() {
-        if (playing && !frame) frame = requestAnimationFrame(animateScroll);
+        if (!frame) frame = requestAnimationFrame(animateScroll);
     }
 
     function jump(hash, behavior) {
         const index = scenes.findIndex(scene => `#${scene.id}` === hash);
-        if (!playing || index < 0) return false;
+        if (index < 0) return false;
         const positions = [0, .47, .96];
         scrollTo({ top: Math.max(0, dimensions.start + dimensions.travel * positions[index]), behavior });
         return true;
     }
 
-    function setMotion() {
-        playing = motionOverride ?? !reducedMotion.matches;
-        document.documentElement.classList.toggle('home-motion', playing);
-        story.classList.toggle('is-animated', playing);
-        controls.hidden = !playing;
-        enableButton.hidden = playing;
-
-        if (playing) {
-            stage.append(artwork);
-            measure();
-            active = -1;
-            progress = scrollProgress();
-            render(progress);
-        } else {
-            cancelAnimationFrame(frame);
-            frame = 0;
-            lastFrame = 0;
-            story.classList.remove('is-entering');
-            artwork.remove();
-            delete stage.dataset.scene;
-            scenes.forEach(scene => setSceneHidden(scene, false));
-            [...copies, gallery, uptodate, lexicomp, conditions].forEach(element => element.removeAttribute('style'));
-        }
-    }
-
     function playEntrance() {
-        story.classList.remove('is-entering');
         artwork.style.setProperty('--home-entrance-y', `-${dimensions.height * 1.3}px`);
-        // Resolve the resting style before reapplying the same animation class.
-        void device.offsetWidth;
         story.classList.add('is-entering');
     }
-
-    function replay() {
-        if (!playing) {
-            motionOverride = true;
-            setMotion();
-        }
-        if (location.hash) history.replaceState(history.state, '', location.pathname + location.search);
-        measure();
-        jump('#overview', 'instant');
-        progress = scrollProgress();
-        render(progress);
-        playEntrance();
-    }
-
-    enableButton.addEventListener('click', () => {
-        replay();
-        replayButton.focus({ preventScroll: true });
-    });
-    replayButton.addEventListener('click', replay);
-    stopButton.addEventListener('click', () => {
-        const current = scenes[active] || hero;
-        motionOverride = false;
-        setMotion();
-        current.scrollIntoView({ block: 'start', behavior: 'instant' });
-        const focusTarget = current === hero ? enableButton : current.querySelector('h2');
-        focusTarget.focus({ preventScroll: true });
-    });
 
     controls.addEventListener('click', event => {
         const link = event.target.closest('a');
@@ -270,19 +209,20 @@
     });
     addEventListener('scroll', syncScroll, { passive: true });
     addEventListener('resize', () => {
-        if (!playing) return;
         measure();
         render(progress);
         syncScroll();
     }, { passive: true });
     addEventListener('hashchange', () => jump(location.hash, 'instant'));
-    const syncMotionPreference = () => { if (motionOverride === null) setMotion(); };
-    if (reducedMotion.addEventListener) reducedMotion.addEventListener('change', syncMotionPreference);
-    else reducedMotion.addListener(syncMotionPreference);
 
-    setMotion();
+    document.documentElement.classList.add('home-motion');
+    story.classList.add('is-animated');
+    controls.hidden = false;
+    stage.append(artwork);
+    measure();
+    progress = scrollProgress();
+    render(progress);
     (document.fonts?.ready || Promise.resolve()).then(() => {
-        if (!playing) return;
         measure();
         jump(location.hash, 'instant');
         progress = scrollProgress();

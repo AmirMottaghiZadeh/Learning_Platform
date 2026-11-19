@@ -20,31 +20,5 @@
 
 {% include "website/_home_study.html" %}
 
-<section class="sec wrap" id="plans">
-  <div class="hd2 rv"><h2>پلنی که به شما می‌خورد</h2><p>قیمت‌ها همین‌جا و بدون واسطه است؛ پرداخت با درگاه امن.</p></div>
-  <div class="rv">{% include "website/_pricing.html" %}</div>
-  <p class="more-link"><a href="{% url 'site:plans' %}">مقایسهٔ کامل امکانات ‹</a></p>
-</section>
-
-{% if blocks.faq %}
-<section class="sec wrap split" id="faq">
-  <div class="hd2 rv"><h2>پاسخ پرسش‌های رایج</h2><p>پاسخ سؤالتان اینجا نیست؟ از <a href="{% url 'site:contact' %}">صفحهٔ تماس</a> پیام بدهید.</p></div>
-  <div class="faq">{% for b in blocks.faq %}<details class="rv"{% if forloop.first %} open{% endif %}><summary>{{ b.title }}</summary><div class="ans">{{ b.text|linebreaksbr }}</div></details>{% endfor %}</div>
-</section>
-{% endif %}
-
-{% if posts %}
-<section class="sec wrap">
-  <div class="hd2 rv"><h2>تازه‌ترین مقالات</h2><p>آموزش و اطلاعیه‌های {{ site.site_name }}</p></div>
-  <div class="posts">{% for post in posts %}<div class="rv" style="--d:{{ forloop.counter0 }}00ms;display:flex">{% include "website/_post_card.html" %}</div>{% endfor %}</div>
-</section>
-{% endif %}
-
-<section class="sec wrap" id="download">
-  <div class="dlx rv">
-    <div><h2>{{ site.site_name }} را همین حالا نصب کنید</h2><p>اندروید، iOS و نسخهٔ وب. با یک حساب، همهٔ دستگاه‌ها.</p>{% include "website/_downloads.html" %}</div>
-    <img class="dlx-logo" src="{% static 'website/img/app-logo.png' %}" width="168" height="168" alt="" loading="lazy">
-  </div>
-  {% include "website/_newsletter.html" with source="home" %}
-</section>
+{% include "website/_home_end.html" %}
 {% endblock %}
