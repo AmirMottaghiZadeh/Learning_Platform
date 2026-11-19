@@ -8,6 +8,7 @@
     const controls = stage.querySelector('.home-scene-controls');
     const tabs = [...controls.querySelectorAll('nav a')];
     const next = controls.querySelector('.home-scene-next');
+    const overviewField = stage.querySelector('.home-field-overview');
     const libraryField = stage.querySelector('.home-field-library');
     const referenceField = stage.querySelector('.home-field-references');
     const gallery = stage.querySelector('.home-reference-gallery');
@@ -38,10 +39,10 @@
     artwork.setAttribute('inert', '');
     const device = hero.querySelector('.hero-dev').cloneNode(true);
     const screen = device.querySelector('.ip-screen');
+    const homeImage = screen.querySelector('.shot');
     const libraryImage = stage.querySelector('.home-library-phone img').cloneNode(true);
     libraryImage.className = 'shot home-phone-library';
     libraryImage.removeAttribute('loading');
-    const homeImages = [...screen.querySelectorAll('.shot')];
     const accessories = [...device.querySelectorAll('.plate, .sticker, .ip-status, .ip-island, .ip-home')];
     const header = document.getElementById('hdr');
     let dimensions;
@@ -71,23 +72,28 @@
         const phoneHeight = mobile
             ? Math.min(425, height * (small ? .43 : .53), width * 1.02)
             : Math.min(575, height * .72, width * .54);
-        const phoneWidth = phoneHeight * 415 / 874;
         const heroHeight = mobile ? phoneHeight : Math.min(716, height * .84, width * .53);
+        const heroWidth = heroHeight * 415 / 874;
+        const heroX = mobile ? width * .5 : Math.min(width * .5 - 20, Math.max(width * .32, width * .5 - 300));
+        const heroY = height * (mobile ? (small ? .625 : .59) : .47);
         const galleryGap = parseFloat(getComputedStyle(gallery).columnGap);
         const gallerySpace = mobile ? width - 58 : Math.min(width * .45, 598);
-        const referenceWidth = Math.min((gallerySpace - 2 * galleryGap) / 3, phoneWidth * .81, 190);
+        const referenceWidth = Math.min((gallerySpace - 2 * galleryGap) / 3, phoneHeight * 415 / 874 * .81, 190);
         const referenceHeight = (referenceWidth - 10) * 852 / 393 + 10;
         const galleryWidth = 3 * referenceWidth + 2 * galleryGap;
         const referenceX = width * (mobile ? .5 : .278);
         const referenceY = height * (mobile ? (small ? .62 : .635) : .48);
         dimensions = {
-            width, height, mobile, small, phoneWidth, phoneHeight, heroHeight,
+            width, height, mobile, small, phoneHeight, heroHeight, heroWidth, heroX, heroY,
             referenceWidth, referenceX, referenceY,
             start: scrollY + story.getBoundingClientRect().top - top,
             travel: Math.max(1, story.offsetHeight - stage.offsetHeight),
         };
 
-        artwork.style.setProperty('--w', `${phoneWidth}px`);
+        // Layout at the resting size so the screenshot is painted without scaling.
+        artwork.style.setProperty('--w', `${heroWidth}px`);
+        artwork.style.left = `${Math.round(heroX - heroWidth / 2)}px`;
+        artwork.style.top = `${Math.round(heroY - heroHeight / 2)}px`;
         gallery.style.width = `${galleryWidth}px`;
         // The gallery is positioned relative to its full-width animated section.
         gallery.style.transform = translate(referenceX - galleryWidth / 2, referenceY - referenceHeight / 2);
@@ -125,27 +131,27 @@
 
     function render(value) {
         if (value > .065) story.classList.remove('is-entering');
-        const { width, height, mobile, small, phoneWidth, phoneHeight, heroHeight, referenceWidth, referenceX, referenceY } = dimensions;
+        const { width, height, mobile, small, phoneHeight, heroHeight, heroWidth, heroX, heroY, referenceWidth, referenceX, referenceY } = dimensions;
         const open = smooth(.065, .455, value);
         const handoff = smooth(.54, .74, value);
-        const heroX = Math.min(width * .5 - 20, Math.max(width * .32, width * .5 - 300));
-        const x = mix(mobile ? width * .5 : mix(heroX, width * .28, open), referenceX, handoff);
-        const heroCenter = mobile ? (small ? .625 : .59) : .47;
+        const x = mix(mobile ? heroX : mix(heroX, width * .28, open), referenceX, handoff);
         const libraryCenter = mobile ? (small ? .62 : .60) : .475;
-        const y = mix(height * mix(heroCenter, libraryCenter, open), referenceY, handoff);
-        const scale = mix(mix(heroHeight / phoneHeight, .97, open), referenceWidth / phoneWidth, handoff);
-        artwork.style.transform = `${translate(x - phoneWidth / 2, y - phoneHeight / 2)} rotate(${mix(-2, 0, open)}deg) scale(${scale})`;
+        const y = mix(mix(heroY, height * libraryCenter, open), referenceY, handoff);
+        const scale = mix(mix(1, .97 * phoneHeight / heroHeight, open), referenceWidth / heroWidth, handoff);
+        artwork.style.transform = open ? `${translate(x - heroX, y - heroY)} scale(${scale})` : '';
 
         const libraryProgress = smooth(.155, .405, value);
         const center = smooth(.68, .82, value);
         const leftPhone = smooth(.61, .87, value);
         const rightPhone = smooth(.655, .91, value);
 
-        opacity(libraryField, smooth(.145, .39, value));
+        const libraryBlend = smooth(.145, .39, value);
+        opacity(overviewField, 1 - libraryBlend);
+        opacity(libraryField, libraryBlend);
         opacity(referenceField, smooth(.56, .87, value));
         opacity(libraryImage, libraryProgress);
         libraryImage.style.transform = translate(0, 32 * (1 - libraryProgress));
-        homeImages.forEach(image => { image.style.transform = translate(0, -25 * libraryProgress); });
+        homeImage.style.transform = libraryProgress ? translate(0, -25 * libraryProgress) : '';
         const detail = 1 - smooth(.08, .28, value);
         accessories.forEach(accessory => opacity(accessory, detail));
         opacity(artwork, 1 - center);

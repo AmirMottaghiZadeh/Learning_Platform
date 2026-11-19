@@ -1,13 +1,16 @@
 {% load static %}{% comment %}An iPhone 15 Pro drawn to scale: every length inside is in em, and one em is one
 point of the real 393 x 852 pt screen, so the device scales from one width (--w).
-screen="app" shows the web app's real first screen (light and dark captures);
+screen="app" shows the web app's real first screen;
+light_only keeps the light capture regardless of the site theme.
 the other screens are drawn in the app's own look.{% endcomment %}
-<div class="iphone{% if screen == 'app' %} is-app{% endif %}" data-ui{% if screen == "app" %} role="img" aria-label="صفحهٔ اول وب‌اپ {{ site.site_name }} روی آیفون"{% else %} aria-hidden="true"{% endif %}>
+<div class="iphone{% if screen == 'app' and not light_only %} is-app{% endif %}" data-ui{% if screen == "app" %} role="img" aria-label="صفحهٔ اول وب‌اپ {{ site.site_name }} روی آیفون"{% else %} aria-hidden="true"{% endif %}>
   <span class="ip-key ip-action"></span><span class="ip-key ip-vup"></span><span class="ip-key ip-vdn"></span><span class="ip-key ip-pwr"></span>
   <div class="ip-body"><div class="ip-screen">
 {% if screen == "app" %}
-    <img class="shot shot-l" src="{% static 'website/img/app-home-light.webp' %}" width="1179" height="2556" alt="" fetchpriority="high" decoding="async">
+    <img class="shot{% if not light_only %} shot-l{% endif %}" src="{% static 'website/img/app-home-light.webp' %}" width="1179" height="2556" alt="" fetchpriority="high" decoding="async">
+    {% if not light_only %}
     <img class="shot shot-d" src="{% static 'website/img/app-home-dark.webp' %}" width="1179" height="2556" alt="" loading="lazy" decoding="async">
+    {% endif %}
 {% else %}
     <div class="sc">
 {% if screen == "quiz" %}

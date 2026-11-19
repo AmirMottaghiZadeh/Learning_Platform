@@ -38,6 +38,12 @@ class HostRoutingTests(TestCase):
         for control in ("home-motion-enable", "home-motion-replay", "home-motion-stop"):
             self.assertNotContains(response, control)
 
+    def test_home_hero_uses_only_the_light_app_screenshot(self):
+        response = self.client.get("/", **HOST)
+        self.assertContains(response, "app-home-light.webp")
+        self.assertNotContains(response, "app-home-dark.webp")
+        self.assertContains(self.client.get("/download/", **HOST), "app-home-dark.webp")
+
     def test_home_end_links_to_published_articles_and_active_downloads(self):
         post = make_post("مقالهٔ صفحهٔ اصلی", slug="homepage-article")
         make_post("مقالهٔ پنهان", slug="hidden-homepage-article", status=Post.DRAFT)

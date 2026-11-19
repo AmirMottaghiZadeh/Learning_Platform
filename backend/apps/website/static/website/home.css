@@ -1,5 +1,7 @@
 /* The first scene uses the site's original hero and iPhone frame. */
 .home-story {
+  --overview-bg: #edf5f0;
+  --overview-ink: #125954;
   --story-top: 78px;
   --stage-gutter: clamp(10px, 3.1vw, 45px);
   --stage-width: min(1660px, 100% - 2 * var(--stage-gutter));
@@ -7,6 +9,23 @@
 .home-stage { position: relative; isolation: isolate; }
 .home-scene { scroll-margin-top: calc(var(--story-top) + 10px); }
 .home-field, .home-shared { display: none; }
+.home-story .hero { background: var(--overview-bg); }
+.home-story :is(.hero, .home-shared) {
+  --p: var(--overview-ink);
+  --h: var(--overview-ink);
+  --stroke: var(--overview-ink);
+  --edge: var(--overview-ink);
+  --edge-p: #0a3a36;
+  --onp: #fff;
+  --surface: #fff;
+  --muted: #4d6560;
+  --mint: #a3d5bb;
+  --light: #c2e4d1;
+  --coral-t: #c24f38;
+  --coral-soft: #fbe3dc;
+  color-scheme: light;
+}
+.home-story .ip-screen::after { content: none; }
 .home-library, .home-references { width: var(--stage-width); margin-inline: auto; border-radius: 30px; }
 .home-library { background: #e2eddf; }
 .home-references { margin-block-start: 15px; background: #c5ded5; }
@@ -82,6 +101,7 @@
   opacity: 0;
   pointer-events: none;
 }
+.is-animated .home-field-overview { inset: 0; width: 100%; border-radius: 0; opacity: 1; background: var(--overview-bg); }
 .home-field-library { background: radial-gradient(ellipse at 34% 57%, #f7faed, transparent 63%), #e2eddf; }
 .home-field-references { background: radial-gradient(ellipse at 32% 53%, #dfecdb, transparent 65%), #c5ded5; }
 .is-animated .home-scene {
@@ -112,14 +132,13 @@
   inset: 0 auto auto 0;
   z-index: 3;
   pointer-events: none;
-  will-change: transform;
 }
 .home-shared .hero-dev { display: block; padding: 0; --w: inherit; }
 .js .home-shared .hero-dev :is(.iphone, .plate, .sticker),
 .js .home-story[data-motion="off"] .hero-dev :is(.iphone, .plate, .sticker),
 .js .home-story[data-motion="off"] .hero-txt > * { animation: none; }
 /* The homepage setting governs the hero entrance over the shared motion reset. */
-.home-story.is-entering .home-shared .hero-dev { animation: home-phone-entrance 1060ms both !important; }
+.home-story.is-entering .home-shared .hero-dev { animation: home-phone-entrance 1060ms backwards !important; }
 .home-story.is-entering .hero h1 { animation: home-title-entrance 700ms cubic-bezier(.16, 1, .3, 1) both !important; }
 .home-shared .home-phone-library { z-index: 1; opacity: 0; }
 .home-shared .plate { will-change: opacity; }
@@ -141,7 +160,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  color: var(--h);
+  color: var(--overview-ink);
 }
 .home-scene-controls[hidden] { display: none; }
 .home-stage:not([data-scene="overview"]) .home-scene-controls { color: #284a3e; }
@@ -163,7 +182,7 @@
   .home-scene h2 + p { font-size: 14px; line-height: 1.55; }
   .home-reference-gallery { --gallery-gap: 8px; }
   .home-reference-gallery a:not(:nth-child(2)) { margin-block-start: 9px; }
-  .home-library, .home-references, .is-animated .home-field { border-radius: 21px; }
+  .home-library, .home-references, .is-animated :is(.home-field-library, .home-field-references) { border-radius: 21px; }
   .is-animated .home-stage { height: max(505px, calc(100svh - var(--story-top))); }
   .is-animated .home-scene > .wrap { display: block; padding-block: 10px 0; }
   .is-animated .home-scene h1 { font-size: clamp(25px, 7.2vw, 43px); }

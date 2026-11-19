@@ -1,6 +1,7 @@
 {% load static website_extras %}
 <div class="home-story" data-motion="{{ site.hero_motion_enabled|yesno:'on,off' }}">
   <div class="home-stage">
+    <div class="home-field home-field-overview" aria-hidden="true"></div>
     <div class="home-field home-field-library" aria-hidden="true"></div>
     <div class="home-field home-field-references" aria-hidden="true"></div>
 
@@ -16,7 +17,7 @@
         </div>
         <div class="hero-dev">
           <span class="plate" aria-hidden="true"></span><span class="plate" aria-hidden="true"></span>
-          {% include "website/_phone.html" with screen="app" %}
+          {% include "website/_phone.html" with screen="app" light_only=True %}
           <div class="sticker s1" aria-hidden="true"><div><b>مرور اشتباه‌ها</b><span>سؤال‌هایی که اشتباه پاسخ داده‌اید.</span></div></div>
           <div class="sticker s2" aria-hidden="true"><img src="{% static 'website/img/edu-quiz.png' %}" alt="" width="44" height="44"><div><b>آزمون</b><span>سؤال از همان داروهایی که خوانده‌اید.</span></div></div>
         </div>
