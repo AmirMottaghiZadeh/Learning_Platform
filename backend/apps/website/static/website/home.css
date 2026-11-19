@@ -116,8 +116,21 @@
 }
 .home-shared .hero-dev { display: block; padding: 0; --w: inherit; }
 .js .home-shared .hero-dev :is(.iphone, .plate, .sticker) { animation: none; }
+/* The play control can explicitly override the site's reduced-motion reset for this intro. */
+.home-story.is-entering .home-shared .hero-dev { animation: home-phone-entrance 1060ms both !important; }
+.home-story.is-entering .hero h1 { animation: home-title-entrance 700ms cubic-bezier(.16, 1, .3, 1) both !important; }
 .home-shared .home-phone-library { z-index: 1; opacity: 0; }
 .home-shared .plate { will-change: opacity; }
+
+@keyframes home-phone-entrance {
+  0% { transform: translateY(var(--home-entrance-y, -100vh)) rotate(-10deg) scale(.93); animation-timing-function: cubic-bezier(.37, .05, .66, .65); }
+  68% { transform: translateY(12px) rotate(1.6deg) scale(1.015); animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
+  100% { transform: translateY(0) rotate(0) scale(1); }
+}
+@keyframes home-title-entrance {
+  from { transform: translateY(22px); opacity: .35; }
+  to { transform: translateY(0); opacity: 1; }
+}
 .home-scene-controls {
   position: absolute;
   z-index: 5;
@@ -131,9 +144,31 @@
 .home-scene-controls[hidden] { display: none; }
 .home-stage:not([data-scene="overview"]) .home-scene-controls { color: #284a3e; }
 .home-scene-controls nav { display: flex; gap: clamp(9px, 2vw, 27px); }
+.home-scene-actions { display: flex; align-items: center; gap: 6px; }
+.home-motion-enable, .home-scene-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.home-motion-enable { color: var(--h); }
+.home-motion-enable[hidden] { display: none; }
+.home-motion-enable:hover, .home-scene-actions button:hover { background: rgb(89 145 124 / 15%); }
+.home-motion-enable svg, .home-scene-actions button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .home-scene-controls a { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; font-weight: 700; }
 .home-scene-controls a[aria-current] { border-block-end: 2px solid currentColor; font-weight: 900; }
-.home-scene-next { gap: 8px; white-space: nowrap; }
+.home-scene-next { gap: 8px; min-width: 44px; justify-content: center; white-space: nowrap; }
 .home-scene-next b { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid currentColor; border-radius: 50%; }
 
 @media (min-width: 721px) and (max-width: 1280px) {
@@ -163,8 +198,12 @@
   .home-scene-controls { inset: auto 22px 16px; }
   .home-scene-controls a { font-size: 12px; }
 }
-@media (max-width: 390px) {
+@media (max-width: 600px) {
   .home-scene-next > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+@media (max-width: 390px) {
+  .home-scene-controls { inset-inline: 14px; }
+  .home-scene-actions { gap: 2px; }
 }
 
 /* Homepage sections, shared with the colors and type of the public site. */

@@ -8,6 +8,9 @@
     const controls = stage.querySelector('.home-scene-controls');
     const tabs = [...controls.querySelectorAll('nav a')];
     const next = controls.querySelector('.home-scene-next');
+    const enableButton = stage.querySelector('.home-motion-enable');
+    const replayButton = controls.querySelector('.home-motion-replay');
+    const stopButton = controls.querySelector('.home-motion-stop');
     const libraryField = stage.querySelector('.home-field-library');
     const referenceField = stage.querySelector('.home-field-references');
     const gallery = stage.querySelector('.home-reference-gallery');
@@ -26,16 +29,17 @@
         dialog.showModal();
     });
 
-    if (!window.matchMedia || !Element.prototype.animate || !CSS.supports('position', 'sticky') || !('inert' in HTMLElement.prototype)) return;
+    if (!window.matchMedia || !window.CSS?.supports('position', 'sticky')) return;
 
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
     const mobileScreen = matchMedia('(max-width: 720px)');
     const shortScreen = matchMedia('(max-width: 365px), (max-width: 720px) and (max-height: 690px)');
+    const supportsInert = 'inert' in HTMLElement.prototype;
     const hero = scenes[0];
     const artwork = document.createElement('div');
     artwork.className = 'home-shared';
     artwork.setAttribute('aria-hidden', 'true');
-    artwork.inert = true;
+    artwork.setAttribute('inert', '');
     const device = hero.querySelector('.hero-dev').cloneNode(true);
     const screen = device.querySelector('.ip-screen');
     const libraryImage = stage.querySelector('.home-library-phone img').cloneNode(true);
@@ -50,7 +54,7 @@
     let lastFrame = 0;
     let active = -1;
     let playing = false;
-    let entrance = [];
+    let motionOverride = null;
 
     screen.append(libraryImage);
     artwork.append(device);
@@ -95,6 +99,18 @@
         gallery.style.transform = translate(referenceX - galleryWidth / 2, referenceY - referenceHeight / 2);
     }
 
+    function setSceneHidden(scene, hidden) {
+        scene.toggleAttribute('inert', hidden);
+        if (hidden) scene.setAttribute('aria-hidden', 'true');
+        else scene.removeAttribute('aria-hidden');
+        if (!supportsInert) {
+            scene.querySelectorAll('a[href]').forEach(link => {
+                if (hidden) link.tabIndex = -1;
+                else link.removeAttribute('tabindex');
+            });
+        }
+    }
+
     function updateScene(index) {
         if (index === active) return;
         active = index;
@@ -103,9 +119,7 @@
         if (previous && previous !== scenes[index]) tabs[index].focus({ preventScroll: true });
 
         scenes.forEach((scene, position) => {
-            scene.inert = position !== index;
-            if (scene.inert) scene.setAttribute('aria-hidden', 'true');
-            else scene.removeAttribute('aria-hidden');
+            setSceneHidden(scene, position !== index);
             if (position === index) tabs[position].setAttribute('aria-current', 'step');
             else tabs[position].removeAttribute('aria-current');
         });
@@ -116,6 +130,7 @@
     }
 
     function render(value) {
+        if (value > .065) story.classList.remove('is-entering');
         const { width, height, mobile, small, phoneWidth, phoneHeight, heroHeight, referenceWidth, referenceX, referenceY } = dimensions;
         const open = smooth(.065, .455, value);
         const handoff = smooth(.54, .74, value);
@@ -187,10 +202,11 @@
     }
 
     function setMotion() {
-        playing = !reducedMotion.matches;
+        playing = motionOverride ?? !reducedMotion.matches;
         document.documentElement.classList.toggle('home-motion', playing);
         story.classList.toggle('is-animated', playing);
         controls.hidden = !playing;
+        enableButton.hidden = playing;
 
         if (playing) {
             stage.append(artwork);
@@ -202,14 +218,48 @@
             cancelAnimationFrame(frame);
             frame = 0;
             lastFrame = 0;
-            entrance.forEach(animation => animation.cancel());
-            entrance = [];
+            story.classList.remove('is-entering');
             artwork.remove();
             delete stage.dataset.scene;
-            scenes.forEach(scene => { scene.inert = false; scene.removeAttribute('aria-hidden'); });
+            scenes.forEach(scene => setSceneHidden(scene, false));
             [...copies, gallery, uptodate, lexicomp, conditions].forEach(element => element.removeAttribute('style'));
         }
     }
+
+    function playEntrance() {
+        story.classList.remove('is-entering');
+        artwork.style.setProperty('--home-entrance-y', `-${dimensions.height * 1.3}px`);
+        // Resolve the resting style before reapplying the same animation class.
+        void device.offsetWidth;
+        story.classList.add('is-entering');
+    }
+
+    function replay() {
+        if (!playing) {
+            motionOverride = true;
+            setMotion();
+        }
+        if (location.hash) history.replaceState(history.state, '', location.pathname + location.search);
+        measure();
+        jump('#overview', 'instant');
+        progress = scrollProgress();
+        render(progress);
+        playEntrance();
+    }
+
+    enableButton.addEventListener('click', () => {
+        replay();
+        replayButton.focus({ preventScroll: true });
+    });
+    replayButton.addEventListener('click', replay);
+    stopButton.addEventListener('click', () => {
+        const current = scenes[active] || hero;
+        motionOverride = false;
+        setMotion();
+        current.scrollIntoView({ block: 'start', behavior: 'instant' });
+        const focusTarget = current === hero ? enableButton : current.querySelector('h2');
+        focusTarget.focus({ preventScroll: true });
+    });
 
     controls.addEventListener('click', event => {
         const link = event.target.closest('a');
@@ -226,26 +276,17 @@
         syncScroll();
     }, { passive: true });
     addEventListener('hashchange', () => jump(location.hash, 'instant'));
-    reducedMotion.addEventListener('change', setMotion);
+    const syncMotionPreference = () => { if (motionOverride === null) setMotion(); };
+    if (reducedMotion.addEventListener) reducedMotion.addEventListener('change', syncMotionPreference);
+    else reducedMotion.addListener(syncMotionPreference);
 
     setMotion();
     (document.fonts?.ready || Promise.resolve()).then(() => {
         if (!playing) return;
         measure();
-        if (jump(location.hash, 'instant')) {
-            progress = scrollProgress();
-            render(progress);
-        } else if (!location.hash && progress === 0) {
-            const phoneEntrance = device.animate([
-                { transform: `translateY(-${dimensions.height * 1.3}px) rotate(-10deg) scale(.93)`, easing: 'cubic-bezier(.37,.05,.66,.65)' },
-                { transform: 'translateY(12px) rotate(1.6deg) scale(1.015)', offset: .68, easing: 'cubic-bezier(.16,1,.3,1)' },
-                { transform: 'translateY(0) rotate(0) scale(1)' },
-            ], { duration: 1060, fill: 'backwards' });
-            const titleEntrance = hero.querySelector('h1').animate([
-                { transform: 'translateY(22px)', opacity: .35 },
-                { transform: 'translateY(0)', opacity: 1 },
-            ], { duration: 700, easing: 'cubic-bezier(.16,1,.3,1)' });
-            entrance = [phoneEntrance, titleEntrance];
-        }
+        jump(location.hash, 'instant');
+        progress = scrollProgress();
+        render(progress);
+        if ((!location.hash || location.hash === '#overview') && progress === 0) playEntrance();
     });
 })();

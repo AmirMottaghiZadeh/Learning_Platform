@@ -7,11 +7,12 @@
     <section class="hero home-scene" id="overview" aria-labelledby="overview-title">
       <div class="wrap">
         <div class="hero-txt home-scene-copy">
-          <h1 id="overview-title">{% if site.hero_highlight and site.hero_highlight in site.hero_title %}{% for part in site.hero_title|split_highlight:site.hero_highlight %}{{ part }}{% endfor %}{% else %}{{ site.hero_title }}{% endif %}</h1>
+          <h1 id="overview-title" tabindex="-1">{% if site.hero_highlight and site.hero_highlight in site.hero_title %}{% for part in site.hero_title|split_highlight:site.hero_highlight %}{{ part }}{% endfor %}{% else %}{{ site.hero_title }}{% endif %}</h1>
           <p class="lead">{{ site.hero_text }}</p>
           <div class="row">
             <a class="btn p" href="{{ site.hero_primary_url }}">{{ site.hero_primary_label }}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg></a>
             {% if site.hero_secondary_label %}<a class="btn" href="{{ site.app_url }}">{{ site.hero_secondary_label }}</a>{% endif %}
+            <button class="home-motion-enable" type="button" hidden>پخش موشن <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 10 6-10 6z"/></svg></button>
           </div>
         </div>
         <div class="hero-dev">
@@ -27,7 +28,7 @@
       <div class="wrap">
         <div class="home-scene-copy">
           <p class="home-scene-label">دارونامهٔ اپ فارمنتا</p>
-          <h2 id="library-title">هر دارو،<br> در گروه خودش.</h2>
+          <h2 id="library-title" tabindex="-1">هر دارو،<br> در گروه خودش.</h2>
           <p>در دارونامهٔ اپ، نام دارو را به فارسی یا انگلیسی جست‌وجو کنید یا از دسته‌های دارویی به درس‌ها برسید.</p>
           <a href="{{ site.app_url }}">باز کردن اپ فارمنتا <span aria-hidden="true">↖</span></a>
         </div>
@@ -39,7 +40,7 @@
       <div class="wrap">
         <div class="home-scene-copy">
           <p class="home-scene-label">منابع بالینی در اپ</p>
-          <h2 id="references-title">سه مسیر برای جست‌وجوی بالینی.</h2>
+          <h2 id="references-title" tabindex="-1">سه مسیر برای جست‌وجوی بالینی.</h2>
           <p>موضوع بالینی را در UpToDate جست‌وجو کنید، تداخل دارویی را در Lexicomp بررسی کنید یا از بخش بیماری‌ها و شرایط شروع کنید.</p>
           <a href="{{ site.app_url }}">باز کردن اپ فارمنتا <span aria-hidden="true">↖</span></a>
         </div>
@@ -63,7 +64,11 @@
         <a href="#library">دارونامه</a>
         <a href="#references">منابع بالینی</a>
       </nav>
-      <a class="home-scene-next" href="#library"><span>اسکرول برای کشف</span><b aria-hidden="true">↓</b></a>
+      <div class="home-scene-actions">
+        <button class="home-motion-replay" type="button" aria-label="بازپخش موشن" title="بازپخش موشن"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11a8 8 0 1 1 2.2 6.5M4 5v6h6"/></svg></button>
+        <button class="home-motion-stop" type="button" aria-label="خاموش کردن موشن" title="خاموش کردن موشن"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg></button>
+        <a class="home-scene-next" href="#library"><span>اسکرول برای کشف</span><b aria-hidden="true">↓</b></a>
+      </div>
     </div>
   </div>
 </div>
