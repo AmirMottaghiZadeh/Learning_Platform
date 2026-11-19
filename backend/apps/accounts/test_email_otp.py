@@ -1,12 +1,17 @@
 from datetime import timedelta
+from io import StringIO
 import re
+from smtplib import SMTPAuthenticationError
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core import mail
-from django.test import TestCase, override_settings
+from django.core.management import call_command
+from django.core.management.base import CommandError
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
+from config.email_config import SMTP_BACKEND
 from . import email_otp
 from .models import EmailLoginIdentity, EmailOneTimeCode
 from .otp import OtpError
@@ -65,9 +70,24 @@ class EmailOtpTests(TestCase):
         self.assertTrue(EmailOneTimeCode.objects.filter(consumed_at__isnull=True).count()==1)
 
     def test_delivery_failure_keeps_no_usable_unsent_code(self):
-        with patch("apps.accounts.email_otp.EmailMultiAlternatives.send",side_effect=OSError("private SMTP failure")):
-            with self.assertRaises(OtpError):self.send()
+        error = SMTPAuthenticationError(535, b"private provider response")
+        with self.assertLogs("apps.accounts.email_otp", level="WARNING") as logs:
+            with patch("apps.accounts.email_otp.EmailMultiAlternatives.send", side_effect=error):
+                with self.assertRaises(OtpError):
+                    self.send()
+        self.assertIn("SMTPAuthenticationError (SMTP status 535)", logs.output[0])
+        self.assertNotIn("private provider response", logs.output[0])
         self.assertFalse(EmailOneTimeCode.objects.exists())
+
+    @override_settings(EMAIL_BACKEND=SMTP_BACKEND, EMAIL_HOST="smtp.example.com", EMAIL_HOST_USER="sender@example.com",
+        EMAIL_HOST_PASSWORD="", EMAIL_USE_SSL=True, EMAIL_USE_TLS=False, DEFAULT_FROM_EMAIL="sender@example.com")
+    def test_incomplete_smtp_configuration_stops_before_creating_a_code(self):
+        with patch("apps.accounts.email_otp.EmailMultiAlternatives.send") as send:
+            with self.assertRaises(OtpError) as error:
+                self.send()
+        self.assertEqual(error.exception.code, "EMAIL_SEND_FAILED")
+        send.assert_not_called()
+        self.assertFalse(EmailLoginIdentity.objects.exists())
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend")
     def test_console_backend_cannot_print_a_login_code(self):
@@ -93,3 +113,41 @@ class EmailOtpTests(TestCase):
         self.assertEqual(response["Cache-Control"],"no-store")
         self.api.credentials(HTTP_AUTHORIZATION="Bearer "+response.data["access_token"])
         self.assertEqual(self.api.get(reverse("auth-me")).status_code,200)
+
+
+@override_settings(
+    AUTH_EMAIL_OTP_ENABLED=True,
+    EMAIL_BACKEND=SMTP_BACKEND,
+    EMAIL_HOST="smtp.example.com",
+    EMAIL_PORT=465,
+    EMAIL_USE_SSL=True,
+    EMAIL_USE_TLS=False,
+    EMAIL_HOST_USER="sender@example.com",
+    EMAIL_HOST_PASSWORD="test-password",
+    DEFAULT_FROM_EMAIL="Pharmenta <sender@example.com>",
+)
+class CheckEmailOtpTests(SimpleTestCase):
+    @patch("apps.accounts.management.commands.check_email_otp.get_connection")
+    def test_command_authenticates_without_sending(self, get_connection):
+        output = StringIO()
+        call_command("check_email_otp", stdout=output)
+        get_connection.assert_called_once_with(fail_silently=False)
+        connection = get_connection.return_value
+        connection.__enter__.assert_called_once()
+        connection.__exit__.assert_called_once()
+        connection.__enter__.return_value.send_messages.assert_not_called()
+        self.assertIn("No email was sent", output.getvalue())
+
+    @override_settings(EMAIL_USE_TLS=True)
+    @patch("apps.accounts.management.commands.check_email_otp.get_connection")
+    def test_command_rejects_conflicting_encryption_before_connecting(self, get_connection):
+        with self.assertRaisesMessage(CommandError, "Enable at most one"):
+            call_command("check_email_otp")
+        get_connection.assert_not_called()
+
+    @patch("apps.accounts.management.commands.check_email_otp.get_connection")
+    def test_command_reports_the_smtp_status_without_provider_text(self, get_connection):
+        get_connection.return_value.__enter__.side_effect = SMTPAuthenticationError(535, b"private response")
+        with self.assertRaises(CommandError) as error:
+            call_command("check_email_otp")
+        self.assertEqual(str(error.exception), "SMTP connection failed (SMTPAuthenticationError, SMTP status 535).")

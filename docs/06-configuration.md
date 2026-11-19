@@ -106,7 +106,7 @@
 
 | متغیر | پیش‌فرض | رانفلر | کار |
 |---|---|---|---|
-| `EMAIL_BACKEND` | کنسول | `django.core.mail.backends.smtp.EmailBackend` | کد ورود و بازیابی رمز؛ OTP با backend کنسول/فایل ارسال نمی‌شود تا کد چاپ نشود |
+| `EMAIL_BACKEND` | SMTP وقتی `EMAIL_HOST` تنظیم است، وگرنه کنسول | `django.core.mail.backends.smtp.EmailBackend` | کد ورود و بازیابی رمز. برای آزمون اتصال روی سرور، `python manage.py check_email_otp` را اجرا کنید |
 | `EMAIL_CREDENTIALS_FILE` | خالی | مسیر فایل راز با مجوز `600` | JSON با کلیدهای مجاز SMTP؛ جایگزین اختیاری env و خارج از گیت/ایمیج؛ تنظیم محیطی اولویت دارد |
 | `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_USE_TLS` | خالی / `587` / `True` | | |
 | `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | خالی | رمز **راز** است | |

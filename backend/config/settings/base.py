@@ -311,17 +311,18 @@ AUTH_EMAIL_OTP_ENABLED = config("AUTH_EMAIL_OTP_ENABLED", default=True, cast=boo
 EMAIL_OTP_CODE_LENGTH = config("EMAIL_OTP_CODE_LENGTH", default=6, cast=int)
 EMAIL_OTP_TTL_SECONDS = config("EMAIL_OTP_TTL_SECONDS", default=300, cast=int)
 EMAIL_CREDENTIALS_FILE = config("EMAIL_CREDENTIALS_FILE", default="")
-from config.email_config import private_email_settings
+from config.email_config import LOCAL_FROM_EMAIL, SMTP_BACKEND, private_email_settings
 _private_mail = private_email_settings(EMAIL_CREDENTIALS_FILE)
-EMAIL_BACKEND = config("EMAIL_BACKEND", default=_private_mail.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"))
 EMAIL_HOST = config("EMAIL_HOST", default="") or _private_mail.get("EMAIL_HOST", "")
+_default_email_backend = SMTP_BACKEND if EMAIL_HOST else "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = config("EMAIL_BACKEND", default=_private_mail.get("EMAIL_BACKEND", _default_email_backend))
 EMAIL_PORT = config("EMAIL_PORT", default=_private_mail.get("EMAIL_PORT", 587), cast=int)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="") or _private_mail.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="") or _private_mail.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=_private_mail.get("EMAIL_USE_SSL", False), cast=bool)
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=_private_mail.get("EMAIL_USE_TLS", not EMAIL_USE_SSL), cast=bool)
 EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=10, cast=int)
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=_private_mail.get("DEFAULT_FROM_EMAIL", "no-reply@pharmexa.local"))
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=_private_mail.get("DEFAULT_FROM_EMAIL", LOCAL_FROM_EMAIL))
 if RUNNING_TESTS:
     EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 # Data Quality Center governance

@@ -11,11 +11,13 @@ from django.db import transaction
 from django.utils import timezone
 from django.views.decorators.debug import sensitive_variables
 from apps.core import ratelimit
+from config.email_config import SMTP_BACKEND, smtp_configuration_problem
 from .models import EmailLoginIdentity, EmailOneTimeCode, LearnerProfile, SecurityAuditEvent
 from .otp import OtpError
 from .services import _request_metadata, ensure_default_learner_role, record_security_event
 
 logger = logging.getLogger(__name__)
+DELIVERY_ERROR_MESSAGE = "ارسال کد ایمیلی انجام نشد؛ کمی بعد دوباره تلاش کنید."
 
 
 def normalized(email):
@@ -34,6 +36,17 @@ def _require_enabled():
 @sensitive_variables()
 def request_code(email, *, request=None):
     _require_enabled()
+    backend = settings.EMAIL_BACKEND
+    # A console or file backend exposes login secrets.
+    problem = None
+    if backend.endswith(("console.EmailBackend", "filebased.EmailBackend", "dummy.EmailBackend")):
+        problem = "Set EMAIL_BACKEND to a delivery backend."
+    elif backend == SMTP_BACKEND:
+        problem = smtp_configuration_problem(settings)
+    if problem:
+        logger.warning("email_otp_misconfigured: %s", problem)
+        raise OtpError(DELIVERY_ERROR_MESSAGE, code="EMAIL_SEND_FAILED", status=503)
+
     email=normalized(email);now=timezone.now();limits=ratelimit.current().otp
     code="".join(secrets.choice("0123456789") for _ in range(max(6,settings.EMAIL_OTP_CODE_LENGTH)))
     with transaction.atomic():
@@ -54,16 +67,14 @@ def request_code(email, *, request=None):
         row=EmailOneTimeCode.objects.create(identity=identity,code_hash=_hash(email,code),
             expires_at=now+timedelta(seconds=settings.EMAIL_OTP_TTL_SECONDS),ip_address=ip)
     try:
-        # A console backend prints mail bodies, so refuse it for login secrets.
-        if settings.EMAIL_BACKEND.endswith(("console.EmailBackend","filebased.EmailBackend")):
-            raise ValueError
         message=EmailMultiAlternatives("کد ورود به فارمنتا",f"کد ورود شما به فارمنتا: {code}\nاین کد فقط یک بار قابل استفاده است و تا {settings.EMAIL_OTP_TTL_SECONDS//60} دقیقه اعتبار دارد.\nاگر شما درخواست نداده‌اید، این پیام را نادیده بگیرید.",settings.DEFAULT_FROM_EMAIL,[email])
         if message.send(fail_silently=False)!=1:
             raise ValueError
-    except Exception:
+    except Exception as error:
         row.delete()
-        logger.warning("email_otp_delivery_failed")
-        raise OtpError("ارسال کد ایمیلی انجام نشد؛ کمی بعد دوباره تلاش کنید.",code="EMAIL_SEND_FAILED",status=503) from None
+        status = getattr(error, "smtp_code", None)
+        logger.warning("email_otp_delivery_failed: %s (SMTP status %s)", type(error).__name__, status if isinstance(status, int) else "-")
+        raise OtpError(DELIVERY_ERROR_MESSAGE, code="EMAIL_SEND_FAILED", status=503) from None
     record_security_event(SecurityAuditEvent.OTP_SENT,request=request,metadata={"channel":"email"})
     return row
 
