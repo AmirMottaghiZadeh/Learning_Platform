@@ -46,6 +46,16 @@ def feature_icon(title):
     return ""
 
 
+@register.filter
+def home_audience_icon(badge):
+    return {
+        "Rx": "website/img/topic-vitamins.png",
+        "MD": "website/img/spec-anatomy.png",
+        "RN": "website/img/spec-critical-care.png",
+        "A+": "website/img/entry-today-plan.png",
+    }.get(badge, "")
+
+
 @register.simple_tag
 def nav_on(path, url):
     """True when `url` is the current section of the site."""
