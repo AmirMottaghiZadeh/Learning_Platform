@@ -1,11 +1,30 @@
 {% extends "website/base.html" %}
+{% load static billing_extras %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'website/auth.css' %}">
+<script src="{% static 'website/otp.js' %}" defer></script>
+{% endblock %}
 {% block content %}
-<div class="wrap"><div class="center-card auth-card">
-  <h1>تأیید شمارهٔ موبایل</h1>
-  <p class="sub">کد {{ code_length }} رقمی پیامک‌شده به <b dir="ltr">{{ phone }}</b> را وارد کنید.</p>
+<div class="wrap"><section class="center-card auth-card otp-card" aria-labelledby="otp-title">
+  <div class="otp-heading">
+    <span class="otp-mark" aria-hidden="true">•••</span>
+    <div>
+      <h1 id="otp-title">تأیید شمارهٔ موبایل</h1>
+      <p class="sub" id="otp-help">کد {{ code_length|fa }} رقمی پیامک‌شده به <bdi dir="ltr" class="otp-phone">{{ phone }}</bdi> را وارد کنید.</p>
+    </div>
+  </div>
   <form method="post" class="auth-form auth-code">
     {% csrf_token %}
-    {% include "website/_auth_fields.html" %}
+    <div class="form-row">
+      <label for="{{ form.code.id_for_label }}">کد تأیید</label>
+      <div class="otp-entry" data-otp dir="ltr">
+        {{ form.code }}
+        <div class="otp-cells" aria-hidden="true" hidden>
+          {% for cell in code_cells %}<span class="otp-cell"></span>{% endfor %}
+        </div>
+      </div>
+      {% if form.errors %}<div class="auth-error" id="otp-error" role="alert">{{ form.code.errors }}{{ form.non_field_errors }}</div>{% endif %}
+    </div>
     <button class="btn p block" type="submit">تأیید و ادامه</button>
   </form>
   <div class="auth-actions">
@@ -16,5 +35,5 @@
     </form>
   </div>
   <p class="auth-link"><a href="{% url 'site:login' %}?mode=login&amp;next={{ next|urlencode }}">بازگشت به ورود</a></p>
-</div></div>
+</section></div>
 {% endblock %}

@@ -1,75 +1,97 @@
 {% load static website_extras %}
-<div class="home-story" data-motion="{{ site.hero_motion_enabled|yesno:'on,off' }}">
+{% comment %}Hero visual review adapted from Unslop by Damir Sokolovsky (@heydamir), CC BY 4.0.{% endcomment %}
+<div class="home-story">
+  <span class="home-scene-anchor" id="overview" aria-hidden="true"></span>
+  <span class="home-scene-anchor" id="library" aria-hidden="true"></span>
+  <span class="home-scene-anchor" id="references" aria-hidden="true"></span>
   <div class="home-stage">
-    <div class="home-field home-field-overview" aria-hidden="true"></div>
-    <div class="home-field home-field-library" aria-hidden="true"></div>
-    <div class="home-field home-field-references" aria-hidden="true"></div>
+    <div class="wrap home-story-layout">
+      <div class="home-story-copy">
+        <section class="home-scene home-overview" data-home-scene="overview" aria-labelledby="overview-title">
+          <div class="home-overview-copy">
+            <p class="home-scene-label">دارونامهٔ فارسی و منابع بالینی</p>
+            <h1 id="overview-title">{% if site.hero_highlight and site.hero_highlight in site.hero_title %}{% for part in site.hero_title|split_highlight:site.hero_highlight %}{{ part }}{% endfor %}{% else %}{{ site.hero_title }}{% endif %}</h1>
+            <p class="home-overview-lead">{{ site.hero_text }}</p>
+            <div class="home-overview-actions">
+              <a class="btn p" href="{{ site.hero_primary_url }}">{{ site.hero_primary_label }}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg></a>
+              {% if site.hero_secondary_label %}<a class="btn" href="{{ site.app_url }}">{{ site.hero_secondary_label }}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg></a>{% endif %}
+            </div>
+          </div>
+        </section>
 
-    <section class="hero home-scene" id="overview" aria-labelledby="overview-title">
-      <div class="wrap">
-        <div class="hero-txt home-scene-copy">
-          <h1 id="overview-title">{% if site.hero_highlight and site.hero_highlight in site.hero_title %}{% for part in site.hero_title|split_highlight:site.hero_highlight %}{{ part }}{% endfor %}{% else %}{{ site.hero_title }}{% endif %}</h1>
-          <p class="lead">{{ site.hero_text }}</p>
-          <div class="row">
-            <a class="btn p" href="{{ site.hero_primary_url }}">{{ site.hero_primary_label }}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg></a>
-            {% if site.hero_secondary_label %}<a class="btn" href="{{ site.app_url }}">{{ site.hero_secondary_label }}</a>{% endif %}
+        <section class="home-scene home-library" data-home-scene="library" aria-labelledby="library-title" inert aria-hidden="true">
+          <div class="home-library-copy">
+            <p class="home-scene-label">دارونامهٔ اپ {{ site.site_name }}</p>
+            <h2 id="library-title">هر دارو، در گروه خودش</h2>
+            <p class="home-scene-description">در دارونامهٔ اپ، نام دارو را به فارسی یا انگلیسی جست‌وجو کنید یا از دسته‌های دارویی به درس‌ها برسید.</p>
+            <a class="home-text-action" href="{{ site.app_url }}">باز کردن اپ {{ site.site_name }}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg></a>
+          </div>
+        </section>
+
+        <section class="home-scene home-references" data-home-scene="references" aria-labelledby="references-title" inert aria-hidden="true">
+          <div class="home-references-copy">
+            <p class="home-scene-label">منابع بالینی در اپ {{ site.site_name }}</p>
+            <h2 id="references-title">سه مسیر برای جست‌وجوی بالینی</h2>
+          </div>
+          <div class="home-reference-card" data-tabs>
+            <div class="home-reference-tabs" role="tablist" aria-label="منابع بالینی">
+              {% for ref in home_references %}
+              <button type="button" id="home-tab-{{ ref.key }}" role="tab" aria-controls="home-panel-{{ ref.key }}" aria-selected="{{ forloop.first|yesno:'true,false' }}" tabindex="{% if forloop.first %}0{% else %}-1{% endif %}" data-reference="{{ ref.key }}"><bdi lang="{{ ref.language }}">{{ ref.label }}</bdi></button>
+              {% endfor %}
+            </div>
+            {% for ref in home_references %}
+            <div class="home-reference-panel" id="home-panel-{{ ref.key }}" role="tabpanel" aria-labelledby="home-tab-{{ ref.key }}"{% if not forloop.first %} hidden{% endif %}>
+              <div class="home-reference-copy">
+                <h3>{{ ref.title }}</h3>
+                <p>{{ ref.description }}</p>
+                <div class="home-reference-actions">
+                  <a class="home-text-action" href="{{ site.app_url }}">باز کردن اپ {{ site.site_name }}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg></a>
+                  <a class="home-text-action" href="{% static ref.image %}" data-home-zoom data-preview-title="{{ ref.label }}" data-preview-alt="{{ ref.alt }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4m-12-9.5h5m-2.5-2.5v5"/></svg>بزرگ‌نمایی<span class="sr"> {{ ref.label }}</span></a>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+
+      <div class="home-art" aria-hidden="true">
+        <div class="home-art-world">
+          {% for ref in home_references|slice:"1:" %}
+          <div class="home-side-device"><img src="{% static ref.image %}" width="393" height="852" alt="" decoding="async"></div>
+          {% endfor %}
+          <div class="home-device-seat">
+            <span class="home-device-shadow"></span>
+            <div class="home-device-body">
+              <div class="home-device-glass">
+                <div class="home-device-screen" data-screen="home">
+                  <img class="shot-l" src="{% static 'website/img/app-home-light.webp' %}" width="1179" height="2556" alt="" decoding="async">
+                  <img class="shot-d" src="{% static 'website/img/app-home-dark.webp' %}" width="1179" height="2556" alt="" loading="lazy" decoding="async">
+                </div>
+                <div class="home-device-screen" data-screen="library"><img src="{% static 'website/img/app-library.webp' %}" width="393" height="852" alt="" decoding="async"></div>
+                {% for ref in home_references %}
+                <div class="home-device-screen" data-screen="{{ ref.key }}"><img src="{% static ref.image %}" width="393" height="852" alt="" decoding="async"></div>
+                {% endfor %}
+              </div>
+              <span class="home-frame-highlight"></span>
+            </div>
           </div>
         </div>
-        <div class="hero-dev">
-          <span class="plate" aria-hidden="true"></span><span class="plate" aria-hidden="true"></span>
-          {% include "website/_phone.html" with screen="app" light_only=True %}
-          <div class="sticker s1" aria-hidden="true"><div><b>مرور اشتباه‌ها</b><span>سؤال‌هایی که اشتباه پاسخ داده‌اید.</span></div></div>
-          <div class="sticker s2" aria-hidden="true"><img src="{% static 'website/img/edu-quiz.png' %}" alt="" width="44" height="44"><div><b>آزمون</b><span>سؤال از همان داروهایی که خوانده‌اید.</span></div></div>
-        </div>
       </div>
-    </section>
 
-    <section class="home-scene home-library" id="library" aria-labelledby="library-title">
-      <div class="wrap">
-        <div class="home-scene-copy">
-          <p class="home-scene-label">دارونامهٔ اپ فارمنتا</p>
-          <h2 id="library-title">هر دارو،<br> در گروه خودش.</h2>
-          <p>در دارونامهٔ اپ، نام دارو را به فارسی یا انگلیسی جست‌وجو کنید یا از دسته‌های دارویی به درس‌ها برسید.</p>
-          <a href="{{ site.app_url }}">باز کردن اپ فارمنتا <span aria-hidden="true">↖</span></a>
-        </div>
-        <figure class="home-library-phone"><img src="{% static 'website/img/app-library.webp' %}" width="393" height="852" alt="دارونامهٔ اپ فارمنتا با جست‌وجو و فهرست دسته‌های دارویی" loading="lazy"></figure>
+      <div class="home-scene-controls" hidden>
+        <nav aria-label="پیش‌نمایش اپ {{ site.site_name }}">
+          <a href="#overview" aria-current="step">خانهٔ اپ</a>
+          <a href="#library">دارونامه</a>
+          <a href="#references">منابع بالینی</a>
+        </nav>
+        <a class="home-scene-next" href="#library"><span>دارونامه را ببینید</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15m-5-5 5 5 5-5"/></svg></a>
       </div>
-    </section>
-
-    <section class="home-scene home-references" id="references" aria-labelledby="references-title">
-      <div class="wrap">
-        <div class="home-scene-copy">
-          <p class="home-scene-label">منابع بالینی در اپ</p>
-          <h2 id="references-title">سه مسیر برای جست‌وجوی بالینی.</h2>
-          <p>موضوع بالینی را در UpToDate جست‌وجو کنید، تداخل دارویی را در Lexicomp بررسی کنید یا از بخش بیماری‌ها و شرایط شروع کنید.</p>
-          <a href="{{ site.app_url }}">باز کردن اپ فارمنتا <span aria-hidden="true">↖</span></a>
-        </div>
-        <div class="home-reference-gallery" dir="ltr">
-          <a href="{% static 'website/img/app-uptodate.webp' %}">
-            <img src="{% static 'website/img/app-uptodate.webp' %}" width="393" height="852" alt="نتایج جست‌وجو در بخش UpToDate اپ فارمنتا" decoding="async" fetchpriority="low"><span lang="en">UpToDate</span>
-          </a>
-          <a href="{% static 'website/img/app-lexicomp.webp' %}">
-            <img src="{% static 'website/img/app-lexicomp.webp' %}" width="393" height="852" alt="صفحهٔ بررسی تداخل دارویی در بخش Lexicomp اپ فارمنتا" decoding="async" fetchpriority="low"><span lang="en">Lexicomp</span>
-          </a>
-          <a href="{% static 'website/img/app-conditions.webp' %}">
-            <img src="{% static 'website/img/app-conditions.webp' %}" width="393" height="852" alt="فهرست دسته‌ها در بخش بیماری‌ها و شرایط اپ فارمنتا" decoding="async" fetchpriority="low"><span lang="en">Diseases &amp; Conditions</span>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <div class="home-scene-controls" hidden>
-      <nav aria-label="پیش‌نمایش اپ فارمنتا">
-        <a href="#overview" aria-current="step">خانهٔ اپ</a>
-        <a href="#library">دارونامه</a>
-        <a href="#references">منابع بالینی</a>
-      </nav>
-      <a class="home-scene-next" href="#library"><span>اسکرول برای کشف</span><b aria-hidden="true">↓</b></a>
     </div>
   </div>
 </div>
 
 <dialog class="home-screen-preview" aria-labelledby="home-screen-title">
   <form method="dialog"><h2 id="home-screen-title" dir="auto"></h2><button type="submit" aria-label="بستن پیش‌نمایش" autofocus>×</button></form>
-  <img src="{% static 'website/img/app-uptodate.webp' %}" width="393" height="852" alt="" loading="lazy">
+  <img src="{% static 'website/img/app-uptodate.webp' %}" width="393" height="852" alt="" loading="lazy" decoding="async">
 </dialog>

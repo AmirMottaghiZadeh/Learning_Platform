@@ -1,238 +1,210 @@
 (() => {
-    const story = document.querySelector('.home-story');
-    if (!story) return;
+  const story = document.querySelector('.home-story');
+  if (!story) return;
 
-    const stage = story.querySelector('.home-stage');
-    const scenes = [...stage.querySelectorAll('.home-scene')];
-    const copies = scenes.map(scene => scene.querySelector('.home-scene-copy'));
-    const controls = stage.querySelector('.home-scene-controls');
-    const tabs = [...controls.querySelectorAll('nav a')];
-    const next = controls.querySelector('.home-scene-next');
-    const overviewField = stage.querySelector('.home-field-overview');
-    const libraryField = stage.querySelector('.home-field-library');
-    const referenceField = stage.querySelector('.home-field-references');
-    const gallery = stage.querySelector('.home-reference-gallery');
-    const [uptodate, lexicomp, conditions] = gallery.querySelectorAll('a');
-    const dialog = document.querySelector('.home-screen-preview');
+  const card = story.querySelector('.home-reference-card');
+  const tabList = card.querySelector('.home-reference-tabs');
+  const tabs = [...tabList.querySelectorAll('[role="tab"]')];
+  const referenceLinks = [...card.querySelectorAll('[data-home-zoom]')];
+  const dialog = document.querySelector('.home-screen-preview');
 
-    gallery.addEventListener('click', event => {
-        const frame = event.target.closest('a');
-        if (!frame || !dialog.showModal || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  card.addEventListener('click', event => {
+    const link = event.target.closest('[data-home-zoom]');
+    if (!link || !dialog.showModal || isModifiedClick(event)) return;
 
-        event.preventDefault();
-        const image = dialog.querySelector('img');
-        image.src = frame.href;
-        image.alt = frame.querySelector('img').alt;
-        dialog.querySelector('h2').textContent = frame.querySelector('span').textContent;
-        dialog.showModal();
+    event.preventDefault();
+    dialog.querySelector('h2').textContent = link.dataset.previewTitle;
+    const image = dialog.querySelector('img');
+    image.src = link.href;
+    image.alt = link.dataset.previewAlt;
+    dialog.showModal();
+  });
+
+  const header = document.getElementById('hdr');
+  const stage = story.querySelector('.home-stage');
+  const scenes = [...story.querySelectorAll('.home-scene')];
+  const art = story.querySelector('.home-art');
+  const device = art.querySelector('.home-device-seat');
+  const deviceBody = device.querySelector('.home-device-body');
+  const shadow = device.querySelector('.home-device-shadow');
+  const rim = device.querySelector('.home-frame-highlight');
+  const screens = [...device.querySelectorAll('[data-screen]')];
+  const sideImages = [...art.querySelectorAll('.home-side-device img')];
+  const controls = story.querySelector('.home-scene-controls');
+  const copy = story.querySelector('.home-story-copy');
+  const steps = [...controls.querySelectorAll('nav a')];
+  const next = controls.querySelector('.home-scene-next');
+  const nextTargets = ['library', 'references', document.getElementById('stats') ? 'stats' : 'features'];
+  const nextLabels = ['دارونامه را ببینید', 'منابع بالینی را ببینید', 'ادامهٔ صفحه'];
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const mobile = matchMedia('(max-width: 720px)');
+  const curve = 'cubic-bezier(.2,.8,.2,1)';
+
+  let entrance = [];
+  let frame = 0;
+  let previousTime = 0;
+  let renderedProgress = 0;
+  let activeScene = -1;
+  let start = 0;
+  let travel = 1;
+  let artWidth = 0;
+
+  const clamp = value => Math.max(0, Math.min(1, value));
+  const mix = (from, to, amount) => from + (to - from) * amount;
+  const ease = (from, to, value) => {
+    const t = clamp((value - from) / (to - from));
+    return t * t * (3 - 2 * t);
+  };
+
+  function isModifiedClick(event) {
+    return event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
+  }
+
+  function move(element, x, y, angle = 0, scale = 1) {
+    element.style.transform = `translate3d(${x}px,${y}px,0) rotate(${angle}deg) scale(${scale})`;
+  }
+
+  function measure() {
+    story.style.setProperty('--story-top', `${header.offsetHeight}px`);
+    start = scrollY + story.getBoundingClientRect().top - header.offsetHeight;
+    travel = Math.max(1, story.offsetHeight - stage.offsetHeight);
+    artWidth = art.clientWidth;
+  }
+
+  function updateScene(index) {
+    if (index === activeScene) return;
+    activeScene = index;
+    stage.dataset.scene = scenes[index].dataset.homeScene;
+    copy.scrollTop = 0;
+
+    const focusedScene = document.activeElement?.closest('.home-scene');
+    if (focusedScene && focusedScene !== scenes[index]) steps[index].focus({preventScroll: true});
+    scenes.forEach((scene, i) => {
+      const current = index === i;
+      scene.inert = !current;
+      if (current) {
+        scene.removeAttribute('aria-hidden');
+        steps[i].setAttribute('aria-current', 'step');
+      } else {
+        scene.setAttribute('aria-hidden', 'true');
+        steps[i].removeAttribute('aria-current');
+      }
+    });
+    next.hash = nextTargets[index];
+    next.querySelector('span').textContent = nextLabels[index];
+  }
+
+  function render(value) {
+    const library = ease(.14, .43, value);
+    const references = ease(.56, .86, value);
+    const fan = ease(.62, .94, value);
+    const selected = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true');
+    const selectedReference = tabs[selected].dataset.reference;
+
+    if (value > .045) {
+      for (const animation of entrance) {
+        if (animation.playState === 'running') animation.finish();
+      }
+    }
+
+    updateScene(value > .67 ? 2 : value > .27 ? 1 : 0);
+    stage.toggleAttribute('data-reference-resting', references > .995);
+    const still = reducedMotion.matches;
+    move(device, (still ? 0 : mobile.matches ? 4 : 12) * library * (1 - references), still ? 0 : -6 * library + 4 * references,
+      still ? 0 : -5 * (1 - library) - references, still ? 1 : 1 - .06 * library - .025 * references);
+
+    screens.forEach(screen => {
+      const key = screen.dataset.screen;
+      const layer = key === 'home' ? 1 : key === 'library' ? library : key === selectedReference ? references : 0;
+      screen.style.opacity = layer;
+      move(screen, 0, still ? 0 : key === 'home' ? -12 * library : (1 - layer) * 24);
     });
 
-    if (story.dataset.motion !== 'on' || !window.matchMedia || !window.CSS?.supports('position', 'sticky')) return;
-
-    const mobileScreen = matchMedia('(max-width: 720px)');
-    const shortScreen = matchMedia('(max-width: 365px), (max-width: 720px) and (max-height: 690px)');
-    const supportsInert = 'inert' in HTMLElement.prototype;
-    const hero = scenes[0];
-    const artwork = document.createElement('div');
-    artwork.className = 'home-shared';
-    artwork.setAttribute('aria-hidden', 'true');
-    artwork.setAttribute('inert', '');
-    const device = hero.querySelector('.hero-dev').cloneNode(true);
-    const screen = device.querySelector('.ip-screen');
-    const homeImage = screen.querySelector('.shot');
-    const libraryImage = stage.querySelector('.home-library-phone img').cloneNode(true);
-    libraryImage.className = 'shot home-phone-library';
-    libraryImage.removeAttribute('loading');
-    const accessories = [...device.querySelectorAll('.plate, .sticker, .ip-status, .ip-island, .ip-home')];
-    const header = document.getElementById('hdr');
-    let dimensions;
-    let frame = 0;
-    let progress = 0;
-    let lastFrame = 0;
-    let active = -1;
-
-    screen.append(libraryImage);
-    artwork.append(device);
-
-    const clamp = value => Math.max(0, Math.min(1, value));
-    const mix = (from, to, amount) => from + (to - from) * amount;
-    const smooth = (from, to, value) => {
-        const t = clamp((value - from) / (to - from));
-        return t * t * (3 - 2 * t);
-    };
-    const translate = (x, y) => `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
-    const opacity = (element, value) => { element.style.opacity = value.toFixed(4); };
-
-    function measure() {
-        const top = header.offsetHeight;
-        story.style.setProperty('--story-top', `${top}px`);
-        const { width, height } = stage.getBoundingClientRect();
-        const mobile = mobileScreen.matches;
-        const small = shortScreen.matches;
-        const phoneHeight = mobile
-            ? Math.min(425, height * (small ? .43 : .53), width * 1.02)
-            : Math.min(575, height * .72, width * .54);
-        const heroHeight = mobile ? phoneHeight : Math.min(716, height * .84, width * .53);
-        const heroWidth = heroHeight * 415 / 874;
-        const heroX = mobile ? width * .5 : Math.min(width * .5 - 20, Math.max(width * .32, width * .5 - 300));
-        const heroY = height * (mobile ? (small ? .625 : .59) : .47);
-        const galleryGap = parseFloat(getComputedStyle(gallery).columnGap);
-        const gallerySpace = mobile ? width - 58 : Math.min(width * .45, 598);
-        const referenceWidth = Math.min((gallerySpace - 2 * galleryGap) / 3, phoneHeight * 415 / 874 * .81, 190);
-        const referenceHeight = (referenceWidth - 10) * 852 / 393 + 10;
-        const galleryWidth = 3 * referenceWidth + 2 * galleryGap;
-        const referenceX = width * (mobile ? .5 : .278);
-        const referenceY = height * (mobile ? (small ? .62 : .635) : .48);
-        dimensions = {
-            width, height, mobile, small, phoneHeight, heroHeight, heroWidth, heroX, heroY,
-            referenceWidth, referenceX, referenceY,
-            start: scrollY + story.getBoundingClientRect().top - top,
-            travel: Math.max(1, story.offsetHeight - stage.offsetHeight),
-        };
-
-        // Layout at the resting size so the screenshot is painted without scaling.
-        artwork.style.setProperty('--w', `${heroWidth}px`);
-        artwork.style.left = `${Math.round(heroX - heroWidth / 2)}px`;
-        artwork.style.top = `${Math.round(heroY - heroHeight / 2)}px`;
-        gallery.style.width = `${galleryWidth}px`;
-        // The gallery is positioned relative to its full-width animated section.
-        gallery.style.transform = translate(referenceX - galleryWidth / 2, referenceY - referenceHeight / 2);
-    }
-
-    function setSceneHidden(scene, hidden) {
-        scene.toggleAttribute('inert', hidden);
-        if (hidden) scene.setAttribute('aria-hidden', 'true');
-        else scene.removeAttribute('aria-hidden');
-        if (!supportsInert) {
-            scene.querySelectorAll('a[href]').forEach(link => {
-                if (hidden) link.tabIndex = -1;
-                else link.removeAttribute('tabindex');
-            });
-        }
-    }
-
-    function updateScene(index) {
-        if (index === active) return;
-        active = index;
-        stage.dataset.scene = scenes[index].id;
-        const previous = document.activeElement?.closest('.home-scene');
-        if (previous && previous !== scenes[index]) tabs[index].focus({ preventScroll: true });
-
-        scenes.forEach((scene, position) => {
-            setSceneHidden(scene, position !== index);
-            if (position === index) tabs[position].setAttribute('aria-current', 'step');
-            else tabs[position].removeAttribute('aria-current');
-        });
-
-        const targets = ['library', 'references', document.getElementById('stats') ? 'stats' : 'features'];
-        next.href = `#${targets[index]}`;
-        next.firstElementChild.textContent = ['اسکرول برای کشف', 'دیدن منابع بالینی', 'ادامهٔ صفحه'][index];
-    }
-
-    function render(value) {
-        if (value > .065) story.classList.remove('is-entering');
-        const { width, height, mobile, small, phoneHeight, heroHeight, heroWidth, heroX, heroY, referenceWidth, referenceX, referenceY } = dimensions;
-        const open = smooth(.065, .455, value);
-        const handoff = smooth(.54, .74, value);
-        const x = mix(mobile ? heroX : mix(heroX, width * .28, open), referenceX, handoff);
-        const libraryCenter = mobile ? (small ? .62 : .60) : .475;
-        const y = mix(mix(heroY, height * libraryCenter, open), referenceY, handoff);
-        const scale = mix(mix(1, .97 * phoneHeight / heroHeight, open), referenceWidth / heroWidth, handoff);
-        artwork.style.transform = open ? `${translate(x - heroX, y - heroY)} scale(${scale})` : '';
-
-        const libraryProgress = smooth(.155, .405, value);
-        const center = smooth(.68, .82, value);
-        const leftPhone = smooth(.61, .87, value);
-        const rightPhone = smooth(.655, .91, value);
-
-        const libraryBlend = smooth(.145, .39, value);
-        opacity(overviewField, 1 - libraryBlend);
-        opacity(libraryField, libraryBlend);
-        opacity(referenceField, smooth(.56, .87, value));
-        opacity(libraryImage, libraryProgress);
-        libraryImage.style.transform = translate(0, 32 * (1 - libraryProgress));
-        homeImage.style.transform = libraryProgress ? translate(0, -25 * libraryProgress) : '';
-        const detail = 1 - smooth(.08, .28, value);
-        accessories.forEach(accessory => opacity(accessory, detail));
-        opacity(artwork, 1 - center);
-        artwork.style.visibility = center === 1 ? 'hidden' : 'visible';
-
-        // The same central phone resolves into Lexicomp while the side phones fan out.
-        gallery.style.visibility = leftPhone > 0 ? 'visible' : 'hidden';
-        opacity(uptodate, leftPhone);
-        uptodate.style.transform = translate(57 * (1 - leftPhone), 24 * (1 - leftPhone));
-        opacity(lexicomp, center);
-        opacity(conditions, rightPhone);
-        conditions.style.transform = translate(-57 * (1 - rightPhone), 24 * (1 - rightPhone));
-
-        const entering = [1, smooth(.265, .475, value), smooth(.66, .88, value)];
-        const leaving = [smooth(.12, .295, value), smooth(.58, .76, value), 0];
-        copies.forEach((copy, index) => {
-            opacity(copy, entering[index] * (1 - leaving[index]));
-            copy.style.transform = translate(0, 33 * (1 - entering[index]) - 28 * leaving[index]);
-        });
-
-        updateScene(value > .71 ? 2 : value > .305 ? 1 : 0);
-    }
-
-    function scrollProgress() {
-        return clamp((scrollY - dimensions.start) / dimensions.travel);
-    }
-
-    function animateScroll(now) {
-        frame = 0;
-        const target = scrollProgress();
-        const amount = 1 - Math.exp(-Math.max(1, now - (lastFrame || now - 16)) / 30);
-        progress = Math.abs(progress - target) < .0006 ? target : mix(progress, target, amount);
-        lastFrame = progress === target ? 0 : now;
-        render(progress);
-        if (lastFrame) frame = requestAnimationFrame(animateScroll);
-    }
-
-    function syncScroll() {
-        if (!frame) frame = requestAnimationFrame(animateScroll);
-    }
-
-    function jump(hash, behavior) {
-        const index = scenes.findIndex(scene => `#${scene.id}` === hash);
-        if (index < 0) return false;
-        const positions = [0, .47, .96];
-        scrollTo({ top: Math.max(0, dimensions.start + dimensions.travel * positions[index]), behavior });
-        return true;
-    }
-
-    function playEntrance() {
-        artwork.style.setProperty('--home-entrance-y', `-${dimensions.height * 1.3}px`);
-        story.classList.add('is-entering');
-    }
-
-    controls.addEventListener('click', event => {
-        const link = event.target.closest('a');
-        if (!link || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-        if (!jump(link.hash, 'smooth')) return;
-        event.preventDefault();
-        history.replaceState(history.state, '', link.hash);
+    const adjacentLinks = referenceLinks.filter((link, index) => index !== selected);
+    sideImages.forEach((image, index) => {
+      if (fan > 0 && image.src !== adjacentLinks[index].href) image.src = adjacentLinks[index].href;
+      const frame = image.parentElement;
+      const direction = index ? -1 : 1;
+      frame.style.opacity = fan;
+      const spread = still ? 1 : fan;
+      move(frame, direction * artWidth * (mobile.matches ? .265 : .245) * spread, 18 * spread,
+        direction * 11 * spread, .84 + .14 * spread);
     });
-    addEventListener('scroll', syncScroll, { passive: true });
-    addEventListener('resize', () => {
-        measure();
-        render(progress);
-        syncScroll();
-    }, { passive: true });
-    addEventListener('hashchange', () => jump(location.hash, 'instant'));
 
-    document.documentElement.classList.add('home-motion');
-    story.classList.add('is-animated');
-    controls.hidden = false;
-    stage.append(artwork);
+    const entering = [1, ease(.24, .44, value), ease(.65, .86, value)];
+    const leaving = [ease(.12, .28, value), ease(.56, .72, value), 0];
+    scenes.forEach((scene, index) => {
+      scene.style.opacity = entering[index] * (1 - leaving[index]);
+      move(scene, 0, still ? 0 : 22 * (1 - entering[index]) - 18 * leaving[index]);
+    });
+  }
+
+  function scrollProgress() {
+    return clamp((scrollY - start) / travel);
+  }
+
+  function animate(now) {
+    frame = 0;
+    const target = scrollProgress();
+    const delta = Math.max(1, Math.min(40, now - (previousTime || now - 16)));
+    renderedProgress = Math.abs(renderedProgress - target) < .001
+      ? target
+      : mix(renderedProgress, target, 1 - Math.exp(-delta / 53));
+    render(renderedProgress);
+    previousTime = renderedProgress === target ? 0 : now;
+    if (previousTime) schedule();
+  }
+
+  function schedule() {
+    if (!frame) frame = requestAnimationFrame(animate);
+  }
+
+  function playEntrance() {
+    if (!deviceBody.animate || (location.hash && location.hash !== '#overview') || scrollProgress() > .015) return;
+    if (reducedMotion.matches) {
+      entrance = [deviceBody.animate([{opacity: .5}, {opacity: 1}], {duration: 180, easing: curve})];
+      return;
+    }
+    const distance = mobile.matches ? '-44svh' : '-65svh';
+    const duration = 860;
+    entrance = [
+      deviceBody.animate([
+        {transform: `translate3d(32px,${distance},0) rotate(-8deg) scale(.96)`, offset: 0, easing: 'cubic-bezier(.44,.05,.74,.58)'},
+        {transform: 'translate3d(0,2px,0) rotate(.5deg)', offset: .78, easing: curve},
+        {transform: 'none', offset: 1},
+      ], duration),
+      shadow.animate([
+        {opacity: 0, transform: 'translate(40px,38px) scale(1.14)'},
+        {opacity: .3, transform: 'translate(15px,14px) scale(1.06)', offset: .61},
+        {opacity: 1, transform: 'none'},
+      ], {duration, easing: curve}),
+      rim.animate([{opacity: 0}, {opacity: .67, offset: .4}, {opacity: 0}], {duration: 430, delay: 470, easing: curve}),
+      scenes[0].querySelector('.home-overview-copy').animate([
+        {opacity: .22, transform: 'translateY(12px)'},
+        {opacity: 1, transform: 'none'},
+      ], {duration: 480, easing: curve}),
+    ];
+  }
+
+  function refresh() {
     measure();
-    progress = scrollProgress();
-    render(progress);
-    (document.fonts?.ready || Promise.resolve()).then(() => {
-        measure();
-        jump(location.hash, 'instant');
-        progress = scrollProgress();
-        render(progress);
-        if ((!location.hash || location.hash === '#overview') && progress === 0) playEntrance();
-    });
+    schedule();
+  }
+
+  story.classList.add('home-motion-ready');
+  document.documentElement.classList.add('home-motion');
+  controls.hidden = false;
+  measure();
+  renderedProgress = scrollProgress();
+  render(renderedProgress);
+  playEntrance();
+
+  new MutationObserver(schedule).observe(tabList, {attributes: true, subtree: true, attributeFilter: ['aria-selected']});
+  addEventListener('scroll', schedule, {passive: true});
+  addEventListener('resize', refresh, {passive: true});
+  reducedMotion.addEventListener('change', () => {
+    entrance.forEach(animation => animation.cancel());
+    schedule();
+  });
+  document.fonts?.ready.then(refresh);
 })();

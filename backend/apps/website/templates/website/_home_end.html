@@ -1,4 +1,4 @@
-{% load static billing_extras %}
+{% load billing_extras %}
 <div class="home-end">
   <section class="home-section wrap home-plans" id="plans" aria-labelledby="plans-title">
     <div class="section-head">
@@ -47,11 +47,9 @@
   </section>
   {% endif %}
 
-  <section class="home-section wrap" id="download" aria-labelledby="download-title">
-    <div class="home-install">
-      <div><h2 id="download-title">{{ site.site_name }} را همین حالا نصب کنید</h2><p>اندروید، iOS و نسخهٔ وب. با یک حساب، همهٔ دستگاه‌ها.</p>{% include "website/_downloads.html" with homepage=True %}</div>
-      <img src="{% static 'website/img/app-logo.png' %}" width="164" height="164" alt="" loading="lazy">
-    </div>
+  {% if site.newsletter_enabled %}
+  <section class="home-section wrap" id="newsletter" aria-label="خبرنامهٔ {{ site.site_name }}">
     {% include "website/_newsletter.html" with source="home" %}
   </section>
+  {% endif %}
 </div>

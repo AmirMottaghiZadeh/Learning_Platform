@@ -298,8 +298,6 @@ details .ans{max-width:64ch;padding:0 0 20px;color:var(--muted);font-size:16px;l
 .input,.textarea,.select{width:100%;min-height:50px;border-radius:var(--rb);border:2px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;padding:0 16px;transition:border-color .2s,box-shadow .2s}
 .textarea{padding:12px 16px;min-height:130px;resize:vertical}
 .input:focus,.textarea:focus,.select:focus{outline:0;border-color:var(--p2);box-shadow:0 4px 0 var(--edge)}
-.auth-form input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]){width:100%;min-height:50px;border-radius:var(--rb);border:2px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;padding:0 16px;transition:border-color .2s,box-shadow .2s}
-.auth-form input:focus{outline:0;border-color:var(--p2);box-shadow:0 4px 0 var(--edge)}
 .pager{display:flex;gap:8px;justify-content:center;margin-top:36px;flex-wrap:wrap}
 .pager a,.pager span{min-width:46px;min-height:46px;border-radius:14px;border:2px solid var(--stroke);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;font-weight:900;padding:0 12px;transition:transform .18s var(--ease),box-shadow .18s var(--ease)}
 .pager a:hover{transform:translateY(-3px);box-shadow:0 3px 0 var(--edge)}
@@ -408,7 +406,7 @@ details .ans{max-width:64ch;padding:0 0 20px;color:var(--muted);font-size:16px;l
 .auth-link{margin-top:16px;text-align:center;font-size:14px;color:var(--muted)}
 .auth-link a,.auth-actions a{color:var(--p);font-weight:700}
 .auth-note{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
-.auth-form .auth-note{margin:0}.auth-code input{letter-spacing:6px;text-align:center;font-size:22px}
+.auth-form .auth-note{margin:0}
 .auth-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;font-size:13px}
 .auth-resend{padding:0;border:0;background:none;color:var(--p);font:inherit;font-weight:700;cursor:pointer}
 .auth-resend:disabled{color:var(--muted);cursor:wait}

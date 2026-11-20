@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.staticfiles import finders
 from django.core import mail
 from .base import SiteTestCase as TestCase
 from django.utils import timezone
@@ -34,17 +35,30 @@ class HostRoutingTests(TestCase):
 
     def test_home_uses_automatic_motion_without_visitor_controls(self):
         response = self.client.get("/", **HOST)
-        self.assertContains(response, 'class="home-story" data-motion="on"')
+        self.assertContains(response, 'class="home-story"')
+        self.assertNotContains(response, 'data-motion=')
+        self.assertNotContains(response, 'home-static-phone')
         for control in ("home-motion-enable", "home-motion-replay", "home-motion-stop"):
             self.assertNotContains(response, control)
 
-    def test_home_hero_uses_only_the_light_app_screenshot(self):
+    def test_home_hero_loads_the_clinical_atlas_and_theme_aware_app_screens(self):
         response = self.client.get("/", **HOST)
+        self.assertContains(response, "website/home.css")
+        for filename in ("home-clinical-atlas.webp", "home-clinical-atlas-dark.webp"):
+            self.assertIsNotNone(finders.find(f"website/img/{filename}"))
         self.assertContains(response, "app-home-light.webp")
-        self.assertNotContains(response, "app-home-dark.webp")
+        self.assertContains(response, "app-home-dark.webp")
         self.assertContains(self.client.get("/download/", **HOST), "app-home-dark.webp")
 
-    def test_home_end_links_to_published_articles_and_active_downloads(self):
+    def test_home_references_have_tabs_and_direct_image_links(self):
+        response = self.client.get("/", **HOST)
+        for key in ("uptodate", "lexicomp", "conditions"):
+            with self.subTest(reference=key):
+                self.assertContains(response, f'aria-controls="home-panel-{key}"')
+                self.assertContains(response, f'aria-labelledby="home-tab-{key}"')
+                self.assertContains(response, f'href="/static/website/img/app-{key}.webp"')
+
+    def test_home_end_links_to_published_articles_and_keeps_downloads_on_their_page(self):
         post = make_post("مقالهٔ صفحهٔ اصلی", slug="homepage-article")
         make_post("مقالهٔ پنهان", slug="hidden-homepage-article", status=Post.DRAFT)
         download = DownloadLink.objects.create(store="web", label="نسخهٔ وب", url="https://app.example.com/")
@@ -52,7 +66,10 @@ class HostRoutingTests(TestCase):
         self.assertContains(response, 'id="articles"')
         self.assertContains(response, post.get_absolute_url())
         self.assertNotContains(response, "hidden-homepage-article")
-        self.assertContains(response, f'href="/dl/{download.pk}/"')
+        self.assertNotContains(response, "را همین حالا نصب کنید")
+        self.assertNotContains(response, f'href="/dl/{download.pk}/"')
+        self.assertContains(self.client.get("/download/", **HOST), f'href="/dl/{download.pk}/"')
+        self.assertContains(response, 'id="newsletter"')
         self.assertContains(response, 'class="ft home-footer"')
 
     def test_plan_features_isolate_english_names_on_home_and_plans(self):

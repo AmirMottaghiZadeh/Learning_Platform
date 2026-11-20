@@ -63,7 +63,6 @@ class SiteSettings(models.Model):
     hero_title = models.CharField("تیتر صفحهٔ اصلی", max_length=160, default="داروشناسی را دسته‌به‌دسته یاد بگیرید")
     hero_highlight = models.CharField("کلمهٔ پررنگ در تیتر", max_length=60, default="دسته‌به‌دسته", blank=True)
     hero_text = models.TextField("متن زیر تیتر", default="دارونامه و آزمون بر پایهٔ طبقه‌بندی جهانی ATC. هر دارو در جای درست خودش، با خلاصهٔ فارسی از برچسب رسمی دارو.")
-    hero_motion_enabled = models.BooleanField("موشن هیرو", default=True, help_text="نمایش ورود متحرک گوشی و گذار اسکرولی بین صحنه‌های هیرو در صفحهٔ اصلی.")
     hero_primary_label = models.CharField("دکمهٔ اصلی", max_length=40, default="دانلود اپ")
     hero_primary_url = models.CharField("نشانی دکمهٔ اصلی", max_length=300, default="/download/")
     hero_secondary_label = models.CharField("دکمهٔ دوم", max_length=40, default="استفاده از وب‌اپ", blank=True)

@@ -25,6 +25,37 @@ from .models import (
 from .sanitize import plain_text
 
 
+HOME_REFERENCES = (
+    {
+        "key": "uptodate",
+        "label": "UpToDate",
+        "language": "en",
+        "title": "جست‌وجوی موضوعات بالینی",
+        "description": "نام بیماری یا موضوع بالینی را جست‌وجو کنید و مقالهٔ مرتبط را باز کنید.",
+        "image": "website/img/app-uptodate.webp",
+        "alt": "نتایج جست‌وجو در بخش UpToDate اپ فارمنتا",
+    },
+    {
+        "key": "lexicomp",
+        "label": "Lexicomp",
+        "language": "en",
+        "title": "بررسی تداخل‌های دارویی",
+        "description": "داروها را انتخاب کنید و خلاصهٔ تداخل و مدیریت بالینی آن را ببینید.",
+        "image": "website/img/app-lexicomp.webp",
+        "alt": "صفحهٔ بررسی تداخل دارویی در Lexicomp اپ فارمنتا",
+    },
+    {
+        "key": "conditions",
+        "label": "بیماری‌ها و شرایط",
+        "language": "fa",
+        "title": "مرور موضوعات بر اساس دسته",
+        "description": "از فهرست دسته‌ها شروع کنید و موضوعات بیماری‌ها و شرایط را مرور کنید.",
+        "image": "website/img/app-conditions.webp",
+        "alt": "فهرست دسته‌ها در بخش بیماری‌ها و شرایط اپ فارمنتا",
+    },
+)
+
+
 def _page_meta(request, *, title="", description="", image=None, noindex=False, canonical=None, kind="website"):
     site = SiteSettings.get()
     suffix = f" {site.title_suffix}" if site.title_suffix and title else ""
@@ -48,7 +79,7 @@ def home(request):
         "cards": services.plan_cards(),
         "posts": list(services.live_posts().order_by("-featured", "-published_at")[:3]),
         "announcement": services.latest_announcement(),
-        "downloads": list(DownloadLink.objects.filter(is_active=True)),
+        "home_references": HOME_REFERENCES,
         "nav": "home",
     }
     if settings.SITE_DRUG_ATC_PREFIXES:

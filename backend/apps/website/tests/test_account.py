@@ -55,7 +55,13 @@ class PurchaseFlowTests(SiteTestCase):
     def test_wrong_code_is_refused(self):
         with mock.patch("apps.accounts.otp._new_code", return_value="12345"):
             self.client.post("/account/login/", {"mode": "signup", "phone": "09121112233"}, **HOST)
-        self.client.post("/account/code/", {"code": "00000"}, **HOST)
+        page = self.client.get("/account/code/", **HOST)
+        self.assertContains(page, 'name="code"', count=1)
+        self.assertContains(page, 'autocomplete="one-time-code"')
+        self.assertContains(page, 'class="otp-cell"', count=page.context["code_length"])
+        rejected = self.client.post("/account/code/", {"code": "00000"}, **HOST)
+        self.assertContains(rejected, 'aria-describedby="otp-help otp-error"')
+        self.assertContains(rejected, 'id="otp-error"')
         self.assertEqual(self.client.get("/account/", **HOST).status_code, 302)
 
     def test_bad_phone_refused(self):

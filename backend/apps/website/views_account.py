@@ -163,11 +163,19 @@ def login_code(request):
                 metadata={"purpose": purpose},
             )
             return redirect("site:set_password")
+    code_length = max(4, settings.OTP_CODE_LENGTH)
+    form.fields["code"].widget.attrs.update({
+        "maxlength": code_length,
+        "aria-describedby": "otp-help otp-error" if form.errors else "otp-help",
+    })
+    if form.errors:
+        form.fields["code"].widget.attrs["aria-invalid"] = "true"
     ctx = {
         "phone": mask(pending["phone"]), "nav": "", "form": form,
         "mode": "reset" if pending["purpose"] == OneTimeCode.RESET else "signup",
         "next": _safe_next(request, pending.get("next")),
-        "code_length": max(4, settings.OTP_CODE_LENGTH),
+        "code_length": code_length,
+        "code_cells": range(code_length),
         "resend_in": max(0, ceil(pending.get("resend_at", 0) - timezone.now().timestamp())),
     }
     ctx.update(_meta("کد تأیید"))
