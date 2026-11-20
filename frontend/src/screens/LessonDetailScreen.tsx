@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useRef, useState } from "react";
-import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, TextInput, View } from "react-native";
+import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, View } from "react-native";
+import { TextInput } from "@/components/primitives/TextInput";
 
 import { lessonsApi } from "@/api/endpoints";
 import { DrugReviewBadge } from "@/components/DrugReviewBadge";

@@ -111,12 +111,20 @@ async function main() {
     const geometry = `(()=>{const e=document.querySelector('[data-testid=reference-answer-draft]');let p=e;
       while(p&&!(p.scrollHeight>p.clientHeight+10&&/auto|scroll/.test(getComputedStyle(p).overflowY)))p=p.parentElement;
       if(!e||!p)return null;const a=e.getBoundingClientRect(),b=p.getBoundingClientRect();return {tail:a.bottom,top:b.top,bottom:b.bottom,scroll:p.scrollTop,height:p.clientHeight};})()`;
-    for (const [name, width, height] of [['mobile', 390, 844], ['desktop', 1280, 900]]) {
-      await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: name === 'mobile' });
+    for (const [name, width, height] of [['iphone', 390, 844], ['mobile', 390, 844], ['desktop', 1280, 900]]) {
+      const ios = name === 'iphone';
+      await send('Emulation.setUserAgentOverride', { userAgent: ios
+        ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'
+        : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36', platform: ios ? 'iPhone' : 'Linux x86_64' });
+      await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: name !== 'desktop' });
       await send('Page.navigate', { url: origin });
       await until(() => evaluate(`Boolean([...document.querySelectorAll('[role=button],button')].find(e=>e.textContent.includes('سرچ هوشمند')))`));
       await evaluate(`[...document.querySelectorAll('[role=button],button')].find(e=>e.textContent.includes('سرچ هوشمند')).click()`);
       await until(() => evaluate(`Boolean(document.querySelector('[data-testid=reference-question]'))`));
+      const inputSize = await evaluate(`parseFloat(getComputedStyle(document.querySelector('[data-testid=reference-question]')).fontSize)`);
+      assert.equal(inputSize, ios ? 16 : 14);
+      assert.equal(await evaluate(`/maximum-scale|user-scalable/.test(document.querySelector('meta[name=viewport]').content)`), false);
+
       await evaluate(`(()=>{const e=document.querySelector('[data-testid=reference-question]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(e,${JSON.stringify(question)});e.dispatchEvent(new Event('input',{bubbles:true}));})()`);
       await until(() => evaluate(`document.querySelector('[data-testid=reference-send]').getAttribute('aria-disabled')!=='true'`));
       await evaluate(`document.querySelector('[data-testid=reference-send]').click()`);
@@ -136,7 +144,7 @@ async function main() {
       fs.writeFileSync(path.join(output, `${name}-stream.png`), Buffer.from(shot.data, 'base64'), { mode: 0o600 });
       await until(() => evaluate(`Boolean(document.querySelector('[data-testid=reference-final-answer]'))`));
       assert.equal(await evaluate(`document.querySelector('[data-testid=reference-answer-text]').textContent.includes('**')`), false);
-      console.log(JSON.stringify({ surface: name, streaming_tail_visible: true, bold_rendered: true, pause_resume: true }));
+      console.log(JSON.stringify({ surface: name, input_font_size: inputSize, streaming_tail_visible: true, bold_rendered: true, pause_resume: true }));
     }
   } catch (error) {
     if (send && session) {

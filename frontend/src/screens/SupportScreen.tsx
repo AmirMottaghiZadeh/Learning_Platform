@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import React, { useEffect, useRef, useState } from "react";
-import { AppState, KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
+import { AppState, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
+import { TextInput } from "@/components/primitives/TextInput";
 import { supportApi, SupportMessage } from "@/api/support";
 import { queryClient } from "@/api/queryClient";
 import { ScreenChrome } from "@/components/ScreenChrome";

@@ -1,5 +1,6 @@
 import React from "react";
-import { TextInput, TextInputProps, View } from "react-native";
+import { TextInputProps, View } from "react-native";
+import { TextInput } from "@/components/primitives/TextInput";
 
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";

@@ -14,6 +14,7 @@
     "test:pediatric-dose": "node --test scripts/pediatric-dose/*.test.cjs",
     "test:reference-timing": "node --test scripts/test-reference-timing.cjs",
     "test:reference-answer": "node --test scripts/test-reference-answer.cjs",
+    "test:input-zoom": "node scripts/test-input-zoom.cjs",
     "test:reference-answer:browser": "node scripts/test-reference-answer-browser.cjs",
     "benchmark:reference-browser": "node scripts/benchmark-reference-browser.cjs"
   },

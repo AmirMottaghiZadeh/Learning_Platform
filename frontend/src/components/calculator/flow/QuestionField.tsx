@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Pressable, TextInput, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { TextInput } from "@/components/primitives/TextInput";
 
 import { CalculatorQuestion } from "@/api/types";
 import { AppText } from "@/components/primitives/AppText";

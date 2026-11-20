@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
-import { Pressable, TextInput, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { TextInput } from "@/components/primitives/TextInput";
 
 import { includePediatricDose, PEDIATRIC_DOSE_SLUG } from "@/pediatricDose/catalog";
 import { calculatorsApi } from "@/api/endpoints";

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
+import { TextInput } from "@/components/primitives/TextInput";
 import Svg, { Path } from "react-native-svg";
 import { aiLabApi, LAB_MODEL, LabCitation } from "@/api/aiLab";
 import { ApiError } from "@/api/client";

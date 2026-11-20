@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AppState, Linking, Platform, Pressable, TextInput, View } from "react-native";
+import { AppState, Linking, Platform, Pressable, View } from "react-native";
+import { TextInput } from "@/components/primitives/TextInput";
 
 import { ApiError } from "@/api/client";
 import { billingApi } from "@/api/endpoints";

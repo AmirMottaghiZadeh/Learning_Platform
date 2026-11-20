@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useState } from "react";
-import { TextInput, View } from "react-native";
+import { View } from "react-native";
+import { TextInput } from "@/components/primitives/TextInput";
 
 import { medscapeApi } from "@/api/endpoints";
 import { MedscapeKind } from "@/api/types";
