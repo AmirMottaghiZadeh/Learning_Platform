@@ -1,0 +1,11 @@
+{% extends "panel/base.html" %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>{{ heading }}</h1><div class="sub">{{ section.title }}</div></div><div class="acts"><a class="btn" href="{{ back }}">بازگشت</a></div></div>
+{% if tabs %}<div class="tabs">{% for label, url, key in tabs %}<a href="{{ url }}" class="{% if key == section.key %}on{% endif %}">{{ label }}</a>{% endfor %}</div>{% endif %}
+<form method="post" class="card formcard">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="toast error">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="fgrid">{% for field in form %}{% include "panel/_field.html" %}{% endfor %}</div>
+  <div style="display:flex;gap:8px;margin-top:18px"><button class="btn p" type="submit">ذخیره</button><a class="btn" href="{{ back }}">انصراف</a></div>
+</form>
+{% endblock %}

@@ -1,0 +1,6 @@
+<span class="chip {% if ingredient.is_reviewed %}tone-ok{% else %}tone-danger{% endif %}" data-drug-reviewed="{{ ingredient.is_reviewed|yesno:'true,false' }}" role="status">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    {% if ingredient.is_reviewed %}<path d="m5 12 4 4L19 6"/>{% else %}<path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v4m0 4h.01"/>{% endif %}
+  </svg>
+  {% if ingredient.is_reviewed %}بازبینی شده{% else %}بازبینی نشده{% endif %}
+</span>

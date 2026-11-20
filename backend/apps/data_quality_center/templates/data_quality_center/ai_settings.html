@@ -1,0 +1,16 @@
+{% extends "data_quality_center/base.html" %}
+{% block title %}تنظیمات ویرایش با AI{% endblock %}
+{% block head %}<style>
+.ai-settings{max-width:1000px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px}.ai-card{border:1px solid var(--line);background:var(--surface);padding:22px;border-radius:16px}.ai-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.ai-field label{display:block;font-weight:700;font-size:13px;margin-bottom:6px}.ai-field .input{width:100%}.ai-field .errorlist{color:var(--danger);padding:0;list-style:none;font-size:12px}.ai-card h2{font-size:16px;margin:0 0 18px}.ai-preset{padding:18px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:12px}.ai-preset textarea{width:100%}.ai-help{font-size:12px;color:var(--muted);line-height:2;margin:10px 0}.ai-span{grid-column:1/-1}@media(max-width:650px){.ai-fields{grid-template-columns:1fr}.ai-card{padding:16px}}
+</style>{% endblock %}
+{% block content %}<div class="ai-settings">
+<div><div class="page-title">تنظیمات ویرایش با AI</div><p class="ai-help">اتصال مستقل ابزار ویرایش کیفیت داده و دستورهای آمادهٔ اپراتورها</p></div>
+<form method="post" autocomplete="off" class="ai-settings" data-testid="dqc-ai-settings">{% csrf_token %}
+<section class="ai-card"><h2>اتصال سرویس</h2>{{ form.non_field_errors }}
+<div class="ai-fields">{% for field in form %}<div class="ai-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}</div>
+<p class="ai-help">{% if key_configured %}کلید به‌صورت رمزگذاری‌شده ذخیره شده است؛ خالی‌گذاشتن فیلد، کلید فعلی را نگه می‌دارد.{% else %}هنوز کلیدی ذخیره نشده است.{% endif %} کلید در صفحهٔ اپراتور یا لاگ نمایش داده نمی‌شود.</p></section>
+<section class="ai-card"><h2>دستورهای آماده</h2><p class="ai-help">چهار دستور اصلی قابل ویرایش‌اند. برای افزودن دستور اختصاصی از ردیف خالی استفاده و ذخیره کنید؛ ردیف خالی تازه پس از ذخیره ظاهر می‌شود. اپراتور می‌تواند هنگام اجرا توضیح تکمیلی بنویسد.</p>
+{{ presets.management_form }}{{ presets.non_form_errors }}
+{% for preset in presets %}<div class="ai-preset">{{ preset.id }}{{ preset.non_field_errors }}<div class="ai-fields">{% for field in preset.visible_fields %}<div class="ai-field {% if field.name == 'instruction' %}ai-span{% endif %}"><label for="{{ field.id_for_label }}">{% if field.name == 'DELETE' %}حذف دستور{% else %}{{ field.label }}{% endif %}</label>{{ field }}{{ field.errors }}</div>{% endfor %}</div></div>{% endfor %}
+</section><div class="ai-card"><button class="btn" type="submit">ذخیرهٔ تنظیمات و دستورها</button> <a class="btn outline" href="{% url 'data_quality_center:queue' %}">بازگشت به کیفیت داده</a></div>
+</form></div>{% endblock %}

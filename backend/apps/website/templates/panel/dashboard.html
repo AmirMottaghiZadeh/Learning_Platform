@@ -1,0 +1,32 @@
+{% extends "panel/base.html" %}
+{% load billing_extras website_extras %}
+{% block title %}داشبورد{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>داشبورد</h1><div class="sub">خلاصهٔ ۳۰ روز گذشته · امروز {{ today }}</div></div>
+  <div class="acts"><a class="btn" href="{% url 'panel:stats' %}"><svg class="i"><use href="#i-chart"/></svg>آمار کامل</a></div></div>
+<div class="grid kpis">
+  <div class="card kpi"><div class="l">بازدید سایت</div><div class="v num">{{ views_total|num }}</div>{% if views_delta is not None %}<div class="d{% if views_delta < 0 %} n{% endif %}">{% if views_delta >= 0 %}▲{% else %}▼{% endif %} {{ views_delta|fa }}٪ نسبت به ماه قبل</div>{% else %}<div class="d" style="color:var(--muted)">داده‌ای برای مقایسه نیست</div>{% endif %}</div>
+  <div class="card kpi"><div class="l">بازدیدکنندهٔ یکتا</div><div class="v num">{{ uniques_total|num }}</div>{% if uniques_delta is not None %}<div class="d{% if uniques_delta < 0 %} n{% endif %}">{% if uniques_delta >= 0 %}▲{% else %}▼{% endif %} {{ uniques_delta|fa }}٪ نسبت به ماه قبل</div>{% else %}<div class="d" style="color:var(--muted)">IP متمایز در ۳۰ روز</div>{% endif %}</div>
+  {% if show_sales %}
+  <div class="card kpi"><div class="l">اشتراک فعال</div><div class="v num">{{ active_subs|num }}</div><div class="d" style="color:var(--muted)">کاربر با اشتراک معتبر</div></div>
+  <div class="card kpi"><div class="l">درآمد ۳۰ روز (تومان)</div><div class="v num">{{ revenue|num }}</div>{% if revenue_delta is not None %}<div class="d{% if revenue_delta < 0 %} n{% endif %}">{% if revenue_delta >= 0 %}▲{% else %}▼{% endif %} {{ revenue_delta|fa }}٪</div>{% else %}<div class="d" style="color:var(--muted)">{{ orders_paid|fa }} سفارش پرداخت‌شده</div>{% endif %}</div>
+  {% else %}
+  <div class="card kpi"><div class="l">مطالب منتشرشده</div><div class="v num">{{ posts_total|num }}</div></div>
+  <div class="card kpi"><div class="l">عضو جدید خبرنامه</div><div class="v num">{{ subscribers_new|num }}</div></div>
+  {% endif %}
+  <div class="card kpi"><div class="l">دانلود اپ</div><div class="v num">{{ downloads_total|num }}</div><div class="d" style="color:var(--muted)">کلیک روی دکمه‌های دانلود</div></div>
+</div>
+<div class="grid two">
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h2>بازدید روزانه</h2><span class="legend">{{ chart_first }} تا {{ chart_last }} · بیشترین: {{ chart_max|num }}</span></div>
+    <svg class="chart" viewBox="0 0 560 150" preserveAspectRatio="none" role="img" aria-label="نمودار بازدید ۳۰ روز گذشته"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".28"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+      <g stroke="var(--line)"><path d="M0 30H560M0 75H560M0 120H560"/></g><path d="{{ chart_area }}" fill="url(#g1)"/><path d="{{ chart_line }}" fill="none" stroke="var(--accent)" stroke-width="2.2" vector-effect="non-scaling-stroke"/></svg></div>
+  <div class="card"><h2>دانلود بر اساس فروشگاه</h2>
+    {% for p in platforms %}<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>{{ p.name }}</span><b class="num">{{ p.n|num }}</b></div><div class="bar"><i style="width:{{ p.pct }}%"></i></div></div>{% empty %}<p class="empty">هنوز کلیکی ثبت نشده است.</p>{% endfor %}</div>
+</div>
+<div class="grid two">
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h2>آخرین مطالب</h2><a href="{% url 'panel:posts' %}" style="color:var(--accent);font-weight:700;font-size:12.5px">مشاهدهٔ همه ‹</a></div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>عنوان</th><th>وضعیت</th><th>نویسنده</th><th>بازدید</th></tr></thead><tbody>
+    {% for p in recent_posts %}<tr><td class="ttl"><a href="{% url 'panel:post_edit' p.pk %}">{{ p.title }}</a></td><td><span class="chip {% if p.status == 'published' %}ok{% elif p.status == 'scheduled' %}sc{% elif p.status == 'review' %}rv{% else %}dr{% endif %}">{{ p.get_status_display }}</span></td><td>{{ p.author|person }}</td><td class="num">{{ p.views|num }}</td></tr>{% empty %}<tr><td colspan="4" class="empty">هنوز مطلبی ننوشته‌اید.</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="card"><h2>نیازمند اقدام</h2>{% for text, url, kind in tasks %}<a class="task" href="{{ url }}"><span class="dot {{ kind }}"></span>{{ text }}</a>{% empty %}<p class="empty">همه‌چیز مرتب است.</p>{% endfor %}</div>
+</div>
+{% endblock %}

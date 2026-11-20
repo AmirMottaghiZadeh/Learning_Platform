@@ -1,0 +1,51 @@
+{% extends "billing/console/_wizard.html" %}
+{% load billing_extras %}
+{% block step %}
+  <div class="grid g2" style="align-items:start">
+    <section class="card stack">
+      <h2>امکانات</h2>
+      {% for pf in features_rows %}
+        <div class="row" style="padding:8px 0;border-top:1px solid var(--line-2)"><b class="grow">{{ pf.feature.name_fa }}</b>
+          <span class="sub">{% if pf.feature.countable and pf.limit %}{{ pf.limit|num }} {{ pf.feature.unit_fa }} {{ pf.get_period_display }}{% else %}نامحدود{% endif %}</span>
+          {% if not pf.feature.is_wired %}<span class="chip warn">در انتظار اتصال در کد</span>{% endif %}</div>
+      {% empty %}<p class="sub">امکانی انتخاب نشده.</p>{% endfor %}
+    </section>
+    <section class="card stack">
+      <h2>قیمت‌ها</h2>
+      {% if plan.is_free %}<p class="sub">پلن رایگان قیمت ندارد.</p>{% else %}
+      {% for p in prices %}<div class="row" style="padding:8px 0;border-top:1px solid var(--line-2)"><b class="grow">{{ p.duration_label }}</b><span>{{ p.price_toman|toman }}</span></div>
+      {% empty %}<p class="sub" style="color:var(--deny)">قیمت فعالی ندارد؛ تا قیمت نگذارید قابل خرید نیست.</p>{% endfor %}{% endif %}
+      <span class="sub">{{ holders|num }} نفر الان این را دارند.</span>
+    </section>
+  </div>
+  <form method="post" class="card stack" style="gap:14px">
+    {% csrf_token %}
+    <h2>انتشار</h2>
+    <div class="grid g3">
+      {% for value, label in statuses %}
+        <label style="display:flex;gap:10px;align-items:flex-start;padding:14px;border-radius:14px;border:2px solid {% if plan.status == value %}var(--accent){% else %}var(--line){% endif %};cursor:pointer">
+          <input type="radio" name="status" value="{{ value }}" {% if plan.status == value %}checked{% endif %} style="accent-color:#0F5C52;margin-top:4px">
+          <span class="stack" style="gap:2px"><b>{{ label }}</b><span class="sub" style="font-size:12px">{% if value == 'active' %}در صفحه‌ی خرید اپ نمایش داده می‌شود{% elif value == 'hidden' %}فقط ادمین می‌تواند آن را به کاربر بدهد{% else %}نه فروخته می‌شود نه داده می‌شود؛ دارنده‌های فعلی تا پایان مدت دارند{% endif %}</span></span>
+        </label>
+      {% endfor %}
+    </div>
+    <div class="row" style="justify-content:space-between">
+      <a class="btn" href="{% if plan.is_free %}{% url 'console:plan_features' plan.pk %}{% else %}{% url 'console:plan_prices' plan.pk %}{% endif %}">مرحله‌ی قبل</a>
+      <button class="btn primary" type="submit">ذخیره و پایان</button>
+    </div>
+  </form>
+  {% if not plan.is_free %}
+  <section class="card stack" style="gap:10px">
+    <h2>حذف</h2>
+    {% if plan.can_be_deleted %}
+      <p class="sub">هنوز کسی این را نخریده و به کسی داده نشده؛ حذفش همه‌چیزش را پاک می‌کند.</p>
+      <details>
+        <summary class="btn danger" style="display:inline-flex">حذف «{{ plan.name_fa }}»</summary>
+        <form method="post" action="{% url 'console:plan_delete' plan.pk %}" class="row" style="margin-top:10px">{% csrf_token %}<span class="sub">مطمئنید؟ برگشت ندارد.</span><button class="btn danger" type="submit">بله، حذف شود</button></form>
+      </details>
+    {% else %}
+      <p class="sub">این پلن خریدار یا دسترسی داده‌شده دارد، پس حذف نمی‌شود تا سابقهٔ آن‌ها بماند. برای کنار گذاشتنش وضعیت را «غیرفعال» کنید.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+{% endblock %}

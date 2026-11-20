@@ -1,0 +1,28 @@
+<div class="grid g3">
+  <div><label class="lbl" for="id_name_fa">نام فارسی</label><input class="fld" id="id_name_fa" name="name_fa" required placeholder="مثلاً جزوه‌های PDF"></div>
+  <div><label class="lbl" for="id_name_en">نام انگلیسی</label><input class="fld ltr" id="id_name_en" name="name_en" placeholder="PDF notes"></div>
+  <div><label class="lbl" for="id_key">شناسه (برای کد)</label><input class="fld ltr mono" id="id_key" name="key" required placeholder="pdf_notes"></div>
+  <div>
+    <label class="lbl" for="id_kind">نوع</label>
+    <select class="fld" id="id_kind" name="kind">
+      <option value="content">دسترسی به محتوا (بدون نیاز به کدنویسی)</option>
+      <option value="custom">امکان سفارشی (بعد از اتصال در کد فعال می‌شود)</option>
+    </select>
+  </div>
+  <div data-content-only>
+    <label class="lbl" for="id_scope_type">چه محتوایی؟</label>
+    <select class="fld" id="id_scope_type" name="scope_type">{% for value, label in scope_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+  </div>
+  <div data-content-only data-scope="topic_category">
+    <label class="lbl" for="id_scope_category">کدام دسته؟</label>
+    <select class="fld" id="id_scope_category" name="scope_category">{% for value, label in categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+  </div>
+  <div data-content-only data-scope="atc_prefix" hidden>
+    <label class="lbl" for="id_scope_atc">کد ATC (مثلاً C09)</label>
+    <input class="fld ltr mono" id="id_scope_atc" name="scope_atc" placeholder="C09">
+  </div>
+  <div><label class="lbl" for="id_unit_fa">واحد شمارش</label><input class="fld" id="id_unit_fa" name="unit_fa" placeholder="مثلاً جزوه"></div>
+  <div><label class="lbl" for="id_description_fa">توضیح</label><input class="fld" id="id_description_fa" name="description_fa" placeholder="برای کاربر و ادمین"></div>
+</div>
+<label style="display:flex;gap:10px;align-items:center;font-weight:700"><input type="checkbox" name="countable" style="width:20px;height:20px;accent-color:#9DD4B8">قابل شمارش؛ می‌شود برایش سقف روزانه یا ماهانه گذاشت</label>
+<span class="hint" style="font-size:12.5px;line-height:1.8">«دسترسی به محتوا» همان لحظه کار می‌کند: آن محتوا فقط برای کسانی باز است که پلنشان این امکان را دارد. «امکان سفارشی» برای بخشی است که هنوز در اپ نیست؛ تا وقتی برنامه‌نویس آن را با همین شناسه در کد وصل نکند، چیزی را باز یا قفل نمی‌کند.</span>

@@ -1,0 +1,67 @@
+{
+  "checks": [
+    "Design 1: actual engine result, 50 entries, bilingual UI, dark mode, 3 widths",
+    "Design 2: actual engine result, 50 entries, bilingual UI, dark mode, 3 widths",
+    "Design 3: actual engine result, 50 entries, bilingual UI, dark mode, 3 widths",
+    "Missing required GA blocks results; explicit GA accepted; new patient clears inputs and results",
+    "Wizard patient > drug > result navigation works",
+    "Compact workspace preparation/source tabs and patient editor work"
+  ],
+  "audits": [
+    {
+      "design": 1,
+      "width": 375,
+      "findings": [],
+      "overflow": false
+    },
+    {
+      "design": 1,
+      "width": 768,
+      "findings": [],
+      "overflow": false
+    },
+    {
+      "design": 1,
+      "width": 1440,
+      "findings": [],
+      "overflow": false
+    },
+    {
+      "design": 2,
+      "width": 375,
+      "findings": [],
+      "overflow": false
+    },
+    {
+      "design": 2,
+      "width": 768,
+      "findings": [],
+      "overflow": false
+    },
+    {
+      "design": 2,
+      "width": 1440,
+      "findings": [],
+      "overflow": false
+    },
+    {
+      "design": 3,
+      "width": 375,
+      "findings": [],
+      "overflow": false
+    },
+    {
+      "design": 3,
+      "width": 768,
+      "findings": [],
+      "overflow": false
+    },
+    {
+      "design": 3,
+      "width": 1440,
+      "findings": [],
+      "overflow": false
+    }
+  ],
+  "errors": []
+}

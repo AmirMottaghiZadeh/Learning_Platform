@@ -1,0 +1,9 @@
+{% extends "website/base.html" %}
+{% load billing_extras %}
+{% block content %}
+<div class="wrap"><nav class="crumbs" aria-label="مسیر"><a href="{% url 'site:home' %}">خانه</a> ‹ اطلاعیه‌ها</nav>
+  <div class="hd2" style="margin-top:14px"><h2>اطلاعیه‌ها</h2><p>تازه‌ترین خبرها و نسخه‌های {{ site.site_name }}</p></div>
+  <div class="notes">{% for a in page.object_list %}<a class="rel" href="{{ a.get_absolute_url }}"><header><span class="pill {{ a.level }}">{{ a.get_level_display }}</span>{% if a.pinned %}<span class="pill">سنجاق‌شده</span>{% endif %}<span style="color:var(--muted);font-size:13px">{{ a.published_at|jdate:"long" }}</span></header><h3 style="font-size:20px">{{ a.title }}</h3><p style="color:var(--muted)">{{ a.summary }}</p></a>{% empty %}<p style="color:var(--muted)">اطلاعیه‌ای وجود ندارد.</p>{% endfor %}</div>
+  {% if page.paginator.num_pages > 1 %}<nav class="pager">{% for n in page.paginator.page_range %}{% if n == page.number %}<span class="on">{{ n|fa }}</span>{% else %}<a href="?page={{ n }}">{{ n|fa }}</a>{% endif %}{% endfor %}</nav>{% endif %}
+</div>
+{% endblock %}

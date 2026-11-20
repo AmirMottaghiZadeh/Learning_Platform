@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>طرح‌های جدول UpToDate — Pharmenta</title>
+  <style>
+    @font-face { font-family: Vazirmatn; src: url(data:font/ttf;base64,__FONT_REGULAR__) format("truetype"); font-weight: 400; font-display: swap; }
+    @font-face { font-family: Vazirmatn; src: url(data:font/ttf;base64,__FONT_SEMIBOLD__) format("truetype"); font-weight: 600 900; font-display: swap; }
+    :root { color-scheme: light; --ground:#f3f6f5; --paper:#fff; --ink:#192a24; --muted:#52665d; --line:#dde5e0; --soft:#f6f8f7; --accent:#126b51; --tint:#eaf4ef; --focus:#cfe8da; --cell-size:15px; }
+    :root[data-theme="dark"] { color-scheme:dark; --ground:#101312; --paper:#191d1b; --ink:#f0f4f1; --muted:#b5c1b9; --line:#343e37; --soft:#202622; --accent:#87d2ac; --tint:#20372b; --focus:#304f3d; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--ground); color:var(--ink); font:14px/1.65 Vazirmatn,sans-serif; }
+    button,select,input { font:inherit; color:inherit; }
+    button,select { min-height:44px; border:1px solid var(--line); border-radius:6px; background:var(--paper); padding:8px 14px; }
+    button { cursor:pointer; }
+    button:hover { border-color:var(--muted); }
+    button:focus-visible,select:focus-visible,summary:focus-visible,[tabindex]:focus-visible,a:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+    button[aria-pressed="true"] { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+    .shell { width:min(1280px,100%); margin:auto; padding:24px 32px 48px; }
+    .brand { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:22px; }
+    .brand-name { font-size:16px; font-weight:600; letter-spacing:-.3px; }
+    .brand p { margin:0; color:var(--muted); font-size:12px; }
+    h1 { font-size:26px; line-height:1.45; margin:0 0 6px; font-weight:600; }
+    .intro { margin:0; color:var(--muted); }
+    .designs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:22px 0; }
+    .design { text-align:right; padding:12px 16px; min-height:80px; }
+    .design strong { display:block; font-size:16px; font-weight:600; }
+    .design span { display:block; font-size:12px; margin-top:3px; }
+    .controls { display:flex; flex-wrap:wrap; align-items:end; gap:12px; margin-bottom:16px; }
+    .sample-field { flex:1 1 280px; min-width:0; }
+    .sample-field label { display:block; color:var(--muted); font-size:12px; margin-bottom:5px; }
+    select { width:100%; }
+    .utilities { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .size-control { display:flex; gap:0; align-items:center; }
+    .size-control button { min-width:44px; }
+    .size-control output { width:44px; text-align:center; font-variant-numeric:tabular-nums; }
+    .size-control button:first-child { border-radius:0 6px 6px 0; }
+    .size-control button:last-child { border-radius:6px 0 0 6px; }
+    .workspace { background:var(--paper); border-radius:10px; padding:20px; min-width:0; }
+    .viewbar { display:flex; justify-content:space-between; gap:16px; align-items:start; margin-bottom:20px; }
+    .viewbar h2 { font-size:18px; margin:0 0 3px; font-weight:600; }
+    .viewbar p { margin:0; color:var(--muted); font-size:12px; max-width:74ch; }
+    .widths { display:flex; gap:4px; flex:none; }
+    .widths button { font-size:12px; min-height:36px; padding:6px 10px; }
+    .canvas { max-width:100%; margin:auto; container-type:inline-size; }
+    .canvas[data-width="phone"] { width:390px; }
+    .canvas[data-width="tablet"] { width:768px; }
+    .canvas-inner { background:var(--paper); }
+    .table-heading { direction:ltr; text-align:left; padding:0 0 18px; }
+    .table-title { font-size:20px; line-height:1.5; font-weight:600; margin:0 0 10px; max-width:70ch; }
+    .table-meta { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
+    .table-meta span { font-variant-numeric:tabular-nums; }
+    .table-scroll { direction:ltr; overflow:auto; max-height:620px; overscroll-behavior:contain; scrollbar-color:var(--muted) var(--soft); scrollbar-width:thin; border:1px solid var(--line); border-radius:6px; }
+    table { width:100%; border-collapse:separate; border-spacing:0; font-size:var(--cell-size); line-height:1.6; text-align:left; table-layout:fixed; }
+    td,th { padding:14px 16px; vertical-align:top; font-weight:400; border-bottom:1px solid var(--line); overflow-wrap:break-word; background:var(--paper); }
+    th { font-weight:600; }
+    tr:last-child > * { border-bottom:0; }
+    td p,th p { margin:0 0 9px; }
+    td p:last-child,th p:last-child { margin-bottom:0; }
+    td ul,th ul { margin:0; padding-left:20px; }
+    td li+li,th li+li { margin-top:6px; }
+    sup { font-size:.8em; color:var(--accent); }
+    .table-scroll sup a { color:inherit; text-decoration:underline; text-underline-offset:2px; }
+    .table-scroll colgroup,.table-scroll col { width:auto; }
+    .group-head > * { font-size:13px; color:var(--muted); }
+    .top-head > * { position:sticky; top:var(--head-top,0px); z-index:4; }
+    .top-head > :first-child { z-index:6; }
+    .row-label { position:sticky; left:0; z-index:2; font-weight:600; }
+    .section-start > * { border-top:2px solid var(--muted); }
+    .group-start:not(.top-head) > * { border-top:1px solid var(--line); }
+    td.number,th.number { text-align:right; font-variant-numeric:tabular-nums; }
+    .scroll-hint { display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--muted); font-size:12px; padding:10px 0; }
+    .scroll-hint p { margin:0; }
+    .scroll-arrows { display:flex; direction:ltr; gap:6px; }
+    .scroll-arrows button { min-width:44px; padding:5px 12px; }
+    .notes { direction:ltr; text-align:left; margin-top:20px; padding:16px 18px; background:var(--soft); border-radius:6px; }
+    .notes summary { font-size:14px; font-weight:600; cursor:pointer; min-height:28px; }
+    .notes-body { font-size:13px; line-height:1.75; padding-top:12px; }
+    .notes-body p { margin:0 0 12px; }
+    .notes-body ul,.notes-body ol { padding-left:20px; margin:0 0 14px; }
+    .notes-body li+li { margin-top:8px; }
+    .notes-body [id]:target { outline:2px solid var(--accent); outline-offset:6px; }
+    .source { font-size:12px; color:var(--muted); direction:ltr; text-align:left; margin-top:14px; }
+    .decision { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:20px; padding-top:18px; border-top:1px solid var(--line); }
+    .decision p { margin:0; font-size:13px; color:var(--muted); }
+    .decision button { flex:none; }
+    #choice { margin:12px 0 0; font-size:14px; color:var(--accent); }
+    .footer { font-size:12px; color:var(--muted); margin:16px 0 0; }
+    .column-tools { display:none; direction:rtl; gap:6px; flex-wrap:wrap; padding-bottom:14px; }
+    .column-tools button { font-size:12px; min-height:40px; }
+    .records { display:none; direction:ltr; text-align:left; font-variant-numeric:tabular-nums; }
+    .records details { background:var(--soft); padding:0 20px; border-radius:6px; margin-bottom:12px; }
+    .records summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:start; gap:16px; padding:18px 0; font-size:var(--cell-size); font-weight:600; }
+    .records summary::-webkit-details-marker { display:none; }
+    .records summary::after { content:"−"; font-size:20px; font-weight:400; flex:none; color:var(--muted); }
+    .records details:not([open]) summary::after { content:"+"; }
+    .record-content { padding-bottom:16px; }
+    .record-line { padding:14px 0; border-top:1px solid var(--line); font-size:var(--cell-size); line-height:1.65; }
+    .record-line p { margin:0; }
+    .record-line ul { margin:0; padding-left:20px; }
+    .record-label { font-size:12px; color:var(--muted); margin:0 0 4px; font-weight:400; }
+    .record-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(130px,.52fr); gap:20px; }
+    .record-field { min-width:0; }
+    .record-section { font-size:16px; margin:22px 0 12px; font-weight:600; }
+    .record-section:first-child { margin-top:0; }
+    .record-full { grid-column:1/-1; }
+    .mode-reading .table-heading { padding:14px 12px 24px; }
+    .mode-reading .table-title { font-size:22px; line-height:1.55; }
+    .mode-reading .table-scroll { border:0; border-radius:0; max-height:720px; }
+    .mode-reading table { font-size:calc(var(--cell-size) + 1px); line-height:1.85; }
+    .mode-reading td,.mode-reading th { padding:22px 20px; border-bottom-color:var(--line); }
+    .mode-reading .row-label { border-top:1px solid var(--line); }
+    .mode-reading .group-head > * { font-size:13px; }
+    .mode-reading .notes { padding:22px; }
+    .mode-reference table[data-cols="4"] col:nth-child(1) { width:27%; }
+    .mode-reference table[data-cols="4"] col:nth-child(2) { width:39%; }
+    .mode-reference table[data-cols="4"] col:nth-child(3) { width:22%; }
+    .mode-reference table[data-cols="4"] col:nth-child(4) { width:12%; }
+    .mode-reference td,.mode-reference th { border-right:1px solid var(--line); }
+    .mode-reference tr > :last-child { border-right:0; }
+    .mode-reference .row-label { background:var(--soft); }
+    .mode-reference .group-head > * { border-bottom:2px solid var(--accent); }
+    .mode-compare .column-tools { display:flex; }
+    .mode-compare td,.mode-compare th { border-right:8px solid var(--soft); padding:18px 16px; }
+    .mode-compare tr > :last-child { border-right:0; }
+    .mode-compare .table-scroll { background:var(--soft); border:0; }
+    .mode-compare .focus-column { background:var(--tint); }
+    .mode-compare .row-label { color:var(--accent); }
+    .mode-mobile .table-scroll,.mode-mobile .scroll-hint,.mode-mobile .column-tools { display:none; }
+    .mode-mobile .records { display:block; }
+    .mode-legacy #enhanced { display:none; }
+    .mode-legacy #legacy { display:block; }
+    #legacy { display:none; width:100%; height:720px; border:1px solid var(--line); border-radius:6px; background:white; }
+    @container (max-width:600px) {
+      table[data-cols="4"] { min-width:820px; }
+      table[data-cols="3"] { min-width:760px; }
+      .mode-reading table[data-cols="4"] { min-width:940px; }
+      .record-pair { grid-template-columns:minmax(0,1fr); gap:14px; }
+      .records details { padding:0 16px; }
+      .table-title { font-size:18px; }
+      .mode-reading .table-title { font-size:20px; }
+    }
+    @media (max-width:850px) {
+      .shell { padding:20px; }
+      .viewbar { flex-wrap:wrap; }
+      .widths { display:none; }
+      .workspace { padding:18px; }
+    }
+    @media (max-width:500px) {
+      .shell { padding:16px 16px 30px; }
+      .brand { margin-bottom:16px; }
+      .brand p { max-width:130px; text-align:left; }
+      h1 { font-size:24px; }
+      .intro { font-size:13px; }
+      .designs { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:18px 0; }
+      .design { min-height:70px; padding:9px 12px; }
+      .design strong { font-size:14px; }
+      .design span { font-size:11px; }
+      .controls { gap:10px; }
+      .sample-field { flex-basis:100%; }
+      .utilities { width:100%; justify-content:space-between; gap:6px; }
+      .utilities > button { padding:8px 10px; font-size:12px; }
+      .workspace { padding:16px 12px; }
+      .viewbar { margin-bottom:16px; }
+      .decision { align-items:start; flex-direction:column; gap:12px; }
+      .decision button { width:100%; }
+      .notes { padding:14px; }
+      .scroll-hint { align-items:start; }
+      .scroll-hint p { max-width:25ch; }
+    }
+    @media print {
+      .brand,.intro,.designs,.controls,.viewbar,.decision,#choice,.footer,.scroll-hint,.column-tools { display:none!important; }
+      body,.shell,.workspace { background:white; padding:0; color:black; }
+      .table-scroll { max-height:none!important; overflow:visible; }
+      .row-label,.top-head > * { position:static; }
+      .notes { break-inside:avoid; }
+    }
+  </style>
+</head>
+<body data-default="__DEFAULT_MODE__">
+  <main class="shell">
+    <header>
+      <div class="brand"><span class="brand-name" dir="ltr">Pharmenta / UpToDate</span><p>پیش‌نمایش طراحی · انتخاب با شما</p></div>
+      <h1>جدول‌های UpToDate</h1>
+      <p class="intro">یک محتوای واقعی، چهار شیوهٔ نمایش. طرح‌ها را عوض کنید و خوانایی را بسنجید.</p>
+    </header>
+    <nav class="designs" aria-label="طرح جدول">
+      <button class="design" data-mode="reference" aria-pressed="false"><strong>مرجع دقیق</strong><span>شبکهٔ منظم و ستون ثابت</span></button>
+      <button class="design" data-mode="reading" aria-pressed="false"><strong>برگهٔ مطالعه</strong><span>فاصلهٔ بیشتر، خطوط کمتر</span></button>
+      <button class="design" data-mode="compare" aria-pressed="false"><strong>مقایسهٔ ستونی</strong><span>تمرکز روی یک ستون</span></button>
+      <button class="design" data-mode="mobile" aria-pressed="false"><strong>مرور موبایلی</strong><span>هر رژیم در یک بخش بازشونده</span></button>
+    </nav>
+    <div class="controls">
+      <div class="sample-field"><label for="sample">جدول نمونه</label><select id="sample"><option value="112171">درمان خط اول · سلول‌های ادغام‌شده</option><option value="112172">درمان نجات · سرستون چندسطحی</option><option value="141829">موارد انجام آزمایش · جدول فهرستی</option></select></div>
+      <div class="utilities">
+        <button id="before" aria-pressed="false">مقایسه با حالت فعلی</button>
+        <button id="theme" aria-pressed="false">نمای تیره</button>
+        <div class="size-control" aria-label="اندازهٔ متن"><button id="increase" aria-label="بزرگ‌تر کردن متن">+A</button><output id="size" aria-live="polite">۱۵</output><button id="decrease" aria-label="کوچک‌تر کردن متن">−A</button></div>
+      </div>
+    </div>
+    <section class="workspace" aria-labelledby="preview-title">
+      <div class="viewbar"><div><h2 id="preview-title">مرجع دقیق</h2><p id="description"></p></div><div class="widths" aria-label="عرض پیش‌نمایش"><button data-width="full" aria-pressed="true">تمام‌عرض</button><button data-width="tablet" aria-pressed="false">تبلت</button><button data-width="phone" aria-pressed="false">موبایل</button></div></div>
+      <div class="canvas" id="canvas" data-width="full"><div class="canvas-inner">
+        <div id="enhanced">
+          <div class="table-heading" lang="en"><p id="table-title" class="table-title"></p><div class="table-meta"><span id="sample-meta"></span><span id="shape-meta"></span></div></div>
+          <div id="columns" class="column-tools" aria-label="ستون مورد تمرکز"></div>
+          <div class="table-scroll" id="table-scroll" role="region" aria-label="جدول UpToDate، قابل پیمایش" tabindex="0" lang="en"></div>
+          <div class="scroll-hint" id="scroll-hint"><p>ستون اول ثابت می‌ماند؛ برای دیدن ادامه، جدول را افقی جابه‌جا کنید.</p><div class="scroll-arrows"><button id="scroll-left" aria-label="حرکت جدول به چپ">←</button><button id="scroll-right" aria-label="حرکت جدول به راست">→</button></div></div>
+          <div class="records" id="records" lang="en"></div>
+          <details class="notes" open id="notes" lang="en"><summary>Notes &amp; references — original table</summary><div class="notes-body" id="notes-body"></div></details>
+          <p class="source" id="source"></p>
+        </div>
+        <iframe id="legacy" title="نمای فعلی جدول در خوانشگر" sandbox="allow-same-origin"></iframe>
+      </div></div>
+      <div class="decision"><p>برای انتخاب، نام طرح را بفرستید. تنظیم اندازهٔ متن و حالت تیره در همهٔ طرح‌ها قابل آزمایش است.</p><button id="choose">انتخاب مرجع دقیق</button></div>
+      <p id="choice" role="status" aria-live="polite"></p>
+    </section>
+    <p class="footer">این فایل فقط پیش‌نمایش طراحی است؛ متن و پاورقی‌ها از snapshot محلی پروژه آمده‌اند و در این نمونه بازنویسی نشده‌اند.</p>
+  </main>
+  <script id="samples" type="application/json">__SAMPLES_JSON__</script>
+  <script>
+    "use strict";
+    const samples = JSON.parse(document.getElementById("samples").textContent);
+    const modes = {
+      reference:{name:"مرجع دقیق",description:"همهٔ رابطه‌ها در یک جدول؛ خطوط ظریف، سرستون و ستون اول ثابت، پاورقی‌های در دسترس."},
+      reading:{name:"برگهٔ مطالعه",description:"متن درشت‌تر و فاصله‌های باز برای مطالعهٔ طولانی؛ ساختار ادغام سلول‌ها حفظ می‌شود."},
+      compare:{name:"مقایسهٔ ستونی",description:"ستون مورد نظر را مشخص کنید؛ باقی اطلاعات برای مقایسه کنار آن می‌مانند."},
+      mobile:{name:"مرور موبایلی",description:"هر رژیم در یک بخش مستقل؛ نام دارو، دفعات مصرف و مدت در کنار برچسب خود می‌مانند."}
+    };
+    const $ = (id) => document.getElementById(id);
+    const params = new URLSearchParams(location.search);
+    let mode = modes[params.get("style")] ? params.get("style") : document.body.dataset.default;
+    let selected = samples.find(s=>s.id===params.get("sample")) || samples[0];
+    let before = false, size = 15, focusColumn = -1, tableModel;
+    function plain(html) { const d=new DOMParser().parseFromString(html,"text/html"); return d.body.textContent.replace(/\s+/g," ").trim(); }
+    function safeFragment(node) {
+      const clone=node.cloneNode(true);
+      clone.querySelectorAll("script,style,iframe,object,embed").forEach(n=>n.remove());
+      [clone,...clone.querySelectorAll("*")].forEach(n=>{for(const a of [...n.attributes]) if(/^on/i.test(a.name)||["style","width","height"].includes(a.name))n.removeAttribute(a.name);});
+      return clone;
+    }
+    function model(table) {
+      const matrix=[], sources=[];
+      [...table.rows].forEach((row,r)=>{
+        matrix[r] ||= []; let c=0;
+        [...row.cells].forEach((cell)=>{
+          while(matrix[r][c])c++;
+          const item={cell,r,c,rs:cell.rowSpan||1,cs:cell.colSpan||1,header:/subtitle/.test(cell.className)||cell.tagName==="TH"};
+          sources.push(item);
+          for(let rr=r;rr<r+item.rs;rr++){ matrix[rr] ||= []; for(let cc=c;cc<c+item.cs;cc++)matrix[rr][cc]=item; }
+          c+=item.cs;
+        });
+      });
+      let headerRows=0;
+      while(headerRows<matrix.length&&matrix[headerRows].length&&matrix[headerRows].every(x=>x.header))headerRows++;
+      return {matrix,sources,cols:Math.max(...matrix.map(r=>r.length)),headerRows};
+    }
+    function enhance(table) {
+      tableModel=model(table);
+      const {matrix,sources,cols,headerRows}=tableModel;
+      table.querySelectorAll("col,colgroup").forEach(n=>n.remove());
+      const colgroup=document.createElement("colgroup");for(let i=0;i<cols;i++)colgroup.append(document.createElement("col"));table.prepend(colgroup);
+      table.dataset.cols=cols; table.setAttribute("aria-label",plain(selected.title));
+      [...table.rows].forEach((row,r)=>{
+        const items=sources.filter(x=>x.r===r), isHead=items.length&&items.every(x=>x.header);
+        if(isHead)row.classList.add("group-head");
+        if(r<headerRows){ row.classList.add("top-head");row.dataset.headrow=r; }
+        if(r>=headerRows&&matrix[r]?.[0]&&matrix[r][0].r===r&&!isHead)row.classList.add("group-start");
+        if(r>=headerRows&&isHead)row.classList.add("section-start");
+        items.forEach(item=>{
+          let cell=item.cell;
+          if(item.header&&cell.tagName!=="TH"){
+            const th=document.createElement("th"); for(const a of [...cell.attributes])th.setAttribute(a.name,a.value);th.innerHTML=cell.innerHTML;cell.replaceWith(th);item.cell=cell=th;
+            th.scope=item.cs>1?"colgroup":"col";
+          }
+          cell.dataset.column=item.c;cell.dataset.span=item.cs;
+          cell.removeAttribute("class");
+          if(item.c===0&&item.cs===1&&cols>1)cell.classList.add("row-label");
+          if(/^\d+(?:[.,]\d+)?$/.test(cell.textContent.trim()))cell.classList.add("number");
+        });
+      });
+      return tableModel;
+    }
+    function headersFor(row) {
+      const labels=[];
+      for(let r=0;r<=row;r++){
+        const items=tableModel.matrix[r];
+        if(!items?.every(x=>x.header))continue;
+        for(let c=0;c<tableModel.cols;c++){
+          const chain=[];
+          for(let rr=r;rr>=0&&tableModel.matrix[rr]?.every(x=>x.header);rr--){const x=tableModel.matrix[rr][c];if(x&&!chain.includes(x))chain.unshift(x);}
+          labels[c]=chain.map(x=>plain(x.cell.innerHTML)).join(" / ");
+        }
+      }
+      return labels;
+    }
+    function buildRecords() {
+      const target=$("records");target.replaceChildren();
+      const {matrix,cols,headerRows}=tableModel;
+      let active=null, first=null, previousHeader="";
+      matrix.forEach((row,r)=>{
+        if(r<headerRows)return;
+        if(row.every(x=>x.header)) {
+          active=null;first=null;
+          const heading=[...new Set(row)].map(x=>plain(x.cell.innerHTML)).join(" · ");
+          if(heading!==previousHeader){const p=document.createElement("p");p.className="record-section";p.textContent=heading;target.append(p);previousHeader=heading;}return;
+        }
+        const identity=row[0], labels=headersFor(r);
+        if(!active||first!==identity){
+          const details=document.createElement("details");details.open=true;
+          const summary=document.createElement("summary"), title=document.createElement("span");
+          if(cols===1)title.textContent=labels[0]||"Details";else title.innerHTML=identity.cell.innerHTML;
+          summary.append(title);
+          const content=document.createElement("div");content.className="record-content";details.append(summary,content);target.append(details);active=content;first=identity;
+        }
+        const line=document.createElement("div");line.className="record-line record-pair";
+        const seen=new Set();
+        for(let c=cols===1?0:1;c<cols;c++){
+          const item=row[c];if(!item||seen.has(item))continue;seen.add(item);
+          const field=document.createElement("div");field.className="record-field";
+          if(item.cs>1)field.classList.add("record-full");
+          const label=document.createElement("p");label.className="record-label";
+          label.textContent=labels.slice(c,c+item.cs).filter((x,i,a)=>x&&a.indexOf(x)===i).join(" / ");
+          const value=document.createElement("div");value.innerHTML=item.cell.innerHTML;
+          field.append(label,value);line.append(field);
+        }
+        if(line.children.length)active.append(line);
+      });
+    }
+    function updateOffsets() {
+      const rows=[...$("table-scroll").querySelectorAll(".top-head")];let top=0;
+      rows.forEach(row=>{row.style.setProperty("--head-top",`${top}px`);top+=row.getBoundingClientRect().height;});
+      const region=$("table-scroll"), wide=region.scrollWidth>region.clientWidth+2;
+      $("scroll-hint").style.display=mode==="mobile"?"none":wide?"flex":"none";
+    }
+    function applyFocus(col) {
+      focusColumn=col;
+      $("table-scroll").querySelectorAll("td,th").forEach(cell=>{
+        const start=+cell.dataset.column, span=+cell.dataset.span;
+        cell.classList.toggle("focus-column",col>=start&&col<start+span);
+      });
+      $("columns").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.col===col)));
+      if(col>=0)$("table-scroll").querySelector(`[data-column="${col}"]`)?.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"});
+    }
+    function render() {
+      const parsed=new DOMParser().parseFromString(selected.body,"text/html"), table=safeFragment(parsed.querySelector("table"));
+      $("table-scroll").replaceChildren(table);enhance(table);buildRecords();
+      $("table-title").textContent=plain(selected.title);
+      $("sample-meta").textContent=`UpToDate · Graphic ${selected.id}`;
+      $("shape-meta").textContent=`${tableModel.cols} ${tableModel.cols===1?"column":"columns"} · original merged cells preserved`;
+      $("notes-body").replaceChildren();
+      parsed.querySelectorAll(".graphic_lgnd,.graphic_footnotes,.graphic_reference").forEach(node=>$("notes-body").append(safeFragment(node),document.createTextNode("\n")));
+      $("source").textContent=parsed.querySelector("#graphicVersion")?.textContent||`Graphic ${selected.id}`;
+      $("columns").replaceChildren();
+      const labels=headersFor(tableModel.headerRows);
+      for(let col=-1;col<tableModel.cols;col++){
+        const b=document.createElement("button");b.type="button";b.dir=col<0?"rtl":"ltr";b.dataset.col=col;b.textContent=col<0?"همهٔ ستون‌ها":labels[col]||`Column ${col+1}`;b.onclick=()=>applyFocus(col);$("columns").append(b);
+      }
+      applyFocus(-1);$("sample").value=selected.id;
+      $("legacy").srcdoc=selected.legacy;
+      setMode(mode);
+    }
+    function setMode(next) {
+      mode=next;
+      $("canvas").className=`canvas mode-${before?"legacy":mode}`;
+      document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===mode&&!before)));
+      $("before").setAttribute("aria-pressed",String(before));
+      $("before").textContent=before?"بازگشت به طرح جدید":"مقایسه با حالت فعلی";
+      $("preview-title").textContent=before?"نمای فعلی":modes[mode].name;
+      $("description").textContent=before?"خروجی فعلی خوانشگر، با همان HTML و CSS موجود در اپ.":modes[mode].description;
+      $("choose").textContent=`انتخاب ${modes[mode].name}`;
+      $("choose").disabled=before;
+      document.body.dataset.default=mode;
+      if(!before)requestAnimationFrame(updateOffsets);
+    }
+    document.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{before=false;setMode(b.dataset.mode);});
+    $("sample").onchange=e=>{selected=samples.find(s=>s.id===e.target.value);render();};
+    $("before").onclick=()=>{before=!before;setMode(mode);};
+    $("theme").onclick=()=>{const dark=document.documentElement.dataset.theme!=="dark";document.documentElement.dataset.theme=dark?"dark":"light";$("theme").textContent=dark?"نمای روشن":"نمای تیره";$("theme").setAttribute("aria-pressed",String(dark));};
+    function setSize(next){size=Math.max(13,Math.min(19,next));document.documentElement.style.setProperty("--cell-size",`${size}px`);$("size").textContent=size.toLocaleString("fa-IR");$("increase").disabled=size===19;$("decrease").disabled=size===13;requestAnimationFrame(updateOffsets);}
+    $("increase").onclick=()=>setSize(size+1);$("decrease").onclick=()=>setSize(size-1);
+    document.querySelectorAll("button[data-width]").forEach(b=>b.onclick=()=>{$("canvas").dataset.width=b.dataset.width;document.querySelectorAll("button[data-width]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));requestAnimationFrame(updateOffsets);});
+    $("scroll-left").onclick=()=>$("table-scroll").scrollBy({left:-240,behavior:"smooth"});
+    $("scroll-right").onclick=()=>$("table-scroll").scrollBy({left:240,behavior:"smooth"});
+    $("choose").onclick=()=>{const choice={style:mode,name:modes[mode].name,table:selected.id,size,theme:document.documentElement.dataset.theme||"light"};try{localStorage.setItem("uptodate-table-design-choice",JSON.stringify(choice));}catch{}$("choice").textContent=`انتخاب شما: «${choice.name}». همین نام را در گفتگو بفرستید؛ این انتخاب فقط در مرورگر شما ثبت می‌شود.`;};
+    new ResizeObserver(()=>{if(!before)updateOffsets();}).observe($("canvas"));
+    render();document.fonts.ready.then(updateOffsets);
+  </script>
+</body>
+</html>

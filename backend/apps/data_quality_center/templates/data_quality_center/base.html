@@ -1,0 +1,19 @@
+{% extends "manage/base.html" %}
+{% load static dqc_extras %}
+{% comment %}The data-quality desk's pages, inside the admin shell (apps.manage):
+the shell draws the rail, the page column and the command bar; the desk
+adds today's count to the column. Drug search lives above the queue list.{% endcomment %}
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'dqc/dqc.css' %}">
+{% block head %}{% endblock %}
+{% endblock %}
+{% block sub_note %}
+{% if today %}<div class="mg-note"><b>امروز</b>{{ today.submitted|fa_digits }} ارسال · {{ today.approved|fa_digits }} تأییدشده</div>{% endif %}
+{% endblock %}
+{% block shell_messages %}{% block messages %}
+{% if messages %}<div class="mg-flashes">{% for m in messages %}<div class="mg-flash {{ m.tags }}" role="status">{{ m }}</div>{% endfor %}</div>{% endif %}
+{% endblock %}{% endblock %}
+{% block module %}
+<div class="mx-data {% block content_class %}padded{% endblock %}">{% block content %}{% endblock %}</div>
+{% endblock %}
+{% block module_scripts %}{% block scripts %}{% endblock %}{% endblock %}

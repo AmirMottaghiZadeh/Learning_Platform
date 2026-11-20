@@ -1,0 +1,4 @@
+# Optional CPU inference; install alongside requirements.txt when using backend=onnx.
+numpy==2.4.6
+onnxruntime==1.31.1
+tokenizers==0.23.3

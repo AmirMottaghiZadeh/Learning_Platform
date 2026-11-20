@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "date": "2026-11-11",
+  "scope": "Bounded diagnostics only, not a release evaluation; final prompt also preserves supported partial recommendations when dosage is missing. No further live requests after that clarification.",
+  "reports": [
+    {
+      "report": "first-line-regimens-2026-11-11.json",
+      "timeout_seconds": 18.0,
+      "extended_diagnostic": false,
+      "runs": [
+        {
+          "case_id": "topic-psoriasis-first-line",
+          "status": "failed",
+          "error_code": "EXPERIMENT_TIMEOUT",
+          "machine_complete": false,
+          "server_elapsed_ms": 18009.279,
+          "provider_requests": 3,
+          "parts": []
+        },
+        {
+          "case_id": "topic-hypertension-initial",
+          "status": "failed",
+          "error_code": "EXPERIMENT_TIMEOUT",
+          "machine_complete": false,
+          "server_elapsed_ms": 18001.769,
+          "provider_requests": 4,
+          "parts": []
+        }
+      ]
+    },
+    {
+      "report": "first-line-regimens-extended-diagnostic-2026-11-11.json",
+      "timeout_seconds": 45,
+      "extended_diagnostic": true,
+      "runs": [
+        {
+          "case_id": "topic-psoriasis-first-line",
+          "status": "complete",
+          "error_code": null,
+          "machine_complete": false,
+          "server_elapsed_ms": 30671.434,
+          "provider_requests": 8,
+          "parts": [
+            {
+              "status": "partial",
+              "citation_count": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "report": "first-line-positive-diagnostic-2026-11-11.json",
+      "timeout_seconds": 18.0,
+      "extended_diagnostic": false,
+      "runs": [
+        {
+          "case_id": "first-line-anaphylaxis-regimen",
+          "status": "failed",
+          "error_code": "EXPERIMENT_TIMEOUT",
+          "machine_complete": false,
+          "server_elapsed_ms": 18002.271,
+          "provider_requests": 6,
+          "parts": []
+        }
+      ]
+    }
+  ],
+  "release_slo_verified": false,
+  "clinical_review": "pending",
+  "production_timeout_changed": false,
+  "ordinary_search_changed": false
+}

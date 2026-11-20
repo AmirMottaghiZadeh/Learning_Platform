@@ -1,0 +1,18 @@
+{% extends "website/base.html" %}
+{% block content %}
+<div class="wrap"><nav class="crumbs" aria-label="مسیر"><a href="{% url 'site:home' %}">خانه</a> ‹ تماس با ما</nav>
+  <div class="page"><h1>{{ page.title|default:"تماس با ما" }}</h1>
+    {% if page and page.body_html %}<div class="prose" style="margin-bottom:24px">{{ page.body_html|safe }}</div>{% endif %}
+    {% if site.contact_email or site.contact_phone or site.address %}<div class="box" style="margin-bottom:22px">{% if site.contact_email %}<p>ایمیل: <span dir="ltr">{{ site.contact_email }}</span></p>{% endif %}{% if site.contact_phone %}<p>تلفن: <span dir="ltr">{{ site.contact_phone }}</span></p>{% endif %}{% if site.address %}<p>نشانی: {{ site.address }}</p>{% endif %}</div>{% endif %}
+    <form method="post" novalidate>{% csrf_token %}
+      <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="form-row">
+        <label for="f-name">نام</label><input class="input" id="f-name" name="name" value="{{ form.name }}" required maxlength="100">
+        <label for="f-email">ایمیل</label><input class="input" id="f-email" type="email" name="email" value="{{ form.email }}" dir="ltr">
+        <label for="f-phone">تلفن</label><input class="input" id="f-phone" name="phone" value="{{ form.phone }}" dir="ltr" maxlength="20">
+        <label for="f-subject">موضوع</label><input class="input" id="f-subject" name="subject" value="{{ form.subject }}" maxlength="160">
+        <label for="f-message">پیام</label><textarea class="textarea" id="f-message" name="message" required maxlength="4000">{{ form.message }}</textarea>
+      </div>
+      <button class="btn p" type="submit">ارسال پیام</button>
+    </form></div></div>
+{% endblock %}

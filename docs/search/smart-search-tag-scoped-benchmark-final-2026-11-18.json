@@ -1,0 +1,1039 @@
+{
+  "created_at_utc": "2026-11-18T15:09:13.139380+00:00",
+  "scope": "direct_engine_fresh_private_account_not_browser_queue_or_load_test",
+  "clinical_review": "pending_owner_review",
+  "release_slo_verified": false,
+  "configuration": {
+    "model": "gpt-6-luna",
+    "base_url": "https://api.gapgpt.app/v1",
+    "reasoning_effort": "none",
+    "tag_scoped": true,
+    "initial_fallback": true,
+    "embedding_model": "text-embedding-3-small",
+    "dimensions": 1536
+  },
+  "runs": [
+    {
+      "id": "severe-hyperkalemia",
+      "elapsed_ms": 22176.83,
+      "baseline_elapsed_ms": 52965.037,
+      "status": [],
+      "error": {
+        "code": "INVALID_MODEL_OUTPUT",
+        "type": "ProviderError"
+      },
+      "source_count": 0,
+      "coverage": [],
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "failed",
+        "worker_elapsed_ms": 22175.885,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 22175.885,
+        "machine_answer_complete": false,
+        "final_answer_ms": null,
+        "first_titles_ms": 8109.786,
+        "first_sections_ms": null,
+        "first_citation_ms": null,
+        "model_attempts": 4,
+        "provider_requests": 4,
+        "provider_elapsed_ms": 21494.184,
+        "known_usage": {
+          "prompt_tokens": 12966,
+          "completion_tokens": 1078,
+          "total_tokens": 14044
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "cache_lookup": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 111.109
+          },
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 5634.361
+          },
+          "embedding": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1798.803
+          },
+          "source_links": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 6.322
+          },
+          "source_context": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 238.275
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 2180.947
+          },
+          "answering": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 9721.531
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4341.707
+          }
+        },
+        "attempts_limited": false,
+        "response_cache": "miss",
+        "first_source_ms": 8109.858,
+        "first_answer_delta_ms": 12135.455,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 1200,
+            "sequence": 1,
+            "usage": {
+              "prompt_tokens": 1137,
+              "completion_tokens": 145,
+              "total_tokens": 1282
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 0,
+            "elapsed_ms": 5633.859
+          },
+          {
+            "stage": "embedding",
+            "sent": true,
+            "status": "ok",
+            "sequence": 2,
+            "usage": {
+              "prompt_tokens": 10,
+              "completion_tokens": 0,
+              "total_tokens": 10
+            },
+            "elapsed_ms": 1798.731
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 3,
+            "usage": {
+              "prompt_tokens": 5775,
+              "completion_tokens": 736,
+              "total_tokens": 6511
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 5772,
+            "elapsed_ms": 9720.794
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 4,
+            "usage": {
+              "prompt_tokens": 6044,
+              "completion_tokens": 197,
+              "total_tokens": 6241
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 6041,
+            "elapsed_ms": 4340.8
+          }
+        ]
+      },
+      "retrieval": [],
+      "progress": [
+        {
+          "stage": "planning",
+          "at_ms": 155.217
+        },
+        {
+          "stage": "retrieving",
+          "at_ms": 5803.104
+        },
+        {
+          "stage": "answering",
+          "at_ms": 8109.87
+        },
+        {
+          "stage": "verifying",
+          "at_ms": 17833.24
+        }
+      ],
+      "sql": {
+        "default": {
+          "count": 60,
+          "elapsed_ms": 97.284
+        },
+        "reference_search": {
+          "count": 14,
+          "elapsed_ms": 222.458
+        }
+      },
+      "budget_used": 4
+    },
+    {
+      "id": "aripiprazole-monitoring",
+      "elapsed_ms": 18018.38,
+      "baseline_elapsed_ms": 15676.864,
+      "status": [
+        "partial"
+      ],
+      "error": null,
+      "source_count": 8,
+      "coverage": [
+        [
+          {
+            "requirement": "requested_aspects",
+            "status": "missing",
+            "source_ids": []
+          }
+        ]
+      ],
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 18018.336,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 18018.336,
+        "machine_answer_complete": false,
+        "final_answer_ms": null,
+        "first_titles_ms": 6368.53,
+        "first_sections_ms": null,
+        "first_citation_ms": 18015.266,
+        "model_attempts": 4,
+        "provider_requests": 4,
+        "provider_elapsed_ms": 17705.571,
+        "known_usage": {
+          "prompt_tokens": 6721,
+          "completion_tokens": 668,
+          "total_tokens": 7389
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "cache_lookup": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 14.673
+          },
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4459.077
+          },
+          "embedding": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1606.085
+          },
+          "source_links": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 7.154
+          },
+          "source_context": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 130.392
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1844.744
+          },
+          "answering": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 7953.535
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3688.806
+          },
+          "cache_write": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 0.019
+          }
+        },
+        "attempts_limited": false,
+        "response_cache": "miss",
+        "first_source_ms": 6368.564,
+        "first_answer_delta_ms": 10459.867,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 1200,
+            "sequence": 1,
+            "usage": {
+              "prompt_tokens": 1137,
+              "completion_tokens": 98,
+              "total_tokens": 1235
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 0,
+            "elapsed_ms": 4458.504
+          },
+          {
+            "stage": "embedding",
+            "sent": true,
+            "status": "ok",
+            "sequence": 2,
+            "usage": {
+              "prompt_tokens": 10,
+              "completion_tokens": 0,
+              "total_tokens": 10
+            },
+            "elapsed_ms": 1606.028
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 3,
+            "usage": {
+              "prompt_tokens": 2559,
+              "completion_tokens": 512,
+              "total_tokens": 3071
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 2556,
+            "elapsed_ms": 7952.861
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 4,
+            "usage": {
+              "prompt_tokens": 3015,
+              "completion_tokens": 58,
+              "total_tokens": 3073
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 3012,
+            "elapsed_ms": 3688.178
+          }
+        ]
+      },
+      "retrieval": [
+        {
+          "engine": "tag_scoped",
+          "searches": [
+            {
+              "engine": "hybrid",
+              "lexical_candidates": 33,
+              "semantic_candidates": 40,
+              "tagging_candidates": 40,
+              "selected_chunks": 8,
+              "selected_passages": 16,
+              "context_tokens": 1268,
+              "chunk_context_tokens": 2106,
+              "evidence_focus": {
+                "version": 1,
+                "enabled": true,
+                "input_passages": 22,
+                "selected_passages": 16,
+                "target_passages": 12,
+                "input_text_tokens": 1545,
+                "selected_text_tokens": 1268,
+                "duplicate_passages": 0,
+                "off_scope_passages": 0
+              },
+              "regimen_supplement_chunks": 0,
+              "selected_media": 0,
+              "source_context": {
+                "enabled": true,
+                "neighbors": 6,
+                "section_links": 0,
+                "article_links": 0,
+                "graphic_links": 0,
+                "denied_links": 0,
+                "unavailable_links": 0,
+                "limited": false
+              },
+              "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b",
+              "degraded": null,
+              "embedding": {
+                "cache_hit": false,
+                "requests": 1,
+                "latency_ms": 1606,
+                "inputs": 1,
+                "estimated_input_tokens": 10,
+                "usage": {
+                  "prompt_tokens": 10,
+                  "total_tokens": 10
+                }
+              },
+              "scope": {
+                "roots": [
+                  "8786",
+                  "104548",
+                  "10978"
+                ],
+                "related": {},
+                "initial_fallback": false,
+                "global_followup_searches": 0
+              }
+            }
+          ],
+          "selected_passages": 16,
+          "selected_articles": 2,
+          "context_tokens": 1893,
+          "early_stopped": false,
+          "stop_reason": "scoped_evidence_exhausted",
+          "uncited_omitted": false,
+          "question_kind": "drug_question",
+          "objectives": [
+            "adverse_effects",
+            "monitoring"
+          ],
+          "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b"
+        }
+      ],
+      "progress": [
+        {
+          "stage": "planning",
+          "at_ms": 35.082
+        },
+        {
+          "stage": "retrieving",
+          "at_ms": 4505.467
+        },
+        {
+          "stage": "answering",
+          "at_ms": 6368.554
+        },
+        {
+          "stage": "verifying",
+          "at_ms": 14322.375
+        }
+      ],
+      "sql": {
+        "default": {
+          "count": 42,
+          "elapsed_ms": 49.324
+        },
+        "reference_search": {
+          "count": 12,
+          "elapsed_ms": 58.199
+        }
+      },
+      "budget_used": 4
+    },
+    {
+      "id": "pediatric-fever-without-focus",
+      "elapsed_ms": 24442.712,
+      "baseline_elapsed_ms": 43781.037,
+      "status": [
+        "partial"
+      ],
+      "error": null,
+      "source_count": 8,
+      "coverage": [
+        [
+          {
+            "requirement": "requested_aspects",
+            "status": "supported",
+            "source_ids": [
+              "P1",
+              "P2",
+              "P3",
+              "P4",
+              "P7",
+              "P8",
+              "P10",
+              "P11"
+            ]
+          },
+          {
+            "requirement": "case_applicability",
+            "status": "missing",
+            "source_ids": []
+          },
+          {
+            "requirement": "diagnostic_assessment",
+            "status": "missing",
+            "source_ids": []
+          }
+        ]
+      ],
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 24442.65,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 24442.65,
+        "machine_answer_complete": false,
+        "final_answer_ms": null,
+        "first_titles_ms": 12185.217,
+        "first_sections_ms": null,
+        "first_citation_ms": 24438.734,
+        "model_attempts": 4,
+        "provider_requests": 4,
+        "provider_elapsed_ms": 24045.362,
+        "known_usage": {
+          "prompt_tokens": 7314,
+          "completion_tokens": 585,
+          "total_tokens": 7899
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "cache_lookup": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 14.76
+          },
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 10351.169
+          },
+          "embedding": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1446.154
+          },
+          "source_links": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 5.78
+          },
+          "source_context": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 201.267
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1767.446
+          },
+          "answering": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 8328.079
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3921.47
+          },
+          "cache_write": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 0.019
+          }
+        },
+        "attempts_limited": false,
+        "response_cache": "miss",
+        "first_source_ms": 12185.256,
+        "first_answer_delta_ms": 20049.177,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 1200,
+            "sequence": 1,
+            "usage": {
+              "prompt_tokens": 1133,
+              "completion_tokens": 96,
+              "total_tokens": 1229
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 0,
+            "elapsed_ms": 10350.746
+          },
+          {
+            "stage": "embedding",
+            "sent": true,
+            "status": "ok",
+            "sequence": 2,
+            "usage": {
+              "prompt_tokens": 7,
+              "completion_tokens": 0,
+              "total_tokens": 7
+            },
+            "elapsed_ms": 1446.112
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 3,
+            "usage": {
+              "prompt_tokens": 3034,
+              "completion_tokens": 384,
+              "total_tokens": 3418
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 3031,
+            "elapsed_ms": 8327.507
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 4,
+            "usage": {
+              "prompt_tokens": 3140,
+              "completion_tokens": 105,
+              "total_tokens": 3245
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 3137,
+            "elapsed_ms": 3920.997
+          }
+        ]
+      },
+      "retrieval": [
+        {
+          "engine": "tag_scoped",
+          "searches": [
+            {
+              "engine": "hybrid",
+              "lexical_candidates": 40,
+              "semantic_candidates": 40,
+              "tagging_candidates": 40,
+              "selected_chunks": 8,
+              "selected_passages": 13,
+              "context_tokens": 1400,
+              "chunk_context_tokens": 2721,
+              "evidence_focus": {
+                "version": 1,
+                "enabled": true,
+                "input_passages": 94,
+                "selected_passages": 13,
+                "target_passages": 6,
+                "input_text_tokens": 8822,
+                "selected_text_tokens": 1400,
+                "duplicate_passages": 0,
+                "off_scope_passages": 0
+              },
+              "regimen_supplement_chunks": 0,
+              "selected_media": 0,
+              "source_context": {
+                "enabled": true,
+                "neighbors": 13,
+                "section_links": 43,
+                "article_links": 27,
+                "graphic_links": 2,
+                "denied_links": 0,
+                "unavailable_links": 0,
+                "limited": true
+              },
+              "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b",
+              "degraded": null,
+              "embedding": {
+                "cache_hit": false,
+                "requests": 1,
+                "latency_ms": 1446,
+                "inputs": 1,
+                "estimated_input_tokens": 7,
+                "usage": {
+                  "prompt_tokens": 7,
+                  "total_tokens": 7
+                }
+              },
+              "scope": {
+                "roots": [
+                  "6075",
+                  "5993",
+                  "5937"
+                ],
+                "related": {
+                  "134347": {
+                    "parent": "6075",
+                    "kind": "source_link"
+                  },
+                  "6339": {
+                    "parent": "6075",
+                    "kind": "source_link"
+                  },
+                  "15567": {
+                    "parent": "6075",
+                    "kind": "source_link"
+                  },
+                  "127488": {
+                    "parent": "6075",
+                    "kind": "source_link"
+                  },
+                  "5986": {
+                    "parent": "6075",
+                    "kind": "source_link"
+                  },
+                  "5988": {
+                    "parent": "6075",
+                    "kind": "source_link"
+                  }
+                },
+                "initial_fallback": false,
+                "global_followup_searches": 0
+              }
+            }
+          ],
+          "selected_passages": 13,
+          "selected_articles": 3,
+          "context_tokens": 2332,
+          "early_stopped": false,
+          "stop_reason": "scoped_evidence_exhausted",
+          "uncited_omitted": false,
+          "question_kind": "clinical_scenario",
+          "objectives": [
+            "diagnosis"
+          ],
+          "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b"
+        }
+      ],
+      "progress": [
+        {
+          "stage": "planning",
+          "at_ms": 34.988
+        },
+        {
+          "stage": "retrieving",
+          "at_ms": 10397.519
+        },
+        {
+          "stage": "answering",
+          "at_ms": 12185.253
+        },
+        {
+          "stage": "verifying",
+          "at_ms": 20513.518
+        }
+      ],
+      "sql": {
+        "default": {
+          "count": 57,
+          "elapsed_ms": 85.233
+        },
+        "reference_search": {
+          "count": 13,
+          "elapsed_ms": 72.28
+        }
+      },
+      "budget_used": 4
+    },
+    {
+      "id": "nsaid-prior-ulcer",
+      "elapsed_ms": 18964.6,
+      "baseline_elapsed_ms": 33580.503,
+      "status": [
+        "answered"
+      ],
+      "error": null,
+      "source_count": 6,
+      "coverage": [
+        [
+          {
+            "requirement": "requested_aspects",
+            "status": "supported",
+            "source_ids": [
+              "P9",
+              "P10",
+              "P3",
+              "P6"
+            ]
+          },
+          {
+            "requirement": "drug_regimen",
+            "status": "supported",
+            "source_ids": [
+              "P3"
+            ]
+          },
+          {
+            "requirement": "important_restrictions",
+            "status": "supported",
+            "source_ids": [
+              "P3",
+              "P6",
+              "P14",
+              "P11"
+            ]
+          }
+        ]
+      ],
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 18964.522,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 18964.522,
+        "machine_answer_complete": true,
+        "final_answer_ms": 18964.522,
+        "first_titles_ms": 7308.33,
+        "first_sections_ms": null,
+        "first_citation_ms": 18958.836,
+        "model_attempts": 4,
+        "provider_requests": 4,
+        "provider_elapsed_ms": 18643.398,
+        "known_usage": {
+          "prompt_tokens": 8098,
+          "completion_tokens": 497,
+          "total_tokens": 8595
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "cache_lookup": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 13.647
+          },
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 5407.944
+          },
+          "embedding": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1591.822
+          },
+          "source_links": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 8.612
+          },
+          "source_context": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 107.37
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1823.262
+          },
+          "answering": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 7906.311
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3739.246
+          },
+          "cache_write": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 0.098
+          }
+        },
+        "attempts_limited": false,
+        "response_cache": "miss",
+        "first_source_ms": 7308.363,
+        "first_answer_delta_ms": 13430.395,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 1200,
+            "sequence": 1,
+            "usage": {
+              "prompt_tokens": 1138,
+              "completion_tokens": 123,
+              "total_tokens": 1261
+            },
+            "cache_write_prompt_tokens": 0,
+            "elapsed_ms": 5407.531
+          },
+          {
+            "stage": "embedding",
+            "sent": true,
+            "status": "ok",
+            "sequence": 2,
+            "usage": {
+              "prompt_tokens": 12,
+              "completion_tokens": 0,
+              "total_tokens": 12
+            },
+            "elapsed_ms": 1591.775
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 3,
+            "usage": {
+              "prompt_tokens": 3903,
+              "completion_tokens": 270,
+              "total_tokens": 4173
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 3900,
+            "elapsed_ms": 7905.761
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 4,
+            "usage": {
+              "prompt_tokens": 3045,
+              "completion_tokens": 104,
+              "total_tokens": 3149
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 3042,
+            "elapsed_ms": 3738.331
+          }
+        ]
+      },
+      "retrieval": [
+        {
+          "engine": "tag_scoped",
+          "searches": [
+            {
+              "engine": "hybrid",
+              "lexical_candidates": 40,
+              "semantic_candidates": 40,
+              "tagging_candidates": 16,
+              "selected_chunks": 8,
+              "selected_passages": 14,
+              "context_tokens": 2270,
+              "chunk_context_tokens": 2950,
+              "evidence_focus": {
+                "version": 1,
+                "enabled": true,
+                "input_passages": 23,
+                "selected_passages": 14,
+                "target_passages": 12,
+                "input_text_tokens": 3000,
+                "selected_text_tokens": 2270,
+                "duplicate_passages": 0,
+                "off_scope_passages": 0
+              },
+              "regimen_supplement_chunks": 0,
+              "selected_media": 1,
+              "source_context": {
+                "enabled": true,
+                "neighbors": 8,
+                "section_links": 0,
+                "article_links": 2,
+                "graphic_links": 1,
+                "denied_links": 0,
+                "unavailable_links": 0,
+                "limited": true
+              },
+              "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b",
+              "degraded": null,
+              "embedding": {
+                "cache_hit": false,
+                "requests": 1,
+                "latency_ms": 1591,
+                "inputs": 1,
+                "estimated_input_tokens": 12,
+                "usage": {
+                  "prompt_tokens": 12,
+                  "total_tokens": 12
+                }
+              },
+              "scope": {
+                "roots": [
+                  "14",
+                  "2600",
+                  "35"
+                ],
+                "related": {
+                  "9657": {
+                    "parent": "35",
+                    "kind": "source_link"
+                  },
+                  "8907": {
+                    "parent": "14",
+                    "kind": "source_link"
+                  },
+                  "8847": {
+                    "parent": "14",
+                    "kind": "source_link"
+                  },
+                  "9546": {
+                    "parent": "14",
+                    "kind": "source_link"
+                  },
+                  "9348": {
+                    "parent": "35",
+                    "kind": "source_link"
+                  },
+                  "9104": {
+                    "parent": "14",
+                    "kind": "source_link"
+                  }
+                },
+                "initial_fallback": false,
+                "global_followup_searches": 0
+              }
+            }
+          ],
+          "selected_passages": 14,
+          "selected_articles": 2,
+          "context_tokens": 3274,
+          "early_stopped": true,
+          "stop_reason": "verified_answer",
+          "uncited_omitted": false,
+          "question_kind": "disease_question",
+          "objectives": [
+            "prevention"
+          ],
+          "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b"
+        }
+      ],
+      "progress": [
+        {
+          "stage": "planning",
+          "at_ms": 32.897
+        },
+        {
+          "stage": "retrieving",
+          "at_ms": 5452.066
+        },
+        {
+          "stage": "answering",
+          "at_ms": 7308.366
+        },
+        {
+          "stage": "verifying",
+          "at_ms": 15214.867
+        }
+      ],
+      "sql": {
+        "default": {
+          "count": 33,
+          "elapsed_ms": 46.055
+        },
+        "reference_search": {
+          "count": 14,
+          "elapsed_ms": 91.712
+        }
+      },
+      "budget_used": 4
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{% load billing_extras %}
+<div class="home-end">
+  <section class="home-section wrap home-plans" id="plans" aria-labelledby="plans-title">
+    <div class="section-head">
+      <div><h2 id="plans-title">پلنی که به شما می‌خورد</h2><p>امکانات نسخهٔ رایگان، پلاس و پرو را مقایسه کنید.</p></div>
+      <a class="text-link" href="{% url 'site:plans' %}">مقایسهٔ کامل امکانات <span aria-hidden="true">↖</span></a>
+    </div>
+    {% include "website/_pricing.html" with homepage=True %}
+  </section>
+
+  {% if blocks.faq %}
+  <section class="home-section wrap home-faq" id="faq" aria-labelledby="faq-title">
+    <div class="section-head">
+      <h2 id="faq-title">پاسخ پرسش‌های رایج</h2>
+      <p>پاسخ سؤالتان اینجا نیست؟ از <a class="home-inline-link" href="{% url 'site:contact' %}">صفحهٔ تماس</a> پیام بدهید.</p>
+    </div>
+    <div class="home-faq-items">
+      {% for b in blocks.faq %}<details{% if forloop.first %} open{% endif %}><summary>{{ b.title }}</summary><div class="ans">{{ b.text|linebreaksbr }}</div></details>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if posts %}
+  <section class="home-section wrap" id="articles" aria-labelledby="articles-title">
+    <div class="section-head">
+      <div><h2 id="articles-title">تازه‌ترین مقالات</h2><p>آموزش و اطلاعیه‌های {{ site.site_name }}</p></div>
+      <a class="text-link" href="{% url 'site:blog' %}">همهٔ مقالات <span aria-hidden="true">↖</span></a>
+    </div>
+    <div class="home-article-grid">
+      {% for post in posts %}
+      <article class="home-article"><a href="{{ post.get_absolute_url }}">
+        <div class="home-article-art"{% if not post.cover %} aria-hidden="true"{% endif %}>
+          {% if post.cover %}<img src="{{ post.cover.url }}" alt="{{ post.cover.alt }}" loading="lazy">
+          {% elif post.slug == 'atc-classification' %}<span lang="en" dir="ltr">ATC</span>
+          {% elif post.slug == 'learn-pharmacology-guide' %}یادگیری
+          {% elif post.slug == 'what-is-a-drug-formulary' %}دارونامه
+          {% else %}{{ post.category.name|default:site.site_name }}{% endif %}
+        </div>
+        <div class="home-article-copy">
+          <p class="home-article-meta">{{ post.published_at|jdate:"long" }} · {{ post.reading_minutes|fa }} دقیقه مطالعه</p>
+          <h3>{{ post.title }}</h3>
+          {% if post.excerpt %}<p>{{ post.excerpt|truncatechars:110 }}</p>{% endif %}
+        </div>
+      </a></article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if site.newsletter_enabled %}
+  <section class="home-section wrap" id="newsletter" aria-label="خبرنامهٔ {{ site.site_name }}">
+    {% include "website/_newsletter.html" with source="home" %}
+  </section>
+  {% endif %}
+</div>

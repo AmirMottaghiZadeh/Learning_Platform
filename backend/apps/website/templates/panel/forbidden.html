@@ -1,0 +1,3 @@
+{% extends "panel/base.html" %}
+{% block title %}دسترسی ندارید{% endblock %}
+{% block content %}<div class="card empty"><h1 style="margin:0 0 8px">دسترسی ندارید</h1><p>نقش شما اجازهٔ دیدن این بخش را نمی‌دهد. اگر لازم است، از مدیر بخواهید نقش شما را تغییر دهد.</p><a class="btn" href="{% url 'panel:dashboard' %}" style="margin-top:12px">بازگشت به داشبورد</a></div>{% endblock %}

@@ -1,0 +1,6 @@
+{% load billing_extras %}
+<a class="post" href="{{ post.get_absolute_url }}">
+  <div class="cv">{% if post.cover %}<img src="{{ post.cover.url }}" alt="{{ post.cover.alt }}" loading="lazy">{% endif %}{% if post.category %}<span>{{ post.category.name }}</span>{% endif %}</div>
+  <div class="b"><h3>{{ post.title }}</h3>{% if post.excerpt %}<p>{{ post.excerpt|truncatechars:110 }}</p>{% endif %}
+  <div class="m"><span>{{ post.published_at|jdate:"long" }}</span><span>{{ post.reading_minutes|fa }} دقیقه مطالعه</span></div></div>
+</a>

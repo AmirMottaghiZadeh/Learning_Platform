@@ -1,0 +1,75 @@
+{% load static billing_extras website_extras %}
+<div class="home-study">
+  <section class="home-section wrap" id="features" aria-labelledby="features-title">
+    <div class="section-head"><h2 id="features-title">همه چیز برای یادگیری ماندگار</h2></div>
+    <div class="feature-grid">
+      <article class="feature-main">
+        <img class="feature-icon" src="{% static 'website/img/nav-lessons.png' %}" width="48" height="48" alt="" loading="lazy">
+        <h3>دارونامه</h3>
+        <p>نام دارو را به فارسی یا انگلیسی جست‌وجو کنید و مکانیسم اثر، موارد مصرف و عوارض جانبی آن را در درس‌نامه بخوانید.</p>
+        <a class="text-link" href="{% if drugs %}#drugs{% else %}{{ site.app_url }}{% endif %}">مشاهدهٔ دارونامه <span aria-hidden="true">↙</span></a>
+      </article>
+      <article>
+        <img class="feature-icon" src="{% static 'website/img/edu-quiz.png' %}" width="48" height="48" alt="" loading="lazy">
+        <h3>آزمون</h3><p>از داروهایی که خوانده‌اید سؤال بگیرید و پاسخ و توضیح را همان‌جا ببینید.</p>
+      </article>
+      <article>
+        <img class="feature-icon" src="{% static 'website/img/entry-guidelines.png' %}" width="48" height="48" alt="" loading="lazy">
+        <h3>رفرنس‌های بالینی</h3><p>به <bdi lang="en">UpToDate</bdi>، <bdi lang="en">Lexicomp</bdi> و بخش بیماری‌ها و شرایط دسترسی داشته باشید.</p>
+      </article>
+      <article>
+        <img class="feature-icon" src="{% static 'website/img/entry-calculator.png' %}" width="48" height="48" alt="" loading="lazy">
+        <h3>ماشین‌حساب بالینی</h3><p>ابزارهای محاسبهٔ دوز، کلیرانس و دیگر محاسبه‌های رایج بالینی را پیدا کنید.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="home-section wrap atlas" id="atc" aria-labelledby="atc-title">
+    <div class="section-head"><h2 id="atc-title">چهارده گروه ATC، یک نقشهٔ کامل</h2><p>از کدام گروه شروع می‌کنید؟</p></div>
+    <ul class="atlas-grid" role="list">
+      {% atc_groups as groups %}{% for code, name in groups %}<li><b dir="ltr">{{ code }}</b><span>{{ name }}</span></li>{% endfor %}
+    </ul>
+  </section>
+
+  {% if drugs %}
+  <section class="home-section wrap formulary" id="drugs" aria-labelledby="drugs-title">
+    <div class="section-head formulary-intro">
+      <img src="{% static 'website/img/nav-lessons.png' %}" width="54" height="54" alt="" loading="lazy">
+      <h2 id="drugs-title">دارونامهٔ فارسی فارمنتا</h2>
+      <p>مکانیسم اثر، موارد مصرف و عوارض جانبی داروها به زبان ساده. شروع با آنتی‌بیوتیک‌ها.</p>
+      <a class="text-link" href="{% url 'site:drugs' %}">همهٔ داروهای دارونامه <span aria-hidden="true">↖</span></a>
+    </div>
+    <ul class="drug-grid" role="list">
+      {% for d in drugs %}<li><a href="{% url 'site:drug' d.slug %}">{{ d.name_fa }}{% if d.name_fa != d.name|capfirst %}<span lang="en" dir="ltr">{{ d.name|capfirst }}</span>{% endif %}</a></li>{% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if blocks.audience %}
+  <section class="home-section wrap audience-panel" id="audience" aria-labelledby="audience-title">
+    <div class="section-head"><h2 id="audience-title">فارمنتا برای چه کسانی است؟</h2></div>
+    <div class="audience-grid">
+      {% for b in blocks.audience %}
+      <article>
+        {% with icon=b.badge|home_audience_icon %}
+        {% if icon %}<div class="audience-icon"><img src="{% static icon %}" width="38" height="38" loading="lazy" alt=""></div>
+        {% else %}<div class="audience-icon" aria-hidden="true">{{ b.badge }}</div>{% endif %}
+        {% endwith %}
+        <div><h3>{{ b.title }}</h3><p>{{ b.text }}</p></div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if blocks.step %}
+  <section class="home-section wrap learning-path" id="how" aria-labelledby="how-title">
+    <div class="section-head"><h2 id="how-title">چهار قدم تا یادگیری ماندگار</h2></div>
+    {% with steps=blocks.step|slice:':4' %}
+    <ol class="path-list" role="list" style="--step-count:{{ steps|length }}">
+      {% for b in steps %}<li><span class="path-number" aria-hidden="true">{{ forloop.counter|fa }}</span><div><h3>{{ b.title }}</h3><p>{{ b.text }}</p></div></li>{% endfor %}
+    </ol>
+    {% endwith %}
+  </section>
+  {% endif %}
+</div>

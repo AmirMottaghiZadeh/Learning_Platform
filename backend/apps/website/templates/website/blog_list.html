@@ -1,0 +1,24 @@
+{% extends "website/base.html" %}
+{% load billing_extras %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumbs" aria-label="مسیر"><a href="{% url 'site:home' %}">خانه</a> ‹ <a href="{% url 'site:blog' %}">مقالات</a>{% if heading %} ‹ {{ heading }}{% endif %}</nav>
+  <div class="hd2" style="margin-top:14px"><h2>{{ heading|default:"مقالات" }}</h2>{% if subheading %}<p>{{ subheading }}</p>{% else %}<p>آموزش داروشناسی، طبقه‌بندی ATC و روش‌های یادگیری.</p>{% endif %}</div>
+  <form class="search" method="get" action="{% url 'site:blog' %}" role="search"><label class="sr" for="q">جست‌وجو</label><input class="input" id="q" type="search" name="q" value="{{ query }}" placeholder="جست‌وجو در مقالات"><button class="btn p" type="submit">جست‌وجو</button></form>
+  {% if categories %}<div class="filters"><a class="chip{% if not active_category and not heading %} on{% endif %}" href="{% url 'site:blog' %}">همه</a>{% for c in categories %}<a class="chip{% if active_category and active_category.pk == c.pk %} on{% endif %}" href="{{ c.get_absolute_url }}">{{ c.name }}</a>{% endfor %}</div>{% endif %}
+  {% if featured %}
+  <a class="feat" href="{{ featured.get_absolute_url }}"><div class="cv">{% if featured.cover %}<img src="{{ featured.cover.url }}" alt="{{ featured.cover.alt }}">{% endif %}</div>
+    <div class="b"><span class="pill" style="width:fit-content">ویژه</span><h2>{{ featured.title }}</h2><p style="color:var(--muted)">{{ featured.excerpt|truncatechars:200 }}</p><span style="color:var(--p);font-weight:700">ادامهٔ مطلب ‹</span></div></a>
+  {% endif %}
+  {% if page.object_list %}
+  <div class="posts">{% for post in page.object_list %}{% include "website/_post_card.html" %}{% endfor %}</div>
+  {% if page.paginator.num_pages > 1 %}<nav class="pager" aria-label="صفحه‌ها">
+    {% if page.has_previous %}<a href="?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ page.previous_page_number }}">قبلی</a>{% endif %}
+    {% for n in page.paginator.page_range %}{% if n == page.number %}<span class="on" aria-current="page">{{ n|fa }}</span>{% else %}<a href="?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ n }}">{{ n|fa }}</a>{% endif %}{% endfor %}
+    {% if page.has_next %}<a href="?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ page.next_page_number }}">بعدی</a>{% endif %}</nav>{% endif %}
+  {% else %}
+  <p style="color:var(--muted);padding-block:40px">{% if query %}مطلبی برای «{{ query }}» پیدا نشد.{% else %}هنوز مطلبی منتشر نشده است.{% endif %}</p>
+  {% endif %}
+  {% include "website/_newsletter.html" with source="blog" %}
+</div>
+{% endblock %}

@@ -1,0 +1,460 @@
+{
+  "schema": 1,
+  "kind": "phase3_local_selection_live_diagnostics",
+  "scope": "bounded_service_samples_not_browser_or_load_slo",
+  "clinical_quality_assessed": false,
+  "release_slo_verified": false,
+  "total_provider_requests": 30,
+  "iterations": [
+    {
+      "iteration": "two_leading_paragraphs",
+      "configuration": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "none",
+        "section_selection": "local",
+        "selection_version": 1,
+        "lexical_version": 1,
+        "pipeline_code_digest": "2c0773f35455e89095f99cc96b5dd19d532d3f4203081cdf23ddb84896e8154c",
+        "prompt_digest": "292684471ef171727cfe0c967b1ed33716969e14c498a344883d172d80355dbc"
+      },
+      "summary": {
+        "scope": "service_baseline_not_browser_latency",
+        "target_ms": 20000,
+        "cases": 3,
+        "answerable_cases": 3,
+        "status_counts": {
+          "complete": 3
+        },
+        "machine_complete": 3,
+        "clinically_reviewed_complete": 0,
+        "machine_complete_under_target": 2,
+        "quality_verified_under_target": 0,
+        "quality_verified_success_rate": 0.0,
+        "pending_clinical_reviews": 3,
+        "abstention_cases": 0,
+        "structurally_correct_abstentions": 0,
+        "complete_answer_latency_ms": {
+          "p50": 13303.024,
+          "p95": 21682.671
+        },
+        "known_usage": {
+          "prompt_tokens": 8665,
+          "completion_tokens": 553,
+          "total_tokens": 9218
+        },
+        "unknown_usage_requests": 0,
+        "provider_requests": 11,
+        "provisional_service_target_met": false,
+        "full_suite_measured": false,
+        "release_slo_verified": false,
+        "categories": {
+          "adult_treatment": {
+            "cases": 1,
+            "failed": 0,
+            "machine_complete": 1
+          },
+          "drug_safety": {
+            "cases": 1,
+            "failed": 0,
+            "machine_complete": 1
+          },
+          "pediatric": {
+            "cases": 1,
+            "failed": 0,
+            "machine_complete": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "case_id": "drug-aripiprazole-adverse",
+          "status": "complete",
+          "server_elapsed_ms": 21682.671,
+          "provider_requests": 5,
+          "known_usage": {
+            "prompt_tokens": 4399,
+            "completion_tokens": 171,
+            "total_tokens": 4570
+          },
+          "unknown_usage_requests": 0,
+          "model_stages": [
+            "planning",
+            "answering",
+            "answering",
+            "answering",
+            "verification"
+          ],
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 1,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        },
+        {
+          "case_id": "topic-enuresis-treatment",
+          "status": "complete",
+          "server_elapsed_ms": 13303.024,
+          "provider_requests": 3,
+          "known_usage": {
+            "prompt_tokens": 2316,
+            "completion_tokens": 251,
+            "total_tokens": 2567
+          },
+          "unknown_usage_requests": 0,
+          "model_stages": [
+            "planning",
+            "answering",
+            "verification"
+          ],
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 2,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        },
+        {
+          "case_id": "topic-psoriasis-first-line",
+          "status": "complete",
+          "server_elapsed_ms": 12905.288,
+          "provider_requests": 3,
+          "known_usage": {
+            "prompt_tokens": 1950,
+            "completion_tokens": 131,
+            "total_tokens": 2081
+          },
+          "unknown_usage_requests": 0,
+          "model_stages": [
+            "planning",
+            "answering",
+            "verification"
+          ],
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 1,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        }
+      ]
+    },
+    {
+      "iteration": "three_leading_paragraphs",
+      "configuration": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "none",
+        "section_selection": "local",
+        "selection_version": 1,
+        "lexical_version": 1,
+        "pipeline_code_digest": "603978a18b788d56f096e56fbae58264f444c2a0bb99691b45864b4845605302",
+        "prompt_digest": "292684471ef171727cfe0c967b1ed33716969e14c498a344883d172d80355dbc"
+      },
+      "summary": {
+        "scope": "service_baseline_not_browser_latency",
+        "target_ms": 20000,
+        "cases": 3,
+        "answerable_cases": 3,
+        "status_counts": {
+          "complete": 3
+        },
+        "machine_complete": 3,
+        "clinically_reviewed_complete": 0,
+        "machine_complete_under_target": 3,
+        "quality_verified_under_target": 0,
+        "quality_verified_success_rate": 0.0,
+        "pending_clinical_reviews": 3,
+        "abstention_cases": 0,
+        "structurally_correct_abstentions": 0,
+        "complete_answer_latency_ms": {
+          "p50": 13707.494,
+          "p95": 15946.482
+        },
+        "known_usage": {
+          "prompt_tokens": 7626,
+          "completion_tokens": 637,
+          "total_tokens": 8263
+        },
+        "unknown_usage_requests": 0,
+        "provider_requests": 10,
+        "provisional_service_target_met": false,
+        "full_suite_measured": false,
+        "release_slo_verified": false,
+        "categories": {
+          "adult_treatment": {
+            "cases": 1,
+            "failed": 0,
+            "machine_complete": 1
+          },
+          "drug_safety": {
+            "cases": 1,
+            "failed": 0,
+            "machine_complete": 1
+          },
+          "pediatric": {
+            "cases": 1,
+            "failed": 0,
+            "machine_complete": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "case_id": "drug-aripiprazole-adverse",
+          "status": "complete",
+          "server_elapsed_ms": 15946.482,
+          "provider_requests": 4,
+          "known_usage": {
+            "prompt_tokens": 3051,
+            "completion_tokens": 139,
+            "total_tokens": 3190
+          },
+          "unknown_usage_requests": 0,
+          "model_stages": [
+            "planning",
+            "answering",
+            "answering",
+            "verification"
+          ],
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": false,
+            "source_matches": [
+              false
+            ],
+            "abstained": false,
+            "citation_count": 1,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        },
+        {
+          "case_id": "topic-enuresis-treatment",
+          "status": "complete",
+          "server_elapsed_ms": 13707.494,
+          "provider_requests": 3,
+          "known_usage": {
+            "prompt_tokens": 2489,
+            "completion_tokens": 304,
+            "total_tokens": 2793
+          },
+          "unknown_usage_requests": 0,
+          "model_stages": [
+            "planning",
+            "answering",
+            "verification"
+          ],
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 3,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        },
+        {
+          "case_id": "topic-psoriasis-first-line",
+          "status": "complete",
+          "server_elapsed_ms": 11876.445,
+          "provider_requests": 3,
+          "known_usage": {
+            "prompt_tokens": 2086,
+            "completion_tokens": 194,
+            "total_tokens": 2280
+          },
+          "unknown_usage_requests": 0,
+          "model_stages": [
+            "planning",
+            "answering",
+            "verification"
+          ],
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 2,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        }
+      ]
+    },
+    {
+      "iteration": "importance_qualifier_final",
+      "configuration": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "none",
+        "section_selection": "local",
+        "selection_version": 1,
+        "lexical_version": 2,
+        "pipeline_code_digest": "f9b47a0f910871f3f884b02eafb6b59d9ab9a1d409013a13af086704d5e0e83c",
+        "prompt_digest": "292684471ef171727cfe0c967b1ed33716969e14c498a344883d172d80355dbc"
+      },
+      "summary": {
+        "scope": "service_baseline_not_browser_latency",
+        "target_ms": 20000,
+        "cases": 3,
+        "answerable_cases": 3,
+        "status_counts": {
+          "complete": 3
+        },
+        "machine_complete": 3,
+        "clinically_reviewed_complete": 0,
+        "machine_complete_under_target": 3,
+        "quality_verified_under_target": 0,
+        "quality_verified_success_rate": 0.0,
+        "pending_clinical_reviews": 3,
+        "abstention_cases": 0,
+        "structurally_correct_abstentions": 0,
+        "complete_answer_latency_ms": {
+          "p50": 11067.387,
+          "p95": 12077.076
+        },
+        "known_usage": {
+          "prompt_tokens": 6372,
+          "completion_tokens": 580,
+          "total_tokens": 6952
+        },
+        "unknown_usage_requests": 0,
+        "provider_requests": 9,
+        "provisional_service_target_met": false,
+        "full_suite_measured": false,
+        "release_slo_verified": false,
+        "categories": {
+          "adult_treatment": {
+            "cases": 1,
+            "failed": 0,
+            "machine_complete": 1
+          },
+          "drug_safety": {
+            "cases": 1,
+            "failed": 0,
+            "machine_complete": 1
+          },
+          "pediatric": {
+            "cases": 1,
+            "failed": 0,
+            "machine_complete": 1
+          }
+        }
+      },
+      "runs": [
+        {
+          "case_id": "drug-aripiprazole-adverse",
+          "status": "complete",
+          "server_elapsed_ms": 10359.627,
+          "provider_requests": 3,
+          "known_usage": {
+            "prompt_tokens": 2054,
+            "completion_tokens": 150,
+            "total_tokens": 2204
+          },
+          "unknown_usage_requests": 0,
+          "model_stages": [
+            "planning",
+            "answering",
+            "verification"
+          ],
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 1,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        },
+        {
+          "case_id": "topic-enuresis-treatment",
+          "status": "complete",
+          "server_elapsed_ms": 12077.076,
+          "provider_requests": 3,
+          "known_usage": {
+            "prompt_tokens": 2387,
+            "completion_tokens": 298,
+            "total_tokens": 2685
+          },
+          "unknown_usage_requests": 0,
+          "model_stages": [
+            "planning",
+            "answering",
+            "verification"
+          ],
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 3,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        },
+        {
+          "case_id": "topic-psoriasis-first-line",
+          "status": "complete",
+          "server_elapsed_ms": 11067.387,
+          "provider_requests": 3,
+          "known_usage": {
+            "prompt_tokens": 1931,
+            "completion_tokens": 132,
+            "total_tokens": 2063
+          },
+          "unknown_usage_requests": 0,
+          "model_stages": [
+            "planning",
+            "answering",
+            "verification"
+          ],
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 1,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        }
+      ]
+    }
+  ]
+}

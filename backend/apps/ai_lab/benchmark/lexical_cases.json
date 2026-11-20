@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "description": "Authored English retrieval plans from the questions, independent of expected source headings. Tests retrieval with a fixed plan; does not evaluate model planning or clinical answer quality.",
+  "plans": [
+    {"case_id": "topic-enuresis-treatment", "queries": ["nocturnal enuresis"], "audience": "pediatric", "intent": "drug_therapy", "keywords": ["drug therapy"]},
+    {"case_id": "topic-enuresis-comparison", "queries": ["nocturnal enuresis"], "audience": "pediatric", "intent": "comparison", "keywords": ["alarm", "desmopressin", "comparison"]},
+    {"case_id": "topic-enuresis-hyponatremia", "queries": ["nocturnal enuresis"], "audience": "pediatric", "intent": "prevention", "keywords": ["hyponatremia", "desmopressin", "prevention"]},
+    {"case_id": "topic-psoriasis-first-line", "queries": ["psoriasis"], "audience": "adult", "intent": "treatment", "keywords": ["first line", "plaque psoriasis"]},
+    {"case_id": "topic-psoriasis-extent", "queries": ["psoriasis"], "intent": "treatment", "keywords": ["extent", "skin involvement"]},
+    {"case_id": "topic-hypertension-initial", "queries": ["hypertension"], "audience": "adult", "intent": "treatment", "keywords": ["initial treatment"]},
+    {"case_id": "topic-asthma-step-one", "queries": ["asthma"], "audience": "adult", "intent": "treatment", "keywords": ["infrequent symptoms"]},
+    {"case_id": "topic-diabetes-cardiorenal", "queries": ["type 2 diabetes"], "audience": "adult", "intent": "treatment", "keywords": ["cardiovascular disease", "kidney disease", "initial therapy"]},
+    {"case_id": "topic-hypothyroidism-monitoring", "queries": ["hypothyroidism"], "audience": "adult", "intent": "monitoring", "keywords": ["levothyroxine", "dose adjustment"]},
+    {"case_id": "topic-h-pylori-test-of-cure", "queries": ["h pylori"], "intent": "general", "keywords": ["confirmation", "eradication", "test of cure"]},
+    {"case_id": "topic-otitis-initial", "queries": ["acute otitis media"], "audience": "pediatric", "intent": "treatment", "keywords": ["initial treatment"]},
+    {"case_id": "topic-anaphylaxis-epinephrine", "queries": ["anaphylaxis"], "intent": "treatment", "keywords": ["epinephrine", "administration", "preferred route"]},
+    {"case_id": "drug-aripiprazole-adverse", "queries": ["aripiprazole"], "lookup_kind": "drug", "intent": "adverse_effects", "keywords": ["significant adverse reactions"]},
+    {"case_id": "drug-aripiprazole-mechanism", "queries": ["aripiprazole"], "lookup_kind": "drug", "intent": "mechanism", "keywords": ["mechanism of action"]},
+    {"case_id": "drug-metformin-renal", "queries": ["metformin"], "lookup_kind": "drug", "audience": "adult", "intent": "renal_dose", "keywords": ["dosing", "renal impairment"]},
+    {"case_id": "drug-metformin-contraindications", "queries": ["metformin"], "lookup_kind": "drug", "intent": "contraindications", "keywords": ["contraindications"]},
+    {"case_id": "drug-amoxicillin-pediatric", "queries": ["amoxicillin"], "lookup_kind": "drug", "audience": "pediatric", "intent": "dose", "keywords": ["dosing", "children"]},
+    {"case_id": "drug-warfarin-pregnancy", "queries": ["warfarin"], "lookup_kind": "drug", "intent": "pregnancy", "keywords": ["pregnancy"]},
+    {"case_id": "drug-sertraline-indications", "queries": ["sertraline"], "lookup_kind": "drug", "intent": "indications", "keywords": ["approved indications"]},
+    {"case_id": "drug-ibuprofen-adverse", "queries": ["ibuprofen"], "lookup_kind": "drug", "intent": "adverse_effects", "keywords": ["significant adverse reactions"]}
+  ]
+}

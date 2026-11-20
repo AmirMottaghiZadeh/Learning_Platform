@@ -1,0 +1,15 @@
+{% extends "panel/base.html" %}
+{% block title %}ویرایش فایل{% endblock %}
+{% block content %}
+<div class="hd"><div><h1>ویرایش فایل</h1><div class="sub" dir="ltr" style="text-align:right">{{ item.filename }} · {{ item.size|filesizeformat }}</div></div><div class="acts"><a class="btn" href="{% url 'panel:media' %}">بازگشت</a></div></div>
+<div class="grid" style="grid-template-columns:minmax(0,320px) 1fr;align-items:start">
+  <div class="card">{% if item.is_image %}<img src="{{ item.url }}" alt="{{ item.alt }}" style="width:100%;border-radius:10px">{% else %}<p class="empty">پیش‌نمایش PDF</p>{% endif %}
+    <p class="sm" style="margin-top:10px;color:var(--muted)">نشانی فایل:</p><input class="inp" readonly value="{{ item.url }}" dir="ltr" onclick="this.select()">
+    {% if used_in %}<p style="margin-top:10px;font-size:12.5px">استفاده‌شده در: {% for p in used_in %}<a href="{% url 'panel:post_edit' p.pk %}" style="color:var(--accent)">{{ p.title }}</a>{% if not forloop.last %}، {% endif %}{% endfor %}</p>{% endif %}
+    {% if is_default_og %}<p class="chip ok" style="margin-top:10px">تصویر پیش‌فرض اشتراک‌گذاری</p>{% endif %}</div>
+  <form method="post" class="card formcard">{% csrf_token %}<div class="grid">{% for field in form %}{% include "panel/_field.html" %}{% endfor %}</div>
+    <p class="hint" style="color:var(--muted);font-size:12.5px;margin-top:10px">متن جایگزین را برای دسترس‌پذیری و سئو بنویسید؛ تصویر را کوتاه و دقیق توصیف کنید.</p>
+    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn p" type="submit">ذخیره</button>
+    <button class="btn danger" type="submit" formaction="{% url 'panel:media_delete' item.pk %}" data-confirm="این فایل حذف شود؟ جاهایی که از آن استفاده شده بدون تصویر می‌شوند.">حذف فایل</button></div></form>
+</div>
+{% endblock %}
