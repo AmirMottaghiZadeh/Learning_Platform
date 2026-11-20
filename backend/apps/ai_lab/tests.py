@@ -17,7 +17,7 @@ from rest_framework.test import APIClient
 from apps.core.exceptions import PlatformAPIError
 from apps.uptodate import services as utd
 from apps.uptodate.tests import _make_snapshot, _add_concept_snapshot
-from . import jobs, provider, retrieval, services, views, warmup, workflow
+from . import jobs, provider, retrieval, services, telemetry, views, warmup, workflow
 
 QUOTE = "This is an original reference passage describing the population and intervention with its qualifications."
 
@@ -593,6 +593,26 @@ class ApiTests(TestCase):
         self.assertEqual(public["metrics"], result["metrics"])
         self.assertIsNone(cache.get("ai-lab:slot:0"))
         self.assertIsNone(cache.get(f"ai-lab:user:{self.admin.pk}"))
+
+    @patch.object(views._executor, "submit")
+    @patch.object(views, "close_old_connections")
+    @patch.object(views, "answer")
+    def test_internal_failure_has_a_safe_job_and_stage_log_without_disclosing_its_message(self, answer, close_connections, submit):
+        private = "private-provider-message-and-credential"
+        def fail(*args, **kwargs):
+            args[5]("answering")
+            raise ValueError(private)
+        answer.side_effect = fail
+        job_id = self.client.post("/api/v1/ai-lab/ask/", self.payload, format="json").data["job_id"]
+        record = caches["throttle"].get(f"ai-lab:job:{job_id}")
+        with self.assertLogs(telemetry.logger, level="WARNING") as logs:
+            views._run(job_id, self.admin, {**self.payload, "history": []}, record["slot"])
+        result = self.client.get(f"/api/v1/ai-lab/results/{job_id}/").data
+        self.assertEqual(result["error"]["code"], "EXPERIMENT_FAILED")
+        self.assertNotIn(private, json.dumps(result))
+        self.assertIn(job_id, " ".join(logs.output))
+        self.assertIn('"stage":"answering"', " ".join(logs.output))
+        self.assertNotIn(private, " ".join(logs.output))
 
     @patch.object(views._executor, "submit")
     def test_reload_can_recover_own_running_question_without_another_submission(self, submit):

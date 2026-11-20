@@ -66,6 +66,7 @@ def _run(job_id, user, payload, slot, *, durable=False):
     created = initial.get("created_at")
     queue_wait_ms = max(0, (time.time() - created) * 1000) if isinstance(created, (int, float)) else 0
     trace = telemetry.Trace(queue_wait_ms=queue_wait_ms,credit_reservation_id=job_id if durable else None)
+    last_stage = "starting"
     close_old_connections()
     stopped, state_lock = Event(), Lock()
     cancelled = Event()
@@ -115,7 +116,9 @@ def _run(job_id, user, payload, slot, *, durable=False):
             if lease and cache.get(lease) == job_id:
                 cache.touch(lease, jobs.LEASE)
     def progress(stage):
+        nonlocal last_stage
         check_cancelled()
+        last_stage = stage
         if draft_buffer is not None:
             draft_buffer.flush()
         with state_lock:
@@ -243,13 +246,16 @@ def _run(job_id, user, payload, slot, *, durable=False):
             check_cancelled(force=True)
         finish({"status": "complete", "result": result})
     except ProviderError as exc:
+        telemetry.log_failure(job_id, exc, stage=last_stage)
         finish({"status": "failed", "error": {
             "code": exc.code, "provider_status": exc.status,
             "model": getattr(exc, "model", configured_models().get(payload["model"])),
         }})
     except PlatformAPIError as exc:
+        telemetry.log_failure(job_id, exc, stage=last_stage)
         finish({"status": "failed", "error": {"code": exc.code}})
-    except Exception:
+    except Exception as exc:
+        telemetry.log_failure(job_id, exc, stage=last_stage)
         finish({"status": "failed", "error": {"code": "EXPERIMENT_FAILED"}})
     finally:
         trace.finish("failed")

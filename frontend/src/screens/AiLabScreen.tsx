@@ -22,24 +22,10 @@ import { HeaderMesh } from "@/components/HeaderMesh";
 import { ReferenceAnswerSkeleton, ReferenceSearchLoading } from "@/components/ReferenceSearchLoading";
 import { ReferenceAnswerText } from "@/components/ReferenceAnswerText";
 import { answerFollowOffset } from "@/utils/referenceAnswer";
+import { referenceFailure as failure } from "@/utils/referenceFailure";
 import { cancelReferenceTiming, noteReferenceRender, startReferenceTiming } from "@/api/referenceTiming";
 import { pickClinicalSearchSuggestions } from "@/data/clinicalSearchSuggestions";
 import { radius as radii, spacing } from "@/theme/tokens";
-
-function failure(code?: string, status?: number): string {
-  if (code === "AI_CREDIT_INSUFFICIENT") return "اعتبار سرچ هوشمند کافی نیست؛ از بخش مدیریت اعتبار، حساب خود را شارژ کنید.";
-  if (code === "EXPERIMENT_TIMEOUT") return "مهلت این جست‌وجو تمام شد. می‌توانید دوباره تلاش کنید.";
-  if (code === "SEARCH_REQUEST_LIMIT") return "این جست‌وجو به پاسخ کافی نرسید. می‌توانید دوباره تلاش کنید.";
-  if (code === "EXPERIMENT_EXPIRED") return "جست‌وجوی قبلی متوقف یا منقضی شد. می‌توانید دوباره سؤال بپرسید.";
-  if (code === "PROVIDER_HTTP_ERROR" || code === "PROVIDER_UNAVAILABLE") return "ارتباط با سرویس جست‌وجو برقرار نشد. کمی بعد دوباره تلاش کنید.";
-  if (code === "REFERENCE_INDEX_NOT_READY" || code === "REFERENCE_INDEX_STALE") return "منبع سرچ هوشمند باید در سرور آماده‌سازی شود. کمی بعد دوباره تلاش کنید.";
-  if (code === "SOURCE_UNAVAILABLE") return "منبع UpToDate در سرور در دسترس نیست.";
-  if (code === "HYBRID_INDEX_NOT_READY" || code === "HYBRID_INDEX_STALE") return "نمایهٔ سرچ هوشمند هنوز آماده نیست. کمی بعد دوباره تلاش کنید.";
-  if (code === "SEARCH_CANCELLED") return "جست‌وجو به درخواست شما متوقف شد.";
-  if (code === "INVALID_MODEL_OUTPUT") return "پاسخ قابل استناد دریافت نشد. دوباره تلاش کنید.";
-  if (status === 401 || code === "KEY_NOT_CONFIGURED") return "سرویس سرچ هوشمند فعلاً در دسترس نیست.";
-  return "جست‌وجو کامل نشد. اتصال را بررسی کنید و دوباره تلاش کنید.";
-}
 
 export function AiLabScreen() {
   const { colors } = useTheme();

@@ -111,15 +111,22 @@ def stream_chat(messages, *, tools=(), tool_choice="auto", max_tokens=2400,
                             raise ProviderError("INVALID_PROVIDER_RESPONSE") from None
                         if not isinstance(value,dict) or value.get("error"):
                             raise ProviderError("INVALID_PROVIDER_RESPONSE")
-                        if "model" in value:
-                            reported = value["model"]
-                            provider.validate_reported_model(reported, accepted)
-                        if isinstance(value.get("usage"),dict):
-                            usage = {k:v for k,v in value["usage"].items() if k in {"prompt_tokens","completion_tokens","total_tokens"} and type(v) is int and v>=0}
-                            telemetry.provider_usage({"usage":value["usage"]})
                         choices = value.get("choices",[])
                         if not isinstance(choices,list):
                             raise ProviderError("INVALID_PROVIDER_RESPONSE")
+                        if "model" in value:
+                            candidate = value["model"]
+                            # Gateways can announce the stream or its usage with
+                            # no generation choices and an empty model field.
+                            # Such metadata must not erase a validated identity.
+                            empty_metadata = not choices and (
+                                candidate is None or isinstance(candidate,str) and not candidate.strip())
+                            if not empty_metadata:
+                                provider.validate_reported_model(candidate, accepted)
+                                reported = candidate
+                        if isinstance(value.get("usage"),dict):
+                            usage = {k:v for k,v in value["usage"].items() if k in {"prompt_tokens","completion_tokens","total_tokens"} and type(v) is int and v>=0}
+                            telemetry.provider_usage({"usage":value["usage"]})
                         for choice in choices:
                             if not isinstance(choice,dict) or choice.get("index",0) != 0:
                                 raise ProviderError("INVALID_PROVIDER_RESPONSE")

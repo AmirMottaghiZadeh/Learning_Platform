@@ -3,6 +3,7 @@ import json
 from threading import Barrier
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
+from uuid import uuid4
 
 from django.test import SimpleTestCase, override_settings
 
@@ -12,6 +13,34 @@ from . import provider, telemetry
 @override_settings(AI_LAB_MODEL="gpt-6-luna", AI_LAB_API_KEY="private-credential", AI_LAB_REASONING_EFFORT="low",
                    AI_LAB_CREDENTIALS_FILE="", AI_LAB_BASE_URL="https://provider.example/v1")
 class TelemetryTests(SimpleTestCase):
+    def test_failure_log_identifies_the_job_and_source_location_without_exception_data(self):
+        identifier = str(uuid4())
+        private = "private-question-and-credential"
+        try:
+            raise ValueError(private)
+        except ValueError as exc:
+            with self.assertLogs(telemetry.logger, level="WARNING") as logs:
+                telemetry.log_failure(identifier, exc, stage="planning")
+        payload = json.loads(logs.records[0].getMessage().split("reference_search_failed ", 1)[1])
+        self.assertEqual(payload["job_id"], identifier)
+        self.assertEqual(payload["code"], "EXPERIMENT_FAILED")
+        self.assertEqual(payload["exception_type"], "ValueError")
+        self.assertEqual(payload["stage"], "planning")
+        self.assertEqual(payload["origin"]["module"], __name__)
+        self.assertIsInstance(payload["origin"]["line"], int)
+        self.assertIsNone(logs.records[0].exc_info)
+        self.assertNotIn(private, " ".join(logs.output))
+
+    def test_failure_log_rejects_untrusted_identifiers_codes_and_stages(self):
+        private = "sensitive-value"
+        error = provider.ProviderError(private)
+        with self.assertLogs(telemetry.logger, level="WARNING") as logs:
+            telemetry.log_failure(private, error, stage=private)
+        payload = json.loads(logs.records[0].getMessage().split("reference_search_failed ", 1)[1])
+        self.assertEqual((payload["job_id"], payload["code"], payload["stage"]),
+                         ("unknown", "EXPERIMENT_FAILED", "unclassified"))
+        self.assertNotIn(private, " ".join(logs.output))
+
     def response(self, *, finish="stop", content='{"ok":true}', usage=None):
         opener = MagicMock()
         data = {"model": "gpt-6-luna", "choices": [{"finish_reason": finish, "message": {"content": content}}]}

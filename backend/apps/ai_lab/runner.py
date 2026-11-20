@@ -8,7 +8,7 @@ from django.db import IntegrityError, transaction, close_old_connections
 from django.utils import timezone
 from rest_framework.response import Response
 from apps.core.exceptions import PlatformAPIError
-from . import events, jobs, job_store
+from . import events, jobs, job_store, telemetry
 from .models import SearchRun
 from .provider import ProviderError
 
@@ -123,6 +123,7 @@ def execute(job_id):
         require_lab(run.owner)
         _run(str(run.pk),run.owner,job_store.decode(run.encrypted_payload),run.slot,durable=True)
     except Exception as exc:
+        telemetry.log_failure(job_id, exc, stage="worker_start")
         code=getattr(exc,"code","EXPERIMENT_FAILED")
         if not isinstance(code,str) or not re.fullmatch(r"[A-Z_]{1,64}",code):code="EXPERIMENT_FAILED"
         values={"status":"failed","error":{"code":code}}

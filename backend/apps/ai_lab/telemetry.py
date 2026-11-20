@@ -5,6 +5,7 @@ import json
 import logging
 import re
 import time
+from uuid import UUID
 
 logger = logging.getLogger(__name__)
 _current = ContextVar("reference_search_trace", default=None)
@@ -217,3 +218,24 @@ def mark(name):
 def log_summary(trace):
     # Only fixed field names, timings, counts, token totals and safe status codes.
     logger.info("reference_search_metrics %s", json.dumps(trace.snapshot(include_attempts=False), separators=(",", ":")))
+
+
+def log_failure(job_id, exc, *, stage):
+    """Correlate failures without exception messages, source lines or locals."""
+    try:
+        identifier = str(UUID(str(job_id)))
+    except (ValueError, TypeError, AttributeError):
+        identifier = "unknown"
+    code = getattr(exc, "code", "EXPERIMENT_FAILED")
+    if not isinstance(code, str) or not re.fullmatch(r"[A-Z_]{1,64}", code):
+        code = "EXPERIMENT_FAILED"
+    data = {"job_id": identifier, "code": code, "exception_type": type(exc).__name__,
+            "stage": stage if isinstance(stage, str) and re.fullmatch(r"[a-z_]{1,40}", stage) else "unclassified"}
+    frame = exc.__traceback__
+    while frame is not None:
+        module = frame.tb_frame.f_globals.get("__name__", "")
+        if module.startswith(("apps.", "config.")):
+            data["origin"] = {"module": module, "function": frame.tb_frame.f_code.co_name, "line": frame.tb_lineno}
+        frame = frame.tb_next
+    # exc_info would also print the message, including possible request/SQL data.
+    logger.warning("reference_search_failed %s", json.dumps(data, separators=(",", ":")))

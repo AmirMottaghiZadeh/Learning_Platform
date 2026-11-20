@@ -7,18 +7,88 @@ from . import provider, streaming, telemetry
 @override_settings(AI_LAB_API_KEY="test-private-key",AI_LAB_MODEL="gpt-6-luna",AI_LAB_REASONING_EFFORT="low",
                    AI_LAB_BASE_URL="https://provider.example/v1", AI_LAB_RESPONSE_MODEL_ALIASES=())
 class StreamingProviderTests(SimpleTestCase):
-    def mock_client(self, deltas, *, finish="stop", done=True, model="gpt-6-luna", status=200):
+    def mock_client(self, deltas, *, finish="stop", done=True, model="gpt-6-luna", status=200, prefix=(), suffix=()):
         lines=[]
+        for value in prefix:
+            lines += ["data: " + json.dumps(value), ""]
         for delta in deltas:
             lines += ["data: "+json.dumps({"model":model,"choices":[{"index":0,"delta":delta,"finish_reason":None}]}), ""]
         lines += ["data: "+json.dumps({"model":model,"choices":[{"index":0,"delta":{},"finish_reason":finish}]}), ""]
         lines += ["data: "+json.dumps({"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":20,"total_tokens":30}}), ""]
+        for value in suffix:
+            lines += ["data: " + json.dumps(value), ""]
         if done:lines += ["data: [DONE]", ""]
         client=MagicMock()
         response=client.return_value.__enter__.return_value.stream.return_value.__enter__.return_value
         response.status_code=status
         response.iter_lines.return_value=iter(lines)
         return client
+
+    def test_empty_initial_model_metadata_does_not_abort_a_valid_tool_stream(self):
+        tool = {"index": 0, "id": "call_1", "type": "function",
+                "function": {"name": "search_references", "arguments": '{"query":"enuresis"}'}}
+        for model in [None, "", "   "]:
+            with self.subTest(model=model):
+                client = self.mock_client([{"tool_calls": [tool]}], finish="tool_calls",
+                    prefix=[{"model": model, "choices": [], "usage": None}])
+                output, trace = [], telemetry.Trace()
+                with patch.object(streaming.httpx, "Client", client), trace.activate():
+                    message, meta = streaming.stream_chat([], on_delta=output.append)
+                self.assertEqual(json.loads(message["tool_calls"][0]["function"]["arguments"]), {"query": "enuresis"})
+                self.assertEqual(meta["reported_model"], "gpt-6-luna")
+                self.assertEqual(output, [])
+                self.assertEqual(trace.request_count, 1)
+
+    def test_empty_trailing_model_metadata_preserves_identity_text_and_usage(self):
+        client = self.mock_client([{"content": "پاسخ مستند"}], suffix=[{
+            "model": None, "choices": [], "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30}}])
+        output = []
+        with patch.object(streaming.httpx, "Client", client):
+            message, meta = streaming.stream_chat([], on_delta=output.append)
+        self.assertEqual("".join(output), message["content"])
+        self.assertEqual(meta["reported_model"], "gpt-6-luna")
+        self.assertEqual(meta["usage"]["total_tokens"], 30)
+
+    def test_nonempty_or_malformed_model_metadata_is_still_validated_before_any_output(self):
+        for model, code in [("other-model", "MODEL_MISMATCH"), (0, "INVALID_PROVIDER_RESPONSE"),
+                            (False, "INVALID_PROVIDER_RESPONSE"), ({}, "INVALID_PROVIDER_RESPONSE")]:
+            with self.subTest(model=model):
+                client = self.mock_client([{"content": "private answer" * 30}], prefix=[{"model": model, "choices": []}])
+                output = []
+                with patch.object(streaming.httpx, "Client", client), self.assertRaisesMessage(provider.ProviderError, code):
+                    streaming.stream_chat([], on_delta=output.append)
+                self.assertEqual(output, [])
+
+    def test_empty_model_on_actual_generation_choices_is_not_treated_as_metadata(self):
+        for model in [None, "", " "]:
+            with self.subTest(model=model):
+                client = self.mock_client([{"content": "private answer" * 30}], model=model)
+                output = []
+                with patch.object(streaming.httpx, "Client", client), self.assertRaisesMessage(provider.ProviderError, "INVALID_PROVIDER_RESPONSE"):
+                    streaming.stream_chat([], on_delta=output.append)
+                self.assertEqual(output, [])
+
+    def test_metadata_does_not_make_a_truncated_stream_complete_or_allow_a_key_echo(self):
+        for prefix, done, code in [
+            ([{"model": None, "choices": [], "usage": None}], False, "PROVIDER_STREAM_INCOMPLETE"),
+            ([{"model": None, "choices": [], "private_echo": "test-private-key"}], True, "UNSAFE_PROVIDER_RESPONSE"),
+        ]:
+            with self.subTest(code=code):
+                client = self.mock_client([{"content": "پاسخ"}], prefix=prefix, done=done)
+                with patch.object(streaming.httpx, "Client", client), self.assertRaisesMessage(provider.ProviderError, code):
+                    streaming.stream_chat([])
+                client.return_value.__enter__.return_value.stream.assert_called_once()
+
+    def test_metadata_and_done_without_a_generation_finish_are_not_an_answer(self):
+        client = self.mock_client([])
+        response = client.return_value.__enter__.return_value.stream.return_value.__enter__.return_value
+        response.iter_lines.return_value = iter([
+            'data: {"model": null, "choices": [], "usage": null}', "", "data: [DONE]", "",
+        ])
+        output = []
+        with patch.object(streaming.httpx, "Client", client), self.assertRaisesMessage(provider.ProviderError, "PROVIDER_STREAM_INCOMPLETE"):
+            streaming.stream_chat([], on_delta=output.append)
+        self.assertEqual(output, [])
 
     def test_streams_only_content_and_records_one_paid_attempt(self):
         client=self.mock_client([{"reasoning_content":"never expose reasoning"},{"content":"پاسخ مستند فارسی. "*20},{"content":"پایان پاسخ"}])
