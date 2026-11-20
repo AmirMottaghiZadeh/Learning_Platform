@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { TextInputProps, View } from "react-native";
 import { TextInput } from "@/components/primitives/TextInput";
 
@@ -12,14 +12,15 @@ type Props = TextInputProps;
 export function Input(props: Props) {
   const { colors } = useTheme();
   const { dir } = useLang();
+  const [focused, setFocused] = useState(false);
   return (
     <View
       style={{
         height: 48,
         borderRadius: radius.input,
         backgroundColor: colors.inputBg,
-        borderWidth: 1,
-        borderColor: colors.trackBg,
+        borderWidth: focused ? 2 : 1,
+        borderColor: focused ? colors.accent : colors.trackBg,
         paddingHorizontal: 16,
         justifyContent: "center",
       }}
@@ -27,6 +28,8 @@ export function Input(props: Props) {
       <TextInput
         placeholderTextColor={colors.muted}
         {...props}
+        onFocus={(event) => { setFocused(true); props.onFocus?.(event); }}
+        onBlur={(event) => { setFocused(false); props.onBlur?.(event); }}
         style={[
           {
             fontFamily: fontFamily("500"),

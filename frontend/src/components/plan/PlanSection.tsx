@@ -36,7 +36,7 @@ const fill = (template: string, values: Record<string, string>) =>
  * study planning sees `fallback` -- the plain next-chapter card. */
 export function PlanSection({ fallback }: { fallback: React.ReactNode }) {
   const { t, row } = useLang();
-  const { colors } = useTheme();
+  const { colors, shadows } = useTheme();
   const navigate = useNav((s) => s.navigate);
 
   // Refetched every time home shows: a lesson read or a quiz finished
@@ -69,7 +69,7 @@ export function PlanSection({ fallback }: { fallback: React.ReactNode }) {
     return (
       <View>
         {head}
-        <Card style={{ alignItems: "center", paddingVertical: 24, gap: 8 }}>
+        <Card raised style={{ alignItems: "center", paddingVertical: 24, gap: 8 }}>
           <AppText weight="800" size={15} center>
             {t("planningEmptyTitle")}
           </AppText>
@@ -80,7 +80,7 @@ export function PlanSection({ fallback }: { fallback: React.ReactNode }) {
             label={t("planningCreateCta")}
             full={false}
             onPress={() => navigate("planningSetup")}
-            style={{ marginTop: 6, alignSelf: "center" }}
+            style={[shadows.glow, { marginTop: 6, alignSelf: "center" }]}
           />
         </Card>
       </View>
@@ -162,7 +162,7 @@ function TodayBox({ data }: { data: PlanToday }) {
   else if (!next) empty = t("planAllDone");
 
   return (
-    <Card padded={false} style={{ marginBottom: spacing.md, overflow: "hidden" }}>
+    <Card raised padded={false} style={{ marginBottom: spacing.md, overflow: "hidden" }}>
       {/* the box's head in the same accent as its start button */}
       <View
         style={{
@@ -330,7 +330,7 @@ function WeekBox({ data }: { data: PlanToday }) {
   const done = study.filter((d) => d.state === "done").length;
   const labels = DAY_LABELS_SHORT[lang];
   return (
-    <Card padded={false} style={{ overflow: "hidden" }}>
+    <Card raised padded={false} style={{ overflow: "hidden" }}>
       {/* head in the accent, like the Today box's */}
       <View
         style={{

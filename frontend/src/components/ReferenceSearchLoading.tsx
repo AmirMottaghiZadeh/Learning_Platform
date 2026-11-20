@@ -1,24 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, Easing, Platform, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Easing, Platform, View } from "react-native";
 import { AppText } from "@/components/primitives/AppText";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 
+import { useReducedMotion } from "@/utils/useReducedMotion";
+
 function useLoadingPulse() {
   const pulse = useRef(new Animated.Value(0)).current;
-  const [reducedMotion, setReducedMotion] = useState(true);
-  useEffect(() => {
-    let mounted = true;
-    let preferenceChanged = false;
-    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", (reduced) => {
-      preferenceChanged = true;
-      setReducedMotion(reduced);
-    });
-    void AccessibilityInfo.isReduceMotionEnabled().then((reduced) => {
-      if (mounted && !preferenceChanged) setReducedMotion(reduced);
-    }).catch(() => { /* Keep the static indicator if the preference is unavailable. */ });
-    return () => { mounted = false; subscription.remove(); };
-  }, []);
+  const reducedMotion = useReducedMotion();
   useEffect(() => {
     if (reducedMotion) { pulse.setValue(0.5); return; }
     pulse.setValue(0);
@@ -35,18 +25,14 @@ function useLoadingPulse() {
 /** Reserve the final answer's place even while source results arrive below it. */
 export function ReferenceAnswerSkeleton() {
   const { colors } = useTheme();
-  const { isFa } = useLang();
   const { pulse, reducedMotion } = useLoadingPulse();
-  const label = isFa ? "پاسخ فارسی در حال آماده‌سازی است…" : "Preparing your answer…";
-  return <View testID="reference-answer-skeleton" accessible accessibilityRole="progressbar"
-    accessibilityLabel={label} accessibilityState={{ busy: true }} aria-busy style={{ gap: 16 }}>
+  return <View testID="reference-answer-skeleton" aria-hidden importantForAccessibility="no-hide-descendants">
     <Animated.View importantForAccessibility="no-hide-descendants" aria-hidden
-      style={{ gap: 12, paddingVertical: 6, alignItems: isFa ? "flex-end" : "flex-start", opacity: reducedMotion ? 0.5
+      style={{ gap: 12, paddingVertical: 6, alignItems: "stretch", opacity: reducedMotion ? 0.5
         : pulse.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.35, 0.7, 0.35] }) }}>
       {(["100%", "94%", "100%", "64%"] as const).map((width, index) => <View key={index}
         style={{ width, height: 9, borderRadius: 5, backgroundColor: colors.trackBg }} />)}
     </Animated.View>
-    <AppText size={12} muted>{label}</AppText>
   </View>;
 }
 

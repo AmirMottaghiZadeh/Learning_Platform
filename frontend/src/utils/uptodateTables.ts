@@ -4,13 +4,13 @@ export type TableLabels = ReturnType<typeof tableLabels>;
 
 export function tableLabels(isFa: boolean) {
   return isFa ? {
-    direction: "rtl", open: "نمایش تمام‌صفحهٔ جدول", all: "کل جدول", width: "تمام‌عرض",
+    direction: "rtl", open: "نمایش تمام‌صفحهٔ جدول", all: "کل جدول", width: "عرض صفحه", read: "خواندن",
     smaller: "کوچک‌نمایی", larger: "بزرگ‌نمایی", zoom: "میزان زوم", notes: "توضیحات و پاورقی‌ها",
-    hint: "برای جزئیات زوم کنید؛ برای جابه‌جایی، جدول را بکشید.", unavailable: "جدول در دسترس نیست.",
+    hint: "برای دیدن ستون‌های دیگر، جدول را به طرفین بکشید.", unavailable: "جدول در دسترس نیست.",
   } : {
-    direction: "ltr", open: "View table full screen", all: "Fit table", width: "Fit width",
+    direction: "ltr", open: "View table full screen", all: "Fit table", width: "Fit width", read: "Read",
     smaller: "Zoom out", larger: "Zoom in", zoom: "Zoom level", notes: "Notes and references",
-    hint: "Pinch to zoom. Drag to move around the table.", unavailable: "Table unavailable.",
+    hint: "Drag or scroll sideways to see more columns.", unavailable: "Table unavailable.",
   };
 }
 
@@ -66,7 +66,7 @@ export function tableStyles(c: TableColors, dark: boolean) {
   .utd-table-zoom output { font:600 13px/1.4 -apple-system,"Segoe UI",sans-serif; width:48px;
     text-align:center; font-variant-numeric:tabular-nums; direction:ltr; }
   .utd-table-stage { flex:1; min-height:0; width:100%; overflow:auto; direction:ltr;
-    touch-action:none; overscroll-behavior:contain; background:var(--utd-table-soft); cursor:grab; }
+    touch-action:none; overscroll-behavior:contain; background:${dark ? "#101614" : "#f4f5f1"}; cursor:grab; }
   .utd-table-stage:active { cursor:grabbing; }
   body .utd-table-extent { position:relative; max-width:none; min-width:100%; min-height:100%; }
   body .utd-table-canvas { position:absolute; max-width:none; transform-origin:0 0; user-select:none; }
@@ -133,7 +133,7 @@ function __utdTablesInit(options) {
     for (var c = 0; c < columns; c++) cols.appendChild(document.createElement("col"));
     table.insertBefore(cols, table.firstChild);
     var box = document.createElement("div"); box.className = "utd-table-box";
-    var tools = document.createElement("div"); tools.className = "utd-table-tools"; tools.dir = labels.direction;
+    var tools = document.createElement("div"); tools.className = "utd-table-tools"; tools.dir = labels.direction; tools.lang = labels.direction === "rtl" ? "fa" : "en";
     tools.setAttribute("data-utd-ui", "");
     var figure = table.closest(".figure,.utdGraphicWrapper,figure");
     var title = table.caption || (figure && figure.querySelector(".ttl,.graphic_title,figcaption"));
@@ -190,7 +190,7 @@ function __utdTablesInit(options) {
   var table = selected.table, figure = table.closest(".figure,.utdGraphicWrapper,figure");
   var notes = figure ? Array.from(figure.querySelectorAll(".graphic_lgnd,.graphic_footnotes,.graphic_reference")) : [];
   var root = document.createElement("div"); root.id = "utdTableViewer";
-  var toolbar = document.createElement("div"); toolbar.className = "utd-table-zoom"; toolbar.dir = labels.direction;
+  var toolbar = document.createElement("div"); toolbar.className = "utd-table-zoom"; toolbar.dir = labels.direction; toolbar.lang = labels.direction === "rtl" ? "fa" : "en";
   toolbar.setAttribute("data-utd-ui", "");
   var stage = document.createElement("div"); stage.className = "utd-table-stage"; stage.tabIndex = 0;
   stage.setAttribute("role", "region"); stage.setAttribute("aria-label", options.viewer.title || labels.open);
@@ -199,20 +199,21 @@ function __utdTablesInit(options) {
   var naturalWidth = Math.max(selected.width, table.offsetWidth, 320), naturalHeight = 1;
   canvas.style.width = naturalWidth + "px"; canvas.appendChild(table); extent.appendChild(canvas); stage.appendChild(extent);
   var footer = document.createElement("div"); footer.className = "utd-table-footer";
-  var hint = document.createElement("p"); hint.className = "utd-table-hint"; hint.dir = labels.direction; hint.textContent = labels.hint; footer.appendChild(hint);
+  var hint = document.createElement("p"); hint.className = "utd-table-hint"; hint.dir = labels.direction; hint.lang = toolbar.lang; hint.textContent = labels.hint; footer.appendChild(hint);
   if (notes.length) {
     var details = document.createElement("details"); details.className = "utd-table-notes";
     var summary = document.createElement("summary"); summary.dir = labels.direction; summary.textContent = labels.notes;
     var content = document.createElement("div"); content.className = "utd-table-notes-content";
     notes.forEach(function (node) { content.appendChild(node); }); details.appendChild(summary); details.appendChild(content); footer.appendChild(details);
   }
-  var scale = 1, fitMode = "all", left = 12, top = 12, ready = false;
+  var scale = 1, fitMode = "read", left = 12, top = 12, ready = false;
+  var readButton = button(labels.read, labels.read, function () { fit("read"); });
   var allButton = button(labels.all, labels.all, function () { fit("all"); });
   var widthButton = button(labels.width, labels.width, function () { fit("width"); });
   var smaller = button("−", labels.smaller, function () { zoom(scale / 1.25); });
   var larger = button("+", labels.larger, function () { zoom(scale * 1.25); });
   var output = document.createElement("output"); output.setAttribute("aria-label", labels.zoom); output.setAttribute("aria-live", "polite");
-  [allButton, widthButton, smaller, output, larger].forEach(function (node) { toolbar.appendChild(node); });
+  [readButton, allButton, widthButton, smaller, output, larger].forEach(function (node) { toolbar.appendChild(node); });
   root.appendChild(toolbar); root.appendChild(stage); root.appendChild(footer); document.body.appendChild(root);
   document.documentElement.classList.add("utd-table-viewer");
   document.body.classList.add("utd-table-viewer");
@@ -226,24 +227,25 @@ function __utdTablesInit(options) {
     contentY = contentY === undefined ? (stage.scrollTop + anchorY - top) / scale : contentY;
     scale = next;
     var width = Math.max(stage.clientWidth, naturalWidth * scale + 24), height = Math.max(stage.clientHeight, naturalHeight * scale + 24);
-    left = Math.max(12, (width - naturalWidth * scale) / 2); top = Math.max(12, (height - naturalHeight * scale) / 2);
+    left = Math.max(12, (width - naturalWidth * scale) / 2); top = fitMode === "all" ? Math.max(12, (height - naturalHeight * scale) / 2) : 12;
     extent.style.width = width + "px"; extent.style.height = height + "px";
     canvas.style.left = left + "px"; canvas.style.top = top + "px"; canvas.style.transform = "scale(" + scale + ")";
     stage.scrollLeft = contentX * scale + left - anchorX; stage.scrollTop = contentY * scale + top - anchorY;
     output.value = Math.round(scale * 100) + "%";
     smaller.disabled = scale <= min + .0001; larger.disabled = scale >= 4;
+    readButton.setAttribute("aria-pressed", String(fitMode === "read"));
     allButton.setAttribute("aria-pressed", String(fitMode === "all")); widthButton.setAttribute("aria-pressed", String(fitMode === "width"));
   }
   function fit(kind) {
     fitMode = kind;
-    draw(kind === "all" ? allScale() : Math.min(4, (stage.clientWidth - 24) / naturalWidth));
+    draw(kind === "read" ? 1 : kind === "all" ? allScale() : Math.min(4, (stage.clientWidth - 24) / naturalWidth));
     stage.scrollLeft = 0; stage.scrollTop = 0;
   }
   function zoom(value, x, y, cx, cy) { fitMode = "manual"; draw(value, x, y, cx, cy); }
   function measure() {
     naturalHeight = Math.max(1, table.offsetHeight);
     if (stage.clientHeight < 25 || stage.clientWidth < 25) return;
-    if (!ready || fitMode !== "manual") fit(fitMode === "width" ? "width" : "all"); else draw(scale);
+    if (!ready || fitMode !== "manual") fit(fitMode); else draw(scale);
     ready = true;
   }
   var pointers = new Map(), last = null, pinch = null, moved = false, lastTap = 0, ignoreClickUntil = 0;
@@ -292,7 +294,7 @@ function __utdTablesInit(options) {
     if (e.key === "Escape") { __utdEmitOp({ type:"table-close" }); return; }
     if (e.key === "+" || e.key === "=") { e.preventDefault(); zoom(scale*1.25); }
     if (e.key === "-") { e.preventDefault(); zoom(scale/1.25); }
-    if (e.key === "0") { e.preventDefault(); fit("all"); }
+    if (e.key === "0") { e.preventDefault(); fit("read"); }
   });
   if (typeof ResizeObserver !== "undefined") { var observer=new ResizeObserver(measure); observer.observe(stage); observer.observe(table); }
   window.addEventListener("resize", measure); document.fonts && document.fonts.ready.then(measure); requestAnimationFrame(measure);

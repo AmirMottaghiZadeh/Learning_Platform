@@ -5,6 +5,7 @@ import { TextInput } from "@/components/primitives/TextInput";
 import { WebView } from "react-native-webview";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Chevron } from "@/components/primitives/Chevron";
 import { ChromeButton } from "@/components/ScreenChrome";
 import { useBleedTop } from "@/components/AppShell";
 import { AppText } from "@/components/primitives/AppText";
@@ -640,13 +641,14 @@ function wrap(bodyHtml: string, c: WrapColors, opts: WrapOptions = {}) {
   // box. minimum-scale=1 stops the WebView zooming out to fit overflow.
   // Every size is in rem, so the root's font size (the reader's text size)
   // scales the whole page.
-  return `<!doctype html><html style="font-size:${(BASE_TEXT_PX * scale).toFixed(2)}px"><head><meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+  return `<!doctype html><html lang="en" style="font-size:${(BASE_TEXT_PX * scale).toFixed(2)}px"><head><meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <style>
   *, *::before, *::after { box-sizing:border-box; }
   html, body { max-width:100%; overflow-x:hidden; }
   body { font-size:1rem; line-height:1.7; font-family:-apple-system, "Segoe UI", Roboto, sans-serif; color:${prose};
-         background:${bg}; margin:0; padding:18px 20px 110px; overflow-wrap:anywhere; word-break:break-word;
+         background:${bg}; margin:0 auto; padding:20px 20px 110px; overflow-wrap:anywhere; word-break:break-word;
          -webkit-text-size-adjust:100%; }
+  body:not(.utd-table-viewer) { max-width:760px; }
   body *:not(td):not(th):not(tr):not(thead):not(tbody):not(tfoot):not(col):not(colgroup) {
     max-width:100%; }
   ::selection { background:${accentSoft}; }
@@ -659,7 +661,7 @@ function wrap(bodyHtml: string, c: WrapColors, opts: WrapOptions = {}) {
   img { max-width:100%; height:auto; }
   .utdGraphicWrapper, figure { overflow-x:auto; }
   mark.utd-hit { background:${accentSoft}; color:inherit; border-radius:2px; }
-  mark.utd-hit-current { background:${accent}; color:#fff; }
+  mark.utd-hit-current { background:${accent}; color:${onAccent}; }
   mark.utd-hl { color:inherit; border-radius:2px; padding:0 1px; }
   ${paint}
   #utdHlBar { position:fixed; z-index:50; display:none; align-items:center; gap:10px; padding:8px 12px;
@@ -1063,43 +1065,48 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
-      <View style={{ paddingHorizontal: 20, paddingTop: 16 + bleedTop, gap: 12 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 8 + bleedTop, gap: 8 }}>
+        <View style={{ flexDirection: row, alignItems: "center", gap: 12 }}>
+          <ChromeButton onPress={goBack} accessibilityLabel={isFa ? "بازگشت" : "Back"}>
+            <Chevron back color={colors.ink} />
+          </ChromeButton>
+          <View style={{ flex: 1 }}>
+            <AppText muted size={12} style={{ textAlign: "left", writingDirection: "ltr" }}>
+              {source === "utd" ? "UpToDate" : "Medscape"}
+            </AppText>
+            <AppText accessibilityRole="header" aria-level={1} weight="700" size={15} numberOfLines={2}
+              style={{ textAlign: "left", writingDirection: "ltr", lineHeight: 21 }}>
+              {stripHtml(data?.title || titleParam)}
+            </AppText>
+          </View>
+        </View>
         <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>
-          <ChromeButton onPress={goBack} size={34}>
-            <AppText weight="800" size={16} color={colors.ink}>
-              {isFa ? "›" : "‹"}
+          <ChromeButton onPress={() => setSearchOpen((v) => !v)} accessibilityLabel={t("uptodateSearchInArticleHint")}>
+            <AppText weight="800" size={15} color={searchOpen ? colors.accent : colors.ink}>
+              ⌕
             </AppText>
           </ChromeButton>
-          <AppText weight="700" size={12} muted numberOfLines={1} style={{ flex: 1, textAlign: "left", writingDirection: "ltr" }}>
-            {stripHtml(data?.title || titleParam)}
-          </AppText>
-          {source==="utd" ? <ChromeButton onPress={() => void exportPdf()} size={34} accessibilityLabel={isFa ? "خروجی PDF مقاله" : "Export article as PDF"}>
+          <ChromeButton onPress={() => setTocOpen(true)} accessibilityLabel={t("articleContents")}>
+            <AppText weight="800" size={15} color={colors.ink}>
+              ≡
+            </AppText>
+          </ChromeButton>
+          {source==="utd" ? <ChromeButton onPress={() => void exportPdf()} accessibilityLabel={isFa ? "خروجی PDF مقاله" : "Export article as PDF"}>
             <AppText weight="800" size={10} color={exporting ? colors.muted : colors.accent}>{exporting ? "…" : "PDF"}</AppText>
           </ChromeButton> : null}
           <ChromeButton
             onPress={() =>
               toggleFavorite({ source, id, kind: data?.reference_kind, title: stripHtml(data?.title || titleParam), section: data?.section ?? "" })
             }
-            size={34}
             accessibilityLabel={t(favorite ? "favoriteRemove" : "favoriteAdd")}
           >
             <AppText weight="800" size={16} color={favorite ? "#E0A526" : colors.ink}>
               {favorite ? "★" : "☆"}
             </AppText>
           </ChromeButton>
-          <ChromeButton onPress={() => setTextOpen(true)} size={34} accessibilityLabel={t("readerTextSize")}>
+          <ChromeButton onPress={() => setTextOpen(true)} accessibilityLabel={t("readerTextSize")}>
             <AppText weight="800" size={13} color={textOpen ? colors.accent : colors.ink}>
               Aa
-            </AppText>
-          </ChromeButton>
-          <ChromeButton onPress={() => setTocOpen(true)} size={34} accessibilityLabel={t("articleContents")}>
-            <AppText weight="800" size={15} color={colors.ink}>
-              ≡
-            </AppText>
-          </ChromeButton>
-          <ChromeButton onPress={() => setSearchOpen((v) => !v)} size={34} accessibilityLabel={t("uptodateSearchInArticleHint")}>
-            <AppText weight="800" size={15} color={searchOpen ? colors.accent : colors.ink}>
-              ⌕
             </AppText>
           </ChromeButton>
         </View>
@@ -1348,7 +1355,7 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
         supportedOrientations={["portrait", "landscape", "landscape-left", "landscape-right"]}
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: auxiliaryFullScreen ? colors.cardBg : "rgba(4,10,9,0.55)", padding: auxiliaryFullScreen ? 0 : 16 }}>
-          <View style={{ flex: 1, backgroundColor: colors.cardBg, borderRadius: auxiliaryFullScreen ? 0 : 18, overflow: "hidden" }}>
+          <View style={{ flex: 1, width: "100%", maxWidth: auxiliaryFullScreen ? 1120 : 960, alignSelf: "center", backgroundColor: colors.cardBg, borderRadius: auxiliaryFullScreen ? 0 : 18, overflow: "hidden" }}>
             <View
               style={{
                 flexDirection: row,

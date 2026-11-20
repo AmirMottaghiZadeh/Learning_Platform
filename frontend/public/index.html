@@ -42,9 +42,13 @@
         height: 100%;
         flex: 1;
       }
-      /* Every text field sits inside its own rounded box, which looks the
-         same focused or not: no browser focus outline on the field, no ring
-         on the box. The blinking caret shows which field is active. */
+      /* Text fields apply focus to their enclosing control. */
+      :root { --app-focus-ring: #0F5C52; }
+      :root[data-app-theme="dark"] { --app-focus-ring: #9DD4B8; }
+      :where(button, [role="button"], [role="tab"], [role="radio"], a):focus-visible {
+        outline: 2px solid var(--app-focus-ring);
+        outline-offset: -2px;
+      }
       input,
       textarea {
         outline: none;
@@ -57,6 +61,7 @@
       You need to enable JavaScript to run this app.
     </noscript>
     <!-- The root element for your Expo app. -->
-    <div id="root"></div>
+    <!-- React Native rows mirror in the app; keep their physical layout stable. -->
+    <div id="root" dir="ltr"></div>
   </body>
 </html>

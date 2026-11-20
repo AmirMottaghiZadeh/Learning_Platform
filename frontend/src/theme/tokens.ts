@@ -241,6 +241,8 @@ export function shadow(mode: ThemeMode) {
 
 export const motion = {
   screen: 350,
+  navigationFade: 120,
+  navigationSlide: 180,
   pop: 220,
   flip: 500,
   ease: "cubic-bezier(0.32, 0.72, 0, 1)",

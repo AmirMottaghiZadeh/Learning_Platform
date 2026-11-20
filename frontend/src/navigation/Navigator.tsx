@@ -44,11 +44,16 @@ import { UptodateScreen } from "@/screens/UptodateScreen";
 import { useAuth } from "@/store/auth";
 import { goBackInApp, installWebBackGuard } from "@/navigation/back";
 import { useNav } from "@/store/nav";
+import { motion } from "@/theme/tokens";
+import { useReducedMotion } from "@/utils/useReducedMotion";
 
 export function Navigator() {
   const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
   const mustSetPassword = useAuth((s) => s.mustSetPassword);
+
+  const screen = useNav((s) => s.screen);
+  const wide = ["aiLab", "uptodateArticle", "medscapeArticle", "uptodateOutline", "medscapeOutline"].includes(screen);
 
   let content: React.ReactNode;
   if (status === "loading") content = <LoadingState />;
@@ -58,7 +63,7 @@ export function Navigator() {
   else if (user && !user.profile.is_onboarded) content = <OnboardingScreen />;
   else {
     content = (
-      <AppShell padBottom={false}>
+      <AppShell padBottom={false} wide={wide}>
         <View style={{ flex: 1 }}>
           <ScreenTransition>
             <CurrentScreen />
@@ -113,7 +118,7 @@ function WebBackGuard() {
   return null;
 }
 
-const SLIDE_DISTANCE = 28;
+const SLIDE_DISTANCE = 12;
 
 /** Replays a short enter animation each time the screen changes: a slide
  * from the trailing edge going deeper, from the leading edge coming back
@@ -124,22 +129,25 @@ function ScreenTransition({ children }: { children: React.ReactNode }) {
   const transitionId = useNav((s) => s.transitionId);
   const direction = useNav((s) => s.direction);
   const { isFa } = useLang();
+  const reduced = useReducedMotion();
   const progress = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (transitionId === 0) return; // first render: nothing to animate from
     progress.setValue(0);
-    Animated.timing(progress, {
+    const animation = Animated.timing(progress, {
       toValue: 1,
-      duration: direction === "tab" ? 160 : 240,
+      duration: reduced || direction === "tab" ? motion.navigationFade : motion.navigationSlide,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: Platform.OS !== "web",
-    }).start();
-  }, [transitionId, direction, progress]);
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [transitionId, direction, progress, reduced]);
 
   // Physical px the screen starts offset by: positive = starts to the right.
   const fromRight = direction === "forward" ? !isFa : isFa;
-  const offset = direction === "tab" ? 0 : fromRight ? SLIDE_DISTANCE : -SLIDE_DISTANCE;
+  const offset = reduced || direction === "tab" ? 0 : fromRight ? SLIDE_DISTANCE : -SLIDE_DISTANCE;
 
   return (
     <Animated.View

@@ -24,6 +24,9 @@ import { MeshBackground } from "./MeshBackground";
  * at 440, Android phones with a smaller display-size setting at 450-500),
  * and framing those left rounded corners and a sliver of mesh at both sides.
  *
+ * On a wider web viewport, reference readers and smart search use a wider
+ * frame so the source and its tables have room.
+ *
  * Every screen renders inside this one component (Navigator wraps the whole
  * authenticated app in it, and AuthScreen/OnboardingScreen each use it
  * directly), so the keyboard-avoidance wrapper belongs here once rather than
@@ -57,11 +60,12 @@ export function useBleedTop(enabled: boolean) {
  * the screen's background too, or, with `padBottom={false}`, left to the
  * BottomNav, which grows into it.
  */
-export function AppShell({ children, padBottom = true }: { children: React.ReactNode; padBottom?: boolean }) {
+export function AppShell({ children, padBottom = true, wide = false }: { children: React.ReactNode; padBottom?: boolean; wide?: boolean }) {
   const { colors, shadows } = useTheme();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const showMockupFrame = Platform.OS === "web" && width >= layout.mockupFrameMinWidth;
+  const roomForReading = wide && showMockupFrame;
   const [claims, setClaims] = useState(0);
   const claim = useCallback(() => {
     setClaims((n) => n + 1);
@@ -81,7 +85,11 @@ export function AppShell({ children, padBottom = true }: { children: React.React
               backgroundColor: colors.appBg,
               overflow: "hidden",
             },
-            showMockupFrame && { maxWidth: layout.appMaxWidth, borderRadius: radius.shell },
+            showMockupFrame && {
+              maxWidth: roomForReading ? 960 : layout.appMaxWidth,
+              borderRadius: radius.shell,
+              ...(roomForReading ? { width: "96%" } : {}),
+            },
             showMockupFrame && shadows.shell,
           ]}
         >

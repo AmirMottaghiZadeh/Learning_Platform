@@ -9,6 +9,7 @@ import { UptodateSearchResult, UptodateSearchSuggestion } from "@/api/types";
 import { SuggestionFilter, UptodateSuggestionMenu } from "@/components/UptodateSuggestionMenu";
 import { ChromeButton, LangToggleButton, TourButton } from "@/components/ScreenChrome";
 import { OfflineDownloadButton } from "@/components/offline/OfflineDownloadButton";
+import { Chevron } from "@/components/primitives/Chevron";
 import { AppText } from "@/components/primitives/AppText";
 import { IconImage } from "@/components/primitives/IconImage";
 import { useDebounced } from "@/hooks/useDebounced";
@@ -35,7 +36,7 @@ const PAGE = 30;
 export function UptodateScreen() {
   const navClearance = useNavClearance();
   const { t, n, row, isFa } = useLang();
-  const { colors, shadows } = useTheme();
+  const { colors } = useTheme();
   const bleedTop = useBleedTop(true);
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
@@ -54,9 +55,7 @@ export function UptodateScreen() {
   const [suggestionFilter, setSuggestionFilter] = useState<SuggestionFilter>("all");
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 20, width: 0, maxHeight: 380 });
-  const menuVisible = suggestionsOpen && q.trim().length > 0;
   const dismissSuggestions = () => { setSuggestionsOpen(false); setActiveSuggestion(-1); Keyboard.dismiss(); };
-  useBackInterceptor(menuVisible, dismissSuggestions);
   const measureMenu = React.useCallback(() => {
     if (!rootRef.current) return;
     // Measure relative to one ancestor, so an in-flight screen transition
@@ -79,7 +78,6 @@ export function UptodateScreen() {
       if (Platform.OS === "web") window.visualViewport?.removeEventListener("resize", measureMenu);
     };
   }, [measureMenu]);
-  React.useEffect(() => { if (menuVisible) requestAnimationFrame(measureMenu); }, [menuVisible, dimensions.width, dimensions.height, measureMenu]);
   const favorites = useLibrary((s) => s.favorites);
   // a new query starts on "All"
   React.useEffect(() => setSection(null), [query]);
@@ -105,6 +103,9 @@ export function UptodateScreen() {
 
   const locked = error instanceof ApiError && error.status === 503;
   const first = data?.pages[0];
+  const menuVisible = suggestionsOpen && q.trim() === query && !!first?.suggestions?.length;
+  useBackInterceptor(menuVisible, dismissSuggestions);
+  React.useEffect(() => { if (menuVisible) requestAnimationFrame(measureMenu); }, [menuVisible, dimensions.width, dimensions.height, measureMenu]);
   const suggestions = useMemo(() => q.trim() === query ? (first?.suggestions ?? []).filter((suggestion) =>
     suggestionFilter === "all" || (suggestion.kind ?? suggestionKind(suggestion.query)) === suggestionFilter) : [], [first, q, query, suggestionFilter]);
   React.useEffect(() => setActiveSuggestion(-1), [query, suggestionFilter]);
@@ -146,12 +147,10 @@ export function UptodateScreen() {
         }}
       >
         <View style={{ flexDirection: row, alignItems: "center", gap: 10 }}>
-          <ChromeButton onPress={menuVisible ? dismissSuggestions : goBack} size={34}>
-            <AppText weight="800" size={16} color={colors.ink}>
-              {isFa ? "›" : "‹"}
-            </AppText>
+          <ChromeButton onPress={menuVisible ? dismissSuggestions : goBack} accessibilityLabel={isFa ? "بازگشت" : "Back"}>
+            <Chevron back color={colors.ink} />
           </ChromeButton>
-          <AppText accessibilityRole="header" weight="900" size={18} style={{ flex: 1 }}>
+          <AppText accessibilityRole="header" weight="700" size={17} style={{ flex: 1 }}>
             {t("uptodateScreenTitle")}
           </AppText>
           <TourButton tour="uptodate" size={34} />
@@ -184,7 +183,7 @@ export function UptodateScreen() {
             ref={inputRef} nativeID="uptodate-query"
             accessibilityLabel={t("uptodateSearchPlaceholder")}
             role="combobox" aria-autocomplete="list" aria-expanded={menuVisible}
-            aria-controls="uptodate-suggestions"
+            aria-controls={menuVisible ? "uptodate-suggestions" : undefined}
             aria-activedescendant={menuVisible && activeSuggestion >= 0 ? `utd-suggestion-${activeSuggestion}` : undefined}
             value={q}
             onChangeText={changeQuery}
@@ -312,7 +311,6 @@ export function UptodateScreen() {
                 key={r.id}
                 result={r}
                 onPress={() => navigate("uptodateOutline", { id: r.id, title: stripHtml(r.title) })}
-                shadow={shadows.raisedSm}
               />
             ))}
             {hasNextPage ? (
@@ -392,7 +390,7 @@ function Chip({ label, count, on, onPress }: { label: string; count?: string; on
   );
 }
 
-function ResultCard({ result, onPress, shadow }: { result: UptodateSearchResult; onPress: () => void; shadow: object }) {
+function ResultCard({ result, onPress }: { result: UptodateSearchResult; onPress: () => void }) {
   const { colors } = useTheme();
   // the start of each title word the query matched, highlighted
   const title = useMemo(() => {
@@ -424,8 +422,9 @@ function ResultCard({ result, onPress, shadow }: { result: UptodateSearchResult;
 
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={onPress}
-      style={[{ backgroundColor: colors.cardBg, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16, gap: 5 }, shadow]}
+      style={({ pressed }) => ({ backgroundColor: pressed ? colors.softBg : colors.cardBg, borderRadius: 16, borderWidth: 1, borderColor: colors.border, paddingVertical: 12, paddingHorizontal: 16, gap: 4 })}
     >
       {result.section ? (
         <AppText weight="700" size={11.5} color={colors.accent} style={[LTR, { lineHeight: 16 }]}>

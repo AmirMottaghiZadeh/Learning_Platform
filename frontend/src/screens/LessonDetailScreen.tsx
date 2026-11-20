@@ -8,6 +8,7 @@ import { DrugReviewBadge } from "@/components/DrugReviewBadge";
 import { DrugChemistryCard } from "@/components/DrugChemistryCard";
 import { LessonSection } from "@/api/types";
 import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
+import { Chevron } from "@/components/primitives/Chevron";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -283,9 +284,7 @@ export function LessonDetailScreen() {
         <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
           <View style={{ flexDirection: row, alignItems: "center", gap: 10 }}>
             <ChromeButton onPress={goBack} size={30}>
-              <AppText weight="800" size={15} color={colors.ink}>
-                {isFa ? "›" : "‹"}
-              </AppText>
+              <Chevron back color={colors.ink} />
             </ChromeButton>
             <AppText weight="800" size={12} muted>
               {data ? (isFa ? data.name_fa : data.name_en) : code}
@@ -437,7 +436,7 @@ export function LessonDetailScreen() {
               : "Covers this drug's indications, adverse reactions, warnings, contraindications and dosing"}
           </AppText>
           <AppText weight="900" size={13} color={colors.accent} style={{ marginTop: 10 }}>
-            {isFa ? "شروع آزمون ‹" : "Start quiz ›"}
+            {isFa ? "شروع آزمون" : "Start quiz"}
           </AppText>
         </Pressable>
       </ScrollView>

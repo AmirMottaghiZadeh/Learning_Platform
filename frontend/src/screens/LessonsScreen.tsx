@@ -6,6 +6,7 @@ import { TextInput } from "@/components/primitives/TextInput";
 import { lessonsApi } from "@/api/endpoints";
 import { DrugReviewBadge } from "@/components/DrugReviewBadge";
 import { ScreenChrome } from "@/components/ScreenChrome";
+import { Chevron } from "@/components/primitives/Chevron";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { IconImage, iconFor } from "@/components/primitives/IconImage";
@@ -179,6 +180,7 @@ function DrugSearchResults({
             ]}
           >
             <Pressable
+              accessibilityRole="button"
               onPress={() => open(hit.slug, hit.chapters[0].code)}
               style={{ flexDirection: row, alignItems: "center", gap: 10, padding: 14 }}
             >
@@ -198,9 +200,7 @@ function DrugSearchResults({
                   {isFa ? hit.chapters[0].name_fa : hit.chapters[0].name_en}
                 </AppText>
               ) : null}
-              <AppText muted size={14}>
-                {isFa ? "‹" : "›"}
-              </AppText>
+              <Chevron />
             </Pressable>
             {hit.chapters.length > 1 ? (
               <View style={{ flexDirection: row, flexWrap: "wrap", gap: 6, paddingHorizontal: 14, paddingBottom: 12 }}>

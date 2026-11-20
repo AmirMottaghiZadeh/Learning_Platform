@@ -11,7 +11,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 
 /** The signed-out screens' frame: the brand on the teal header mesh, and a
  * sheet below it holding the form. */
-export function AuthLayout({ title, subtitle, children, panel=false }: { title: string; subtitle: string; children: React.ReactNode; panel?:boolean }) {
+export function AuthLayout({ title, subtitle, children, panel = false, compact = false }: { title: string; subtitle: string; children: React.ReactNode; panel?: boolean; compact?: boolean }) {
   const { t } = useLang();
   const { colors } = useTheme();
   return (
@@ -21,17 +21,12 @@ export function AuthLayout({ title, subtitle, children, panel=false }: { title: 
         <View style={{ flex: 1 }}>
           <GlassToggles />
 
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}>
-            <IconImage name="app-logo" size={96} style={{ marginBottom: 16 }} />
-            <AppText weight="900" size={26} color="#fff" center>
-              {t("appName")}
-            </AppText>
-            {/* The header mesh is a dark teal gradient in BOTH themes, so this
-                text must stay light — `onAccentSub` flips to near-black in dark
-                mode (it is tuned for text on the light accent pill). */}
-            <AppText weight="600" size={14} color="rgba(255,255,255,0.85)" center style={{ marginTop: 8 }}>
-              {t("tagline")}
-            </AppText>
+          <View style={compact
+            ? { flexDirection: "row", justifyContent: "center", alignItems: "center", paddingTop: 8, paddingBottom: 16, gap: 8 }
+            : { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24, paddingVertical: 8 }}>
+            <IconImage name="app-logo" size={compact ? 36 : 64} style={{ marginBottom: compact ? 0 : 8 }} />
+            <AppText weight="700" size={compact ? 17 : 23} color="#fff" center>{t("appName")}</AppText>
+            {!compact ? <AppText size={13} color="rgba(255,255,255,0.85)" center style={{ marginTop: 4 }}>{t("tagline")}</AppText> : null}
           </View>
 
           <View
@@ -39,21 +34,22 @@ export function AuthLayout({ title, subtitle, children, panel=false }: { title: 
               backgroundColor: colors.appBg,
               borderTopLeftRadius: 28,
               borderTopRightRadius: 28,
-              paddingHorizontal: 26,
-              paddingTop: 28,
-              paddingBottom: 34,
-              maxHeight:"78%",
+              paddingHorizontal: 20,
+              paddingTop: 24,
+              paddingBottom: 24,
+              maxHeight: compact ? undefined : "84%",
+              flexGrow: compact ? 1 : undefined,
               flexShrink:1,
             }}
           >
-            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-              <AppText weight="800" size={20}>
+            <ScrollView style={compact ? { flex: 1 } : undefined} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              <AppText accessibilityRole="header" aria-level={1} weight="700" size={21}>
                 {title}
               </AppText>
               <AppText muted weight="600" size={13} style={{ marginTop: 4, marginBottom: 20, lineHeight: 21 }}>
                 {subtitle}
               </AppText>
-              {panel ? <View style={{padding:18,borderRadius:20,backgroundColor:colors.cardBg}}>{children}</View> : children}
+              {panel ? <View style={{padding:16,borderRadius:16,backgroundColor:colors.cardBg}}>{children}</View> : children}
             </ScrollView>
           </View>
         </View>

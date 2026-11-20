@@ -26,7 +26,7 @@ export function Button({
   full = true,
   style,
 }: Props) {
-  const { colors, shadows } = useTheme();
+  const { colors } = useTheme();
   const isPrimary = variant === "primary";
   const isGhost = variant === "ghost";
 
@@ -35,7 +35,11 @@ export function Button({
 
   return (
     <Pressable
-      onPress={disabled || loading ? undefined : onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled || !!loading, busy: !!loading }}
+      disabled={!!disabled || !!loading}
+      onPress={onPress}
       style={({ pressed }) => [
         {
           height: 52,
@@ -45,19 +49,17 @@ export function Button({
           backgroundColor: bg,
           borderWidth: variant === "secondary" ? 1 : 0,
           borderColor: colors.trackBg,
-          opacity: disabled ? 0.5 : 1,
+          opacity: disabled ? 0.5 : pressed ? 0.82 : 1,
           alignSelf: full ? "stretch" : "flex-start",
           paddingHorizontal: 22,
-          transform: [{ scale: pressed ? 0.985 : 1 }],
         },
-        isPrimary && shadows.glow,
         style,
       ]}
     >
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
-        <AppText weight="800" size={15} color={fg}>
+        <AppText weight="700" size={15} color={fg}>
           {label}
         </AppText>
       )}

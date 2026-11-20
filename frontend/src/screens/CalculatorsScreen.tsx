@@ -41,7 +41,7 @@ function monogram(name: string): string {
  * than a handful of subtopics. The search box is a secondary filter over the
  * same already-fetched flat set, not a separate server query. */
 export function CalculatorsScreen() {
-  const { t, isFa, row } = useLang();
+  const { t, isFa, row, n } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
@@ -87,7 +87,7 @@ export function CalculatorsScreen() {
     <Screen>
       <ScreenChrome title={t("calculatorScreenTitle")} onBack={goBack} tour="calculator" />
       <AppText muted weight="600" size={12} style={{ marginBottom: 14 }}>
-        {items.length} {t("calculatorCountSuffix")} {t("calculatorInLabel")} {mainGroups.length}{" "}
+        {n(items.length)} {t("calculatorCountSuffix")} {t("calculatorInLabel")} {n(mainGroups.length)}{" "}
         {t("calculatorDomainCountSuffix")}
       </AppText>
 

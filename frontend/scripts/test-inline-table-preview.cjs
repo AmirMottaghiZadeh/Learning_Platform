@@ -30,6 +30,12 @@ setTimeout(function(){
   var view=viewer.contentWindow.__utdTableView;
   result.viewerOpened=!!view&&!!d.getElementById('utdTableViewer');
   result.viewerHasNoPreview=!!d.querySelector('.utd-table-canvas > table')&&!d.querySelector('.utd-table-preview');
+  result.readByDefault=view.state().mode==='read'&&view.state().scale===1;
+  view.fit('all');
+  result.wholeTableFits=view.state().mode==='all'&&view.state().scale<1;
+  view.fit('read');
+  var stage=d.querySelector('.utd-table-stage');
+  result.canScrollToMoreColumns=view.state().scale===1&&stage.scrollWidth>stage.clientWidth;
   var r=document.createElement('script');r.id='qa-result';r.type='application/json';r.textContent=JSON.stringify(result);document.body.appendChild(r);
 },150);
 </script></html>`;
@@ -38,6 +44,6 @@ const result=cp.spawnSync('/usr/bin/google-chrome',['--headless=new','--no-sandb
 assert.equal(result.status,0);
 const match=result.stdout.match(/<script id="qa-result" type="application\/json">([^<]+)<\/script>/);assert.ok(match,'Browser report missing');
 const report=JSON.parse(match[1]);
-for(const key of ['small','resized','opened','linkPreserved','textPreserved','accessible','viewerOpened','viewerHasNoPreview'])assert.equal(report[key],true,key);
+for(const key of ['small','resized','opened','linkPreserved','textPreserved','accessible','viewerOpened','viewerHasNoPreview','readByDefault','wholeTableFits','canScrollToMoreColumns'])assert.equal(report[key],true,key);
 assert.equal(report.rowspan,2);
 console.log('Inline table preview passed: full table fits, resize works, original text/links/spans remain, keyboard opens original full viewer.');

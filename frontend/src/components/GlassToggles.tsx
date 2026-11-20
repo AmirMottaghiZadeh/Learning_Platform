@@ -25,13 +25,15 @@ export function GlassToggles() {
     >
       <Pressable
         onPress={toggleLang}
-        style={[chip, { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }]}
+        accessibilityRole="button"
+        accessibilityLabel={t("langSwitch")}
+        style={[chip, { borderRadius: 12, minHeight: 44, minWidth: 44, justifyContent: "center", alignItems: "center" }]}
       >
         <AppText weight="800" size={12} color="#fff">
           {t("langSwitch")}
         </AppText>
       </Pressable>
-      <ThemeToggleButton size={34} />
+      <ThemeToggleButton />
     </View>
   );
 }

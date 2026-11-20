@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Animated, LayoutChangeEvent, Pressable, View } from "react-native";
+import React from "react";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useLang } from "@/i18n/LanguageProvider";
@@ -10,8 +10,6 @@ import { layout } from "@/theme/tokens";
 import { LOCKED_TABS, TAB_ORDER, TabKey } from "@/navigation/types";
 import { AppText } from "./primitives/AppText";
 import { IconImage, IconName } from "./primitives/IconImage";
-
-const PILL_W = 56;
 
 /** How much room to leave under a screen's content so its end isn't hidden
  * behind the tab bar -- which grows by the home-indicator strip (see
@@ -41,6 +39,12 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
   statistics: "profile",
   planning: "profile",
   planningSetup: "profile",
+  settings: "profile",
+  plans: "profile",
+  devices: "profile",
+  notifications: "profile",
+  downloads: "profile",
+  support: "profile",
   uptodate: "dashboard",
   uptodateOutline: "dashboard",
   uptodateArticle: "dashboard",
@@ -57,34 +61,11 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
 
 export function BottomNav() {
   const insets = useSafeAreaInsets();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { t, isFa } = useLang();
   const screen = useNav((s) => s.screen);
   const setTab = useNav((s) => s.setTab);
   const activeTab = SCREEN_TO_TAB[screen] ?? "dashboard";
-  const activeIndex = TAB_ORDER.indexOf(activeTab);
-  // The pill is positioned from the physical left edge with translateX, so it
-  // must track the *visual* slot. In fa the row is `row-reverse`, so tab i of
-  // TAB_ORDER sits in slot (n-1-i) from the left. Relying on an inherited
-  // `direction` here is what put the pill on the wrong tab in the APK.
-  const visualIndex = isFa ? TAB_ORDER.length - 1 - activeIndex : activeIndex;
-
-  const [width, setWidth] = useState(0);
-  const x = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (!width) return;
-    const center = ((visualIndex + 0.5) / TAB_ORDER.length) * width;
-    Animated.spring(x, {
-      toValue: center - PILL_W / 2,
-      useNativeDriver: true,
-      speed: 16,
-      bounciness: 6,
-    }).start();
-  }, [visualIndex, width, x]);
-
-  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
-
   return (
     // The guided tours point at the bar as "nav".
     <TourTarget
@@ -100,10 +81,11 @@ export function BottomNav() {
       }}
     >
     <View
-      onLayout={onLayout}
+      role="navigation"
+      accessibilityLabel={isFa ? "ناوبری اصلی" : "Main navigation"}
       style={{
         flex: 1,
-        backgroundColor: colors.navBg,
+        backgroundColor: colors.cardBg,
         borderTopWidth: 1,
         borderTopColor: colors.border,
         flexDirection: isFa ? "row-reverse" : "row",
@@ -111,19 +93,6 @@ export function BottomNav() {
         paddingBottom: 6 + insets.bottom,
       }}
     >
-      <Animated.View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 8,
-          left: 0,
-          width: PILL_W,
-          height: 44,
-          borderRadius: 14,
-          backgroundColor: isDark ? "rgba(157,212,184,0.10)" : "rgba(15,92,82,0.08)",
-          transform: [{ translateX: x }],
-        }}
-      />
       {TAB_ORDER.map((tab) => {
         const meta = TAB_META[tab];
         const isActive = tab === activeTab;
@@ -131,10 +100,14 @@ export function BottomNav() {
         return (
           <Pressable
             key={tab}
+            accessibilityRole="button"
+            aria-current={isActive ? "page" : undefined}
+            accessibilityState={{ selected: isActive }}
             onPress={() => setTab(tab)}
-            style={{ flex: 1, alignItems: "center", gap: 3 }}
+            style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.75 : 1 })}
           >
-            <View style={{ opacity: isActive ? 1 : 0.45 }}>
+            <View style={{ alignItems: "center", justifyContent: "center", width: 52, height: 28, borderRadius: 10,
+              backgroundColor: isActive ? colors.leitnerActiveBg : "transparent", opacity: isActive ? 1 : 0.65 }}>
               <IconImage name={meta.icon} size={24} />
               {locked ? (
                 <View
@@ -153,8 +126,8 @@ export function BottomNav() {
               ) : null}
             </View>
             <AppText
-              size={11}
-              weight={isActive ? "800" : "600"}
+              size={12}
+              weight={isActive ? "700" : "500"}
               color={isActive ? colors.accent : colors.muted}
             >
               {t(meta.labelKey)}

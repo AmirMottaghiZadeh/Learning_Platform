@@ -55,6 +55,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // mode no longer switches it.
   const mode: ThemeMode = override ?? "light";
 
+  useEffect(() => {
+    if (typeof document !== "undefined") document.documentElement.dataset.appTheme = mode;
+  }, [mode]);
+
   const value = useMemo<ThemeContextValue>(() => {
     const setMode = (next: ThemeMode) => {
       setOverride(next);

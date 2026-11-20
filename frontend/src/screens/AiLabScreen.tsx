@@ -19,7 +19,7 @@ import { fontFamily } from "@/theme/fonts";
 import { SearchFeedback } from "@/components/SearchFeedback";
 import { SmartSearchWallet } from "@/components/SmartSearchWallet";
 import { ReferenceMediaCards } from "@/components/ReferenceMediaCards";
-import { HeaderMesh } from "@/components/HeaderMesh";
+import { Chevron } from "@/components/primitives/Chevron";
 import { ReferenceAnswerSkeleton, ReferenceSearchLoading } from "@/components/ReferenceSearchLoading";
 import { ReferenceAnswerText } from "@/components/ReferenceAnswerText";
 import { answerFollowOffset } from "@/utils/referenceAnswer";
@@ -46,6 +46,7 @@ export function AiLabScreen() {
   const autoScrollUntil = useRef(0);
   const sending = useRef(false);
   const [requestError, setRequestError] = useState("");
+  const [cancellingJob, setCancellingJob] = useState<string | null>(null);
   const [suggestions] = useState(() => pickClinicalSearchSuggestions());
   const questionInput = useRef<TextInput>(null);
   const [quotes, setQuotes] = useState<Record<string, boolean>>({});
@@ -182,7 +183,7 @@ export function AiLabScreen() {
   const send = async (question = state.draft) => {
     const q = question.trim();
     if (!q || active || recovering || sending.current) return;
-    if(creditBlocked){setRequestError(failure("AI_CREDIT_INSUFFICIENT"));return;}
+    if(creditBlocked){setRequestError(failure("AI_CREDIT_INSUFFICIENT", undefined, isFa));return;}
     sending.current = true; setRequestError("");
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     startReferenceTiming(id);
@@ -198,15 +199,30 @@ export function AiLabScreen() {
           if (previous) {
             cancelReferenceTiming(id);
             useAiLab.setState((s) => ({ turns: s.turns.filter((t) => t.id !== id), draft: previous.question === q ? "" : q }));
-            setRequestError("جست‌وجوی قبلی بازیابی شد؛ نتیجه در همین گفت‌وگو نمایش داده می‌شود.");
+            setRequestError(isFa ? "جست‌وجوی قبلی بازیابی شد؛ نتیجه در همین گفت‌وگو نمایش داده می‌شود." : "The previous search was recovered and will appear here.");
             return;
           }
         } catch { /* Keep the submitted question available for retry. */ }
       }
       if (useAiLab.getState().owner === userId) useAiLab.getState().patch(id, { status: "failed", error: { code: error instanceof ApiError ? error.code : "REQUEST_FAILED" } });
-      setRequestError(error instanceof ApiError && [402, 429].includes(error.status) ? error.message : "ارسال سؤال انجام نشد؛ سؤال در گفت‌وگو باقی مانده است.");
+      setRequestError(error instanceof ApiError && [402, 429].includes(error.status) ? failure(error.code, error.status, isFa)
+        : isFa ? "ارسال سؤال انجام نشد؛ سؤال در گفت‌وگو باقی مانده است." : "Could not submit the question. You can retry it here.");
     } finally { sending.current = false; }
   };
+
+  const stopSearch = async () => {
+    if (!active?.jobId || cancellingJob) return;
+    setCancellingJob(active.jobId);
+    try {
+      await aiLabApi.cancel(active.jobId);
+    } catch {
+      setCancellingJob(null);
+      setRequestError(isFa ? "توقف جست‌وجو انجام نشد؛ دوباره تلاش کنید." : "Could not stop the search. Try again.");
+    }
+  };
+  useEffect(() => {
+    if (!active) setCancellingJob(null);
+  }, [active?.id]);
 
   const open = (citation: LabCitation) => {
     const { screen, params } = citation.target;
@@ -219,7 +235,7 @@ export function AiLabScreen() {
     <Pressable accessibilityRole="button" accessibilityState={{ expanded: !!quotes[key] }}
       onPress={() => setQuotes((s) => ({ ...s, [key]: !s[key] }))}
       style={{ minHeight: 44, justifyContent: "center" }}>
-      <AppText size={13} color={colors.accent}>{quotes[key] ? "بستن بند منبع" : "نمایش بند منبع"}</AppText>
+      <AppText size={13} color={colors.accent}>{quotes[key] ? (isFa ? "بستن بند منبع" : "Hide source passage") : (isFa ? "نمایش بند منبع" : "Show source passage")}</AppText>
     </Pressable>
     {quotes[key] ? <View style={{ gap: 8 }}>
       {citation.context?.length ? <View style={{ gap: 4 }}>
@@ -229,20 +245,20 @@ export function AiLabScreen() {
       <AppText selectable size={13} style={{ writingDirection: "ltr", textAlign: "left" }}>{citation.quote}</AppText>
     </View> : null}
     <Pressable accessibilityRole="button" onPress={() => open(citation)} style={{ minHeight: 44, justifyContent: "center" }}>
-      <AppText weight="800" size={13} color={colors.accent}>باز کردن متن اصلی</AppText><AppText size={12} muted>{citation.title}</AppText>
+      <AppText weight="800" size={13} color={colors.accent}>{isFa ? "باز کردن متن اصلی" : "Open original source"}</AppText><AppText size={12} muted>{citation.title}</AppText>
     </Pressable>
   </View>;
 
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: colors.appBg, paddingBottom: clearance }}>
-    <View style={{height:76}}><HeaderMesh><View style={{ paddingHorizontal:20,paddingTop:12,gap:8 }}>
-      <View style={{flexDirection:row,alignItems:"center",gap:10}}>
-        <ChromeButton onPress={goBack} size={44} accessibilityLabel={isFa ? "بازگشت" : "Back"}><AppText weight="800" size={18}>{isFa ? "›" : "‹"}</AppText></ChromeButton>
-        <AppText accessibilityRole="header" aria-level={1} color="#FFFFFF" weight="800" size={17} style={{flex:1}}>{isFa ? "سرچ هوشمند" : "Smart search"}</AppText>
-        <ThemeToggleButton variant="soft" size={44} /><LangToggleButton size={44} />
+    <View style={{ backgroundColor: colors.cardBg, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+      <View style={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, flexDirection: row, alignItems: "center", gap: spacing.sm }}>
+        <ChromeButton onPress={goBack} accessibilityLabel={isFa ? "بازگشت" : "Back"}><Chevron back color={colors.ink} /></ChromeButton>
+        <AppText accessibilityRole="header" aria-level={1} weight="700" size={17} style={{ flex: 1 }}>{isFa ? "سرچ هوشمند" : "Smart search"}</AppText>
+        <ThemeToggleButton variant="soft" /><LangToggleButton />
       </View>
-    </View></HeaderMesh></View>
-    <View style={{paddingHorizontal:20,paddingTop:12}}>
-      <SmartSearchWallet compact refreshKey={`${latest?.jobId ?? ""}:${latest?.status ?? ""}`} running={!!active} />
+      <View style={{ paddingHorizontal: spacing.lg }}>
+        <SmartSearchWallet compact refreshKey={`${latest?.jobId ?? ""}:${latest?.status ?? ""}`} running={!!active} />
+      </View>
     </View>
     <ScrollView ref={scroll} scrollEventThrottle={100}
       {...(Platform.OS === "web" ? { onWheel: pauseFollow } : {})}
@@ -255,20 +271,20 @@ export function AiLabScreen() {
       }}
       onContentSizeChange={() => {
         if (latestRef.current?.status === "running") scheduleFollow();
-      }} contentContainerStyle={{ padding: 20, gap: 18, flexGrow: 1 }}>
-      {!turns.length ? <View style={{ gap: 20, paddingTop: 12 }}>
+      }} contentContainerStyle={{ width: "100%", maxWidth: 780, alignSelf: "center", padding: spacing.lg, gap: spacing.lg, flexGrow: 1 }}>
+      {!turns.length ? <View style={{ gap: spacing.md, paddingTop: spacing.sm }}>
         <View style={{ gap: 8 }}>
-          <AppText weight="800" size={23}>{isFa ? "پرسش شما، متن اصلی منبع" : "Your question, the original source"}</AppText>
+          <AppText weight="700" size={22}>{isFa ? "پرسش شما، متن اصلی منبع" : "Your question, the original source"}</AppText>
           <AppText size={14} muted>{isFa ? "پرسش بالینی‌تان را بنویسید و پاسخ را کنار منبع بخوانید." : "Ask your clinical question and read the answer alongside its source."}</AppText>
         </View>
-        <AppText size={12} muted>{isFa ? "پرسش‌های پیشنهادی" : "Suggested questions"}</AppText>
+        <AppText size={13} muted>{isFa ? "پرسش‌های پیشنهادی" : "Suggested questions"}</AppText>
         <View style={{ backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.card, paddingHorizontal: spacing.lg }}>
         {suggestions.map((item, index) => <Pressable key={item.id} testID={`reference-suggestion-${item.id}`} accessibilityRole="button"
           accessibilityHint={isFa ? "فقط متن سؤال را وارد کادر می‌کند؛ برای ارسال، جست‌وجو را بزنید." : "Fills the question field. Press Search to submit."}
           onPress={() => { useAiLab.setState({ draft: isFa ? item.fa : item.en }); questionInput.current?.focus(); }}
-          style={{ minHeight: 60, paddingVertical: 12, flexDirection: row, alignItems: "center", gap: 10,
+          style={{ minHeight: 52, paddingVertical: 8, flexDirection: row, alignItems: "center", gap: 10,
             borderBottomWidth: index < suggestions.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-          <AppText size={13} style={{ flex: 1 }}>{isFa ? item.fa : item.en}</AppText>
+          <AppText size={14} style={{ flex: 1 }}>{isFa ? item.fa : item.en}</AppText>
           <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke={colors.muted} strokeWidth={1.7} accessibilityElementsHidden>
             <Path d={isFa ? "M20 12H4m6-6-6 6 6 6" : "M4 12h16m-6-6 6 6-6 6"} strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
@@ -276,8 +292,8 @@ export function AiLabScreen() {
         </View>
         <AppText size={12} muted>{isFa ? "با انتخاب پیشنهاد، فقط کادر سؤال پر می‌شود." : "Selecting a suggestion only fills the question field."}</AppText>
       </View> : null}
-      {status.isError ? <AppText size={13} muted>دریافت وضعیت سرچ هوشمند ممکن نشد. <AppText color={colors.accent} onPress={() => void status.refetch()}>تلاش دوباره</AppText></AppText> : null}
-      {status.data && !status.data.enabled ? <AppText size={14} muted>سرچ هوشمند برای حساب شما فعال نیست.</AppText> : null}
+      {status.isError ? <AppText size={13} muted>{isFa ? "دریافت وضعیت سرچ هوشمند ممکن نشد. " : "Could not check search availability. "}<AppText color={colors.accent} onPress={() => void status.refetch()}>{isFa ? "تلاش دوباره" : "Retry"}</AppText></AppText> : null}
+      {status.data && !status.data.enabled ? <AppText size={14} muted>{failure("AI_LAB_DISABLED", undefined, isFa)}</AppText> : null}
       {turns.map((turn) => {
         const draft = Object.values(turn.answer_drafts ?? {}).join("\n\n");
         const hasFinalSources = !!turn.result?.parts.some((part) => part.items.length);
@@ -290,7 +306,7 @@ export function AiLabScreen() {
         }
         const hasSources = articles.size > 0;
         return <View testID={turn.status === "complete" ? "reference-final-answer" : "reference-pending-answer"} key={turn.id} onLayout={(event) => { turnPositions.current[turn.id] = event.nativeEvent.layout.y; scheduleFollow(); }} style={{ gap: 12 }}>
-        <View style={{backgroundColor:colors.accent,borderRadius:18,padding:14,maxWidth:"95%",alignSelf:isFa ? "flex-end" : "flex-start"}}><AppText color={colors.onAccent} size={14}>{turn.question}</AppText></View>
+        <View style={{backgroundColor:colors.leitnerActiveBg,borderRadius:14,padding:12,maxWidth:"92%",alignSelf:isFa ? "flex-end" : "flex-start"}}><AppText color={colors.ink} weight="500" size={15}>{turn.question}</AppText></View>
         {citations.some(c => c.media?.length) ? <View testID="reference-primary-media" style={{padding:16,borderRadius:18,backgroundColor:colors.cardBg}}>
           <ReferenceMediaCards items={[...new Map(citations.flatMap(c => c.media??[]).map(item => [item.article_id+":"+item.key,item])).values()]} />
         </View> : null}
@@ -300,42 +316,42 @@ export function AiLabScreen() {
           scheduleFollow();
         }}
           style={{ backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.card, padding: spacing.lg, gap: 14 }}>
-          <AppText weight="800" size={14}>{isFa ? "پاسخ فارسی" : "Answer"}</AppText>
+          <AppText weight="700" size={15}>{isFa ? "پاسخ فارسی" : "Answer in Persian"}</AppText>
           {turn.status === "running" && !draft ? <ReferenceAnswerSkeleton /> : null}
-          {turn.status === "running" && draft ? <View style={{ gap: 8 }}>
-            <AppText muted size={12}>{isFa ? "پیش‌نویس در حال بررسی" : "Draft under review"}</AppText>
-            <ReferenceAnswerText text={draft} testID="reference-answer-draft" />
-          </View> : null}
-          {turn.status === "failed" ? <AppText size={14} color={colors.denyLabel}>{failure(turn.error?.code, turn.error?.provider_status)}</AppText> : null}
-          {turn.result?.parts.length === 0 ? <AppText size={14} muted>در محدودهٔ منابع انتخاب‌شده پاسخی پیدا نشد.</AppText> : null}
+          {turn.status === "running" && draft ? <ReferenceAnswerText text={draft} testID="reference-answer-draft" /> : null}
+          {turn.status === "failed" ? <AppText size={14} color={colors.denyLabel}>{failure(turn.error?.code, turn.error?.provider_status, isFa)}</AppText> : null}
+          {turn.result?.parts.length === 0 ? <AppText size={14} muted>{isFa ? "در محدودهٔ منابع انتخاب‌شده پاسخی پیدا نشد." : "No answer was found in the selected references."}</AppText> : null}
           {turn.result?.parts.map((part, i) => {
             const summary = part.overview_fa || [...new Set(part.items.map((item) => item.summary_fa))].join("\n\n");
             return <View key={i} style={{ gap: 10 }}>
               {turn.result!.parts.length > 1 ? <AppText weight="700" size={14}>{part.question_fa}</AppText> : null}
               {summary ? <ReferenceAnswerText testID="reference-answer-text" text={summary} /> : null}
-              {part.retrieval?.limited && !part.retrieval.early_stopped ? <AppText size={12} muted>نمایش نتایج بازیابی‌شده در محدودهٔ این جست‌وجو؛ پوشش منابع کامل نیست.</AppText> : null}
-              {part.status === "partial" ? <AppText size={13} muted>{part.clarification_fa || "این منابع فقط بخشی از سؤال را پوشش می‌دهند؛ پاسخ کامل تأیید نشد."}</AppText> : null}
+              {part.retrieval?.limited && !part.retrieval.early_stopped ? <AppText size={12} muted>{isFa ? "پوشش منابع در این جست‌وجو کامل نیست." : "This search covered a limited set of references."}</AppText> : null}
+              {part.status === "partial" ? <AppText size={13} muted>{part.clarification_fa || (isFa ? "منابع فقط بخشی از سؤال را پوشش می‌دهند." : "The sources cover only part of the question.")}</AppText> : null}
               {part.status === "needs_clarification" ? <AppText size={14}>{part.clarification_fa}</AppText> : null}
-              {part.status === "not_found" ? <AppText size={14} muted>متن کافی برای پاسخ مستند پیدا نشد؛ پاسخی حدس زده نشد.</AppText> : null}
+              {part.status === "not_found" ? <AppText size={14} muted>{isFa ? "متن کافی برای پاسخ مستند پیدا نشد." : "There was insufficient evidence for a sourced answer."}</AppText> : null}
             </View>;
           })}
-          {turn.status === "running" ? <View style={{ gap: 8 }}>
-            <ReferenceSearchLoading hasResults={hasSources} stage={turn.stage} />
-            {turn.jobId && turn.cancellable ? <Pressable accessibilityRole="button" onPress={() => {
-              void aiLabApi.cancel(turn.jobId!).catch(() => setRequestError("لغو درخواست انجام نشد؛ دوباره تلاش کنید."));
-            }} style={{ minHeight: 44, justifyContent: "center" }}><AppText size={13} color={colors.denyLabel}>{isFa ? "توقف جست‌وجو" : "Stop search"}</AppText></Pressable> : null}
-          </View> : null}
         </View>
         {hasSources ? <View testID="reference-source-results" style={{ gap: 12 }}>
           <AppText weight="800" size={13}>{isFa ? turn.status === "running" ? "منابع در حال بررسی" : "منابع اصلی" : turn.status === "running" ? "Sources under review" : "Sources"}</AppText>
-          {[...articles.values()].map((citation,index) => {
-            return <View key={String(citation.target.params.id)} style={{padding:16,borderRadius:18,backgroundColor:colors.cardBg,gap:12}}>
-              <Pressable testID="reference-source" accessibilityRole="button" onPress={() => open(citation)} style={{flexDirection:row,gap:10,alignItems:"center"}}>
-                <View style={{width:28,height:28,borderRadius:9,backgroundColor:colors.leitnerActiveBg,alignItems:"center",justifyContent:"center"}}><AppText weight="800" size={12} color={colors.accent}>{index+1}</AppText></View>
-                <View style={{flex:1,gap:5}}><AppText size={11} muted>UpToDate</AppText><AppText weight="800" size={13} style={{writingDirection:"ltr",textAlign:"left"}}>{citation.title}</AppText></View>
+          <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.card, backgroundColor: colors.cardBg }}>
+            {[...articles.values()].map((citation, index) => (
+              <Pressable key={String(citation.target.params.id)} testID="reference-source" accessibilityRole="button" onPress={() => open(citation)}
+                style={({ pressed }) => ({
+                  flexDirection: row, alignItems: "center", gap: 12, minHeight: 60, padding: spacing.md,
+                  borderTopWidth: index ? 1 : 0, borderTopColor: colors.border, opacity: pressed ? 0.75 : 1,
+                })}>
+                <View style={{ flex: 1, gap: 3 }}>
+                  <AppText size={13} color={colors.accent} style={{ writingDirection: "ltr", textAlign: "left" }}>
+                    {citation.section ? `UpToDate · ${citation.section}` : "UpToDate"}
+                  </AppText>
+                  <AppText weight="700" size={14} style={{ writingDirection: "ltr", textAlign: "left" }}>{citation.title}</AppText>
+                </View>
+                <Chevron />
               </Pressable>
-            </View>;
-          })}
+            ))}
+          </View>
           {hasFinalSources ? <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: "hidden", backgroundColor: colors.cardBg }}>
             <Pressable testID="reference-sources-toggle" accessibilityRole="button"
               accessibilityLabel={isFa ? "دیدن بخش‌های مرتبط در منابع" : "View relevant source passages"}
@@ -355,9 +371,9 @@ export function AiLabScreen() {
           </View> : null}
         </View> : null}
         {turn.status === "complete" && turn.result && turn.jobId ? <SearchFeedback jobId={turn.jobId} available={!!turn.feedback_available} /> : null}
-        {turn.status === "running" && turn.findings_limited ? <AppText size={12} muted>سقف نمایش تدریجی پر شده است؛ بررسی ادامه یافته و نتیجهٔ نهایی جداگانه نمایش داده می‌شود.</AppText> : null}
-        {turn.result?.warnings.length ? <AppText muted size={12}>برخی منابع یا توضیح‌ها قابل تأیید نبودند و کنار گذاشته شدند.</AppText> : null}
-        {turn.status === "failed" ? <Pressable disabled={!!active} onPress={() => void send(turn.question)} style={{ minHeight: 44, justifyContent: "center" }}><AppText size={13} muted>تلاش دوباره</AppText></Pressable> : null}
+        {turn.status === "running" && turn.findings_limited ? <AppText size={12} muted>{isFa ? "بررسی منابع ادامه دارد. نتیجهٔ نهایی پس از تکمیل جست‌وجو نمایش داده می‌شود." : "Review is continuing. Final results will appear when the search is complete."}</AppText> : null}
+        {turn.result?.warnings.length ? <AppText muted size={12}>{isFa ? "برخی منابع یا توضیح‌ها قابل تأیید نبودند." : "Some passages or explanations could not be verified."}</AppText> : null}
+        {turn.status === "failed" ? <Pressable disabled={!!active} onPress={() => void send(turn.question)} style={{ minHeight: 44, justifyContent: "center" }}><AppText size={13} muted>{isFa ? "تلاش دوباره" : "Retry"}</AppText></Pressable> : null}
       </View>; })}
     </ScrollView>
     {active && !followingAnswer ? <Pressable testID="reference-follow-answer" accessibilityRole="button"
@@ -366,17 +382,25 @@ export function AiLabScreen() {
       <AppText size={13} weight="700" color={colors.accent}>{isFa ? "دنبال‌کردن پاسخ" : "Follow the answer"}</AppText>
     </Pressable> : null}
     {requestError ? <AppText size={12} color={colors.denyLabel} style={{ paddingHorizontal: 20 }}>{requestError}</AppText> : null}
-    {recovering ? <AppText size={12} muted style={{ paddingHorizontal: 20 }}>بررسی درخواست قبلی…</AppText> : null}
-    <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, gap: 8, flexDirection: row, alignItems: "flex-end", backgroundColor: colors.cardBg, borderTopWidth: 1, borderTopColor: colors.border }}>
+    {recovering ? <AppText size={13} muted style={{ paddingHorizontal: 16 }}>{isFa ? "بررسی درخواست قبلی…" : "Recovering the previous search…"}</AppText> : null}
+    {active ? <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between", gap: spacing.sm,
+      paddingHorizontal: spacing.lg, backgroundColor: colors.cardBg, borderTopWidth: 1, borderTopColor: colors.border }}>
+      <View style={{ flex: 1 }}><ReferenceSearchLoading hasResults={!!active.findings?.length} stage={active.stage} /></View>
+      {active.jobId && active.cancellable ? <Pressable accessibilityRole="button" disabled={!!cancellingJob}
+        onPress={() => void stopSearch()} style={{ minHeight: 44, paddingHorizontal: 4, justifyContent: "center" }}>
+        <AppText size={13} color={colors.denyLabel}>{cancellingJob ? (isFa ? "در حال توقف…" : "Stopping…") : (isFa ? "توقف جست‌وجو" : "Stop search")}</AppText>
+      </Pressable> : null}
+    </View> : null}
+    <View style={{ paddingHorizontal: 16, paddingVertical: 8, gap: 8, flexDirection: row, alignItems: "flex-end", backgroundColor: colors.cardBg, borderTopWidth: 1, borderTopColor: colors.border }}>
       <TextInput ref={questionInput} testID="reference-question" value={state.draft} onChangeText={(draft) => useAiLab.setState({ draft })} multiline maxLength={1500} editable={!active}
-        accessibilityLabel="پرسش برای سرچ هوشمند" placeholder="سؤال خود را بنویسید…" placeholderTextColor={colors.muted}
+        accessibilityLabel={isFa ? "پرسش برای سرچ هوشمند" : "Question for smart search"} placeholder={isFa ? "سؤال خود را بنویسید…" : "Write your question…"} placeholderTextColor={colors.muted}
         style={{ flex: 1, minHeight: 48, maxHeight: 120, padding: 12, borderRadius: radii.input, backgroundColor: colors.softBg, borderWidth: 1, borderColor: colors.border,
           fontFamily: fontFamily("500"), fontSize: 14, color: colors.ink, textAlign: isFa ? "right" : "left" }} />
       <Pressable testID="reference-send" accessibilityRole="button" onPress={() => void send()} disabled={recovering || !!active || creditBlocked || credits.isLoading || !status.data?.enabled || !state.draft.trim()}
         style={{ minHeight: 48, width: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.btn, backgroundColor: colors.accent,
           opacity: recovering || active || creditBlocked || credits.isLoading || !status.data?.enabled || !state.draft.trim() ? 0.5 : 1 }}
         accessibilityLabel={isFa ? "جست‌وجو" : "Search"}>
-        {active ? <AppText color={colors.onAccent}>…</AppText> : <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.onAccent} strokeWidth={1.7} accessibilityElementsHidden><Path d="m3 11 18-8-8 18-2-8-8-2zM11 13l10-10" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
+        {active ? <AppText color={colors.onAccent}>…</AppText> : <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.onAccent} strokeWidth={1.7} accessibilityElementsHidden><Path d={isFa ? "m21 11-18-8 8 18 2-8 8-2zM13 13 3 3" : "m3 11 18-8-8 18-2-8-8-2zM11 13l10-10"} strokeLinecap="round" strokeLinejoin="round" /></Svg>}
       </Pressable>
     </View>
   </KeyboardAvoidingView>;

@@ -34,9 +34,9 @@ export function ProfileScreen() {
 
   const tiles = [
     { value: n(dash?.xp ?? 0), label: t("xpLabel"), icon: "stat-xp" as IconName, color: colors.accent, bg: colors.softBg },
-    { value: n(dash?.streak_days ?? 0), label: t("streakLabel"), icon: "stat-streak" as IconName, color: "#E08A3C", bg: "rgba(224,138,60,0.12)" },
-    { value: `${n(stats?.accuracy_pct ?? 0)}%`, label: t("profileStatsAccuracy"), icon: "stat-accuracy" as IconName, color: "#5AAE8C", bg: "rgba(90,174,140,0.14)" },
-    { value: n(stats?.quizzes ?? 0), label: t("profileStatsQuizzes"), icon: "stat-quizzes" as IconName, color: "#7E57C2", bg: "rgba(126,87,194,0.14)" },
+    { value: n(dash?.streak_days ?? 0), label: t("streakLabel"), icon: "stat-streak" as IconName, color: colors.cautLabel, bg: colors.cautBg },
+    { value: `${n(stats?.accuracy_pct ?? 0)}%`, label: t("profileStatsAccuracy"), icon: "stat-accuracy" as IconName, color: colors.accent, bg: colors.leitnerActiveBg },
+    { value: n(stats?.quizzes ?? 0), label: t("profileStatsQuizzes"), icon: "stat-quizzes" as IconName, color: colors.ink, bg: colors.softBg },
   ];
 
   const Row = ({
@@ -55,6 +55,7 @@ export function ProfileScreen() {
   }) => (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
       style={[
         {
           height: 52,

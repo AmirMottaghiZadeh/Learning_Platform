@@ -38,6 +38,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setReady(true));
   }, []);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "fa" ? "rtl" : "ltr";
+  }, [lang]);
+
   const value = useMemo<LanguageContextValue>(() => {
     const isFa = lang === "fa";
     // Direction is handled entirely in JS (per-node `textAlign` and explicit

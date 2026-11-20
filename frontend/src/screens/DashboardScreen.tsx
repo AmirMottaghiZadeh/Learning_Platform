@@ -57,7 +57,7 @@ export function DashboardScreen() {
 
   return (
     <Screen padded={false} refreshing={isRefetching} onRefresh={refresh}>
-      <HeaderMesh bleedTop>
+      <HeaderMesh bleedTop gradient>
         <View style={{ padding: 20, paddingBottom: 26 }}>
           <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center" }}>
             <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>
@@ -86,7 +86,7 @@ export function DashboardScreen() {
                   ?
                 </AppText>
               </Pressable>
-              <ThemeToggleButton />
+              <ThemeToggleButton size={32} />
               <Pressable
                 onPress={toggleLang}
                 style={{
@@ -121,8 +121,8 @@ export function DashboardScreen() {
 
         {/* uptodate reference card */}
         <TourTarget id="home.uptodate">
-        <Pressable onPress={() => navigate("uptodate")}>
-          <Card style={{ marginBottom: spacing.lg }}>
+        <Pressable accessibilityRole="button" onPress={() => navigate("uptodate")}>
+          <Card raised style={{ marginBottom: spacing.lg }}>
             <View style={{ flexDirection: row, alignItems: "center", gap: 12 }}>
               <View
                 style={{
@@ -184,8 +184,8 @@ export function DashboardScreen() {
 
         {/* lexicomp drug-interaction check card -- same width as UpToDate */}
         <TourTarget id="home.lexicomp">
-        <Pressable onPress={() => navigate("lexicomp")}>
-          <Card style={{ marginBottom: spacing.lg }}>
+        <Pressable accessibilityRole="button" onPress={() => navigate("lexicomp")}>
+          <Card raised style={{ marginBottom: spacing.lg }}>
             <View style={{ flexDirection: row, alignItems: "center", gap: 12 }}>
               <View
                 style={{
@@ -303,7 +303,7 @@ export function DashboardScreen() {
                   else if (rows.length > 0) setTab("lessons");
                 }}
               >
-                <Card
+                <Card raised
                   style={[
                     { flexDirection: row, alignItems: "center", gap: 12 },
                     !isError ? { backgroundColor: colors.accent + "12", borderColor: colors.accent + "30" } : null,

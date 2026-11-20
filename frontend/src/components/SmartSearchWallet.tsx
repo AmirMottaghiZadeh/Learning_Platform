@@ -95,25 +95,25 @@ export function SmartSearchWallet({ refreshKey, running, compact=false }: { refr
   const card = { backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.border, borderRadius: radius.card, padding: spacing.lg, gap: spacing.sm } as const;
   const paymentAvailable = !!data?.topups_enabled;
   return <>
-    <Card testID="smart-search-wallet" style={{ marginBottom: spacing.md, gap: spacing.md, ...(compact ? {padding:10} : {}) }}>
+    <Card testID="smart-search-wallet" style={compact ? { paddingVertical: 0, paddingHorizontal: 0, gap: 4, borderWidth: 0, borderTopWidth: 1, borderRadius: 0, paddingTop: 4, paddingBottom: 4 } : { marginBottom: spacing.md, gap: spacing.md }}>
       <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <View style={{ flex: 1, gap: 3 }}>
           {!compact ? <AppText size={12} muted>{isFa ? "اعتبار سرچ هوشمند" : "Smart search credits"}</AppText> : null}
-          <AppText testID="search-credit-balance" size={compact ? 14 : 26} weight="900" color={exhausted || low ? colors.denyLabel : colors.accent}>
-            {compact ? <AppText size={11} muted>{isFa ? "موجودی " : "Balance "}</AppText> : null}
+          <AppText testID="search-credit-balance" size={compact ? 14 : 26} weight="700" color={exhausted || low ? colors.denyLabel : colors.accent}>
+            {compact ? <AppText size={13} muted>{isFa ? "موجودی " : "Balance "}</AppText> : null}
             {amount(data?.available, isFa)} <AppText size={12}>{isFa ? "اعتبار" : "credits"}</AppText>
           </AppText>
         </View>
         <Pressable accessibilityRole="button" testID="search-credit-manage" onPress={() => setOpen(true)}
-          style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: spacing.lg, justifyContent: "center", borderRadius: radius.btn,
-            backgroundColor: colors.accent, opacity: pressed ? 0.85 : 1 })}>
-          <AppText size={12} weight="800" color={colors.onAccent}>{isFa ? "مدیریت و شارژ" : "Manage & top up"}</AppText>
+          style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: spacing.md, justifyContent: "center", borderRadius: 10,
+            backgroundColor: compact ? colors.leitnerActiveBg : colors.accent, opacity: pressed ? 0.85 : 1 })}>
+          <AppText size={13} weight="700" color={compact ? colors.accent : colors.onAccent}>{isFa ? "مدیریت و شارژ" : "Manage & top up"}</AppText>
         </Pressable>
       </View>
       {data ? <>
         {!compact ? <AppText size={12} muted>{isFa ? "مصرف ۳۰ روز گذشته: " : "Used in the last 30 days: "}{amount(data.usage_30_days.credits, isFa)} {isFa ? "اعتبار" : "credits"}</AppText> : null}
         {low || exhausted ? <View testID="search-credit-warning" style={{padding:10,borderRadius:10,backgroundColor:colors.denyLabel+"12",borderWidth:1,borderColor:colors.denyLabel+"40"}}><AppText size={12} weight="700" color={colors.denyLabel}>{exhausted ? isFa ? "⚑ اعتبار تمام شده؛ برای ادامه، بستهٔ اعتبار بخرید." : "⚑ Credits exhausted. Top up to continue." : isFa ? "⚑ اعتبار شما رو به پایان است." : "⚑ Your credits are running low."}</AppText></View> : null}
-        {!data.billing_enabled ? <AppText size={11} muted>{isFa ? "در حال حاضر از اعتبار شما کم نمی‌شود." : "Credits are not being deducted yet."}</AppText> : !data.can_search ? <AppText size={12} color={colors.denyLabel}>{!data.pricing_ready ? isFa ? "تعرفهٔ سرویس موقتاً در دسترس نیست." : "Pricing is temporarily unavailable."
+        {!data.billing_enabled ? <AppText size={11} muted>{isFa ? "در حال حاضر از اعتبار شما کم نمی‌شود." : "Credits are not being deducted yet."}</AppText> : !data.can_search && (!exhausted || !data.pricing_ready) ? <AppText size={12} color={colors.denyLabel}>{!data.pricing_ready ? isFa ? "تعرفهٔ سرویس موقتاً در دسترس نیست." : "Pricing is temporarily unavailable."
           : isFa ? "اعتبار قابل استفادهٔ شما تمام شده است؛ برای ادامه بستهٔ شارژ بخرید." : "You have no available credits left. Buy a package to continue."}</AppText> : null}
       </> : <Pressable accessibilityRole="button" onPress={() => void wallet.refetch()}><AppText size={11} muted>{wallet.isError ? isFa ? "دریافت اعتبار انجام نشد؛ تلاش دوباره" : "Could not load credits. Retry" : isFa ? "دریافت موجودی…" : "Loading credits…"}</AppText></Pressable>}
     </Card>

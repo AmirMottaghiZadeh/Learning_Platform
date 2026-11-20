@@ -6,7 +6,7 @@ import { radius, spacing } from "@/theme/tokens";
 
 type Props = ViewProps & { padded?: boolean; raised?: boolean; soft?: boolean };
 
-export function Card({ padded = true, raised = true, soft, style, children, ...rest }: Props) {
+export function Card({ padded = true, raised = false, soft, style, children, ...rest }: Props) {
   const { colors, shadows } = useTheme();
   return (
     <View

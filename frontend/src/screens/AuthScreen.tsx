@@ -10,6 +10,7 @@ import { AuthMethodSelector } from "@/components/AuthMethodSelector";
 import { LegalSheet, LegalSlug } from "@/components/LegalSheet";
 import { AppText } from "@/components/primitives/AppText";
 import { Button } from "@/components/primitives/Button";
+import { OtpInput, otpDigits } from "@/components/OtpInput";
 import { Input } from "@/components/primitives/Input";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useBackInterceptor } from "@/navigation/back";
@@ -140,9 +141,9 @@ export function AuthScreen() {
   };
 
   const onCode = (value: string) => {
-    const digits = value.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/\D/g, "");
-    setCode(digits.slice(0, codeLength));
-    if (digits.length === codeLength && !busy) verify(digits.slice(0, codeLength));
+    const digits = otpDigits(value, codeLength);
+    setCode(digits);
+    if (digits.length === codeLength && !busy) verify(digits);
   };
   const onCodeRef = useRef(onCode);
   onCodeRef.current = onCode;
@@ -181,11 +182,12 @@ export function AuthScreen() {
 
   if(emailMode) return <EmailOtpForm mode={mode==="login"?"login":"signup"} onBack={() => setEmailMode(false)} />;
   return (
-    <AuthLayout panel title={step === "code" && mode !== "login" ? t("otpTitle") : title} subtitle={subtitle}>
+    <AuthLayout panel compact={step === "code" && mode !== "login"} title={step === "code" && mode !== "login" ? t("otpTitle") : title} subtitle={subtitle}>
       {step === "phone" && mode !== "reset" ? <AuthMethodSelector value="mobile" onChange={method=>setEmailMode(method==="email")} /> : null}
       {mode === "login" ? (
         <View style={{ gap: 12 }}>
           <Input
+            accessibilityLabel={isFa ? "شمارهٔ موبایل" : "Mobile number"}
             placeholder={isFa ? "شمارهٔ موبایل" : "Mobile number"}
             autoCapitalize="none"
             autoComplete="username"
@@ -194,6 +196,7 @@ export function AuthScreen() {
             onChangeText={setIdentifier}
           />
           <Input
+            accessibilityLabel={t("passwordLabel")}
             placeholder={t("passwordLabel")}
             secureTextEntry
             autoComplete="current-password"
@@ -205,6 +208,7 @@ export function AuthScreen() {
         </View>
       ) : step === "phone" ? (
         <Input
+          accessibilityLabel={t("phoneLabel")}
           placeholder={t("phoneLabel")}
           keyboardType="phone-pad"
           autoComplete="tel"
@@ -215,22 +219,11 @@ export function AuthScreen() {
           autoFocus
         />
       ) : (
-        <Input
-          placeholder={t("otpPlaceholder")}
-          keyboardType="number-pad"
-          // Lets the phone or browser offer the code straight from the SMS.
-          autoComplete={Platform.OS === "web" ? ("one-time-code" as never) : "sms-otp"}
-          textContentType="oneTimeCode"
-          maxLength={codeLength}
-          value={code}
-          onChangeText={onCode}
-          autoFocus
-          style={{ textAlign: "center", letterSpacing: 8, fontSize: 20, writingDirection: "ltr" }}
-        />
+        <OtpInput value={code} length={codeLength} onChangeText={onCode} hasError={!!error} sms />
       )}
 
       {error ? (
-        <AppText size={12} weight="700" color={colors.denyLabel} style={{ marginTop: 12 }}>
+        <AppText nativeID={step === "code" ? "otp-error" : undefined} accessibilityRole="alert" size={13} weight="600" color={colors.denyLabel} style={{ marginTop: 12 }}>
           {error}
         </AppText>
       ) : null}
@@ -255,8 +248,8 @@ export function AuthScreen() {
             disabled={code.length < codeLength}
             style={{ marginTop: 20 }}
           />
-          <View style={{ flexDirection: row, justifyContent: "space-between", marginTop: 14 }}>
-            <Pressable onPress={() => setStep("phone")} hitSlop={8}>
+          <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+            <Pressable accessibilityRole="button" onPress={() => { setStep("phone"); setError(null); }} style={{ minHeight: 44, justifyContent: "center" }}>
               <AppText weight="700" size={13} color={colors.accent}>
                 {t("editPhone")}
               </AppText>
@@ -266,7 +259,7 @@ export function AuthScreen() {
                 {t("resendIn").replace("{s}", n(countdown))}
               </AppText>
             ) : (
-              <Pressable onPress={sendCode} disabled={busy} hitSlop={8}>
+              <Pressable accessibilityRole="button" onPress={sendCode} disabled={busy} style={{ minHeight: 44, justifyContent: "center" }}>
                 <AppText weight="700" size={13} color={colors.accent}>
                   {t("resendCode")}
                 </AppText>

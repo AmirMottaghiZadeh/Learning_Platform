@@ -129,17 +129,18 @@ async function main() {
       await until(() => evaluate(`document.querySelector('[data-testid=reference-send]').getAttribute('aria-disabled')!=='true'`));
       await evaluate(`document.querySelector('[data-testid=reference-send]').click()`);
       await until(() => evaluate(`document.querySelector('[data-testid=reference-answer-draft]')?.textContent.length>600`));
-      await delay(120);
       assert.equal(await evaluate(`document.querySelector('[data-testid=reference-answer-draft]').textContent.includes('**')`), false);
       assert.equal(await evaluate(`Boolean([...document.querySelector('[data-testid=reference-answer-draft]').children].find(e=>getComputedStyle(e).fontFamily.includes('700Bold')))`), true);
-      let box = await evaluate(geometry);
-      assert.ok(box && box.tail <= box.bottom && box.tail > box.top, JSON.stringify(box));
+      // A streamed chunk can render just before the frame that follows it.
+      const visibleTail = async () => {
+        const box = await evaluate(geometry);
+        return box && box.tail <= box.bottom + 1 && box.tail > box.top && box;
+      };
+      const box = await until(visibleTail, 600);
       await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: width / 2, y: box.top + 100, deltaX: 0, deltaY: -240 });
       await until(() => evaluate(`Boolean(document.querySelector('[data-testid=reference-follow-answer]'))`));
       await evaluate(`document.querySelector('[data-testid=reference-follow-answer]').click()`);
-      await delay(200);
-      box = await evaluate(geometry);
-      assert.ok(box && box.tail <= box.bottom && box.tail > box.top, JSON.stringify(box));
+      await until(visibleTail, 600);
       const shot = await send('Page.captureScreenshot', { format: 'png' });
       fs.writeFileSync(path.join(output, `${name}-stream.png`), Buffer.from(shot.data, 'base64'), { mode: 0o600 });
       await until(() => evaluate(`Boolean(document.querySelector('[data-testid=reference-final-answer]'))`));

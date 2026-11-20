@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
 import { countWords, readingMinutes } from "@/components/article/numbering";
+import { Chevron } from "@/components/primitives/Chevron";
 import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
@@ -66,7 +67,7 @@ export function ClinicalArticleOutline({ source = "utd" }: { source?: "utd" | "m
     source === "utd" ? navigate("uptodateArticle", { id, title, sectionId, openSearch }) : navigate("medscapeArticle", { slug: id, title, path: sectionId?.replace(/^med-/, ""), openSearch });
 
   const version = source === "utd" && data?.version ? `v${data.version.replace(/\.0+$/, "")}` : "";
-  const chips = [version, data?.updated ? shortDate(data.updated) : "", minutes ? `${minutes} min read` : ""].filter(Boolean);
+  const chips = [version, data?.updated ? shortDate(data.updated) : "", minutes ? (isFa ? `${n(minutes)} دقیقه مطالعه` : `${minutes} min read`) : ""].filter(Boolean);
 
   if (data && content.kind !== "article") return <ReferenceContentSheet article={data} content={content} onClose={goBack} />;
 
@@ -74,10 +75,8 @@ export function ClinicalArticleOutline({ source = "utd" }: { source?: "utd" | "m
     <View style={{ flex: 1, backgroundColor: colors.softBg }}>
       <View style={{ backgroundColor: colors.cardBg, paddingHorizontal: 20, paddingTop: 18 + bleedTop, paddingBottom: 20, gap: 12 }}>
         <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
-          <ChromeButton onPress={goBack} size={34}>
-            <AppText weight="800" size={16} color={colors.ink}>
-              {isFa ? "›" : "‹"}
-            </AppText>
+          <ChromeButton onPress={goBack} accessibilityLabel={isFa ? "بازگشت" : "Back"}>
+            <Chevron back color={colors.ink} />
           </ChromeButton>
           <View style={{ flexDirection: row, alignItems: "center", gap: 8 }}>
             <ChromeButton
@@ -95,18 +94,18 @@ export function ClinicalArticleOutline({ source = "utd" }: { source?: "utd" | "m
 
         <View style={{ gap: 8 }}>
           {data?.section ? (
-            <AppText weight="800" size={11} color={colors.accent} style={[LTR, { letterSpacing: 1.2, lineHeight: 16 }]}>
-              {data.section.toUpperCase()} · {source === "utd" ? "TOPIC" : "REFERENCE"}
+            <AppText weight="600" size={13} color={colors.accent} style={LTR}>
+              {source === "utd" ? "UpToDate" : "Medscape"} · {data.section}
             </AppText>
           ) : null}
-          <AppText weight="900" size={22} style={[LTR, { lineHeight: 30 }]}>
+          <AppText weight="700" size={23} style={[LTR, { lineHeight: 30 }]}>
             {title}
           </AppText>
           {chips.length ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {chips.map((chip) => (
                 <View key={chip} style={{ backgroundColor: colors.softBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-                  <AppText weight="700" size={11.5} style={[LTR, { lineHeight: 16 }]}>
+                  <AppText weight="500" size={13} style={[LTR, { lineHeight: 16 }]}>
                     {chip}
                   </AppText>
                 </View>
@@ -159,6 +158,7 @@ export function ClinicalArticleOutline({ source = "utd" }: { source?: "utd" | "m
         <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: navClearance + 24 }}>
           {related.length ? (
             <Pressable
+              accessibilityRole="button"
               onPress={() => read("utdRelated")}
               style={{ flexDirection: row, alignItems: "center", gap: 12, backgroundColor: colors.cardBg, borderRadius: 16, padding: 14, marginBottom: 6 }}
             >
@@ -175,9 +175,7 @@ export function ClinicalArticleOutline({ source = "utd" }: { source?: "utd" | "m
                   {related.map((g) => g.heading || (g.kind === "calculators" ? "Calculators" : "Related topics")).join(" · ")}
                 </AppText>
               </View>
-              <AppText weight="800" size={16} muted>
-                {isFa ? "‹" : "›"}
-              </AppText>
+              <Chevron />
             </Pressable>
           ) : null}
           {highlightCount ? (
@@ -207,6 +205,7 @@ export function ClinicalArticleOutline({ source = "utd" }: { source?: "utd" | "m
                   >
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <Pressable
+                        accessibilityRole="button"
                         onPress={() => read(top.id)}
                         style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13, paddingLeft: 14 }}
                       >
