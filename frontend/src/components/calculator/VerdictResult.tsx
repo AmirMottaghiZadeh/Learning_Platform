@@ -76,8 +76,6 @@ export function VerdictResult({ results, info }: ResultProps) {
                   paddingHorizontal: 10,
                   paddingVertical: 7,
                   borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: active ? rt.border : "transparent",
                   backgroundColor: active ? rt.bg : "transparent",
                 }}
               >

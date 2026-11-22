@@ -66,7 +66,7 @@ export function BandLangToggle() {
   return (
     <Pressable
       onPress={toggle}
-      style={{ borderWidth: 1, borderColor: band.outline, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4 }}
+      style={{ borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4 }}
     >
       <AppText weight="800" size={11.5} color={band.ink}>
         {t("langSwitch")}

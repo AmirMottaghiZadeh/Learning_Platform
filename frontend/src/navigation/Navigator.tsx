@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from "react";
 import { AiLabScreen } from "@/screens/AiLabScreen";
 import { SupportScreen } from "@/screens/SupportScreen";
 import { DevicesScreen } from "@/screens/DevicesScreen";
-import { NotificationsScreen } from "@/screens/NotificationsScreen";
 import { Animated, BackHandler, Easing, Platform, ToastAndroid, View } from "react-native";
 
 import { AppShell } from "@/components/AppShell";
@@ -18,6 +17,9 @@ import { CalculatorsScreen } from "@/screens/CalculatorsScreen";
 import { DashboardScreen } from "@/screens/DashboardScreen";
 import { EducationScreen } from "@/screens/EducationScreen";
 import { ClinicalScreen } from "@/screens/ClinicalScreen";
+import { ResourceLookup } from "@/components/ResourceLookup";
+import { ScreenChrome } from "@/components/ScreenChrome";
+import { Screen } from "@/components/primitives/Screen";
 import { LessonDetailScreen } from "@/screens/LessonDetailScreen";
 import { LessonListScreen } from "@/screens/LessonListScreen";
 import { LessonsScreen } from "@/screens/LessonsScreen";
@@ -43,6 +45,7 @@ import { UptodateOutlineScreen } from "@/screens/UptodateOutlineScreen";
 import { UptodateScreen } from "@/screens/UptodateScreen";
 import { useAuth } from "@/store/auth";
 import { goBackInApp, installWebBackGuard } from "@/navigation/back";
+import { resourceDestination } from "@/navigation/resourceDestination";
 import { useNav } from "@/store/nav";
 import { motion } from "@/theme/tokens";
 import { useReducedMotion } from "@/utils/useReducedMotion";
@@ -52,18 +55,29 @@ export function Navigator() {
   const user = useAuth((s) => s.user);
   const mustSetPassword = useAuth((s) => s.mustSetPassword);
 
-  const screen = useNav((s) => s.screen);
-  const wide = ["aiLab", "uptodateArticle", "medscapeArticle", "uptodateOutline", "medscapeOutline"].includes(screen);
+  const openedDestination = useRef(false);
+  const needsPassword = Boolean(user && !user.is_guest && (user.has_password === false || mustSetPassword));
+  const ready = status === "signedIn" && Boolean(user?.profile.is_onboarded) && !needsPassword;
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || !ready || openedDestination.current) return;
+    openedDestination.current = true;
+    const target = resourceDestination(window.location.search);
+    if (!target) return;
+    const nav = useNav.getState();
+    if (target.screen === nav.screen) nav.setParams(target.params ?? {});
+    else nav.navigate(target.screen, target.params);
+  }, [ready]);
 
   let content: React.ReactNode;
   if (status === "loading") content = <LoadingState />;
   else if (status === "signedOut") content = <AuthScreen />;
   // Signed in with an SMS code: a password comes before anything else.
-  else if (user && !user.is_guest && (user.has_password === false || mustSetPassword)) content = <SetPasswordScreen />;
+  else if (needsPassword) content = <SetPasswordScreen />;
   else if (user && !user.profile.is_onboarded) content = <OnboardingScreen />;
   else {
     content = (
-      <AppShell padBottom={false} wide={wide}>
+      <AppShell padBottom={false}>
         <View style={{ flex: 1 }}>
           <ScreenTransition>
             <CurrentScreen />
@@ -173,8 +187,8 @@ function CurrentScreen() {
       return <SupportScreen />;
     case "devices":
       return <DevicesScreen />;
-    case "notifications":
-      return <NotificationsScreen />;
+    case "resourceSearch":
+      return <ResourceSearchScreen />;
     case "lessons":
       return <LessonsScreen />;
     case "lessonList":
@@ -231,4 +245,15 @@ function CurrentScreen() {
     default:
       return <DashboardScreen />;
   }
+}
+
+function ResourceSearchScreen() {
+  const { t } = useLang();
+  const goBack = useNav((state) => state.goBack);
+  return (
+    <Screen contentStyle={{ maxWidth: 820 }} keyboardShouldPersistTaps="handled">
+      <ScreenChrome title={t("resourceLookupTitle")} onBack={goBack} />
+      <ResourceLookup />
+    </Screen>
+  );
 }

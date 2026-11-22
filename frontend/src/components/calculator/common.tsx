@@ -147,8 +147,6 @@ export function Chip({ text, tone = "info" }: { text: string; tone?: Tone }) {
         paddingHorizontal: 12,
         paddingVertical: 3,
         borderRadius: 999,
-        borderWidth: 1,
-        borderColor: tone === "info" ? colors.border : t.border,
         backgroundColor: tone === "info" ? colors.softBg : t.bg,
       }}
     >
@@ -290,8 +288,6 @@ export function Interpretation({ title, text, tone }: { title: string; text: str
     <View
       style={{
         borderRadius: 12,
-        borderWidth: 1,
-        borderColor: tinted ? t.border : colors.border,
         backgroundColor: tinted ? t.bg : colors.softBg,
         paddingHorizontal: 12,
         paddingVertical: 10,
@@ -481,7 +477,7 @@ export function Collapse({
   const { row, isFa } = useLang();
   const [open, setOpen] = React.useState(defaultOpen);
   return (
-    <View style={{ borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.softBg, overflow: "hidden" }}>
+    <View style={{ borderRadius: 12, backgroundColor: colors.softBg, overflow: "hidden" }}>
       <Pressable
         onPress={() => setOpen((v) => !v)}
         style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 9 }}

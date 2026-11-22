@@ -30,7 +30,7 @@ import { radius as radii, spacing } from "@/theme/tokens";
 
 export function AiLabScreen() {
   const { colors } = useTheme();
-  const { row, isFa } = useLang();
+  const { row, isFa, t } = useLang();
   const { navigate, goBack } = useNav();
   const userId = useAuth((s) => s.user?.id ?? null);
   const state = useAiLab();
@@ -253,7 +253,7 @@ export function AiLabScreen() {
     <View style={{ backgroundColor: colors.cardBg, borderBottomWidth: 1, borderBottomColor: colors.border }}>
       <View style={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, flexDirection: row, alignItems: "center", gap: spacing.sm }}>
         <ChromeButton onPress={goBack} accessibilityLabel={isFa ? "بازگشت" : "Back"}><Chevron back color={colors.ink} /></ChromeButton>
-        <AppText accessibilityRole="header" aria-level={1} weight="700" size={17} style={{ flex: 1 }}>{isFa ? "سرچ هوشمند" : "Smart search"}</AppText>
+        <AppText accessibilityRole="header" aria-level={1} weight="700" size={17} style={{ flex: 1 }}>{t("resourceLookupSmart")}</AppText>
         <ThemeToggleButton variant="soft" /><LangToggleButton />
       </View>
       <View style={{ paddingHorizontal: spacing.lg }}>
@@ -278,7 +278,7 @@ export function AiLabScreen() {
           <AppText size={14} muted>{isFa ? "پرسش بالینی‌تان را بنویسید و پاسخ را کنار منبع بخوانید." : "Ask your clinical question and read the answer alongside its source."}</AppText>
         </View>
         <AppText size={13} muted>{isFa ? "پرسش‌های پیشنهادی" : "Suggested questions"}</AppText>
-        <View style={{ backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.card, paddingHorizontal: spacing.lg }}>
+        <View style={{ backgroundColor: colors.cardBg, boxShadow: colors.cardShadow, borderRadius: radii.card, paddingHorizontal: spacing.lg }}>
         {suggestions.map((item, index) => <Pressable key={item.id} testID={`reference-suggestion-${item.id}`} accessibilityRole="button"
           accessibilityHint={isFa ? "فقط متن سؤال را وارد کادر می‌کند؛ برای ارسال، جست‌وجو را بزنید." : "Fills the question field. Press Search to submit."}
           onPress={() => { useAiLab.setState({ draft: isFa ? item.fa : item.en }); questionInput.current?.focus(); }}
@@ -315,7 +315,7 @@ export function AiLabScreen() {
           answerHeights.current[turn.id] = event.nativeEvent.layout.height;
           scheduleFollow();
         }}
-          style={{ backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.card, padding: spacing.lg, gap: 14 }}>
+          style={{ backgroundColor: colors.cardBg, boxShadow: colors.cardShadow, borderRadius: radii.card, padding: spacing.lg, gap: 14 }}>
           <AppText weight="700" size={15}>{isFa ? "پاسخ فارسی" : "Answer in Persian"}</AppText>
           {turn.status === "running" && !draft ? <ReferenceAnswerSkeleton /> : null}
           {turn.status === "running" && draft ? <ReferenceAnswerText text={draft} testID="reference-answer-draft" /> : null}
@@ -335,7 +335,7 @@ export function AiLabScreen() {
         </View>
         {hasSources ? <View testID="reference-source-results" style={{ gap: 12 }}>
           <AppText weight="800" size={13}>{isFa ? turn.status === "running" ? "منابع در حال بررسی" : "منابع اصلی" : turn.status === "running" ? "Sources under review" : "Sources"}</AppText>
-          <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radii.card, backgroundColor: colors.cardBg }}>
+          <View style={{ borderRadius: radii.card, backgroundColor: colors.cardBg }}>
             {[...articles.values()].map((citation, index) => (
               <Pressable key={String(citation.target.params.id)} testID="reference-source" accessibilityRole="button" onPress={() => open(citation)}
                 style={({ pressed }) => ({
@@ -352,7 +352,7 @@ export function AiLabScreen() {
               </Pressable>
             ))}
           </View>
-          {hasFinalSources ? <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: "hidden", backgroundColor: colors.cardBg }}>
+          {hasFinalSources ? <View style={{ borderRadius: 14, overflow: "hidden", backgroundColor: colors.softBg }}>
             <Pressable testID="reference-sources-toggle" accessibilityRole="button"
               accessibilityLabel={isFa ? "دیدن بخش‌های مرتبط در منابع" : "View relevant source passages"}
               aria-expanded={!!sourcesExpanded[turn.id]}
@@ -394,7 +394,7 @@ export function AiLabScreen() {
     <View style={{ paddingHorizontal: 16, paddingVertical: 8, gap: 8, flexDirection: row, alignItems: "flex-end", backgroundColor: colors.cardBg, borderTopWidth: 1, borderTopColor: colors.border }}>
       <TextInput ref={questionInput} testID="reference-question" value={state.draft} onChangeText={(draft) => useAiLab.setState({ draft })} multiline maxLength={1500} editable={!active}
         accessibilityLabel={isFa ? "پرسش برای سرچ هوشمند" : "Question for smart search"} placeholder={isFa ? "سؤال خود را بنویسید…" : "Write your question…"} placeholderTextColor={colors.muted}
-        style={{ flex: 1, minHeight: 48, maxHeight: 120, padding: 12, borderRadius: radii.input, backgroundColor: colors.softBg, borderWidth: 1, borderColor: colors.border,
+        style={{ flex: 1, minHeight: 48, maxHeight: 120, padding: 12, borderRadius: radii.input, backgroundColor: colors.softBg,
           fontFamily: fontFamily("500"), fontSize: 14, color: colors.ink, textAlign: isFa ? "right" : "left" }} />
       <Pressable testID="reference-send" accessibilityRole="button" onPress={() => void send()} disabled={recovering || !!active || creditBlocked || credits.isLoading || !status.data?.enabled || !state.draft.trim()}
         style={{ minHeight: 48, width: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.btn, backgroundColor: colors.accent,

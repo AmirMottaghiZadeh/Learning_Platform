@@ -3,139 +3,159 @@ import React from "react";
 import { Pressable, View } from "react-native";
 
 import { meApi } from "@/api/endpoints";
-import { PlanItemActivity, StudyPlanItem } from "@/api/types";
+import { StudyPlanItem } from "@/api/types";
+import { ClinicalPlan, StudyTrackSelector, useStudyTrack } from "@/components/plan/ClinicalPlan";
+import { PLAN_BRIEF_KEY } from "@/components/plan/PlanSection";
+import { STUDY_TILES } from "@/components/HomeTileGrid";
+import { Button } from "@/components/primitives/Button";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
+import { Chevron } from "@/components/primitives/Chevron";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
-import { StringKey } from "@/i18n/strings";
+import { DAY_LABELS_SHORT } from "@/i18n/strings";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
 
-const ACTIVITY_LABEL: Record<PlanItemActivity, StringKey> = {
-  lesson: "planningActivityLesson",
-  quiz: "planningActivityQuiz",
-  mistake_review: "planningActivityMistakeReview",
-};
-
-/** The planner's home: "what do I do right now" (see the planning spec's UX
- * rule this implements), not a calendar. Free-study users see an empty
- * state with a way to build a plan; goal/maintenance users see today's
- * queue, fed by GET /me/plan/today/ which also lazily (re)generates a
- * maintenance plan's pick for the day. */
 export function PlanningScreen() {
-  const { t, isFa, n, row } = useLang();
-  const { colors, shadows } = useTheme();
+  const { t, isFa, lang, n, row } = useLang();
+  const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
   const qc = useQueryClient();
 
-  const { data: plan, isLoading: planLoading } = useQuery({ queryKey: ["plan"], queryFn: meApi.plan });
+  const study = useStudyTrack();
+  const student = study.track === "student" && study.query.isSuccess;
+  const planQuery = useQuery({ queryKey: ["plan"], queryFn: meApi.plan, enabled: student, retry: false });
+  const plan = planQuery.data;
   const hasActivePlan = !!plan && plan.mode !== "none";
-  const { data: today, isLoading: todayLoading } = useQuery({
+  const todayQuery = useQuery({
     queryKey: ["plan-today"],
     queryFn: meApi.planToday,
-    enabled: hasActivePlan,
+    enabled: student && hasActivePlan,
+    retry: false,
   });
+  const today = todayQuery.data;
+  const refreshPlan = () => {
+    void qc.invalidateQueries({ queryKey: ["plan-today"] });
+    void qc.invalidateQueries({ queryKey: PLAN_BRIEF_KEY });
+  };
 
   const complete = useMutation({
     mutationFn: (id: number) => meApi.completePlanItem(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["plan-today"] }),
+    onSuccess: refreshPlan,
   });
   const skip = useMutation({
     mutationFn: (id: number) => meApi.skipPlanItem(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["plan-today"] }),
+    onSuccess: refreshPlan,
   });
 
   const openActivity = (item: StudyPlanItem) => {
     if (item.activity_type === "lesson" && item.atc_code) navigate("lessonList", { code: item.atc_code });
     else if (item.activity_type === "mistake_review") navigate("mistakes");
     else if (item.activity_type === "quiz") navigate("quiz", { topic: item.topic_key });
+    else if (item.activity_type === "lesson") navigate("lessons");
   };
 
-  if (planLoading) return <LoadingState />;
-
-  if (!hasActivePlan) {
+  const header = (
+    <>
+      <ScreenChrome title={t("planningTitle")} onBack={goBack} help="planning" />
+      <StudyTrackSelector state={study} />
+    </>
+  );
+  const learningPath = (
+    <Card testID="student-learning-path" style={{ gap: spacing.sm }}>
+      <AppText accessibilityRole="header" size={16} weight="800">{isFa ? "ترتیب مطالعه" : "Study sequence"}</AppText>
+      {STUDY_TILES.map(({ label, screen }, i) => (
+        <Pressable key={label} accessibilityLabel={t(label)} accessibilityRole="button"
+          accessibilityState={{ disabled: !screen }} disabled={!screen} onPress={screen ? () => navigate(screen) : undefined}
+          style={({ pressed }) => ({
+            flexDirection: row, minHeight: 52, alignItems: "center", gap: spacing.sm,
+            padding: spacing.sm, borderRadius: 10, backgroundColor: colors.softBg, opacity: pressed ? 0.76 : 1,
+          })}>
+          <AppText color={colors.accent} weight="800" center size={13} style={{ minWidth: 25 }}>{n(i + 1)}</AppText>
+          <AppText size={14} weight="700" muted={!screen} style={{ flex: 1 }}>{t(label)}</AppText>
+          {screen ? <Chevron /> : <AppText size={11} muted>{t("comingSoon")}</AppText>}
+        </Pressable>
+      ))}
+    </Card>
+  );
+  const planError = planQuery.isError || (hasActivePlan && todayQuery.isError);
+  if (!student || !today || !hasActivePlan || planError) {
     return (
-      <Screen>
-        <ScreenChrome title={t("planningTitle")} onBack={goBack} help="planning" />
-        <Card style={{ alignItems: "center", paddingVertical: 30 }}>
-          <AppText weight="800" size={15} center style={{ marginBottom: 8 }}>
-            {t("planningEmptyTitle")}
-          </AppText>
-          <AppText muted weight="600" size={13} center style={{ marginBottom: 20, lineHeight: 20, maxWidth: 280 }}>
-            {t("planningEmptyBody")}
-          </AppText>
-          <Pressable
-            onPress={() => navigate("planningSetup")}
-            style={[
-              {
-                backgroundColor: colors.accent,
-                borderRadius: 14,
-                paddingVertical: 13,
-                paddingHorizontal: 26,
-              },
-              shadows.glow,
-            ]}
-          >
-            <AppText weight="800" size={14} color={colors.onAccent}>
-              {t("planningCreateCta")}
-            </AppText>
-          </Pressable>
-        </Card>
+      <Screen contentStyle={{ maxWidth: 790, gap: spacing.md }} keyboardShouldPersistTaps="handled">
+        {header}
+        {study.query.isSuccess && !student ? <ClinicalPlan state={study} /> : null}
+        {student ? learningPath : null}
+        {student && (planQuery.isPending || (hasActivePlan && todayQuery.isPending)) ? <LoadingState /> : null}
+        {student && planError ? <Card style={{ gap: spacing.sm }}>
+          <AppText accessibilityRole="alert" muted>{t("loadFailed")}</AppText>
+          <Button label={t("retry")} variant="secondary" onPress={() => void (planQuery.isError ? planQuery.refetch() : todayQuery.refetch())} />
+        </Card> : null}
+        {student && planQuery.isSuccess && !hasActivePlan ? (
+          <Card style={{ gap: spacing.sm }}>
+            <AppText weight="900" size={18}>{t("planningEmptyTitle")}</AppText>
+            <AppText muted size={13}>{t("planningEmptyBody")}</AppText>
+            <Button label={t("planningCreateCta")} full={false} onPress={() => navigate("planningSetup")} />
+          </Card>
+        ) : null}
       </Screen>
     );
   }
 
-  if (todayLoading || !today) return <LoadingState />;
-
-  const pending = today.items.filter((i) => i.status === "pending");
-  const resolved = today.items.filter((i) => i.status !== "pending");
-  const doneCount = today.items.filter((i) => i.status === "done").length;
+  const pending = today.items.filter((item) => item.status === "pending");
+  const resolved = today.items.filter((item) => item.status !== "pending");
+  const doneCount = today.items.filter((item) => item.status === "done").length;
+  const pct = today.items.length ? Math.round((doneCount / today.items.length) * 100) : 0;
 
   return (
-    <Screen>
-      <ScreenChrome title={t("planningTitle")} onBack={goBack} help="planning" />
-
-      <Pressable
-        onPress={() => navigate("planningSetup")}
-        style={{ alignSelf: isFa ? "flex-start" : "flex-end", marginBottom: spacing.md }}
-      >
-        <AppText weight="700" size={12} color={colors.accent}>
-          {t("planningEditPlan")}
-        </AppText>
-      </Pressable>
-
-      <Card style={{ marginBottom: spacing.lg }}>
-        <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
-          <AppText weight="900" size={20}>
-            {n(doneCount)}/{n(today.items.length)}
-          </AppText>
-          <AppText muted weight="700" size={12}>
-            {n(today.total_minutes)} {t("planningTodayMinutes")}
-          </AppText>
+    <Screen contentStyle={{ maxWidth: 790, gap: spacing.md }}>
+      {header}
+      <Card style={{ gap: spacing.sm }}>
+        <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.sm }}>
+          <AppText accessibilityRole="header" weight="900" size={18}>{isFa ? "برنامهٔ امروز" : "Today’s study plan"}</AppText>
+          <Button label={t("planningEditPlan")} full={false} variant="secondary" onPress={() => navigate("planningSetup")} style={{ minHeight: 44 }} />
         </View>
-        <View
-          style={{
-            height: 6,
-            borderRadius: 3,
-            backgroundColor: colors.trackBg,
-            marginTop: 10,
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              width: `${today.items.length ? Math.max(3, Math.round((doneCount / today.items.length) * 100)) : 0}%`,
-              height: 6,
-              backgroundColor: colors.accent,
-            }}
-          />
+        <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
+          <AppText muted weight="700" size={12}>{n(doneCount)}/{n(today.items.length)} {isFa ? "انجام شده" : "completed"}</AppText>
+          <AppText muted weight="700" size={12}>{n(today.total_minutes)} {t("planningTodayMinutes")}</AppText>
+        </View>
+        <View accessibilityRole="progressbar" accessibilityValue={{ min: 0, now: pct, max: 100 }}
+          style={{ height: 6, borderRadius: 3, backgroundColor: colors.trackBg, flexDirection: row, overflow: "hidden" }}>
+          <View style={{ width: `${pct}%`, height: 6, backgroundColor: colors.accent }} />
         </View>
       </Card>
+      {complete.isError || skip.isError ? <AppText accessibilityRole="alert" color={colors.denyLabel}>{t("planningSaveError")}</AppText> : null}
+      {pending.map((item, index) => (
+        <PlanItemRow key={item.id} item={item} label={t(index === 0 ? "planningNowLabel" : "planningNextLabel")}
+          busy={complete.isPending || skip.isPending} onOpen={() => openActivity(item)}
+          onComplete={() => complete.mutate(item.id)} onSkip={() => skip.mutate(item.id)} />
+      ))}
+      {pending.length === 0 ? <Card><AppText size={14} weight="800">{t("planningAllDoneTitle")}</AppText><AppText muted size={12}>{t("planningAllDoneBody")}</AppText></Card> : null}
+      {learningPath}
+      {today.week.length > 0 ? (
+        <Card style={{ gap: spacing.sm }}>
+          <AppText accessibilityRole="header" weight="800" size={15}>{isFa ? "این هفته" : "This week"}</AppText>
+          <View style={{ flexDirection: row, gap: 4 }}>
+            {today.week.map((day, i) => {
+              const label = DAY_LABELS_SHORT[lang][i];
+              const current = day.state === "today";
+              const done = day.state === "done";
+              const caption = current ? (isFa ? "امروز" : "Today") : done ? (isFa ? "انجام شد" : "Done") : day.study_day ? (isFa ? "روز مطالعه" : "Study day") : (isFa ? "استراحت" : "Rest day");
+              return (
+                <View accessible accessibilityLabel={`${label} · ${caption}`} key={day.date}
+                  style={{ flex: 1, minHeight: 48, justifyContent: "center", borderRadius: 9, backgroundColor: current ? colors.accent : colors.softBg }}>
+                  <AppText center size={11} weight="700" color={current ? colors.onAccent : colors.ink}>{label}</AppText>
+                  <AppText center size={11} color={current ? colors.onAccent : colors.accent}>{done ? "✓" : day.study_day ? "•" : "–"}</AppText>
+                </View>
+              );
+            })}
+          </View>
+        </Card>
+      ) : null}
 
       {today.topics.length ? (
         <View style={{ marginBottom: spacing.lg }}>
@@ -171,30 +191,6 @@ export function PlanningScreen() {
         </View>
       ) : null}
 
-      {pending.length === 0 ? (
-        <Card style={{ alignItems: "center", paddingVertical: 26, marginBottom: spacing.lg }}>
-          <AppText weight="800" size={14} center style={{ marginBottom: 6 }}>
-            {t("planningAllDoneTitle")}
-          </AppText>
-          <AppText muted weight="600" size={12} center>
-            {t("planningAllDoneBody")}
-          </AppText>
-        </Card>
-      ) : (
-        <View style={{ gap: 10, marginBottom: spacing.lg }}>
-          {pending.map((item, i) => (
-            <PlanItemRow
-              key={item.id}
-              item={item}
-              label={i === 0 ? t("planningNowLabel") : t("planningNextLabel")}
-              onOpen={() => openActivity(item)}
-              onComplete={() => complete.mutate(item.id)}
-              onSkip={() => skip.mutate(item.id)}
-            />
-          ))}
-        </View>
-      )}
-
       {resolved.length ? (
         <View style={{ gap: 8 }}>
           <AppText weight="800" size={12} muted>
@@ -218,7 +214,7 @@ export function PlanningScreen() {
                 size={12}
                 style={{ flex: 1, textDecorationLine: item.status === "done" ? "line-through" : "none" }}
               >
-                {t(ACTIVITY_LABEL[item.activity_type])}
+                {isFa ? item.title_fa : item.title_en}
               </AppText>
               <AppText muted size={11} weight="700">
                 {item.status === "done" ? "✓" : "–"}
@@ -237,23 +233,20 @@ function PlanItemRow({
   onOpen,
   onComplete,
   onSkip,
+  busy,
 }: {
   item: StudyPlanItem;
   label: string;
   onOpen: () => void;
   onComplete: () => void;
   onSkip: () => void;
+  busy: boolean;
 }) {
   const { t, isFa, n, row } = useLang();
-  const { colors, shadows } = useTheme();
+  const { colors } = useTheme();
 
   return (
-    <View
-      style={[
-        { backgroundColor: colors.cardBg, borderRadius: 16, padding: 13, gap: 10 },
-        shadows.raisedSm,
-      ]}
-    >
+    <Card style={{ padding: 13, gap: 10 }}>
       <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between" }}>
         <AppText weight="800" size={11} color={colors.accent}>
           {label}
@@ -263,15 +256,16 @@ function PlanItemRow({
         </AppText>
       </View>
       <AppText weight="800" size={14}>
-        {t(ACTIVITY_LABEL[item.activity_type])}
+        {isFa ? item.title_fa : item.title_en}
       </AppText>
       {item.reason_fa || item.reason_en ? (
         <AppText muted weight="600" size={12} style={{ lineHeight: 18 }}>
           {isFa ? item.reason_fa : item.reason_en}
         </AppText>
       ) : null}
-      <View style={{ flexDirection: row, gap: 8, marginTop: 2 }}>
+      <View style={{ flexDirection: row, gap: 8, marginTop: 2, flexWrap: "wrap" }}>
         <Pressable
+          accessibilityRole="button"
           onPress={onOpen}
           style={{
             flex: 1,
@@ -286,6 +280,8 @@ function PlanItemRow({
           </AppText>
         </Pressable>
         <Pressable
+          accessibilityRole="button"
+          disabled={busy}
           onPress={onComplete}
           style={{
             paddingVertical: 11,
@@ -299,6 +295,8 @@ function PlanItemRow({
           </AppText>
         </Pressable>
         <Pressable
+          accessibilityRole="button"
+          disabled={busy}
           onPress={onSkip}
           style={{
             paddingVertical: 11,
@@ -312,6 +310,6 @@ function PlanItemRow({
           </AppText>
         </Pressable>
       </View>
-    </View>
+    </Card>
   );
 }

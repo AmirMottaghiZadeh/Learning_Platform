@@ -19,7 +19,7 @@ export function PediatricChoice({ label, value, options, onChange, placeholder, 
   return <View style={{ gap: 7 }}>
     <AppText weight="700" size={13}>{label}</AppText>
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => setOpen(true)}
-      style={{ minHeight: 48, borderWidth: 1, borderColor: colors.trackBg, borderRadius: 13, backgroundColor: colors.inputBg, padding: 12, flexDirection: row, alignItems: "center", gap: 8 }}>
+      style={{ minHeight: 48, borderRadius: 13, backgroundColor: colors.inputBg, padding: 12, flexDirection: row, alignItems: "center", gap: 8 }}>
       <AppText size={13} muted={!selected} style={{ flex: 1, ...(english && selected ? { writingDirection: "ltr", textAlign: "left" } as const : {}) }}>
         {selected?.label ?? placeholder}
       </AppText>

@@ -1,4 +1,4 @@
-export type TabKey = "dashboard" | "lessons" | "profile";
+export type TabKey = "dashboard" | "lessons" | "clinical" | "profile";
 
 export type ScreenKey =
   | TabKey
@@ -20,10 +20,9 @@ export type ScreenKey =
   | "support"
   | "aiLab"
   | "devices"
-  | "notifications"
+  | "resourceSearch"
   | "plans"
   | "education"
-  | "clinical"
   | "guidelines"
   | "diseasesConditions"
   | "calculator"
@@ -33,7 +32,7 @@ export type ScreenKey =
   | "medscapeArticle"
   | "medscapeSpecialty";
 
-export const TAB_ORDER: TabKey[] = ["dashboard", "lessons", "profile"];
+export const TAB_ORDER: TabKey[] = ["dashboard", "lessons", "clinical", "profile"];
 
 /** Reserved for tabs shipped behind a server feature flag. */
 export const LOCKED_TABS: TabKey[] = [];

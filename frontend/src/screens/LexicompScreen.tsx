@@ -44,7 +44,10 @@ export function LexicompScreen() {
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
 
-  const [q, setQ] = useState("");
+  const initialQuery = useNav((s) => s.params.query);
+  const plannedFollowup = useNav((s) => s.params.nextQuery);
+  const [q, setQ] = useState(typeof initialQuery === "string" ? initialQuery : "");
+  const [nextDrug, setNextDrug] = useState(typeof plannedFollowup === "string" ? plannedFollowup : "");
   const query = useDebounced(q.trim());
   const [selected, setSelected] = useState<LexicompDrug[]>([]);
 
@@ -71,7 +74,8 @@ export function LexicompScreen() {
 
   const addDrug = (drug: LexicompDrug) => {
     setSelected((cur) => (cur.some((d) => d.generic_id === drug.generic_id) ? cur : [...cur, drug]));
-    setQ("");
+    setQ(nextDrug);
+    setNextDrug("");
     check.reset();
   };
 
@@ -99,8 +103,7 @@ export function LexicompScreen() {
           alignItems: "center",
           gap: 8,
           backgroundColor: colors.inputBg,
-          borderWidth: 1,
-          borderColor: colors.trackBg,
+          boxShadow: colors.cardShadow,
           borderRadius: 14,
           paddingHorizontal: 14,
           paddingVertical: 12,
@@ -182,8 +185,6 @@ export function LexicompScreen() {
                   alignItems: "center",
                   gap: 6,
                   backgroundColor: `${colors.accent}14`,
-                  borderWidth: 1,
-                  borderColor: colors.accent,
                   borderRadius: 999,
                   paddingVertical: 7,
                   paddingHorizontal: 12,
@@ -278,8 +279,6 @@ function InteractionCard({ group }: { group: InteractionGroup }) {
         <View
           style={{
             backgroundColor: tone.bg,
-            borderWidth: 1,
-            borderColor: tone.border,
             borderRadius: 999,
             paddingVertical: 4,
             paddingHorizontal: 10,
@@ -313,7 +312,7 @@ function InteractionDisclosure({ label, text }: { label: string; text: string })
   const { colors } = useTheme();
   const { row, isFa } = useLang();
   return (
-    <View style={{ borderWidth: 1, borderColor: colors.trackBg, borderRadius: 12, overflow: "hidden" }}>
+    <View style={{ borderRadius: 12, overflow: "hidden" }}>
       <Pressable onPress={() => setOpen((value) => !value)} accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={label} style={{ minHeight: 46, paddingHorizontal: 12, flexDirection: row, alignItems: "center", justifyContent: "space-between", backgroundColor: colors.softBg }}>
         <AppText weight="700" size={12}>{label}</AppText>
         <AppText muted>{open ? "−" : "+"}</AppText>

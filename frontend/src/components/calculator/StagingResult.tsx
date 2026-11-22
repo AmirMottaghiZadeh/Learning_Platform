@@ -56,7 +56,7 @@ export function StagingResult({ results, data }: ResultProps) {
                   {a.hint}
                 </AppText>
               </View>
-              <View style={{ paddingHorizontal: 14, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.specBg, borderWidth: 1, borderColor: colors.specBorder }}>
+              <View style={{ paddingHorizontal: 14, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.specBg, }}>
                 <AppText weight="900" size={17} color={colors.specLabel} style={{ writingDirection: "ltr", textAlign: "left" }}>
                   {codes.get(a.key)}
                 </AppText>

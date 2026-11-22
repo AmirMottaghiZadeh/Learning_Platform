@@ -107,7 +107,7 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights, uni
   if (variant === "row") {
     if (binary) {
       return (
-        <View style={{ flexDirection: row, borderRadius: 999, borderWidth: 1, borderColor: colors.border, overflow: "hidden", backgroundColor: colors.softBg }}>
+        <View style={{ flexDirection: row, borderRadius: 999, overflow: "hidden", backgroundColor: colors.softBg }}>
           {options.map((o) => (
             <Pressable key={o.i} onPress={() => pick(o)} style={{ paddingHorizontal: 14, paddingVertical: 6, backgroundColor: o.selected ? colors.accent : "transparent" }}>
               <AppText weight="800" size={12} color={o.selected ? colors.onAccent : colors.muted}>
@@ -130,8 +130,6 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights, uni
               maxWidth: "100%",
               width: o.sub ? "100%" : undefined,
               borderRadius: o.sub ? 12 : 999,
-              borderWidth: 1,
-              borderColor: o.selected ? colors.accent : colors.trackBg,
               backgroundColor: o.selected ? `${colors.accent}1a` : colors.softBg,
             }}
           >
@@ -155,8 +153,6 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights, uni
               justifyContent: "center",
               paddingVertical: 22,
               borderRadius: 16,
-              borderWidth: 1.5,
-              borderColor: o.selected ? colors.accent : colors.trackBg,
               backgroundColor: o.selected ? `${colors.accent}1a` : colors.cardBg,
               gap: 2,
             }}
@@ -189,8 +185,6 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights, uni
             paddingHorizontal: 14,
             paddingVertical: 13,
             borderRadius: 16,
-            borderWidth: 1.5,
-            borderColor: o.selected ? colors.accent : colors.trackBg,
             backgroundColor: o.selected ? `${colors.accent}1a` : colors.cardBg,
           }}
         >
@@ -199,8 +193,6 @@ function Choices({ question, variant, value, choiceIndex, onChoose, weights, uni
               width: 20,
               height: 20,
               borderRadius: 10,
-              borderWidth: 2,
-              borderColor: o.selected ? colors.accent : colors.trackBg,
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -244,8 +236,6 @@ function Numeric({ question, variant, value, unitIndex, onChange, onUnit }: Fiel
           alignItems: "center",
           gap: 8,
           backgroundColor: colors.inputBg,
-          borderWidth: big ? 1.5 : 1,
-          borderColor: big && value !== undefined ? colors.accent : colors.trackBg,
           borderRadius: big ? 16 : 12,
           paddingHorizontal: big ? 16 : 10,
           paddingVertical: big ? 12 : 6,
@@ -307,8 +297,6 @@ function Numeric({ question, variant, value, unitIndex, onChange, onUnit }: Fiel
             flexDirection: "row",
             alignSelf: "flex-start",
             borderRadius: 999,
-            borderWidth: 1,
-            borderColor: colors.border,
             backgroundColor: colors.softBg,
             overflow: "hidden",
           }}

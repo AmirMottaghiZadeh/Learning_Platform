@@ -36,8 +36,6 @@ export function DoseResult({ results, inputs }: ResultProps) {
       <View
         style={{
           borderRadius: 10,
-          borderWidth: 1,
-          borderColor: colors.cautBorder,
           backgroundColor: colors.cautBg,
           paddingHorizontal: 10,
           paddingVertical: 7,

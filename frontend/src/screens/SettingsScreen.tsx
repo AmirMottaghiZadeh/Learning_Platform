@@ -9,7 +9,8 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { BG_TONES, DEFAULT_TONE, THEME, ThemeMode } from "@/theme/tokens";
-import { SupportLink, NotificationSettings } from "@/components/SupportSettings";
+import { SupportLink } from "@/components/SupportSettings";
+import { TypographySettings } from "@/components/TypographySettings";
 
 const MODES: ThemeMode[] = ["light", "dark"];
 
@@ -30,7 +31,6 @@ export function SettingsScreen() {
         <SupportLink />
         <Pressable onPress={() => navigate("plans")} accessibilityRole="button"><Card><AppText weight="800">{t("profileBuySubscription")}</AppText></Card></Pressable>
         <Pressable onPress={() => navigate("devices")} accessibilityRole="button"><Card><AppText weight="800">{t("devicesTitle")}</AppText></Card></Pressable>
-        <NotificationSettings />
       </View>
 
       <AppText weight="800" size={13} muted style={{ marginBottom: 8 }}>
@@ -60,8 +60,6 @@ export function SettingsScreen() {
                     justifyContent: "center",
                     gap: 8,
                     backgroundColor: on ? colors.accent : colors.softBg,
-                    borderWidth: 1,
-                    borderColor: on ? colors.accent : colors.trackBg,
                   }}
                 >
                   <AppText size={14} color={on ? colors.onAccent : colors.ink}>
@@ -101,7 +99,7 @@ export function SettingsScreen() {
                       if (mode !== m) setMode(m);
                     }}
                     accessibilityRole="radio"
-                    accessibilityState={{ selected: on }}
+                    accessibilityState={{ checked: on }}
                     accessibilityLabel={`${t(m === "light" ? "settingsBgLight" : "settingsBgDark")} ${i + 1}`}
                     style={{ flex: 1, alignItems: "center", gap: 6 }}
                   >
@@ -113,8 +111,6 @@ export function SettingsScreen() {
                         padding: 7,
                         gap: 5,
                         backgroundColor: tone.appBg,
-                        borderWidth: on ? 3 : 1,
-                        borderColor: on ? colors.accent : colors.trackBg,
                         justifyContent: "flex-end",
                       }}
                     >
@@ -123,7 +119,7 @@ export function SettingsScreen() {
                       <View style={{ height: 12, width: "70%", borderRadius: 4, backgroundColor: card }} />
                     </View>
                     <AppText weight={on ? "800" : "600"} size={11.5} color={on ? colors.accent : colors.muted}>
-                      {i === DEFAULT_TONE ? t("settingsDefault") : n(i + 1)}
+                      {on ? "✓ " : ""}{i === DEFAULT_TONE ? t("settingsDefault") : n(i + 1)}
                     </AppText>
                   </Pressable>
                 );
@@ -132,6 +128,7 @@ export function SettingsScreen() {
           </View>
         ))}
       </Card>
+      <View style={{ marginTop: 16 }}><TypographySettings /></View>
     </Screen>
   );
 }

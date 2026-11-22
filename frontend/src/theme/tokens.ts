@@ -9,6 +9,7 @@ export interface ThemeColors {
   pageBg: string;
   appBg: string;
   cardBg: string;
+  cardShadow: string;
   ink: string;
   muted: string;
   border: string;
@@ -49,11 +50,26 @@ export interface ThemeColors {
   headerMeshGradient: [string, string];
 }
 
+const darkSurfaces = {
+  pageBg: "#101814",
+  appBg: "#141F1B",
+  cardBg: "#1D2A24",
+  softBg: "#24332C",
+  inputBg: "#19251F",
+  trackBg: "#3C5246",
+  navBg: "rgba(29,42,36,0.96)",
+  optBg: "#1D2A24",
+  sheetLine: "#2C4035",
+  flipBackBg: "#24332C",
+  meshBg: "#101814",
+};
+
 export const THEME: Record<ThemeMode, ThemeColors> = {
   light: {
     pageBg: "#E7E4DC",
     appBg: "#EFECE4",
     cardBg: "#FFFFFF",
+    cardShadow: "0 4px 12px #14201D1A",
     ink: "#14201D",
     muted: "#5F6B68",
     border: "rgba(20,32,29,0.07)",
@@ -93,46 +109,37 @@ export const THEME: Record<ThemeMode, ThemeColors> = {
     headerMeshGradient: ["#0F5C52", "#0F5C52"],
   },
   dark: {
-    pageBg: "#0B100F",
-    appBg: "#0F1413",
-    cardBg: "#171F1D",
-    ink: "#EDF3F0",
-    muted: "#9AACA5",
-    border: "rgba(255,255,255,0.06)",
-    softBg: "#141B19",
-    trackBg: "#26302D",
-    inputBg: "#171F1D",
-    navBg: "rgba(15,20,19,0.94)",
-    optBg: "#171F1D",
+    ...darkSurfaces,
+    cardShadow: "0 4px 12px #00000052",
+    ink: "#EDF6F0",
+    muted: "#B3C8BB",
+    border: "rgba(157,212,184,0.20)",
     accent: "#9DD4B8",
     accent2: "#7EC7A8",
-    onAccent: "#0D1A15",
-    onAccentSub: "rgba(13,26,21,0.75)",
-    onAccentChip: "rgba(13,26,21,0.12)",
-    onAccentChipBorder: "rgba(13,26,21,0.28)",
-    sheetLine: "#202927",
-    boxedBorder: "#EDF3F0",
-    boxedInk: "#EDF3F0",
-    denyBg: "#1F1615",
-    denyBorder: "#3D2925",
-    denyInk: "#E7D3CD",
-    denyLabel: "#F0A08C",
-    cautBg: "#1E1C14",
-    cautBorder: "#3A3524",
-    cautInk: "#E6DECB",
-    cautLabel: "#E0C182",
-    specBg: "#191C22",
-    specBorder: "#2C3140",
-    specInk: "#DCE0EC",
-    specLabel: "#A6B4FF",
-    proseInk: "#B4C2BC",
-    flipBackBg: "#1B2422",
-    leitnerActiveBg: "rgba(157,212,184,0.08)",
-    flipFrontInk: "#EDF3F0",
-    flipFrontSub: "rgba(237,243,240,0.72)",
-    meshBg: "#0B100F",
-    headerMesh: "#1D2A26",
-    headerMeshGradient: ["#1D2A26", "#141C1A"],
+    onAccent: "#17251E",
+    onAccentSub: "rgba(23,37,30,0.80)",
+    onAccentChip: "rgba(23,37,30,0.13)",
+    onAccentChipBorder: "rgba(23,37,30,0.30)",
+    boxedBorder: "#E3F3E9",
+    boxedInk: "#EDF6F0",
+    denyBg: "#352923",
+    denyBorder: "#62433A",
+    denyInk: "#FFE3DB",
+    denyLabel: "#FFAC96",
+    cautBg: "#332D20",
+    cautBorder: "#625239",
+    cautInk: "#F9ECCB",
+    cautLabel: "#F2C772",
+    specBg: "#292C37",
+    specBorder: "#454A61",
+    specInk: "#E4E9F7",
+    specLabel: "#BEC9F7",
+    proseInk: "#D3E2D8",
+    leitnerActiveBg: "rgba(157,212,184,0.13)",
+    flipFrontInk: "#F2FBF6",
+    flipFrontSub: "#D2E9DD",
+    headerMesh: "#23463B",
+    headerMeshGradient: ["#284C3F", "#1B332B"],
   },
 };
 
@@ -156,20 +163,17 @@ export const BG_TONES: Record<ThemeMode, ToneColors[]> = {
   ],
   dark: [
     {
-      pageBg: "#151D1B", appBg: "#1A2321", softBg: "#1E2826", sheetLine: "#2A3431", meshBg: "#151D1B",
-      navBg: "rgba(26,35,33,0.94)", cardBg: "#232D2A", inputBg: "#232D2A", optBg: "#232D2A", flipBackBg: "#283330", trackBg: "#313C38",
+      pageBg: "#1B2621", appBg: "#202E27", softBg: "#2A3A31", sheetLine: "#354B3F", meshBg: "#1B2621",
+      navBg: "rgba(38,53,44,0.96)", cardBg: "#26352C", inputBg: "#222F28", optBg: "#26352C", flipBackBg: "#2A3A31", trackBg: "#496052",
+    },
+    darkSurfaces,
+    {
+      pageBg: "#0C120F", appBg: "#101915", softBg: "#1D2B24", sheetLine: "#25362D", meshBg: "#0C120F",
+      navBg: "rgba(24,36,30,0.96)", cardBg: "#18241E", inputBg: "#151F19", optBg: "#18241E", flipBackBg: "#1D2B24", trackBg: "#34493E",
     },
     {
-      pageBg: "#0B100F", appBg: "#0F1413", softBg: "#141B19", sheetLine: "#202927", meshBg: "#0B100F",
-      navBg: "rgba(15,20,19,0.94)", cardBg: "#171F1D", inputBg: "#171F1D", optBg: "#171F1D", flipBackBg: "#1B2422", trackBg: "#26302D",
-    },
-    {
-      pageBg: "#060908", appBg: "#090D0C", softBg: "#0E1412", sheetLine: "#1A2220", meshBg: "#060908",
-      navBg: "rgba(9,13,12,0.94)", cardBg: "#121917", inputBg: "#121917", optBg: "#121917", flipBackBg: "#161E1C", trackBg: "#212A27",
-    },
-    {
-      pageBg: "#000000", appBg: "#000000", softBg: "#0A0E0D", sheetLine: "#161D1B", meshBg: "#000000",
-      navBg: "rgba(0,0,0,0.94)", cardBg: "#0E1312", inputBg: "#0E1312", optBg: "#0E1312", flipBackBg: "#121917", trackBg: "#1E2624",
+      pageBg: "#080D0A", appBg: "#0B120E", softBg: "#17231D", sheetLine: "#203128", meshBg: "#080D0A",
+      navBg: "rgba(18,28,23,0.97)", cardBg: "#121C17", inputBg: "#101913", optBg: "#121C17", flipBackBg: "#17231D", trackBg: "#2F4238",
     },
   ],
 };
@@ -195,11 +199,7 @@ export const radius = {
 
 export const layout = {
   appMaxWidth: 430,
-  /** Below this viewport width the web app fills the screen edge to edge;
-   * only a window at least this wide (a tablet, a desktop browser) gets the
-   * centred `appMaxWidth` mockup frame. 600 is where Android draws the
-   * phone/tablet line (sw600dp). */
-  mockupFrameMinWidth: 600,
+  contentMaxWidth: 1120,
   bottomNavHeight: 72,
   screenPadding: 20,
 } as const;
@@ -208,6 +208,7 @@ export const layout = {
 export function shadow(mode: ThemeMode) {
   const heavy = mode === "dark";
   return {
+    surface: { boxShadow: THEME[mode].cardShadow },
     raised: {
       shadowColor: "#000",
       shadowOpacity: heavy ? 0.5 : 0.1,

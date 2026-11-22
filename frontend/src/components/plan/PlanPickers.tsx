@@ -38,8 +38,6 @@ function Chip({ label, selected, onPress }: { label: string; selected: boolean; 
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: selected ? colors.accent : colors.cardBg,
-        borderWidth: 1,
-        borderColor: selected ? colors.accent : colors.trackBg,
       }}
     >
       <AppText weight={selected ? "800" : "700"} size={13} color={selected ? colors.onAccent : colors.ink}>
@@ -87,8 +85,6 @@ function DateField({
         style={{
           height: 46,
           borderRadius: 12,
-          borderWidth: 1,
-          borderColor: colors.trackBg,
           backgroundColor: colors.inputBg,
           textAlign: "center",
           fontFamily: fontFamily("700"),
@@ -197,8 +193,6 @@ export function StudyDaysPicker({ value, onChange }: { value: boolean[]; onChang
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: on ? colors.accent : colors.cardBg,
-              borderWidth: 1,
-              borderColor: on ? colors.accent : colors.trackBg,
             }}
           >
             <AppText weight="800" size={13} color={on ? colors.onAccent : colors.muted}>

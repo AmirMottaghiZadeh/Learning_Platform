@@ -311,8 +311,6 @@ export function LessonDetailScreen() {
               alignItems: "center",
               gap: 9,
               backgroundColor: colors.softBg,
-              borderWidth: 1,
-              borderColor: colors.trackBg,
               borderRadius: 13,
               paddingHorizontal: 12,
               paddingVertical: 8,
@@ -390,8 +388,6 @@ export function LessonDetailScreen() {
                   { marginTop: 20 },
                   isBox && {
                     backgroundColor: tc.bg,
-                    borderWidth: 1,
-                    borderColor: tc.border,
                     borderRadius: 14,
                     padding: 14,
                   },
@@ -421,8 +417,6 @@ export function LessonDetailScreen() {
           style={{
             marginTop: 28,
             backgroundColor: colors.accent + "12",
-            borderWidth: 1,
-            borderColor: colors.trackBg,
             borderRadius: 16,
             padding: 16,
           }}
@@ -449,8 +443,6 @@ function Badge({ bg, fg, text, border }: { bg: string; fg: string; text: string;
     <View
       style={{
         backgroundColor: bg,
-        borderWidth: border ? 1 : 0,
-        borderColor: border,
         borderRadius: 8,
         paddingHorizontal: 10,
         paddingVertical: 5,

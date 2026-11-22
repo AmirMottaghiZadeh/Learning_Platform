@@ -37,7 +37,7 @@ export function ThemeToggleButton({
         alignItems: "center",
         justifyContent: "center",
         ...(variant === "chip"
-          ? { backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: "rgba(255,255,255,0.3)" }
+          ? { backgroundColor: "rgba(255,255,255,0.16)", }
           : { backgroundColor: colors.softBg }),
       })}
     >

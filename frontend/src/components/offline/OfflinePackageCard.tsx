@@ -189,8 +189,6 @@ export function OfflinePackageCard({ dataset }: { dataset: OfflineDataset }) {
                 justifyContent: "center",
                 paddingHorizontal: 14,
                 backgroundColor: a.primary ? colors.accent : a.danger ? colors.denyBg : colors.softBg,
-                borderWidth: a.primary ? 0 : 1,
-                borderColor: a.danger ? colors.denyBorder : colors.trackBg,
                 opacity: busy ? 0.6 : 1,
                 transform: [{ scale: pressed ? 0.98 : 1 }],
               })}

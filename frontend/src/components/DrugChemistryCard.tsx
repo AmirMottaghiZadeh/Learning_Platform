@@ -30,7 +30,7 @@ export function DrugChemistryCard({ chemistry, name }: { chemistry?: DrugChemist
   };
   return (
     <View style={{ marginTop: 22, borderRadius: 14, padding: 16, backgroundColor: colors.softBg,
-      borderWidth: 1, borderColor: colors.trackBg }}>
+      }}>
       <AppText weight="800" size={16}>{isFa ? "فرمول و ساختار شیمیایی" : "Chemical formula & structure"}</AppText>
       <AppText muted size={12} style={{ marginTop: 4 }}>{isFa ? "فرمول مولکولی مادهٔ مؤثره" : "Active ingredient molecular formula"}</AppText>
       <AppText selectable weight="800" size={25} style={{ writingDirection: "ltr", textAlign: "left", marginTop: 8 }}>

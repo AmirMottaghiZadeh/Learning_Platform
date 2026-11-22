@@ -18,6 +18,7 @@ type NavState = {
    * (e.g. one calculator, then another) still replays its enter animation. */
   transitionId: number;
   navigate: (screen: ScreenKey, params?: Record<string, unknown>) => void;
+  setParams: (params: Record<string, unknown>) => void;
   /** Switch bottom-nav tab (resets the in-tab stack). */
   setTab: (tab: TabKey) => void;
   goBack: () => void;
@@ -39,6 +40,8 @@ export const useNav = create<NavState>((set) => ({
       direction: "forward",
       transitionId: s.transitionId + 1,
     })),
+
+  setParams: (params) => set((s) => ({ params: { ...s.params, ...params } })),
 
   setTab: (tab) =>
     set((s) => ({ screen: tab, params: {}, history: [], direction: "tab", transitionId: s.transitionId + 1 })),

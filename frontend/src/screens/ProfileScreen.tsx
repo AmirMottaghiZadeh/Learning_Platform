@@ -15,7 +15,6 @@ import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useNavClearance } from "@/components/BottomNav";
 import { SupportLink } from "@/components/SupportSettings";
-import { useSupportSummary } from "@/notifications/useSupportNotifications";
 
 export function ProfileScreen() {
   const navClearance = useNavClearance();
@@ -24,7 +23,6 @@ export function ProfileScreen() {
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
   const navigate = useNav((s) => s.navigate);
-  const notificationsEnabled = useSupportSummary().data?.push_enabled === true;
 
   const { data: stats } = useQuery({ queryKey: ["statistics"], queryFn: meApi.statistics });
   const { data: dash } = useQuery({ queryKey: ["dashboard"], queryFn: meApi.dashboard });
@@ -65,8 +63,6 @@ export function ProfileScreen() {
           gap: 12,
           paddingHorizontal: 14,
           backgroundColor: danger ? "rgba(214,88,88,0.08)" : colors.cardBg,
-          borderWidth: danger ? 1 : 0,
-          borderColor: "rgba(214,88,88,0.2)",
         },
         !danger && shadows.raisedSm,
       ]}
@@ -105,8 +101,6 @@ export function ProfileScreen() {
                   onPress={toggleLang}
                   style={{
                     backgroundColor: "rgba(255,255,255,0.16)",
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.3)",
                     borderRadius: 999,
                     paddingHorizontal: 10,
                     paddingVertical: 6,
@@ -126,8 +120,6 @@ export function ProfileScreen() {
                   height: 74,
                   borderRadius: 37,
                   backgroundColor: "rgba(255,255,255,0.16)",
-                  borderWidth: 2,
-                  borderColor: "rgba(255,255,255,0.35)",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
@@ -186,7 +178,6 @@ export function ProfileScreen() {
         <Row label={t("mistakesTitle")} icon="edu-mistakes" onPress={() => navigate("mistakes")} />
         <Row label={t("offlineTitle")} icon="profile-downloads" onPress={() => navigate("downloads")} />
         <Row label={t("settingsTitle")} glyph="⚙" onPress={() => navigate("settings")} />
-        {notificationsEnabled ? <Row label={t("profileNotifications")} icon="profile-notifications" onPress={() => navigate("notifications")} /> : null}
         <Row label={t("devicesTitle")} glyph="▣" onPress={() => navigate("devices")} />
         {user?.is_guest ? (
           // A guest has no account to log out of: this leads to the sign-in screen.

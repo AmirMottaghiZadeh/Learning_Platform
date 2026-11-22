@@ -42,12 +42,11 @@
         height: 100%;
         flex: 1;
       }
-      /* Text fields apply focus to their enclosing control. */
       :root { --app-focus-ring: #0F5C52; }
-      :root[data-app-theme="dark"] { --app-focus-ring: #9DD4B8; }
-      :where(button, [role="button"], [role="tab"], [role="radio"], a):focus-visible {
-        outline: 2px solid var(--app-focus-ring);
-        outline-offset: -2px;
+      :root[data-app-theme="dark"] { --app-focus-ring: #A4E3C0; color-scheme: dark; }
+      :where(button, [role="button"], [role="tab"], [role="radio"], a, input, textarea):focus-visible {
+        outline: none;
+        box-shadow: inset 0 -2px var(--app-focus-ring);
       }
       input,
       textarea {

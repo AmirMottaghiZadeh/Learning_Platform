@@ -330,7 +330,7 @@ export function QuizScreen() {
         <AppText weight="800" size={11.5} muted style={{ flex: 1 }}>
           {isFa ? selectedTopic?.name_fa ?? session!.category : selectedTopic?.name_en ?? session!.category}
         </AppText>
-        <View style={{ flexDirection: row, alignItems: "center", gap: 5, backgroundColor: colors.softBg, borderWidth: 1, borderColor: colors.trackBg, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 }}>
+        <View style={{ flexDirection: row, alignItems: "center", gap: 5, backgroundColor: colors.softBg, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 }}>
           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: scoreGood ? colors.accent : colors.denyLabel }} />
           <AppText weight="800" size={10.5}>
             {n(runningScore.correct)}/{n(runningScore.total)} {t("quizRunningScore")}
@@ -349,7 +349,7 @@ export function QuizScreen() {
 
       <Card>
         <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: fieldTag.bg, borderWidth: 1, borderColor: fieldTag.border }}>
+          <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: fieldTag.bg, }}>
             <AppText weight="800" size={10} color={fieldTag.label}>{q.field_label_fa}</AppText>
           </View>
           <AppText weight="800" size={10.5} muted style={{ textAlign: "left", writingDirection: "ltr" }}>{drugName}</AppText>
@@ -362,17 +362,14 @@ export function QuizScreen() {
       <View style={{ gap: 10, marginTop: 16 }}>
         {options.map((label, i) => {
           let bg = colors.optBg;
-          let border = colors.trackBg;
           let tag: string | null = null;
           let tagColor = colors.accent;
           if (answered && i === correctIndex) {
             bg = colors.accent + "1a";
-            border = colors.accent;
             tag = t("quizCorrectAnswer");
             tagColor = colors.accent;
           } else if (answered && i === picked && i !== correctIndex) {
             bg = colors.denyBg;
-            border = colors.denyBorder;
             tag = t("quizYourAnswer");
             tagColor = colors.denyLabel;
           }
@@ -385,7 +382,7 @@ export function QuizScreen() {
                 setPicked(i);
                 answer.mutate(i);
               }}
-              style={{ padding: 14, borderRadius: 14, backgroundColor: bg, borderWidth: 1.5, borderColor: border, opacity: dim ? 0.5 : 1 }}
+              style={{ padding: 14, borderRadius: 14, backgroundColor: bg, boxShadow: colors.cardShadow, opacity: dim ? 0.5 : 1 }}
             >
               <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <AppText weight="600" size={13.5} style={{ flex: 1 }}>
@@ -450,7 +447,7 @@ export function QuizScreen() {
           style={{ marginTop: spacing.lg }}
         />
       ) : (
-        <View style={{ height: 52, borderRadius: 16, backgroundColor: colors.softBg, borderWidth: 1.5, borderColor: colors.trackBg, alignItems: "center", justifyContent: "center", marginTop: spacing.lg }}>
+        <View style={{ height: 52, borderRadius: 16, backgroundColor: colors.softBg, alignItems: "center", justifyContent: "center", marginTop: spacing.lg }}>
           <AppText weight="700" size={13.5} muted>{t("quizSelectAnOption")}</AppText>
         </View>
       )}

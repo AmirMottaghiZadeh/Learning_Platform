@@ -158,8 +158,7 @@ export function LessonListScreen() {
                   <View
                     style={{
                       backgroundColor: colors.onAccentChip,
-                      borderWidth: 1,
-                      borderColor: colors.onAccentChipBorder,
+                      boxShadow: colors.cardShadow,
                       borderRadius: 8,
                       paddingHorizontal: 8,
                       paddingVertical: 2,
@@ -237,8 +236,7 @@ export function LessonListScreen() {
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: done ? colors.accent : colors.cardBg,
-                    borderWidth: 1,
-                    borderColor: colors.trackBg,
+                    boxShadow: colors.cardShadow,
                   }}
                 >
                   <AppText weight="800" size={12} color={done ? colors.onAccent : colors.muted}>

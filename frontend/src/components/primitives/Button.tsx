@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleProp, ViewStyle } from "react-native
 
 import { useTheme } from "@/theme/ThemeProvider";
 import { radius } from "@/theme/tokens";
+import { squircle } from "@/theme/squircle";
 import { AppText } from "./AppText";
 
 type Variant = "primary" | "secondary" | "ghost";
@@ -42,13 +43,13 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         {
-          height: 52,
+          ...squircle,
+          minHeight: 52,
+          paddingVertical: 6,
           borderRadius: radius.btn,
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: bg,
-          borderWidth: variant === "secondary" ? 1 : 0,
-          borderColor: colors.trackBg,
           opacity: disabled ? 0.5 : pressed ? 0.82 : 1,
           alignSelf: full ? "stretch" : "flex-start",
           paddingHorizontal: 22,

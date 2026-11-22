@@ -60,8 +60,6 @@ export function MeasureResult({ results, ranges, altResults }: ResultProps) {
             alignSelf: "center",
             direction: "ltr",
             borderRadius: 999,
-            borderWidth: 1,
-            borderColor: colors.border,
             backgroundColor: colors.softBg,
             overflow: "hidden",
           }}

@@ -10,8 +10,10 @@ import { AlphabeticalArticleList } from "@/components/AlphabeticalArticleList";
 import { LoadFailed } from "@/components/LoadFailed";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
+import { Input } from "@/components/primitives/Input";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
+import { useDebounced } from "@/hooks/useDebounced";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -36,13 +38,21 @@ function formatMonthYear(iso: string): string {
  * section), which matters more for guidelines than alphabetical browsing
  * alone. Absent for the other two buckets, which have no such section. */
 export function MedscapeGuidelinesScreen() {
-  const { t, row } = useLang();
+  const { t, row, isFa } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
 
   const [activeSpecialty, setActiveSpecialty] = useState<string | null>(null);
-  const [q, setQ] = useState("");
+  const initialQuery = useNav((s) => s.params.query);
+  const [q, setQ] = useState(typeof initialQuery === "string" ? initialQuery : "");
+  const plannedTopic = typeof initialQuery === "string" && initialQuery.trim().length > 0;
+  const plannedQuery = useDebounced(q.trim());
+  const topicResults = useQuery({
+    queryKey: ["medscape-search", "guideline", plannedQuery],
+    queryFn: () => medscapeApi.search("guideline", plannedQuery),
+    enabled: plannedTopic && plannedQuery.length >= 2,
+  });
 
   const {
     data: tree,
@@ -53,6 +63,7 @@ export function MedscapeGuidelinesScreen() {
   } = useQuery({
     queryKey: ["medscape-tree", "guideline"],
     queryFn: () => medscapeApi.tree("guideline"),
+    enabled: !plannedTopic,
   });
 
   const node = tree?.[0];
@@ -86,6 +97,20 @@ export function MedscapeGuidelinesScreen() {
 
   const openArticle = (slug: string) => navigate("medscapeOutline", { slug });
   useTour("guidelines", !itemsLoading && all.length > 0);
+
+  if (plannedTopic) {
+    const placeholder = isFa ? "جست‌وجو در همهٔ گایدلاین‌ها" : "Search all guidelines";
+    return (
+      <Screen scroll={false} contentStyle={{ gap: spacing.md }} keyboardShouldPersistTaps="handled">
+        <ScreenChrome title={t("guidelinesLabel")} onBack={goBack} />
+        <Input value={q} onChangeText={setQ} accessibilityLabel={placeholder} placeholder={placeholder} />
+        {q.trim().length < 2 ? <AppText muted>{t("resourceLookupShort")}</AppText>
+          : q.trim() !== plannedQuery || topicResults.isPending ? <LoadingState />
+          : topicResults.isError ? <LoadFailed message={t("loadFailed")} onRetry={() => void topicResults.refetch()} />
+          : <AlphabeticalArticleList items={topicResults.data ?? []} onPressItem={openArticle} emptyText={t("medscapeNoLocalResults")} />}
+      </Screen>
+    );
+  }
 
   if (treeLoading) return <LoadingState />;
   // Loaded but nothing to browse: say so, instead of spinning forever
@@ -151,8 +176,7 @@ export function MedscapeGuidelinesScreen() {
             alignItems: "center",
             gap: 8,
             backgroundColor: colors.inputBg,
-            borderWidth: 1,
-            borderColor: colors.trackBg,
+            boxShadow: colors.cardShadow,
             borderRadius: 14,
             paddingHorizontal: 14,
             paddingVertical: 12,
@@ -226,8 +250,7 @@ function RecentCard({ article, onPress }: { article: MedscapeArticleListItem; on
       <View
         style={{
           backgroundColor: colors.cardBg,
-          borderWidth: 1,
-          borderColor: colors.border,
+          boxShadow: colors.cardShadow,
           borderRadius: 14,
           padding: 12,
           height: 96,

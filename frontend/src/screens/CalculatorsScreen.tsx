@@ -103,8 +103,7 @@ export function CalculatorsScreen() {
           alignItems: "center",
           gap: 8,
           backgroundColor: colors.inputBg,
-          borderWidth: 1,
-          borderColor: colors.trackBg,
+          boxShadow: colors.cardShadow,
           borderRadius: 14,
           paddingHorizontal: 14,
           paddingVertical: 12,
@@ -160,8 +159,7 @@ export function CalculatorsScreen() {
                   style={{
                     backgroundColor: colors.cardBg,
                     borderRadius: 18,
-                    borderWidth: 1,
-                    borderColor: colors.border,
+                    boxShadow: colors.cardShadow,
                     padding: 14,
                     gap: 8,
                   }}
