@@ -2,9 +2,10 @@ import React, { createContext, useContext } from "react";
 import { StyleProp, StyleSheet, Text, TextProps, TextStyle } from "react-native";
 
 import { useLang } from "@/i18n/LanguageProvider";
+import { useReaderScale } from "@/store/reader";
 import { useTheme } from "@/theme/ThemeProvider";
 import { FontWeight, fontFamily } from "@/theme/fonts";
-import { useTypography } from "@/theme/TypographyProvider";
+import { IRANIAN_SANS_REGULAR, useTypography } from "@/theme/TypographyProvider";
 import { LRI, PDI, hasPersianLetters, isolateEnglish } from "@/utils/bidi";
 
 type Props = TextProps & {
@@ -20,6 +21,12 @@ type Props = TextProps & {
  * hold only English («Clonidine:» as a bold label) is still laid out as part
  * of that right-to-left paragraph. */
 const InPersianParagraph = createContext(false);
+const TextScale = createContext(1);
+
+export function ReadingTextScope({ children }: { children: React.ReactNode }) {
+  const scale = useReaderScale();
+  return <TextScale.Provider value={scale}>{children}</TextScale.Provider>;
+}
 
 /** All the text in `node`, nested pieces included. */
 function textOf(node: React.ReactNode): string {
@@ -52,7 +59,8 @@ export function AppText({
 }: Props) {
   const { colors } = useTheme();
   const { dir } = useLang();
-  const { family, scale } = useTypography();
+  const { family } = useTypography();
+  const scale = useContext(TextScale);
   const inPersian = useContext(InPersianParagraph);
   // Persian text is drawn through the bidi layer: right-to-left at its
   // base, its English isolated. English with no Persian in it, shown in the
@@ -73,7 +81,7 @@ export function AppText({
       style={[
         {
           fontFamily: face,
-          fontWeight: face.startsWith("Pharmenta") ? weight : undefined,
+          fontWeight: face === IRANIAN_SANS_REGULAR ? weight : undefined,
           color: color ?? (muted ? colors.muted : colors.ink),
           writingDirection: dir,
           textAlign: center ? "center" : dir === "rtl" ? "right" : "left",

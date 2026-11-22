@@ -7,7 +7,7 @@ import { ApiError } from "@/api/client";
 import { LexicompDrug, LexicompInteraction } from "@/api/types";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { OfflineDownloadButton } from "@/components/offline/OfflineDownloadButton";
-import { AppText } from "@/components/primitives/AppText";
+import { AppText, ReadingTextScope } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { Screen } from "@/components/primitives/Screen";
 import { useDebounced } from "@/hooks/useDebounced";
@@ -317,7 +317,11 @@ function InteractionDisclosure({ label, text }: { label: string; text: string })
         <AppText weight="700" size={12}>{label}</AppText>
         <AppText muted>{open ? "−" : "+"}</AppText>
       </Pressable>
-      {open ? <AppText size={13} style={{ padding: 12, lineHeight: 22, textAlign: "left", writingDirection: "ltr" }}>{htmlToParagraphs(text) || (isFa ? "در منبع توضیحی ثبت نشده است." : "No explanation in the source.")}</AppText> : null}
+      {open ? <ReadingTextScope>
+        <AppText size={13} style={{ padding: 12, lineHeight: 22, textAlign: "left", writingDirection: "ltr" }}>
+          {htmlToParagraphs(text) || (isFa ? "در منبع توضیحی ثبت نشده است." : "No explanation in the source.")}
+        </AppText>
+      </ReadingTextScope> : null}
     </View>
   );
 }

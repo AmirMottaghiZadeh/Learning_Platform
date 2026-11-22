@@ -6,7 +6,6 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
 import { radius } from "@/theme/tokens";
-import { useTypography } from "@/theme/TypographyProvider";
 import { SquircleView } from "./SquircleView";
 import { CardSurface } from "./Card";
 
@@ -16,12 +15,11 @@ export function Input(props: Props) {
   const { colors, shadows } = useTheme();
   const nested = useContext(CardSurface);
   const { dir } = useLang();
-  const { scale } = useTypography();
   const [focused, setFocused] = useState(false);
   return (
     <SquircleView
       style={[!nested && shadows.surface, {
-        minHeight: Math.max(48, Math.ceil(32 * scale + 12)),
+        minHeight: 48,
         borderRadius: radius.input,
         backgroundColor: focused ? colors.leitnerActiveBg : nested ? colors.softBg : colors.inputBg,
         paddingHorizontal: 16,

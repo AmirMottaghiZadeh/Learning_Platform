@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "frontend/src/components/article/ClinicalArticleReader.tsx"
+        ],
+        "createdAt": "2026-11-22T18:47:44.502Z",
+        "reason": "Agent: the reported src is part of a regular expression matching reference image IDs; the reader resolves them before rendering."
+      }
+    ]
+  }
+}

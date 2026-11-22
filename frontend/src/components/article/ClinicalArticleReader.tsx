@@ -1299,16 +1299,17 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <TextSizeButton small disabled={scaleStep(textScale) === 0} onPress={() => changeScale(scaleStep(textScale) - 1)} />
-              <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 4 }}>
+              <View style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center" }}>
                 {TEXT_SCALES.map((value, i) => {
                   const on = i === scaleStep(textScale);
                   return (
                     <Pressable
                       key={value}
                       onPress={() => changeScale(i)}
-                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on }}
                       accessibilityLabel={`${Math.round(value * 100)}%`}
-                      style={{ width: 22, height: 30, alignItems: "center", justifyContent: "center" }}
+                      style={{ flex: 1, minWidth: 0, minHeight: 44, alignItems: "center", justifyContent: "center" }}
                     >
                       <View
                         style={{

@@ -9,7 +9,7 @@ import { DrugChemistryCard } from "@/components/DrugChemistryCard";
 import { LessonSection } from "@/api/types";
 import { ChromeButton, LangToggleButton } from "@/components/ScreenChrome";
 import { Chevron } from "@/components/primitives/Chevron";
-import { AppText } from "@/components/primitives/AppText";
+import { AppText, ReadingTextScope } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
@@ -393,20 +393,22 @@ export function LessonDetailScreen() {
                   },
                 ]}
               >
-                <AppText weight="900" size={isBox ? 14 : 18} color={isBox ? tc.label : colors.ink}>
-                  {isFa ? b.title_fa : b.title_en}
-                </AppText>
-                {sectionText(b, isFa) ? <View style={{ marginTop: 10 }}>
-                  <LessonBody text={sectionText(b, isFa)} color={colors.proseInk} />
-                </View> : null}
-                {otherSourcesText(b, isFa) ? (
-                  <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: isBox ? tc.border : colors.sheetLine }}>
-                    <AppText weight="800" size={12.5} color={colors.accent}>
-                      {isFa ? "اطلاعات سایر منابع" : "Information from other sources"}
-                    </AppText>
-                    <View style={{ marginTop: 8 }}><LessonBody text={otherSourcesText(b, isFa)} color={colors.proseInk} /></View>
-                  </View>
-                ) : null}
+                <ReadingTextScope>
+                  <AppText weight="900" size={isBox ? 14 : 18} color={isBox ? tc.label : colors.ink}>
+                    {isFa ? b.title_fa : b.title_en}
+                  </AppText>
+                  {sectionText(b, isFa) ? <View style={{ marginTop: 10 }}>
+                    <LessonBody text={sectionText(b, isFa)} color={colors.proseInk} />
+                  </View> : null}
+                  {otherSourcesText(b, isFa) ? (
+                    <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: isBox ? tc.border : colors.sheetLine }}>
+                      <AppText weight="800" size={12.5} color={colors.accent}>
+                        {isFa ? "اطلاعات سایر منابع" : "Information from other sources"}
+                      </AppText>
+                      <View style={{ marginTop: 8 }}><LessonBody text={otherSourcesText(b, isFa)} color={colors.proseInk} /></View>
+                    </View>
+                  ) : null}
+                </ReadingTextScope>
               </View>
             );
           })

@@ -1,12 +1,13 @@
 import React, { useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { AppText } from "@/components/primitives/AppText";
+import { AppText, ReadingTextScope } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { useLang } from "@/i18n/LanguageProvider";
+import { READING_SIZE_OPTIONS, useReader, useReaderScale } from "@/store/reader";
 import { squircle } from "@/theme/squircle";
 import { useTheme } from "@/theme/ThemeProvider";
-import { FONT_OPTIONS, FONT_SCALES, useTypography } from "@/theme/TypographyProvider";
+import { FONT_OPTIONS, useTypography } from "@/theme/TypographyProvider";
 import { radius, spacing } from "@/theme/tokens";
 
 type Choice = {
@@ -14,16 +15,16 @@ type Choice = {
   selected: boolean;
   disabled?: boolean;
   onPress: () => void;
-  description?: string;
 };
 
-function FontChoice({ label, selected, disabled, onPress, description }: Choice) {
+function FontChoice({ label, selected, disabled, onPress }: Choice) {
   const { colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="radio"
+      aria-checked={selected}
       accessibilityState={{ checked: selected, disabled }}
-      accessibilityLabel={description ? `${label}، ${description}` : label}
+      accessibilityLabel={label}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => ({
@@ -44,11 +45,17 @@ function FontChoice({ label, selected, disabled, onPress, description }: Choice)
 
 export function TypographySettings() {
   const { isFa, n, row } = useLang();
-  const { fonts, scale, needsFile, setFont, setScale } = useTypography();
+  const { fonts, setFont } = useTypography();
+  const scale = useReaderScale();
+  const setTextScale = useReader((state) => state.setTextScale);
+  const readingSizeLabel = isFa ? "اندازهٔ متن مطالعه" : "Reading text size";
+  const readingSizes = READING_SIZE_OPTIONS.some((size) => size === scale)
+    ? READING_SIZE_OPTIONS
+    : [...READING_SIZE_OPTIONS, scale].sort((a, b) => a - b);
   const inProgress = useRef(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const choose = async (apply: () => Promise<void>, importFile = false) => {
+  const choose = async (apply: () => Promise<void>) => {
     if (inProgress.current) return;
     inProgress.current = true;
     setPending(true);
@@ -56,9 +63,7 @@ export function TypographySettings() {
     try {
       await apply();
     } catch {
-      setError(importFile
-        ? isFa ? "فونت بارگذاری نشد. یک فایل TTF یا OTF کوچک‌تر از ۱ مگابایت انتخاب کنید." : "The font could not be loaded. Choose a TTF or OTF file under 1 MB."
-        : isFa ? "ذخیرهٔ تنظیمات فونت ممکن نشد. دوباره تلاش کنید." : "Could not save typography settings. Try again.");
+      setError(isFa ? "ذخیرهٔ تنظیمات فونت ممکن نشد. دوباره تلاش کنید." : "Could not save typography settings. Try again.");
     } finally {
       inProgress.current = false;
       setPending(false);
@@ -74,33 +79,28 @@ export function TypographySettings() {
           <View key={script} style={{ gap: spacing.sm }}>
             <AppText weight="700" size={14}>{label}</AppText>
             <View accessibilityRole="radiogroup" accessibilityLabel={label} style={{ flexDirection: row, flexWrap: "wrap", gap: spacing.sm }}>
-              {FONT_OPTIONS[script].map(({ id, label: name }) => {
-                const importFile = needsFile(id);
-                return (
-                  <FontChoice key={id} label={name} selected={fonts[script] === id} disabled={pending}
-                    description={importFile ? isFa ? "انتخاب فایل فونت" : "Choose a font file" : undefined}
-                    onPress={() => void choose(() => setFont(script, id), importFile)} />
-                );
-              })}
+              {FONT_OPTIONS[script].map(({ id, label: name }) => (
+                <FontChoice key={id} label={name} selected={fonts[script] === id} disabled={pending}
+                  onPress={() => void choose(() => setFont(script, id))} />
+              ))}
             </View>
           </View>
         );
       })}
-      <AppText size={12} muted>
-        {isFa ? "برای فونت‌هایی که روی دستگاه در دسترس نیستند، فایل TTF یا OTF را انتخاب کنید." : "Choose a TTF or OTF file for a font that is unavailable on your device."}
-      </AppText>
       <View style={{ gap: spacing.sm }}>
-        <AppText weight="700" size={14}>{isFa ? "اندازهٔ متن" : "Text size"}</AppText>
-        <View accessibilityRole="radiogroup" accessibilityLabel={isFa ? "اندازهٔ متن" : "Text size"} style={{ flexDirection: row, flexWrap: "wrap", gap: spacing.sm }}>
-          {FONT_SCALES.map((value) => (
+        <AppText weight="700" size={14}>{readingSizeLabel}</AppText>
+        <View accessibilityRole="radiogroup" accessibilityLabel={readingSizeLabel} style={{ flexDirection: row, flexWrap: "wrap", gap: spacing.sm }}>
+          {readingSizes.map((value) => (
             <FontChoice key={value} label={isFa ? `${n(Math.round(value * 100))}٪` : `${Math.round(value * 100)}%`}
-              selected={scale === value} disabled={pending} onPress={() => void choose(() => setScale(value))} />
+              selected={scale === value} disabled={pending} onPress={() => void choose(async () => setTextScale(value))} />
           ))}
         </View>
       </View>
       <Card soft style={{ gap: spacing.xs }}>
-        <AppText weight="700">{isFa ? "جست‌وجوی دارو و مرجع" : "Find drugs and references"}</AppText>
-        <AppText size={13} muted style={{ writingDirection: isFa ? "ltr" : "rtl" }}>{isFa ? "Clinical references and drug information" : "دارونامه و منابع بالینی"}</AppText>
+        <ReadingTextScope>
+          <AppText weight="700">{isFa ? "دارونامه و منابع بالینی" : "Clinical references and drug information"}</AppText>
+          <AppText size={13} muted style={{ writingDirection: isFa ? "ltr" : "rtl" }}>{isFa ? "Read about medicines and clinical topics." : "مطالعهٔ داروها و موضوعات بالینی"}</AppText>
+        </ReadingTextScope>
       </Card>
       {error ? <AppText accessibilityRole="alert" size={13}>{error}</AppText> : null}
     </Card>

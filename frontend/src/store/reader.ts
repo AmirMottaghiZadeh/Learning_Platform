@@ -4,7 +4,8 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 /** The text sizes the readers offer, as a share of the normal size: from a
  * little smaller to half again as large. */
-export const TEXT_SCALES = [0.85, 0.92, 1, 1.08, 1.16, 1.25, 1.35, 1.5, 1.65] as const;
+export const TEXT_SCALES = [0.85, 0.9, 0.92, 1, 1.08, 1.12, 1.16, 1.25, 1.35, 1.5, 1.65] as const;
+export const READING_SIZE_OPTIONS = [0.9, 1, 1.12, 1.25] as const;
 /** What the Medscape reader's "Aa" button steps through. */
 export const READER_SCALES = [1, 1.12, 1.25] as const;
 

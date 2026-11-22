@@ -1,169 +1,118 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as DocumentPicker from "expo-document-picker";
-import { File, Paths } from "expo-file-system";
 import { loadAsync } from "expo-font";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Platform } from "react-native";
 
+import { READING_SIZE_OPTIONS, useReader } from "@/store/reader";
 import { FontWeight, fontFamily } from "./fonts";
 
 export const FONT_OPTIONS = {
   fa: [
     { id: "vazirmatn", label: "وزیرمتن" },
-    { id: "yekan", label: "یکان" },
-    { id: "iran-sans", label: "ایران‌سنس" },
-    { id: "ir-lotus", label: "IR Lotus" },
+    { id: "estedad", label: "استعداد" },
+    { id: "alexandria", label: "اسکندریه" },
+    { id: "iran-sans", label: "ایران سانس" },
+    { id: "noto-arabic", label: "نوتو سنس عربی" },
   ],
   en: [
     { id: "inter", label: "Inter" },
     { id: "source-sans", label: "Source Sans 3" },
     { id: "dm-sans", label: "DM Sans" },
-    { id: "times", label: "Times New Roman" },
-    { id: "calibri", label: "Calibri" },
+    { id: "libre-baskerville", label: "Libre Baskerville" },
+    { id: "carlito", label: "Carlito" },
   ],
 } as const;
 
-export const FONT_SCALES = [0.9, 1, 1.12, 1.25] as const;
 type Script = keyof typeof FONT_OPTIONS;
 type FontId = (typeof FONT_OPTIONS)[Script][number]["id"];
-type FontScale = (typeof FONT_SCALES)[number];
-type LocalFontId = "yekan" | "iran-sans" | "ir-lotus" | "times" | "calibri";
-type Fonts = Record<Script, FontId | null>;
-type LocalFonts = Partial<Record<LocalFontId, string>>;
+type Fonts = Record<Script, FontId>;
 
 const KEY = "pharmenta.typography";
-const LOCAL = {
-  yekan: ["Yekan", "B Yekan", "IRYekan", "IPT Yekan"],
-  "iran-sans": ["IRANSans", "IRANSansWeb", "Iran Sans", "IRANSans Regular"],
-  "ir-lotus": ["IRlotus", "IR Lotus", "IRlotus Regular"],
-  times: ["Times New Roman", "TimesNewRomanPSMT"],
-  calibri: ["Calibri", "Calibri Regular"],
-} as const satisfies Record<LocalFontId, readonly string[]>;
+const LEGACY_SCALE_KEY = KEY + ".scale";
+const IRANIAN_SANS = "PharmentaIranianSans";
+export const IRANIAN_SANS_REGULAR = IRANIAN_SANS + "Regular";
+const DEFAULT_FONTS: Fonts = { fa: "estedad", en: "inter" };
+const FALLBACK_FONTS: Fonts = { fa: "vazirmatn", en: "inter" };
+const LEGACY_CHOICES: Partial<Record<string, FontId>> = {
+  yekan: "estedad",
+  "readex-pro": "iran-sans",
+  "ir-lotus": "noto-arabic",
+  times: "libre-baskerville",
+  calibri: "carlito",
+};
 
-const BUNDLED = {
+const ADDITIONAL_FACES = {
+  estedad: ["PharmentaEstedad", require("../../assets/fonts/Estedad/Estedad-Regular.ttf"), require("../../assets/fonts/Estedad/Estedad-Bold.ttf")],
+  alexandria: ["PharmentaAlexandria", require("../../assets/fonts/Alexandria/Alexandria-Regular.ttf"), require("../../assets/fonts/Alexandria/Alexandria-Bold.ttf")],
+  "iran-sans": [IRANIAN_SANS, require("../../assets/fonts/IranianSans/IranianSans-Regular.ttf")],
+  "noto-arabic": ["PharmentaNotoArabic", require("../../assets/fonts/NotoSansArabic/NotoSansArabic-Regular.ttf"), require("../../assets/fonts/NotoSansArabic/NotoSansArabic-Bold.ttf")],
+  "libre-baskerville": ["PharmentaLibreBaskerville", require("../../assets/fonts/LibreBaskerville/LibreBaskerville-Regular.ttf"), require("../../assets/fonts/LibreBaskerville/LibreBaskerville-Bold.ttf")],
+  carlito: ["PharmentaCarlito", require("../../assets/fonts/Carlito/Carlito-Regular.ttf"), require("../../assets/fonts/Carlito/Carlito-Bold.ttf")],
+} as const;
+
+const BUNDLED_FACES = {
   inter: ["Inter_400Regular", "Inter_700Bold"],
   "source-sans": ["SourceSans3_400Regular", "SourceSans3_700Bold"],
   "dm-sans": ["DMSans_400Regular", "DMSans_700Bold"],
 } as const;
 
-const MAX_FONT_BYTES = 1024 * 1024;
-const localIds = Object.keys(LOCAL) as LocalFontId[];
-const isLocal = (id: FontId): id is LocalFontId => Object.hasOwn(LOCAL, id);
-
-function optionFor(script: Script, value: unknown): FontId | null {
-  return FONT_OPTIONS[script].find((font) => font.id === value)?.id ?? null;
+function additionalFace(id: FontId) {
+  return id in ADDITIONAL_FACES ? ADDITIONAL_FACES[id as keyof typeof ADDITIONAL_FACES] : undefined;
 }
 
-type SavedFont = { family: string; source: string };
-
-async function discoverFont(id: LocalFontId): Promise<string | undefined> {
-  const raw = await AsyncStorage.getItem(`${KEY}.file.${id}`);
-  if (raw) {
-    try {
-      const { family, source } = JSON.parse(raw) as SavedFont;
-      if (!/^PharmentaFont\d+$/.test(family)) throw new Error("Invalid font family");
-      if (Platform.OS === "web") {
-        if (!/^data:[^,]*;base64,/.test(source)) throw new Error("Invalid font source");
-        await loadAsync(family, source);
-      } else {
-        if (!/^PharmentaFont\d+\.(ttf|otf)$/.test(source)) throw new Error("Invalid font source");
-        await loadAsync(family, new File(Paths.document, source).uri);
-      }
-      return family;
-    } catch {
-      // The device may have discarded a file. Try the system face on web.
-    }
+async function loadFont(id: FontId) {
+  const face = additionalFace(id);
+  if (face) {
+    const [family, regular, bold] = face;
+    await loadAsync({ [family + "Regular"]: regular, ...(bold ? { [family + "Bold"]: bold } : {}) });
   }
-  if (Platform.OS === "web" && typeof FontFace !== "undefined") {
-    const family = `PharmentaSystem-${id}`;
-    const locations = LOCAL[id].map((name) => `local("${name}")`).join(", ");
-    const face = await new FontFace(family, locations).load();
-    document.fonts.add(face);
-    return family;
-  }
-  return undefined;
 }
 
-async function pickFont(id: LocalFontId): Promise<string | undefined> {
-  const picked = await DocumentPicker.getDocumentAsync({
-    type: Platform.OS === "web" ? [".ttf", ".otf"] : "*/*",
-    copyToCacheDirectory: true,
-    base64: false,
-  });
-  if (picked.canceled) return undefined;
-  const asset = picked.assets[0];
-  const extension = asset?.name.match(/\.(ttf|otf)$/i)?.[1].toLowerCase();
-  if (!extension || (asset.size ?? 0) > MAX_FONT_BYTES) {
-    if (Platform.OS === "web" && asset?.uri) URL.revokeObjectURL(asset.uri);
-    throw new Error("Invalid font file");
-  }
-
-  const family = `PharmentaFont${Date.now()}`;
-  const key = `${KEY}.file.${id}`;
-  if (Platform.OS === "web") {
-    try {
-      if (!asset.file?.size) throw new Error("Missing font file");
-      const source = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Invalid font data"));
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(asset.file!);
-      });
-      await loadAsync(family, source);
-      await AsyncStorage.setItem(key, JSON.stringify({ family, source }));
-    } finally {
-      URL.revokeObjectURL(asset.uri);
-    }
-  } else {
-    const original = new File(asset.uri);
-    const target = new File(Paths.document, `${family}.${extension}`);
-    if (!original.size || original.size > MAX_FONT_BYTES) throw new Error("Invalid font size");
-    try {
-      await original.copy(target);
-      await loadAsync(family, target.uri);
-      await AsyncStorage.setItem(key, JSON.stringify({ family, source: target.name }));
-    } catch (error) {
-      if (target.exists) await target.delete();
-      throw error;
-    }
-  }
-  return family;
+function availableFont(script: Script, saved: string | null | undefined): FontId {
+  const value = saved ? (LEGACY_CHOICES[saved] ?? saved) : null;
+  return FONT_OPTIONS[script].find(({ id }) => id === value)?.id ?? DEFAULT_FONTS[script];
 }
 
 type Typography = {
   ready: boolean;
   fonts: Fonts;
-  scale: FontScale;
-  needsFile: (id: FontId) => boolean;
-  family: (script: Script, weight?: FontWeight) => string | undefined;
+  family: (script: Script, weight?: FontWeight) => string;
   setFont: (script: Script, id: FontId) => Promise<void>;
-  setScale: (scale: FontScale) => Promise<void>;
 };
 
 const TypographyContext = createContext<Typography | null>(null);
 
 export function TypographyProvider({ children }: { children: React.ReactNode }) {
-  const [fonts, setFonts] = useState<Fonts>({ fa: "vazirmatn", en: "inter" });
-  const [scale, updateScale] = useState<FontScale>(1);
-  const [local, setLocal] = useState<LocalFonts>({});
+  const [fonts, setFonts] = useState<Fonts>(DEFAULT_FONTS);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     async function restore() {
-      const choices = await AsyncStorage.multiGet([`${KEY}.fa`, `${KEY}.en`, `${KEY}.scale`]).catch(() => []);
-      const resolved: LocalFonts = {};
-      await Promise.all(localIds.map(async (id) => {
-        resolved[id] = await discoverFont(id).catch(() => undefined);
-      }));
-      if (!mounted) return;
-      const available = (script: Script, raw: unknown) => {
-        const id = optionFor(script, raw);
-        return id && (!isLocal(id) || resolved[id]) ? id : null;
+      const choices = await AsyncStorage.multiGet([KEY + ".fa", KEY + ".en", LEGACY_SCALE_KEY]).catch(() => []);
+      const fontFor = async (script: Script, index: number) => {
+        const selection = availableFont(script, choices[index]?.[1]);
+        try {
+          await loadFont(selection);
+          return selection;
+        } catch {
+          const defaultFont = DEFAULT_FONTS[script];
+          if (selection === defaultFont) return FALLBACK_FONTS[script];
+          return loadFont(defaultFont).then(() => defaultFont, () => FALLBACK_FONTS[script]);
+        }
       };
-      setLocal(resolved);
-      setFonts({ fa: available("fa", choices[0]?.[1]) ?? "vazirmatn", en: available("en", choices[1]?.[1]) ?? "inter" });
-      updateScale(FONT_SCALES.find((value) => String(value) === choices[2]?.[1]) ?? 1);
+      const [fa, en] = await Promise.all([fontFor("fa", 0), fontFor("en", 1)]);
+      const previousScale = READING_SIZE_OPTIONS.find((value) => String(value) === choices[2]?.[1]);
+      if (previousScale !== undefined) {
+        try {
+          if (!useReader.persist.hasHydrated()) await useReader.persist.rehydrate();
+          await useReader.getState().setTextScale(previousScale);
+          await AsyncStorage.removeItem(LEGACY_SCALE_KEY);
+        } catch {
+          // Keep the saved preference available for the next launch.
+        }
+      }
+      if (!mounted) return;
+      setFonts({ fa, en });
       setReady(true);
     }
     void restore();
@@ -171,31 +120,23 @@ export function TypographyProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   async function setFont(script: Script, id: FontId) {
-    if (!optionFor(script, id)) return;
-    if (isLocal(id) && !local[id]) {
-      const family = await pickFont(id);
-      if (!family) return;
-      setLocal((prev) => ({ ...prev, [id]: family }));
-    }
-    await AsyncStorage.setItem(`${KEY}.${script}`, id);
+    if (!FONT_OPTIONS[script].some((option) => option.id === id)) return;
+    await loadFont(id);
+    await AsyncStorage.setItem(KEY + "." + script, id);
     setFonts((prev) => ({ ...prev, [script]: id }));
   }
 
   function family(script: Script, weight: FontWeight = "400") {
     const id = fonts[script];
-    if (!id) return undefined;
     if (id === "vazirmatn") return fontFamily(weight);
-    if (isLocal(id)) return local[id];
-    return BUNDLED[id][Number(weight) >= 700 ? 1 : 0];
-  }
-
-  async function setScale(next: FontScale) {
-    await AsyncStorage.setItem(`${KEY}.scale`, String(next));
-    updateScale(next);
+    const bold = Number(weight) >= 700;
+    const face = additionalFace(id);
+    if (face) return face[0] + (bold && face[2] ? "Bold" : "Regular");
+    return BUNDLED_FACES[id as keyof typeof BUNDLED_FACES][bold ? 1 : 0];
   }
 
   return (
-    <TypographyContext.Provider value={{ ready, fonts, scale, family, setFont, setScale, needsFile: (id) => isLocal(id) && !local[id] }}>
+    <TypographyContext.Provider value={{ ready, fonts, family, setFont }}>
       {children}
     </TypographyContext.Provider>
   );
