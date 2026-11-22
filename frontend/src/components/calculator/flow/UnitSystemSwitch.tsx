@@ -33,8 +33,6 @@ export function UnitSystemSwitch({
         style={{
           flexDirection: "row",
           borderRadius: 999,
-          borderWidth: 1,
-          borderColor: colors.border,
           backgroundColor: colors.softBg,
           overflow: "hidden",
         }}

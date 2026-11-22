@@ -27,7 +27,8 @@ export function LessonsScreen() {
   const { colors } = useTheme();
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [openTopic, setOpenTopic] = useState<string | null>(null);
-  const [q, setQ] = useState("");
+  const initialQuery = useNav((s) => s.params.query);
+  const [q, setQ] = useState(typeof initialQuery === "string" ? initialQuery : "");
   const query = useDebounced(q.trim(), 250);
   const searching = query.length >= 2;
 
@@ -45,10 +46,8 @@ export function LessonsScreen() {
 
   const categories = useMemo(() => groupByCategory(data ?? []), [data]);
 
-  if (isLoading) return <LoadingState />;
-
   return (
-    <Screen refreshing={isRefetching} onRefresh={refetch}>
+    <Screen refreshing={isRefetching} onRefresh={refetch} keyboardShouldPersistTaps="handled">
       <ScreenChrome title={t("lessonsTitle")} tour="lessons" />
       <TourTarget id="lessons.search" style={{ marginBottom: spacing.md }}>
       <View
@@ -57,8 +56,7 @@ export function LessonsScreen() {
           alignItems: "center",
           gap: 8,
           backgroundColor: colors.inputBg,
-          borderWidth: 1,
-          borderColor: q ? colors.accent : colors.trackBg,
+          boxShadow: colors.cardShadow,
           borderRadius: 14,
           paddingHorizontal: 14,
           paddingVertical: 11,
@@ -70,6 +68,7 @@ export function LessonsScreen() {
         <TextInput
           value={q}
           onChangeText={setQ}
+          accessibilityLabel={t("lessonsSearchPlaceholder")}
           placeholder={t("lessonsSearchPlaceholder")}
           placeholderTextColor={colors.muted}
           autoCorrect={false}
@@ -89,7 +88,7 @@ export function LessonsScreen() {
             …
           </AppText>
         ) : q ? (
-          <Pressable onPress={() => setQ("")} hitSlop={10} accessibilityLabel="clear">
+          <Pressable accessibilityRole="button" onPress={() => setQ("")} hitSlop={10} accessibilityLabel={t("clearSearch")}>
             <AppText muted weight="700" size={17} style={{ lineHeight: 20 }}>
               ×
             </AppText>
@@ -100,6 +99,8 @@ export function LessonsScreen() {
 
       {searching ? (
         <DrugSearchResults hits={hits} loading={hitsLoading && !hits} failed={hitsError} />
+      ) : isLoading ? (
+        <LoadingState />
       ) : isError ? (
         <Card>
           <AppText weight="700" color={colors.denyLabel}>
@@ -175,7 +176,7 @@ function DrugSearchResults({
           <View
             key={hit.slug}
             style={[
-              { backgroundColor: colors.cardBg, borderRadius: 16, borderWidth: 1, borderColor: colors.border },
+              { backgroundColor: colors.cardBg, borderRadius: 16, boxShadow: colors.cardShadow, },
               shadows.raisedSm,
             ]}
           >
@@ -265,8 +266,7 @@ function CategoryCard({
         {
           backgroundColor: colors.cardBg,
           borderRadius: 18,
-          borderWidth: 1,
-          borderColor: colors.border,
+          boxShadow: colors.cardShadow,
           marginBottom: spacing.md,
           overflow: "hidden",
         },
@@ -358,8 +358,7 @@ function GroupCard({
       style={{
         backgroundColor: colors.softBg,
         borderRadius: 14,
-        borderWidth: 1,
-        borderColor: colors.border,
+        boxShadow: colors.cardShadow,
         overflow: "hidden",
       }}
     >

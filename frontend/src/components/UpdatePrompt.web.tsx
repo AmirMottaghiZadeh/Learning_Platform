@@ -87,8 +87,6 @@ function Banner({ onReload, onDismiss }: { onReload: () => void; onDismiss: () =
             width: "100%",
             backgroundColor: colors.cardBg,
             borderRadius: 16,
-            borderWidth: 1,
-            borderColor: colors.border,
             paddingVertical: 8,
             paddingHorizontal: 14,
           },

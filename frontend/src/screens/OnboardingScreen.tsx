@@ -305,8 +305,6 @@ export function OnboardingScreen() {
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: colors.cardBg,
-                borderWidth: 1,
-                borderColor: colors.border,
               }}
             >
               <AppText weight="800" size={18} color={colors.ink}>
@@ -384,8 +382,6 @@ export function OnboardingScreen() {
                           padding: 16,
                           borderRadius: 20,
                           backgroundColor: colors.cardBg,
-                          borderWidth: 2,
-                          borderColor: sel ? colors.accent : "transparent",
                         },
                         sel && shadows.raisedSm,
                       ]}
@@ -424,8 +420,6 @@ export function OnboardingScreen() {
                           alignItems: "center",
                           justifyContent: "center",
                           backgroundColor: sel ? colors.accent : "transparent",
-                          borderWidth: sel ? 0 : 2,
-                          borderColor: colors.trackBg,
                         }}
                       >
                         {sel ? <Check color={colors.onAccent} size={14} /> : null}
@@ -510,8 +504,6 @@ export function OnboardingScreen() {
                         paddingVertical: 6,
                         borderRadius: 999,
                         backgroundColor: colors.cardBg,
-                        borderWidth: 1,
-                        borderColor: colors.trackBg,
                       }}
                     >
                       <AppText weight="700" size={12.5} color={colors.accent}>

@@ -1,2 +1,11 @@
-// Native apps keep React Native's original input and ref behavior.
-export { TextInput } from "react-native";
+import React, { forwardRef } from "react";
+import { TextInput as NativeTextInput, TextInputProps } from "react-native";
+
+import { useInputTypography } from "@/theme/useInputTypography";
+
+export type TextInput = NativeTextInput;
+
+export const TextInput = forwardRef<NativeTextInput, TextInputProps>(function TextInput(props, ref) {
+  const typography = useInputTypography(props);
+  return <NativeTextInput {...props} ref={ref} style={[props.style, typography]} />;
+});

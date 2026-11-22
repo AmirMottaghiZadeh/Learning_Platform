@@ -209,7 +209,7 @@ function TourRun({ tourKey }: { tourKey: TourKey }) {
           onPress={() => setPaused((p) => !p)}
           accessibilityRole="button"
           accessibilityLabel={isFa ? "مکث یا ادامهٔ راهنما" : "Pause or resume the tour"}
-          style={{ height: 122, borderRadius: 14, borderWidth: 1, borderColor: colors.trackBg, backgroundColor: colors.softBg, padding: 12, overflow: "hidden" }}
+          style={{ height: 122, borderRadius: 14, backgroundColor: colors.softBg, padding: 12, overflow: "hidden" }}
         >
           <Preview key={`${tourKey}-${index}`} spec={step.preview} />
           {paused ? (

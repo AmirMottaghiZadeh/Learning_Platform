@@ -92,10 +92,10 @@ export function SmartSearchWallet({ refreshKey, running, compact=false }: { refr
         setError(failure instanceof ApiError ? failure.message : isFa ? "آماده‌سازی پرداخت انجام نشد؛ دوباره تلاش کنید." : "Could not prepare payment. Please retry.");
     } finally { if (mounted.current && account.current === expectedOwner) setPaying(null); }
   };
-  const card = { backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.border, borderRadius: radius.card, padding: spacing.lg, gap: spacing.sm } as const;
+  const card = { backgroundColor: colors.cardBg, borderRadius: radius.card, padding: spacing.lg, gap: spacing.sm } as const;
   const paymentAvailable = !!data?.topups_enabled;
   return <>
-    <Card testID="smart-search-wallet" style={compact ? { paddingVertical: 0, paddingHorizontal: 0, gap: 4, borderWidth: 0, borderTopWidth: 1, borderRadius: 0, paddingTop: 4, paddingBottom: 4 } : { marginBottom: spacing.md, gap: spacing.md }}>
+    <Card testID="smart-search-wallet" raised={!compact} style={compact ? { paddingHorizontal: 0, gap: 4, borderRadius: 0, paddingVertical: 4 } : { marginBottom: spacing.md, gap: spacing.md }}>
       <View style={{ flexDirection: row, alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <View style={{ flex: 1, gap: 3 }}>
           {!compact ? <AppText size={12} muted>{isFa ? "اعتبار سرچ هوشمند" : "Smart search credits"}</AppText> : null}
@@ -112,7 +112,7 @@ export function SmartSearchWallet({ refreshKey, running, compact=false }: { refr
       </View>
       {data ? <>
         {!compact ? <AppText size={12} muted>{isFa ? "مصرف ۳۰ روز گذشته: " : "Used in the last 30 days: "}{amount(data.usage_30_days.credits, isFa)} {isFa ? "اعتبار" : "credits"}</AppText> : null}
-        {low || exhausted ? <View testID="search-credit-warning" style={{padding:10,borderRadius:10,backgroundColor:colors.denyLabel+"12",borderWidth:1,borderColor:colors.denyLabel+"40"}}><AppText size={12} weight="700" color={colors.denyLabel}>{exhausted ? isFa ? "⚑ اعتبار تمام شده؛ برای ادامه، بستهٔ اعتبار بخرید." : "⚑ Credits exhausted. Top up to continue." : isFa ? "⚑ اعتبار شما رو به پایان است." : "⚑ Your credits are running low."}</AppText></View> : null}
+        {low || exhausted ? <View testID="search-credit-warning" style={{padding:10,borderRadius:10,backgroundColor:colors.denyLabel+"12",}}><AppText size={12} weight="700" color={colors.denyLabel}>{exhausted ? isFa ? "⚑ اعتبار تمام شده؛ برای ادامه، بستهٔ اعتبار بخرید." : "⚑ Credits exhausted. Top up to continue." : isFa ? "⚑ اعتبار شما رو به پایان است." : "⚑ Your credits are running low."}</AppText></View> : null}
         {!data.billing_enabled ? <AppText size={11} muted>{isFa ? "در حال حاضر از اعتبار شما کم نمی‌شود." : "Credits are not being deducted yet."}</AppText> : !data.can_search && (!exhausted || !data.pricing_ready) ? <AppText size={12} color={colors.denyLabel}>{!data.pricing_ready ? isFa ? "تعرفهٔ سرویس موقتاً در دسترس نیست." : "Pricing is temporarily unavailable."
           : isFa ? "اعتبار قابل استفادهٔ شما تمام شده است؛ برای ادامه بستهٔ شارژ بخرید." : "You have no available credits left. Buy a package to continue."}</AppText> : null}
       </> : <Pressable accessibilityRole="button" onPress={() => void wallet.refetch()}><AppText size={11} muted>{wallet.isError ? isFa ? "دریافت اعتبار انجام نشد؛ تلاش دوباره" : "Could not load credits. Retry" : isFa ? "دریافت موجودی…" : "Loading credits…"}</AppText></Pressable>}
@@ -141,7 +141,7 @@ export function SmartSearchWallet({ refreshKey, running, compact=false }: { refr
                 return <Pressable key={pack.id} testID={`search-credit-package-${pack.id}`} accessibilityRole="radio"
                   accessibilityState={{ checked: selected }} disabled={paying !== null} onPress={() => setSelectedPackage(pack.id)}
                   style={{ flexGrow: 1, flexBasis: 90, minHeight: 96, padding: spacing.md, gap: spacing.sm,
-                    borderRadius: radius.input, borderWidth: 2, borderColor: selected ? colors.accent : colors.border,
+                    borderRadius: radius.input,
                     backgroundColor: selected ? `${colors.accent}12` : colors.softBg, alignItems: "center", justifyContent: "center" }}>
                   <AppText size={20} weight="900" color={selected ? colors.accent : colors.ink}>{amount(pack.credits, isFa)}</AppText>
                   <AppText size={12} muted>{isFa ? "اعتبار" : "credits"}</AppText>

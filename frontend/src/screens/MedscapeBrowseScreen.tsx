@@ -54,7 +54,8 @@ export function MedscapeBrowseScreen() {
   const kind: MedscapeKind = "disease";
   const titleKey: StringKey = "diseasesConditionsLabel";
 
-  const [q, setQ] = useState("");
+  const initialQuery = useNav((s) => s.params.query);
+  const [q, setQ] = useState(typeof initialQuery === "string" ? initialQuery : "");
   const query = useDebounced(q.trim());
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -98,8 +99,7 @@ export function MedscapeBrowseScreen() {
           alignItems: "center",
           gap: 8,
           backgroundColor: colors.inputBg,
-          borderWidth: 1,
-          borderColor: colors.trackBg,
+          boxShadow: colors.cardShadow,
           borderRadius: 14,
           paddingHorizontal: 14,
           paddingVertical: 12,
@@ -179,8 +179,7 @@ export function MedscapeBrowseScreen() {
                   style={{
                     backgroundColor: colors.cardBg,
                     borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: colors.border,
+                    boxShadow: colors.cardShadow,
                     padding: 13,
                     gap: 8,
                   }}

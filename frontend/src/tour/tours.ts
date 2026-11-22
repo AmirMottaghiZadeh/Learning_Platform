@@ -31,8 +31,8 @@ export const TOURS: Record<TourKey, TourStep[]> = {
   home: [
     {
       target: "home.uptodate",
-      fa: ["مرجع بالینی", "نام دارو یا بیماری را بنویس؛ مقاله‌های UpToDate همان‌جا می‌آیند."],
-      en: ["Clinical reference", "Type a drug or a disease; UpToDate's articles come right up."],
+      fa: ["رفرنس بالینی", "آپتودیت را باز کن و آنجا نام دارو یا بیماری را جست‌وجو کن."],
+      en: ["Clinical references", "Open UpToDate to search for a drug or condition."],
       preview: { kind: "search", term: "warfarin", rows: ["Warfarin: Drug information", "Warfarin: Patient education", "Anticoagulation in AF"] },
     },
     {
@@ -43,24 +43,24 @@ export const TOURS: Record<TourKey, TourStep[]> = {
     },
     {
       target: "home.paths",
-      fa: ["درهای ورود", "آموزش، گایدلاین، بیماری‌ها و ماشین‌حساب، هر کدام یک لمس."],
-      en: ["Ways in", "Education, guidelines, diseases and calculators, one tap each."],
+      fa: ["درهای ورود", "از اینجا مستقیماً به دارونامه یا آزمون برو."],
+      en: ["Learning paths", "Open the formulary or start a quiz from here."],
       preview: {
         kind: "tap",
-        tiles: [FA_EN("آموزش", "Education"), FA_EN("گایدلاین", "Guidelines"), FA_EN("بیماری‌ها", "Diseases"), FA_EN("ماشین‌حساب", "Calculators")],
-        result: FA_EN("آموزش", "Education"),
+        tiles: [FA_EN("دارونامه", "Formulary"), FA_EN("آزمون", "Quiz"), FA_EN("فلش‌کارت", "Flashcards")],
+        result: FA_EN("دارونامه", "Formulary"),
       },
     },
     {
       target: "home.plan",
-      fa: ["برنامهٔ مطالعه", "کارهای امروز و این هفته. دایره را بزن تا کار انجام‌شده شود؛ «ویرایش برنامه» همه را عوض می‌کند."],
-      en: ["Study plan", "Today's tasks and this week. Tap a circle to tick a task off; “Edit plan” changes it all."],
+      fa: ["برنامهٔ مطالعه", "برنامه را باز کن و بین مسیر دانشجویی و مرور بالینی انتخاب کن."],
+      en: ["Study plan", "Open your plan and choose between the student and clinical tracks."],
       preview: { kind: "check", title: FA_EN("دارونامه: ضدفشارخون‌ها", "Formulary: Antihypertensives"), sub: FA_EN("۱۰ دقیقه", "10 min") },
     },
     {
       target: "nav",
-      fa: ["بخش‌های اصلی", "خانه، دارونامه و پروفایل همیشه این پایین است."],
-      en: ["The main sections", "Home, the formulary and your profile are always down here."],
+      fa: ["بخش‌های اصلی", "خانه، دارونامه، منابع بالینی و پروفایل این پایین‌اند."],
+      en: ["The main sections", "Home, Formulary, Clinical resources and Profile are down here."],
       preview: { kind: "nav" },
     },
   ],

@@ -41,7 +41,8 @@ export function UptodateScreen() {
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
 
-  const [q, setQ] = useState("");
+  const initialQuery = useNav((s) => s.params.query);
+  const [q, setQ] = useState(typeof initialQuery === "string" ? initialQuery : "");
   const query = useDebounced(q.trim(), 200);
   const [section, setSection] = useState<string | null>(null);
   const sectionScroll = React.useRef<ScrollView>(null);
@@ -166,8 +167,7 @@ export function UptodateScreen() {
             alignItems: "center",
             gap: 10,
             backgroundColor: colors.inputBg,
-            borderWidth: 2,
-            borderColor: colors.accent,
+            boxShadow: colors.cardShadow,
             borderRadius: 14,
             paddingHorizontal: 8,
             minHeight: 54,
@@ -271,8 +271,6 @@ export function UptodateScreen() {
                 height: 60,
                 borderRadius: 18,
                 backgroundColor: colors.cardBg,
-                borderWidth: 1,
-                borderColor: colors.trackBg,
                 alignItems: "center",
                 justifyContent: "center",
                 marginBottom: 14,
@@ -317,7 +315,7 @@ export function UptodateScreen() {
               <Pressable
                 onPress={loadMore}
                 disabled={isFetchingNextPage}
-                style={{ alignSelf: "center", paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999, backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.trackBg }}
+                style={{ alignSelf: "center", paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999, backgroundColor: colors.cardBg, }}
               >
                 <AppText weight="800" size={13} color={colors.accent}>
                   {isFetchingNextPage
@@ -368,8 +366,6 @@ function Chip({ label, count, on, onPress }: { label: string; count?: string; on
         paddingVertical: 5,
         borderRadius: 999,
         backgroundColor: on ? colors.accent : colors.softBg,
-        borderWidth: 1,
-        borderColor: on ? colors.accent : colors.trackBg,
       }}
     >
       {count === undefined ? (
@@ -424,7 +420,7 @@ function ResultCard({ result, onPress }: { result: UptodateSearchResult; onPress
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => ({ backgroundColor: pressed ? colors.softBg : colors.cardBg, borderRadius: 16, borderWidth: 1, borderColor: colors.border, paddingVertical: 12, paddingHorizontal: 16, gap: 4 })}
+      style={({ pressed }) => ({ backgroundColor: pressed ? colors.softBg : colors.cardBg, borderRadius: 16, boxShadow: colors.cardShadow, paddingVertical: 12, paddingHorizontal: 16, gap: 4 })}
     >
       {result.section ? (
         <AppText weight="700" size={11.5} color={colors.accent} style={[LTR, { lineHeight: 16 }]}>

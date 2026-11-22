@@ -1,29 +1,32 @@
-import React from "react";
-import { View, ViewProps } from "react-native";
+import React, { createContext, useContext } from "react";
+import { ViewProps } from "react-native";
 
 import { useTheme } from "@/theme/ThemeProvider";
 import { radius, spacing } from "@/theme/tokens";
+import { SquircleView } from "./SquircleView";
 
 type Props = ViewProps & { padded?: boolean; raised?: boolean; soft?: boolean };
+export const CardSurface = createContext(false);
 
-export function Card({ padded = true, raised = false, soft, style, children, ...rest }: Props) {
+export function Card({ padded = true, raised = true, soft, style, children, ...rest }: Props) {
   const { colors, shadows } = useTheme();
+  const nested = useContext(CardSurface);
   return (
-    <View
+    <SquircleView
       {...rest}
       style={[
         {
-          backgroundColor: soft ? colors.softBg : colors.cardBg,
+          backgroundColor: soft || nested ? colors.softBg : colors.cardBg,
           borderRadius: radius.card,
-          borderWidth: 1,
-          borderColor: colors.border,
           padding: padded ? spacing.lg : 0,
         },
-        raised && shadows.raisedSm,
+        raised && !nested && shadows.surface,
         style,
+        { borderWidth: 0 },
+        nested && { boxShadow: "none", shadowOpacity: 0, elevation: 0 },
       ]}
     >
-      {children}
-    </View>
+      <CardSurface.Provider value>{children}</CardSurface.Provider>
+    </SquircleView>
   );
 }

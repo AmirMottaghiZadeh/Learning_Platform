@@ -29,7 +29,7 @@ export function ReferenceMediaCards({ items }: { items: ReferenceMedia[] }) {
         <AppText size={12} weight="800" color={entry.key===item.key ? colors.accent : colors.muted}>{entry.kind==="table" ? isFa ? "جدول" : "Table" : isFa ? "شکل" : "Figure"}{items.filter(v=>v.kind===entry.kind).length>1 ? ` ${i+1}` : ""}</AppText>
       </Pressable>)}
     </View>
-    <View style={{borderWidth:1,borderColor:colors.border,borderRadius:14,overflow:"hidden",backgroundColor:colors.softBg}}>
+    <View style={{borderRadius:14,overflow:"hidden",backgroundColor:colors.softBg}}>
       {query.isLoading ? <View style={{height:150,justifyContent:"center",padding:16}}><AppText muted size={12}>{isFa ? "دریافت جدول یا تصویر منبع…" : "Loading original media…"}</AppText></View>
         : query.isError ? <Pressable disabled={stale} onPress={() => void query.refetch()} style={{padding:16}}><AppText color={colors.denyLabel} size={12}>{stale ? isFa ? "نسخهٔ منبع تغییر کرده؛ جست‌وجو را دوباره انجام دهید." : "The source changed. Please search again." : isFa ? "دریافت منبع انجام نشد؛ تلاش دوباره" : "Could not load media. Retry"}</AppText></Pressable>
           : data?.kind==="image" ? <Pressable onPress={() => setFull(true)} accessibilityRole="button"><Image source={{uri:data.src}} accessibilityLabel={data.alt||item.title} resizeMode="contain" style={{width:"100%",height:180}} /></Pressable>

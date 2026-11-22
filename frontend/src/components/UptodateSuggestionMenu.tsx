@@ -49,7 +49,7 @@ export function UptodateSuggestionMenu({ suggestions, query, filter, onFilter, a
   } as object : {};
   return (
     <View nativeID="uptodate-suggestions" testID="uptodate-suggestion-menu"
-      style={{ maxHeight, borderWidth: 1, borderColor: colors.boxedBorder, borderRadius: 12, backgroundColor: colors.cardBg, overflow: "hidden" }}>
+      style={{ maxHeight, boxShadow: colors.cardShadow, borderRadius: 12, backgroundColor: colors.cardBg, overflow: "hidden" }}>
       <View style={{ flexDirection: row, justifyContent: "space-between", gap: 8, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4 }}>
         <AppText muted size={13}>{isFa ? "پیشنهادها به ترتیب اولویت" : "Suggested searches"}</AppText>
         <AppText muted size={12} accessibilityLiveRegion="polite">

@@ -187,7 +187,7 @@ export function PlansScreen() {
           ) : null}
 
           {!salesOpen ? (
-            <View style={{ backgroundColor: colors.cautBg, borderColor: colors.cautBorder, borderWidth: 1, borderRadius: 14, padding: 14 }}>
+            <View style={{ backgroundColor: colors.cautBg, borderRadius: 14, padding: 14 }}>
               <AppText weight="700" size={13} color={colors.cautInk} style={{ lineHeight: 22 }}>
                 {t("plansSalesPaused")}
               </AppText>
@@ -253,8 +253,6 @@ export function PlansScreen() {
                       minWidth: 0,
                       height: 46,
                       borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: codeError ? "#D65858" : colors.trackBg,
                       backgroundColor: colors.inputBg,
                       paddingHorizontal: 12,
                       fontFamily: fontFamily("700"),
@@ -275,8 +273,6 @@ export function PlansScreen() {
                       alignItems: "center",
                       justifyContent: "center",
                       backgroundColor: colors.softBg,
-                      borderWidth: 1,
-                      borderColor: colors.trackBg,
                       opacity: !code.trim() ? 0.5 : 1,
                     }}
                   >
@@ -323,8 +319,6 @@ export function PlansScreen() {
                             paddingHorizontal: 14,
                             paddingVertical: 9,
                             borderRadius: 12,
-                            borderWidth: on ? 2 : 1,
-                            borderColor: on ? colors.accent : colors.trackBg,
                             backgroundColor: on ? `${colors.accent}14` : colors.cardBg,
                           }}
                         >
@@ -409,8 +403,6 @@ function PlanCard({ plan, picked, onPick }: { plan: CatalogPlan; picked: number 
           borderRadius: 20,
           padding: 16,
           gap: 12,
-          borderWidth: 2,
-          borderColor: on ? colors.accent : "transparent",
         },
         shadows.raisedSm,
       ]}
@@ -470,8 +462,6 @@ function PlanCard({ plan, picked, onPick }: { plan: CatalogPlan; picked: number 
                   paddingHorizontal: 12,
                   paddingVertical: 8,
                   borderRadius: 12,
-                  borderWidth: chosen ? 2 : 1,
-                  borderColor: chosen ? colors.accent : colors.trackBg,
                   backgroundColor: chosen ? `${colors.accent}14` : colors.softBg,
                   alignItems: "center",
                   gap: 2,
@@ -535,7 +525,7 @@ function OrderStatusCard({
         ? { bg: colors.cautBg, border: colors.cautBorder, ink: colors.cautInk, title: t("plansPendingTitle") }
         : { bg: colors.denyBg, border: colors.denyBorder, ink: colors.denyInk, title: t("plansFailedTitle") };
   return (
-    <View style={{ backgroundColor: tone.bg, borderColor: tone.border, borderWidth: 1, borderRadius: 16, padding: 14, gap: 8 }}>
+    <View style={{ backgroundColor: tone.bg, borderRadius: 16, padding: 14, gap: 8 }}>
       <AppText weight="900" size={15} color={tone.ink}>
         {tone.title}
       </AppText>

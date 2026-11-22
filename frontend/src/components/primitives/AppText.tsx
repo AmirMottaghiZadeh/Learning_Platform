@@ -4,6 +4,7 @@ import { StyleProp, StyleSheet, Text, TextProps, TextStyle } from "react-native"
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { FontWeight, fontFamily } from "@/theme/fonts";
+import { useTypography } from "@/theme/TypographyProvider";
 import { LRI, PDI, hasPersianLetters, isolateEnglish } from "@/utils/bidi";
 
 type Props = TextProps & {
@@ -51,30 +52,37 @@ export function AppText({
 }: Props) {
   const { colors } = useTheme();
   const { dir } = useLang();
+  const { family, scale } = useTypography();
   const inPersian = useContext(InPersianParagraph);
   // Persian text is drawn through the bidi layer: right-to-left at its
   // base, its English isolated. English with no Persian in it, shown in the
   // Persian layout («None.» in a Persian section), is one isolate, so it reads
   // left-to-right instead of «.None». Text set to left-to-right (an English
   // title, a weight) is left as it is.
-  const direction = StyleSheet.flatten(style)?.writingDirection ?? dir;
+  const explicit = StyleSheet.flatten(style);
+  const direction = explicit?.writingDirection ?? dir;
   const all = textOf(children);
   const persian = direction === "rtl" && (inPersian || hasPersianLetters(all));
   const english = direction === "rtl" && !persian && /[A-Za-z]/.test(all);
+  const script = hasPersianLetters(all) ? "fa" : /[A-Za-z]/.test(all) || dir === "ltr" ? "en" : "fa";
+  const face = family(script, weight) ?? fontFamily(weight);
 
   const text = (
     <Text
       {...rest}
       style={[
         {
-          fontFamily: fontFamily(weight),
-          fontSize: size,
-          lineHeight: Math.round(size * 1.7),
+          fontFamily: face,
+          fontWeight: face.startsWith("Pharmenta") ? weight : undefined,
           color: color ?? (muted ? colors.muted : colors.ink),
           writingDirection: dir,
           textAlign: center ? "center" : dir === "rtl" ? "right" : "left",
         },
         style,
+        {
+          fontSize: (explicit?.fontSize ?? size) * scale,
+          lineHeight: Math.round((explicit?.lineHeight ?? (explicit?.fontSize ?? size) * 1.7) * scale),
+        },
       ]}
     >
       {persian ? (

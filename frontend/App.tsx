@@ -14,6 +14,7 @@ import { initializeInstall } from "@/pwa/install";
 import { useAuth } from "@/store/auth";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { useAppFonts } from "@/theme/fonts";
+import { TypographyProvider, useTypography } from "@/theme/TypographyProvider";
 import { TourProvider } from "@/tour/TourContext";
 import { TourOverlay } from "@/tour/TourOverlay";
 import { useActivity } from "@/activity/useActivity";
@@ -35,6 +36,7 @@ function Gate() {
   const [fontsLoaded] = useAppFonts();
   const themeReady = useTheme().ready;
   const langReady = useLang().ready;
+  const typographyReady = useTypography().ready;
   const hydrate = useAuth((s) => s.hydrate);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ function Gate() {
   useActivity();
   useSupportNotifications();
 
-  if (!fontsLoaded || !themeReady || !langReady) return <LoadingState />;
+  if (!fontsLoaded || !themeReady || !langReady || !typographyReady) return <LoadingState />;
   return (
     <TourProvider>
       <ActivityCapture>
@@ -65,6 +67,7 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <LanguageProvider>
+          <TypographyProvider>
           {/* Answers already fetched survive closing the app: restored from
               device storage on start, shown at once, refreshed in the
               background only when stale (see api/queryClient). */}
@@ -75,6 +78,7 @@ export default function App() {
             <ThemedStatusBar />
             <Gate />
           </PersistQueryClientProvider>
+          </TypographyProvider>
         </LanguageProvider>
       </ThemeProvider>
     </SafeAreaProvider>

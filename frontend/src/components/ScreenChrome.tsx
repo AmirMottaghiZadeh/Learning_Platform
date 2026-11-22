@@ -15,11 +15,13 @@ export function ChromeButton({
   onPress,
   children,
   size = 44,
+  variant = "soft",
   accessibilityLabel,
 }: {
   onPress: () => void;
   children: React.ReactNode;
   size?: number;
+  variant?: "soft" | "chip";
   accessibilityLabel?: string;
 }) {
   const { colors } = useTheme();
@@ -34,7 +36,7 @@ export function ChromeButton({
         width: size,
         height: size,
         borderRadius: 12,
-        backgroundColor: colors.softBg,
+        backgroundColor: variant === "chip" ? "rgba(255,255,255,0.16)" : colors.softBg,
         alignItems: "center",
         justifyContent: "center",
       })}
@@ -46,7 +48,7 @@ export function ChromeButton({
 
 /** The EN/FA switch -- the only place the app's language changes, so every
  * screen that shows language-dependent content carries it in its header. */
-export function LangToggleButton({ size = 44 }: { size?: number } = {}) {
+export function LangToggleButton({ size = 44, variant = "soft" }: { size?: number; variant?: "soft" | "chip" } = {}) {
   const { colors } = useTheme();
   const { t, toggle } = useLang();
   return (
@@ -54,18 +56,19 @@ export function LangToggleButton({ size = 44 }: { size?: number } = {}) {
       onPress={toggle}
       accessibilityRole="button"
       accessibilityLabel={t("langSwitch") === "EN" ? "Switch to English" : "تغییر زبان به فارسی"}
+      hitSlop={Math.max(0, (44 - size) / 2)}
       style={{
         minWidth: size,
         minHeight: size,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: colors.softBg,
+        backgroundColor: variant === "chip" ? "rgba(255,255,255,0.16)" : colors.softBg,
         borderRadius: 12,
         paddingHorizontal: 10,
         paddingVertical: 6,
       }}
     >
-      <AppText weight="800" size={12} color={colors.accent}>
+      <AppText weight="800" size={12} color={variant === "chip" ? colors.flipFrontInk : colors.accent}>
         {t("langSwitch")}
       </AppText>
     </Pressable>

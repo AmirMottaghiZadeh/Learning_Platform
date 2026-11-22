@@ -77,7 +77,7 @@ function Search({ spec }: { spec: Extract<PreviewSpec, { kind: "search" }> }) {
   const typed = Math.max(40, term.length * 7.5);
   return (
     <View style={{ gap: 6 }}>
-      <View style={{ height: 28, borderRadius: 9, backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.trackBg, flexDirection: row, alignItems: "center", gap: 6, paddingHorizontal: 10 }}>
+      <View style={{ height: 28, borderRadius: 9, backgroundColor: colors.cardBg, flexDirection: row, alignItems: "center", gap: 6, paddingHorizontal: 10 }}>
         <AppText muted size={12}>
           ⌕
         </AppText>
@@ -124,8 +124,6 @@ function Tap({ spec }: { spec: Extract<PreviewSpec, { kind: "tap" }> }) {
               height: 40,
               borderRadius: 9,
               backgroundColor: colors.cardBg,
-              borderWidth: 1,
-              borderColor: colors.trackBg,
               justifyContent: "flex-end",
               padding: 6,
               transform: i === 0 ? [{ scale: kf(v, [0, 0.2, 0.28, 0.36, 1], [1, 1, 0.9, 1, 1]) }] : undefined,
@@ -287,11 +285,11 @@ function List({ spec }: { spec: Extract<PreviewSpec, { kind: "list" }> }) {
 function Nav({ spec }: { spec: Extract<PreviewSpec, { kind: "nav" }> }) {
   const v = useLoop();
   const { colors } = useTheme();
-  const { lang, row } = useLang();
+  const { t, row } = useLang();
   const tx = useTx();
   const labels =
     spec.items?.map(tx) ??
-    (lang === "fa" ? ["خانه", "دارونامه", "پروفایل"] : ["Home", "Formulary", "Profile"]);
+    [t("navHome"), t("lessonsLabel"), t("clinicalResources"), t("profileLabel")];
   const count = labels.length;
   const cell = 100 / count;
   // the pill visits the items in reading order (the nav's first four tabs),
@@ -337,12 +335,11 @@ function Choice({ spec }: { spec: Extract<PreviewSpec, { kind: "choice" }> }) {
     <View style={{ gap: 5 }}>
       {spec.options.slice(0, 4).map((o, i) => {
         const tint = i === spec.wrong ? colors.denyBg : i === spec.correct ? colors.leitnerActiveBg : colors.cardBg;
-        const edge = i === spec.wrong ? colors.denyBorder : i === spec.correct ? colors.accent : colors.trackBg;
         const at = i === spec.wrong ? 0.3 : i === spec.correct ? 0.5 : 2;
         return (
-          <View key={i} style={{ height: 24, borderRadius: 8, backgroundColor: colors.cardBg, borderWidth: 1, borderColor: colors.trackBg, justifyContent: "center", paddingHorizontal: 9 }}>
+          <View key={i} style={{ height: 24, borderRadius: 8, backgroundColor: colors.cardBg, justifyContent: "center", paddingHorizontal: 9 }}>
             <Animated.View
-              style={{ position: "absolute", top: -1, bottom: -1, left: -1, right: -1, borderRadius: 8, backgroundColor: tint, borderWidth: 1.5, borderColor: edge, opacity: at > 1 ? 0 : kf(v, [0, at, at + 0.06, 0.92, 1], [0, 0, 1, 1, 0]) }}
+              style={{ position: "absolute", top: -1, bottom: -1, left: -1, right: -1, borderRadius: 8, backgroundColor: tint, opacity: at > 1 ? 0 : kf(v, [0, at, at + 0.06, 0.92, 1], [0, 0, 1, 1, 0]) }}
             />
             <Line size={10.5} weight="800">
               {tx(o)}
@@ -407,8 +404,6 @@ function Interaction({ spec }: { spec: Extract<PreviewSpec, { kind: "interaction
         paddingVertical: 5,
         borderRadius: 999,
         backgroundColor: colors.leitnerActiveBg,
-        borderWidth: 1,
-        borderColor: colors.accent,
         transform: [{ translateX: kf(v, [0, 0.15, 0.4, 1], [from, from, 0, 0]) }],
         opacity: kf(v, [0, 0.15, 0.25, 0.92, 1], [0, 0, 1, 1, 0]),
       }}
@@ -430,8 +425,6 @@ function Interaction({ spec }: { spec: Extract<PreviewSpec, { kind: "interaction
           paddingVertical: 4,
           borderRadius: 8,
           backgroundColor: colors.denyBg,
-          borderWidth: 1,
-          borderColor: colors.denyBorder,
           opacity: kf(v, [0, 0.5, 0.58, 0.92, 1], [0, 0, 1, 1, 0]),
           transform: [{ scale: kf(v, [0, 0.5, 0.58, 0.64], [0.6, 0.6, 1.1, 1]) }],
         }}
@@ -455,8 +448,6 @@ function Zoom() {
           height: "100%",
           borderRadius: 8,
           backgroundColor: colors.cardBg,
-          borderWidth: 1,
-          borderColor: colors.trackBg,
           padding: 8,
           gap: 5,
           transform: [{ scale: kf(v, [0, 0.25, 0.45, 0.85, 1], [0.45, 0.45, 1, 1, 0.45]) }],
@@ -509,7 +500,7 @@ function Score({ spec }: { spec: Extract<PreviewSpec, { kind: "score" }> }) {
         {spec.options.slice(0, 3).map((o, i) => (
           <View key={i} style={{ height: 24, borderRadius: 8, backgroundColor: colors.cardBg, justifyContent: "center", paddingHorizontal: 9 }}>
             <Animated.View
-              style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, borderRadius: 8, backgroundColor: colors.leitnerActiveBg, borderWidth: 1.5, borderColor: colors.accent, opacity: kf(v, [0, 0.15 + i * 0.2, 0.2 + i * 0.2, 0.92, 1], [0, 0, 1, 1, 0]) }}
+              style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, borderRadius: 8, backgroundColor: colors.leitnerActiveBg, opacity: kf(v, [0, 0.15 + i * 0.2, 0.2 + i * 0.2, 0.92, 1], [0, 0, 1, 1, 0]) }}
             />
             <Line size={10.5} weight="800">
               {tx(o)}

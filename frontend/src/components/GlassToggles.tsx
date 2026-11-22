@@ -10,8 +10,6 @@ export function GlassToggles() {
   const { t, row, toggle: toggleLang } = useLang();
   const chip = {
     backgroundColor: "rgba(255,255,255,0.16)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
   } as const;
 
   return (

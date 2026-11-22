@@ -1140,8 +1140,6 @@ function ClinicalArticle({ source }: { source: "utd" | "medscape" }) {
               paddingHorizontal: 12,
               borderRadius: 12,
               backgroundColor: colors.inputBg,
-              borderWidth: 1,
-              borderColor: colors.trackBg,
             }}
           >
             <TextInput
@@ -1434,8 +1432,6 @@ function FindStepButton({ glyph, label, disabled, onPress }: { glyph: string; la
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: pressed ? `${colors.accent}22` : colors.cardBg,
-        borderWidth: 1,
-        borderColor: colors.trackBg,
         opacity: disabled ? 0.4 : 1,
       })}
     >
@@ -1462,8 +1458,6 @@ function TextSizeButton({ small, disabled, onPress }: { small?: boolean; disable
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: colors.softBg,
-        borderWidth: 1,
-        borderColor: colors.trackBg,
         opacity: disabled ? 0.4 : 1,
       }}
     >

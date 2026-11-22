@@ -77,8 +77,6 @@ function Field({
           paddingVertical: 10,
           paddingHorizontal: 4,
           borderRadius: 12,
-          borderWidth: 1,
-          borderColor: colors.trackBg,
           backgroundColor: colors.inputBg,
         }}
       />
@@ -161,7 +159,7 @@ export function DateInput({
         <Field label={t("calcDay")} value={parts.d} onChange={(v) => apply({ ...parts, d: v.slice(0, 2) })} width={62} placeholder="DD" />
         <Pressable
           onPress={today}
-          style={{ paddingHorizontal: 14, paddingVertical: 11, borderRadius: 12, borderWidth: 1, borderColor: colors.accent, backgroundColor: `${colors.accent}14` }}
+          style={{ paddingHorizontal: 14, paddingVertical: 11, borderRadius: 12, backgroundColor: `${colors.accent}14` }}
         >
           <AppText weight="800" size={12.5} color={colors.accent}>
             {t("calcToday")}

@@ -32,6 +32,9 @@ export function AuthLayout({ title, subtitle, children, panel = false, compact =
           <View
             style={{
               backgroundColor: colors.appBg,
+              width: "100%",
+              maxWidth: 580,
+              alignSelf: "center",
               borderTopLeftRadius: 28,
               borderTopRightRadius: 28,
               paddingHorizontal: 20,

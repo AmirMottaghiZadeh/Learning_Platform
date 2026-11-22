@@ -131,8 +131,6 @@ export function ClinicalArticleOutline({ source = "utd" }: { source?: "utd" | "m
                 width: 46,
                 height: 46,
                 borderRadius: 14,
-                borderWidth: 1,
-                borderColor: colors.trackBg,
                 backgroundColor: colors.cardBg,
                 alignItems: "center",
                 justifyContent: "center",

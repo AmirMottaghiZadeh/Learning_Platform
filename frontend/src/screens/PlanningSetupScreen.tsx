@@ -9,11 +9,13 @@ import { ExamDatePicker } from "@/components/plan/PlanPickers";
 import { PLAN_BRIEF_KEY } from "@/components/plan/PlanSection";
 import { AppText } from "@/components/primitives/AppText";
 import { Button } from "@/components/primitives/Button";
+import { Card } from "@/components/primitives/Card";
+import { Chevron } from "@/components/primitives/Chevron";
 import { Input } from "@/components/primitives/Input";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
-import { DAY_LABELS_FULL, StringKey } from "@/i18n/strings";
+import { DAY_LABELS_FULL, DAY_LABELS_SHORT, StringKey } from "@/i18n/strings";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { spacing } from "@/theme/tokens";
@@ -26,29 +28,28 @@ const MODES: { key: PlanMode; titleKey: StringKey; descKey: StringKey }[] = [
   { key: "maintenance", titleKey: "planningModeMaintenanceTitle", descKey: "planningModeMaintenanceDesc" },
 ];
 
-/** Mode + topics + deadline + daily time + study days, all one form: the
- * three planning models share enough fields (topics, daily minutes, days,
- * reminders) that splitting them into separate screens would just duplicate
- * this layout three times. */
+/** Settings for the student schedule, shared by the two scheduled modes. */
 export function PlanningSetupScreen() {
-  const { t, isFa, lang, row } = useLang();
-  const { colors, shadows } = useTheme();
+  const { t, isFa, lang, n, row } = useLang();
+  const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const qc = useQueryClient();
 
-  const { data: plan, isLoading: planLoading } = useQuery({ queryKey: ["plan"], queryFn: meApi.plan });
-  const { data: groups, isLoading: groupsLoading } = useQuery({
+  const planQuery = useQuery({ queryKey: ["plan"], queryFn: meApi.plan, retry: false });
+  const plan = planQuery.data;
+  const groupsQuery = useQuery({
     queryKey: ["lesson-groups"],
     queryFn: lessonsApi.groups,
   });
-  const categories = useMemo(() => groupByCategory(groups ?? []), [groups]);
+  const categories = useMemo(() => groupByCategory(groupsQuery.data ?? []), [groupsQuery.data]);
 
   const [mode, setMode] = useState<PlanMode>("none");
   const [topicKeys, setTopicKeys] = useState<string[]>([]);
   const [dailyMinutes, setDailyMinutes] = useState("30");
   const [deadline, setDeadline] = useState<string | null>(null);
   const [days, setDays] = useState<boolean[]>([false, false, false, false, false, false, false]);
-  const [reminders, setReminders] = useState(false);
+  const [topicQuery, setTopicQuery] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fitsWarning, setFitsWarning] = useState(false);
 
@@ -58,7 +59,6 @@ export function PlanningSetupScreen() {
     setTopicKeys(plan.topic_keys);
     setDailyMinutes(String(plan.daily_minutes));
     setDays(plan.days);
-    setReminders(plan.reminders_enabled);
     // A deadline already past is no exam date to keep.
     setDeadline(plan.deadline && daysUntil(plan.deadline) > 0 ? plan.deadline : null);
   }, [plan]);
@@ -68,14 +68,14 @@ export function PlanningSetupScreen() {
 
   const save = useMutation({
     mutationFn: () => {
-      const minutes = Math.max(5, Math.min(240, parseInt(dailyMinutes, 10) || 30));
+      const minutes = Math.max(5, Math.min(240, parseInt(dailyMinutes.replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0)), 10) || 30));
       return meApi.savePlan({
         mode,
         topic_keys: mode === "none" ? [] : topicKeys,
         daily_minutes: minutes,
         deadline: mode === "goal" ? deadline : null,
         days,
-        reminders_enabled: reminders,
+        reminders_enabled: false,
       });
     },
     onSuccess: (result) => {
@@ -98,6 +98,10 @@ export function PlanningSetupScreen() {
       setError(t("planningNoTopicsSelected"));
       return;
     }
+    if (mode !== "none" && !days.some(Boolean)) {
+      setError(isFa ? "دست‌کم یک روز برای مطالعه انتخاب کنید." : "Select at least one study day.");
+      return;
+    }
     if (mode === "goal" && !deadline) {
       setError(t("planningNoDeadline"));
       return;
@@ -105,218 +109,126 @@ export function PlanningSetupScreen() {
     save.mutate();
   };
 
-  if (planLoading) return <LoadingState />;
-
-  const labels = DAY_LABELS_FULL[lang];
+  const term = topicQuery.trim().toLocaleLowerCase();
+  const visibleCategories = categories.map((category) => ({
+    ...category,
+    topics: category.topics.filter((topic) => `${category.name_fa} ${category.name_en} ${topic.name_fa} ${topic.name_en}`.toLocaleLowerCase().includes(term)),
+  })).filter((category) => category.topics.length > 0);
+  const modeHeading = isFa ? "نوع برنامه" : "Schedule type";
 
   return (
-    <Screen>
+    <Screen contentStyle={{ maxWidth: 790, gap: spacing.md }} keyboardShouldPersistTaps="handled">
       <ScreenChrome title={t("planningSetupTitle")} onBack={goBack} />
 
-      <View style={{ gap: 10, marginBottom: spacing.lg }}>
-        {MODES.map((m) => {
-          const active = mode === m.key;
-          return (
-            <Pressable
-              key={m.key}
-              onPress={() => setMode(m.key)}
-              style={[
-                {
-                  borderRadius: 16,
-                  borderWidth: 1.5,
-                  borderColor: active ? colors.accent : colors.border,
-                  backgroundColor: active ? `${colors.accent}14` : colors.cardBg,
-                  padding: 14,
-                },
-                shadows.raisedSm,
-              ]}
-            >
-              <AppText weight="800" size={14} color={active ? colors.accent : colors.ink}>
-                {t(m.titleKey)}
-              </AppText>
-              <AppText muted weight="600" size={12} style={{ marginTop: 4 }}>
-                {t(m.descKey)}
-              </AppText>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {mode !== "none" ? (
+      {planQuery.isPending ? <LoadingState /> : planQuery.isError ? (
+        <Card>
+          <AppText muted accessibilityRole="alert">{t("loadFailed")}</AppText>
+          <Button label={t("retry")} full={false} variant="secondary" onPress={() => void planQuery.refetch()} />
+        </Card>
+      ) : (
         <>
-          <AppText weight="800" size={14} style={{ marginBottom: 6 }}>
-            {t("planningPickTopicsLabel")}
-          </AppText>
-          {mode === "maintenance" ? (
-            <AppText muted weight="600" size={12} style={{ marginBottom: 10 }}>
-              {t("planningPickTopicsOptionalHint")}
-            </AppText>
-          ) : null}
+          <Card style={{ gap: spacing.sm }}>
+            <AppText accessibilityRole="header" weight="800" size={16}>{modeHeading}</AppText>
+            <View accessibilityRole="radiogroup" style={{ gap: spacing.xs }}>
+              {MODES.map((option) => {
+                const active = mode === option.key;
+                return (
+                  <Pressable key={option.key} accessibilityRole="radio" accessibilityState={{ checked: active }}
+                    onPress={() => setMode(option.key)}
+                    style={{ borderRadius: 13, backgroundColor: active ? colors.leitnerActiveBg : colors.softBg, padding: 12 }}>
+                    <View style={{ flexDirection: row, alignItems: "center", gap: spacing.sm }}>
+                      <AppText weight="800" size={14} color={active ? colors.accent : colors.ink} style={{ flex: 1 }}>{t(option.titleKey)}</AppText>
+                      {active ? <AppText color={colors.accent} aria-hidden>✓</AppText> : null}
+                    </View>
+                    <AppText muted size={12}>{t(option.descKey)}</AppText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Card>
 
-          {groupsLoading ? (
-            <LoadingState />
-          ) : (
-            <View style={{ gap: 14, marginBottom: spacing.lg }}>
-              {categories.map((category) => (
-                <View key={category.code}>
-                  <AppText weight="800" size={12} muted style={{ marginBottom: 6 }}>
-                    {isFa ? category.name_fa : category.name_en}
-                  </AppText>
-                  <View style={{ gap: 6 }}>
-                    {category.topics.map((topic) => {
-                      const checked = topicKeys.includes(topic.code);
-                      const total = topic.subgroups.reduce((a, s) => a + s.total, 0);
-                      const done = topic.subgroups.reduce((a, s) => a + s.done, 0);
+          {mode !== "none" ? (
+            <>
+              <Card style={{ gap: spacing.sm }}>
+                <AppText accessibilityRole="header" weight="800" size={16}>{isFa ? "زمان مطالعه" : "Study time"}</AppText>
+                <AppText weight="700" size={13}>{t("planningDailyMinutesLabel")}</AppText>
+                <Input keyboardType="number-pad" maxLength={3} accessibilityLabel={t("planningDailyMinutesLabel")}
+                  value={dailyMinutes} onChangeText={setDailyMinutes} />
+                <AppText weight="700" size={13}>{t("planningDaysLabel")}</AppText>
+                <View style={{ flexDirection: row, gap: spacing.xs, flexWrap: "wrap" }}>
+                  {DAY_LABELS_FULL[lang].map((label, i) => {
+                    const on = days[i];
+                    return (
+                      <Pressable key={label} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={label}
+                        onPress={() => setDays((current) => current.map((value, j) => (i === j ? !value : value)))}
+                        style={{ minHeight: 44, minWidth: 42, paddingHorizontal: 8, justifyContent: "center", borderRadius: 10,
+                          backgroundColor: on ? colors.accent : colors.softBg }}>
+                        <AppText center size={12} weight="800" color={on ? colors.onAccent : colors.ink}>{DAY_LABELS_SHORT[lang][i]}</AppText>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                {mode === "goal" ? (
+                  <View style={{ gap: spacing.xs }}>
+                    <AppText weight="700" size={13}>{t("planningDeadlineLabel")}</AppText>
+                    <ExamDatePicker key={plan?.deadline ?? "none"} value={deadline} onChange={setDeadline} />
+                  </View>
+                ) : null}
+              </Card>
+
+              <Card style={{ gap: spacing.sm }}>
+                <View style={{ flexDirection: row, alignItems: "baseline", justifyContent: "space-between", gap: spacing.sm }}>
+                  <AppText accessibilityRole="header" weight="800" size={16} style={{ flex: 1 }}>{t("planningPickTopicsLabel")}</AppText>
+                  <AppText muted size={12}>{isFa ? `${n(topicKeys.length)} انتخاب` : `${n(topicKeys.length)} selected`}</AppText>
+                </View>
+                {mode === "maintenance" ? <AppText muted size={12}>{t("planningPickTopicsOptionalHint")}</AppText> : null}
+                {groupsQuery.isPending ? <LoadingState /> : groupsQuery.isError ? (
+                  <Button full={false} label={t("retry")} variant="secondary" onPress={() => void groupsQuery.refetch()} />
+                ) : (
+                  <>
+                    <Input value={topicQuery} onChangeText={setTopicQuery}
+                      placeholder={isFa ? "جست‌وجوی موضوع درسی" : "Find a study topic"}
+                      accessibilityLabel={isFa ? "جست‌وجوی موضوع درسی" : "Find a study topic"} />
+                    {visibleCategories.length === 0 ? <AppText muted size={13}>{isFa ? "موضوعی پیدا نشد." : "No study topics found."}</AppText> : null}
+                    {visibleCategories.map((category) => {
+                      const open = Boolean(term) || expanded === category.code;
+                      const selected = category.topics.filter((topic) => topicKeys.includes(topic.code)).length;
                       return (
-                        <Pressable
-                          key={topic.code}
-                          onPress={() => toggleTopic(topic.code)}
-                          style={{
-                            flexDirection: row,
-                            alignItems: "center",
-                            gap: 10,
-                            paddingVertical: 9,
-                            paddingHorizontal: 12,
-                            borderRadius: 12,
-                            backgroundColor: checked ? `${colors.accent}14` : colors.softBg,
-                            borderWidth: 1,
-                            borderColor: checked ? colors.accent : colors.trackBg,
-                          }}
-                        >
-                          <View
-                            style={{
-                              width: 18,
-                              height: 18,
-                              borderRadius: 5,
-                              backgroundColor: checked ? colors.accent : "transparent",
-                              borderWidth: checked ? 0 : 1.5,
-                              borderColor: colors.trackBg,
-                            }}
-                          />
-                          <AppText
-                            weight="700"
-                            size={13}
-                            style={{ flex: 1 }}
-                            color={checked ? colors.accent : colors.ink}
-                          >
-                            {isFa ? topic.name_fa : topic.name_en}
-                          </AppText>
-                          <AppText muted size={11} weight="700">
-                            {done}/{total}
-                          </AppText>
-                        </Pressable>
+                        <View key={category.code} style={{ gap: 4 }}>
+                          <Pressable onPress={() => setExpanded((current) => current === category.code ? null : category.code)}
+                            accessibilityRole="button" accessibilityState={{ expanded: open }} disabled={Boolean(term)}
+                            style={{ flexDirection: row, alignItems: "center", gap: spacing.xs, minHeight: 46, borderRadius: 10,
+                              backgroundColor: colors.softBg, paddingHorizontal: 10 }}>
+                            <AppText weight="700" size={13} style={{ flex: 1 }}>{isFa ? category.name_fa : category.name_en}</AppText>
+                            {selected ? <AppText size={12} color={colors.accent}>{n(selected)}</AppText> : null}
+                            {!term ? <View style={{ transform: [{ rotate: open ? "90deg" : "0deg" }] }}><Chevron /></View> : null}
+                          </Pressable>
+                          {open ? category.topics.map((topic) => {
+                            const checked = topicKeys.includes(topic.code);
+                            return (
+                              <Pressable key={topic.code} accessibilityRole="checkbox" accessibilityState={{ checked }} onPress={() => toggleTopic(topic.code)}
+                                style={{ flexDirection: row, alignItems: "center", gap: spacing.sm, minHeight: 44, borderRadius: 9, paddingHorizontal: 10,
+                                  backgroundColor: checked ? colors.leitnerActiveBg : "transparent" }}>
+                                <AppText size={13} weight={checked ? "800" : "600"} style={{ flex: 1 }}>{isFa ? topic.name_fa : topic.name_en}</AppText>
+                                {checked ? <AppText color={colors.accent} aria-hidden>✓</AppText> : null}
+                              </Pressable>
+                            );
+                          }) : null}
+                        </View>
                       );
                     })}
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-
-          <AppText weight="800" size={14} style={{ marginBottom: 6 }}>
-            {t("planningDailyMinutesLabel")}
-          </AppText>
-          <Input
-            keyboardType="number-pad"
-            value={dailyMinutes}
-            onChangeText={setDailyMinutes}
-            style={{ marginBottom: spacing.lg }}
-          />
-
-          {mode === "goal" ? (
-            <View style={{ marginBottom: spacing.lg }}>
-              <AppText weight="800" size={14} style={{ marginBottom: 10 }}>
-                {t("planningDeadlineLabel")}
-              </AppText>
-              {/* keyed on the loaded plan, so its date fills the fields */}
-              <ExamDatePicker key={plan?.deadline ?? "none"} value={deadline} onChange={setDeadline} />
-            </View>
+                  </>
+                )}
+              </Card>
+            </>
           ) : null}
+
+          {error || fitsWarning ? (
+            <AppText accessibilityRole="alert" size={13} weight="700" color={colors.denyLabel}>{error || t("planningFitsWarning")}</AppText>
+          ) : null}
+          <Button label={t("planningSave")} onPress={handleSave} loading={save.isPending} />
         </>
-      ) : null}
-
-      <AppText weight="800" size={14} style={{ marginBottom: 10 }}>
-        {t("planningDaysLabel")}
-      </AppText>
-      <View style={{ gap: 8, marginBottom: spacing.lg }}>
-        {labels.map((label, i) => {
-          const on = days[i];
-          return (
-            <Pressable
-              key={i}
-              onPress={() => setDays((d) => d.map((v, j) => (j === i ? !v : v)))}
-              style={{
-                flexDirection: row,
-                alignItems: "center",
-                gap: 12,
-                height: 50,
-                paddingHorizontal: 16,
-                borderRadius: 14,
-                backgroundColor: on ? `${colors.accent}1a` : colors.softBg,
-                borderWidth: 1.5,
-                borderColor: on ? colors.accent : colors.trackBg,
-              }}
-            >
-              <View
-                style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: 7,
-                  backgroundColor: on ? colors.accent : "transparent",
-                  borderWidth: on ? 0 : 1.5,
-                  borderColor: colors.trackBg,
-                }}
-              />
-              <AppText weight="700" size={14} color={on ? colors.accent : colors.ink}>
-                {label}
-              </AppText>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <Pressable
-        onPress={() => setReminders((v) => !v)}
-        style={{
-          flexDirection: row,
-          alignItems: "center",
-          justifyContent: "space-between",
-          height: 48,
-          paddingHorizontal: 16,
-          borderRadius: 14,
-          backgroundColor: colors.softBg,
-          marginBottom: spacing.lg,
-        }}
-      >
-        <AppText weight="700" size={14}>
-          {t("profileNotifications")}
-        </AppText>
-        <View
-          style={{
-            width: 44,
-            height: 26,
-            borderRadius: 13,
-            backgroundColor: reminders ? colors.accent : colors.trackBg,
-            padding: 3,
-            alignItems: reminders ? "flex-end" : "flex-start",
-          }}
-        >
-          <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#fff" }} />
-        </View>
-      </Pressable>
-
-      {error ? (
-        <AppText size={12} weight="700" color={colors.denyLabel} style={{ marginBottom: 12 }}>
-          {error}
-        </AppText>
-      ) : null}
-      {fitsWarning ? (
-        <AppText size={12} weight="700" color={colors.denyLabel} style={{ marginBottom: 12 }}>
-          {t("planningFitsWarning")}
-        </AppText>
-      ) : null}
-
-      <Button label={t("planningSave")} onPress={handleSave} loading={save.isPending} />
+      )}
     </Screen>
   );
 }

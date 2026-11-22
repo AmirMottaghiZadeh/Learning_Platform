@@ -40,9 +40,10 @@ export function OtpInput({ value, length, onChangeText, onSubmitEditing, hasErro
           {Array.from({ length }, (_, index) => {
             const selected = focused && index === activeCell;
             return (
-              <View key={index} style={{ flex: 1, minHeight: 48, borderRadius: 10, borderWidth: selected ? 2 : 1,
-                alignItems: "center", justifyContent: "center", backgroundColor: colors.softBg,
-                borderColor: hasError ? colors.denyLabel : selected ? colors.accent : colors.trackBg }}>
+              <View key={index} style={{ flex: 1, minHeight: 48, borderRadius: 10,
+                alignItems: "center", justifyContent: "center",
+                backgroundColor: hasError ? colors.denyBg : selected ? colors.trackBg : colors.softBg,
+                }}>
                 <AppText size={21} weight="600" style={{ writingDirection: "ltr", fontVariant: ["tabular-nums"] }}>
                   {value[index] ? n(value[index]) : ""}
                 </AppText>

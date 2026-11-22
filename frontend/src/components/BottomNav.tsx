@@ -9,7 +9,7 @@ import { TourTarget } from "@/tour/TourContext";
 import { layout } from "@/theme/tokens";
 import { LOCKED_TABS, TAB_ORDER, TabKey } from "@/navigation/types";
 import { AppText } from "./primitives/AppText";
-import { IconImage, IconName } from "./primitives/IconImage";
+import { TabGlyph } from "./TabGlyph";
 
 /** How much room to leave under a screen's content so its end isn't hidden
  * behind the tab bar -- which grows by the home-indicator strip (see
@@ -20,11 +20,12 @@ export function useNavClearance(extra = 0) {
 
 const TAB_META: Record<
   TabKey,
-  { icon: IconName; labelKey: "navHome" | "lessonsLabel" | "profileLabel" }
+  "navHome" | "lessonsLabel" | "clinicalResources" | "profileLabel"
 > = {
-  dashboard: { icon: "nav-home", labelKey: "navHome" },
-  lessons: { icon: "nav-lessons", labelKey: "lessonsLabel" },
-  profile: { icon: "nav-profile", labelKey: "profileLabel" },
+  dashboard: "navHome",
+  lessons: "lessonsLabel",
+  clinical: "clinicalResources",
+  profile: "profileLabel",
 };
 
 // Which top-level screens count as "inside" which tab.
@@ -42,21 +43,24 @@ const SCREEN_TO_TAB: Record<string, TabKey> = {
   settings: "profile",
   plans: "profile",
   devices: "profile",
-  notifications: "profile",
+  resourceSearch: "dashboard",
   downloads: "profile",
   support: "profile",
-  uptodate: "dashboard",
-  uptodateOutline: "dashboard",
-  uptodateArticle: "dashboard",
-  lexicomp: "dashboard",
+  clinical: "clinical",
+  uptodate: "clinical",
+  uptodateOutline: "clinical",
+  uptodateArticle: "clinical",
+  lexicomp: "clinical",
+  aiLab: "clinical",
   education: "lessons",
-  guidelines: "dashboard",
-  diseasesConditions: "dashboard",
-  medscapeOutline: "dashboard",
-  medscapeArticle: "dashboard",
-  calculator: "dashboard",
-  calculatorDomain: "dashboard",
-  calculatorDetail: "dashboard",
+  guidelines: "clinical",
+  diseasesConditions: "clinical",
+  medscapeOutline: "clinical",
+  medscapeArticle: "clinical",
+  medscapeSpecialty: "clinical",
+  calculator: "clinical",
+  calculatorDomain: "clinical",
+  calculatorDetail: "clinical",
 };
 
 export function BottomNav() {
@@ -94,21 +98,20 @@ export function BottomNav() {
       }}
     >
       {TAB_ORDER.map((tab) => {
-        const meta = TAB_META[tab];
         const isActive = tab === activeTab;
         const locked = LOCKED_TABS.includes(tab);
         return (
           <Pressable
             key={tab}
             accessibilityRole="button"
+            accessibilityLabel={t(TAB_META[tab])}
             aria-current={isActive ? "page" : undefined}
             accessibilityState={{ selected: isActive }}
             onPress={() => setTab(tab)}
             style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.75 : 1 })}
           >
-            <View style={{ alignItems: "center", justifyContent: "center", width: 52, height: 28, borderRadius: 10,
-              backgroundColor: isActive ? colors.leitnerActiveBg : "transparent", opacity: isActive ? 1 : 0.65 }}>
-              <IconImage name={meta.icon} size={24} />
+            <View style={{ alignItems: "center", justifyContent: "center", width: 31, height: 28 }}>
+              <TabGlyph tab={tab} active={isActive} />
               {locked ? (
                 <View
                   style={{
@@ -130,7 +133,7 @@ export function BottomNav() {
               weight={isActive ? "700" : "500"}
               color={isActive ? colors.accent : colors.muted}
             >
-              {t(meta.labelKey)}
+              {t(TAB_META[tab])}
             </AppText>
           </Pressable>
         );

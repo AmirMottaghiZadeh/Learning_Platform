@@ -44,7 +44,7 @@ export function SearchFeedback({ jobId, available }: { jobId: string; available:
           accessibilityLabel={isFa ? (value === 1 ? "پاسخ درست و مفید بود" : "پاسخ درست یا کافی نبود") : value === 1 ? "Helpful answer" : "Incorrect or incomplete answer"}
           accessibilityState={{ selected, disabled: !available || busy || (!loaded && !error) }} disabled={!available || busy || (!loaded && !error)} onPress={() => void rate(value)}
           style={{ minWidth: 92, minHeight: 46, paddingHorizontal: 14, flexDirection: row, gap: 8, alignItems: "center", justifyContent: "center", borderRadius: 12,
-            borderWidth: 1, borderColor: colors.accent, backgroundColor: selected ? colors.accent : colors.cardBg, opacity: !available || busy ? 0.5 : 1 }}>
+            backgroundColor: selected ? colors.accent : colors.cardBg, opacity: !available || busy ? 0.5 : 1 }}>
           <Thumb down={value === -1} color={color} /><AppText size={13} color={color}>{isFa ? (value === 1 ? "بله" : "خیر") : value === 1 ? "Yes" : "No"}</AppText>
         </Pressable>;
       })}

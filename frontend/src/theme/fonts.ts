@@ -1,4 +1,10 @@
 import { useFonts } from "expo-font";
+import { Inter_400Regular } from "@expo-google-fonts/inter/400Regular";
+import { Inter_700Bold } from "@expo-google-fonts/inter/700Bold";
+import { DMSans_400Regular } from "@expo-google-fonts/dm-sans/400Regular";
+import { DMSans_700Bold } from "@expo-google-fonts/dm-sans/700Bold";
+import { SourceSans3_400Regular } from "@expo-google-fonts/source-sans-3/400Regular";
+import { SourceSans3_700Bold } from "@expo-google-fonts/source-sans-3/700Bold";
 import {
   Vazirmatn_400Regular,
   Vazirmatn_500Medium,
@@ -26,6 +32,12 @@ export function fontFamily(weight: FontWeight | number | string = "400"): string
 
 export function useAppFonts() {
   return useFonts({
+    Inter_400Regular,
+    Inter_700Bold,
+    DMSans_400Regular,
+    DMSans_700Bold,
+    SourceSans3_400Regular,
+    SourceSans3_700Bold,
     Vazirmatn_400Regular,
     Vazirmatn_500Medium,
     Vazirmatn_600SemiBold,

@@ -3,6 +3,7 @@ import {
   Animated,
   RefreshControl,
   ScrollView,
+  ScrollViewProps,
   StyleProp,
   View,
   ViewStyle,
@@ -20,6 +21,7 @@ type Props = {
   refreshing?: boolean;
   onRefresh?: () => void;
   contentStyle?: StyleProp<ViewStyle>;
+  keyboardShouldPersistTaps?: ScrollViewProps["keyboardShouldPersistTaps"];
 };
 
 /** A screen body with the design's `fadeUp` entrance. */
@@ -30,6 +32,7 @@ export function Screen({
   refreshing,
   onRefresh,
   contentStyle,
+  keyboardShouldPersistTaps,
 }: Props) {
   const navClearance = useNavClearance();
   const { colors } = useTheme();
@@ -67,7 +70,8 @@ export function Screen({
   const inner = (
     <Animated.View
       style={[
-        { flex: scroll ? undefined : 1, padding: padded ? layout.screenPadding : 0 },
+        { flex: scroll ? undefined : 1, padding: padded ? layout.screenPadding : 0,
+          width: "100%", maxWidth: padded ? layout.contentMaxWidth : undefined, alignSelf: "center" },
         animatedStyle,
         contentStyle,
       ]}
@@ -83,6 +87,7 @@ export function Screen({
   return (
     <ScrollView
       ref={scrollRef}
+      keyboardShouldPersistTaps={keyboardShouldPersistTaps}
       onScroll={(e) => (offset.current = e.nativeEvent.contentOffset.y)}
       scrollEventThrottle={32}
       style={{ flex: 1, backgroundColor: colors.appBg }}
