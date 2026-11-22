@@ -8,7 +8,7 @@ import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
-import { ICONS, IconImage, IconName } from "@/components/primitives/IconImage";
+import { iconFor, IconImage, IconName } from "@/components/primitives/IconImage";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -21,7 +21,7 @@ import { groupByCategory } from "@/utils/lessonCategories";
 
 const COUNTS = [5, 10, 15, 20];
 function icon(name: string): IconName {
-  return name in ICONS ? name as IconName : "edu-quiz";
+  return iconFor(name) ?? "edu-quiz";
 }
 
 /** The former deck browser's category grid and topic rows, using the shared

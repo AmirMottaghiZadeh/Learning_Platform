@@ -1,8 +1,17 @@
 import React from "react";
 import { Image, ImageStyle, StyleProp } from "react-native";
 
+import { EntryGlyph, EntryGlyphName } from "./EntryGlyph";
+
+const entryGlyphs = {
+  "edu-quiz": "quiz",
+  "lexicomp-logo": "lexicomp",
+  "uptodate-logo": "uptodate",
+  "edu-flashcards": "flashcards",
+} as const satisfies Record<string, EntryGlyphName>;
+
 // Static registry — Metro needs literal require() paths.
-export const ICONS = {
+const ICONS = {
   "app-logo": require("../../../assets/icons/app-logo.png"),
   "cat-cardio-blood": require("../../../assets/icons/cat-cardio-blood.png"),
   "cat-dermatology": require("../../../assets/icons/cat-dermatology.png"),
@@ -19,7 +28,6 @@ export const ICONS = {
   "edu-lessons": require("../../../assets/icons/edu-lessons.png"),
   "edu-mistakes": require("../../../assets/icons/edu-mistakes.png"),
   "edu-profile": require("../../../assets/icons/edu-profile.png"),
-  "edu-quiz": require("../../../assets/icons/edu-quiz.png"),
   "edu-stats": require("../../../assets/icons/edu-stats.png"),
   "entry-calculator": require("../../../assets/icons/entry-calculator.png"),
   "entry-diseases": require("../../../assets/icons/entry-diseases.png"),
@@ -27,7 +35,6 @@ export const ICONS = {
   "entry-guidelines": require("../../../assets/icons/entry-guidelines.png"),
   "entry-next-chapter": require("../../../assets/icons/entry-next-chapter.png"),
   "entry-today-plan": require("../../../assets/icons/entry-today-plan.png"),
-  "lexicomp-logo": require("../../../assets/icons/lexicomp-logo.png"),
   "nav-home": require("../../../assets/icons/nav-home.png"),
   "nav-lessons": require("../../../assets/icons/nav-lessons.png"),
   "nav-profile": require("../../../assets/icons/nav-profile.png"),
@@ -134,16 +141,20 @@ export const ICONS = {
   "topic-sense-ear": require("../../../assets/icons/topic-sense-ear.png"),
   "topic-sense-eye": require("../../../assets/icons/topic-sense-eye.png"),
   "topic-vitamins": require("../../../assets/icons/topic-vitamins.png"),
-  "uptodate-logo": require("../../../assets/icons/uptodate-logo.png"),
 } as const;
 
-export type IconName = keyof typeof ICONS;
+type EntryIconName = keyof typeof entryGlyphs;
+export type IconName = keyof typeof ICONS | EntryIconName;
+
+function isEntryIcon(name: string): name is EntryIconName {
+  return Object.prototype.hasOwnProperty.call(entryGlyphs, name);
+}
 
 /** The icon registered under `name`, or null -- for icons looked up from
  * server data (lesson category/topic codes, calculator specialties) where a
  * new code might not have an icon drawn for it yet. */
 export function iconFor(name: string): IconName | null {
-  return name in ICONS ? (name as IconName) : null;
+  return isEntryIcon(name) || Object.prototype.hasOwnProperty.call(ICONS, name) ? (name as IconName) : null;
 }
 
 export function IconImage({
@@ -155,6 +166,9 @@ export function IconImage({
   size?: number;
   style?: StyleProp<ImageStyle>;
 }) {
+  if (isEntryIcon(name)) {
+    return <EntryGlyph name={entryGlyphs[name]} size={size} style={style} />;
+  }
   return (
     <Image
       source={ICONS[name]}

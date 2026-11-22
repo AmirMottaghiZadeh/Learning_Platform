@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useLang } from "@/i18n/LanguageProvider";
@@ -67,6 +67,9 @@ export function BottomNav() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { t, isFa } = useLang();
+  const { width } = useWindowDimensions();
+  const tabWidth = width / TAB_ORDER.length;
+  const compactClinicalLabel = !isFa && tabWidth < 117;
   const screen = useNav((s) => s.screen);
   const setTab = useNav((s) => s.setTab);
   const activeTab = SCREEN_TO_TAB[screen] ?? "dashboard";
@@ -100,15 +103,24 @@ export function BottomNav() {
       {TAB_ORDER.map((tab) => {
         const isActive = tab === activeTab;
         const locked = LOCKED_TABS.includes(tab);
+        const label = t(TAB_META[tab]);
+        const visibleLabel = tab === "clinical" && compactClinicalLabel ? t("navClinicalShort") : label;
         return (
           <Pressable
             key={tab}
             accessibilityRole="button"
-            accessibilityLabel={t(TAB_META[tab])}
+            accessibilityLabel={label}
             aria-current={isActive ? "page" : undefined}
             accessibilityState={{ selected: isActive }}
             onPress={() => setTab(tab)}
-            style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.75 : 1 })}
+            style={({ pressed }) => ({
+              flex: 1,
+              minWidth: 0,
+              alignSelf: "stretch",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: pressed ? 0.75 : 1,
+            })}
           >
             <View style={{ alignItems: "center", justifyContent: "center", width: 31, height: 28 }}>
               <TabGlyph tab={tab} active={isActive} />
@@ -129,11 +141,16 @@ export function BottomNav() {
               ) : null}
             </View>
             <AppText
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              center
               size={12}
+              style={{ maxWidth: "100%", paddingHorizontal: 1 }}
               weight={isActive ? "700" : "500"}
               color={isActive ? colors.accent : colors.muted}
             >
-              {t(TAB_META[tab])}
+              {visibleLabel}
             </AppText>
           </Pressable>
         );
