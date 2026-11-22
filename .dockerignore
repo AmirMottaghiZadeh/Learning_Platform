@@ -5,6 +5,7 @@
 .codegraph
 .codesight-cache.json
 Icon_Candidates
+graphify-out
 **/node_modules
 **/__pycache__
 **/*.py[cod]

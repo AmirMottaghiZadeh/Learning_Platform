@@ -101,6 +101,9 @@ celerybeat.pid
 # Playwright MCP browser output (screenshots, snapshots, console logs)
 .playwright-mcp/
 
+# Generated project graph and analysis cache
+/graphify-out/
+
 # Local support Web Push signing keys
 backend/.private/
 
