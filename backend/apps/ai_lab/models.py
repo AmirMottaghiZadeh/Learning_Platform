@@ -87,7 +87,7 @@ class ReferenceParagraph(models.Model):
 
 
 class SearchRun(models.Model):
-    """Short-lived durable admission/state; final feedback stays in its own DB."""
+    """Durable search state and account history. Feedback stays in its own DB."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     client_id = models.CharField(max_length=128)

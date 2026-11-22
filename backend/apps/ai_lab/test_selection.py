@@ -162,6 +162,7 @@ class PreparedSelectionTests(TestCase):
             return decision(supported=(identifier,), answer=(identifier,)), {}
         with patch.object(services, "chat", side_effect=model) as chat, \
                 patch.object(services, "search_articles", return_value=[{"id": "3851", "title": "Aripiprazole: Drug information"}]), \
+                patch("apps.ai_retrieval.media.outline_media", return_value=[]), \
                 patch.object(retrieval.utd, "get_topic", side_effect=AssertionError("No source HTML at runtime")):
             result = services.answer("عوارض آریپیپرازول", "luna", ["uptodate"], [], None)
         self.assertEqual(chat.call_count, 5)

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { AiLabScreen } from "@/screens/AiLabScreen";
 import { SupportScreen } from "@/screens/SupportScreen";
 import { DevicesScreen } from "@/screens/DevicesScreen";
-import { Animated, BackHandler, Easing, Platform, ToastAndroid, View } from "react-native";
+import { BackHandler, Platform, ToastAndroid, View } from "react-native";
 
 import { AppShell } from "@/components/AppShell";
 import { BottomNav } from "@/components/BottomNav";
@@ -47,8 +47,6 @@ import { useAuth } from "@/store/auth";
 import { goBackInApp, installWebBackGuard } from "@/navigation/back";
 import { resourceDestination } from "@/navigation/resourceDestination";
 import { useNav } from "@/store/nav";
-import { motion } from "@/theme/tokens";
-import { useReducedMotion } from "@/utils/useReducedMotion";
 
 export function Navigator() {
   const status = useAuth((s) => s.status);
@@ -79,9 +77,9 @@ export function Navigator() {
     content = (
       <AppShell padBottom={false}>
         <View style={{ flex: 1 }}>
-          <ScreenTransition>
+          <View style={{ flex: 1 }}>
             <CurrentScreen />
-          </ScreenTransition>
+          </View>
           <BottomNav />
         </View>
       </AppShell>
@@ -130,50 +128,6 @@ function WebBackGuard() {
     return installWebBackGuard(window);
   }, []);
   return null;
-}
-
-const SLIDE_DISTANCE = 12;
-
-/** Replays a short enter animation each time the screen changes: a slide
- * from the trailing edge going deeper, from the leading edge coming back
- * (mirrored for RTL, where "forward" reads right-to-left), and a plain fade
- * for tab switches -- the screen-to-screen motion a native app has, instead
- * of the instant swap that made navigation feel like following web links. */
-function ScreenTransition({ children }: { children: React.ReactNode }) {
-  const transitionId = useNav((s) => s.transitionId);
-  const direction = useNav((s) => s.direction);
-  const { isFa } = useLang();
-  const reduced = useReducedMotion();
-  const progress = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (transitionId === 0) return; // first render: nothing to animate from
-    progress.setValue(0);
-    const animation = Animated.timing(progress, {
-      toValue: 1,
-      duration: reduced || direction === "tab" ? motion.navigationFade : motion.navigationSlide,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: Platform.OS !== "web",
-    });
-    animation.start();
-    return () => animation.stop();
-  }, [transitionId, direction, progress, reduced]);
-
-  // Physical px the screen starts offset by: positive = starts to the right.
-  const fromRight = direction === "forward" ? !isFa : isFa;
-  const offset = reduced || direction === "tab" ? 0 : fromRight ? SLIDE_DISTANCE : -SLIDE_DISTANCE;
-
-  return (
-    <Animated.View
-      style={{
-        flex: 1,
-        opacity: progress,
-        transform: [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [offset, 0] }) }],
-      }}
-    >
-      {children}
-    </Animated.View>
-  );
 }
 
 function CurrentScreen() {

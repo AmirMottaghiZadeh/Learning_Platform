@@ -36,7 +36,7 @@ def snapshot(run):
     result=decode(run.encrypted_result) if run.encrypted_result else {}
     active=run.status in {"admitting","queued","running"}
     return {"user_id":run.owner_id,"question":payload["question"],"model":payload["model"],
-        "sources":payload["sources"],"pipeline":"hybrid-v1","slot":run.slot,
+        "sources":payload["sources"],"pipeline":payload.get("_pipeline", "hybrid-v1"),"slot":run.slot,"history_saved":True,
         "status":"running" if active else run.status,
         "stage":"queued" if run.status in {"admitting","queued"} else "starting",
         "created_at":run.created_at.timestamp(),

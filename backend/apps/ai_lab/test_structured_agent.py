@@ -66,6 +66,15 @@ class StructuredAgentTests(SimpleTestCase):
         value=profile(kind="disease_question",objectives=["drug_therapy","dose"],regimen_requested=True)
         self.assertIn("dose",scoped.missing_facets(rows,value))
 
+    def test_regimen_must_match_both_named_medication_and_indication(self):
+        value = profile(kind="drug_question", medications=["Fixturemed"], objectives=["dose"], regimen_requested=True,
+                        conditions=[{"name": "ConditionY", "status": "reported"}])
+        comparator = reference(10, "For ConditionY, the ComparatorMed initial dose is 10 mg daily.")
+        other_indication = reference(20, "For ConditionZ, the Fixturemed initial dose is 20 mg daily.")
+        matching = reference(30, "For ConditionY, the Fixturemed initial dose is 30 mg daily.")
+        self.assertIn("dose", scoped.missing_facets([comparator, other_indication], value))
+        self.assertNotIn("dose", scoped.missing_facets([comparator, other_indication, matching], value))
+
     def test_writer_cannot_trigger_a_new_search(self):
         r=self.retriever([reference(10,"Original adverse effects with the source-defined constraints.")])
         with patch.object(scoped,"stream_chat",side_effect=[(self.plan(),{}),(tool("unrelated corpus search"),{})]):

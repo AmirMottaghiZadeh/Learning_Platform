@@ -10,10 +10,14 @@ import { mediaPage } from "@/components/article/mediaPage";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 
-export function ReferenceMediaCards({ items }: { items: ReferenceMedia[] }) {
+function mediaId(item: ReferenceMedia) {
+  return `${item.article_id}:${item.key}`;
+}
+
+export function ReferenceMediaCards({ items, onOpenSource }: { items: ReferenceMedia[]; onOpenSource?: (item: ReferenceMedia) => void }) {
   const { isFa,row }=useLang();const {colors,isDark}=useTheme();
   const [selected,setSelected]=useState("");const [full,setFull]=useState(false);
-  const item=items.find(v => v.key===selected) ?? items[0];
+  const item=items.find(v => mediaId(v)===selected) ?? items[0];
   const query=useQuery({queryKey:["reference-media",item?.article_id,item?.key,item?.content_hash,item?.graphic_hash],
     queryFn:() => referenceMediaApi.get(item),enabled:!!item,staleTime:60000,retry:false});
   if(!item)return null;
@@ -22,12 +26,16 @@ export function ReferenceMediaCards({ items }: { items: ReferenceMedia[] }) {
   const html=data?.kind==="table" ? mediaPage(data,{background:colors.softBg,ink:colors.ink,muted:colors.muted,
     headerBg:colors.trackBg,line:isDark?"#85998b":"#26382e",cellBg:colors.cardBg,firstColumnBg:isDark?"#303d34":"#d4dcd3"}) : "";
   return <View testID="reference-media" style={{gap:10}}>
-    <View style={{flexDirection:row,gap:5,padding:4,borderRadius:12,backgroundColor:colors.softBg}}>
-      {items.map((entry,i) => <Pressable key={entry.key} accessibilityRole="tab" accessibilityState={{selected:entry.key===item.key}}
-        onPress={() => setSelected(entry.key)} style={{flex:1,minHeight:36,alignItems:"center",justifyContent:"center",borderRadius:9,
-          backgroundColor:entry.key===item.key ? colors.cardBg : "transparent"}}>
-        <AppText size={12} weight="800" color={entry.key===item.key ? colors.accent : colors.muted}>{entry.kind==="table" ? isFa ? "جدول" : "Table" : isFa ? "شکل" : "Figure"}{items.filter(v=>v.kind===entry.kind).length>1 ? ` ${i+1}` : ""}</AppText>
-      </Pressable>)}
+    <View accessibilityRole="tablist" style={{flexDirection:row,flexWrap:"wrap",gap:5,padding:4,borderRadius:12,backgroundColor:colors.softBg}}>
+      {items.map((entry,i) => {
+        const id = mediaId(entry);
+        const active = id === mediaId(item);
+        return <Pressable key={id} accessibilityRole="tab" accessibilityState={{selected:active}} accessibilityLabel={entry.title}
+          onPress={() => setSelected(id)} style={{flexGrow:1,minHeight:44,minWidth:60,alignItems:"center",justifyContent:"center",borderRadius:9,
+            backgroundColor:active ? colors.cardBg : "transparent"}}>
+          <AppText size={12} weight="800" color={active ? colors.accent : colors.muted}>{entry.kind==="table" ? isFa ? "جدول" : "Table" : isFa ? "شکل" : "Figure"}{items.length>1 ? ` ${i+1}` : ""}</AppText>
+        </Pressable>;
+      })}
     </View>
     <View style={{borderRadius:14,overflow:"hidden",backgroundColor:colors.softBg}}>
       {query.isLoading ? <View style={{height:150,justifyContent:"center",padding:16}}><AppText muted size={12}>{isFa ? "دریافت جدول یا تصویر منبع…" : "Loading original media…"}</AppText></View>
@@ -37,7 +45,12 @@ export function ReferenceMediaCards({ items }: { items: ReferenceMedia[] }) {
               : <WebView source={{html}} style={{flex:1,backgroundColor:colors.softBg}} originWhitelist={["*"]} />}</View> : null}
     </View>
     <AppText size={11} muted style={{writingDirection:"ltr",textAlign:"left"}}>{item.title}</AppText>
-    {data ? <Pressable accessibilityRole="button" onPress={() => setFull(true)} style={{minHeight:38,justifyContent:"center"}}><AppText color={colors.accent} size={12} weight="700">{isFa ? "نمایش کامل و بزرگ‌نمایی" : "Open full size"}</AppText></Pressable> : null}
+    <View style={{ flexDirection: row, flexWrap: "wrap", gap: 12 }}>
+      {data ? <Pressable accessibilityRole="button" onPress={() => setFull(true)} style={{minHeight:44,justifyContent:"center"}}><AppText color={colors.accent} size={12} weight="700">{isFa ? "نمایش کامل و بزرگ‌نمایی" : "Open full size"}</AppText></Pressable> : null}
+      {onOpenSource ? <Pressable testID="reference-media-source" accessibilityRole="link" onPress={() => onOpenSource(item)} style={{ minHeight: 44, justifyContent: "center" }}>
+        <AppText size={12} weight="700" color={colors.accent}>{isFa ? "باز کردن در مقالهٔ اصلی" : "Open in the original article"}</AppText>
+      </Pressable> : null}
+    </View>
     <MediaViewer reference media={full ? data??null : null} onClose={() => setFull(false)} />
   </View>;
 }

@@ -304,6 +304,30 @@ def _citation(passage, *, retrieved=False):
         "verification":"retrieved" if retrieved else "verified"}
 
 
+def answer_blocks(claims):
+    return [{"text_fa": claim["text"], "source_ids": claim["source_ids"]} for claim in claims]
+
+
+def related_citations(passages, verified, *, include_unquoted=False):
+    """Keep original supporting sections/media distinct from verified claims."""
+    from apps.ai_retrieval.evidence import section_key
+
+    used = set(verified)
+    represented = {section_key(passage) for passage in passages if passage.id in used and not passage.media}
+    result = []
+    for passage in passages:
+        if passage.id in used or passage.media:
+            continue
+        key = section_key(passage)
+        if key not in represented and (include_unquoted or any(
+                r["kind"] in {"subsections", "section_links", "article_links"} for r in passage.relations)):
+            result.append(_citation(passage, retrieved=True))
+            represented.add(key)
+    media = [_citation(passage, retrieved=True) for passage in passages if passage.media and passage.id not in used
+             and (not passage.relations or any(r["source_id"] in used for r in passage.relations))]
+    return result[:24] + media[:6]
+
+
 def _evidence_payload(passages):
     contexts, sources = {}, []
     for passage in passages:
@@ -500,6 +524,7 @@ def _answer_agent_loop(question, history, request, *, progress=lambda _:None,pub
         overview="\n\n".join(re.sub(r"\[(?:P\d+[\s,،;؛]*)+\]","",claim["text"]).strip() for claim in kept)
         part={"question_fa":original,"queries":queries,"lookup_kind":kind,"audience":audience,"intent":intent,
             "requirements":requirements,"coverage":coverage,"overview_fa":overview,"items":citations,
+            "answer_blocks":answer_blocks(kept),"related_items":related_citations(evidence.values(),used),
             "status":"answered" if sufficient else "partial" if citations else "not_found",
             "clarification_fa":"" if sufficient else "همهٔ جزئیات خواسته‌شده در منابع پیدا یا تأیید نشد؛ اطلاعات ناموجود حدس زده نشده است.",
             "retrieval":{"engine":"hybrid_agent","searches":searches,"selected_passages":len(evidence),

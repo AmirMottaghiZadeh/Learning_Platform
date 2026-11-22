@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from "react";
-import Animated, { createAnimatedPropAdapter, Easing, interpolateColor, processColor, ReduceMotion, useAnimatedProps, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { createAnimatedPropAdapter, interpolateColor, processColor, ReduceMotion, useAnimatedProps, useSharedValue, withSpring } from "react-native-reanimated";
 import Svg, { Path, PathProps } from "react-native-svg";
 
 import { TabKey } from "@/navigation/types";
 import { useTheme } from "@/theme/ThemeProvider";
+import { navigationGlyphSpring } from "@/theme/tokens";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
-const selectTiming = { duration: 145, easing: Easing.bezier(0.77, 0, 0.175, 1), reduceMotion: ReduceMotion.System };
+const selectSpring = { ...navigationGlyphSpring, reduceMotion: ReduceMotion.System };
 const strokeAdapter = createAnimatedPropAdapter((props) => {
   if (typeof props.stroke === "string") {
     props.stroke = { type: 0, payload: processColor(props.stroke) };
@@ -48,20 +49,21 @@ export function TabGlyph({ tab, active }: { tab: TabKey; active: boolean }) {
   const selection = useSharedValue(active ? 1 : 0);
 
   useEffect(() => {
-    selection.value = withTiming(active ? 1 : 0, selectTiming);
+    selection.value = withSpring(active ? 1 : 0, selectSpring);
   }, [active, selection]);
 
   const shell = useAnimatedProps<PathProps>(() => {
     const progress = selection.value;
+    const paint = Math.min(1, Math.max(0, progress));
     const path = start.map((part, i) => typeof part === "number" ? part + ((end[i] as number) - part) * progress : part).join(" ");
     return {
       d: path,
-      fillOpacity: progress,
-      stroke: interpolateColor(progress, [0, 1], [muted, accent]),
+      fillOpacity: paint,
+      stroke: interpolateColor(paint, [0, 1], [muted, accent]),
     };
   }, undefined, strokeAdapter);
   const detailInk = useAnimatedProps<PathProps>(() => ({
-    stroke: interpolateColor(selection.value, [0, 1], [muted, onAccent]),
+    stroke: interpolateColor(Math.min(1, Math.max(0, selection.value)), [0, 1], [muted, onAccent]),
   }), undefined, strokeAdapter);
 
   return (

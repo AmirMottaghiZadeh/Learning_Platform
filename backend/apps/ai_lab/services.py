@@ -38,6 +38,8 @@ ANSWER_PROMPT = """Answer ONLY from the supplied original UpToDate paragraphs. R
 Use the SMALLEST set of paragraphs sufficient to answer the actual question. Avoid repeated statements or an exhaustive catalog.
 Include necessary alternatives and qualifications. Avoid exhaustive dosing catalogs; first-line regimen rules below take precedence.
 For drug therapy, definitions, causes or prevalence alone do not answer the question.
+For a broad drug therapy question, explain each clinically distinct relevant branch in the supplied batch.
+Keep different populations and indications separate and include relevant branches even if an earlier batch covered a different option.
 Write enough Persian detail to satisfy every applicable requirement; do not omit regimen or treatment steps to be brief. Preserve the actual recommendation, population, restrictions,
 negation, dose and uncertainty. Keep English generic drug names in parentheses. Translate rather than as به جای.
 Do not add medical knowledge absent from the paragraph. Do not ask for patient details for a general reference lookup.
@@ -53,6 +55,7 @@ supported contains only current items satisfying BOTH:
 2) every medical assertion in the Persian explanation is supported by that paragraph, including drug identity,
 population, restrictions, preference, negation and numeric values.
 Evidence explicitly restricted to another population cannot answer the requested population.
+A regimen for a different medication or a different indication does not answer a question about a named drug for a named condition.
 A relevant qualified subgroup can answer a broad reference question. Do not require exact age/severity in the question.
 sufficient is true ONLY if answer_source_ids ALONE, from the selected sections, adequately answer the main question and every explicitly
 requested aspect and all applicable supplied requirements. Missing regimen details make a drug-therapy answer incomplete. Non-drug care does not require drug dosing. Do not demand all rare alternatives; apply first-line regimen requirements when supplied below.
@@ -282,7 +285,23 @@ def _ordered_ids(raw, allowed, maximum):
     return raw
 
 
+def _select_outline_headings(model, part, articles, headings, stages):
+    def select(group):
+        chosen, meta = telemetry.model_call("section_selection", chat, model, TITLE_PROMPT,
+            {"question": part["question_fa"], "requirements": part["requirements"], "articles": articles, "sections": group}, 600)
+        stages.append({"stage": "section_selection", **meta})
+        return _ordered_ids(chosen.get("section_ids"), {h["id"] for h in group}, 3)
+
+    finalists = []
+    for offset in range(0, len(headings), 180):
+        group = {heading["id"]: heading for heading in headings[offset:offset + 180]}
+        finalists.extend(group[identifier] for identifier in select(list(group.values())))
+    return select(finalists) if len(finalists) > 3 else [heading["id"] for heading in finalists]
+
+
 def _answer(question, model, history, request, progress, publish, observe):
+    from apps.ai_retrieval.media import outline_media
+    from .hybrid_agent import related_citations
     from .outline import OutlineReader
     stages, results = [], []
     progress("planning")
@@ -318,30 +337,16 @@ def _answer(question, model, history, request, progress, publish, observe):
             results.append(result); continue
         progress("selecting_sections")
         headings = reader.headings(articles)
-        # Bound only the heading-selection context, without silently dropping headings:
-        # large outlines are ranked in title-only groups, then the finalists compete.
-        finalists = []
-        for offset in range(0, len(headings), 180):
-            group = headings[offset:offset + 180]
-            chosen, meta = telemetry.model_call("section_selection", chat, model, TITLE_PROMPT,
-                {"question": part["question_fa"], "requirements": part["requirements"], "articles": articles, "sections": group}, 600)
-            stages.append({"stage": "section_selection", **meta})
-            ids = _ordered_ids(chosen.get("section_ids"), {h["id"] for h in group}, 3)
-            finalists.extend(h for identifier in ids for h in group if h["id"] == identifier)
-        if len(finalists) > 3:
-            chosen, meta = telemetry.model_call("section_selection", chat, model, TITLE_PROMPT,
-                {"question": part["question_fa"], "requirements": part["requirements"], "articles": articles, "sections": finalists}, 600)
-            stages.append({"stage": "section_selection", **meta})
-            selected = _ordered_ids(chosen.get("section_ids"), {h["id"] for h in finalists}, 3)
-        else:
-            selected = [h["id"] for h in finalists]
+        selected = _select_outline_headings(model, part, articles, headings, stages)
         chosen_headings = [next(h for h in headings if h["id"] == identifier) for identifier in selected]
         for article in articles:
             report({"type": "article", "article_id": article["id"], "title": article["title"]})
             report({"type": "sections", "article_id": article["id"], "sections": [
                 {"id": h["id"], "heading": " › ".join(h["path"]) or h["title"]} for h in chosen_headings if h["article_id"] == article["id"]], "paragraph_count": 0})
         # This is the FIRST paragraph-text query of the active pipeline.
-        passages = reader.passages(selected) if selected else []
+        therapy = part["intent"] in {"treatment", "drug_therapy", "dose", "renal_dose"}
+        broad_therapy = part["intent"] in {"treatment", "drug_therapy"}
+        passages = reader.passages(selected, include_therapy_siblings=therapy) if selected else []
         audit.update(candidate_articles=len(candidates), reviewed_articles=len({p.article_id for p in passages}),
                      selected_articles=len({p.article_id for p in passages}), selected_sections=len(selected),
                      selected_passages=len(passages), preprocessing_generation=str(reader.generation))
@@ -349,8 +354,28 @@ def _answer(question, model, history, request, progress, publish, observe):
         for article in articles:
             report({"type": "sections", "article_id": article["id"], "sections": [
                 {"id": h["id"], "heading": " › ".join(h["path"]) or h["title"]} for h in chosen_headings if h["article_id"] == article["id"]], "paragraph_count": len(by_article[article["id"]])})
-        items, complete, offset, coverage = [], False, 0, []
-        while offset < len(passages):
+        items, complete, offset, coverage, answer_ids = [], False, 0, [], set()
+        followed_links = False
+        while True:
+            if offset == len(passages):
+                if followed_links or (complete and not broad_therapy) or not passages:
+                    break
+                followed_links = True
+                linked = reader.related(passages, part["queries"], {article["id"] for article in articles})
+                if not linked:
+                    break
+                progress("selecting_sections")
+                linked_headings = reader.headings(linked)
+                linked_sections = _select_outline_headings(model, part, linked, linked_headings, stages)
+                if not linked_sections:
+                    break
+                added = reader.passages(linked_sections, include_therapy_siblings=therapy)
+                passages.extend(added)
+                audit["selected_sections"] += len(linked_sections)
+                audit["selected_articles"] = audit["reviewed_articles"] = len({p.article_id for p in passages})
+                audit["selected_passages"] = len(passages)
+                if not added:
+                    break
             batch, characters = [], 0
             while offset < len(passages) and len(batch) < 6:
                 passage = passages[offset]
@@ -361,7 +386,7 @@ def _answer(question, model, history, request, progress, publish, observe):
                 report({"type": "paragraphs", "article_id": article_id, "reviewed_passages": sum(p.article_id == article_id for p in passages[:offset-len(batch)]), "reviewing_count": sum(p.article_id == article_id for p in batch)})
             current, sufficient_ids = _explain_batch(model, part["question_fa"], batch, stages, progress,
                 previous=items, requirements=part["requirements"])
-            if stages[-1].get("coverage") is not None:
+            if stages[-1].get("coverage") is not None and (sufficient_ids or not complete):
                 coverage = stages[-1]["coverage"]
             items.extend(current)
             audit["reviewed_passages"] += len(batch)
@@ -370,11 +395,11 @@ def _answer(question, model, history, request, progress, publish, observe):
                          "citations": [item for item in current if item["target"]["params"]["id"] == article_id]})
             for article_id in dict.fromkeys(p.article_id for p in batch):
                 report({"type": "paragraphs", "article_id": article_id, "reviewed_passages": sum(p.article_id == article_id for p in passages[:offset]), "reviewing_count": 0})
-            if current:
-                complete = bool(sufficient_ids)
-                result["items"] = [item for item in items if item["source_id"] in sufficient_ids] if complete else []
+            if sufficient_ids:
+                complete = True
+                answer_ids.update(sufficient_ids)
         if complete:
-            result["status"] = "answered"
+            result.update(status="answered", items=[item for item in items if broad_therapy or item["source_id"] in answer_ids])
         reader.validate()
         result["coverage"] = coverage
         if not complete and items:
@@ -384,5 +409,11 @@ def _answer(question, model, history, request, progress, publish, observe):
         for article in articles:
             report({"type": "article_done", "article_id": article["id"], "outcome": "answered" if complete and any(i["target"]["params"]["id"] == article["id"] for i in result["items"]) else "partial" if by_article[article["id"]] else "no_answer"})
         result["overview_fa"] = _overview(result["items"])
+        result["answer_blocks"] = [{"text_fa": item["summary_fa"], "source_ids": [item["source_id"]]}
+                                   for item in result["items"]]
+        media_articles = [reader.articles[identifier] for identifier in dict.fromkeys(p.article_id for p in passages)]
+        attachments = outline_media(media_articles, part["queries"], part["question_fa"], part["audience"])
+        result["related_items"] = related_citations([*passages, *attachments], [item["source_id"] for item in result["items"]],
+            include_unquoted=broad_therapy)
         results.append(result)
     return {"model": model, "pipeline": "uptodate-outline-v1", "parts": results, "warnings": [], "stages": stages}

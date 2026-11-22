@@ -476,9 +476,13 @@ class HybridRetriever:
                 passages = core + additional
         from . import media
         media_count=0
-        if media.requested(question or query):
-            selected=media.search(self.generation,query,article_ids=self.scope.ids if settings.AI_LAB_TAG_SCOPED_SEARCH else {p.article_id for p in passages},
-                audience=audience,kinds=media.requested_kinds(question or query), scoped=settings.AI_LAB_TAG_SCOPED_SEARCH)
+        explicit_media = media.requested(question or query)
+        text_articles = {p.article_id for p in passages if not p.media}
+        if explicit_media or text_articles:
+            media_articles = self.scope.ids if explicit_media and settings.AI_LAB_TAG_SCOPED_SEARCH else text_articles
+            selected=media.search(self.generation,query,article_ids=media_articles, audience=audience,
+                kinds=media.requested_kinds(question or query), scoped=not explicit_media or settings.AI_LAB_TAG_SCOPED_SEARCH,
+                implicit=not explicit_media)
             allowed=[]
             for passage in selected:
                 try:require_feature(self.request,"uptodate",item=passage.article_id,consume=False)

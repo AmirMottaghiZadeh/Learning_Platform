@@ -11,7 +11,8 @@ from apps.ai_lab.provider import ProviderError
 from apps.uptodate import services
 from apps.uptodate.search_extraction import ANCHOR_ATTRIBUTE, EXTRACTION_VERSION, extract_article
 
-VERSION = 2
+VERSION = 3
+RELATED = "__related_topics__"
 MAX_LINKS = 8192
 MAX_BYTES = 1500000
 VOID = frozenset("area base br col embed hr img input link meta param source track wbr".split())
@@ -46,12 +47,13 @@ def target(attrs):
 
 
 class ParagraphLinks(HTMLParser):
-    def __init__(self):
+    def __init__(self, fallback_owner=""):
         super().__init__(convert_charrefs=True)
         self.stack = []
         self.current = None
         self.links = {}
         self.count = 0
+        self.fallback_owner = fallback_owner
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -60,7 +62,7 @@ class ParagraphLinks(HTMLParser):
         if tag not in VOID:
             self.stack.append((tag, anchor, skip))
         if tag == "a" and not skip and self.count < MAX_LINKS:
-            owner = next((row[1] for row in reversed(self.stack) if row[1]), "")
+            owner = next((row[1] for row in reversed(self.stack) if row[1]), self.fallback_owner)
             link = target(attrs)
             self.current = {"owner": owner, "target": link, "parts": []} if owner and link else None
 
@@ -95,7 +97,7 @@ def _signature(key, value):
     return salted_hmac("reference-paragraph-links", key + raw, algorithm="sha256").hexdigest()
 
 
-def load(article):
+def load(article, *, prepared=True):
     """Cached only for the exact original article/hash and parser version."""
     key = f"source-links:{VERSION}:{EXTRACTION_VERSION}:{article.source_id}:{article.content_hash}"
     cache = caches["ai_lab"]
@@ -107,7 +109,7 @@ def load(article):
     except Exception:
         pass
     links = None
-    if getattr(article, "generation_id", None) is not None:
+    if prepared and getattr(article, "generation_id", None) is not None:
         from .models import SourceLinkMap
         links = SourceLinkMap.objects.filter(source_generation=article.generation_id,
             source_id=article.source_id,content_hash=article.content_hash,
@@ -137,4 +139,13 @@ def parse(article, raw):
     parser = ParagraphLinks()
     parser.feed(extracted.html)
     parser.close()
+    outline = raw.get("outline_html") or ""
+    region = re.search(r"\bid\s*=\s*['\"]outlineRelatedTopicsLinks['\"]", outline, re.I)
+    if region:
+        fragment = re.split(r"</section\s*>", outline[region.end():], maxsplit=1, flags=re.I)[0]
+        related = ParagraphLinks(fallback_owner=RELATED)
+        related.feed(fragment)
+        related.close()
+        parser.links[RELATED] = [link for link in related.links.get(RELATED, [])
+                                 if link["kind"] == "article" and link.get("target_id") != article.source_id]
     return parser.links

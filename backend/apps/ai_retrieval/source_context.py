@@ -14,6 +14,7 @@ from django.db.models.functions import Length
 from apps.ai_lab import lexical, telemetry
 from apps.ai_lab.models import ReferenceArticle, ReferenceParagraph, ReferenceSection
 from apps.ai_lab.provider import ProviderError
+from apps.ai_lab.section_tree import balanced_paragraphs, expand_sections, therapy_root
 from . import evidence, media, source_links
 from .chunking import source_metadata
 from .models import ReferenceMedia
@@ -43,6 +44,7 @@ class SourceContext:
         noise = {"medical", "medication", "medications", "pharmacotherapy", "regimen", "regimens",
                  "dosing", "dosage", "dose", "doses", "safety", "selection", "restrictions"}
         self.concepts = [word for word in concepts if word not in noise]
+        self.medications = set(lexical.tokens(" ".join((question_profile or {}).get("medications", []))))
         population = {"men", "women", "patients", "elderly"}
         condition = [word for word in self.concepts if word not in population]
         if len(condition) >= 2:
@@ -50,7 +52,7 @@ class SourceContext:
         self.links = getattr(retriever, "_source_link_maps", {})
         retriever._source_link_maps = self.links
         self.result, self.original = {}, set()
-        self.stats = {"neighbors": 0, "section_links": 0, "article_links": 0, "graphic_links": 0,
+        self.stats = {"neighbors": 0, "subsections": 0, "section_links": 0, "article_links": 0, "graphic_links": 0,
                       "denied_links": 0, "unavailable_links": 0, "limited": False}
         self.visited = set()
         self.articles = {}
@@ -198,14 +200,41 @@ class SourceContext:
         # Some snapshots repeat an anchor in an empty outline node and the
         # actual body. Resolve all occurrences in this same article, rather
         # than silently choosing the empty outline and missing its regimen.
-        allowed = {row.pk for row in sections if row.source_id == identifier}
-        if not allowed:
-            return []
-        for row in sections:
-            if row.parent_id in allowed:
-                allowed.add(row.pk)
-        return ReferenceParagraph.objects.filter(article=article, section_id__in=allowed,
-            retrieval_number__isnull=False).select_related("article", "section").order_by("ordinal")[:16]
+        roots = {row.pk for row in sections if row.source_id == identifier}
+        return self.branch_rows(article, sections, roots) if roots else []
+
+    def branch_rows(self, article, sections, roots):
+        allowed = expand_sections(sections, roots)
+        rows = ReferenceParagraph.objects.filter(article=article, section_id__in=allowed,
+            retrieval_number__isnull=False).select_related("article", "section")
+        return balanced_paragraphs(rows, 24)
+
+    def therapy_subsections(self, seeds):
+        if not self.regimen:
+            return
+        budget = max(1, settings.AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES // 2)
+        visited = set()
+        for seed in seeds:
+            article = self.article(seed.article_id)
+            # Monographs can repeat a dose family across indications. Their
+            # separate indication-aware lookup must retain its tighter scope.
+            if article is None or "drug information" in article.title.lower():
+                continue
+            sections = self.sections(article)
+            by_id = {section.pk: section for section in sections}
+            anchor = seed.target.get("params", {}).get("sectionId")
+            matches = [section for section in sections if section.source_id == anchor and section.hierarchy_known]
+            for section in matches:
+                root = therapy_root(section, by_id)
+                if root is None or root.pk in visited:
+                    continue
+                visited.add(root.pk)
+                rows = self.branch_rows(article, sections, {root.pk})
+                for passage in self.passages(rows):
+                    if self.stats["subsections"] >= budget:
+                        self.stats["limited"] = True
+                        return
+                    self.add(passage, seed, "subsections", root.heading)
 
     def linked_article(self, article, parent, link, *, depth=0):
         audience = self.audience
@@ -259,8 +288,8 @@ class SourceContext:
             if matches:
                 rows = self.indication_rows(base, matches)
             else:
-                rows = list(base.filter(retrieval_number__isnull=False)
-                    .select_related("article", "section").order_by("ordinal")[:8])
+                rows = balanced_paragraphs(base.filter(retrieval_number__isnull=False)
+                    .select_related("article", "section"), 16)
         self.add_group(self.passages(rows,audience=audience), parent, "article_links", link["label"])
 
     def follow(self, parent, link, counts):
@@ -323,6 +352,7 @@ class SourceContext:
         self.result = {p.id:p for p in seeds}
         self.original = set(self.result)
         leading = list(dict.fromkeys(p.article_id for p in seeds if not p.media))[:settings.AI_LAB_SOURCE_CONTEXT_START_ARTICLES]
+        self.therapy_subsections([seed for seed in seeds if seed.article_id in leading and not seed.media])
         for seed in seeds:
             if seed.article_id in leading:
                 self.neighbors(seed)
@@ -330,7 +360,7 @@ class SourceContext:
         # the actual drug links (summary -> selection/dosing -> monograph).
         # Only then follow one outward hop; never crawl linked article bodies.
         counts = {"section":0, "article":0, "graphic":0}
-        scanned, pending = set(), []
+        scanned, related_scanned, pending = set(), set(), []
         while True:
             parents = [p for p in self.result.values() if p.article_id in leading
                        and not p.media and p.id not in scanned]
@@ -345,6 +375,13 @@ class SourceContext:
                 if parent.article_id not in self.links:
                     with telemetry.operation("source_links"):
                         self.links[parent.article_id] = source_links.load(article)
+                if parent.article_id not in related_scanned:
+                    related_scanned.add(parent.article_id)
+                    terms = set(self.concepts) | self.medications
+                    for link in self.links[parent.article_id].get(source_links.RELATED, []):
+                        shared = terms.intersection(lexical.tokens(link["label"]))
+                        if shared:
+                            pending.append((4,-len(shared),len(pending),parent,link))
                 anchor = parent.target.get("params", {}).get("searchAnchor")
                 for link in self.links[parent.article_id].get(anchor, []):
                     if self.regimen and link.get("drug") and re.search(

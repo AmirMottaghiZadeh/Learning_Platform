@@ -1,9 +1,12 @@
 """Metadata first. Paragraph text is queried only after the model selects headings."""
+from apps.ai_retrieval import source_links
 from apps.billing.enforcement import require_feature
+from apps.uptodate.search_catalog import normalize
 from . import reference_index
-from .models import ReferenceArticle, ReferenceParagraph
+from .models import ReferenceArticle, ReferenceParagraph, ReferenceSection
 from .provider import ProviderError
 from .retrieval import Passage
+from .section_tree import expand_sections, therapy_root
 
 
 class OutlineReader:
@@ -52,7 +55,25 @@ class OutlineReader:
                     'title': section.heading, 'path': section.heading_path})
         return result
 
-    def passages(self, identifiers):
+    def related(self, passages, queries, excluded):
+        query_terms = set(normalize(" ".join(queries)).split())
+        hits = {}
+        for article_id in dict.fromkeys(p.article_id for p in passages):
+            article = self.articles[article_id]
+            links = source_links.load(article, prepared=False)
+            anchors = [p.target["params"]["searchAnchor"] for p in passages if p.article_id == article_id]
+            for anchor in dict.fromkeys([*anchors, source_links.RELATED]):
+                for link in links.get(anchor, []):
+                    target = link.get("target_id")
+                    if link["kind"] != "article" or target in excluded or not target:
+                        continue
+                    score = len(query_terms & set(normalize(link["label"]).split()))
+                    if score or anchor != source_links.RELATED:
+                        hits[target] = max(hits.get(target, 0), score * 2 + (anchor != source_links.RELATED))
+        ranked = sorted(hits, key=lambda identifier: (-hits[identifier], identifier))[:8]
+        return self.candidates([{"id": identifier} for identifier in ranked])[:3]
+
+    def passages(self, identifiers, *, include_therapy_siblings=False):
         # Only IDs from headings() can reach this method.
         selected = [self.sections[i] for i in identifiers]
         article_ids = {section.article_id for section in selected}
@@ -66,19 +87,31 @@ class OutlineReader:
                     row = cursor.fetchone()
                 if not row or row['blob_hash'] != article.blob_hash:
                     raise ProviderError('REFERENCE_INDEX_STALE')
+        selected = list(dict.fromkeys(selected))
+        all_sections = list(ReferenceSection.objects.filter(article_id__in=article_ids).order_by("article_id", "ordinal"))
+        by_id = {section.pk: section for section in all_sections}
+        roots = {section.pk for section in selected}
+        if include_therapy_siblings:
+            for section in selected:
+                if "drug information" not in section.article.title.lower():
+                    root = therapy_root(section, by_id)
+                    if root:
+                        roots.add(root.pk)
+        expanded = expand_sections(all_sections, roots)
+        known = {section.pk for section in selected}
+        selected += [section for section in all_sections if section.pk in expanded and section.pk not in known]
         rows = ReferenceParagraph.objects.filter(section_id__in=[s.pk for s in selected],
             retrieval_number__isnull=False).select_related('section', 'article').order_by('article_id', 'ordinal')
-        groups = {identifier: [] for identifier in identifiers}
-        mapping = {self.sections[i].pk: i for i in identifiers}
+        groups = {section.pk: [] for section in selected}
         for row in rows:
             article, section = row.article, row.section
             number = 'P' + str(row.pk)  # Global within the prepared generation, including across articles.
-            groups[mapping[section.pk]].append(Passage(number, article.source_id, article.title, section.heading, row.text,
+            groups[section.pk].append(Passage(number, article.source_id, article.title, section.heading, row.text,
                 {'screen': 'uptodateArticle', 'params': {'id': article.source_id, 'title': article.title,
                  'sectionId': section.source_id, 'searchAnchor': row.source_anchor, 'searchContentHash': article.content_hash}}, article.content_hash,
                  heading_path=tuple(section.heading_path)))
         self.validate()
-        return [p for identifier in identifiers for p in groups[identifier]]
+        return [passage for section in selected for passage in groups[section.pk]]
 
     def validate(self):
         if reference_index.source_stamp() != self.stamp or reference_index.active_generation(self.stamp) != self.generation:

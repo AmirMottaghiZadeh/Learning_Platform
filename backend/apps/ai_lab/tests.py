@@ -1,3 +1,4 @@
+from datetime import timedelta
 import json
 import os
 from pathlib import Path
@@ -12,12 +13,14 @@ from uuid import uuid4
 from django.contrib.auth import get_user_model
 from django.core.cache import caches
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.core.exceptions import PlatformAPIError
 from apps.uptodate import services as utd
 from apps.uptodate.tests import _make_snapshot, _add_concept_snapshot
 from . import jobs, provider, retrieval, services, telemetry, views, warmup, workflow
+from .models import SearchRun
 
 QUOTE = "This is an original reference passage describing the population and intervention with its qualifications."
 
@@ -704,7 +707,9 @@ class ApiTests(TestCase):
             with patch.object(views, "answer") as answer, patch.object(views, "close_old_connections"):
                 views._run(job_id, self.admin, {**self.payload, "model": model, "history": []}, "ai-lab:slot:0")
                 answer.assert_not_called()
-            self.assertEqual(self.client.post("/api/v1/ai-lab/ask/", self.payload, format="json").status_code, 202)
+            response = self.client.post("/api/v1/ai-lab/ask/", self.payload, format="json")
+            self.assertEqual(response.status_code, 202)
+            SearchRun.objects.filter(pk=response.data["job_id"]).update(status="failed")
 
     @patch.object(views._executor, "submit")
     @patch.object(views, "close_old_connections")
@@ -755,6 +760,7 @@ class ApiTests(TestCase):
         record = cache.get(key)
         record["heartbeat_at"] = time.time() - 46
         cache.set(key, record)
+        SearchRun.objects.filter(pk=old_id).update(heartbeat_at=timezone.now() - timedelta(seconds=46))
         response = self.client.post("/api/v1/ai-lab/ask/", self.payload, format="json")
         self.assertEqual(response.status_code, 202)
         self.assertNotEqual(response.data["job_id"], old_id)
@@ -777,6 +783,7 @@ class ApiTests(TestCase):
                 cache.set(f"ai-lab:job:{job_id}", record)
             response = self.client.post("/api/v1/ai-lab/ask/", self.payload, format="json")
             self.assertEqual(response.status_code, 202)
+            SearchRun.objects.filter(pk=response.data["job_id"]).update(status="failed")
 
     @patch.object(views._executor, "submit")
     def test_live_outline_job_is_not_cut_off_by_total_age(self, submit):

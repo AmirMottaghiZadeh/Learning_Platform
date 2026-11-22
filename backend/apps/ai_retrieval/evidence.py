@@ -8,7 +8,7 @@ from apps.ai_lab import lexical
 from .chunking import token_count
 
 
-FOCUS_VERSION = 1
+FOCUS_VERSION = 2
 BACKGROUND = re.compile(r"\b(?:epidemiology|etiology|aetiology|pathogenesis|pathophysiology|historical background|definition|diagnosis|diagnostic evaluation)\b", re.I)
 NON_DRUG = re.compile(r"\b(?:nonpharmacologic\w*|non[ -]drug|behavioral (?:therapy|treatment|interventions)|psychotherapy|surgical treatment)\b", re.I)
 LATER_LINE = re.compile(r"\b(?:(?:second|third|fourth)[ -]line|subsequent (?:therapy|treatment)|refractory|treatment[ -]resistant)\b", re.I)
@@ -155,7 +155,8 @@ def focus_passages(passages, question, query, *, lookup_kind="topic", audience="
         if therapy:
             selected.update(row[0].id for row in rows if row[2])
         represented = {section_key(row[0]) for row in rows if row[0].id in selected}
-        for passage, _, _, _ in eligible:
+        balanced = [row for row in rows if any(relation["kind"] == "subsections" for relation in row[0].relations)]
+        for passage, _, _, _ in [*balanced, *eligible]:
             key = section_key(passage)
             if len(selected) < target and key not in represented:
                 selected.add(passage.id)

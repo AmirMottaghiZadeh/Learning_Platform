@@ -9,6 +9,7 @@ from apps.ai_retrieval import evidence
 from apps.ai_retrieval.chunking import token_count
 from apps.ai_retrieval.query_terms import query_text
 from apps.ai_retrieval.retrieval import HybridRetriever
+from apps.uptodate.search_catalog import normalize
 from . import hybrid_agent as agent, lexical, question_profile, telemetry
 from .provider import ProviderError
 from .streaming import stream_chat
@@ -37,9 +38,12 @@ Do not cite context IDs. Keep each paragraph to one point and one or two sentenc
 For drug therapy/first-line treatment, begin with ONE sentence naming only the primary recommended drug/class and its
 source-stated preference/line with citations. Put its actual dose, route, frequency and source-stated duration, titration,
 maximum, monitoring and restrictions in separately cited paragraphs. Never borrow another indication's or population's dose.
+For a broad therapy question, cover each clinically distinct applicable branch supported by the medication subheadings.
+Separate population, severity, first-line and subsequent options when the question calls for them. Follow the heading paths
+through nested subheadings. Do not stop after the first source paragraph or skip a linked regimen that fits the asked indication.
 Prioritize the requested regimen and safety over causes, background or unrequested comparisons/non-drug alternatives.
-For a simple drug fact/adverse-effect question use one or two short paragraphs. Therapy normally needs 150-220 Persian words;
-expand only for requested source-supported details. Never upgrade an important effect to 'most common/most important'
+For a simple drug fact/adverse-effect question use one or two short paragraphs. Expand a therapy answer to cover its
+requested source-supported branches. Never upgrade an important effect to 'most common/most important'
 or claim comparative safety without explicit evidence.
 Apply sources to the stated findings, conditions and care setting. Respect negation, uncertainty, age, pregnancy,
 renal function, route and relevant constraints. Unknown breathing/pulse/weight are UNKNOWN, never invented values.
@@ -71,7 +75,15 @@ def missing_facets(passages, profile):
             present = bool(re.search(pattern, text, re.I))
         if not present:
             missing.append(objective)
-    regimen = any(evidence.DOSE_NUMBER.search(p.text) and (
+    named_drugs = [name for name in map(normalize, profile.get("medications", [])) if name]
+    indications = [name for name in (normalize(condition["name"]) for condition in profile.get("conditions", [])) if name]
+
+    def matches_regimen(p):
+        source = " " + normalize(" ".join((p.title, p.section, *p.heading_path, p.text,
+                                             *(label["quote"] for label in p.context)))) + " "
+        return all(not names or any(f" {name} " in source for name in names) for names in (named_drugs, indications))
+
+    regimen = any(matches_regimen(p) and evidence.DOSE_NUMBER.search(p.text) and (
         re.search(lexical.REGIMEN_HEADING, " > ".join(p.heading_path) or p.section,re.I)
         or re.search(r"\b(?:dose|initial|titration|daily|divided doses|mg/kg/day)\b",p.text,re.I))
         for p in passages)
@@ -89,11 +101,12 @@ def ordered_evidence(passages, query, requirements):
         if evidence.DOSE_NUMBER.search(p.text):result.add("drug_regimen")
         if evidence.QUALIFIER.search(p.text):result.add("important_restrictions")
         return result
-    remaining=list(enumerate(passages));result=[];covered=set()
+    remaining=list(enumerate(passages));result=[];covered=set();sections=set()
     while remaining:
         selected=max(remaining,key=lambda row:(len((roles(row[1]) & needed)-covered),
+            evidence.section_key(row[1]) not in sections,
             lexical.text_score(row[1].text,context),-row[0]))
-        remaining.remove(selected);result.append(selected[1]);covered.update(roles(selected[1]))
+        remaining.remove(selected);result.append(selected[1]);covered.update(roles(selected[1]));sections.add(evidence.section_key(selected[1]))
     return result
 
 
@@ -134,7 +147,7 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
         passages,audit=retriever.search(query,question=original,question_profile=profile,**arguments)
     searches=[audit];queries=[query]
     missing=missing_facets(passages,profile)
-    if missing and passages and settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS>1:
+    if missing and settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS>1:
         suffix=" ".join(lexical.HINTS.get(name,name) for name in missing[:2])
         supplement=query_text(query+" "+suffix)[:240]
         supplement_arguments = {**arguments, **({"intent":"dose"} if "dose" in missing else {})}
@@ -146,7 +159,8 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
     common={"question":original,"history":history,"question_profile":profile,"requirements":requirements}
     overhead=token_count(ANSWER_PROMPT)+token_count(json.dumps(common,ensure_ascii=False))+64
     evidence_map,short_ids={},{}
-    agent._admit_evidence(evidence_map,short_ids,ordered_evidence(passages,query,requirements),
+    ordered = ordered_evidence(passages, query, requirements)
+    agent._admit_evidence(evidence_map,short_ids,ordered,
                           token_budget=max(0,settings.AI_LAB_HYBRID_CONTEXT_TOKENS-overhead))
     selected=list(evidence_map.values())
     if selected:
@@ -180,10 +194,13 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
     citations=[agent._citation(evidence_map[identifier]) for identifier in used]
     if "requested_media" in requirements and not any(c.get("media") for c in citations):sufficient=False
     if citations:telemetry.mark("first_citation_ms")
+    supplemental = [passage for passage in ordered if passage.id not in short_ids]
+    related = agent.related_citations([*selected, *supplemental], used)
     part={"question_fa":original,"queries":queries,"lookup_kind":arguments["lookup_kind"],"audience":arguments["audience"],
         "intent":intent,"requirements":requirements,"coverage":coverage,
         "overview_fa":"\n\n".join(re.sub(r"\[(?:P\d+[\s,،;؛]*)+\]","",c["text"]).strip() for c in kept),
-        "items":citations,"status":"answered" if sufficient else "partial" if citations else "not_found",
+        "items":citations,"answer_blocks":agent.answer_blocks(kept),"related_items":related,
+        "status":"answered" if sufficient else "partial" if citations else "not_found",
         "clarification_fa":"" if sufficient else "همهٔ جزئیات خواسته‌شده در منابع پیدا یا تأیید نشد؛ اطلاعات ناموجود حدس زده نشده است.",
         "retrieval":{"engine":"tag_scoped","searches":searches,"selected_passages":len(selected),
             "selected_articles":len({p.article_id for p in selected}),"context_tokens":token_count(json.dumps(agent._evidence_payload(selected),ensure_ascii=False)),

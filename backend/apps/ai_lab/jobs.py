@@ -1,5 +1,6 @@
 """Temporary job ownership, recovery and bounded worker leases."""
 import time
+from uuid import UUID
 
 from django.conf import settings
 from django.core.cache import caches
@@ -29,7 +30,11 @@ def read(job_id, user_id, *, verify_sql=True):
         record = cache.get(key)
     except Exception:
         record = None
-    if record is None and settings.AI_LAB_SEARCH_ENGINE=="hybrid":
+    if record is None:
+        try:
+            UUID(str(job_id))
+        except ValueError:
+            return None
         from .models import SearchRun
         from .job_store import snapshot
         run=SearchRun.objects.filter(pk=job_id,owner_id=user_id).first()
@@ -42,7 +47,7 @@ def read(job_id, user_id, *, verify_sql=True):
     if not record or record.get("user_id") != user_id:
         return None
     queued = record.get("stage") == "queued"
-    if verify_sql and record.get("pipeline") == "hybrid-v1" and record.get("status") == "running":
+    if verify_sql and (record.get("pipeline") == "hybrid-v1" or record.get("history_saved")) and record.get("status") == "running":
         # Redis can return an older value after an outage. SQL terminal state
         # wins, and a healthy worker's persisted heartbeat prevents false expiry.
         from .models import SearchRun
@@ -67,12 +72,12 @@ def read(job_id, user_id, *, verify_sql=True):
                 or record.get("model") not in MODEL_ALIASES or record.get("sources") != ["uptodate"]):
             record = {**record, "status": "failed", "error": {"code": "EXPERIMENT_EXPIRED"}}
             cache.set(key, record, TTL)
-            if record.get("pipeline")=="hybrid-v1":
+            if record.get("pipeline") in {"hybrid-v1", "outline-v1"}:
                 from .models import SearchRun
                 from .job_store import encode
                 from django.utils import timezone
                 SearchRun.objects.filter(pk=job_id,owner_id=user_id,status__in=["admitting","queued","running"]).update(
-                    status="failed",finished_at=timezone.now(),encrypted_result=encode({"status":"failed","error":record["error"]}))
+                    status="failed",finished_at=timezone.now(),encrypted_result=encode(public(record)))
             release(str(job_id), user_id)
     return record
 
@@ -83,21 +88,24 @@ def active(user_id):
         job_id = cache.get(f"ai-lab:user:{user_id}")
     except Exception:
         job_id = None
-    if not job_id and settings.AI_LAB_SEARCH_ENGINE=="hybrid":
-        from .models import SearchRun
-        run=SearchRun.objects.filter(owner_id=user_id,status__in=["admitting","queued","running"]).order_by("-created_at").first()
-        if run:
-            job_id=str(run.pk)
-            try:
-                cache.add(f"ai-lab:user:{user_id}",job_id,LEASE)
-            except Exception:
-                pass
-    if not job_id:
+    record = read(job_id, user_id) if job_id else None
+    if record and record.get("status") == "running":
+        return {"job_id": job_id, **{k: record[k] for k in ("question", "model", "sources")}, **public(record)}
+    if job_id:
+        release(job_id, user_id)
+
+    from .models import SearchRun
+    run = SearchRun.objects.filter(owner_id=user_id, status__in=["admitting", "queued", "running"]).first()
+    if not run:
         return None
+    job_id = str(run.pk)
     record = read(job_id, user_id)
     if not record or record.get("status") != "running":
-        release(job_id, user_id)
         return None
+    try:
+        cache.add(f"ai-lab:user:{user_id}", job_id, LEASE)
+    except Exception:
+        pass
     return {"job_id": job_id, **{k: record[k] for k in ("question", "model", "sources")}, **public(record)}
 
 

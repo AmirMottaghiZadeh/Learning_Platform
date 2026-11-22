@@ -43,6 +43,27 @@ class DurableSearchTests(TestCase):
         self.assertNotIn(self.payload["question"], run.encrypted_payload)
         self.assertEqual(job_store.decode(run.encrypted_payload)["question"], self.payload["question"])
 
+    def test_history_is_paginated_and_keeps_outline_results_private_after_cache_loss(self):
+        questions = [f"پرسش مستند شمارهٔ {number}" for number in range(22)]
+        for owner, entries in ((self.user, questions), (self.other, ["پرسش خصوصی حساب دیگر"])):
+            for question in entries:
+                SearchRun.objects.create(owner=owner, client_id=str(uuid4()), status="complete", payload_digest="test",
+                    encrypted_payload=job_store.encode({**self.payload, "question": question, "_pipeline": "outline-v1"}),
+                    encrypted_result=job_store.encode({"status": "complete", "result": {"parts": []}}))
+        caches["throttle"].clear()
+        page = self.client.get("/api/v1/ai-lab/history/")
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page["Cache-Control"], "private, no-store")
+        self.assertEqual([entry["question"] for entry in page.data["results"]], questions[:1:-1])
+        cursor = page.data["next_cursor"]
+        older = self.client.get("/api/v1/ai-lab/history/", {"cursor": cursor})
+        self.assertEqual([entry["question"] for entry in older.data["results"]], questions[1::-1])
+        identifier = older.data["results"][0]["job_id"]
+        record = self.client.get(f"/api/v1/ai-lab/results/{identifier}/")
+        self.assertEqual(record.data["result"], {"parts": []})
+        self.client.force_authenticate(self.other)
+        self.assertEqual(self.client.get(f"/api/v1/ai-lab/results/{identifier}/").status_code, 404)
+
     @override_settings(AI_LAB_PUBLIC_ENABLED=True, AI_LAB_USER_IDS=set(), AI_LAB_ROLLOUT_PERCENT=0)
     def test_public_learners_can_submit_but_cannot_read_each_others_jobs(self):
         learner = get_user_model().objects.create_user("public-stream-owner")

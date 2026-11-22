@@ -8,6 +8,7 @@ export type LabStatus = { enabled: boolean; models: Record<LabModel, string>; so
 export type LabCitation = {
   source_id: string; source: LabSource; title: string; section: string;
   quote: string; summary_fa: string; content_hash: string;
+  section_path?: string[];
   verification?: "retrieved" | "verified";
   context?: { quote: string; source_anchor: string; ordinal: number }[];
   media?: ReferenceMedia[];
@@ -16,6 +17,7 @@ export type LabCitation = {
 export type LabResult = {
   model: LabModel; pipeline: string; elapsed_ms: number;
   parts: { question_fa: string; queries: string[]; status: string; clarification_fa: string; items: LabCitation[];
+    answer_blocks?: { text_fa: string; source_ids: string[] }[]; related_items?: LabCitation[];
     overview_fa?: string; retrieval?: { selected_passages?: number; reviewed_passages?: number; selected_articles?: number;
       reviewed_articles?: number; early_stopped?: boolean; stop_reason?: string; limited?: boolean } }[];
   warnings: { source: string; code: string }[];
@@ -37,6 +39,8 @@ export type LabWorkflowPart = { part_index: number; question_fa: string; queries
 export type LabFinding = { id: string; sequence: number; part_index: number; question_fa: string;
   article_id: string; published_at: number; citation: LabCitation };
 export type ActiveLabJob = LabJob & { job_id: string; question: string; model: LabModel; sources: LabSource[]; status: "running"; stage: string };
+export type LabHistoryEntry = { job_id: string; question: string; created_at: string; status: "complete" | "failed" | "unavailable" };
+export type LabHistoryPage = { results: LabHistoryEntry[]; next_cursor: string | null };
 
 export type LabEvent = { sequence: number } & (
   { type: "snapshot" | "complete"; job: LabJob }
@@ -98,6 +102,8 @@ export const aiLabApi = {
   rate: async (id: string, value: 1 | -1): Promise<{ value: 1 | -1 }> => (await apiClient.post(`/ai-lab/results/${id}/feedback/`, { value })).data,
   active: async (): Promise<ActiveLabJob | null> => (await apiClient.get("/ai-lab/active/")).data.active_job,
   status: async (): Promise<LabStatus> => (await apiClient.get("/ai-lab/status/")).data,
+  history: async (cursor?: string): Promise<LabHistoryPage> =>
+    (await apiClient.get("/ai-lab/history/", { params: cursor ? { cursor } : undefined })).data,
   ask: async (question: string, history: string[], requestId?: string): Promise<{ job_id: string }> =>
     (await apiClient.post("/ai-lab/ask/", { question, model: LAB_MODEL, sources: ["uptodate"], history, request_id: requestId })).data,
   result: async (id: string, revision?: number): Promise<LabJob> =>

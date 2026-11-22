@@ -6,12 +6,12 @@ export type LabTurn = LabJob & { id: string; question: string; model: LabModel; 
 
 /** Memory only, account scoped. Never persist prompts or model responses to disk. */
 export const useAiLab = create<{
-  owner: number | null; turns: LabTurn[]; draft: string;
+  owner: number | null; turns: LabTurn[]; draft: string; archivedTurn: LabTurn | null;
   reset: (owner: number | null) => void;
   patch: (id: string, values: Partial<LabTurn>) => void;
 }>((set) => ({
-  owner: null, turns: [], draft: "",
-  reset: (owner) => set({ owner, turns: [], draft: "" }),
+  owner: null, turns: [], draft: "", archivedTurn: null,
+  reset: (owner) => set({ owner, turns: [], draft: "", archivedTurn: null }),
   patch: (id, values) => set((s) => ({ turns: s.turns.map((t) => t.id === id ? { ...t, ...values } : t) })),
 }));
 

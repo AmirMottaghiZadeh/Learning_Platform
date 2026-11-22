@@ -11,6 +11,7 @@ from .outline import OutlineReader
 from .provider import ProviderError
 
 
+@override_settings(AI_LAB_SEARCH_ENGINE="outline")
 class OutlinePipelineTests(TestCase):
     setUp = fixtures.ReferenceIndexTests.setUp
     write_article = fixtures.ReferenceIndexTests.write_article
@@ -61,6 +62,71 @@ class OutlinePipelineTests(TestCase):
             part=services.answer('عارضه دارو چیست؟','luna',['uptodate'],[],None)['parts'][0]
         self.assertEqual(sum(counts),9)
         self.assertEqual(part['retrieval']['reviewed_passages'],9)
+
+    def test_selecting_first_therapy_subheading_retrieves_all_six_branches_and_nested_regimen(self):
+        headings = '<p class="headingAnchor" id="H1"><span class="h1">Drug therapy</span></p>'
+        outline = '<ul><li><a id="outline-link-H1">Drug therapy</a><ul>'
+        for number in range(1, 7):
+            headings += (f'<p class="headingAnchor" id="H{number + 1}"><span class="h2">Branch {number}</span></p>'
+                         f'<p>Distinct original evidence for therapy branch {number}.</p>')
+            outline += f'<li><a id="outline-link-H{number + 1}">Branch {number}</a>'
+            if number == 6:
+                outline += '<ul><li><a id="outline-link-H8">Fixturemed regimen</a></li></ul>'
+            outline += '</li>'
+        headings += ('<p class="headingAnchor" id="H8"><span class="h3">Fixturemed regimen</span></p>'
+                     '<p>The source gives a distinct Fixturemed regimen for ConditionY.</p>')
+        self.write_article('3851', '<div id="topicText">' + headings + '</div>', outline=outline + '</ul></li></ul>')
+        self.build()
+
+        def model(alias, system, payload, tokens):
+            if system == services.PLAN_PROMPT:
+                return {'queries': ['ConditionY'], 'intent': 'drug_therapy', 'requirements': ['drug_names']}, {}
+            if system == services.TITLE_PROMPT:
+                return {'section_ids': [h['id'] for h in payload['sections'] if h['title'] == 'Branch 1']}, {}
+            if 'paragraphs' in payload:
+                return {'items': [{'source_id': p['id'], 'summary_fa': f'توضیح مستند برای {p["section"]}'}
+                                  for p in payload['paragraphs']]}, {}
+            return self.model(alias, system, payload, tokens)
+
+        with patch.object(services, 'search_articles', return_value=[{'id': '3851', 'title': 'ConditionY'}]), \
+                patch.object(services, 'chat', side_effect=model):
+            part = services.answer('دارودرمانی ConditionY چیست؟', 'luna', ['uptodate'], [], None)['parts'][0]
+        self.assertEqual(part['status'], 'answered')
+        self.assertEqual({item['section'] for item in part['items']},
+                         {f'Branch {n}' for n in range(1, 7)} | {'Fixturemed regimen'})
+        self.assertEqual([block['source_ids'] for block in part['answer_blocks']],
+                         [[item['source_id']] for item in part['items']])
+        self.assertTrue(all(item['target']['params']['searchAnchor'] for item in part['items']))
+
+    def test_dosing_follows_original_related_topic_and_includes_only_matching_media(self):
+        first = fixtures.html(heading='Drug therapy', text='The source lists a comparison drug for ConditionY.')
+        self.write_article('3851', first, outline='''<section id="outlineRelatedTopicsLinks">
+            <a onclick="doOperation({contentId:'3852'})">Fixturemed for ConditionY</a></section>''')
+        self.add_title('3852')
+        followup = fixtures.html(heading='ConditionY regimen',
+            text='The original source gives a Fixturemed regimen specifically for ConditionY.')[:-6]
+        self.write_article('3852', followup + '''<table><caption>Fixturemed regimen for ConditionY</caption>
+            <tr><th>Item</th><th>Original notes</th></tr><tr><td>A</td><td>Fixture-specific details</td></tr></table>
+            <img src="reference.png" alt="Fixturemed for ConditionY diagram">
+            <img src="unrelated.png" alt="DifferentTopic diagram"></div>''')
+        self.build()
+
+        def model(alias, system, payload, tokens):
+            if system == services.PLAN_PROMPT:
+                return {'queries': ['Fixturemed ConditionY'], 'intent': 'dose', 'requirements': ['dose']}, {}
+            if 'paragraphs' in payload:
+                return {'items': [{'source_id': p['id'], 'summary_fa': 'رژیم مستند برای داروی پرسش'}
+                                  for p in payload['paragraphs'] if 'gives a Fixturemed regimen' in p['text']]}, {}
+            return self.model(alias, system, payload, tokens)
+
+        with patch.object(services, 'search_articles', return_value=[{'id': '3851', 'title': 'ConditionY'}]), \
+                patch.object(services, 'chat', side_effect=model):
+            part = services.answer('دوز Fixturemed برای ConditionY چیست؟', 'luna', ['uptodate'], [], None)['parts'][0]
+        self.assertEqual(part['status'], 'answered')
+        self.assertEqual({item['target']['params']['id'] for item in part['items']}, {'3852'})
+        media_items = [item['media'][0] for item in part['related_items']]
+        self.assertEqual({item['kind'] for item in media_items}, {'table', 'image'})
+        self.assertTrue(all(item['article_id'] == '3852' and 'Fixturemed' in item['title'] for item in media_items))
 
     def test_old_selection_flags_cannot_reactivate_body_first_selection(self):
         self.prepare()

@@ -3,14 +3,16 @@ from threading import Event, Lock, Thread
 import time
 from types import SimpleNamespace
 from uuid import uuid4
+from urllib.parse import parse_qs, urlsplit
 
 from django.conf import settings
 from django.core.cache import caches
-from django.db import close_old_connections
+from django.db import IntegrityError, close_old_connections, transaction
 from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.utils.decorators import method_decorator
 from rest_framework import serializers
+from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,7 +23,8 @@ from .access import allowed, require_search_plan
 from .provider import MODEL_ALIASES, ProviderError, configured_models
 from .retrieval import SOURCES
 from .services import answer
-from . import jobs
+from . import jobs, job_store
+from .models import SearchRun
 from . import telemetry
 from .workflow import apply_event
 
@@ -100,7 +103,7 @@ def _run(job_id, user, payload, slot, *, durable=False):
             if cancelled.is_set() or requested:
                 raise ProviderError("SEARCH_CANCELLED")
     def touch(stage=None):
-        record = jobs.read(job_id, user.pk, verify_sql=not durable)
+        record = jobs.read(job_id, user.pk, verify_sql=False)
         if not record or record.get("status") != "running":
             raise ProviderError("EXPERIMENT_EXPIRED")
         record["heartbeat_at"] = time.time()
@@ -131,9 +134,9 @@ def _run(job_id, user, payload, slot, *, durable=False):
                         if stopped.is_set():
                             return
                         touch()
-                        if durable:
+                        if durable or initial.get("history_saved"):
                             from .models import SearchRun
-                            if SearchRun.objects.filter(pk=job_id,cancel_requested=True).exists():
+                            if durable and SearchRun.objects.filter(pk=job_id,cancel_requested=True).exists():
                                 cancelled.set()
                             SearchRun.objects.filter(pk=job_id,status="running").update(heartbeat_at=timezone.now())
                 except Exception:
@@ -144,7 +147,7 @@ def _run(job_id, user, payload, slot, *, durable=False):
     def publish(event):
         check_cancelled()
         with state_lock:
-            record = jobs.read(job_id, user.pk, verify_sql=not durable)
+            record = jobs.read(job_id, user.pk, verify_sql=False)
             if not record or record.get("status") != "running":
                 raise ProviderError("EXPERIMENT_EXPIRED")
             findings = list(record.get("findings", []))
@@ -174,7 +177,7 @@ def _run(job_id, user, payload, slot, *, durable=False):
                 journal({"type":"sources","findings":changed})
     def observe(event):
         with state_lock:
-            record = jobs.read(job_id, user.pk, verify_sql=not durable)
+            record = jobs.read(job_id, user.pk, verify_sql=False)
             if not record or record.get("status") != "running":
                 raise ProviderError("EXPERIMENT_EXPIRED")
             record.update(workflow=apply_event(record.get("workflow", []), event),
@@ -201,14 +204,12 @@ def _run(job_id, user, payload, slot, *, durable=False):
         trace.mark("credit_settled_ms")
         with state_lock:
             stopped.set()
-            record = jobs.read(job_id, user.pk, verify_sql=not durable)
+            record = jobs.read(job_id, user.pk, verify_sql=False)
             if record and record.get("status") == "running":
                 record={**record, **values, "metrics": trace.snapshot(), "revision": record.get("revision", 0) + 1}
-                if durable:
-                    from .models import SearchRun
-                    from .job_store import encode
-                    SearchRun.objects.filter(pk=job_id).update(status=values["status"],finished_at=timezone.now(),
-                        heartbeat_at=timezone.now(),encrypted_result=encode(jobs.public(record)))
+                if durable or initial.get("history_saved"):
+                    SearchRun.objects.filter(pk=job_id, owner=user).update(status=values["status"],finished_at=timezone.now(),
+                        heartbeat_at=timezone.now(),encrypted_result=job_store.encode(jobs.public(record)))
                 trace.mark("result_persisted_ms")
                 record["metrics"]=trace.snapshot()
                 try:
@@ -330,15 +331,20 @@ class AskView(APIView):
             cache.delete(f"ai-lab:job:{job_id}")
             raise PlatformAPIError("جست‌وجوی قبلی هنوز در حال اجراست.", code="AI_LAB_BUSY", status_code=429,
                                    details={"job_id": previous["job_id"]} if previous else {})
-        slot = None
+        slot = run = None
         try:
             for n in range(max(1, min(16, settings.AI_LAB_MAX_CONCURRENT_JOBS))):
                 candidate = f"ai-lab:slot:{n}"
+                persisted = SearchRun.objects.filter(slot=candidate, status__in=["admitting", "queued", "running"]).first()
+                if persisted:
+                    live = jobs.read(str(persisted.pk), persisted.owner_id)
+                    if live and live.get("status") == "running":
+                        continue
                 owner = cache.get(candidate)
                 if owner:
                     record = cache.get(f"ai-lab:job:{owner}")
                     if record:
-                        jobs.read(owner, record["user_id"])
+                        record = jobs.read(owner, record["user_id"])
                     if not record or record.get("status") != "running":
                         if cache.get(candidate) == owner:
                             cache.delete(candidate)
@@ -352,12 +358,23 @@ class AskView(APIView):
             cache.add(quota, 0, 3700)
             if cache.incr(quota) > 20:
                 raise PlatformAPIError("سقف ۲۰ جست‌وجو در ساعت پر شده است.", code="AI_LAB_LIMIT", status_code=429)
-            _executor.submit(_run, job_id, request.user, serializer.validated_data, slot)
+            payload = serializer.validated_data
+            try:
+                with transaction.atomic():
+                    run = SearchRun.objects.create(pk=job_id, owner=request.user, client_id=job_id,
+                        status="running", slot=slot, started_at=timezone.now(), heartbeat_at=timezone.now(),
+                        payload_digest=job_store.digest(payload), encrypted_payload=job_store.encode({**payload, "_pipeline": "outline-v1"}))
+            except IntegrityError:
+                raise PlatformAPIError("جست‌وجوی دیگری در حال پذیرش است.", code="AI_LAB_BUSY", status_code=429) from None
+            record = cache.get(f"ai-lab:job:{job_id}")
+            cache.set(f"ai-lab:job:{job_id}", {**record, "history_saved": True}, TTL)
+            _executor.submit(_run, job_id, request.user, payload, slot)
         except Exception:
+            if run is not None:
+                SearchRun.objects.filter(pk=job_id, status="running").update(status="failed", finished_at=timezone.now(),
+                    encrypted_result=job_store.encode({"status": "failed", "error": {"code": "SEARCH_ADMISSION_FAILED"}}))
             cache.delete(f"ai-lab:job:{job_id}")
-            cache.delete(user_lock)
-            if slot:
-                cache.delete(slot)
+            jobs.release(job_id, request.user.pk, slot)
             raise
         response = Response({"job_id": job_id}, status=202)
         response["Cache-Control"] = "private, no-store"
@@ -374,5 +391,47 @@ class ResultView(APIView):
         if not record:
             raise PlatformAPIError("جست‌وجو پیدا نشد یا منقضی شده است.", code="NOT_FOUND", status_code=404)
         response = Response(jobs.public(record, request.query_params.get("after_revision")))
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+class SearchHistoryEntrySerializer(serializers.Serializer):
+    job_id = serializers.UUIDField()
+    question = serializers.CharField(allow_blank=True)
+    status = serializers.ChoiceField(choices=["complete", "failed", "unavailable"])
+    created_at = serializers.DateTimeField()
+
+
+class SearchHistorySerializer(serializers.Serializer):
+    results = SearchHistoryEntrySerializer(many=True)
+    next_cursor = serializers.CharField(allow_null=True)
+
+
+class SearchHistoryPagination(CursorPagination):
+    page_size = 20
+    ordering = ("-created_at", "-pk")
+
+
+class SearchHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=SearchHistorySerializer)
+    @sensitive_variables()
+    def get(self, request):
+        require_lab(request.user)
+        runs = SearchRun.objects.filter(owner=request.user, status__in=["complete", "failed"]).only(
+            "id", "created_at", "status", "encrypted_payload")
+        pagination = SearchHistoryPagination()
+        results = []
+        for run in pagination.paginate_queryset(runs, request, view=self):
+            try:
+                question = job_store.decode(run.encrypted_payload).get("question", "")
+            except ProviderError:
+                question = ""
+            results.append({"job_id": run.pk, "created_at": run.created_at,
+                            "status": run.status if question else "unavailable", "question": question})
+        next_link = pagination.get_next_link()
+        cursor = parse_qs(urlsplit(next_link).query).get("cursor", [None])[0] if next_link else None
+        response = Response(SearchHistorySerializer({"results": results, "next_cursor": cursor}).data)
         response["Cache-Control"] = "private, no-store"
         return response

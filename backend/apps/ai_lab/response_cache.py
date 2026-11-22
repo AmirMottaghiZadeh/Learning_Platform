@@ -17,7 +17,7 @@ from . import lexical, reference_index, selection, telemetry
 from .models import ReferenceArticle, ReferenceParagraph
 from .provider import check_deadline, response_model_aliases
 
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 MAX_PAYLOAD_BYTES = 512000
 
 
@@ -120,19 +120,24 @@ def signature(key, result):
 def validate(result, lookup):
     if not complete(result):
         return None
-    citations = [item for part in result["parts"] for item in part["items"]]
+    citations = []
     for part in result["parts"]:
         if (not isinstance(part.get("question_fa"), str) or not isinstance(part.get("queries"), list)
                 or not part["queries"] or any(not isinstance(query, str) for query in part["queries"])):
             return None
+        related = part.get("related_items", [])
+        if not isinstance(related, list) or len(related) > 30:
+            return None
+        citations.extend((item, False) for item in part["items"])
+        citations.extend((item, True) for item in related)
     identifiers, anchors = set(), set()
-    for item in citations:
+    for item, related in citations:
         if not isinstance(item, dict) or item.get("source") != "uptodate":
             return None
         target, summary = item.get("target", {}), item.get("summary_fa")
         if (not isinstance(target, dict) or target.get("screen") != "uptodateArticle"
                 or not isinstance(target.get("params"), dict) or not isinstance(summary, str)
-                or not 8 <= len(summary) <= 4000 or not re.search(r"[\u0600-\u06ff]", summary)):
+                or (not related and (not 8 <= len(summary) <= 4000 or not re.search(r"[\u0600-\u06ff]", summary)))):
             return None
         params = target["params"]
         identifier, anchor = params.get("id"), params.get("searchAnchor")
@@ -164,7 +169,7 @@ def validate(result, lookup):
             return None
     blocks = {(str(block.article_id), block.source_anchor): block for block in ReferenceParagraph.objects.filter(
         article_id__in=[article.pk for article in articles.values()], source_anchor__in=anchors).select_related("section")}
-    for item in citations:
+    for item, _ in citations:
         params = item["target"]["params"]
         article = articles[params["id"]]
         block = blocks.get((str(article.pk), params["searchAnchor"]))
