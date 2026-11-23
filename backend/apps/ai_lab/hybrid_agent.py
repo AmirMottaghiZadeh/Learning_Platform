@@ -10,6 +10,7 @@ from . import lexical, question_profile, telemetry
 from .provider import ProviderError
 from .transport_pool import pooled
 from .streaming import stream_chat
+from apps.ai_retrieval import media
 from apps.ai_retrieval.chunking import token_count
 from apps.ai_retrieval.retrieval import HybridRetriever
 from apps.ai_retrieval.evidence import retain_with_context
@@ -407,6 +408,8 @@ def _answer_agent_loop(question, history, request, *, progress=lambda _:None,pub
         bound_audience = None
         profile = None
         empty_repair_available = True
+        explicit_media = media.requested(original)
+        media_passages, originals = [], {}
         max_rounds=max(1,min(6,settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS))
         for turn in range(max_rounds+1):
             check_cancelled()
@@ -475,6 +478,11 @@ def _answer_agent_loop(question, history, request, *, progress=lambda _:None,pub
                     passages,audit=retriever.search(query,question=original,
                         **({"question_profile":profile} if profile else {}),**arguments)
                 searches.append(audit)
+                if explicit_media:
+                    media_passages.extend(passage for passage in passages if passage.media)
+                    originals = media.media_answer(original, media_passages)
+                    if originals.get("status") == "answered":
+                        break
                 fresh = _admit_evidence(evidence,short_ids,passages)
                 used_tokens=token_count(json.dumps(_evidence_payload(list(evidence.values())),ensure_ascii=False))
                 audit["model_passages_after_search"] = len(evidence)
@@ -507,6 +515,21 @@ def _answer_agent_loop(question, history, request, *, progress=lambda _:None,pub
             messages.append({"role":"tool","tool_call_id":calls[0]["id"],"content":json.dumps(content,ensure_ascii=False)})
             on_event({"type":"answer_reset","part_index":part_index})
         requirements=_requirements(original,intent,profile)
+        if originals:
+            retriever.validate()
+            check_cancelled()
+            citations = originals["items"]
+            for article_id in dict.fromkeys(item["target"]["params"]["id"] for item in citations):
+                publish({"part_index": part_index, "question_fa": original, "article_id": article_id,
+                         "citations": [item for item in citations if item["target"]["params"]["id"] == article_id]})
+            telemetry.mark("first_citation_ms")
+            part = {**originals, "question_fa": original, "queries": queries, "lookup_kind": kind,
+                    "audience": audience, "intent": intent, "requirements": requirements,
+                    "retrieval": {"engine": "hybrid_agent", "searches": searches, "selected_media": len(citations),
+                                  "stop_reason": "original_media_found", "generation": str(retriever.generation.pk)}}
+            parts.append(part)
+            on_event({"type": "answer_part_complete", "part_index": part_index, "part": part})
+            continue
         claims,uncited=_claims(raw_answer,list(evidence.values()))
         if claims and not re.search(r"[\u0600-\u06ff]", raw_answer):
             raise ProviderError("INVALID_MODEL_OUTPUT")

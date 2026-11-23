@@ -72,6 +72,7 @@ export function OtpInput({ value, length, onChangeText, onSubmitEditing, hasErro
           style={[StyleSheet.absoluteFill, {
             width: "100%", color: "transparent", backgroundColor: "transparent",
             padding: 0, fontFamily: fontFamily("500"), fontSize: 16, writingDirection: "ltr", textAlign: "left",
+            ...(Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : {}),
           }]}
         />
       </View>

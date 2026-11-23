@@ -4,11 +4,7 @@ from html import escape
 import re
 from bs4 import BeautifulSoup
 
-
-def graphic_ids(html):
-    soup=BeautifulSoup(html,"html.parser")
-    return list(dict.fromkeys(match.group(1) for anchor in soup.find_all("a",onclick=True)
-        if (match:=re.search(r"[\"']?contentIds[\"']?\s*:\s*\[\s*[\"']([0-9]+)[\"']",anchor["onclick"]))))
+from .media_links import graphic_ids
 
 
 def safe_fragment(html):

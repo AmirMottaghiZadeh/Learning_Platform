@@ -80,7 +80,7 @@ def request_code(email, *, request=None):
 
 
 @sensitive_variables()
-def verify_code(email, code, *, request=None):
+def verify_code(email, code, *, request=None, allow_create=True):
     _require_enabled();email=normalized(email)
     code=code.strip().translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩","01234567890123456789"))
     now=timezone.now()
@@ -99,7 +99,7 @@ def verify_code(email, code, *, request=None):
     with transaction.atomic():
         identity=EmailLoginIdentity.objects.select_for_update().get(pk=email)
         users=list(get_user_model().objects.filter(email__iexact=email)[:2])
-        if len(users)>1 or (users and not users[0].is_active):
+        if len(users)>1 or (users and not users[0].is_active) or (not users and not allow_create):
             raise OtpError("ورود به این حساب ممکن نیست؛ با پشتیبانی تماس بگیرید.",code="EMAIL_ACCOUNT_UNAVAILABLE")
         created=not users
         user=users[0] if users else get_user_model().objects.create_user(username="email_"+secrets.token_hex(16),email=email)

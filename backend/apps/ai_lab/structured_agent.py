@@ -5,7 +5,7 @@ import re
 from django.conf import settings
 from django.core.cache import caches
 
-from apps.ai_retrieval import evidence
+from apps.ai_retrieval import evidence, media
 from apps.ai_retrieval.chunking import token_count
 from apps.ai_retrieval.query_terms import query_text
 from apps.ai_retrieval.retrieval import HybridRetriever
@@ -146,7 +146,9 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
     with telemetry.operation("retrieval"):
         passages,audit=retriever.search(query,question=original,question_profile=profile,**arguments)
     searches=[audit];queries=[query]
-    missing=missing_facets(passages,profile)
+    explicit_media = media.requested(original)
+    found = media.media_answer(original, passages) if explicit_media else {}
+    missing = missing_facets(passages, profile) if found.get("status") != "answered" else []
     if missing and settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS>1:
         suffix=" ".join(lexical.HINTS.get(name,name) for name in missing[:2])
         supplement=query_text(query+" "+suffix)[:240]
@@ -156,6 +158,22 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
         details["supplement_for"]=missing
         searches.append(details);queries.append(supplement)
         passages=list({p.id:p for p in [*passages,*extra]}.values())
+        if explicit_media:
+            found = media.media_answer(original, passages)
+    if found:
+        retriever.validate()
+        check_cancelled()
+        citations = found["items"]
+        for article_id in dict.fromkeys(item["target"]["params"]["id"] for item in citations):
+            publish({"part_index": 0, "question_fa": original, "article_id": article_id,
+                     "citations": [item for item in citations if item["target"]["params"]["id"] == article_id]})
+        telemetry.mark("first_citation_ms")
+        part = {**found, "question_fa": original, "queries": queries, "lookup_kind": arguments["lookup_kind"],
+                "audience": arguments["audience"], "intent": intent, "requirements": requirements,
+                "retrieval": {"engine": "tag_scoped", "searches": searches, "selected_media": len(citations),
+                              "stop_reason": "original_media_found", "generation": str(retriever.generation.pk)}}
+        on_event({"type": "answer_part_complete", "part_index": 0, "part": part})
+        return {"model": "luna", "pipeline": "uptodate-hybrid-v1", "parts": [part], "warnings": [], "stages": stages}
     common={"question":original,"history":history,"question_profile":profile,"requirements":requirements}
     overhead=token_count(ANSWER_PROMPT)+token_count(json.dumps(common,ensure_ascii=False))+64
     evidence_map,short_ids={},{}

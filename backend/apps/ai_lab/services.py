@@ -300,7 +300,8 @@ def _select_outline_headings(model, part, articles, headings, stages):
 
 
 def _answer(question, model, history, request, progress, publish, observe):
-    from apps.ai_retrieval.media import outline_media
+    from apps.ai_retrieval import media
+    from .models import ReferenceArticle
     from .hybrid_agent import related_citations
     from .outline import OutlineReader
     stages, results = [], []
@@ -315,7 +316,11 @@ def _answer(question, model, history, request, progress, publish, observe):
         result = {**part, "status": "not_found", "clarification_fa": "", "overview_fa": "", "items": [], "retrieval": audit}
         candidates, seen = [], set()
         progress("retrieving")
-        for query in part["queries"]:
+        queries = part["queries"]
+        explicit_media = media.requested(part["question_fa"])
+        if explicit_media:
+            queries = list(dict.fromkeys([*(media.catalog_query(query) for query in queries), *queries]))
+        for query in queries:
             for article in search_articles([query], request, audit):
                 if article["id"] not in seen:
                     candidates.append(article); seen.add(article["id"])
@@ -333,6 +338,22 @@ def _answer(question, model, history, request, progress, publish, observe):
         ids = _ordered_ids(chosen.get("article_ids"), {a["id"] for a in candidates}, 3)
         articles = [next(a for a in candidates if a["id"] == identifier) for identifier in ids]
         report({"type": "titles", "query": " / ".join(part["queries"]), "articles": articles})
+        if explicit_media:
+            media_ids = list(dict.fromkeys(a["id"] for a in [*articles, *candidates]))[:6]
+            source_rows = {article.source_id: article for article in ReferenceArticle.objects.filter(
+                generation_id=reader.generation, source_id__in=media_ids)}
+            attachments = media.outline_media([source_rows[i] for i in media_ids if i in source_rows], part["queries"],
+                part["question_fa"], part["audience"], request=request, generation_id=reader.generation)
+            found = media.media_answer(part["question_fa"], attachments)
+            if found:
+                from apps.billing.enforcement import require_feature
+                reader.validate()
+                for article_id in dict.fromkeys(p.article_id for p in attachments):
+                    require_feature(request, "uptodate", item=article_id, consume=True)
+                    publish({"part_index": index, "question_fa": part["question_fa"], "article_id": article_id,
+                        "citations": [item for item in found["items"] if item["target"]["params"]["id"] == article_id]})
+                results.append({**result, **found, "retrieval": {**audit, "selected_media": len(attachments)}})
+                continue
         if not articles:
             results.append(result); continue
         progress("selecting_sections")
@@ -412,7 +433,8 @@ def _answer(question, model, history, request, progress, publish, observe):
         result["answer_blocks"] = [{"text_fa": item["summary_fa"], "source_ids": [item["source_id"]]}
                                    for item in result["items"]]
         media_articles = [reader.articles[identifier] for identifier in dict.fromkeys(p.article_id for p in passages)]
-        attachments = outline_media(media_articles, part["queries"], part["question_fa"], part["audience"])
+        attachments = [] if explicit_media else media.outline_media(
+            media_articles, part["queries"], part["question_fa"], part["audience"], request=request)
         result["related_items"] = related_citations([*passages, *attachments], [item["source_id"] for item in result["items"]],
             include_unquoted=broad_therapy)
         results.append(result)

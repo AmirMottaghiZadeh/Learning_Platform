@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from django.test import SimpleTestCase, override_settings
@@ -60,6 +61,17 @@ class StructuredAgentTests(SimpleTestCase):
             result=agent.answer_hybrid("عوارض دارو چیست؟",[],None,retriever=r)
         model.assert_called_once();verify.assert_not_called()
         self.assertEqual(result["parts"][0]["status"],"not_found")
+
+    def test_discovered_algorithm_is_returned_even_without_answer_paragraphs(self):
+        source = replace(reference(10, "Decision algorithm"), media=({"key": "fixture", "kind": "image",
+                         "title": "Decision pathway", "caption": "Original source", "is_algorithm": True},))
+        retriever = self.retriever([source])
+        with patch.object(scoped, "stream_chat", return_value=(self.plan(), {})) as model, patch.object(agent, "chat") as verify:
+            part = agent.answer_hybrid("الگوریتم Fixturemed را نشان بده", [], None, retriever=retriever)["parts"][0]
+        model.assert_called_once()
+        verify.assert_not_called()
+        self.assertEqual(part["status"], "answered")
+        self.assertEqual(part["items"][0]["media"][0]["key"], "fixture")
 
     def test_numeric_formulation_fact_does_not_satisfy_a_requested_treatment_regimen(self):
         rows=[reference(10,"We recommend Fixturemed. The available solution contains 10 mg/mL.")]

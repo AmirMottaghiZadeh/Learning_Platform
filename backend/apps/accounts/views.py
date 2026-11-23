@@ -176,7 +176,7 @@ class EmailOtpVerifyView(APIView):
         from . import email_otp
         serializer=EmailOtpVerifySerializer(data=request.data);serializer.is_valid(raise_exception=True)
         data=serializer.validated_data
-        try:user,created=email_otp.verify_code(data["email"],data["code"],request=request)
+        try:user,created=email_otp.verify_code(data["email"],data["code"],request=request,allow_create=not data["recovery"])
         except otp.OtpError as exc:raise _otp_error(exc) from None
         issued=issue_user_session(user,request=request,device_name=data.get("device_name",""))
         verify_session_step_up(issued.session,request=request)

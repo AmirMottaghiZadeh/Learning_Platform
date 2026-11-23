@@ -49,6 +49,22 @@ class EmailOtpTests(TestCase):
         _,code=self.send();user,created=email_otp.verify_code("person@example.com",code)
         self.assertFalse(created);self.assertEqual(user.pk,existing.pk)
 
+    def test_password_login_accepts_email_in_the_same_identifier_field(self):
+        get_user_model().objects.create_user("email-owner", email="Person@example.com", password="test-password")
+        response = self.api.post(reverse("auth-login"), {
+            "username": "person@example.com", "password": "test-password",
+        }, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["access_token"])
+
+    def test_recovery_email_verification_does_not_register_an_account(self):
+        _, code = self.send()
+        response = self.api.post(reverse("auth-email-otp-verify"), {
+            "email": "person@example.com", "code": code, "recovery": True,
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(get_user_model().objects.filter(email="person@example.com").exists())
+
     def test_wrong_attempts_persist_and_eventually_lock(self):
         row,code=self.send();wrong="000000" if code!="000000" else "111111"
         for _ in range(5):

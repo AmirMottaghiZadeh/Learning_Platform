@@ -21,7 +21,7 @@ type Mode = "login" | "signup" | "reset";
 type Step = "phone" | "code";
 
 /** Signed-out entry; it opens on signup. Three paths:
- * - login: mobile number (or an old account's email) + password, no SMS;
+ * - login: one mobile number or email field plus password;
  * - signup: mobile number -> SMS code -> signed in; the app then asks for a
  *   password (SetPasswordScreen) before anything else;
  * - reset (forgotten password): mobile number -> SMS code -> signed in,
@@ -54,10 +54,8 @@ export function AuthScreen() {
     setError(null);
     setEmailMode(false);
   };
-  // Back walks toward the signup page the screen opens on: from the code to
-  // the number, from a forgotten password to login, from login to signup.
-  useBackInterceptor(mode !== "signup" || step === "code", () =>
-    step === "code" ? setStep("phone") : switchTo(mode === "reset" ? "login" : "signup"),
+  useBackInterceptor(emailMode || mode !== "signup" || step === "code", () =>
+    emailMode ? setEmailMode(false) : step === "code" ? setStep("phone") : switchTo(mode === "reset" ? "login" : "signup"),
   );
 
   useEffect(() => {
@@ -180,15 +178,16 @@ export function AuthScreen() {
           ? t("phoneSignupSubtitle")
           : t("resetSubtitle");
 
-  if(emailMode) return <EmailOtpForm mode={mode==="login"?"login":"signup"} onBack={() => setEmailMode(false)} />;
+  if (emailMode) return <EmailOtpForm mode={mode === "reset" ? "reset" : "signup"}
+    initialEmail={mode === "reset" && identifier.includes("@") ? identifier.trim() : ""} onBack={() => setEmailMode(false)} onLogin={() => switchTo("login")} />;
   return (
     <AuthLayout panel compact={step === "code" && mode !== "login"} title={step === "code" && mode !== "login" ? t("otpTitle") : title} subtitle={subtitle}>
-      {step === "phone" && mode !== "reset" ? <AuthMethodSelector value="mobile" onChange={method=>setEmailMode(method==="email")} /> : null}
+      {step === "phone" && mode === "signup" ? <AuthMethodSelector value="mobile" onChange={method=>setEmailMode(method==="email")} /> : null}
       {mode === "login" ? (
         <View style={{ gap: 12 }}>
           <Input
-            accessibilityLabel={isFa ? "شمارهٔ موبایل" : "Mobile number"}
-            placeholder={isFa ? "شمارهٔ موبایل" : "Mobile number"}
+            auth label={isFa ? "شمارهٔ موبایل یا ایمیل" : "Mobile number or email"}
+            placeholder={isFa ? "شمارهٔ موبایل یا ایمیل حساب" : "Enter your mobile number or email"}
             autoCapitalize="none"
             autoComplete="username"
             textContentType="username"
@@ -196,7 +195,7 @@ export function AuthScreen() {
             onChangeText={setIdentifier}
           />
           <Input
-            accessibilityLabel={t("passwordLabel")}
+            auth label={t("passwordLabel")}
             placeholder={t("passwordLabel")}
             secureTextEntry
             autoComplete="current-password"
@@ -208,7 +207,7 @@ export function AuthScreen() {
         </View>
       ) : step === "phone" ? (
         <Input
-          accessibilityLabel={t("phoneLabel")}
+          auth label={t("phoneLabel")}
           placeholder={t("phoneLabel")}
           keyboardType="phone-pad"
           autoComplete="tel"
@@ -231,14 +230,21 @@ export function AuthScreen() {
       {mode === "login" ? (
         <>
           <Button label={t("loginBtn")} onPress={login} loading={busy} style={{ marginTop: 20 }} />
-          <Pressable onPress={() => switchTo("reset")} style={{ marginTop: 14, alignSelf: "center" }}>
+          <Pressable onPress={() => {
+            switchTo("reset");
+            if (identifier.includes("@")) setEmailMode(true);
+          }} style={{ marginTop: 14, alignSelf: "center" }}>
             <AppText weight="700" size={13} color={colors.accent}>
               {t("forgotPassword")}
             </AppText>
           </Pressable>
         </>
       ) : step === "phone" ? (
-        <Button label={t("sendCodeBtn")} onPress={sendCode} loading={busy} style={{ marginTop: 20 }} />
+        <>
+          <Button label={t("sendCodeBtn")} onPress={sendCode} loading={busy} style={{ marginTop: 20 }} />
+          {mode === "reset" ? <Button full={false} variant="ghost" onPress={() => setEmailMode(true)}
+            label={isFa ? "بازیابی با ایمیل" : "Recover by email"} /> : null}
+        </>
       ) : (
         <>
           <Button

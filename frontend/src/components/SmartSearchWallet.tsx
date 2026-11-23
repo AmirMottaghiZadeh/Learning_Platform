@@ -106,8 +106,8 @@ export function SmartSearchWallet({ refreshKey, running, compact=false }: { refr
         </View>
         <Pressable accessibilityRole="button" testID="search-credit-manage" onPress={() => setOpen(true)}
           style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: spacing.md, justifyContent: "center", borderRadius: 10,
-            backgroundColor: compact ? colors.leitnerActiveBg : colors.accent, opacity: pressed ? 0.85 : 1 })}>
-          <AppText size={13} weight="700" color={compact ? colors.accent : colors.onAccent}>{isFa ? "مدیریت و شارژ" : "Manage & top up"}</AppText>
+            backgroundColor: colors.accent, opacity: pressed ? 0.85 : 1 })}>
+          <AppText size={13} weight="700" color={colors.onAccent}>{isFa ? "مدیریت و شارژ" : "Manage & top up"}</AppText>
         </Pressable>
       </View>
       {data ? <>

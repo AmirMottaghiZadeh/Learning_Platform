@@ -51,7 +51,7 @@ export function AuthMethodSelector({ value, onChange }: { value: AuthMethod; onC
     <View
       accessibilityRole="tablist"
       testID="auth-methods"
-      style={[styles.selector, { flexDirection: row, backgroundColor: colors.leitnerActiveBg }]}
+      style={[styles.selector, { flexDirection: row }]}
     >
       {methods.map((method) => {
         const selected = value === method;
@@ -65,7 +65,7 @@ export function AuthMethodSelector({ value, onChange }: { value: AuthMethod; onC
             accessibilityState={{ selected }}
             testID={method === "email" ? "auth-email-otp" : "auth-method-mobile"}
             onPress={() => onChange(method)}
-            style={[styles.tab, { backgroundColor: selected ? colors.cardBg : "transparent" }]}
+            style={[styles.tab, { backgroundColor: selected ? colors.leitnerActiveBg : colors.softBg }]}
           >
             <AuthMethodIcon method={method} color={color} />
             <AppText size={13} weight="800" color={color}>{labels[method]}</AppText>
@@ -77,7 +77,7 @@ export function AuthMethodSelector({ value, onChange }: { value: AuthMethod; onC
 }
 
 const styles = StyleSheet.create({
-  selector: { padding: 4, borderRadius: 14, marginBottom: 20 },
+  selector: { gap: 8, marginBottom: 20 },
   tab: {
     flex: 1,
     minHeight: 58,

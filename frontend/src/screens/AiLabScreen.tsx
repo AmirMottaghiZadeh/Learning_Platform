@@ -51,8 +51,6 @@ export function AiLabScreen() {
   const [cancellingJob, setCancellingJob] = useState<string | null>(null);
   const [suggestions] = useState(() => pickClinicalSearchSuggestions());
   const questionInput = useRef<TextInput>(null);
-  const [quotes, setQuotes] = useState<Record<string, boolean>>({});
-  const [sourcesExpanded, setSourcesExpanded] = useState<Record<string, boolean>>({});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyOpening, setHistoryOpening] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState(false);
@@ -284,29 +282,6 @@ export function AiLabScreen() {
     </Pressable>
   );
 
-  const citationCard = (citation: LabCitation, key: string) => {
-    const showingQuote = quotes[key] ?? (citation.verification === "retrieved" && !citation.media?.length);
-    return <View testID="reference-citation" key={key} style={{ backgroundColor: colors.softBg, padding: 14, borderRadius: 14, gap: 6 }}>
-    {citation.summary_fa ? <AppText size={14}>{citation.summary_fa}</AppText> : <AppText size={12} muted>{isFa ? "بخش مرتبط از منبع" : "Related source passage"}</AppText>}
-    <AppText weight="700" size={12} color={colors.accent} style={{ writingDirection: "ltr", textAlign: "left" }}>UpToDate · {sectionName(citation)}</AppText>
-    <Pressable accessibilityRole="button" accessibilityState={{ expanded: showingQuote }}
-      onPress={() => setQuotes((s) => ({ ...s, [key]: !showingQuote }))}
-      style={{ minHeight: 44, justifyContent: "center" }}>
-      <AppText size={13} color={colors.accent}>{showingQuote ? (isFa ? "بستن بند منبع" : "Hide source passage") : (isFa ? "نمایش بند منبع" : "Show source passage")}</AppText>
-    </Pressable>
-    {showingQuote ? <View style={{ gap: 8 }}>
-      {citation.context?.length ? <View style={{ gap: 4 }}>
-        <AppText size={11} muted>{isFa ? "برچسب‌های پیش از این بند در متن اصلی" : "Preceding labels in the original source"}</AppText>
-        <AppText selectable muted size={12} style={{ writingDirection: "ltr", textAlign: "left" }}>{citation.context.map(label => label.quote).join("\n")}</AppText>
-      </View> : null}
-      <AppText selectable size={13} style={{ writingDirection: "ltr", textAlign: "left" }}>{citation.quote}</AppText>
-    </View> : null}
-    <Pressable accessibilityRole="button" onPress={() => open(citation)} style={{ minHeight: 44, justifyContent: "center" }}>
-      <AppText weight="800" size={13} color={colors.accent}>{isFa ? "باز کردن متن اصلی" : "Open original source"}</AppText><AppText size={12} muted>{citation.title}</AppText>
-    </Pressable>
-  </View>;
-  };
-
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, backgroundColor: colors.appBg, paddingBottom: clearance }}>
     {historyOpen ? <SmartSearchHistory userId={userId} visible opening={historyOpening} openError={historyError}
       onClose={closeHistory} onOpen={(entry) => void openHistoryEntry(entry)} /> : null}
@@ -363,9 +338,7 @@ export function AiLabScreen() {
       {status.data && !status.data.enabled ? <AppText size={14} muted>{failure("AI_LAB_DISABLED", undefined, isFa)}</AppText> : null}
       {displayedTurns.map((turn) => {
         const draft = Object.values(turn.answer_drafts ?? {}).join("\n\n");
-        const hasFinalSources = !!turn.result?.parts.some((part) => part.items.length || part.related_items?.length);
-        const showSources = sourcesExpanded[turn.id] ?? !!turn.result?.parts.some((part) => part.related_items?.some((source) => !source.media?.length));
-        const citations = turn.result?.parts.flatMap((part) => [...part.items, ...(part.related_items ?? [])])
+        const citations = turn.result?.parts.flatMap((part) => [...part.items, ...(part.related_items ?? []).filter((item) => item.media?.length)])
           ?? (turn.status === "running" ? (turn.findings ?? []).map((finding) => finding.citation) : []);
         const articles = new Map<string, LabCitation>();
         for (const citation of citations) {
@@ -439,24 +412,6 @@ export function AiLabScreen() {
               </Pressable>
             ))}
           </View>
-          {hasFinalSources ? <View style={{ borderRadius: 14, overflow: "hidden", backgroundColor: colors.softBg }}>
-            <Pressable testID="reference-sources-toggle" accessibilityRole="button"
-              accessibilityLabel={isFa ? "دیدن بخش‌های مرتبط در منابع" : "View relevant source passages"}
-              aria-expanded={showSources}
-              accessibilityState={{ expanded: showSources }}
-              onPress={() => setSourcesExpanded((s) => ({ ...s, [turn.id]: !showSources }))}
-              style={{ minHeight: 52, padding: 14, flexDirection: row, alignItems: "center", gap: 12 }}>
-              <AppText weight="700" size={13} style={{ flex: 1 }}>{isFa ? "دیدن بخش‌های مرتبط در منابع" : "View relevant source passages"}</AppText>
-              <AppText color={colors.accent} size={18}>{showSources ? "−" : "+"}</AppText>
-            </Pressable>
-            {showSources ? <View testID="reference-source-passages" style={{ padding: 12, paddingTop: 0, gap: 10 }}>
-              {turn.result?.parts.map((part, i) => part.items.length || part.related_items?.length ? <View key={i} style={{ gap: 10 }}>
-                {turn.result!.parts.length > 1 ? <AppText weight="700" size={13}>{part.question_fa}</AppText> : null}
-                {part.items.map((citation) => citationCard(citation, `${turn.id}:${i}:${citation.target.params.id}:${citation.source_id}`))}
-                {part.related_items?.filter((citation) => !citation.media?.length).map((citation) => citationCard(citation, `${turn.id}:${i}:related:${citation.source_id}`))}
-              </View> : null)}
-            </View> : null}
-          </View> : null}
         </View> : null}
         {turn.status === "complete" && turn.result && turn.jobId ? <SearchFeedback jobId={turn.jobId} available={!!turn.feedback_available} /> : null}
         {turn.status === "running" && turn.findings_limited ? <AppText size={12} muted>{isFa ? "بررسی منابع ادامه دارد. نتیجهٔ نهایی پس از تکمیل جست‌وجو نمایش داده می‌شود." : "Review is continuing. Final results will appear when the search is complete."}</AppText> : null}

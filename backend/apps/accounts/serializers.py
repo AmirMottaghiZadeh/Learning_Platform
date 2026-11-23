@@ -426,6 +426,7 @@ class EmailOtpRequestSerializer(serializers.Serializer):
 class EmailOtpVerifySerializer(EmailOtpRequestSerializer):
     code = serializers.CharField(min_length=6,max_length=10,write_only=True)
     device_name = serializers.CharField(required=False,allow_blank=True,max_length=120)
+    recovery = serializers.BooleanField(required=False, default=False)
 
 
 class EmailOtpRequestResponseSerializer(serializers.Serializer):

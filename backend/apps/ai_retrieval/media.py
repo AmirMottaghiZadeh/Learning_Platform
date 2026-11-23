@@ -3,6 +3,8 @@ import re
 from hashlib import sha256
 from django.contrib.postgres.search import SearchQuery,SearchRank,SearchVector
 from apps.ai_lab.retrieval import Passage
+from apps.billing.enforcement import require_feature
+from apps.core.exceptions import PlatformAPIError
 from apps.uptodate.search_catalog import normalize
 from .models import ReferenceMedia
 
@@ -11,15 +13,35 @@ MEDIA_ASPECTS = {"initial", "management", "treatment", "children", "child", "ped
                  "recommended", "first", "line", "approach", "algorithm", "dose", "dosing"}
 
 
+TABLE_INTENT = re.compile(r"(?<![آ-ی])جدول|\btables?\b", re.I)
+IMAGE_INTENT = re.compile(
+    r"(?<![آ-ی])(?:تصویر|عکس|نمودار|شکل(?![\s‌-]*دارویی))|\b(?:figures?|images?|pictures?|illustrations?|diagrams?)\b", re.I)
+ALGORITHM_INTENT = re.compile(r"(?<![آ-ی])(?:الگوریتم|فلو[\s‌-]*چارت)|\b(?:algorithms?|flow[ -]?charts?|decision trees?)\b", re.I)
+LOOKUP_WORDS = set("show find display table tables figure figures image images picture pictures please give chart diagram text reference original article".split())
+
+
 def requested(question):
-    return bool(re.search(r"جدول|تصویر|عکس|نمودار|فلوچارت|الگوریتم|\b(?:tables?|figures?|images?|illustrations?|flowcharts?)\b",question,re.I)
-        or re.search(r"شکل(?!\s*دارویی)",question))
+    return any(pattern.search(question) for pattern in (TABLE_INTENT, IMAGE_INTENT, ALGORITHM_INTENT))
 
 
 def requested_kinds(question):
-    table=bool(re.search(r"جدول|\btables?\b",question,re.I))
-    image=bool(re.search(r"تصویر|عکس|شکل(?!\s*دارویی)|\b(?:figures?|images?|pictures?|illustrations?)\b",question,re.I))
-    return {"table","image"} if table==image else {"table"} if table else {"image"}
+    kinds = {kind for kind, pattern in (("table", TABLE_INTENT), ("image", IMAGE_INTENT)) if pattern.search(question)}
+    return kinds or {"table", "image"}
+
+
+def requested_types(question):
+    return [kind for kind, pattern in (("algorithm", ALGORITHM_INTENT), ("table", TABLE_INTENT),
+                                       ("image", IMAGE_INTENT)) if pattern.search(question)]
+
+
+def catalog_query(query):
+    if not requested(query):
+        return query
+    value = query
+    for pattern in (TABLE_INTENT, IMAGE_INTENT, ALGORITHM_INTENT):
+        value = pattern.sub(" ", value)
+    words = [word for word in value.split() if word.lower() not in LOOKUP_WORDS | {"for", "of", "the", "a", "and"}]
+    return " ".join(words) or query
 
 
 def passage(row):
@@ -36,39 +58,169 @@ def media_passage(identifier, article_id, article_title, content_hash, record, t
         content_hash, heading_path=(record["title"],), media=(descriptor,))
 
 
-def outline_media(articles, queries, question, audience, limit=6):
+def _passage_from_record(article, record):
+    complete = len(record["text"]) <= 12000
+    body = record["text"] if complete else record["caption"] or record["title"]
+    text = "\n".join(dict.fromkeys(filter(None, (record["title"], record["caption"], body))))
+    key = sha256(f'{article.source_id}:{record["key"]}'.encode()).hexdigest()[:24]
+    descriptor = {name: record[name] for name in ("key", "kind", "title", "caption", "graphic_hash", "source_labels") if name in record}
+    return media_passage("M" + key, article.source_id, article.title, article.content_hash,
+                         {**descriptor, "content_complete": complete, "is_algorithm": _algorithm(record)}, text)
+
+
+def _algorithm(record):
+    return bool(ALGORITHM_INTENT.search(" ".join([record["title"], record.get("caption", ""),
+        *record.get("source_labels", []), *record.get("source_groups", [])])))
+
+
+def _number_matches(question, record):
+    western_digits = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+    prefixes = {"table": r"table|جدول", "image": r"fig\.?|figure|image|شکل|تصویر"}
+    prefix = prefixes.get(record.get("kind"), "|".join(prefixes.values()))
+    pattern = rf"(?:{prefix})\s*(?:شماره\s*|#\s*)?(\d+)"
+    numbers = re.findall(pattern, question.translate(western_digits), re.I)
+    if not numbers:
+        return True
+    labels = " ".join([record["title"], record.get("caption", ""), *record.get("source_labels", [])])
+    return bool(set(numbers).intersection(re.findall(pattern, labels.translate(western_digits), re.I)))
+
+
+def outline_media(articles, queries, question, audience, limit=6, *, request=None, generation_id=None,
+                  allow_related=lambda _parent, _target: True):
+    from apps.ai_lab.models import ReferenceArticle
     from apps.uptodate import services
+    from apps.uptodate.media_links import media_links
     from . import media_catalog
     from .chunking import source_metadata
 
     kinds = requested_kinds(question)
-    terms = {word for word in normalize(" ".join(queries)).split() if len(word) > 2} - MEDIA_ASPECTS
-    if not terms:
+    explicit = requested(question)
+    wants_algorithm = bool(ALGORITHM_INTENT.search(question))
+    media_only_algorithm = wants_algorithm and not (TABLE_INTENT.search(question) or IMAGE_INTENT.search(question))
+    terms = set(normalize(" ".join(queries)).split()) - LOOKUP_WORDS
+    topic = {word for word in terms - MEDIA_ASPECTS if len(word) > 2}
+    if not topic and not explicit:
         return []
-    ranked = []
-    for article in articles:
+    ranked, related, inspected = [], {}, set()
+
+    def matches(text):
+        return topic.intersection(normalize(text).split())
+
+    def inspect(article, origin_label="", parent=""):
+        if article.source_id in inspected:
+            return
+        inspected.add(article.source_id)
+        try:
+            require_feature(request, "uptodate", item=article.source_id, consume=False)
+        except PlatformAPIError:
+            return
         raw = services.get_topic(article.source_id, include_memberships=False)
         if not raw or sha256(raw["body_html"].encode()).hexdigest() != article.content_hash:
+            return
+        links = []
+        if explicit:
+            links = [*media_links(raw["body_html"]), *media_links(raw.get("outline_html", ""))]
+            if not parent:
+                for link in links:
+                    relevant = matches(link.label) or matches(link.context) or (not link.context and matches(article.title))
+                    if not link.graphic and link.identifier not in inspected and relevant:
+                        related.setdefault(link.identifier, (article.source_id, link.label))
+            # Prefer anchors whose labels or nearby prose answer the request.
+            # A label such as "Table 1" is still genuine source evidence.
+            def link_score(link):
+                label = " ".join((link.label, link.group))
+                return (wants_algorithm and bool(ALGORITHM_INTENT.search(label)), len(matches(label)),
+                        len(matches(link.context)), _number_matches(question, {"title": label, "caption": ""}))
+            links = sorted((link for link in links if link.graphic), key=link_score, reverse=True)
+            wanted = list(dict.fromkeys(link.identifier for link in links))[:24]
+            links = [link for link in links if link.identifier in wanted]
+        for record in media_catalog.catalog_media(raw, links=links if explicit else None):
+            label = " ".join([record["title"], record["caption"],
+                              *record.get("source_labels", []), *record.get("source_groups", [])])
+            media_audience, _ = source_metadata(article.title, [label])
+            algorithm = _algorithm(record)
+            if ((record["kind"] not in kinds and not (wants_algorithm and algorithm))
+                    or (media_only_algorithm and not algorithm)
+                    or {audience, media_audience} == {"adult", "pediatric"}
+                    or not _number_matches(question, record)):
+                continue
+            own_title = label if record["title"] != article.title or record["caption"] else ""
+            own_body = record["text"] if record["text"] != article.title else ""
+            own = matches(own_title)
+            nearby = matches(" ".join(record.get("source_context", [])))
+            context = matches(own_body)
+            domain = matches(article.title + " " + origin_label)
+            if not own and not context and not (explicit and (nearby or domain or not topic)):
+                continue
+            aspect_hits = (terms & set(normalize(label + " " + own_body).split())) - topic
+            score = 6 * len(own) + 3 * len(nearby) + 2 * len(context) + 2 * len(domain) + len(aspect_hits)
+            if wants_algorithm and algorithm:
+                score += 10
+            ranked.append((score, parent, _passage_from_record(article, record)))
+
+    for article in articles:
+        inspect(article)
+    if explicit and generation_id and related:
+        identifiers = sorted(related, key=lambda identifier: -len(matches(related[identifier][1])))[:12]
+        children = {article.source_id: article for article in ReferenceArticle.objects.filter(
+            generation_id=generation_id, source_id__in=identifiers, is_directory=False)}
+        for identifier in identifiers:
+            if identifier in children:
+                parent, label = related[identifier]
+                inspect(children[identifier], label, parent)
+    selected = []
+    admitted = set()
+    pending = sorted(ranked, key=lambda entry: entry[0], reverse=True)
+    groups = requested_types(question)
+    if len(groups) > 1:
+        first = [next((entry for entry in pending if group in (entry[2].media[0]["kind"],
+            "algorithm" if entry[2].media[0].get("is_algorithm") else "")), None) for group in groups]
+        pending = [entry for entry in first if entry is not None] + pending
+    for _, parent, item in pending:
+        if item.id in admitted or parent and not allow_related(parent, item.article_id):
             continue
-        for record in media_catalog.catalog_media(raw):
-            media_audience, _ = source_metadata(article.title, [record["title"], record["caption"]])
-            if record["kind"] not in kinds or {audience, media_audience} == {"adult", "pediatric"}:
-                continue
-            own_title = normalize(f'{record["title"]} {record["caption"]}') if record["title"] != article.title or record["caption"] else ""
-            own_body = normalize(record["text"]) if record["text"] != article.title else ""
-            hits = len(terms.intersection(own_title.split()))
-            body_hits = len(terms.intersection(own_body.split()))
-            if not hits and not body_hits:
-                continue
-            complete = len(record["text"]) <= 12000
-            body = record["text"] if complete else record["caption"] or record["title"]
-            text = "\n".join(dict.fromkeys(filter(None, (record["title"], record["caption"], body))))
-            key = sha256(f'{article.source_id}:{record["key"]}'.encode()).hexdigest()[:24]
-            descriptor = {**record, "content_complete": complete}
-            descriptor.pop("text")
-            ranked.append((hits * 2 + body_hits, media_passage("M" + key, article.source_id, article.title,
-                          article.content_hash, descriptor, text)))
-    return [item for _, item in sorted(ranked, key=lambda entry: entry[0], reverse=True)[:limit]]
+        admitted.add(item.id)
+        selected.append(item)
+        if len(selected) >= limit:
+            break
+    return selected
+
+
+def media_answer(question, passages):
+    """Return factual discovery of an original asset without a generated availability claim."""
+    from apps.ai_lab.hybrid_agent import _citation
+
+    types = requested_types(question)
+    def matches(passage):
+        if not passage.media:
+            return False
+        asset = passage.media[0]
+        algorithm = asset.get("is_algorithm") or _algorithm(asset)
+        return (asset["kind"] in types or algorithm and "algorithm" in types) and _number_matches(question, asset)
+
+    unique = {}
+    for passage in passages:
+        if matches(passage):
+            unique.setdefault((passage.article_id, passage.media[0]["key"]), passage)
+    rows = list(unique.values())[:6]
+    if not rows:
+        return {}
+    assets = [row.media[0] for row in rows]
+    kinds = {asset["kind"] for asset in assets}
+    if any(asset.get("is_algorithm") or _algorithm(asset) for asset in assets):
+        kinds.add("algorithm")
+    complete = set(types) <= kinds
+    items, blocks = [], []
+    for passage, asset in zip(rows, assets):
+        label = "الگوریتم" if asset.get("is_algorithm") or _algorithm(asset) else "جدول" if asset["kind"] == "table" else "تصویر"
+        item = _citation(passage, retrieved=True)
+        text = f"{label} اصلی در مقالهٔ مرجع پیدا شد."
+        item["summary_fa"] = text
+        items.append(item)
+        blocks.append({"text_fa": text, "source_ids": [item["source_id"]]})
+    return {"status": "answered" if complete else "partial", "items": items, "answer_blocks": blocks,
+            "overview_fa": "\n\n".join(block["text_fa"] for block in blocks),
+            "clarification_fa": "" if complete else "بخشی از رسانه‌های درخواستی در منابع بررسی‌شده پیدا شد."}
 
 
 def citation_valid(citation):

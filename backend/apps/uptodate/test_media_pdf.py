@@ -31,6 +31,14 @@ class MediaExtractionTests(SimpleTestCase):
         html='<a onclick="doOperation({contentIds:[&quot;123&quot;]})">table 1</a>'
         self.assertEqual(graphic_ids(html),["123"])
 
+    def test_reads_all_literal_graphics_and_singular_targets_in_graphics_section(self):
+        html = '''<p><a onclick='doOperation({contentIds:["123", 456]})'>Tables</a></p>
+            <section id="outlineRelatedGraphicsLinks"><a onclick='doOperation({contentId:"789"})'>Pathway</a></section>
+            <a onclick='doOperation({contentId:"777"})'>Figure 3</a>
+            <a onclick='doOperation({contentId:"888"})'>Another clinical article</a>
+            <a onclick='other({contentIds:["999"]})'>Ignored</a>'''
+        self.assertEqual(graphic_ids(html), ["123", "456", "789", "777"])
+
     def test_media_key_cannot_read_an_unrelated_graphic(self):
         self.assertIsNone(resolve_one(ARTICLE,"graphic-999-um-"+"a"*32))
 

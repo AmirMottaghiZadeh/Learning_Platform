@@ -26,6 +26,7 @@ from apps.ai_lab import lexical, question_profile as profiles, reference_index, 
 from apps.ai_lab.models import ReferenceArticle, ReferenceParagraph
 from apps.ai_lab.provider import ProviderError
 from apps.ai_lab.retrieval import Passage
+from apps.uptodate import services as uptodate
 from apps.uptodate.search_catalog import SearchCatalog, normalize
 from . import embeddings, evidence, indexing, vectors
 from .models import RetrievalHead, SearchAlias, SearchChunk
@@ -318,6 +319,8 @@ class HybridRetriever:
             connections.close_all()
 
     def search(self, query, *, lookup_kind="topic", audience="general", intent="general", keywords=(), question=None, question_profile=None):
+        from . import media
+
         self.validate()
         if question_profile is not None:
             question_profile = profiles.validate(question_profile)
@@ -326,7 +329,8 @@ class HybridRetriever:
         query = query.strip()
         if settings.AI_LAB_TAG_SCOPED_SEARCH:
             query = query_text(query)
-            self._bind_scope(query, audience, intent, lookup_kind, question_profile)
+            self._bind_scope(media.catalog_query(query) if media.requested(question or query) else query,
+                             audience, intent, lookup_kind, question_profile)
         followup = self.search_count > 0
         self.search_count += 1
         if settings.AI_LAB_TAG_SCOPED_SEARCH and not self.scope.ids:
@@ -474,7 +478,6 @@ class HybridRetriever:
                 additional.sort(key=lambda p:(not bool(evidence.DOSE_NUMBER.search(p.text)),
                     -lexical.regimen_score(p.text,p.section)))
                 passages = core + additional
-        from . import media
         media_count=0
         explicit_media = media.requested(question or query)
         text_articles = {p.article_id for p in passages if not p.media}
@@ -483,13 +486,31 @@ class HybridRetriever:
             selected=media.search(self.generation,query,article_ids=media_articles, audience=audience,
                 kinds=media.requested_kinds(question or query), scoped=not explicit_media or settings.AI_LAB_TAG_SCOPED_SEARCH,
                 implicit=not explicit_media)
+            if explicit_media:
+                roots = list(dict.fromkeys([*(row.source_id for row in chosen), *sorted(media_articles)]))
+                if not settings.AI_LAB_TAG_SCOPED_SEARCH and not roots:
+                    lookup = media.catalog_query(query)
+                    page = uptodate.search_page(lookup, limit=6, offset=0, section="")
+                    roots = [hit["id"] for hit in page["results"]]
+                media_ids = roots[:6]
+                source_articles = {article.source_id: article for article in ReferenceArticle.objects.filter(
+                    generation_id=self.generation.source_generation, source_id__in=media_ids)}
+                original = media.outline_media([source_articles[i] for i in media_ids if i in source_articles], [query],
+                    question or query, audience, request=self.request, generation_id=self.generation.source_generation,
+                    allow_related=lambda parent, target: self.register_related(parent, target, kind="media_source_link"))
+                if media.ALGORITHM_INTENT.search(question or query):
+                    selected = [passage for passage in selected if media.ALGORITHM_INTENT.search(passage.media[0]["title"])]
+                preferred = {(p.article_id, p.media[0]["key"]): p for p in original}
+                for passage in selected:
+                    preferred.setdefault((passage.article_id, passage.media[0]["key"]), passage)
+                selected = list(preferred.values())
             allowed=[]
             for passage in selected:
                 try:require_feature(self.request,"uptodate",item=passage.article_id,consume=False)
                 except PlatformAPIError:continue
                 allowed.append(passage)
-            combined={p.id:p for p in passages}
-            for passage in allowed:
+            combined = {p.id: p for p in (allowed if explicit_media else passages)}
+            for passage in ([p for p in passages if not p.media] if explicit_media else allowed):
                 combined.setdefault(passage.id,passage)
             passages=list(combined.values())
         media_count=sum(bool(p.media) for p in passages)

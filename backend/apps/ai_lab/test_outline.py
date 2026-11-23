@@ -22,6 +22,46 @@ class OutlinePipelineTests(TestCase):
         self.write_article('3851', fixtures.html(heading='Treatment'))
         self.build()
 
+    def test_explicit_media_search_uses_inline_graphics_and_related_topics_before_text_selection(self):
+        from apps.ai_retrieval.media import citation_valid
+        from apps.uptodate import services as sources
+        from apps.uptodate.media import resolve_one
+
+        self.write_article("3851", '''<div id="topicText"><p>See
+            <a onclick='doOperation({contentIds:["9001", "9002"]})'>Table 2</a>.</p></div>''',
+            title="Fixture syndrome overview", outline='''
+            <section id="outlineRelatedGraphicsLinks"><div class="relatedGraphicsHeading">Algorithms</div>
+            <a onclick='doOperation({contentId:"9002"})'>Decision pathway</a></section>
+            <section id="outlineRelatedTopicsLinks"><a data-topicid="3852">Fixture syndrome follow-up</a></section>''')
+        self.add_title("3852")
+        self.write_article("3852", '<div id="topicText"><figure><img src="diagram.png" alt="Follow-up illustration"></figure></div>',
+                           title="Fixture syndrome follow-up")
+        self.write_article("9001", '<table><tr><th>Source</th></tr><tr><td>Original table cell</td></tr></table>', title="Source table")
+        self.write_article("9002", '<img src="pathway.png" alt="Original pathway">', title="Decision pathway")
+        self.build()
+
+        def model(alias, system, payload, tokens):
+            if system == services.PLAN_PROMPT:
+                return {"queries": ["Fixture syndrome algorithm"], "intent": "general"}, {}
+            if system == services.ARTICLE_PROMPT:
+                return {"article_ids": ["3851"]}, {}
+            self.fail("Explicit original-media lookup must not depend on selecting or paraphrasing a paragraph.")
+
+        def catalog(queries, request, audit):
+            return [{"id": "3851", "title": "Fixture syndrome overview"}] if queries == ["Fixture syndrome"] else []
+
+        with patch.object(services, "search_articles", side_effect=catalog), patch.object(services, "chat", side_effect=model):
+            part = services.answer("جدول و تصویر و الگوریتم Fixture syndrome را نشان بده", "luna", ["uptodate"], [], None)["parts"][0]
+        self.assertEqual(part["status"], "answered")
+        self.assertEqual({item["media"][0]["kind"] for item in part["items"]}, {"table", "image"})
+        self.assertEqual({item["target"]["params"]["id"] for item in part["items"]}, {"3851", "3852"})
+        self.assertTrue(any(item["media"][0]["is_algorithm"] for item in part["items"]))
+        for item in part["items"]:
+            params = item["target"]["params"]
+            original = resolve_one(sources.get_topic(params["id"]), params["mediaKey"])
+            self.assertIsNotNone(original)
+            self.assertTrue(citation_valid(item))
+
     def model(self, alias, system, payload, tokens):
         if system == services.PLAN_PROMPT:
             return {'queries': ['concept'], 'intent': 'adverse_effects', 'requirements': ['adverse_effects']}, {}

@@ -60,10 +60,10 @@ export function SetPasswordScreen() {
     >
       <View style={{ gap: 12 }}>
         {isNewAccount ? (
-          <Input placeholder={t("nameLabel")} autoComplete="name" textContentType="name" value={name} onChangeText={setName} />
+          <Input auth label={t("nameLabel")} autoComplete="name" textContentType="name" value={name} onChangeText={setName} />
         ) : null}
         <Input
-          placeholder={t("passwordLabel")}
+          auth label={t("passwordLabel")}
           secureTextEntry
           autoComplete="new-password"
           textContentType="newPassword"
@@ -71,7 +71,7 @@ export function SetPasswordScreen() {
           onChangeText={setPassword}
         />
         <Input
-          placeholder={t("passwordConfirmLabel")}
+          auth label={t("passwordConfirmLabel")}
           secureTextEntry
           autoComplete="new-password"
           textContentType="newPassword"
