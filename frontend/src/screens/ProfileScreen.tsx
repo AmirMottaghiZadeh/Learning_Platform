@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View } from "react-native";
 
 import { meApi } from "@/api/endpoints";
 import { HeaderMesh } from "@/components/HeaderMesh";
+import { LangToggleButton } from "@/components/ScreenChrome";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
@@ -18,7 +19,7 @@ import { SupportLink } from "@/components/SupportSettings";
 
 export function ProfileScreen() {
   const navClearance = useNavClearance();
-  const { t, n, toggle: toggleLang, row } = useLang();
+  const { t, n, row } = useLang();
   const { colors, shadows } = useTheme();
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
@@ -97,19 +98,7 @@ export function ProfileScreen() {
               </AppText>
               <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
                 <ThemeToggleButton />
-                <Pressable
-                  onPress={toggleLang}
-                  style={{
-                    backgroundColor: "rgba(255,255,255,0.16)",
-                    borderRadius: 999,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                  }}
-                >
-                  <AppText weight="800" size={12} color="#fff">
-                    {t("langSwitch")}
-                  </AppText>
-                </Pressable>
+                <LangToggleButton variant="chip" />
               </View>
             </View>
 

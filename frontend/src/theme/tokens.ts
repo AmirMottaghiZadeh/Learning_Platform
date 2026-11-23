@@ -14,6 +14,8 @@ export interface ThemeColors {
   muted: string;
   border: string;
   softBg: string;
+  chromeControlBg: string;
+  headerControlBg: string;
   trackBg: string;
   inputBg: string;
   navBg: string;
@@ -74,6 +76,8 @@ export const THEME: Record<ThemeMode, ThemeColors> = {
     muted: "#5F6B68",
     border: "rgba(20,32,29,0.07)",
     softBg: "#F7F5EF",
+    chromeControlBg: "#DEE8DE",
+    headerControlBg: "#447D74",
     trackBg: "#E0DBD1",
     inputBg: "#FFFFFF",
     navBg: "rgba(255,255,255,0.94)",
@@ -114,6 +118,8 @@ export const THEME: Record<ThemeMode, ThemeColors> = {
     ink: "#EDF6F0",
     muted: "#B3C8BB",
     border: "rgba(157,212,184,0.20)",
+    chromeControlBg: "#2D4338",
+    headerControlBg: "#4B6A5D",
     accent: "#9DD4B8",
     accent2: "#7EC7A8",
     onAccent: "#17251E",

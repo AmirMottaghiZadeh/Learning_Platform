@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 
+import { ChromeButton } from "@/components/ChromeButton";
 import { Chevron } from "@/components/primitives/Chevron";
 import { AppText } from "@/components/primitives/AppText";
 import { HelpKey, HelpSheet } from "@/components/HelpSheet";
@@ -10,41 +11,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 import { useTourContext } from "@/tour/TourContext";
 import type { TourKey } from "@/tour/tours";
 
-/** Round soft button used across the in-app screen headers. */
-export function ChromeButton({
-  onPress,
-  children,
-  size = 44,
-  variant = "soft",
-  accessibilityLabel,
-}: {
-  onPress: () => void;
-  children: React.ReactNode;
-  size?: number;
-  variant?: "soft" | "chip";
-  accessibilityLabel?: string;
-}) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      hitSlop={Math.max(0, (44 - size) / 2)}
-      style={({ pressed }) => ({
-        opacity: pressed ? 0.75 : 1,
-        width: size,
-        height: size,
-        borderRadius: 12,
-        backgroundColor: variant === "chip" ? "rgba(255,255,255,0.16)" : colors.softBg,
-        alignItems: "center",
-        justifyContent: "center",
-      })}
-    >
-      {children}
-    </Pressable>
-  );
-}
+export { ChromeButton };
 
 /** The EN/FA switch -- the only place the app's language changes, so every
  * screen that shows language-dependent content carries it in its header. */
@@ -52,26 +19,16 @@ export function LangToggleButton({ size = 44, variant = "soft" }: { size?: numbe
   const { colors } = useTheme();
   const { t, toggle } = useLang();
   return (
-    <Pressable
+    <ChromeButton
       onPress={toggle}
-      accessibilityRole="button"
+      size={size}
+      variant={variant === "chip" ? "chip" : "control"}
       accessibilityLabel={t("langSwitch") === "EN" ? "Switch to English" : "تغییر زبان به فارسی"}
-      hitSlop={Math.max(0, (44 - size) / 2)}
-      style={{
-        minWidth: size,
-        minHeight: size,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: variant === "chip" ? "rgba(255,255,255,0.16)" : colors.softBg,
-        borderRadius: 12,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-      }}
     >
       <AppText weight="800" size={12} color={variant === "chip" ? colors.flipFrontInk : colors.accent}>
         {t("langSwitch")}
       </AppText>
-    </Pressable>
+    </ChromeButton>
   );
 }
 
@@ -82,7 +39,7 @@ export function TourButton({ tour, size = 44 }: { tour: TourKey; size?: number }
   const tours = useTourContext();
   const { isFa } = useLang();
   return (
-    <ChromeButton onPress={() => tours?.start(tour)} size={size} accessibilityLabel={isFa ? "راهنمای صفحه" : "Screen tour"}>
+    <ChromeButton variant="control" onPress={() => tours?.start(tour)} size={size} accessibilityLabel={isFa ? "راهنمای صفحه" : "Screen tour"}>
       <AppText weight="800" size={13} color={colors.accent}>
         ?
       </AppText>
@@ -132,7 +89,7 @@ export function ScreenChrome({
       <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
         {actions}
         {tour ? <TourButton tour={tour} /> : help ? (
-          <ChromeButton onPress={() => setHelpOpen(true)} accessibilityLabel={isFa ? "راهنمای صفحه" : "Screen help"}>
+          <ChromeButton variant="control" onPress={() => setHelpOpen(true)} accessibilityLabel={isFa ? "راهنمای صفحه" : "Screen help"}>
             <AppText weight="800" size={13} color={colors.accent}>
               ?
             </AppText>
