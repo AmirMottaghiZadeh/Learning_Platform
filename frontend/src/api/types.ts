@@ -336,6 +336,7 @@ export type PlanMode = "none" | "goal" | "maintenance";
 export interface StudyPlan {
   mode: PlanMode;
   topic_keys: string[];
+  atc_groups: string[];
   daily_minutes: number;
   deadline: string | null;
   days: boolean[];
@@ -345,6 +346,24 @@ export interface StudyPlan {
    * schedule fits before the deadline at this daily_minutes (always true for
    * the other two modes). */
   fits_deadline?: boolean;
+}
+
+export type AtcPlanConfig = Pick<StudyPlan, "atc_groups" | "daily_minutes" | "days" | "deadline">;
+export interface AtcPlanGroup { code: string; name_fa: string; name_en: string }
+export interface AtcPlanActivity extends Pick<StudyPlanItem, "atc_code" | "day"> {
+  activity_type: "lesson" | "quiz";
+  name_fa: string;
+  name_en: string;
+}
+export interface AtcPlanPreview {
+  fits_deadline: boolean;
+  chapter_count: number;
+  missing_quiz_count: number;
+  remaining_minutes: number;
+  study_sessions: number;
+  first_activity: AtcPlanActivity | null;
+  estimated_finish: string | null;
+  empty_groups: string[];
 }
 
 export type PlanItemActivity = "lesson" | "quiz" | "mistake_review";

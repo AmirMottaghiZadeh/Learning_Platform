@@ -3,8 +3,7 @@ import React from "react";
 import { Pressable, View } from "react-native";
 
 import { meApi } from "@/api/endpoints";
-import { StudyPlanItem } from "@/api/types";
-import { ClinicalPlan, StudyTrackSelector, useStudyTrack } from "@/components/plan/ClinicalPlan";
+import { AtcPlanActivity, StudyPlanItem } from "@/api/types";
 import { PLAN_BRIEF_KEY } from "@/components/plan/PlanSection";
 import { STUDY_TILES } from "@/components/HomeTileGrid";
 import { Button } from "@/components/primitives/Button";
@@ -27,15 +26,14 @@ export function PlanningScreen() {
   const navigate = useNav((s) => s.navigate);
   const qc = useQueryClient();
 
-  const study = useStudyTrack();
-  const student = study.track === "student" && study.query.isSuccess;
-  const planQuery = useQuery({ queryKey: ["plan"], queryFn: meApi.plan, enabled: student, retry: false });
+  const firstActivity = useNav((s) => s.params.firstActivity) as AtcPlanActivity | null | undefined;
+  const planQuery = useQuery({ queryKey: ["plan"], queryFn: meApi.plan, retry: false });
   const plan = planQuery.data;
-  const hasActivePlan = !!plan && plan.mode !== "none";
+  const hasActivePlan = plan?.mode === "goal";
   const todayQuery = useQuery({
     queryKey: ["plan-today"],
     queryFn: meApi.planToday,
-    enabled: student && hasActivePlan,
+    enabled: hasActivePlan,
     retry: false,
   });
   const today = todayQuery.data;
@@ -56,16 +54,12 @@ export function PlanningScreen() {
   const openActivity = (item: StudyPlanItem) => {
     if (item.activity_type === "lesson" && item.atc_code) navigate("lessonList", { code: item.atc_code });
     else if (item.activity_type === "mistake_review") navigate("mistakes");
+    else if (item.activity_type === "quiz" && item.atc_code) navigate("quiz", { planChapter: item.atc_code, planTitle: isFa ? item.title_fa : item.title_en });
     else if (item.activity_type === "quiz") navigate("quiz", { topic: item.topic_key });
     else if (item.activity_type === "lesson") navigate("lessons");
   };
 
-  const header = (
-    <>
-      <ScreenChrome title={t("planningTitle")} onBack={goBack} help="planning" />
-      <StudyTrackSelector state={study} />
-    </>
-  );
+  const header = <ScreenChrome title={t("planningTitle")} onBack={goBack} help="planning" />;
   const learningPath = (
     <Card testID="student-learning-path" style={{ gap: spacing.sm }}>
       <AppText accessibilityRole="header" size={16} weight="800">{isFa ? "ترتیب مطالعه" : "Study sequence"}</AppText>
@@ -84,18 +78,17 @@ export function PlanningScreen() {
     </Card>
   );
   const planError = planQuery.isError || (hasActivePlan && todayQuery.isError);
-  if (!student || !today || !hasActivePlan || planError) {
+  if (!today || !hasActivePlan || planError) {
     return (
       <Screen contentStyle={{ maxWidth: 790, gap: spacing.md }} keyboardShouldPersistTaps="handled">
         {header}
-        {study.query.isSuccess && !student ? <ClinicalPlan state={study} /> : null}
-        {student ? learningPath : null}
-        {student && (planQuery.isPending || (hasActivePlan && todayQuery.isPending)) ? <LoadingState /> : null}
-        {student && planError ? <Card style={{ gap: spacing.sm }}>
+        {learningPath}
+        {planQuery.isPending || (hasActivePlan && todayQuery.isPending) ? <LoadingState /> : null}
+        {planError ? <Card style={{ gap: spacing.sm }}>
           <AppText accessibilityRole="alert" muted>{t("loadFailed")}</AppText>
           <Button label={t("retry")} variant="secondary" onPress={() => void (planQuery.isError ? planQuery.refetch() : todayQuery.refetch())} />
         </Card> : null}
-        {student && planQuery.isSuccess && !hasActivePlan ? (
+        {planQuery.isSuccess && !hasActivePlan ? (
           <Card style={{ gap: spacing.sm }}>
             <AppText weight="900" size={18}>{t("planningEmptyTitle")}</AppText>
             <AppText muted size={13}>{t("planningEmptyBody")}</AppText>
@@ -114,6 +107,12 @@ export function PlanningScreen() {
   return (
     <Screen contentStyle={{ maxWidth: 790, gap: spacing.md }}>
       {header}
+      {firstActivity && today.items.length === 0 ? <Card style={{ gap: spacing.sm }}>
+        <AppText weight="800" size={16}>{isFa ? firstActivity.name_fa : firstActivity.name_en}</AppText>
+        <Button full={false} label={firstActivity.activity_type === "lesson" ? (isFa ? "شروع اولین درس" : "Start first lesson") : (isFa ? "شروع اولین آزمون" : "Start first quiz")}
+          onPress={() => firstActivity.activity_type === "lesson" ? navigate("lessonList", { code: firstActivity.atc_code })
+            : navigate("quiz", { planChapter: firstActivity.atc_code, planTitle: isFa ? firstActivity.name_fa : firstActivity.name_en })} />
+      </Card> : null}
       <Card style={{ gap: spacing.sm }}>
         <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: spacing.sm }}>
           <AppText accessibilityRole="header" weight="900" size={18}>{isFa ? "برنامهٔ امروز" : "Today’s study plan"}</AppText>
@@ -134,7 +133,8 @@ export function PlanningScreen() {
           busy={complete.isPending || skip.isPending} onOpen={() => openActivity(item)}
           onComplete={() => complete.mutate(item.id)} onSkip={() => skip.mutate(item.id)} />
       ))}
-      {pending.length === 0 ? <Card><AppText size={14} weight="800">{t("planningAllDoneTitle")}</AppText><AppText muted size={12}>{t("planningAllDoneBody")}</AppText></Card> : null}
+      {pending.length === 0 ? <Card><AppText size={14} weight="800">{today.items.length ? t("planningAllDoneTitle")
+        : isFa ? "امروز فعالیت زمان‌بندی‌شده‌ای ندارید." : "No activities are scheduled for today."}</AppText></Card> : null}
       {learningPath}
       {today.week.length > 0 ? (
         <Card style={{ gap: spacing.sm }}>

@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -38,6 +38,7 @@ from .serializers import (
     RoleAssignmentSerializer,
     RoleSerializer,
     LearnerProfileSerializer,
+    LearningOnboardingSerializer,
     OnboardingSerializer,
     SecurityAuditEventSerializer,
     SessionRevokeSerializer,
@@ -601,9 +602,11 @@ class MeView(APIView):
 class OnboardingView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=OnboardingSerializer, responses=UserSerializer)
+    @extend_schema(request=PolymorphicProxySerializer(component_name="OnboardingRequest",
+        serializers=[LearningOnboardingSerializer, OnboardingSerializer], resource_type_field_name=None), responses=UserSerializer)
     def post(self, request):
-        serializer = OnboardingSerializer(data=request.data, context={"request": request})
+        serializer_cls = LearningOnboardingSerializer if "learning_plan" in request.data else OnboardingSerializer
+        serializer = serializer_cls(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)

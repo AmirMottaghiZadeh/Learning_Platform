@@ -1,6 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 
+from apps.drugs.data.atc_reference import ATC_L1
 from apps.lessons.data.study_topics import STUDY_TOPICS
 
 from .models import Mistake, StudyPlan, StudyPlanItem
@@ -68,10 +69,10 @@ class StudyPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudyPlan
         fields = [
-            "mode", "topic_keys", "daily_minutes", "deadline",
+            "mode", "topic_keys", "atc_groups", "daily_minutes", "deadline",
             "days", "reminders_enabled", "updated_at",
         ]
-        read_only_fields = ["updated_at"]
+        read_only_fields = ["updated_at", "atc_groups"]
 
     def validate_topic_keys(self, value):
         unknown = [key for key in value if key not in _TOPIC_KEYS]
@@ -121,6 +122,51 @@ class StudyPlanItemSerializer(serializers.ModelSerializer):
         return getattr(item, "title_en", "") or item.reason_en
 
 
+class AtcGroupSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name_fa = serializers.CharField()
+    name_en = serializers.CharField()
+
+
+class AtcPlanConfigSerializer(serializers.Serializer):
+    atc_groups = serializers.ListField(child=serializers.ChoiceField(choices=list(ATC_L1)), min_length=1, max_length=len(ATC_L1))
+    days = serializers.ListField(child=serializers.BooleanField(), min_length=7, max_length=7)
+    daily_minutes = serializers.IntegerField(min_value=15, max_value=240)
+    deadline = serializers.DateField(required=False, default=None, allow_null=True)
+
+    def validate_atc_groups(self, value):
+        return list(dict.fromkeys(value))
+
+    def validate_days(self, value):
+        if not any(value):
+            raise serializers.ValidationError("دست‌کم یک روز مطالعه انتخاب کنید.")
+        return value
+
+    def validate_deadline(self, value):
+        if value is not None and value <= timezone.localdate():
+            raise serializers.ValidationError("تاریخ آزمون باید بعد از امروز باشد.")
+        return value
+
+
+class AtcFirstActivitySerializer(serializers.Serializer):
+    atc_code = serializers.CharField()
+    activity_type = serializers.ChoiceField(choices=[StudyPlanItem.LESSON, StudyPlanItem.QUIZ])
+    day = serializers.DateField()
+    name_fa = serializers.CharField()
+    name_en = serializers.CharField()
+
+
+class AtcPlanPreviewSerializer(serializers.Serializer):
+    fits_deadline = serializers.BooleanField()
+    chapter_count = serializers.IntegerField()
+    missing_quiz_count = serializers.IntegerField()
+    remaining_minutes = serializers.IntegerField()
+    study_sessions = serializers.IntegerField()
+    first_activity = AtcFirstActivitySerializer(allow_null=True)
+    estimated_finish = serializers.DateField(allow_null=True)
+    empty_groups = serializers.ListField(child=serializers.CharField())
+
+
 class PlanTopicSerializer(serializers.Serializer):
     key = serializers.CharField()
     name_fa = serializers.CharField()
@@ -160,6 +206,7 @@ class StudyPlanSaveResponseSerializer(serializers.Serializer):
 
     mode = serializers.CharField()
     topic_keys = serializers.ListField(child=serializers.CharField())
+    atc_groups = serializers.ListField(child=serializers.CharField())
     daily_minutes = serializers.IntegerField()
     deadline = serializers.DateField(allow_null=True)
     days = serializers.ListField(child=serializers.BooleanField())

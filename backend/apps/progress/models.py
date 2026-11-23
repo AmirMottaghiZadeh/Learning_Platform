@@ -122,6 +122,7 @@ class StudyPlan(models.Model):
     reminders_enabled = models.BooleanField(default=False)
     mode = models.CharField(max_length=20, choices=MODE_CHOICES, default=MODE_NONE)
     topic_keys = models.JSONField(default=list, blank=True)
+    atc_groups = models.JSONField(default=list, blank=True)
     daily_minutes = models.PositiveSmallIntegerField(default=30)
     deadline = models.DateField(null=True, blank=True)
     # The day this plan (its mode, topics or deadline) was set up -- what

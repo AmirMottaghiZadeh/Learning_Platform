@@ -6,8 +6,10 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.billing.enforcement import require_feature
 from apps.lessons.data.study_topics import CATEGORIES
-from apps.progress.planning import plan_from_onboarding
+from apps.progress.planning import plan_from_onboarding, save_atc_plan
+from apps.progress.serializers import AtcPlanConfigSerializer
 
 from .models import (
     LearnerProfile,
@@ -212,6 +214,30 @@ class OnboardingSerializer(serializers.Serializer):
                 days=data["study_days"],
                 category_keys=data.get("category_keys") or [],
             )
+        return profile
+
+
+class LearningOnboardingSerializer(serializers.Serializer):
+    language = serializers.ChoiceField(choices=["fa", "en"])
+    learning_plan = AtcPlanConfigSerializer(allow_null=True)
+
+    @transaction.atomic
+    def save(self, **kwargs):
+        request = self.context["request"]
+        user = request.user
+        profile, _ = LearnerProfile.objects.get_or_create(user=user)
+        profile = LearnerProfile.objects.select_for_update().get(pk=profile.pk)
+        user.learner_profile = profile
+        if profile.onboarded_at:
+            return profile
+        plan = self.validated_data["learning_plan"]
+        if plan is not None:
+            require_feature(request, "stats")
+            save_atc_plan(user, plan)
+        profile.display_name = profile.display_name or user.get_full_name() or user.username
+        profile.language = self.validated_data["language"]
+        profile.onboarded_at = timezone.now()
+        profile.save(update_fields=["display_name", "language", "onboarded_at", "updated_at"])
         return profile
 
 

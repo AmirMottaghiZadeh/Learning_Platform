@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.permissions import IsAuthenticated
@@ -6,6 +7,7 @@ from rest_framework.views import APIView
 
 from apps.billing.enforcement import require_feature
 from apps.core.exceptions import PlatformAPIError
+from apps.drugs.data.atc_reference import ATC_L1
 from apps.lessons.data.study_topics import STUDY_TOPICS
 from apps.lessons.selectors import topic_progress
 
@@ -13,6 +15,9 @@ from . import planning
 from .models import Mistake, StudyPlanItem
 from .selectors import dashboard, statistics
 from .serializers import (
+    AtcGroupSerializer,
+    AtcPlanConfigSerializer,
+    AtcPlanPreviewSerializer,
     DashboardSerializer,
     MistakeSerializer,
     PlanTodaySerializer,
@@ -84,20 +89,55 @@ class StudyPlanView(APIView):
         return Response(StudyPlanSerializer(get_plan(request.user)).data)
 
     @extend_schema(request=StudyPlanSerializer, responses=StudyPlanSaveResponseSerializer)
+    @transaction.atomic
     def put(self, request):
         require_feature(request, "stats")
         plan = get_plan(request.user)
+        plan = type(plan).objects.select_for_update().get(pk=plan.pk)
         before = (plan.mode, list(plan.topic_keys), plan.deadline)
         serializer = StudyPlanSerializer(plan, data=request.data)
         serializer.is_valid(raise_exception=True)
         plan = serializer.save()
+        plan.atc_groups = []
         # A new mode, topics or deadline is a new plan: "week 1" starts today.
         if plan.started_on is None or before != (plan.mode, list(plan.topic_keys), plan.deadline):
             plan.started_on = timezone.localdate()
         plan.rolled_over_on = None
-        plan.save(update_fields=["started_on", "rolled_over_on"])
+        plan.save(update_fields=["started_on", "rolled_over_on", "atc_groups"])
         fits = planning.regenerate_items(request.user, plan)
         return Response({**serializer.data, "fits_deadline": fits})
+
+
+class PlanGroupsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=AtcGroupSerializer(many=True))
+    def get(self, request):
+        return Response(AtcGroupSerializer([
+            {"code": code, "name_en": en, "name_fa": fa} for code, (en, fa) in ATC_L1.items()
+        ], many=True).data)
+
+
+class AtcPlanView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=AtcPlanConfigSerializer, responses=AtcPlanPreviewSerializer)
+    def post(self, request):
+        require_feature(request, "stats")
+        config = AtcPlanConfigSerializer(data=request.data)
+        config.is_valid(raise_exception=True)
+        plan = getattr(request.user, "study_plan", None)
+        _, preview = planning.atc_schedule(request.user, config.validated_data, plan)
+        return Response(AtcPlanPreviewSerializer(preview).data)
+
+    @extend_schema(request=AtcPlanConfigSerializer, responses=StudyPlanSerializer)
+    @transaction.atomic
+    def put(self, request):
+        require_feature(request, "stats")
+        config = AtcPlanConfigSerializer(data=request.data)
+        config.is_valid(raise_exception=True)
+        plan = planning.save_atc_plan(request.user, config.validated_data)
+        return Response(StudyPlanSerializer(plan).data)
 
 
 class PlanTodayView(APIView):

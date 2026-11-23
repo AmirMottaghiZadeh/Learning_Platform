@@ -40,6 +40,9 @@ import {
   UptodateImage,
   UptodateSearchPage,
   UptodateSearchResult,
+  AtcPlanConfig,
+  AtcPlanGroup,
+  AtcPlanPreview,
   OtpPurpose,
   OtpRequestResponse,
   ReleaseCheck,
@@ -70,18 +73,8 @@ export const authApi = {
     apiClient.post<AuthTokenResponse>("/auth/otp/verify/", body).then((r) => r.data),
   setPassword: (body: { new_password: string; new_password_confirm: string; name?: string; current_password?: string }) =>
     apiClient.post<User>("/auth/password/set/", body).then((r) => r.data),
-  onboarding: (body: {
-    study_field: string;
-    study_goal: string;
-    study_level: string;
-    display_name?: string;
-    language?: string;
-    // The study plan the answers make (backend progress.planning.plan_from_onboarding).
-    exam_date?: string | null;
-    daily_minutes?: number;
-    study_days?: boolean[];
-    category_keys?: string[];
-  }) => apiClient.post<User>("/auth/onboarding/", body).then((r) => r.data),
+  onboarding: (body: { language: "fa" | "en"; learning_plan: AtcPlanConfig | null }) =>
+    apiClient.post<User>("/auth/onboarding/", body).then((r) => r.data),
 };
 
 // Guest access, switched on from the console (/ops/access/): the app opens
@@ -157,8 +150,9 @@ export const meApi = {
   restoreMistakes: () =>
     apiClient.post<Mistake[]>("/me/mistakes/restore/").then((r) => r.data),
   plan: () => apiClient.get<StudyPlan>("/me/plan/").then((r) => r.data),
-  savePlan: (body: Omit<StudyPlan, "fits_deadline" | "updated_at">) =>
-    apiClient.put<StudyPlan>("/me/plan/", body).then((r) => r.data),
+  planGroups: () => apiClient.get<AtcPlanGroup[]>("/me/plan/groups/").then((r) => r.data),
+  previewPlan: (body: AtcPlanConfig) => apiClient.post<AtcPlanPreview>("/me/plan/atc/", body).then((r) => r.data),
+  savePlan: (body: AtcPlanConfig) => apiClient.put<StudyPlan>("/me/plan/atc/", body).then((r) => r.data),
   planToday: () => apiClient.get<PlanToday>("/me/plan/today/").then((r) => r.data),
   // The home screen's plan box: today and this week, without every topic's progress.
   planTodayBrief: () =>

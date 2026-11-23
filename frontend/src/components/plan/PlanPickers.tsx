@@ -7,7 +7,6 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { DAY_LABELS_SHORT } from "@/i18n/strings";
 import { useTheme } from "@/theme/ThemeProvider";
 import { fontFamily } from "@/theme/fonts";
-import { LessonCategory } from "@/utils/lessonCategories";
 import {
   currentJalaliYear,
   daysUntil,
@@ -20,8 +19,7 @@ import {
 import { toJalali } from "@/utils/jalali";
 
 /** The study plan's inputs, shared by the onboarding plan step and the
- * plan editor (PlanningSetupScreen): exam date, daily minutes, study days
- * and this term's subjects. */
+ * plan editor: exam date, daily minutes and study days. */
 
 function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   const { colors } = useTheme();
@@ -46,7 +44,6 @@ function Chip({ label, selected, onPress }: { label: string; selected: boolean; 
     </Pressable>
   );
 }
-
 function ChipRow({ children }: { children: React.ReactNode }) {
   const { row } = useLang();
   return <View style={{ flexDirection: row, flexWrap: "wrap", gap: 8 }}>{children}</View>;
@@ -177,7 +174,7 @@ export function StudyDaysPicker({ value, onChange }: { value: boolean[]; onChang
   const { lang, row } = useLang();
   const { colors } = useTheme();
   return (
-    <View style={{ flexDirection: row, justifyContent: "space-between" }}>
+    <View style={{ flexDirection: row, flexWrap: "wrap", gap: 5, justifyContent: "space-between" }}>
       {DAY_LABELS_SHORT[lang].map((label, i) => {
         const on = value[i];
         return (
@@ -187,8 +184,8 @@ export function StudyDaysPicker({ value, onChange }: { value: boolean[]; onChang
             accessibilityRole="checkbox"
             accessibilityState={{ checked: on }}
             style={{
-              width: 42,
-              height: 42,
+                width: 44,
+                height: 44,
               borderRadius: 14,
               alignItems: "center",
               justifyContent: "center",
@@ -202,33 +199,5 @@ export function StudyDaysPicker({ value, onChange }: { value: boolean[]; onChang
         );
       })}
     </View>
-  );
-}
-
-/** This term's subjects, as the lesson categories. */
-export function CategoryPicker({
-  categories,
-  value,
-  onChange,
-}: {
-  categories: LessonCategory[];
-  value: string[];
-  onChange: (v: string[]) => void;
-}) {
-  const { isFa } = useLang();
-  return (
-    <ChipRow>
-      {categories.map((c) => {
-        const on = value.includes(c.code);
-        return (
-          <Chip
-            key={c.code}
-            label={isFa ? c.name_fa : c.name_en}
-            selected={on}
-            onPress={() => onChange(on ? value.filter((k) => k !== c.code) : [...value, c.code])}
-          />
-        );
-      })}
-    </ChipRow>
   );
 }

@@ -46,6 +46,8 @@ export function QuizScreen() {
   // the topic-picker setup stage entirely and auto-starts a session scoped
   // to just this one ingredient's bank questions.
   const ingredientSlug = String(useNav((s) => s.params.ingredientSlug ?? ""));
+  const planChapter = String(useNav((s) => s.params.planChapter ?? ""));
+  const planTitle = String(useNav((s) => s.params.planTitle ?? ""));
   const autoStarted = useRef(false);
 
   const [lastSelection, setLastSelection] = useState<{ category: string; atc_code: string; count: number }>();
@@ -213,6 +215,19 @@ export function QuizScreen() {
   }
 
   if (stage === "setup") {
+    if (planChapter) return <Screen>
+      <ScreenChrome title={planTitle || planChapter} onBack={goBack} />
+      <Card style={{ gap: 12 }}>
+        <AppText muted size={13}>{isFa ? "آزمون کوتاه از همین فصل دارونامه" : "A short quiz on this Drugbank chapter"}</AppText>
+        {start.isError ? <AppText accessibilityRole="alert" size={13} color={colors.denyLabel}>
+          {insufficientData ? t("quizInsufficientData") : quizErrorMessage(start.error, t("quizStartFailed"))}
+        </AppText> : null}
+        <Button label={t("quizStartBtn")} loading={start.isPending} onPress={() => {
+          setInsufficientData(false);
+          start.mutate({ category: "", atc_code: planChapter, count: 5 });
+        }} />
+      </Card>
+    </Screen>;
     return <QuizSetup pending={start.isPending} initialSelection={lastSelection}
       onSelectionChange={() => { start.reset(); setInsufficientData(false); }}
       error={insufficientData ? t("quizInsufficientData") : start.isError ? quizErrorMessage(start.error, t("quizStartFailed")) : undefined}
@@ -305,7 +320,8 @@ export function QuizScreen() {
               loading={reviewMistakes.isPending}
             />
           ) : null}
-          <Button label={t("quizBackHome")} variant="secondary" onPress={goHome} />
+          <Button label={planChapter ? (isFa ? "بازگشت به برنامه" : "Back to study plan") : t("quizBackHome")}
+            variant="secondary" onPress={planChapter ? goBack : goHome} />
         </View>
       </Screen>
     );

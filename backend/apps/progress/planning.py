@@ -14,12 +14,15 @@ underlying signals (`ReadDrug`, quiz answers) -- see
 from collections import defaultdict
 from datetime import timedelta
 
+from django.db import transaction
+from django.db.models import Count, Max
 from django.utils import timezone
 
+from apps.drugs.data.atc_reference import ATC_L2
 from apps.lessons.data.study_topics import CATEGORIES, STUDY_TOPICS
 from apps.lessons.models import ChapterProgress
-from apps.lessons.selectors import lesson_groups, slugs_for_topic, topic_progress
-from apps.quiz.models import QuizAnswer, QuizSession
+from apps.lessons.selectors import l2_slug_index, lesson_groups, read_slugs_for_user, slugs_for_topic, topic_progress
+from apps.quiz.models import BankQuestion, COUNT_CHOICES, QuizAnswer, QuizSession
 
 from .models import DailyStudy, Mistake, StudyPlan, StudyPlanItem
 from .services import get_plan
@@ -32,6 +35,8 @@ LESSON_MINUTES_BY_LEVEL = {"beginner": 14, "intermediate": 10, "advanced": 7}
 # An open-ended daily review (the "clinical" onboarding goal) by default.
 MAINTENANCE_DEFAULT_MINUTES = 10
 QUIZ_MINUTES = 10
+CHAPTER_QUIZ_COUNT = min(COUNT_CHOICES)
+CHAPTER_QUIZ_MINUTES = 5
 MISTAKE_REVIEW_MINUTES = 10
 
 # Assessment accuracy and reading completion are renormalised over the
@@ -178,7 +183,96 @@ def _with_chapters(group):
     }
 
 
+def _atc_chapters(user, groups):
+    index = l2_slug_index()
+    read = read_slugs_for_user(user)
+    return {
+        group: [{"code": code, "slugs": slugs, "total": len(slugs), "done": len(read.intersection(slugs)),
+                 "name_en": ATC_L2.get(code, (code, code))[0], "name_fa": ATC_L2.get(code, (code, code))[1]}
+                for code, slugs in sorted(index.items()) if code.startswith(group)]
+        for group in groups
+    }
+
+
+def atc_schedule(user, settings, plan=None):
+    """Build the same ordered, bounded schedule for preview, save and rollover."""
+    groups = _atc_chapters(user, settings["atc_groups"])
+    today = timezone.localdate()
+    chapters = [chapter for items in groups.values() for chapter in items]
+    slugs = {slug for chapter in chapters for slug in chapter["slugs"]}
+    question_counts = dict(BankQuestion.objects.filter(ingredient__slug__in=slugs)
+                           .values("ingredient__slug").annotate(count=Count("pk")).values_list("ingredient__slug", "count"))
+    quiz_chapters = set(QuizSession.objects.filter(user=user, finished_at__isnull=False,
+                                                  atc_code__in=[chapter["code"] for chapter in chapters])
+                        .values_list("atc_code", flat=True))
+    finished = set(plan.items.filter(status=StudyPlanItem.DONE).values_list("activity_type", "atc_code")) if plan else set()
+    backlog = []
+    missing_quizzes = 0
+    for chapter in chapters:
+        code = chapter["code"]
+        common = {"topic_key": code[0], "atc_code": code}
+        if chapter["done"] < chapter["total"] and (StudyPlanItem.LESSON, code) not in finished:
+            backlog.append({**common, "activity_type": StudyPlanItem.LESSON, "estimated_minutes": LESSON_MINUTES_PER_CHAPTER,
+                            "reason_fa": "این فصل هنوز کامل مطالعه نشده است.", "reason_en": "This chapter has unread material."})
+        if code in quiz_chapters or (StudyPlanItem.QUIZ, code) in finished:
+            continue
+        if sum(question_counts.get(slug, 0) for slug in chapter["slugs"]) < CHAPTER_QUIZ_COUNT:
+            missing_quizzes += 1
+            continue
+        backlog.append({**common, "activity_type": StudyPlanItem.QUIZ, "estimated_minutes": CHAPTER_QUIZ_MINUTES,
+                        "reason_fa": "آزمون کوتاه از همان فصل دارونامه.", "reason_en": "A short quiz on the same chapter."})
+
+    natural_end = today + timedelta(weeks=len(backlog) + 1)
+    deadline = settings.get("deadline")
+    days = _study_days(settings["days"], today, min(deadline, natural_end) if deadline else natural_end)
+    used_today = sum(plan.items.filter(day=today).exclude(status=StudyPlanItem.PENDING)
+                     .values_list("estimated_minutes", flat=True)) if plan else 0
+    buckets, fits = _pack_into_days(backlog, days, settings["daily_minutes"], used={today: used_today})
+    rows = _flatten(buckets)
+    first = rows[0] if rows else None
+    first_activity = None
+    if first:
+        chapter_en, chapter_fa = ATC_L2.get(first["atc_code"], (first["atc_code"], first["atc_code"]))
+        first_activity = {"atc_code": first["atc_code"], "activity_type": first["activity_type"],
+                          "day": first["day"], "name_fa": chapter_fa, "name_en": chapter_en}
+    summary = {"fits_deadline": fits, "chapter_count": len(chapters), "missing_quiz_count": missing_quizzes,
+               "remaining_minutes": sum(item["estimated_minutes"] for item in backlog),
+               "study_sessions": len({row["day"] for row in rows}), "first_activity": first_activity,
+               "estimated_finish": rows[-1]["day"] if rows and fits else None,
+               "empty_groups": [group for group, items in groups.items() if not items]}
+    return rows, summary
+
+
+def save_atc_plan(user, settings):
+    """Called inside a transaction. Invalid estimates leave the old plan intact."""
+    from rest_framework.exceptions import ValidationError
+
+    plan = StudyPlan.objects.select_for_update().get(pk=get_plan(user).pk)
+    rows, summary = atc_schedule(user, settings, plan)
+    if not summary["chapter_count"]:
+        raise ValidationError({"atc_groups": "برای گروه‌های انتخابی هنوز فصلی در دسترس نیست."})
+    if not summary["fits_deadline"]:
+        raise ValidationError({"deadline": "زمان تا آزمون برای این برنامه کافی نیست."})
+    if (plan.atc_groups, plan.deadline) != (settings["atc_groups"], settings.get("deadline")) or not plan.started_on:
+        plan.started_on = timezone.localdate()
+    plan.mode = StudyPlan.MODE_GOAL
+    plan.atc_groups = settings["atc_groups"]
+    plan.topic_keys = []
+    plan.deadline = settings.get("deadline")
+    plan.days = settings["days"]
+    plan.daily_minutes = settings["daily_minutes"]
+    plan.reminders_enabled = False
+    plan.rolled_over_on = None
+    plan.save()
+    _replace_pending_items(plan, rows)
+    return plan
+
+
 def _goal_items(user, plan):
+    if plan.atc_groups:
+        rows, summary = atc_schedule(user, {"atc_groups": plan.atc_groups, "days": plan.days,
+                                           "deadline": plan.deadline, "daily_minutes": plan.daily_minutes}, plan)
+        return rows, summary["fits_deadline"]
     groups = _groups_by_topic(user)
     done = set(
         plan.items.filter(
@@ -198,7 +292,7 @@ def _goal_items(user, plan):
     study_days = _study_days(plan.days, today, end) or [today]
     # What today already holds (finished or skipped tasks survive replanning)
     # counts against today's time.
-    used_today = sum(plan.items.filter(day=today).values_list("estimated_minutes", flat=True))
+    used_today = sum(plan.items.filter(day=today).exclude(status=StudyPlanItem.PENDING).values_list("estimated_minutes", flat=True))
     buckets, fits = _pack_into_days(backlog, study_days, plan.daily_minutes, used={today: used_today})
     return _flatten(buckets), fits
 
@@ -263,36 +357,46 @@ def regenerate_items(user, plan):
     freshly generated set. Anything already completed or skipped is left
     alone -- replanning must not erase history (see the planning spec's
     Replanning section)."""
-    today = timezone.localdate()
-    StudyPlanItem.objects.filter(
-        plan=plan, day__gte=today, status=StudyPlanItem.PENDING
-    ).delete()
-
     if plan.mode == StudyPlan.MODE_GOAL:
         rows, fits = _goal_items(user, plan)
     elif plan.mode == StudyPlan.MODE_MAINTENANCE:
         rows, fits = _maintenance_items(user, plan)
     else:
+        _delete_pending_items(plan)
         return True
+    _replace_pending_items(plan, rows)
+    return fits
 
+
+def _delete_pending_items(plan):
+    plan.items.filter(day__gte=timezone.localdate(), status=StudyPlanItem.PENDING).delete()
+
+
+def _replace_pending_items(plan, rows):
+    _delete_pending_items(plan)
+    today = timezone.localdate()
     # Today's new tasks follow the ones already finished there.
-    kept_today = StudyPlanItem.objects.filter(plan=plan, day=today).count()
+    last_order = plan.items.filter(day=today).aggregate(last=Max("order"))["last"]
+    kept_today = 0 if last_order is None else last_order + 1
     for row in rows:
         if row["day"] == today:
             row["order"] += kept_today
     StudyPlanItem.objects.bulk_create(StudyPlanItem(plan=plan, **row) for row in rows)
-    return fits
 
 
+@transaction.atomic
 def rollover(user, plan):
     """A goal plan whose study day passed with tasks left: the remaining work
     is laid out again from today, at most once a day, so it moves onto the
     coming study days instead of piling up behind. The missed day's tasks
     stay as they were -- the week shows that day as missed."""
-    if plan.mode != StudyPlan.MODE_GOAL or not plan.deadline:
+    if plan.mode != StudyPlan.MODE_GOAL or (not plan.deadline and not plan.atc_groups):
         return
     today = timezone.localdate()
-    if plan.rolled_over_on == today or plan.deadline < today:
+    if plan.rolled_over_on == today or (plan.deadline and plan.deadline < today):
+        return
+    plan = StudyPlan.objects.select_for_update().get(pk=plan.pk)
+    if plan.rolled_over_on == today or plan.mode != StudyPlan.MODE_GOAL:
         return
     if plan.items.filter(day__lt=today, status=StudyPlanItem.PENDING).exists():
         regenerate_items(user, plan)
@@ -306,6 +410,7 @@ def plan_from_onboarding(user, goal, *, exam_date, daily_minutes, days, category
     the topics of the chosen categories, and daily clinical review is an
     open-ended maintenance plan."""
     plan = get_plan(user)
+    plan.atc_groups = []
     if goal == "clinical":
         plan.mode = StudyPlan.MODE_MAINTENANCE
         plan.topic_keys = []
@@ -354,6 +459,8 @@ def _is_done_elsewhere(user, item, groups):
         chapter = _chapter(groups, item) if item.atc_code else None
         return bool(chapter and chapter["total"] and chapter["done"] >= chapter["total"])
     if item.activity_type == StudyPlanItem.QUIZ:
+        if item.atc_code:
+            return QuizSession.objects.filter(user=user, atc_code=item.atc_code, finished_at__isnull=False).exists()
         return bool(item.topic_key) and QuizSession.objects.filter(
             user=user, category=item.topic_key, finished_at__date__gte=item.day
         ).exists()
@@ -371,6 +478,9 @@ def _title(item, groups):
         return (f"دارونامه: {chapter['name_fa'] if chapter else topic_fa}",
                 f"Formulary: {chapter['name_en'] if chapter else topic_en}")
     if item.activity_type == StudyPlanItem.QUIZ:
+        if item.atc_code:
+            chapter_en, chapter_fa = ATC_L2.get(item.atc_code, (item.atc_code, item.atc_code))
+            return f"آزمون: {chapter_fa}", f"Quiz: {chapter_en}"
         return f"آزمون: {topic_fa}", f"Quiz: {topic_en}"
     return "مرور اشتباه‌ها", "Review your mistakes"
 
@@ -382,7 +492,10 @@ def today_items(user, plan):
     ensure_today_items(user, plan)
     today = timezone.localdate()
     items = list(plan.items.filter(day=today).order_by("order"))
-    groups = _groups_by_topic(user) if items else {}
+    if items and plan.atc_groups:
+        groups = {key: {"subgroups": chapters} for key, chapters in _atc_chapters(user, plan.atc_groups).items()}
+    else:
+        groups = _groups_by_topic(user) if items else {}
     for item in items:
         if item.status == StudyPlanItem.PENDING and _is_done_elsewhere(user, item, groups):
             item.status = StudyPlanItem.DONE
@@ -444,14 +557,15 @@ def plan_summary(plan):
         "week_count": None,
         "progress_pct": None,
     }
-    if plan.mode != StudyPlan.MODE_GOAL or not plan.deadline:
+    if plan.mode != StudyPlan.MODE_GOAL or (not plan.deadline and not plan.atc_groups):
         return summary
     began = plan.started_on or (plan.updated_at.date() if plan.updated_at else today)
-    week_count = max(1, (plan.deadline - began).days // 7 + 1)
+    estimated_end = plan.deadline or plan.items.filter(day__gte=today).order_by("-day").values_list("day", flat=True).first() or today
+    week_count = max(1, (estimated_end - began).days // 7 + 1)
     done = plan.items.filter(status=StudyPlanItem.DONE).count()
     left = plan.items.filter(status=StudyPlanItem.PENDING, day__gte=today).count()
     summary.update({
-        "days_left": max(0, (plan.deadline - today).days),
+        "days_left": max(0, (plan.deadline - today).days) if plan.deadline else None,
         "week_index": min(week_count, max(1, (today - began).days // 7 + 1)),
         "week_count": week_count,
         "progress_pct": round(100 * done / (done + left)) if done + left else 0,

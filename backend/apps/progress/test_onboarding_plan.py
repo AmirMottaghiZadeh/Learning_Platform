@@ -6,9 +6,10 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import LearnerProfile
+from apps.drugs.models import AtcCode, Ingredient
 from apps.lessons.data.study_topics import STUDY_TOPICS
 from apps.lessons.selectors import mark_drug_read
-from apps.quiz.models import QuizSession
+from apps.quiz.models import BankQuestion, QuizSession
 
 from . import planning
 from .models import StudyPlan, StudyPlanItem
@@ -79,6 +80,63 @@ class OnboardingPlanTests(TestCase):
         res = self.post(_onboarding("comprehensive"))
         self.assertEqual(res.status_code, 200, res.content)
         self.assertEqual(get_plan(self.user).mode, StudyPlan.MODE_NONE)
+
+
+class AtcOnboardingTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(username="atc-learner")
+        self.client.force_authenticate(self.user)
+        self.beta, self.diuretic = _two_chapter_topic()
+        nervous = Ingredient.objects.create(name="fixture", rxcui="654321", slug="fixture-654321")
+        code, _ = AtcCode.objects.get_or_create(code="N02BA01", defaults={"name": "Sample"})
+        nervous.atc_codes.add(code)
+        for number in range(5):
+            BankQuestion.objects.create(ingredient=self.diuretic, field="mechanism", prompt_fa=f"نمونهٔ {number}",
+                                        options_fa=["نمونه الف", "نمونه ب"], correct_index=0)
+        self.config = {"atc_groups": ["N", "C"], "days": [True] * 7, "daily_minutes": 15, "deadline": None}
+
+    def test_preview_and_onboarding_use_same_chapters_and_preserve_order(self):
+        groups = self.client.get("/api/v1/me/plan/groups/").json()
+        self.assertEqual([group["code"] for group in groups], list("ABCDGHJLMNPRSV"))
+        preview = self.client.post("/api/v1/me/plan/atc/", self.config, format="json")
+        self.assertEqual(preview.status_code, 200, preview.content)
+        self.assertEqual(preview.json()["first_activity"]["atc_code"], "N02")
+        self.assertEqual(preview.json()["missing_quiz_count"], 2)
+        self.assertFalse(StudyPlan.objects.filter(user=self.user).exists())
+        saved = self.client.post("/api/v1/auth/onboarding/", {"language": "fa", "learning_plan": self.config}, format="json")
+        self.assertEqual(saved.status_code, 200, saved.content)
+        self.assertTrue(saved.json()["profile"]["is_onboarded"])
+        plan = get_plan(self.user)
+        self.assertEqual(plan.atc_groups, ["N", "C"])
+        self.assertEqual(list(plan.items.values_list("activity_type", "atc_code")),
+                         [("lesson", "N02"), ("lesson", "C03"), ("quiz", "C03"), ("lesson", "C07")])
+        self.assertEqual(plan.items.last().day.isoformat(), preview.json()["estimated_finish"])
+
+    def test_short_date_keeps_profile_and_saved_plan_intact(self):
+        config = {**self.config, "days": [False] * 7, "deadline": str(timezone.localdate() + timedelta(days=1))}
+        config["days"][planning._weekday_index(timezone.localdate() + timedelta(days=1))] = True
+        in_time = self.client.post("/api/v1/me/plan/atc/", config, format="json")
+        self.assertFalse(in_time.json()["fits_deadline"])
+        failed = self.client.post("/api/v1/auth/onboarding/", {"language": "fa", "learning_plan": config}, format="json")
+        self.assertEqual(failed.status_code, 400, failed.content)
+        self.assertFalse(LearnerProfile.objects.filter(user=self.user, onboarded_at__isnull=False).exists())
+        self.assertFalse(StudyPlan.objects.filter(user=self.user).exists())
+        saved = self.client.put("/api/v1/me/plan/atc/", self.config, format="json")
+        self.assertEqual(saved.status_code, 200, saved.content)
+        before = list(get_plan(self.user).items.values_list("id", flat=True))
+        failed = self.client.put("/api/v1/me/plan/atc/", config, format="json")
+        self.assertEqual(failed.status_code, 400)
+        self.assertEqual(list(get_plan(self.user).items.values_list("id", flat=True)), before)
+
+    def test_skip_completes_onboarding_without_plan_or_questionnaire(self):
+        saved = self.client.post("/api/v1/auth/onboarding/", {"language": "en", "learning_plan": None}, format="json")
+        self.assertEqual(saved.status_code, 200, saved.content)
+        profile = saved.json()["profile"]
+        self.assertTrue(profile["is_onboarded"])
+        self.assertEqual(profile["language"], "en")
+        self.assertEqual(profile["study_goal"], "")
+        self.assertFalse(StudyPlan.objects.filter(user=self.user).exists())
 
 
 class PlanPaceRolloverAndWeekTests(TestCase):
