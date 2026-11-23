@@ -76,7 +76,7 @@ export function DashboardScreen() {
   const greetKey = hour < 12 ? "greetingMorning" : hour < 18 ? "greetingAfternoon" : "greetingEvening";
 
   return (
-    <Screen padded={false} refreshing={isRefetching} onRefresh={refresh} keyboardShouldPersistTaps="handled">
+    <Screen animateEntrance={false} padded={false} refreshing={isRefetching} onRefresh={refresh} keyboardShouldPersistTaps="handled">
       <HeaderMesh bleedTop testID="home-header">
         <View
           testID="home-header-photo"

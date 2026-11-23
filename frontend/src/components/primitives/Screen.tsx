@@ -18,6 +18,7 @@ type Props = {
   children: React.ReactNode;
   scroll?: boolean;
   padded?: boolean;
+  animateEntrance?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
   contentStyle?: StyleProp<ViewStyle>;
@@ -29,6 +30,7 @@ export function Screen({
   children,
   scroll = true,
   padded = true,
+  animateEntrance = true,
   refreshing,
   onRefresh,
   contentStyle,
@@ -53,12 +55,13 @@ export function Screen({
   );
 
   useEffect(() => {
+    if (!animateEntrance) return;
     Animated.timing(anim, {
       toValue: 1,
       duration: motion.screen,
       useNativeDriver: true,
     }).start();
-  }, [anim]);
+  }, [anim, animateEntrance]);
 
   const animatedStyle = {
     opacity: anim,
@@ -67,17 +70,18 @@ export function Screen({
     ],
   };
 
+  const Content = animateEntrance ? Animated.View : View;
   const inner = (
-    <Animated.View
+    <Content
       style={[
         { flex: scroll ? undefined : 1, padding: padded ? layout.screenPadding : 0,
           width: "100%", maxWidth: padded ? layout.contentMaxWidth : undefined, alignSelf: "center" },
-        animatedStyle,
+        animateEntrance && animatedStyle,
         contentStyle,
       ]}
     >
       {children}
-    </Animated.View>
+    </Content>
   );
 
   if (!scroll) {

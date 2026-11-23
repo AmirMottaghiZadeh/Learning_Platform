@@ -16,7 +16,7 @@ export function ClinicalScreen() {
   const canGoBack = useNav((state) => state.history.length > 0);
 
   return (
-    <Screen contentStyle={{ maxWidth: 780 }}>
+    <Screen animateEntrance={false} contentStyle={{ maxWidth: 780 }}>
       <ScreenChrome title={t("clinicalResources")} onBack={canGoBack ? goBack : undefined} />
       <View testID="clinical-paths" style={{ gap: spacing.lg }}>
         <HomeTileGrid title="resourceLookupQuick" rows={[CLINICAL_TILES.slice(0, 3), CLINICAL_TILES.slice(3)]} />
