@@ -30,13 +30,13 @@ export const STUDY_TILES: Tile[] = [
   { label: "tileFlashcards", icon: "edu-flashcards" },
 ];
 
-export function HomeTileGrid({ title, rows, home = false }: { title: StringKey; rows: Tile[][]; home?: boolean }) {
+export function HomeTileGrid({ title, rows, home = false }: { title?: StringKey; rows: Tile[][]; home?: boolean }) {
   const { row, t } = useLang();
   const { colors } = useTheme();
   const navigate = useNav((s) => s.navigate);
   return (
     <View style={{ gap: spacing.sm }}>
-      <AppText accessibilityRole="header" aria-level={2} size={18} weight="800">{t(title)}</AppText>
+      {title ? <AppText accessibilityRole="header" aria-level={2} size={18} weight="800">{t(title)}</AppText> : null}
       {rows.map((tiles) => (
         <View key={tiles[0].label} style={{ flexDirection: row, gap: spacing.sm, alignItems: "stretch" }}>
           {tiles.map(({ label, screen, icon }) => {
