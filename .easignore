@@ -8,6 +8,7 @@
 credentials.json
 frontend/credentials/
 play-service-account*.json
+/docs/15-android-signing.local.md
 
 # Backend
 backend/
