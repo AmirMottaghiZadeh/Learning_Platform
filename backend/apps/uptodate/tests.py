@@ -419,7 +419,7 @@ class SnapshotSearchRegressionTests(SimpleTestCase):
             [{"id": 1, "word": "H. pylori", "weight": 100}],
             [{"id": 1, "x_topic_hits": "140619,18", "a_topic_hits": "140619", "p_topic_hits": "", "i_topic_hits": ""}],
         ]
-        with patch.object(services, "_mysql_conn", return_value=connection):
+        with patch.object(services, "_mysql_cursor", side_effect=connection.cursor):
             catalog = services._search_catalog("mysql-test")
         self.assertEqual(catalog.resolve("h pylori")[0], "1")
         self.assertEqual(catalog.hits("1", "h pylori"), ["140619", "18"])
@@ -430,6 +430,7 @@ class MysqlTitleSearchTests(SimpleTestCase):
     def tearDown(self):
         services._title_index.cache_clear()
         services._term.cache_clear()
+        services._ranked_search.cache_clear()
 
     @override_settings(UPTODATE_MYSQL_URL="mysql://test:test@localhost/uptodate")
     def test_titles_are_read_once_and_only_result_headers_after(self):
@@ -444,13 +445,17 @@ class MysqlTitleSearchTests(SimpleTestCase):
             [],  # the second search needs no header: the date is kept
         ]
         with (
-            patch.object(services, "_mysql_conn", return_value=connection),
+            patch.object(services, "_mysql_cursor", side_effect=connection.cursor),
             patch.object(services, "snapshot_version", return_value="202607"),
             patch.object(services, "_section_memberships_for", side_effect=lambda ids: {i: ["Cardiovascular Medicine"] for i in ids}),
             patch.object(services, "_search_catalog", return_value=SearchCatalog([], {})),
         ):
             results = services.search_topics("HYPERT adu", limit=3)
             again = services.search_topics("hypertension", limit=3)
+            before = services._ranked_search.cache_info().hits
+            empty_second_page = services.search_page(" HYPERT   ADU ", offset=1, section="Cardiovascular Medicine")
+            self.assertEqual(services._ranked_search.cache_info().hits, before + 1)
+            self.assertEqual((empty_second_page["total"], empty_second_page["results"]), (1, []))
 
         statements = [call.args[0] for call in cursor.execute.call_args_list]
         self.assertEqual(len(statements), 2)
@@ -466,7 +471,7 @@ class MysqlTitleSearchTests(SimpleTestCase):
 
     @override_settings(UPTODATE_MYSQL_URL="mysql://test:test@localhost/uptodate")
     def test_punctuation_only_search_never_connects_to_mysql(self):
-        with patch.object(services, "_mysql_conn") as connect:
+        with patch.object(services, "_mysql_cursor") as connect:
             self.assertEqual(services.search_topics('"() +-*'), [])
         connect.assert_not_called()
 
@@ -539,7 +544,9 @@ class TitleSearchTests(SimpleTestCase):
         index = services.build_title_index((i + 1, str(100 + i), t) for i, t in enumerate(titles))
         index.updated.update({i + 1: "" for i in range(len(titles))})
         services._term.cache_clear()
+        services._ranked_search.cache_clear()
         self.addCleanup(services._term.cache_clear)
+        self.addCleanup(services._ranked_search.cache_clear)
         with (
             patch.object(services, "_title_index", return_value=index),
             patch.object(services, "snapshot_version", return_value="test"),

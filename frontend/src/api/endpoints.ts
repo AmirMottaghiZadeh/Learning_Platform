@@ -168,16 +168,16 @@ export const meApi = {
 
 // --- Quiz -----------------------------------------------------------
 
-export type SearchPageArgs = { limit?: number; offset?: number; section?: string };
+export type SearchPageArgs = { limit?: number; offset?: number; section?: string; signal?: AbortSignal };
 
 export const uptodateApi = {
   search: (search: string, limit = 25) =>
     apiClient
       .get<UptodateSearchResult[]>("/uptodate/topics/", { params: { search, limit } })
       .then((r) => r.data),
-  searchPage: (search: string, { limit = 30, offset = 0, section = "" }: SearchPageArgs = {}) =>
+  searchPage: (search: string, { limit = 30, offset = 0, section = "", signal }: SearchPageArgs = {}) =>
     apiClient
-      .get<UptodateSearchPage>("/uptodate/topics/", { params: { search, limit, offset, section, paged: 1 } })
+      .get<UptodateSearchPage>("/uptodate/topics/", { signal, params: { search, limit, offset, section, paged: 1 } })
       .then((r) => r.data),
   topic: (id: string) =>
     apiClient.get<UptodateArticle>(`/uptodate/topics/${id}/`).then((r) => r.data),

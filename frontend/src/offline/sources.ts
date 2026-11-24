@@ -1,3 +1,4 @@
+import { CanceledError } from "axios";
 import { SearchPageArgs, lexicompApi, uptodateApi } from "@/api/endpoints";
 import { ApiError } from "@/api/client";
 import { queryClient } from "@/api/queryClient";
@@ -54,16 +55,20 @@ async function localFirst<T>(
   dataset: OfflineDataset,
   local: (reader: PackageReader) => Promise<T | null>,
   online: () => Promise<T>,
+  signal?: AbortSignal,
 ): Promise<T> {
+  if (signal?.aborted) throw new CanceledError();
   const reader = await localReader(dataset);
+  if (signal?.aborted) throw new CanceledError();
   if (reader) {
     try {
       const answer = await local(reader);
-      if (answer !== null) return answer;
+      if (answer !== null && !signal?.aborted) return answer;
     } catch {
       /* fall through to the API */
     }
   }
+  if (signal?.aborted) throw new CanceledError();
   return online();
 }
 
@@ -71,7 +76,7 @@ export const uptodateSource = {
   search: (search: string, limit = 25): Promise<UptodateSearchResult[]> =>
     localFirst("uptodate", (r) => searchTopics(r, search, limit), () => uptodateApi.search(search, limit)),
   searchPage: (search: string, args: SearchPageArgs = {}): Promise<UptodateSearchPage> =>
-    localFirst("uptodate", (r) => searchTopicsPage(r, search, args), () => uptodateApi.searchPage(search, args)),
+    localFirst("uptodate", (r) => searchTopicsPage(r, search, args), () => uptodateApi.searchPage(search, args), args.signal),
   topic: (id: string): Promise<UptodateArticle> =>
     localFirst("uptodate", (r) => getTopic(r, id), () => uptodateApi.topic(id)),
   topicAtAnchor: async (id: string, contentHash: string, anchor: string): Promise<UptodateArticle> => {

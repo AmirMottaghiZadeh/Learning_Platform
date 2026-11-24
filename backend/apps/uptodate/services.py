@@ -33,7 +33,9 @@ import logging
 import re
 import sqlite3
 import threading
+import time
 import zlib
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -51,6 +53,7 @@ logger = logging.getLogger(__name__)
 _LOCK = threading.Lock()
 _CONNS: dict[str, sqlite3.Connection] = {}
 _MYSQL_CONN: pymysql.connections.Connection | None = None
+_MYSQL_LAST_USED = 0.0
 
 # Only real topic articles (type 1); type 2/3 are outline/section fragments.
 TOPIC_TYPE = 1
@@ -101,17 +104,26 @@ def mysql_config() -> dict:
     }
 
 
-def _mysql_conn() -> pymysql.connections.Connection:
-    global _MYSQL_CONN
+@contextmanager
+def _mysql_cursor():
+    """Own the entire exchange on the shared connection, not just its ping."""
+    global _MYSQL_CONN, _MYSQL_LAST_USED
     with _LOCK:
-        if _MYSQL_CONN is not None:
-            try:
+        try:
+            if _MYSQL_CONN is None:
+                _MYSQL_CONN = pymysql.connect(**mysql_config())
+            elif time.monotonic() - _MYSQL_LAST_USED >= 30:
                 _MYSQL_CONN.ping(reconnect=True)
-                return _MYSQL_CONN
-            except Exception:
+            with _MYSQL_CONN.cursor() as cursor:
+                yield cursor
+        except (pymysql.err.InterfaceError, pymysql.err.OperationalError):
+            if _MYSQL_CONN is not None:
+                if _MYSQL_CONN.open:
+                    _MYSQL_CONN.close()
                 _MYSQL_CONN = None
-        _MYSQL_CONN = pymysql.connect(**mysql_config())
-        return _MYSQL_CONN
+            raise
+        finally:
+            _MYSQL_LAST_USED = time.monotonic()
 
 
 def close_all() -> None:
@@ -128,6 +140,7 @@ def close_all() -> None:
     _term.cache_clear()
     _infixed.cache_clear()
     _search_catalog.cache_clear()
+    _ranked_search.cache_clear()
     search_metadata.cache_clear()
     search_metadata_record.cache_clear()
     _SECTIONS.clear()
@@ -137,7 +150,7 @@ def close_all() -> None:
 def snapshot_version() -> str:
     if _using_mysql():
         try:
-            with _mysql_conn().cursor() as cur:
+            with _mysql_cursor() as cur:
                 cur.execute("SELECT value FROM meta WHERE `key` = 'version'")
                 row = cur.fetchone()
                 return str(row["value"]) if row else ""
@@ -205,7 +218,7 @@ def _toc_rows(sql_sqlite: str, sql_mysql: str, ids: list) -> list[dict]:
     for at in range(0, len(ids), _SECTION_BATCH):
         part = ids[at:at + _SECTION_BATCH]
         if _using_mysql():
-            with _mysql_conn().cursor() as cur:
+            with _mysql_cursor() as cur:
                 cur.execute(sql_mysql.format(marks=",".join(["%s"] * len(part))), part)
                 rows.extend(cur.fetchall())
         else:
@@ -298,6 +311,7 @@ class TitleIndex:
     # every distinct title word, sorted, and the titles that have it
     vocab: list[str]
     postings: dict[str, list[int]]
+    positions: dict[str, int]
     # each vocab word's letters (`_letters`)
     letters: list[int] = field(default_factory=list)
     # each topic's last-updated date, read from its header on first need
@@ -323,7 +337,8 @@ def build_title_index(rows) -> TitleIndex:
         for word in dict.fromkeys(title_words):
             postings.setdefault(word, []).append(i)
     vocab = sorted(postings)
-    return TitleIndex(rowids, ids, titles, words, vocab, postings, [_letters(w) for w in vocab])
+    return TitleIndex(rowids, ids, titles, words, vocab, postings,
+                      {cid: i for i, cid in enumerate(ids)}, [_letters(w) for w in vocab])
 
 
 def _letters(word: str) -> int:
@@ -337,7 +352,7 @@ def _letters(word: str) -> int:
 @lru_cache(maxsize=1)
 def _title_index(version: str) -> TitleIndex:
     if _using_mysql():
-        with _mysql_conn().cursor() as cur:
+        with _mysql_cursor() as cur:
             cur.execute(
                 "SELECT rowid, contentId, title FROM fts WHERE type = %s ORDER BY rowid",
                 (TOPIC_TYPE,),
@@ -512,7 +527,7 @@ def _updated_dates(index: TitleIndex, positions: list[int]) -> None:
         return
     marks = ",".join(["%s" if _using_mysql() else "?"] * len(missing))
     if _using_mysql():
-        with _mysql_conn().cursor() as cur:
+        with _mysql_cursor() as cur:
             cur.execute(
                 f"SELECT rowid, LEFT(content, %s) AS head FROM fts WHERE rowid IN ({marks})",
                 (SNIPPET_SOURCE_CHARS, *missing),
@@ -533,7 +548,7 @@ def _search_catalog(version: str) -> SearchCatalog:
         return SearchCatalog([], {})
     try:
         if _using_mysql():
-            with _mysql_conn().cursor() as cur:
+            with _mysql_cursor() as cur:
                 cur.execute("SELECT id, word, weight FROM search_query ORDER BY rowid")
                 queries = [(r["id"], r["word"], r["weight"]) for r in cur.fetchall()]
                 cur.execute("SELECT id, x_topic_hits, a_topic_hits, p_topic_hits, i_topic_hits FROM search_query_topic")
@@ -578,22 +593,12 @@ def search_metadata_record(version: str) -> bytes:
     return b"".join(chunks)
 
 
-def search_page(query: str, limit: int = 25, offset: int = 0, section: str = "") -> dict:
-    """Curated snapshot concept hits, followed by direct title matches.
-
-    Unrecognized queries retain title prefix/infix matching and typo correction.
-    A specialty matches any TOC membership. Counts deduplicate articles within
-    each specialty, so their sum can exceed `all`. Bodies are never searched.
-    """
-    empty = {"total": 0, "all": 0, "sections": [], "terms": [], "corrected": "", "suggestions": [], "results": []}
+@lru_cache(maxsize=128)
+def _ranked_search(query: str, version: str):
     words = _search_words(query)
-    if not words:
-        return empty
-    limit, offset = max(0, int(limit)), max(0, int(offset))
-    version = snapshot_version()
     index = _title_index(version)
     catalog = _search_catalog(version)
-    positions = {cid: i for i, cid in enumerate(index.ids)}
+    positions = index.positions
     suggestions = catalog.suggest(query, positions)
     concept, remaining, _ = catalog.resolve(query)
 
@@ -622,6 +627,19 @@ def search_page(query: str, limit: int = 25, offset: int = 0, section: str = "")
         corrected = ""
     curated = list(dict.fromkeys(curated))
     ranked = curated + sorted(found - set(curated), key=lambda i: _rank(index, i, matched))
+    return ranked, terms, corrected, suggestions
+
+
+def search_page(query: str, limit: int = 25, offset: int = 0, section: str = "") -> dict:
+    """Rank titles once, then page and filter their specialty memberships."""
+    empty = {"total": 0, "all": 0, "sections": [], "terms": [], "corrected": "", "suggestions": [], "results": []}
+    query = " ".join((query or "").lower().split())
+    if not _search_words(query):
+        return empty
+    limit, offset = max(0, int(limit)), max(0, int(offset))
+    version = snapshot_version()
+    index = _title_index(version)
+    ranked, terms, corrected, suggestions = _ranked_search(query, version)
     if not ranked:
         return {**empty, "terms": terms, "corrected": corrected, "suggestions": suggestions}
 
@@ -669,7 +687,7 @@ def search_topics(query: str, limit: int = 25) -> list[dict]:
 def get_topic(content_id: str, *, include_memberships: bool = True) -> dict | None:
     content_id = str(content_id)
     if _using_mysql():
-        with _mysql_conn().cursor() as cur:
+        with _mysql_cursor() as cur:
             cur.execute("SELECT gzip, version FROM content WHERE id = %s", (content_id,))
             row = cur.fetchone()
     else:
@@ -721,7 +739,7 @@ _IMAGE_TYPES = {"png", "jpeg", "gif", "webp"}
 def get_image(image_id: str) -> dict | None:
     image_id = str(image_id)
     if _using_mysql():
-        with _mysql_conn().cursor() as cur:
+        with _mysql_cursor() as cur:
             cur.execute("SELECT `binary`, type FROM images WHERE id = %s", (image_id,))
             row = cur.fetchone()
     else:

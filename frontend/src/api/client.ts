@@ -97,6 +97,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const request = error.config as RetryableConfig | undefined;
+    if (axios.isCancel(error) || request?.signal?.aborted) throw error;
 
     // A locked feature answers 503; retry a GET once in case it was a blip.
     const retryCount = request?.retryCount ?? 0;
@@ -117,12 +118,10 @@ apiClient.interceptors.response.use(
       auth
     ) {
       request.authRetry = true;
+      let token: string;
       try {
         refreshPromise ??= auth.refreshAccessToken();
-        const token = await refreshPromise;
-        refreshPromise = null;
-        request.headers = { ...request.headers, Authorization: `Bearer ${token}` };
-        return await apiClient.request(request);
+        token = await refreshPromise;
       } catch (refreshError) {
         // Clear before onAuthFailed(), not in a finally after it: onAuthFailed
         // (signOut) can itself trigger another request that 401s and re-enters
@@ -132,6 +131,9 @@ apiClient.interceptors.response.use(
         await auth.onAuthFailed();
         throw refreshError;
       }
+      refreshPromise = null;
+      request.headers = { ...request.headers, Authorization: `Bearer ${token}` };
+      return apiClient.request(request);
     }
 
     if (request?.authRetry && error.response?.status === 401 && auth) {

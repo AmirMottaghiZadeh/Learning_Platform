@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
-import { Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { TextInput } from "@/components/primitives/TextInput";
 import Svg, { Circle, Path } from "react-native-svg";
 
@@ -44,6 +44,7 @@ export function UptodateScreen() {
   const initialQuery = useNav((s) => s.params.query);
   const [q, setQ] = useState(typeof initialQuery === "string" ? initialQuery : "");
   const query = useDebounced(q.trim(), 200);
+  const ready = q.trim() === query && query.length >= 2;
   const [section, setSection] = useState<string | null>(null);
   const sectionScroll = React.useRef<ScrollView>(null);
   const rootRef = React.useRef<View>(null);
@@ -80,8 +81,6 @@ export function UptodateScreen() {
     };
   }, [measureMenu]);
   const favorites = useLibrary((s) => s.favorites);
-  // a new query starts on "All"
-  React.useEffect(() => setSection(null), [query]);
   React.useEffect(() => {
     if (isFa) {
       sectionScroll.current?.scrollToEnd({ animated: false });
@@ -90,15 +89,15 @@ export function UptodateScreen() {
 
   // Every title with the words is a result: one page at a time, the next
   // as the list nears its end. Counts and section chips cover all of them.
-  const { data, isFetching, error, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ["uptodate-search-page", query, section ?? ""],
-    queryFn: ({ pageParam }) => uptodateSource.searchPage(query, { limit: PAGE, offset: pageParam, section: section ?? "" }),
+  const { data, isFetching, error, hasNextPage, fetchNextPage, isFetchingNextPage, refetch } = useInfiniteQuery({
+    queryKey: ["uptodate-search-page", ready ? query : "", section ?? ""],
+    queryFn: ({ pageParam, signal }) => uptodateSource.searchPage(query, { limit: PAGE, offset: pageParam, section: section ?? "", signal }),
     initialPageParam: 0,
     getNextPageParam: (last, pages) => {
       const loaded = pages.reduce((sum, page) => sum + page.results.length, 0);
       return last.results.length && loaded < last.total ? loaded : undefined;
     },
-    enabled: query.length >= 2,
+    enabled: ready,
     retry: false,
   });
 
@@ -263,7 +262,16 @@ export function UptodateScreen() {
               {t("lockedFeature")}
             </AppText>
           </View>
-        ) : query.length >= 2 && rows.length === 0 && !isFetching ? (
+        ) : q.trim().length < 2 ? (
+          <Favorites items={favorites} onOpen={(f) => navigate("uptodateOutline", { id: f.id, title: stripHtml(f.title) })} />
+        ) : !first && (!ready || isFetching) ? (
+          <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} />
+        ) : error && !first ? (
+          <Pressable onPress={() => void refetch()} accessibilityRole="button"
+            style={{ alignItems: "center", padding: 16 }}>
+            <AppText muted>{t("loadFailed")} · {t("retry")}</AppText>
+          </Pressable>
+        ) : rows.length === 0 ? (
           <View style={{ alignItems: "center", paddingVertical: 40 }}>
             <View
               style={{
@@ -285,8 +293,6 @@ export function UptodateScreen() {
               {t("uptodateEmptySub")}
             </AppText>
           </View>
-        ) : query.length < 2 ? (
-          <Favorites items={favorites} onOpen={(f) => navigate("uptodateOutline", { id: f.id, title: stripHtml(f.title) })} />
         ) : (
           <>
             {corrected ? (
