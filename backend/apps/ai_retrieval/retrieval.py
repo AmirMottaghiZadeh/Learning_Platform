@@ -500,9 +500,11 @@ class HybridRetriever:
                     allow_related=lambda parent, target: self.register_related(parent, target, kind="media_source_link"))
                 if media.ALGORITHM_INTENT.search(question or query):
                     selected = [passage for passage in selected if media.ALGORITHM_INTENT.search(passage.media[0]["title"])]
-                preferred = {(p.article_id, p.media[0]["key"]): p for p in original}
+                preferred = {media.identity(p.media[0]): p for p in original}
+                original_targets = {media.target_identity(p.media[0]) for p in original}
                 for passage in selected:
-                    preferred.setdefault((passage.article_id, passage.media[0]["key"]), passage)
+                    if media.target_identity(passage.media[0]) not in original_targets:
+                        preferred.setdefault(media.identity(passage.media[0]), passage)
                 selected = list(preferred.values())
             allowed=[]
             for passage in selected:

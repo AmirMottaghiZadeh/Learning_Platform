@@ -21,36 +21,45 @@ class Probe(HTMLParser):
             ordinal=self.ordinal;self.ordinal+=1
             if tag=="table":
                 self.depth+=1
-                if self.depth==1:self.table={"ordinal":ordinal,"parts":[],"caption":[],"in_caption":False}
+                if self.depth==1:self.table={"ordinal":ordinal,"parts":[],"caption":[],"in_caption":False,"shape":[]}
             elif self.depth==0 and re.fullmatch(r"[A-Za-z0-9_.-]{1,100}",attrs.get("src","")):
                 caption=attrs.get("alt","") or attrs.get("title","")
-                self.records.append(self.record("image",ordinal,caption or self.title,caption,caption or self.title,attrs["src"]))
+                self.records.append(self.record("image",ordinal,caption or self.title,caption,caption or self.title,
+                                                "image:" + attrs["src"]))
         if self.table:
             if tag=="caption":self.table["in_caption"]=True
             if tag in {"td","th","tr","p","br"}:self.table["parts"].append(" ")
+            if tag in {"table", "tr", "th", "td", "caption"}:
+                self.table["shape"].append(f"<{tag}:{attrs.get('rowspan') or '1'}:{attrs.get('colspan') or '1'}>")
+            if tag == "img":
+                self.table["shape"].append(f"<image:{attrs.get('src') or ''}>")
 
     def handle_data(self,data):
         if self.skip:return
         self.text.append(data)
         if self.table:
             self.table["parts"].append(data)
+            self.table["shape"].append(data)
             if self.table["in_caption"]:self.table["caption"].append(data)
 
     def handle_endtag(self,tag):
         if tag in {"script","style","noscript"} and self.skip:self.skip-=1;return
         if self.skip:return
         if self.table and tag=="caption":self.table["in_caption"]=False
+        if self.table and tag in {"table", "tr", "th", "td", "caption"}:
+            self.table["shape"].append(f"</{tag}>")
         if tag=="table" and self.depth:
             self.depth-=1
             if self.depth==0 and self.table:
                 table=self.table;self.table=None
                 caption=" ".join("".join(table["caption"]).split())
+                shape = re.sub(r">\s+<", "><", " ".join("".join(table["shape"]).split()))
                 self.records.append(self.record("table",table["ordinal"],caption or self.title,caption,
-                    " ".join("".join(table["parts"]).split()),""))
+                    " ".join("".join(table["parts"]).split()),"table:" + sha256(shape.encode()).hexdigest()))
 
-    def record(self,kind,ordinal,title,caption,text,image_id):
+    def record(self,kind,ordinal,title,caption,text,asset_id):
         key="um-"+sha256(f"{self.identifier}:{kind}:{ordinal}".encode()).hexdigest()[:32]
-        return {"key":key,"kind":kind,"title":title,"caption":caption,"text":text,"image_id":image_id}
+        return {"key":key,"kind":kind,"title":title,"caption":caption,"text":text,"asset_id":asset_id}
 
 
 def probe(article):

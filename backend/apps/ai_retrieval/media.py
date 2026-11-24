@@ -58,12 +58,22 @@ def media_passage(identifier, article_id, article_title, content_hash, record, t
         content_hash, heading_path=(record["title"],), media=(descriptor,))
 
 
+def target_identity(asset):
+    key = asset["key"]
+    return key if key.startswith("graphic-") else f'{asset["article_id"]}:{key}'
+
+
+def identity(asset):
+    """A source file or table can be cited through multiple parent articles."""
+    return asset.get("asset_id") or target_identity(asset)
+
+
 def _passage_from_record(article, record):
     complete = len(record["text"]) <= 12000
     body = record["text"] if complete else record["caption"] or record["title"]
     text = "\n".join(dict.fromkeys(filter(None, (record["title"], record["caption"], body))))
     key = sha256(f'{article.source_id}:{record["key"]}'.encode()).hexdigest()[:24]
-    descriptor = {name: record[name] for name in ("key", "kind", "title", "caption", "graphic_hash", "source_labels") if name in record}
+    descriptor = {name: record[name] for name in ("key", "kind", "title", "caption", "graphic_hash", "source_labels", "asset_id") if name in record}
     return media_passage("M" + key, article.source_id, article.title, article.content_hash,
                          {**descriptor, "content_complete": complete, "is_algorithm": _algorithm(record)}, text)
 
@@ -177,9 +187,10 @@ def outline_media(articles, queries, question, audience, limit=6, *, request=Non
             "algorithm" if entry[2].media[0].get("is_algorithm") else "")), None) for group in groups]
         pending = [entry for entry in first if entry is not None] + pending
     for _, parent, item in pending:
-        if item.id in admitted or parent and not allow_related(parent, item.article_id):
+        asset_id = identity(item.media[0])
+        if asset_id in admitted or parent and not allow_related(parent, item.article_id):
             continue
-        admitted.add(item.id)
+        admitted.add(asset_id)
         selected.append(item)
         if len(selected) >= limit:
             break
@@ -201,7 +212,7 @@ def media_answer(question, passages):
     unique = {}
     for passage in passages:
         if matches(passage):
-            unique.setdefault((passage.article_id, passage.media[0]["key"]), passage)
+            unique.setdefault(identity(passage.media[0]), passage)
     rows = list(unique.values())[:6]
     if not rows:
         return {}
@@ -249,6 +260,7 @@ def citation_valid(citation):
         expected="\n".join(dict.fromkeys(filter(None,[record["title"],record["caption"],text])))
         return citation.get("quote")==expected and bool(citation.get("media")) and all(
             item.get("key")==record["key"] and item.get("article_id")==str(params["id"])
+            and (not item.get("asset_id") or item["asset_id"] == record["asset_id"])
             and item.get("content_hash")==citation["content_hash"] and item.get("kind")==record["kind"]
             and item.get("content_complete")==complete for item in citation.get("media",[]))
     except (KeyError,TypeError,ValueError):
@@ -277,6 +289,7 @@ def search(generation,query,*,article_ids=(),audience="general",limit=3,kinds=No
         return focus*2+hits/len(terms)+(0.25 if row.source_id in article_ids else 0),getattr(row,"rank",0)
     candidates.sort(key=rank,reverse=True)
     result=[]
+    seen = set()
     for row in candidates:
         title=normalize(f"{row.article_title} {row.title} {row.caption}")
         if sum(term in title for term in topic)/len(topic)<0.5:continue
@@ -289,6 +302,11 @@ def search(generation,query,*,article_ids=(),audience="general",limit=3,kinds=No
                                if normalize(part) != article_title)
             if not set(topic).intersection(content.split()):
                 continue
-        result.append(passage(row))
+        item = passage(row)
+        asset_id = identity(item.media[0])
+        if asset_id in seen:
+            continue
+        seen.add(asset_id)
+        result.append(item)
         if len(result)>=limit:break
     return result

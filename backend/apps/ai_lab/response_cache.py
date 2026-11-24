@@ -17,7 +17,7 @@ from . import lexical, reference_index, selection, telemetry
 from .models import ReferenceArticle, ReferenceParagraph
 from .provider import check_deadline, response_model_aliases
 
-CACHE_VERSION = 3
+CACHE_VERSION = 4
 MAX_PAYLOAD_BYTES = 512000
 
 

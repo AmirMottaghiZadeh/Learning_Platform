@@ -324,9 +324,19 @@ def related_citations(passages, verified, *, include_unquoted=False):
                 r["kind"] in {"subsections", "section_links", "article_links"} for r in passage.relations)):
             result.append(_citation(passage, retrieved=True))
             represented.add(key)
-    media = [_citation(passage, retrieved=True) for passage in passages if passage.media and passage.id not in used
-             and (not passage.relations or any(r["source_id"] in used for r in passage.relations))]
-    return result[:24] + media[:6]
+    represented_media = {media.identity(asset) for passage in passages if passage.id in used for asset in passage.media}
+    attachments = []
+    for passage in passages:
+        if not passage.media or (passage.relations and not any(r["source_id"] in used for r in passage.relations)):
+            continue
+        asset = media.identity(passage.media[0])
+        if asset in represented_media:
+            continue
+        represented_media.add(asset)
+        attachments.append(_citation(passage, retrieved=True))
+        if len(attachments) == 6:
+            break
+    return result[:24] + attachments
 
 
 def _evidence_payload(passages):

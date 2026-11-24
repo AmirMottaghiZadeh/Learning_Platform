@@ -19,6 +19,7 @@ import { fontFamily } from "@/theme/fonts";
 import { SearchFeedback } from "@/components/SearchFeedback";
 import { SmartSearchWallet } from "@/components/SmartSearchWallet";
 import { ReferenceMediaCards } from "@/components/ReferenceMediaCards";
+import { referenceMediaId } from "@/api/referenceMedia";
 import { Chevron } from "@/components/primitives/Chevron";
 import { ReferenceAnswerSkeleton, ReferenceSearchLoading } from "@/components/ReferenceSearchLoading";
 import { ReferenceAnswerText } from "@/components/ReferenceAnswerText";
@@ -270,15 +271,15 @@ export function AiLabScreen() {
   };
 
   const sectionName = (citation: LabCitation) => citation.section_path?.join(" › ") || citation.section;
-  const sourceLink = (citation: LabCitation, key: string, number?: number) => (
-    <Pressable key={key} testID="reference-inline-citation" accessibilityRole="link" onPress={() => open(citation)}
-      accessibilityLabel={`${isFa ? "متن اصلی" : "Original source"} · ${citation.title} · ${sectionName(citation)}`}
-      style={({ pressed }) => ({ minHeight: 44, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 5,
-        borderRadius: 10, backgroundColor: colors.softBg, opacity: pressed ? 0.72 : 1 })}>
-      <AppText size={12} color={colors.accent} weight="700" style={{ writingDirection: "ltr", textAlign: "left" }}>
-        {number ? `[${number}] ` : ""}{citation.title}
+  const sourceLink = (citation: LabCitation, number: number) => (
+    <Pressable key={citation.source_id} testID="reference-inline-citation" accessibilityRole="link" onPress={() => open(citation)}
+      hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
+      accessibilityLabel={`${isFa ? "منبع" : "Source"} ${number} · ${citation.title}${sectionName(citation) ? ` · ${sectionName(citation)}` : ""}`}
+      style={({ pressed }) => ({ minHeight: 32, minWidth: 44, alignItems: "center", justifyContent: "center",
+        borderRadius: 8, backgroundColor: colors.softBg, opacity: pressed ? 0.72 : 1 })}>
+      <AppText size={12} color={colors.accent} weight="700" style={{ writingDirection: "ltr" }}>
+        [{number}]
       </AppText>
-      {!!sectionName(citation) && <AppText size={11} muted style={{ writingDirection: "ltr", textAlign: "left" }}>{sectionName(citation)}</AppText>}
     </Pressable>
   );
 
@@ -346,13 +347,18 @@ export function AiLabScreen() {
           if (!articles.has(articleId)) articles.set(articleId, citation);
         }
         const hasSources = articles.size > 0;
-        const mediaSources = new Map(citations.flatMap((citation) => (citation.media ?? []).map((item) =>
-          [`${item.article_id}:${item.key}`, { item, citation }] as const)));
+        const mediaSources = new Map<string, { item: NonNullable<LabCitation["media"]>[number]; citation: LabCitation }>();
+        for (const citation of citations) {
+          for (const item of citation.media ?? []) {
+            const id = referenceMediaId(item);
+            if (!mediaSources.has(id)) mediaSources.set(id, { item, citation });
+          }
+        }
         return <View testID={turn.status === "complete" ? "reference-final-answer" : "reference-pending-answer"} key={turn.id} onLayout={(event) => { turnPositions.current[turn.id] = event.nativeEvent.layout.y; scheduleFollow(); }} style={{ gap: 12 }}>
         <View style={{backgroundColor:colors.leitnerActiveBg,borderRadius:14,padding:12,maxWidth:"92%",alignSelf:isFa ? "flex-end" : "flex-start"}}><AppText color={colors.ink} weight="500" size={15}>{turn.question}</AppText></View>
         {mediaSources.size ? <View testID="reference-primary-media" style={{padding:16,borderRadius:18,backgroundColor:colors.cardBg}}>
           <ReferenceMediaCards items={[...mediaSources.values()].map(({ item }) => item)} onOpenSource={(item) => {
-            const source = mediaSources.get(`${item.article_id}:${item.key}`);
+            const source = mediaSources.get(referenceMediaId(item));
             if (source) open(source.citation);
           }} />
         </View> : null}
@@ -377,14 +383,18 @@ export function AiLabScreen() {
               {part.answer_blocks?.length ? <View testID="reference-answer-text" style={{ gap: 12 }}>
                 {part.answer_blocks.map((block, index) => <View key={index} style={{ gap: 4 }}>
                   <ReferenceAnswerText text={block.text_fa} />
-                  {block.source_ids.map((sourceId) => {
-                    const position = part.items.findIndex(({ source_id }) => source_id === sourceId);
-                    return position < 0 ? null : sourceLink(part.items[position], sourceId, position + 1);
-                  })}
+                  <View style={{ flexDirection: row, flexWrap: "wrap", gap: 4 }}>
+                    {[...new Set(block.source_ids)].map((sourceId) => {
+                      const position = part.items.findIndex(({ source_id }) => source_id === sourceId);
+                      return position < 0 ? null : sourceLink(part.items[position], position + 1);
+                    })}
+                  </View>
                 </View>)}
               </View> : summary ? <View style={{ gap: 4 }}>
                 <ReferenceAnswerText testID="reference-answer-text" text={summary} />
-                {part.items.map((item, index) => sourceLink(item, item.source_id, index + 1))}
+                <View style={{ flexDirection: row, flexWrap: "wrap", gap: 4 }}>
+                  {part.items.map((item, index) => sourceLink(item, index + 1))}
+                </View>
               </View> : null}
               {part.retrieval?.limited && !part.retrieval.early_stopped ? <AppText size={12} muted>{isFa ? "پوشش منابع در این جست‌وجو کامل نیست." : "This search covered a limited set of references."}</AppText> : null}
               {part.status === "partial" ? <AppText size={13} muted>{part.clarification_fa || (isFa ? "منابع فقط بخشی از سؤال را پوشش می‌دهند." : "The sources cover only part of the question.")}</AppText> : null}

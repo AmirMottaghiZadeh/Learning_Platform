@@ -34,7 +34,11 @@ class OutlinePipelineTests(TestCase):
             <a onclick='doOperation({contentId:"9002"})'>Decision pathway</a></section>
             <section id="outlineRelatedTopicsLinks"><a data-topicid="3852">Fixture syndrome follow-up</a></section>''')
         self.add_title("3852")
-        self.write_article("3852", '<div id="topicText"><figure><img src="diagram.png" alt="Follow-up illustration"></figure></div>',
+        self.write_article("3852", '''<div id="topicText">
+            <figure><img src="diagram.png" alt="Follow-up illustration"></figure>
+            <img src="diagram.png" alt="Alternative caption"><img src="pathway.png" alt="Original pathway">
+            <table><tr><th>Source</th></tr>
+            <tr><td>Original table cell</td></tr></table></div>''',
                            title="Fixture syndrome follow-up")
         self.write_article("9001", '<table><tr><th>Source</th></tr><tr><td>Original table cell</td></tr></table>', title="Source table")
         self.write_article("9002", '<img src="pathway.png" alt="Original pathway">', title="Decision pathway")
@@ -53,6 +57,8 @@ class OutlinePipelineTests(TestCase):
         with patch.object(services, "search_articles", side_effect=catalog), patch.object(services, "chat", side_effect=model):
             part = services.answer("جدول و تصویر و الگوریتم Fixture syndrome را نشان بده", "luna", ["uptodate"], [], None)["parts"][0]
         self.assertEqual(part["status"], "answered")
+        self.assertEqual(len(part["items"]), 3)
+        self.assertEqual(len({item["media"][0]["asset_id"] for item in part["items"]}), 3)
         self.assertEqual({item["media"][0]["kind"] for item in part["items"]}, {"table", "image"})
         self.assertEqual({item["target"]["params"]["id"] for item in part["items"]}, {"3851", "3852"})
         self.assertTrue(any(item["media"][0]["is_algorithm"] for item in part["items"]))

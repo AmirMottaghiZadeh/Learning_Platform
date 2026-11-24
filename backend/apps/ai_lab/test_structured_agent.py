@@ -63,7 +63,8 @@ class StructuredAgentTests(SimpleTestCase):
         self.assertEqual(result["parts"][0]["status"],"not_found")
 
     def test_discovered_algorithm_is_returned_even_without_answer_paragraphs(self):
-        source = replace(reference(10, "Decision algorithm"), media=({"key": "fixture", "kind": "image",
+        source = reference(10, "Decision algorithm")
+        source = replace(source, media=({"key": "fixture", "kind": "image", "article_id": source.article_id,
                          "title": "Decision pathway", "caption": "Original source", "is_algorithm": True},))
         retriever = self.retriever([source])
         with patch.object(scoped, "stream_chat", return_value=(self.plan(), {})) as model, patch.object(agent, "chat") as verify:

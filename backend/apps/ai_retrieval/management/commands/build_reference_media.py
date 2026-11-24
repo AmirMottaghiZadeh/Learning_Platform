@@ -57,7 +57,8 @@ class Command(BaseCommand):
                         records.append(ReferenceMedia(generation=generation,source_id=identifier,content_hash=content_hash,
                             media_key=item["key"],kind=item["kind"],article_title=article["title"],title=item["title"],
                             caption=item["caption"],search_text=f"{article['title']} {item['kind']} {item['title']} {item['text'][:20000]}",
-                            evidence_text=description,audience=audience,descriptor={"graphic_hash":item.get("graphic_hash",""),"content_complete":complete}))
+                            evidence_text=description,audience=audience,descriptor={"graphic_hash":item.get("graphic_hash",""),
+                                "asset_id":item["asset_id"],"content_complete":complete}))
                     with transaction.atomic(using=alias):
                         ReferenceMedia.objects.filter(generation=generation,source_id=identifier).delete()
                         ReferenceMedia.objects.bulk_create(records,batch_size=100)
