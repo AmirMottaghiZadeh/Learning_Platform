@@ -27,6 +27,7 @@ import {
   OfflineLicense,
   OfflinePackageInfo,
   OfflinePackageUrls,
+  PlanChapter,
   PlanToday,
   QuizAnswerResult,
   QuizOverview,
@@ -155,6 +156,7 @@ export const meApi = {
   previewPlan: (body: AtcPlanConfig) => apiClient.post<AtcPlanPreview>("/me/plan/atc/", body).then((r) => r.data),
   savePlan: (body: AtcPlanConfig) => apiClient.put<StudyPlan>("/me/plan/atc/", body).then((r) => r.data),
   planToday: () => apiClient.get<PlanToday>("/me/plan/today/").then((r) => r.data),
+  planChapter: (code: string) => apiClient.get<PlanChapter>(`/me/plan/atc/${encodeURIComponent(code)}/`).then((r) => r.data),
   // The home screen's plan box: today and this week, without every topic's progress.
   planTodayBrief: () =>
     apiClient.get<PlanToday>("/me/plan/today/", { params: { brief: 1 } }).then((r) => r.data),

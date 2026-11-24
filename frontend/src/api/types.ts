@@ -362,8 +362,16 @@ export interface AtcPlanPreview {
   remaining_minutes: number;
   study_sessions: number;
   first_activity: AtcPlanActivity | null;
+  first_lesson?: AtcPlanActivity | null;
   estimated_finish: string | null;
   empty_groups: string[];
+}
+
+export interface PlanChapter {
+  quiz_day: string | null;
+  quiz_status: "done" | "scheduled" | "unavailable";
+  flashcard_status: "coming_soon";
+  flashcard_after: "quiz";
 }
 
 export type PlanItemActivity = "lesson" | "quiz" | "mistake_review";

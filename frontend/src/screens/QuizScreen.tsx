@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
@@ -37,6 +37,7 @@ function chipColors(tone: SectionTone, colors: ReturnType<typeof useTheme>["colo
 }
 
 export function QuizScreen() {
+  const queryClient = useQueryClient();
   const { t, isFa, n, row } = useLang();
   const { colors } = useTheme();
   const setTab = useNav((s) => s.setTab);
@@ -123,6 +124,10 @@ export function QuizScreen() {
     onSuccess: (r) => {
       setResult(r);
       setStage("done");
+      if (planChapter) {
+        void queryClient.invalidateQueries({ queryKey: ["plan-chapter", planChapter] });
+        void queryClient.invalidateQueries({ queryKey: ["plan-today"] });
+      }
     },
   });
 

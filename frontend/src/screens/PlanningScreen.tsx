@@ -52,7 +52,7 @@ export function PlanningScreen() {
   });
 
   const openActivity = (item: StudyPlanItem) => {
-    if (item.activity_type === "lesson" && item.atc_code) navigate("lessonList", { code: item.atc_code });
+    if (item.activity_type === "lesson" && item.atc_code) navigate("lessonList", { code: item.atc_code, studyPlan: !!plan?.atc_groups?.length });
     else if (item.activity_type === "mistake_review") navigate("mistakes");
     else if (item.activity_type === "quiz" && item.atc_code) navigate("quiz", { planChapter: item.atc_code, planTitle: isFa ? item.title_fa : item.title_en });
     else if (item.activity_type === "quiz") navigate("quiz", { topic: item.topic_key });
@@ -110,7 +110,7 @@ export function PlanningScreen() {
       {firstActivity && today.items.length === 0 ? <Card style={{ gap: spacing.sm }}>
         <AppText weight="800" size={16}>{isFa ? firstActivity.name_fa : firstActivity.name_en}</AppText>
         <Button full={false} label={firstActivity.activity_type === "lesson" ? (isFa ? "شروع اولین درس" : "Start first lesson") : (isFa ? "شروع اولین آزمون" : "Start first quiz")}
-          onPress={() => firstActivity.activity_type === "lesson" ? navigate("lessonList", { code: firstActivity.atc_code })
+          onPress={() => firstActivity.activity_type === "lesson" ? navigate("lessonList", { code: firstActivity.atc_code, studyPlan: true })
             : navigate("quiz", { planChapter: firstActivity.atc_code, planTitle: isFa ? firstActivity.name_fa : firstActivity.name_en })} />
       </Card> : null}
       <Card style={{ gap: spacing.sm }}>

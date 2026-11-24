@@ -8,6 +8,7 @@ import type { AtcGroup, ChapterDrug } from "@/api/types";
 import { ChromeButton, LangToggleButton, TourButton } from "@/components/ScreenChrome";
 import { useBleedTop } from "@/components/AppShell";
 import { useNavClearance } from "@/components/BottomNav";
+import { ChapterPlanSteps } from "@/components/plan/ChapterPlanSteps";
 import { AppText } from "@/components/primitives/AppText";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -57,6 +58,7 @@ export function LessonListScreen() {
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
   const code = String(useNav((s) => s.params.code ?? ""));
+  const fromPlan = useNav((s) => s.params.studyPlan === true);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["chapter", code],
@@ -67,7 +69,8 @@ export function LessonListScreen() {
   useTour("lessonList", !isLoading && !!data);
 
   const items = withGroupHeaders(data?.drugs ?? []);
-  const headerIndices = items.flatMap((item, i) => (item.kind === "group" ? [i] : []));
+  const showPlan = fromPlan && !!data;
+  const headerIndices = items.flatMap((item, i) => (item.kind === "group" ? [i + Number(showPlan)] : []));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cardBg }}>
@@ -133,6 +136,7 @@ export function LessonListScreen() {
           contentContainerStyle={{ padding: 22, paddingTop: 14, paddingBottom: navClearance }}
           showsVerticalScrollIndicator={false}
         >
+          {showPlan && data ? <ChapterPlanSteps chapter={data} /> : null}
           {items.map((item) => {
             if (item.kind === "group") {
               const { group } = item;

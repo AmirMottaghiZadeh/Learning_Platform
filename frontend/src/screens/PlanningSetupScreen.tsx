@@ -16,6 +16,7 @@ import { daysUntil } from "@/utils/planDates";
 export function PlanningSetupScreen() {
   const { t, isFa } = useLang();
   const goBack = useNav((state) => state.goBack);
+  const navigate = useNav((state) => state.navigate);
   const clearance = useNavClearance();
   const client = useQueryClient();
   const plan = useQuery({ queryKey: ["plan"], queryFn: meApi.plan, retry: false });
@@ -35,12 +36,14 @@ export function PlanningSetupScreen() {
 
   return <Screen animateEntrance={false} padded={false} scroll={false}>
     <LearningPlanWizard initial={initial} bottomInset={clearance} isEditing onClose={goBack}
-      onSave={async (config) => {
+      onSave={async (config, first) => {
         const saved = await meApi.savePlan(config);
         client.setQueryData(["plan"], saved);
         void client.invalidateQueries({ queryKey: ["plan-today"] });
         void client.invalidateQueries({ queryKey: PLAN_BRIEF_KEY });
+        void client.invalidateQueries({ queryKey: ["plan-chapter"] });
         goBack();
+        if (first?.activity_type === "lesson") navigate("lessonList", { code: first.atc_code, studyPlan: true });
       }}
     />
   </Screen>;

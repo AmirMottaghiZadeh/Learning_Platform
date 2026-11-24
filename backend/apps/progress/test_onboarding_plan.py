@@ -102,6 +102,7 @@ class AtcOnboardingTests(TestCase):
         preview = self.client.post("/api/v1/me/plan/atc/", self.config, format="json")
         self.assertEqual(preview.status_code, 200, preview.content)
         self.assertEqual(preview.json()["first_activity"]["atc_code"], "N02")
+        self.assertEqual(preview.json()["first_lesson"]["atc_code"], "N02")
         self.assertEqual(preview.json()["missing_quiz_count"], 2)
         self.assertFalse(StudyPlan.objects.filter(user=self.user).exists())
         saved = self.client.post("/api/v1/auth/onboarding/", {"language": "fa", "learning_plan": self.config}, format="json")
@@ -112,6 +113,14 @@ class AtcOnboardingTests(TestCase):
         self.assertEqual(list(plan.items.values_list("activity_type", "atc_code")),
                          [("lesson", "N02"), ("lesson", "C03"), ("quiz", "C03"), ("lesson", "C07")])
         self.assertEqual(plan.items.last().day.isoformat(), preview.json()["estimated_finish"])
+        steps = self.client.get("/api/v1/me/plan/atc/C03/")
+        self.assertEqual(steps.status_code, 200, steps.content)
+        self.assertEqual(steps.json(), {
+            "quiz_day": plan.items.get(activity_type="quiz", atc_code="C03").day.isoformat(),
+            "quiz_status": "scheduled", "flashcard_status": "coming_soon", "flashcard_after": "quiz",
+        })
+        self.assertEqual(self.client.get("/api/v1/me/plan/atc/N02/").json()["quiz_status"], "unavailable")
+        self.assertEqual(self.client.get("/api/v1/me/plan/atc/A01/").status_code, 404)
 
     def test_short_date_keeps_profile_and_saved_plan_intact(self):
         config = {**self.config, "days": [False] * 7, "deadline": str(timezone.localdate() + timedelta(days=1))}

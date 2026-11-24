@@ -41,7 +41,8 @@ export function LearningPlanWizard({ initial = DEFAULT_PLAN, bottomInset = 0, is
   const groups = groupsQuery.data ?? [];
   const preview = useMutation({ mutationFn: meApi.previewPlan });
   const finalize = useMutation({
-    mutationFn: (skip: boolean) => skip ? Promise.resolve(onClose()) : onSave(config, preview.data?.first_activity ?? null),
+    mutationFn: (skip: boolean) => skip ? Promise.resolve(onClose())
+      : onSave(config, preview.data?.first_lesson ?? preview.data?.first_activity ?? null),
   });
   const loading = preview.isPending || finalize.isPending;
   const l = (fa: string, en: string) => isFa ? fa : en;

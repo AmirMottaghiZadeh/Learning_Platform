@@ -163,8 +163,16 @@ class AtcPlanPreviewSerializer(serializers.Serializer):
     remaining_minutes = serializers.IntegerField()
     study_sessions = serializers.IntegerField()
     first_activity = AtcFirstActivitySerializer(allow_null=True)
+    first_lesson = AtcFirstActivitySerializer(allow_null=True)
     estimated_finish = serializers.DateField(allow_null=True)
     empty_groups = serializers.ListField(child=serializers.CharField())
+
+
+class PlanChapterSerializer(serializers.Serializer):
+    quiz_day = serializers.DateField(allow_null=True)
+    quiz_status = serializers.ChoiceField(choices=["done", "scheduled", "unavailable"])
+    flashcard_status = serializers.ChoiceField(choices=["coming_soon"])
+    flashcard_after = serializers.ChoiceField(choices=["quiz"])
 
 
 class PlanTopicSerializer(serializers.Serializer):

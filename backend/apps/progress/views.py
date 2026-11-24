@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,6 +21,7 @@ from .serializers import (
     AtcPlanPreviewSerializer,
     DashboardSerializer,
     MistakeSerializer,
+    PlanChapterSerializer,
     PlanTodaySerializer,
     StatisticsSerializer,
     StudyPlanItemSerializer,
@@ -138,6 +140,18 @@ class AtcPlanView(APIView):
         config.is_valid(raise_exception=True)
         plan = planning.save_atc_plan(request.user, config.validated_data)
         return Response(StudyPlanSerializer(plan).data)
+
+
+class PlanChapterView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=PlanChapterSerializer)
+    def get(self, request, code):
+        require_feature(request, "stats")
+        steps = planning.chapter_plan(request.user, get_plan(request.user), code)
+        if steps is None:
+            raise NotFound()
+        return Response(PlanChapterSerializer(steps).data)
 
 
 class PlanTodayView(APIView):

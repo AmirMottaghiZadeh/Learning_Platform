@@ -229,18 +229,34 @@ def atc_schedule(user, settings, plan=None):
                      .values_list("estimated_minutes", flat=True)) if plan else 0
     buckets, fits = _pack_into_days(backlog, days, settings["daily_minutes"], used={today: used_today})
     rows = _flatten(buckets)
-    first = rows[0] if rows else None
-    first_activity = None
-    if first:
-        chapter_en, chapter_fa = ATC_L2.get(first["atc_code"], (first["atc_code"], first["atc_code"]))
-        first_activity = {"atc_code": first["atc_code"], "activity_type": first["activity_type"],
-                          "day": first["day"], "name_fa": chapter_fa, "name_en": chapter_en}
+    def activity(row):
+        if not row:
+            return None
+        code = row["atc_code"]
+        chapter_en, chapter_fa = ATC_L2.get(code, (code, code))
+        return {"atc_code": code, "activity_type": row["activity_type"], "day": row["day"],
+                "name_fa": chapter_fa, "name_en": chapter_en}
+
+    first_lesson = next((row for row in rows if row["activity_type"] == StudyPlanItem.LESSON), None)
     summary = {"fits_deadline": fits, "chapter_count": len(chapters), "missing_quiz_count": missing_quizzes,
                "remaining_minutes": sum(item["estimated_minutes"] for item in backlog),
-               "study_sessions": len({row["day"] for row in rows}), "first_activity": first_activity,
+               "study_sessions": len({row["day"] for row in rows}), "first_activity": activity(rows[0] if rows else None),
+               "first_lesson": activity(first_lesson),
                "estimated_finish": rows[-1]["day"] if rows and fits else None,
                "empty_groups": [group for group, items in groups.items() if not items]}
     return rows, summary
+
+
+def chapter_plan(user, plan, code):
+    if not code or code[0] not in plan.atc_groups or code not in l2_slug_index():
+        return None
+    quiz_items = plan.items.filter(atc_code=code, activity_type=StudyPlanItem.QUIZ)
+    done = quiz_items.filter(status=StudyPlanItem.DONE).exists() or QuizSession.objects.filter(
+        user=user, atc_code=code, finished_at__isnull=False).exists()
+    quiz = None if done else quiz_items.filter(status=StudyPlanItem.PENDING).order_by("day", "order").first()
+    return {"quiz_day": quiz.day if quiz else None,
+            "quiz_status": "done" if done else "scheduled" if quiz else "unavailable",
+            "flashcard_status": "coming_soon", "flashcard_after": "quiz"}
 
 
 def save_atc_plan(user, settings):

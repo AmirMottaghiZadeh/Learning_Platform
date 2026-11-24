@@ -15,7 +15,9 @@ export function OnboardingScreen() {
     const user = await authApi.onboarding({ language: lang, learning_plan });
     if (learning_plan) {
       useNav.getState().reset("dashboard");
-      useNav.getState().navigate("planning", { firstActivity: first });
+      const nav = useNav.getState();
+      nav.navigate("planning", { firstActivity: first });
+      if (first?.activity_type === "lesson") nav.navigate("lessonList", { code: first.atc_code, studyPlan: true });
     } else useNav.getState().reset("dashboard");
     setUser(user);
   };
