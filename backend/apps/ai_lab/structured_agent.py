@@ -18,6 +18,8 @@ from .streaming import stream_chat
 PLAN_PROMPT = """Interpret the reference question; do NOT answer it. Call search_references exactly once.
 Use a concise English query with the named medical entities, population and requested objective.
 Prefer canonical condition/drug names and recognized abbreviations. Do not list guessed therapies or copy the narrative.
+For a complete disease treatment request, preserve the general condition. Include a refractory or prior-treatment-failure
+qualifier only if the user asks about that stage.
 In the same tool call provide question_profile for the WHOLE question: kind, ordered objectives, focus,
 regimen_requested, stated conditions/medications/findings/constraints and care_setting.
 Preserve negation and unknown observations. Never infer absent breathing/pulse from unconsciousness,
@@ -40,6 +42,7 @@ source-stated preference/line with citations. When the user asks for a regimen, 
 maximum, monitoring and restrictions in separately cited paragraphs. Never borrow another indication's or population's dose.
 Use first-line/initial recommendations for first-line questions. State the source's relevant population or conditions in the claim.
 For a broad therapy question, cover each clinically distinct applicable branch supported by the medication subheadings.
+Start with the general management pathway, then state any later options with the source's eligibility and stage.
 Separate population, severity, first-line and subsequent options when the question calls for them. Follow the heading paths
 through nested subheadings. Do not stop after the first source paragraph or skip a linked regimen that fits the asked indication.
 Prioritize the requested regimen and safety over causes, background or unrequested comparisons/non-drug alternatives.
@@ -139,7 +142,8 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
     arguments.pop("retain_source_ids",None)
     query=query_text(arguments.pop("query"))
     intent=arguments["intent"]=profile["objectives"][0]
-    if set(profile["objectives"]) & {"emergency_care","diagnosis","differential"}:
+    if (set(profile["objectives"]) & {"emergency_care","diagnosis","differential"}
+            or profile["kind"] == "disease_question" and intent in {"drug_therapy", "treatment"}):
         arguments["lookup_kind"]="topic"
     if key is not None:
         try:caches["ai_lab"].set(key,calls[0],settings.AI_LAB_PLAN_CACHE_TTL_SECONDS)

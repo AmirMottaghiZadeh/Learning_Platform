@@ -52,6 +52,8 @@ For drug-disease/interaction questions, preserve BOTH named entities and the req
 Use a recognized drug-class synonym as a query aid when helpful, while retaining the named drug. It is a retrieval hint, not evidence or a treatment recommendation.
 For interaction searches prefer the interacting entities, class and safety/management aspect over generic words like pain, alternative or patient.
 Keep search queries to the essential concept, population and requested aspect (usually 4 to 14 words).
+For a broad treatment request, use the general condition; include a refractory or prior-treatment-failure qualifier only
+when the user asks about that stage.
 Include critical scenario qualifiers even if that needs a few more words. Do not copy the entire narrative into the query.
 Use keywords for discriminating findings/constraints or a secondary requested aspect, not eight generic synonyms.
 The tool searches original paragraph text, titles, source tagging and semantic matches; do not request title-only article searches.
@@ -508,7 +510,8 @@ def _answer_agent_loop(question, history, request, *, progress=lambda _:None,pub
                 profile = question_profile.for_question(candidate_profile, original) if candidate_profile else None
                 if profile is not None:
                     arguments["intent"] = profile["objectives"][0]
-                    if set(profile["objectives"]) & {"emergency_care","diagnosis","differential"}:
+                    if (set(profile["objectives"]) & {"emergency_care","diagnosis","differential"}
+                            or profile["kind"] == "disease_question" and arguments["intent"] in {"drug_therapy", "treatment"}):
                         arguments["lookup_kind"] = "topic"
             retained = arguments.pop("retain_source_ids",None)
             if retained is not None:

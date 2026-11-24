@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 import re
 
+from django.db.models import Q
+
 from apps.billing.enforcement import require_feature
 from apps.uptodate import services as utd
 from apps.uptodate.search_extraction import extract_article
@@ -10,12 +12,36 @@ from .telemetry import operation
 from .document import FormulationLinks as _FormulationLinks, directory_links
 from . import reference_index
 from . import lexical
+from .models import ReferenceArticle
 
 SOURCES = {"uptodate": "UpToDate"}
 PAGE_SIZE = 30  # UptodateScreen's normal search page size.
 MAX_ARTICLES = 8
 MAX_SECTIONS_PER_ARTICLE = 60
 MAX_PASSAGES = 48
+
+
+def treatment_topic_titles(generation, queries):
+    """Find topic titles even when the selected tag only lists a narrow branch."""
+    generic = set(("complete comprehensive full general adults adult pediatric children advanced "
+                   "pharmacotherapy pharmacologic pharmacological drug drugs medication medications "
+                   "first second third fourth later line initial therapy treatment therapies management "
+                   "dosing dose regimen regimens refractory resistant overview approach recommendations").split())
+    phrases = set()
+    for query in queries[:6]:
+        query = re.split(r"\b(?:refractory to|resistant to|after (?:failure|failing))\b", query, maxsplit=1, flags=re.I)[0]
+        words = lexical.tokens(re.sub(r"\([^)]*\)", "", query))
+        phrase = " ".join(word for word in words if word not in lexical.STOP_WORDS and word not in generic)
+        if len(phrase) >= 4:
+            phrases.add(phrase)
+    if not phrases:
+        return []
+    titles = Q()
+    for phrase in sorted(phrases):
+        titles |= Q(title__icontains=phrase)
+    rows = ReferenceArticle.objects.filter(titles, generation_id=generation, is_directory=False)
+    return [{"id": identifier, "title": title} for identifier, title in
+            rows.order_by("title", "source_id").values_list("source_id", "title")[:60]]
 
 
 def prioritize_topics(articles, lookup_kind="topic", audience="general"):

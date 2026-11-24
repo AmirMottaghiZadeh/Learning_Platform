@@ -68,6 +68,61 @@ class HybridRetrievalTests(TestCase):
         self.assertTrue(any("newly diagnosed" in p.text for p in rows))
         self.assertFalse(any("Differentmed" in p.text for p in rows))
 
+    @override_settings(AI_LAB_TAG_SCOPED_SEARCH=True, AI_LAB_SOURCE_CONTEXT_START_ARTICLES=1)
+    def test_general_treatment_recovers_the_matching_title_outside_a_specialized_tag(self):
+        general = "Treatment of rheumatoid arthritis in adults"
+        refractory = "Treatment of rheumatoid arthritis refractory to initial therapy"
+        pediatric = "Drug treatment of rheumatoid arthritis in children"
+        reference = """<div id="topicText">
+            <p class="headingAnchor" id="H1"><span class="h1">Drug therapy</span></p>
+            <p>For rheumatoid arthritis, we recommend the general source-defined pathway.
+            See <a data-topicid="3852">Treatment of refractory disease</a> and
+            <a data-topicid="3853">Treatment in children</a> for those specific settings.</p></div>"""
+        self.write_article("3851", reference, title=general)
+        self.write_article("3852", fixtures.html("Drug therapy", "Rheumatoid arthritis: special evidence after failure of prior treatment."), title=refractory)
+        self.add_title("3853")
+        self.write_article("3853", fixtures.html("Drug therapy", "Rheumatoid arthritis: special source-defined pediatric considerations."), title=pediatric)
+        self.build_reference(force=True)
+        call_command("build_hybrid_index", stdout=StringIO())
+        self.generation = RetrievalGeneration.objects.latest("created_at")
+        concept = SearchConcept.objects.create(generation=self.generation, source_id="ra", topic_lists=["3852,3853", "", "", "", ""])
+        SearchAlias.objects.create(generation=self.generation, concept=concept, alias="rheumatoid arthritis", weight=100)
+        profile = {"kind": "disease_question", "focus": "Rheumatoid arthritis treatment", "objectives": ["drug_therapy"],
+                   "conditions": [{"name": "rheumatoid arthritis", "status": "reported"}]}
+        query = "rheumatoid arthritis refractory to initial therapy"
+        for question in ("دارودرمانی آرتریت روماتویید", "دارودرمانی کامل آرتریت روماتویید"):
+            with self.subTest(question=question):
+                retriever = self.retriever()
+                passages, audit = retriever.search(query, question=question, intent="drug_therapy", question_profile=profile)
+                self.assertEqual(audit["scope"]["roots"], ["3851"])
+                self.assertTrue(passages)
+                self.assertEqual({p.title for p in passages}, {general})
+                self.assertFalse(retriever.register_related("3851", "3852"))
+                self.assertFalse(retriever.register_related("3851", "3853"))
+        for question, audience, source in (
+            ("دارودرمانی کامل آرتریت روماتویید مقاوم به درمان", "general", "3852"),
+            ("دارودرمانی آرتریت روماتویید در کودکان", "pediatric", "3853"),
+        ):
+            with self.subTest(question=question):
+                _, audit = self.retriever().search("rheumatoid arthritis management", question=question,
+                    audience=audience, intent="drug_therapy", question_profile=profile)
+                self.assertEqual(audit["scope"]["roots"], [source])
+
+    def test_general_treatment_fallback_does_not_swap_diseases_when_general_topic_is_missing(self):
+        self.write_article("3851", fixtures.html("Drug therapy"), title="Treatment of refractory rheumatoid arthritis")
+        self.write_article("3852", fixtures.html("Drug therapy"), title="Treatment of septic arthritis")
+        self.build_reference(force=True)
+        call_command("build_hybrid_index", stdout=StringIO())
+        self.generation = RetrievalGeneration.objects.latest("created_at")
+        concept = SearchConcept.objects.create(generation=self.generation, source_id="ra", topic_lists=["3851", "", "", "", ""])
+        SearchAlias.objects.create(generation=self.generation, concept=concept, alias="rheumatoid arthritis", weight=100)
+        profile = {"kind": "disease_question", "focus": "Rheumatoid arthritis treatment", "objectives": ["drug_therapy"],
+                   "conditions": [{"name": "rheumatoid arthritis", "status": "reported"}]}
+        passages, audit = self.retriever().search("rheumatoid arthritis", question="دارودرمانی آرتریت روماتویید",
+                                                 intent="drug_therapy", question_profile=profile)
+        self.assertEqual(audit["scope"]["roots"], [])
+        self.assertEqual(passages, [])
+
     def test_article_quota_is_consumed_only_for_focused_evidence(self):
         def focus(rows,*args,**kwargs):
             selected=[row for row in rows if row.article_id=="3851"]

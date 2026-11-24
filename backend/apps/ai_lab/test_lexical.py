@@ -9,6 +9,27 @@ from . import lexical, retrieval, services, test_reference_index as fixtures
 
 
 class LexicalRankingTests(SimpleTestCase):
+    def test_condition_words_do_not_create_a_treatment_failure_scope(self):
+        for question in ("دارودرمانی شکستگی استخوان", "دارودرمانی مقاومت به انسولین"):
+            with self.subTest(question=question):
+                self.assertEqual(lexical.treatment_topic_scope(question, "topic", "drug_therapy").stage, "general")
+
+    def test_broad_topic_scope_prefers_general_treatment_over_a_modality(self):
+        general = "Plaque psoriasis in adults: Overview of management"
+        topical = "Plaque psoriasis in adults: Treatment with topical therapy"
+        broad = lexical.treatment_topic_scope("دارودرمانی پسوریازیس", "topic", "drug_therapy")
+        specific = lexical.treatment_topic_scope("درمان موضعی پسوریازیس", "topic", "drug_therapy")
+        self.assertLess(lexical.treatment_title_priority(general, broad), lexical.treatment_title_priority(topical, broad))
+        self.assertLess(lexical.treatment_title_priority(topical, specific), lexical.treatment_title_priority(general, specific))
+
+    def test_explicit_age_can_support_pediatric_article_without_child_label(self):
+        title = "Management of Fixture syndrome in children"
+        broad = lexical.treatment_topic_scope("دارودرمانی بیماری نمونه", "topic", "drug_therapy", audience="pediatric")
+        stated = lexical.treatment_topic_scope("دارودرمانی بیماری نمونه در بیمار ۷ ساله",
+                                               "topic", "drug_therapy", audience="pediatric")
+        self.assertFalse(lexical.treatment_title_allowed(title, broad))
+        self.assertTrue(lexical.treatment_title_allowed(title, stated))
+
     def test_detects_first_line_with_or_without_an_explicit_regimen(self):
         for question in ["خط اول درمان چیست؟", "درمان خط اول بیماری", "داروی خط اول چیست؟",
                          "خط‌اول‌درمان چیست", "درمان اولیه چیست؟", "first-line treatment", "first line therapy",
