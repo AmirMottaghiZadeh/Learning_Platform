@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import Animated, { createAnimatedPropAdapter, interpolateColor, processColor, ReduceMotion, useAnimatedProps, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, { ReduceMotion, useAnimatedProps, useSharedValue, withSpring } from "react-native-reanimated";
 import Svg, { Path, PathProps } from "react-native-svg";
 
 import { TabKey } from "@/navigation/types";
@@ -8,11 +8,6 @@ import { navigationGlyphSpring } from "@/theme/tokens";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const selectSpring = { ...navigationGlyphSpring, reduceMotion: ReduceMotion.System };
-const strokeAdapter = createAnimatedPropAdapter((props) => {
-  if (typeof props.stroke === "string") {
-    props.stroke = { type: 0, payload: processColor(props.stroke) };
-  }
-}, ["stroke"]);
 
 function glyph(outline: string, filled: string, detail?: string) {
   const tokenize = (value: string) => value.split(" ").map((part) => /^[A-Z]$/.test(part) ? part : Number(part));
@@ -52,6 +47,8 @@ export function TabGlyph({ tab, active }: { tab: TabKey; active: boolean }) {
     selection.value = withSpring(active ? 1 : 0, selectSpring);
   }, [active, selection]);
 
+  // react-native-svg owns its brushes. The animation sends only geometry
+  // and opacity so Reanimated's color processor never sees a brush object.
   const shell = useAnimatedProps<PathProps>(() => {
     const progress = selection.value;
     const paint = Math.min(1, Math.max(0, progress));
@@ -59,19 +56,15 @@ export function TabGlyph({ tab, active }: { tab: TabKey; active: boolean }) {
     return {
       d: path,
       fillOpacity: paint,
-      stroke: interpolateColor(paint, [0, 1], [muted, accent]),
     };
-  }, undefined, strokeAdapter);
-  const detailInk = useAnimatedProps<PathProps>(() => ({
-    stroke: interpolateColor(Math.min(1, Math.max(0, selection.value)), [0, 1], [muted, onAccent]),
-  }), undefined, strokeAdapter);
+  });
 
   return (
     <Svg testID={`nav-glyph-${tab}`} accessible={false} width={26} height={26} viewBox="0 0 24 24">
-      <AnimatedPath d={initialPath} fill={accent}
+      <AnimatedPath d={initialPath} fill={accent} stroke={active ? accent : muted}
         strokeWidth={1.55} strokeLinecap="round" strokeLinejoin="round" animatedProps={shell} />
-      {detail ? <AnimatedPath d={detail} fill="none" strokeWidth={1.45} strokeLinecap="round"
-        strokeLinejoin="round" animatedProps={detailInk} /> : null}
+      {detail ? <Path d={detail} fill="none" stroke={active ? onAccent : muted}
+        strokeWidth={1.45} strokeLinecap="round" strokeLinejoin="round" /> : null}
     </Svg>
   );
 }
