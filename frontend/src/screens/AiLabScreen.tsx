@@ -386,6 +386,8 @@ export function AiLabScreen() {
               {turn.result!.parts.length > 1 ? <AppText weight="700" size={14}>{part.question_fa}</AppText> : null}
               {part.answer_blocks?.length ? <View testID="reference-answer-text" style={{ gap: 12 }}>
                 {part.answer_blocks.map((block, index) => <View key={index} style={{ gap: 4 }}>
+                  {block.medication_label ? <AppText size={13} weight="700" style={{ writingDirection: "ltr" }}>{block.medication_label}</AppText> : null}
+                  {block.source_label ? <AppText size={12} muted style={{ writingDirection: "ltr" }}>{block.source_label}</AppText> : null}
                   <ReferenceAnswerText text={block.text_fa} />
                   <View style={{ flexDirection: row, flexWrap: "wrap", gap: 4 }}>
                     {[...new Set(block.source_ids)].map((sourceId) => {

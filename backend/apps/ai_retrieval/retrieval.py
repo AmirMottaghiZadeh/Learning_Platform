@@ -25,7 +25,7 @@ from apps.core.exceptions import PlatformAPIError
 from apps.ai_lab import lexical, question_profile as profiles, reference_index, telemetry
 from apps.ai_lab.models import ReferenceArticle, ReferenceParagraph
 from apps.ai_lab.provider import ProviderError
-from apps.ai_lab.retrieval import Passage, treatment_topic_titles
+from apps.ai_lab.retrieval import Passage, source_medication, treatment_topic_titles
 from apps.uptodate import services as uptodate
 from apps.uptodate.search_catalog import SearchCatalog, normalize
 from . import embeddings, evidence, indexing, vectors
@@ -33,6 +33,7 @@ from .models import RetrievalHead, SearchAlias, SearchChunk
 from .chunking import token_count
 from .query_terms import query_text
 from .scope import SourceScope
+from .treatment_sources import PROBE_ARTICLES, treatment_coverage
 
 
 def reciprocal_rank_fusion(rankings):
@@ -140,7 +141,7 @@ class HybridRetriever:
                 rows = [row for row in rows if any(words <= set(lexical.tokens(row.title)) for words in conditions)]
         context = query_context(query, lookup_kind=lookup_kind, audience=audience,
                                 intent=intent, question_profile=profile)
-        def rank(article):
+        def source_match(article):
             words = set(lexical.tokens(article.title))
             drug = "drug information" in article.title.lower()
             pediatric = bool(words & {"pediatric", "paediatric", "children"})
@@ -150,13 +151,27 @@ class HybridRetriever:
             overlap = [len(words & entity)/len(entity) for entity in entities]
             return (lookup_kind == "drug" and not drug, lookup_kind == "drug" and not exact_drug,
                 audience == "pediatric" and not pediatric, audience in {"adult", "general"} and pediatric,
-                -max(overlap, default=0), -sum(overlap),
+                -max(overlap, default=0), -sum(overlap))
+
+        def rank(article):
+            return (*source_match(article),
                 lexical.treatment_title_priority(article.title, self._treatment_scope),
                 -lexical.heading_score(article.title, [article.title], context), order.get(article.source_id, 999))
         rows.sort(key=rank)
+        rows = [article for article in rows if lexical.treatment_title_allowed(article.title, self._treatment_scope)]
+        if self._treatment_scope and self._treatment_scope.stage in {"general", "initial"}:
+            admitted = [article for article in rows[:PROBE_ARTICLES] if self.permitted(article.source_id)]
+            coverage = treatment_coverage(self.generation.source_generation,
+                                          [article.source_id for article in admitted], self._treatment_scope, audience)
+            best_match = min((source_match(article) for article in admitted if coverage.get(article.source_id, 0) >= 0), default=None)
+            primary = [article for article in admitted if coverage.get(article.source_id) == 2 and source_match(article) == best_match]
+            if primary:
+                rows = primary
+            else:
+                rows = [article for article in rows if coverage.get(article.source_id, 0) >= 0]
         chosen = []
         for article in rows:
-            if lexical.treatment_title_allowed(article.title, self._treatment_scope) and self.permitted(article.source_id):
+            if self.permitted(article.source_id):
                 chosen.append(article.source_id)
                 self._article_cache[article.source_id] = article
             if len(chosen) >= max(1, settings.AI_LAB_SOURCE_CONTEXT_START_ARTICLES):
@@ -378,7 +393,7 @@ class HybridRetriever:
         cache = caches["ai_lab"]
         context = query_context(query, question=question, lookup_kind=lookup_kind,
             audience=audience, intent=intent, keywords=keywords, question_profile=question_profile)
-        cache_key = "hybrid-ranking:v7:" + salted_hmac("hybrid-ranking", json.dumps([
+        cache_key = "hybrid-ranking:v8:" + salted_hmac("hybrid-ranking", json.dumps([
             str(getattr(getattr(self.request, "user", None), "pk", "diagnostic")), str(self.generation.pk),
             self.generation.embedding_profile, self.generation.embedding_ready, query, lookup_kind, audience, intent,
             list(keywords), question_profile, settings.AI_LAB_HYBRID_CANDIDATES,
@@ -691,6 +706,7 @@ class HybridRetriever:
             self._label_cache[label.section_id].append(label)
         labels=self._label_cache
         result, seen = [], set()
+        drug_names = drug_name_catalog(self.generation.source_generation) if self._treatment_scope else ()
         for chunk in chunks:
             for identifier in chunk.block_ids:
                 if identifier in seen:
@@ -699,13 +715,17 @@ class HybridRetriever:
                 article = row.article
                 if article.source_id != chunk.source_id or article.content_hash != chunk.content_hash or row.retrieval_number is None:
                     raise ProviderError("REFERENCE_INDEX_STALE")
+                preceding = [label for label in labels.get(row.section_id, []) if label.ordinal < row.ordinal][-4:]
+                heading_path = row.section.heading_path or [row.section.heading]
+                medication = source_medication(article.title, [*heading_path, *(label.text for label in preceding)],
+                                               drug_names)
                 result.append(Passage("P"+str(row.pk),article.source_id,article.title,row.section.heading,row.text,
                     {"screen":"uptodateArticle","params":{"id":article.source_id,"title":article.title,
                      "sectionId":row.section.source_id,"searchAnchor":row.source_anchor,"searchContentHash":article.content_hash}},
                     article.content_hash,heading_path=tuple(row.section.heading_path),context=tuple({
                         "quote":label.text,"source_anchor":label.source_anchor,"ordinal":label.ordinal}
-                        for label in [label for label in labels.get(row.section_id,[]) if label.ordinal<row.ordinal][-4:]),
-                    ordinal=row.ordinal))
+                        for label in preceding),
+                    ordinal=row.ordinal, medication=medication))
                 seen.add(identifier)
         if consume:
             self.consume_passages(result)

@@ -123,6 +123,27 @@ class HybridRetrievalTests(TestCase):
         self.assertEqual(audit["scope"]["roots"], [])
         self.assertEqual(passages, [])
 
+    @override_settings(AI_LAB_TAG_SCOPED_SEARCH=True, AI_LAB_SOURCE_CONTEXT_START_ARTICLES=1)
+    def test_general_article_is_confirmed_by_its_text_when_both_titles_look_general(self):
+        disease = "rheumatoid arthritis"
+        self.write_article("3851", fixtures.html("Initial treatment", "For rheumatoid arthritis we recommend the source-defined initial treatment."),
+                           title="Management of rheumatoid arthritis")
+        self.write_article("3852", fixtures.html("Treatment after failure of initial therapy",
+            "For rheumatoid arthritis after failure of initial therapy we recommend a distinct option."),
+            title="Management of rheumatoid arthritis in selected adults")
+        self.build_reference(force=True)
+        call_command("build_hybrid_index", stdout=StringIO())
+        self.generation = RetrievalGeneration.objects.latest("created_at")
+        concept = SearchConcept.objects.create(generation=self.generation, source_id="topic", topic_lists=["3852,3851", "", "", "", ""])
+        SearchAlias.objects.create(generation=self.generation, concept=concept, alias=disease, weight=100)
+        profile = {"kind": "disease_question", "focus": disease, "objectives": ["drug_therapy"],
+                   "conditions": [{"name": disease, "status": "reported"}]}
+        rows, audit = self.retriever().search(disease, question="دارودرمانی آرتریت روماتویید",
+                                             intent="drug_therapy", question_profile=profile)
+        self.assertEqual(audit["scope"]["roots"], ["3851"])
+        self.assertTrue(rows)
+        self.assertEqual({p.article_id for p in rows}, {"3851"})
+
     def test_article_quota_is_consumed_only_for_focused_evidence(self):
         def focus(rows,*args,**kwargs):
             selected=[row for row in rows if row.article_id=="3851"]

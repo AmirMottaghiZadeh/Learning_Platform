@@ -124,6 +124,32 @@ class SourceContextIntegrationTests(TestCase):
             self.assertEqual(passage.text,row.text)
             self.assertEqual(passage.target["params"]["searchAnchor"],row.source_anchor)
 
+    def test_middle_hit_recovers_the_opening_and_continuation_until_subject_changes(self):
+        self.write_article("3851", """<div id="topicText">
+          <p class="headingAnchor" id="H1"><span class="h1">Treatment</span></p>
+          <p>The etiology describes unrelated historical background for ConditionY.</p>
+          <p>For ConditionY, we recommend a source-defined therapy in the eligible population.</p>
+          <p>It can be given orally following the regimen described in the original source.</p>
+          <p>Monitor the original safety findings during this treatment.</p>
+          <p>Unrelated administrative paragraph describing the editorial production and publishing schedule.</p>
+          </div>""", title="Management of ConditionY")
+        self.build_reference(force=True)
+        call_command("build_hybrid_index", stdout=StringIO())
+        self.generation = RetrievalGeneration.objects.latest("created_at")
+        self.r = HybridRetriever(self.r.request, generation=self.generation)
+        row = ReferenceParagraph.objects.get(article__generation_id=self.generation.source_generation,
+            article__source_id="3851", text__contains="It can be given")
+        chunk = SimpleNamespace(source_id="3851", content_hash=row.article.content_hash, block_ids=[row.pk])
+        seed = self.r.passages([chunk], consume=False)
+        rows, audit = source_context.expand(self.r, seed, "دارودرمانی ConditionY چیست؟",
+            "ConditionY drug therapy", audience="general", intent="drug_therapy", concepts=["conditiony"])
+        self.assertEqual(audit["continuous_runs"], 1)
+        self.assertEqual([p.text.split(",")[0].split(".")[0] for p in rows],
+            ["For ConditionY", "It can be given orally following the regimen described in the original source",
+             "Monitor the original safety findings during this treatment"])
+        self.assertEqual(len({p.passage_run for p in rows}), 1)
+        self.assertTrue(all(p.passage_run for p in rows))
+
     def test_prepared_links_survive_cache_loss_without_parsing_original_articles(self):
         call_command("build_reference_links",workers=1,batch_size=1,stdout=StringIO())
         self.assertEqual(SourceLinkMap.objects.filter(source_generation=self.generation.source_generation).count(),2)

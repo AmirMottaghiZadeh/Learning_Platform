@@ -41,6 +41,8 @@ Include necessary alternatives and qualifications. Avoid exhaustive dosing catal
 For drug therapy, definitions, causes or prevalence alone do not answer the question.
 For a broad drug therapy question, explain each clinically distinct relevant branch in the supplied batch.
 Keep different populations and indications separate and include relevant branches even if an earlier batch covered a different option.
+Read each section in supplied order, preserve the opening recommendation and qualifications, and explicitly name the drug in
+each regimen explanation. When the source or medication changes, make the new subject and its conditions clear.
 Write enough Persian detail to satisfy every applicable requirement; do not omit regimen or treatment steps to be brief. Preserve the actual recommendation, population, restrictions,
 negation, dose and uncertainty. Keep English generic drug names in parentheses. Translate rather than as به جای.
 Do not add medical knowledge absent from the paragraph. Do not ask for patient details for a general reference lookup.
@@ -57,6 +59,7 @@ supported contains only current items satisfying BOTH:
 population, restrictions, preference, negation and numeric values.
 Evidence explicitly restricted to another population cannot answer the requested population.
 A regimen for a different medication or a different indication does not answer a question about a named drug for a named condition.
+Check the subject of each explanation independently. Reject an ambiguous regimen that could be applied to the drug in another section.
 A relevant qualified subgroup can answer a broad reference question. Do not require exact age/severity in the question.
 sufficient is true ONLY if answer_source_ids ALONE, from the selected sections, adequately answer the main question and every explicitly
 requested aspect and all applicable supplied requirements. Missing regimen details make an explicitly requested regimen incomplete.
@@ -153,7 +156,8 @@ def _validated_items(raw, passages):
             continue
         seen.add(p.id)
         result.append({"id": p.id, "summary_fa": summary, "quote": p.text,
-                       "title": p.title, "section": p.section, "section_path": list(p.heading_path)})
+                       "title": p.title, "section": p.section, "section_path": list(p.heading_path),
+                       **({"medication": p.medication} if p.medication else {})})
     return result
 
 
@@ -164,7 +168,8 @@ def _explain_batch(model, question, passages, stages, progress, previous=(), req
     first_line_regimen = first_line and not lexical.first_line_without_regimen(question)
     rules = FIRST_LINE_ANSWER_RULES if first_line_regimen else FIRST_LINE_SELECTION_RULES if first_line else ""
     data, meta = telemetry.model_call("answering", chat, model, ANSWER_PROMPT + rules, {"question": question, "requirements": list(requirements), "paragraphs": [
-        {"id": p.id, "title": p.title, "section": p.section, "section_path": list(p.heading_path), "text": p.text} for p in passages]}, 3800)
+        {"id": p.id, "title": p.title, "section": p.section, "section_path": list(p.heading_path), "text": p.text,
+         **({"medication": p.medication} if p.medication else {})} for p in passages]}, 3800)
     stages.append({"stage": "answering", **meta})
     items = _validated_items(data.get("items"), passages)
     if not items:
@@ -196,7 +201,7 @@ def _explain_batch(model, question, passages, stages, progress, previous=(), req
             p = by_id[item["id"]]
             result.append({"source_id": p.id, "source": "uptodate", "title": p.title, "section": p.section,
                 "quote": p.text, "summary_fa": item["summary_fa"], "target": p.target, "content_hash": p.content_hash,
-                "section_path": list(p.heading_path)})
+                "section_path": list(p.heading_path), **({"medication": p.medication} if p.medication else {})})
     return result, answer_ids
 
 
@@ -302,8 +307,9 @@ def _select_outline_headings(model, part, articles, headings, stages):
 
 def _answer(question, model, history, request, progress, publish, observe):
     from apps.ai_retrieval import media
+    from apps.ai_retrieval.treatment_sources import treatment_coverage
     from .models import ReferenceArticle
-    from .hybrid_agent import related_citations
+    from .hybrid_agent import answer_blocks, related_citations
     from .outline import OutlineReader
     stages, results = [], []
     progress("planning")
@@ -338,6 +344,9 @@ def _answer(question, model, history, request, progress, publish, observe):
         if treatment_scope:
             candidates = [row for row in candidates if lexical.treatment_title_allowed(row["title"], treatment_scope)]
             candidates.sort(key=lambda row: lexical.treatment_title_priority(row["title"], treatment_scope))
+            coverage = treatment_coverage(reader.generation, [row["id"] for row in candidates], treatment_scope, part["audience"])
+            minimum = 2 if 2 in coverage.values() else 0
+            candidates = [row for row in candidates if coverage.get(row["id"], 0) >= minimum]
         if not candidates:
             results.append(result); continue
         progress("selecting_articles")
@@ -447,8 +456,8 @@ def _answer(question, model, history, request, progress, publish, observe):
         for article in articles:
             report({"type": "article_done", "article_id": article["id"], "outcome": "answered" if complete and any(i["target"]["params"]["id"] == article["id"] for i in result["items"]) else "partial" if by_article[article["id"]] else "no_answer"})
         result["overview_fa"] = _overview(result["items"])
-        result["answer_blocks"] = [{"text_fa": item["summary_fa"], "source_ids": [item["source_id"]]}
-                                   for item in result["items"]]
+        result["answer_blocks"] = answer_blocks(
+            [{"text": item["summary_fa"], "source_ids": [item["source_id"]]} for item in result["items"]], result["items"])
         media_articles = [reader.articles[identifier] for identifier in dict.fromkeys(p.article_id for p in passages)]
         attachments = [] if explicit_media else media.outline_media(
             media_articles, part["queries"], part["question_fa"], part["audience"], request=request)

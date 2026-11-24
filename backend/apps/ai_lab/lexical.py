@@ -22,7 +22,9 @@ REGIMEN_SCHEDULE = r"\b(?:once|twice|three times|four times) (?:a |per )?(?:dail
 INITIAL_THERAPY = r"\b(?:first[- ‐‑–]line|initial (?:treatment|therapy|management|choice|pharmacotherap\w*|(?:drug|medication) selection)|(?:DMARD|treatment|therapy)[- ‐‑–]na[iï]ve|treatment of choice)\b"
 LATER_THERAPY = r"\b(?:(?:second|third|fourth|later)[- ‐‑–]line|subsequent (?:therapy|treatment)|refractory|(?:treatment|drug)[- ‐‑–]resistant|inadequate response|(?:failure|failed) (?:of |to |with )?(?:first[- ‐‑–]line|initial|prior|previous|treatment|therapy))\b"
 LATER_TREATMENT_TOPIC = re.compile(LATER_THERAPY + r"|\b(?:resistan(?:t|ce) to|no response to|"
-    r"(?:do|did|has|have) not respond(?:ed)? to|after (?:failing|failure (?:of|with))|(?:inadequate |non[- ]?)responders?)\b", re.I)
+    r"(?:do|did|has|have) not respond(?:ed)? to|after (?:failing|failure (?:of|with))|(?:inadequate |non[- ]?)responders?)\b"
+    r"|\b(?:persistent (?:active )?disease|(?:disease|symptoms?|arthritis) persist\w*|active disease) "
+    r"(?:[\w-]+ ){0,3}despite\b", re.I)
 LATER_TREATMENT_QUESTION = re.compile(
     r"خط\s*(?:دوم|سوم|چهارم|بعدی|[۲۳۴234])|\bمقاوم\b|مقاومت\s*به\s*(?:درمان|دارو)|"
     r"شکست\s*(?:درمان|دارو|خط|خورده?)|(?:عدم|نبود)\s*پاسخ|پاسخ\s*(?:ند|نگرف)|"
@@ -187,7 +189,7 @@ def first_line_without_regimen(question):
 
 
 def after_initial_therapy(path):
-    return bool(re.search(LATER_THERAPY, " > ".join(path), re.I))
+    return bool(LATER_TREATMENT_TOPIC.search(" > ".join(path)))
 
 
 def initial_match(path, text=""):

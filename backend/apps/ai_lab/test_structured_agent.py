@@ -79,6 +79,25 @@ class StructuredAgentTests(SimpleTestCase):
         value=profile(kind="disease_question",objectives=["drug_therapy","dose"],regimen_requested=True)
         self.assertIn("dose",scoped.missing_facets(rows,value))
 
+    def test_later_line_recommendation_and_dose_do_not_count_as_general_coverage(self):
+        value = profile(kind="disease_question", objectives=["drug_therapy"], conditions=[], medications=[])
+        p = reference(10, "When disease persists despite treatment, we recommend the synthetic alternate therapy. Its dose is 10 mg daily.")
+        self.assertEqual(scoped.missing_facets([p], value, general_therapy=True), ["initial_treatment", "dose"])
+
+    def test_final_answer_marks_drug_and_article_switch_even_with_linked_parent_citation(self):
+        a = replace(reference(10, "Original important adverse reactions."), title="Fixturemed reference", medication="Fixturemed")
+        b = replace(reference(20, "Original important adverse reactions."), title="Optionmed reference", article_id="20",
+                    medication="Optionmed", target={"screen": "uptodateArticle", "params": {"id": "20"}},
+                    relations=({"source_id": a.id, "kind": "article_links", "label": "Optionmed"},))
+        retriever = self.retriever([a, b])
+        with patch.object(scoped, "stream_chat", side_effect=[(self.plan(), {}),
+                ({"content": "عارضهٔ فیکستارمد مستند شده است. [P1]\n\nعارضهٔ آپشن‌مد در منبع دوم گزارش شده است. [P2]"}, {})]), \
+                patch.object(agent, "chat", side_effect=approved) as verify:
+            part = agent.answer_hybrid("عوارض دارو چیست؟", [], None, retriever=retriever)["parts"][0]
+        self.assertEqual([block["medication_label"] for block in part["answer_blocks"]], ["Fixturemed", "Optionmed"])
+        self.assertEqual(part["answer_blocks"][1]["source_label"], "Optionmed reference")
+        self.assertEqual(verify.call_args.args[2]["claims"][1]["direct_source_ids"], ["P2"])
+
     def test_regimen_must_match_both_named_medication_and_indication(self):
         value = profile(kind="drug_question", medications=["Fixturemed"], objectives=["dose"], regimen_requested=True,
                         conditions=[{"name": "ConditionY", "status": "reported"}])

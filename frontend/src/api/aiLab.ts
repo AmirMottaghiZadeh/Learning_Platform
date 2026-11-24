@@ -17,7 +17,7 @@ export type LabCitation = {
 export type LabResult = {
   model: LabModel; pipeline: string; elapsed_ms: number;
   parts: { question_fa: string; queries: string[]; status: string; clarification_fa: string; items: LabCitation[];
-    answer_blocks?: { text_fa: string; source_ids: string[] }[]; related_items?: LabCitation[];
+    answer_blocks?: { text_fa: string; source_ids: string[]; medication_label?: string; source_label?: string }[]; related_items?: LabCitation[];
     overview_fa?: string; retrieval?: { selected_passages?: number; reviewed_passages?: number; selected_articles?: number;
       reviewed_articles?: number; early_stopped?: boolean; stop_reason?: string; limited?: boolean } }[];
   warnings: { source: string; code: string }[];

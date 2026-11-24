@@ -44,6 +44,13 @@ def treatment_topic_titles(generation, queries):
             rows.order_by("title", "source_id").values_list("source_id", "title")[:60]]
 
 
+def source_medication(title, path, drug_names=()):
+    if "drug information" in title.lower() and ":" in title:
+        return title.split(":", 1)[0].split("(", 1)[0].strip()
+    return next((heading.rstrip(":").strip() for heading in reversed(path)
+                 if tuple(lexical.tokens(heading)) in drug_names), "")
+
+
 def prioritize_topics(articles, lookup_kind="topic", audience="general"):
     """AI-only stable priorities inside the canonical tagged result set."""
     if lookup_kind != "drug":
@@ -79,6 +86,8 @@ class Passage:
     ordinal: int | None = None
     media: tuple = ()
     relations: tuple = ()
+    passage_run: str = ""
+    medication: str = ""
 
 
 def search_articles(queries, request, audit):

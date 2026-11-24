@@ -5,7 +5,7 @@ from apps.uptodate.search_catalog import normalize
 from . import reference_index
 from .models import ReferenceArticle, ReferenceParagraph, ReferenceSection
 from .provider import ProviderError
-from .retrieval import Passage
+from .retrieval import Passage, source_medication
 from .section_tree import expand_sections, therapy_root
 
 
@@ -100,16 +100,22 @@ class OutlineReader:
         expanded = expand_sections(all_sections, roots)
         known = {section.pk for section in selected}
         selected += [section for section in all_sections if section.pk in expanded and section.pk not in known]
+        article_order = {identifier: index for index, identifier in
+                         enumerate(dict.fromkeys(section.article_id for section in selected))}
+        selected.sort(key=lambda section: (article_order[section.article_id], section.ordinal))
         rows = ReferenceParagraph.objects.filter(section_id__in=[s.pk for s in selected],
             retrieval_number__isnull=False).select_related('section', 'article').order_by('article_id', 'ordinal')
         groups = {section.pk: [] for section in selected}
+        from apps.ai_retrieval.retrieval import drug_name_catalog
+        drug_names = drug_name_catalog(self.generation) if include_therapy_siblings else ()
         for row in rows:
             article, section = row.article, row.section
             number = 'P' + str(row.pk)  # Global within the prepared generation, including across articles.
             groups[section.pk].append(Passage(number, article.source_id, article.title, section.heading, row.text,
                 {'screen': 'uptodateArticle', 'params': {'id': article.source_id, 'title': article.title,
                  'sectionId': section.source_id, 'searchAnchor': row.source_anchor, 'searchContentHash': article.content_hash}}, article.content_hash,
-                 heading_path=tuple(section.heading_path)))
+                 heading_path=tuple(section.heading_path), ordinal=row.ordinal,
+                 medication=source_medication(article.title, section.heading_path or [section.heading], drug_names)))
         self.validate()
         return [passage for section in selected for passage in groups[section.pk]]
 
