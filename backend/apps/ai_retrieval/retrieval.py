@@ -395,7 +395,7 @@ class HybridRetriever:
             audience=audience, intent=intent, keywords=keywords, question_profile=question_profile)
         cache_key = "hybrid-ranking:v8:" + salted_hmac("hybrid-ranking", json.dumps([
             str(getattr(getattr(self.request, "user", None), "pk", "diagnostic")), str(self.generation.pk),
-            self.generation.embedding_profile, self.generation.embedding_ready, query, lookup_kind, audience, intent,
+            embeddings.profile_status(self.generation), query, lookup_kind, audience, intent,
             list(keywords), question_profile, settings.AI_LAB_HYBRID_CANDIDATES,
             self.scope.audit() if settings.AI_LAB_TAG_SCOPED_SEARCH else None, followup,
             context.first_line_regimen, context.initial_only,
@@ -674,22 +674,29 @@ class HybridRetriever:
                 result.append((row,seed.pk))
         return result
 
-    def consume_passages(self, passages):
-        needed = {passage.article_id for passage in passages} - self.consumed
+    def check_passage_access(self, passages, *, consume=False):
+        identifiers = {p.article_id for p in passages}
+        needed = identifiers - self.consumed if consume else identifiers
         if not needed:
             return
         articles = ReferenceArticle.objects.filter(generation_id=self.generation.source_generation, source_id__in=needed)
+        seen = set()
         for article in articles:
-            require_feature(self.request, "uptodate", item=article.source_id, consume=True)
             if self.stamp.backend == "mysql":
                 with reference_index.mysql_source_connection().cursor() as cursor:
                     cursor.execute("SELECT SHA2(gzip,256) AS blob_hash FROM content WHERE id=%s", [article.source_id])
                     current = cursor.fetchone()
                 if not current or current["blob_hash"] != article.blob_hash:
                     raise ProviderError("REFERENCE_INDEX_STALE")
-            self.consumed.add(article.source_id)
-        if needed - self.consumed:
+            require_feature(self.request, "uptodate", item=article.source_id, consume=consume)
+            seen.add(article.source_id)
+            if consume:
+                self.consumed.add(article.source_id)
+        if needed != seen:
             raise ProviderError("REFERENCE_INDEX_STALE")
+
+    def consume_passages(self, passages):
+        self.check_passage_access(passages, consume=True)
 
     def passages(self, chunks, *, consume=True, prefetched=None):
         wanted = {identifier: chunk for chunk in chunks for identifier in chunk.block_ids}

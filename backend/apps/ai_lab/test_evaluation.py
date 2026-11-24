@@ -53,9 +53,11 @@ class EvaluationTests(SimpleTestCase):
                 "assessment": evaluation.assess(self.case, result, self.bindings, self.evidence),
                 "metrics": {"server_elapsed_ms": elapsed}}
 
-    def test_default_suite_has_100_unique_cases_and_no_vectors(self):
+    def test_default_suite_includes_incident_regressions_and_no_vectors(self):
         dataset = evaluation.load_dataset()
-        self.assertEqual(len(dataset["cases"]), 100)
+        self.assertEqual(len(dataset["cases"]), 103)
+        self.assertTrue({"incident-cystitis-older", "incident-cystitis-rephrased", "incident-ra-general"}
+                        <= {case["id"] for case in dataset["cases"]})
         self.assertFalse(dataset["vectors"])
         self.assertEqual(sum(case["expect"] == "abstain" for case in dataset["cases"]), 5)
         self.assertEqual(sum(case["category"] == "compound" for case in dataset["cases"]), 5)

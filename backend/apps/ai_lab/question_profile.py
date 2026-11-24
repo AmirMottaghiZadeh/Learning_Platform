@@ -36,7 +36,7 @@ SCHEMA = {"type": "object", "description": (
         "focus": {"type": "string", "minLength": 2, "maxLength": 200,
                   "description": "The actual clinical question, preserving critical conditions and negation."},
         "regimen_requested": {"type": "boolean", "description": (
-            "True for dosing, general pharmacotherapy/first-line treatment or a requested full therapeutic regimen. "
+            "True for dosing, general pharmacotherapy or a requested full regimen. False for first-line choice alone. "
             "False for a suitability/contraindication/stop-or-continue decision alone, even if changing treatment is mentioned. "
             "A proposed medication is not by itself a request for its dose.")},
         "conditions": {"type": "array", "maxItems": 4, "items": {
@@ -51,6 +51,8 @@ SCHEMA = {"type": "object", "description": (
                 "state": {"type": "string", "enum": ["present", "absent", "unknown"]}},
             "required": ["name", "state"], "additionalProperties": False}},
         "constraints": strings(6, 120),
+        "passage_queries": {**strings(3, 200), "minItems": 1,
+            "description": "English evidence questions for the requested aspects, without guessing answers."},
         "care_setting": {"type": "string", "enum": list(SETTINGS)},
     }, "required": ["kind", "objectives", "focus", "regimen_requested"], "additionalProperties": False}
 
@@ -82,6 +84,12 @@ def validate(value):
     # mention of changing therapy in a safety decision must not impose one.
     result["regimen_requested"] = regimen or goals[0] in {"treatment", "drug_therapy"} or bool(
         {"dose", "renal_dose"} & set(goals))
+    if "passage_queries" in value:
+        queries = value["passage_queries"]
+        if not isinstance(queries, list) or not 1 <= len(queries) <= 3:
+            raise ProviderError("INVALID_SEARCH_TOOL_ARGUMENTS")
+        result["passage_queries"] = list(dict.fromkeys(_text(q, 2, 200) for q in queries))
+        result["regimen_requested"] = regimen
     for field, limit, maximum in [("medications", 4, 100), ("constraints", 6, 120)]:
         rows = value.get(field, [])
         if not isinstance(rows, list) or len(rows) > limit:
@@ -146,6 +154,8 @@ def requirements(profile):
 def for_question(profile, question):
     from .lexical import first_line_without_regimen
 
+    if "passage_queries" in profile:
+        return profile
     if first_line_without_regimen(question) and {"treatment", "drug_therapy"} & set(profile["objectives"]):
         goals = [goal for goal in profile["objectives"] if goal not in {"dose", "renal_dose"}]
         return {**profile, "objectives": goals, "regimen_requested": False}

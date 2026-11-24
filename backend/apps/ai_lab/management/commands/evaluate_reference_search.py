@@ -127,20 +127,24 @@ class Command(BaseCommand):
         if settings.AI_LAB_SEARCH_ENGINE == "hybrid":
             from apps.ai_lab import release
             from apps.ai_lab import hybrid_agent, streaming, transport_pool
-            from apps.ai_retrieval import embeddings, chunking, vectors, indexing, evidence, retrieval as hybrid_retrieval
+            from apps.ai_lab import structured_agent
+            from apps.ai_retrieval import embeddings, chunking, vectors, indexing, evidence, intent_search, retrieval as hybrid_retrieval
             request = SimpleNamespace(user=SimpleNamespace(pk=f"diagnostic-{uuid4()}", is_staff=True, is_authenticated=True))
             prepared = hybrid_retrieval.HybridRetriever(request)
             configuration.update(pipeline="uptodate-hybrid-v1", hybrid_generation=str(prepared.generation.pk),
                 semantic_ready=prepared.generation.embedding_ready,
-                embedding_profile=embeddings.profile(), section_selection="direct_hybrid_evidence",
+                embedding_profile=embeddings.profile(),
+                section_selection="intent_sections" if settings.AI_LAB_TAG_SCOPED_SEARCH else "direct_hybrid_evidence",
                 lexical_enabled=True, outline_limits=None,
-                prompt_digest=evaluation.digest([hybrid_agent.AGENT_PROMPT, hybrid_agent.AGGREGATE_VERIFY]),
+                prompt_digest=evaluation.digest([hybrid_agent.AGGREGATE_VERIFY, structured_agent.PLAN_PROMPT,
+                    intent_search.ARTICLE, intent_search.SECTION, intent_search.READ, structured_agent.ANSWER_PROMPT]
+                    if settings.AI_LAB_TAG_SCOPED_SEARCH else [hybrid_agent.AGENT_PROMPT, hybrid_agent.AGGREGATE_VERIFY]),
                 hybrid_limits={"top_k": settings.AI_LAB_HYBRID_TOP_K, "context_tokens": settings.AI_LAB_HYBRID_CONTEXT_TOKENS,
                     "search_rounds": settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS},
                 pipeline_code_digest=evaluation.digest({module.__name__: Path(module.__file__).read_text() for module in [
                     services, provider, http_transport, response_cache, retrieval, document, reference_index, lexical,
                     selection, evaluation, evaluation.telemetry, outline, hybrid_agent, streaming, transport_pool,
-                    embeddings, chunking, vectors, indexing, evidence, hybrid_retrieval]}))
+                    embeddings, chunking, vectors, indexing, evidence, intent_search, structured_agent, hybrid_retrieval]}))
             profile = release.runtime_profile()
             configuration.update({key: profile[key] for key in release.HYBRID_CONFIGURATION_KEYS})
         report.update(kind="reference_search_baseline", configuration=configuration,

@@ -43,11 +43,11 @@ class Command(BaseCommand):
             cases = {case["id"]: case for case in dataset["cases"]}
             evidence, rows = evaluation.SourceEvidence(), []
             request = SimpleNamespace(user=SimpleNamespace(pk=f"diagnostic-{uuid4()}", is_staff=True, is_authenticated=True))
-            retriever = HybridRetriever(request, generation=generation)
             with provider.evaluation_budget(options["max_requests"], options["max_seconds"]) as budget:
                 for plan in plans:
                     case = cases[plan["case_id"]]
                     bindings = evidence.bind(case)
+                    retriever = HybridRetriever(request, generation=generation)
                     started = time.perf_counter()
                     passages, audit = retriever.search(plan["queries"][0], question=case["question"], **{key: plan[key] for key in
                         ["lookup_kind", "audience", "intent", "keywords"] if key in plan})

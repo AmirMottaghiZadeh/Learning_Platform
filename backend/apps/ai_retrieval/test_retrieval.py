@@ -155,6 +155,33 @@ class HybridRetrievalTests(TestCase):
         consumed=[call.kwargs["item"] for call in permission.call_args_list if call.kwargs.get("consume")]
         self.assertEqual(consumed,["3851"])
 
+    def test_intent_reader_checks_access_before_extraction_and_only_charges_admitted_sources(self):
+        from . import intent_search
+        reader = self.retriever()
+        profile = {"kind": "disease_question", "objectives": ["treatment"], "focus": "enuresis treatment",
+                   "regimen_requested": False, "passage_queries": ["enuresis management"]}
+        arguments = {"audience": "general", "intent": "treatment", "lookup_kind": "topic"}
+
+        def choose(stage, prompt, data, stages, retriever):
+            if stage == "article_selection":
+                self.assertNotIn("3852", data["articles"])
+                self.assertIn("3851", data["articles"])
+                return {"ids": ["3851"]}
+            if stage == "section_selection":
+                return {"ids": [data["sections"][0][0]]}
+            return {"ranges": [["R1", "R1"]], "missing_aspect": None}
+
+        with patch.object(reader, "permitted", side_effect=lambda k: k == "3851"), \
+                patch.object(intent_search, "decide", side_effect=choose), \
+                patch("apps.ai_retrieval.retrieval.require_feature") as permission:
+            rows, _, _ = intent_search.collect(reader, "nocturnal enuresis", "enuresis", profile, arguments, [])
+            self.assertTrue(rows)
+            self.assertFalse(any(call.kwargs.get("consume") for call in permission.call_args_list))
+            reader.consume_passages(rows)
+            reader.consume_passages(rows)
+            self.assertEqual([call.kwargs["item"] for call in permission.call_args_list
+                              if call.kwargs.get("consume")], ["3851"])
+
     def test_tag_only_synonym_reaches_article_without_loading_the_snapshot_catalog_at_runtime(self):
         concept = SearchConcept.objects.create(generation=self.generation, source_id="alias", topic_lists=["3851", "", "", "", ""])
         SearchAlias.objects.create(generation=self.generation, concept=concept, alias="unusual synonym", weight=10)

@@ -173,6 +173,14 @@ def _arguments(call):
         value = json.loads(call["function"]["arguments"])
     except (ValueError,KeyError,TypeError):
         raise ProviderError("INVALID_SEARCH_TOOL_ARGUMENTS") from None
+    # Some tool providers lift this nested array to the top level. Normalize only
+    # this equivalent representation, then validate it with the same bounded schema.
+    if isinstance(value, dict) and "passage_queries" in value and isinstance(value.get("question_profile"), dict):
+        profile = value["question_profile"]
+        queries = value.pop("passage_queries")
+        if "passage_queries" in profile and profile["passage_queries"] != queries:
+            raise ProviderError("INVALID_SEARCH_TOOL_ARGUMENTS")
+        profile["passage_queries"] = queries
     if not isinstance(value,dict) or set(value)-{"query","lookup_kind","audience","intent","keywords","retain_source_ids","question_profile"}:
         raise ProviderError("INVALID_SEARCH_TOOL_ARGUMENTS")
     query = value.get("query")
