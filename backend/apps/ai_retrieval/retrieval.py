@@ -53,8 +53,8 @@ def concept_terms(query, intent):
     return [w for w in dict.fromkeys(lexical.tokens(query)) if w not in lexical.STOP_WORDS and w not in hints and w not in generic][:24]
 
 
-def query_context(query, **kwargs):
-    context = lexical.search_context(query, [query], **kwargs)
+def query_context(query, *, question="", **kwargs):
+    context = lexical.search_context(question or query, [query], **kwargs)
     qualifiers = set(lexical.tokens(query)) & {"important", "major", "serious", "significant"}
     if "adverse_effects" in context.intents and qualifiers:
         context = replace(context, aspects=tuple(dict.fromkeys([*context.aspects, *sorted(qualifiers)])))
@@ -233,7 +233,7 @@ class HybridRetriever:
         return list(dict.fromkeys(identifier for n in range(max(map(len,catalogs),default=0))
                                    for group in catalogs for identifier in group[n:n+1]))
 
-    def lexical_ids(self, query, audience, intent="general", lookup_kind="topic", question_profile=None):
+    def lexical_ids(self, query, audience, intent="general", lookup_kind="topic", question_profile=None, *, question=""):
         if connections[indexing.alias()].vendor != "postgresql":
             raise ProviderError("HYBRID_REQUIRES_POSTGRESQL")
         count = settings.AI_LAB_HYBRID_CANDIDATES
@@ -263,14 +263,19 @@ class HybridRetriever:
         curated = []
         if sources:
             tagged = base.filter(source_id__in=sources)
+            context = query_context(query, question=question, audience=audience, intent=intent, question_profile=question_profile)
             objectives = question_profile["objectives"] if question_profile else [intent]
             pattern = "|".join(lexical.INTENTS[name][1] for name in dict.fromkeys([intent,*objectives])).replace(r"\b", r"\y")
             if intent in {"treatment", "drug_therapy"}:
                 pattern += "|dosing|dosage|administration|regimen|pharmacologic|summary.*recommendations"
-            headings = list(tagged.annotate(path_text=Cast("heading_path", TextField())).filter(
-                Q(heading__iregex=pattern) | Q(path_text__iregex=pattern)).values(
-                    "pk", "source_id", "heading", "heading_path", "ordinal")[:2000])
-            context = query_context(query, audience=audience, intent=intent, question_profile=question_profile)
+            heading_rows = tagged.annotate(path_text=Cast("heading_path", TextField())).values(
+                "pk", "source_id", "heading", "heading_path", "ordinal")
+            headings = list(heading_rows.filter(Q(heading__iregex=pattern) | Q(path_text__iregex=pattern))[:2000])
+            if context.initial_only:
+                initial = lexical.INITIAL_THERAPY.replace(r"\b", r"\y")
+                matches = heading_rows.filter(Q(heading__iregex=initial) | Q(path_text__iregex=initial)
+                                              | Q(text__iregex=initial)).order_by("source_id", "ordinal")[:2000]
+                headings = list({row["pk"]: row for row in [*headings, *matches]}.values())
             positions = {identifier: n for n, identifier in enumerate(sources)}
             headings.sort(key=lambda row: (-lexical.heading_score(row["heading"], row["heading_path"], context),
                                           positions.get(row["source_id"], 999), row["ordinal"]))
@@ -324,6 +329,7 @@ class HybridRetriever:
         self.validate()
         if question_profile is not None:
             question_profile = profiles.validate(question_profile)
+            question_profile = profiles.for_question(question_profile, question or query)
         if not isinstance(query, str) or not 2 <= len(query.strip()) <= 240:
             raise ProviderError("INVALID_SEARCH_TOOL_ARGUMENTS")
         query = query.strip()
@@ -337,11 +343,14 @@ class HybridRetriever:
             return [], {"engine":"scoped", "scope":self.scope.audit(), "selected_passages":0,
                 "selected_chunks":0,"context_tokens":0,"embedding":{"requests":0},"degraded":None}
         cache = caches["ai_lab"]
-        cache_key = "hybrid-ranking:v5:" + salted_hmac("hybrid-ranking", json.dumps([
+        context = query_context(query, question=question, lookup_kind=lookup_kind,
+            audience=audience, intent=intent, keywords=keywords, question_profile=question_profile)
+        cache_key = "hybrid-ranking:v6:" + salted_hmac("hybrid-ranking", json.dumps([
             str(getattr(getattr(self.request, "user", None), "pk", "diagnostic")), str(self.generation.pk),
             self.generation.embedding_profile, self.generation.embedding_ready, query, lookup_kind, audience, intent,
             list(keywords), question_profile, settings.AI_LAB_HYBRID_CANDIDATES,
-            self.scope.audit() if settings.AI_LAB_TAG_SCOPED_SEARCH else None, followup], sort_keys=True)).hexdigest()
+            self.scope.audit() if settings.AI_LAB_TAG_SCOPED_SEARCH else None, followup,
+            context.first_line_regimen, context.initial_only], sort_keys=True)).hexdigest()
         try:
             cached = cache.get(cache_key)
         except Exception:
@@ -363,13 +372,13 @@ class HybridRetriever:
         elif self.generation.embedding_ready and not (settings.AI_LAB_TAG_SCOPED_SEARCH and followup):
             with ThreadPoolExecutor(max_workers=1, thread_name_prefix="reference-vector") as pool:
                 future = pool.submit(copy_context().run, self.semantic_ids, query, audience)
-                lexical_ids, curated = self.lexical_ids(query, audience, intent, lookup_kind, question_profile)
+                lexical_ids, curated = self.lexical_ids(query, audience, intent, lookup_kind, question_profile, question=question)
                 try:
                     semantic, embedding_metadata = future.result()
                 except ProviderError as exc:
                     degraded = exc.code  # Keyword evidence still requires all source/quality checks.
         else:
-            lexical_ids, curated = self.lexical_ids(query, audience, intent, lookup_kind, question_profile)
+            lexical_ids, curated = self.lexical_ids(query, audience, intent, lookup_kind, question_profile, question=question)
             degraded = None if self.generation.embedding_ready else "HYBRID_EMBEDDINGS_NOT_READY"
         if cached is None and degraded is None:
             try:
@@ -378,8 +387,6 @@ class HybridRetriever:
             except Exception:
                 pass
         scores = reciprocal_rank_fusion([lexical_ids, semantic, curated])
-        context = query_context(query, lookup_kind=lookup_kind,
-            audience=audience, intent=intent, keywords=keywords, question_profile=question_profile)
         candidates = list(SearchChunk.objects.filter(pk__in=list(scores), generation=self.generation))
         if lookup_kind == "drug" and intent in {"dose", "renal_dose"}:
             for neighbor, seed_id in self.dose_neighbors(candidates, audience):
@@ -411,7 +418,8 @@ class HybridRetriever:
                 priority += .003 * sum(bool(words) and words<=text for words in entity_terms)
             if intent in {"dose", "renal_dose"}:
                 priority += min(7,lexical.regimen_score(row.text,row.heading))*.001
-            return -(scores[row.pk] + priority), str(row.pk)
+            line = lexical.initial_match(row.heading_path or (row.heading,), row.text) if context.initial_only else 0
+            return -line, -(scores[row.pk] + priority), str(row.pk)
         candidates.sort(key=rank)
         diverse, overflow, section_counts = [], [], {}
         for row in candidates:
@@ -427,6 +435,8 @@ class HybridRetriever:
                 break
             if total_tokens + row.token_count > settings.AI_LAB_HYBRID_CONTEXT_TOKENS:
                 continue
+            if context.initial_only and lexical.after_initial_therapy(row.heading_path or (row.heading,)):
+                continue
             # A default monograph lookup follows the canonical Drug information
             # edition. Do not mix pediatric-only assertions into a general
             # answer when its ordinary monograph is available. Explicit child
@@ -440,6 +450,7 @@ class HybridRetriever:
             chosen.append(row); total_tokens += row.token_count
         supplemented = 0
         if (settings.AI_LAB_HYBRID_REGIMEN_ENRICHMENT and lookup_kind == "topic"
+                and not lexical.first_line_without_regimen(question or query)
                 and intent in {"treatment", "drug_therapy"}):
             capacity = min(2, max(0, settings.AI_LAB_HYBRID_TOP_K-1))
             core = chosen[:max(1,settings.AI_LAB_HYBRID_TOP_K-capacity)]
@@ -511,6 +522,8 @@ class HybridRetriever:
                 try:require_feature(self.request,"uptodate",item=passage.article_id,consume=False)
                 except PlatformAPIError:continue
                 allowed.append(passage)
+            if explicit_media:
+                allowed, _ = media.select_media(question or query, allowed)
             combined = {p.id: p for p in (allowed if explicit_media else passages)}
             for passage in ([p for p in passages if not p.media] if explicit_media else allowed):
                 combined.setdefault(passage.id,passage)

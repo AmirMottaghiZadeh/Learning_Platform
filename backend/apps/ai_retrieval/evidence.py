@@ -8,10 +8,9 @@ from apps.ai_lab import lexical
 from .chunking import token_count
 
 
-FOCUS_VERSION = 2
+FOCUS_VERSION = 3
 BACKGROUND = re.compile(r"\b(?:epidemiology|etiology|aetiology|pathogenesis|pathophysiology|historical background|definition|diagnosis|diagnostic evaluation)\b", re.I)
 NON_DRUG = re.compile(r"\b(?:nonpharmacologic\w*|non[ -]drug|behavioral (?:therapy|treatment|interventions)|psychotherapy|surgical treatment)\b", re.I)
-LATER_LINE = re.compile(r"\b(?:(?:second|third|fourth)[ -]line|subsequent (?:therapy|treatment)|refractory|treatment[ -]resistant)\b", re.I)
 RECOMMENDATION = re.compile(r"\bwe (?:recommend|suggest|prefer|use)\b|\b(?:first[ -]line|initial|preferred) (?:treatment|therapy|medication)|\btreatment of choice\b", re.I)
 DOSE_NUMBER = re.compile(r"\d\s*(?:mg|mcg|µg|μg|micrograms?|milligrams?|grams?|mL|units?)\b", re.I)
 DURATION = re.compile(r"\bduration\b|\bcontinue (?:therapy|treatment)\b|\bfor (?:\d+|one|two|three|four|six|eight|twelve) (?:days?|weeks?|months?)\b", re.I)
@@ -90,7 +89,7 @@ def focus_passages(passages, question, query, *, lookup_kind="topic", audience="
         return passages, {"version": FOCUS_VERSION, "enabled": False, "input_passages": len(passages),
                           "selected_passages": len(passages), "input_text_tokens": before_tokens,
                           "selected_text_tokens": before_tokens, "duplicate_passages": 0, "off_scope_passages": 0}
-    context = lexical.search_context(question + " " + query, [query], lookup_kind=lookup_kind,
+    context = lexical.search_context(question, [query], lookup_kind=lookup_kind,
         audience=audience, intent=intent, keywords=keywords, question_profile=question_profile)
     if "adverse_effects" in context.intents and re.search(r"\b(?:important|major|serious|significant)\b", query, re.I):
         context = replace(context, aspects=tuple(dict.fromkeys([*context.aspects, "important"])))
@@ -133,7 +132,7 @@ def focus_passages(passages, question, query, *, lookup_kind="topic", audience="
                                 and not (roles & {"recommendation", "restriction"}))
         unwanted_alternative = ("drug_therapy" in specific and "comparison" not in specific
                                 and NON_DRUG.search(path) and not (roles & {"regimen", "restriction"}))
-        unwanted_later_line = context.first_line_regimen and context.broad_treatment and LATER_LINE.search(path)
+        unwanted_later_line = context.initial_only and lexical.after_initial_therapy(passage.heading_path or (passage.section,))
         if unwanted_background or unwanted_alternative or unwanted_later_line:
             off_scope += 1
             continue

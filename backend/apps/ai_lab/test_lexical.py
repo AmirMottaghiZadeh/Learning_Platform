@@ -9,19 +9,22 @@ from . import lexical, retrieval, services, test_reference_index as fixtures
 
 
 class LexicalRankingTests(SimpleTestCase):
-    def test_first_line_implicitly_requests_regimen_but_other_queries_do_not(self):
+    def test_detects_first_line_with_or_without_an_explicit_regimen(self):
         for question in ["خط اول درمان چیست؟", "درمان خط اول بیماری", "داروی خط اول چیست؟",
-                         "خط‌اول‌درمان چیست", "درمان اولیه چیست؟", "first-line treatment", "first line therapy"]:
+                         "خط‌اول‌درمان چیست", "درمان اولیه چیست؟", "first-line treatment", "first line therapy",
+                         "آرتریت روماتویید درمان خط اولش چیه"]:
             with self.subTest(question=question):
                 context = lexical.search_context(question, ["example condition"])
                 self.assertTrue(context.first_line_regimen)
                 self.assertIn("treatment", context.intents)
                 self.assertIn("dosing", context.terms)
+                self.assertTrue(lexical.first_line_without_regimen(question))
+        self.assertFalse(lexical.first_line_without_regimen("دارو و دوز خط اول درمان چیست؟"))
         for question in ["عوارض دارو چیست؟", "خط دوم درمان چیست؟", "درمان بیماری چیست؟"]:
             self.assertFalse(lexical.first_line_treatment(question))
 
     def test_first_line_ranks_administration_and_dose_evidence_without_changing_the_question(self):
-        context = lexical.search_context("خط اول درمان بیماری چیست؟", ["example condition"])
+        context = lexical.search_context("خط اول درمان بیماری و دوز آن چیست؟", ["example condition"])
         self.assertGreater(lexical.heading_score("Administration", [], context),
                            lexical.heading_score("Epidemiology", [], context))
         self.assertGreater(lexical.text_score("Example agent: 5 mg orally once daily, with source restrictions.", context),

@@ -19,6 +19,8 @@ MAX_REGIMEN_HITS = 24
 REGIMEN_HEADING = r"dos(?:e|es|ing|age)|administration|regimen|application|frequency|duration"
 REGIMEN_NUMBER = r"\d\s*(?:mg|mcg|µg|μg|micrograms?|milligrams?|grams?|mL|units?|%)"
 REGIMEN_SCHEDULE = r"\b(?:once|twice|three times|four times) (?:a |per )?(?:daily|day|week)|\bevery \d+ hours?\b|\b(?:oral|topical|intravenous|intramuscular)\b"
+INITIAL_THERAPY = r"\b(?:first[- ‐‑–]line|initial (?:treatment|therapy|management|choice|pharmacotherap\w*|(?:drug|medication) selection)|(?:DMARD|treatment|therapy)[- ‐‑–]na[iï]ve|treatment of choice)\b"
+LATER_THERAPY = r"\b(?:(?:second|third|fourth|later)[- ‐‑–]line|subsequent (?:therapy|treatment)|refractory|(?:treatment|drug)[- ‐‑–]resistant|inadequate response|(?:failure|failed) (?:of |to |with )?(?:first[- ‐‑–]line|initial|prior|previous|treatment|therapy))\b"
 STOP_WORDS = frozenset("a an and are as at be by for from in is it of on or the to with what which how information drug patient adult children treatment management".split())
 
 # Retrieval hints only: they never constitute an answer or a medical assertion.
@@ -61,6 +63,7 @@ HINTS = {
     "emergency_care": "prehospital initial management resuscitation basic life support emergency",
     "general": "",
 }
+INITIAL_LOOKUP = "initial treatment first-line therapy"
 
 
 def tokens(text):
@@ -77,12 +80,38 @@ class SearchContext:
     audience: str = "general"
     broad_treatment: bool = False
     first_line_regimen: bool = False
+    initial_only: bool = False
 
 
 def first_line_treatment(question):
     text = re.sub(r"[\u200c\u200d\u0640]", " ", question).replace("ي", "ی").replace("ك", "ک")
-    return bool(re.search(r"خط\s*(?:اول|۱|1)\s*درمان|(?:درمان|دارو(?:ی|های)?)\s*(?:انتخابی\s*)?(?:خط\s*)?(?:اول|اولیه)\b"
-                          r"|\bfirst[ -]+line\s+(?:treatment|therapy|drug|medication|management|regimen)\b", text, re.I))
+    return bool(re.search(r"خط\s*(?:اول|۱|1)(?:ش|اش)?\s*درمان|(?:درمان|دارو(?:ی|های)?)\s*(?:انتخابی\s*)?(?:خط\s*)?(?:اولیه|اول|۱|1)(?:\s*(?:ش|اش))?\b"
+                          r"|\bfirst[- ‐‑–]+line\b", text, re.I))
+
+
+def initial_treatment_only(question):
+    return first_line_treatment(question) and not re.search(
+        LATER_THERAPY + r"|خط\s*(?:دوم|سوم|چهارم|بعدی|[۲۳۴234])|مقاوم|عدم پاسخ|شکست|پاسخ\s*ند",
+        question, re.I)
+
+
+def first_line_without_regimen(question):
+    return first_line_treatment(question) and not re.search(
+        INTENTS["dose"][0] + r"|رژیم|مقدار|راه مصرف|مسیر تجویز|نحوه[ٔ‌ی\s]*مصرف|مدت درمان|دفعات مصرف|regimen|titration|frequency|duration|route",
+        question, re.I)
+
+
+def after_initial_therapy(path):
+    return bool(re.search(LATER_THERAPY, " > ".join(path), re.I))
+
+
+def initial_match(path, text=""):
+    if after_initial_therapy(path):
+        return -1
+    if re.search(INITIAL_THERAPY, " > ".join(path), re.I):
+        return 2
+    return int(any(re.search(INITIAL_THERAPY, sentence, re.I) and not re.search(LATER_THERAPY, sentence, re.I)
+                   for sentence in re.split(r"(?<=[.!?])\s+", text)))
 
 
 def regimen_score(text, heading=""):
@@ -95,7 +124,8 @@ def search_context(question, queries=(), *, lookup_kind="topic", audience="gener
     # question into a dosing request. Typed goals replace incidental regex hits.
     if question_profile:
         detected = list(question_profile["objectives"])
-        first_line = first_line_treatment(question) and bool({"treatment", "drug_therapy"} & set(detected))
+        first_line = first_line_treatment(question) and bool(
+            {"treatment", "drug_therapy", "dose", "renal_dose", "general"} & set(detected))
         from .question_profile import keywords as profile_keywords
         keywords = profile_keywords(question_profile, keywords)
     else:
@@ -119,7 +149,8 @@ def search_context(question, queries=(), *, lookup_kind="topic", audience="gener
     broad = lookup_kind == "topic" and bool({"treatment", "drug_therapy"} & set(detected)) and not specific_scope
     if question_profile and not question_profile["regimen_requested"]:
         broad = False
-    return SearchContext(tuple(detected), terms, tuple(concepts), aspects, lookup_kind, audience, broad, first_line)
+    return SearchContext(tuple(detected), terms, tuple(concepts), aspects, lookup_kind, audience, broad, first_line,
+                         first_line and initial_treatment_only(question))
 
 
 def heading_score(heading, path, context):
@@ -149,8 +180,13 @@ def heading_score(heading, path, context):
     if re.search(r"summary|recommendations|suggested approach", own):
         score += 2
     if context.first_line_regimen:
-        if re.search(r"first.line|initial (?:treatment|therapy)|summary|recommendations|suggested approach", own):
-            score += 8
+        line = initial_match(path or (heading,))
+        if line > 0:
+            score += 24 if re.search(INITIAL_THERAPY, own, re.I) else 14
+        elif line < 0 and context.initial_only:
+            score -= 24
+        elif re.search(r"summary|recommendations|suggested approach", own):
+            score += 6
         if re.search(REGIMEN_HEADING, own):
             score += 10
         elif re.search(REGIMEN_HEADING, ancestors):
@@ -166,7 +202,9 @@ def text_score(text, context):
     if (context.broad_treatment or context.first_line_regimen) and re.search(r"\bwe (?:suggest|recommend)\b|\b(?:initial|first.line) (?:treatment|therapy)\b", text, re.I):
         score += 8
     if context.first_line_regimen:
-        score += regimen_score(text)
+        score += 12 * initial_match((), text)
+        if "dose" in context.intents or "renal_dose" in context.intents:
+            score += regimen_score(text)
     return score
 
 

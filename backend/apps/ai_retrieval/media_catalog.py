@@ -2,7 +2,9 @@
 from functools import lru_cache
 from hashlib import sha256
 from html.parser import HTMLParser
+from pathlib import Path
 import re
+from django.conf import settings
 from apps.uptodate import services
 from apps.uptodate.media_links import media_links
 
@@ -68,15 +70,16 @@ def probe(article):
 
 
 @lru_cache(maxsize=256)
-def graphic_records(identifier,version):
+def graphic_records(identifier, source_revision):
     article=services.get_topic(identifier,include_memberships=False)
     if article is None:return []
     parser=probe(article);description=" ".join(" ".join(parser.text).split())
     return [{**item,"title":article["title"],"caption":item["caption"] or article["title"],"text":description,
+             "asset_text":item["text"],
              "graphic_hash":sha256(article["body_html"].encode()).hexdigest()} for item in parser.records]
 
 
-def catalog_media(article, *, links=None):
+def catalog_media(article, *, links=None, generation_id=None):
     records = list(probe(article).records)
     if links is None:
         links = [*media_links(article["body_html"]), *media_links(article.get("outline_html", ""))]
@@ -84,11 +87,23 @@ def catalog_media(article, *, links=None):
     for link in links:
         if link.graphic and link.identifier != str(article["id"]):
             grouped.setdefault(link.identifier, []).append(link)
+    if not grouped:
+        return records
+    if settings.UPTODATE_MYSQL_URL:
+        source = sha256(settings.UPTODATE_MYSQL_URL.encode()).hexdigest()
+        revision = (source, services.snapshot_version(), generation_id)
+    else:
+        path = Path(settings.UPTODATE_DB_DIR).resolve() / "content.db"
+        try:
+            stamp = path.stat()
+            revision = (path, stamp.st_ino, stamp.st_size, stamp.st_mtime_ns)
+        except FileNotFoundError:
+            revision = (path,)
     for identifier, locations in grouped.items():
         labels = list(dict.fromkeys(link.label for link in locations if link.label))
         groups = list(dict.fromkeys(link.group for link in locations if link.group))
         context = list(dict.fromkeys(link.context for link in locations if link.context))
-        for child in graphic_records(identifier, services.snapshot_version()):
+        for child in graphic_records(identifier, revision):
             records.append({**child, "key": f"graphic-{identifier}-{child['key']}",
                             "source_labels": labels, "source_groups": groups, "source_context": context})
     return records

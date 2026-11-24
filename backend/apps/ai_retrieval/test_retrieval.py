@@ -48,6 +48,26 @@ class HybridRetrievalTests(TestCase):
             self.assertEqual(passage.target["params"]["searchContentHash"], passage.content_hash)
             self.assertEqual(passage.ordinal,row.ordinal)
 
+    @override_settings(AI_LAB_HYBRID_TOP_K=1, AI_LAB_TAG_SCOPED_SEARCH=True)
+    def test_first_line_question_reaches_initial_subheading_when_query_omits_line(self):
+        self.write_article("3851", """<div id="topicText">
+            <p class="headingAnchor" id="H1"><span class="h1">Initial treatment</span></p>
+            <p>For newly diagnosed patients, we recommend Fixturemed, subject to the source restrictions.</p>
+            <p class="headingAnchor" id="H2"><span class="h1">Treatment of refractory disease</span></p>
+            <p>Rheumatoid arthritis: rheumatoid arthritis management after failure is Differentmed.</p></div>""",
+            title="Rheumatoid arthritis management")
+        self.build_reference()
+        call_command("build_hybrid_index", stdout=StringIO())
+        self.generation = RetrievalGeneration.objects.latest("created_at")
+        concept = SearchConcept.objects.create(generation=self.generation, source_id="ra", topic_lists=["3851", "", "", "", ""])
+        SearchAlias.objects.create(generation=self.generation, concept=concept, alias="rheumatoid arthritis", weight=100)
+        profile = {"kind": "disease_question", "focus": "First-line selection", "objectives": ["drug_therapy"]}
+        rows, audit = self.retriever().search("rheumatoid arthritis", question="آرتریت روماتویید درمان خط اولش چیه",
+                                             intent="drug_therapy", question_profile=profile)
+        self.assertEqual(audit["selected_chunks"], 1)
+        self.assertTrue(any("newly diagnosed" in p.text for p in rows))
+        self.assertFalse(any("Differentmed" in p.text for p in rows))
+
     def test_article_quota_is_consumed_only_for_focused_evidence(self):
         def focus(rows,*args,**kwargs):
             selected=[row for row in rows if row.article_id=="3851"]

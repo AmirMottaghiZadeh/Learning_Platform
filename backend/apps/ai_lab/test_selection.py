@@ -99,12 +99,13 @@ class LocalSelectionGroundingTests(SimpleTestCase):
 
 
     @patch.object(services, "chat")
-    def test_first_line_requires_explicit_verified_regimen_coverage(self, chat):
+    def test_requested_first_line_regimen_with_invalid_coverage_keeps_supported_item(self, chat):
         for flag in [None, "true", 1]:
             with self.subTest(flag=flag):
                 chat.side_effect = [({"items": [explanation()]}, {}), ({**decision(), "regimen_complete": flag}, {})]
-                with self.assertRaisesMessage(provider.ProviderError, "INVALID_MODEL_OUTPUT"):
-                    services._explain_batch("luna", "خط اول درمان چیست؟", [passage(1)], [], lambda _: None)
+                supported, chosen = services._explain_batch("luna", "خط اول درمان و دوز چیست؟", [passage(1)], [], lambda _: None)
+                self.assertEqual(chosen, [])
+                self.assertEqual(len(supported), 1)
 
     @patch.object(services, "chat")
     def test_nonpharmacologic_first_line_can_finish_without_inventing_a_drug(self, chat):

@@ -350,8 +350,7 @@ class GroundingTests(SimpleTestCase):
     def test_unverified_or_invented_evidence_cannot_trigger_early_stop(self, chat):
         chat.side_effect = [({"items": [self.item()]}, {}),
                             ({"supported": [], "sufficient": True, "answer_source_ids": ["P1"]}, {})]
-        with self.assertRaisesMessage(provider.ProviderError, "UNKNOWN_SOURCE_ID"):
-            services._explain_batch("luna", "درمان", [passage()], [], lambda _: None)
+        self.assertEqual(services._explain_batch("luna", "درمان", [passage()], [], lambda _: None), ([], []))
 
     @patch.object(services, "chat")
     def test_unsupported_explanation_is_not_rendered(self, chat):

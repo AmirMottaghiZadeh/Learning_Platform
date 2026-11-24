@@ -143,6 +143,15 @@ def requirements(profile):
     return result
 
 
+def for_question(profile, question):
+    from .lexical import first_line_without_regimen
+
+    if first_line_without_regimen(question) and {"treatment", "drug_therapy"} & set(profile["objectives"]):
+        goals = [goal for goal in profile["objectives"] if goal not in {"dose", "renal_dose"}]
+        return {**profile, "objectives": goals, "regimen_requested": False}
+    return profile
+
+
 def question_parts(question):
     # A vignette's sentences, lists and final question belong together. The
     # model can cover several requested aspects without losing the case facts

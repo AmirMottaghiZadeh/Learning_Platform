@@ -128,3 +128,38 @@ class StructuredAgentTests(SimpleTestCase):
             result=agent.answer_hybrid("دارودرمانی و دوز چیست؟",[],None,retriever=r)
         self.assertEqual(result["parts"][0]["status"],"partial")
         self.assertIn("drug_regimen",result["parts"][0]["requirements"])
+
+    def test_first_line_selection_keeps_verified_sentence_without_dose_or_valid_coverage(self):
+        initial = replace(reference(10, "We recommend initial therapy with Fixturemed for this subgroup."),
+                          section="Initial therapy", heading_path=("Initial therapy",))
+        other = reference(20, "A different passage describes management after failure.")
+        retriever = self.retriever([other, initial])
+        proposal = self.plan(kind="disease_question", objectives=["drug_therapy", "dose"], regimen_requested=True)
+        raw = "یک ادعای بدون ارجاع.\n\nدرمان اول برای زیرگروه ذکرشده داروی نمونه است [P1]. درمان دیگری هم اضافه کنید [P2]."
+        decision = {"supported": ["A1"], "sufficient": True,
+                    "coverage": [{"requirement": "requested_aspects", "status": "supported", "source_ids": ["P2"]}]}
+        with patch.object(scoped, "stream_chat", side_effect=[(proposal, {}), ({"content": raw}, {})]), \
+                patch.object(agent, "chat", return_value=(decision, {})) as verify:
+            part = agent.answer_hybrid("آرتریت روماتویید درمان خط اولش چیه", [], None, retriever=retriever)["parts"][0]
+        self.assertEqual(part["status"], "partial")
+        self.assertNotIn("drug_regimen", part["requirements"])
+        self.assertNotIn("dose", retriever.search.call_args.kwargs["question_profile"]["objectives"])
+        self.assertEqual([row["source_ids"] for row in verify.call_args.args[2]["claims"]], [["P1"], ["P2"]])
+        self.assertEqual(part["items"][0]["quote"], initial.text)
+        self.assertEqual(part["answer_blocks"], [{"text_fa": "درمان اول برای زیرگروه ذکرشده داروی نمونه است.", "source_ids": ["P1"]}])
+
+    def test_fully_rejected_draft_is_rewritten_once_and_checked_again(self):
+        retriever = self.retriever([reference(10, "Original adverse reactions with an important source qualification.")])
+        raw = "یک ادعای غیرمستند در پیش‌نویس. [P1]"
+        repair = "عارضه با شرط ذکرشده در منبع گزارش شده است. [P1]"
+        with patch.object(scoped, "stream_chat", side_effect=[(self.plan(), {}), ({"content": raw}, {})]), \
+                patch.object(agent, "chat", side_effect=[
+                    ({"supported": [], "sufficient": False, "coverage": []}, {}), ({"answer": repair}, {}),
+                    ({"supported": ["A1"], "sufficient": True, "coverage": [
+                        {"requirement": "requested_aspects", "status": "supported", "source_ids": ["P1"]}]}, {}),
+                ]) as calls:
+            part = agent.answer_hybrid("عوارض دارو چیست؟", [], None, retriever=retriever)["parts"][0]
+        self.assertEqual(calls.call_count, 3)
+        self.assertEqual(part["status"], "answered")
+        self.assertNotIn("ادعای غیرمستند", part["overview_fa"])
+        self.assertIn("شرط ذکرشده", part["overview_fa"])

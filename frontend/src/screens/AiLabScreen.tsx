@@ -339,7 +339,11 @@ export function AiLabScreen() {
       {status.data && !status.data.enabled ? <AppText size={14} muted>{failure("AI_LAB_DISABLED", undefined, isFa)}</AppText> : null}
       {displayedTurns.map((turn) => {
         const draft = Object.values(turn.answer_drafts ?? {}).join("\n\n");
-        const citations = turn.result?.parts.flatMap((part) => [...part.items, ...(part.related_items ?? []).filter((item) => item.media?.length)])
+        const citations = turn.result?.parts.flatMap((part) => [
+          ...part.items,
+          ...(part.related_items ?? []).filter((item) => item.media?.length),
+          ...(part.status === "not_found" ? (part.related_items ?? []).filter((item) => !item.media?.length).slice(0, 3) : []),
+        ])
           ?? (turn.status === "running" ? (turn.findings ?? []).map((finding) => finding.citation) : []);
         const articles = new Map<string, LabCitation>();
         for (const citation of citations) {
@@ -399,7 +403,7 @@ export function AiLabScreen() {
               {part.retrieval?.limited && !part.retrieval.early_stopped ? <AppText size={12} muted>{isFa ? "پوشش منابع در این جست‌وجو کامل نیست." : "This search covered a limited set of references."}</AppText> : null}
               {part.status === "partial" ? <AppText size={13} muted>{part.clarification_fa || (isFa ? "منابع فقط بخشی از سؤال را پوشش می‌دهند." : "The sources cover only part of the question.")}</AppText> : null}
               {part.status === "needs_clarification" ? <AppText size={14}>{part.clarification_fa}</AppText> : null}
-              {part.status === "not_found" ? <AppText size={14} muted>{isFa ? "متن کافی برای پاسخ مستند پیدا نشد." : "There was insufficient evidence for a sourced answer."}</AppText> : null}
+              {part.status === "not_found" ? <AppText size={14} muted>{isFa ? part.clarification_fa || "متن کافی برای پاسخ مستند پیدا نشد." : "There was insufficient evidence for a sourced answer."}</AppText> : null}
             </View>;
           })}
         </View>

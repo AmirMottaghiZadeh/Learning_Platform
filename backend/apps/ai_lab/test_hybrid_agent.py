@@ -78,7 +78,7 @@ class HybridAgentTests(SimpleTestCase):
             value["coverage"][2]={"requirement":"drug_regimen","status":"missing","source_ids":[]}
             return value,meta
         with patch.object(agent,"stream_chat",side_effect=[(tool(intent="treatment"),{}),({"content":"توصیهٔ درمانی مستند. [P1]"},{})]),patch.object(agent,"chat",side_effect=incomplete):
-            result=agent.answer_hybrid("خط اول درمان چیست؟",[],None,retriever=r)
+            result=agent.answer_hybrid("خط اول درمان و دوز آن چیست؟",[],None,retriever=r)
         self.assertEqual(result["parts"][0]["status"],"partial")
         self.assertEqual(len(result["parts"][0]["items"]),1)
 

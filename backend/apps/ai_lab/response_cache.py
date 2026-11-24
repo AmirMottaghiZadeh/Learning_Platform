@@ -28,7 +28,7 @@ def code_signature():
              "reference_index.py", "document.py", "response_cache.py", "outline.py", "hybrid_agent.py", "structured_agent.py", "question_profile.py", "streaming.py", "transport_pool.py"]
     retrieval = directory.parent / "ai_retrieval"
     return sha256(b"".join((directory / name).read_bytes() for name in names) + b"".join(
-        (retrieval / name).read_bytes() for name in ["retrieval.py", "query_terms.py", "scope.py", "evidence.py", "media.py", "embeddings.py", "local_embeddings.py", "chunking.py", "vectors.py", "source_links.py", "source_context.py"])
+        (retrieval / name).read_bytes() for name in ["retrieval.py", "query_terms.py", "scope.py", "evidence.py", "media.py", "media_catalog.py", "embeddings.py", "local_embeddings.py", "chunking.py", "vectors.py", "source_links.py", "source_context.py"])
         +(directory.parent/"uptodate"/"media.py").read_bytes()).hexdigest()
 
 

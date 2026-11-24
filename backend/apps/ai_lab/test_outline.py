@@ -57,16 +57,58 @@ class OutlinePipelineTests(TestCase):
         with patch.object(services, "search_articles", side_effect=catalog), patch.object(services, "chat", side_effect=model):
             part = services.answer("جدول و تصویر و الگوریتم Fixture syndrome را نشان بده", "luna", ["uptodate"], [], None)["parts"][0]
         self.assertEqual(part["status"], "answered")
-        self.assertEqual(len(part["items"]), 3)
-        self.assertEqual(len({item["media"][0]["asset_id"] for item in part["items"]}), 3)
+        self.assertEqual(len(part["items"]), 2)
+        self.assertEqual(len({item["media"][0]["asset_id"] for item in part["items"]}), 2)
         self.assertEqual({item["media"][0]["kind"] for item in part["items"]}, {"table", "image"})
-        self.assertEqual({item["target"]["params"]["id"] for item in part["items"]}, {"3851", "3852"})
+        self.assertIn("3851", {item["target"]["params"]["id"] for item in part["items"]})
         self.assertTrue(any(item["media"][0]["is_algorithm"] for item in part["items"]))
         for item in part["items"]:
             params = item["target"]["params"]
             original = resolve_one(sources.get_topic(params["id"]), params["mediaKey"])
             self.assertIsNotNone(original)
             self.assertTrue(citation_valid(item))
+
+    def test_requested_table_explanation_uses_original_cells_and_retains_original_viewer_target(self):
+        from . import hybrid_agent
+        from apps.ai_retrieval import media
+
+        self.write_article("3851", """<div id="topicText"><p>See
+            <a data-graphic-id="9001">Reference values table</a>.</p></div>""",
+            title="Fixture syndrome")
+        self.write_article("9001", """<table>
+            <thead><tr><th scope="col" rowspan="2">Population</th><th scope="col">Fixture value</th></tr></thead>
+            <tbody><tr><td>Group A only</td><td>42 units</td></tr></tbody>
+            <tfoot><tr><td colspan="2">Source footnote</td></tr></tfoot></table>
+            <table><tr><td>Sibling table content</td></tr></table>""", title="Fixture syndrome reference values table")
+        self.build()
+
+        def choose(alias, prompt, payload, tokens):
+            if prompt == services.PLAN_PROMPT:
+                return {"queries": ["Fixture syndrome table"], "intent": "general"}, {}
+            self.assertEqual(prompt, services.ARTICLE_PROMPT)
+            return {"article_ids": ["3851"]}, {}
+
+        def explain(alias, prompt, payload, tokens, **kwargs):
+            if prompt == media.TABLE_PROMPT:
+                table = payload["tables"][0]["table"]
+                self.assertEqual(table["rows"][0]["cells"][0]["rowspan"], "2")
+                self.assertEqual(table["rows"][1]["cells"][1]["text"], "42 units")
+                self.assertEqual(table["rows"][2]["group"], "tfoot")
+                self.assertNotIn("Sibling table content", str(table))
+                return {"answer": "عدد مرجع برای گروه الف ۴۲ واحد است. [P1]"}, {}
+            self.assertEqual(prompt, hybrid_agent.AGGREGATE_VERIFY)
+            return {"supported": ["A1"], "sufficient": True,
+                    "coverage": [{"requirement": "requested_aspects", "status": "supported", "source_ids": ["P1"]}]}, {}
+
+        with patch.object(services, "search_articles", return_value=[{"id": "3851", "title": "Fixture syndrome"}]), \
+                patch.object(services, "chat", side_effect=choose), patch.object(hybrid_agent, "chat", side_effect=explain) as model:
+            part = services.answer("جدول Fixture syndrome را بخوان و توضیح بده", "luna", ["uptodate"], [], None)["parts"][0]
+        self.assertEqual(model.call_count, 2, part)
+        self.assertEqual(part["status"], "answered")
+        self.assertIn("۴۲ واحد", part["overview_fa"])
+        item = part["items"][0]
+        self.assertEqual(part["answer_blocks"][0]["source_ids"], [item["source_id"]])
+        self.assertTrue(media.citation_valid(item))
 
     def model(self, alias, system, payload, tokens):
         if system == services.PLAN_PROMPT:
