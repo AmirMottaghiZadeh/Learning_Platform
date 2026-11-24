@@ -12,10 +12,11 @@ import { radius, spacing } from "@/theme/tokens";
 
 function amount(value: string | number | undefined, fa: boolean) {
   if (value === undefined) return "—";
-  const number=Number(value);
-  if(!Number.isFinite(number))return "—";
-  const whole=String(Math.sign(number)*Math.ceil(Math.abs(number)));
-  const text = whole.replace(/\B(?=(\d{3})+(?!\d))/g, fa ? "٬" : ",");
+  const match = /^(-?\d+)(?:\.(\d+))?$/.exec(String(value));
+  if (!match) return "—";
+  const whole = match[1].replace(/\B(?=(\d{3})+(?!\d))/g, fa ? "٬" : ",");
+  const fraction = (match[2] ?? "").replace(/0+$/, "");
+  const text = fraction ? whole + (fa ? "٫" : ".") + fraction : whole;
   return fa ? text.replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]) : text;
 }
 

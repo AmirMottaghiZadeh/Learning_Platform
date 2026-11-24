@@ -22,17 +22,18 @@ class SettingsForm(ConsoleFields, forms.ModelForm):
                   "cache_write_per_million", "cache_write_12h_per_million", "output_per_million",
                   "embedding_per_million", "usd_per_1000_credits", "usd_to_toman", "fx_mode"]
         labels = {"enabled": "فعال‌سازی کسر اعتبار و فروش بسته‌ها", "initial_credits": "اعتبار اولیهٔ هر کاربر",
-            "input_per_million": "اعتبار برای یک میلیون توکن ورودی", "cached_input_per_million": "اعتبار برای یک میلیون توکن ورودی کش‌شده (خالی = نرخ ورودی)",
-            "cache_write_per_million": "اعتبار برای یک میلیون توکن نوشتن کش ۳۰ دقیقه‌ای",
-            "cache_write_12h_per_million": "اعتبار برای یک میلیون توکن نوشتن کش ۱۲ ساعته",
-            "output_per_million": "اعتبار برای یک میلیون توکن خروجی", "embedding_per_million": "اعتبار برای یک میلیون توکن بردارسازی پرسش",
-            "usd_per_1000_credits": "قیمت فروش هر ۱۰۰۰ اعتبار (دلار)",
+            "input_per_million": "دلار برای یک میلیون توکن ورودی", "cached_input_per_million": "دلار برای یک میلیون توکن ورودی کش‌شده (خالی = نرخ ورودی)",
+            "cache_write_per_million": "دلار برای یک میلیون توکن نوشتن کش ۳۰ دقیقه‌ای",
+            "cache_write_12h_per_million": "دلار برای یک میلیون توکن نوشتن کش ۱۲ ساعته",
+            "output_per_million": "دلار برای یک میلیون توکن خروجی", "embedding_per_million": "دلار برای یک میلیون توکن بردارسازی پرسش",
+            "usd_per_1000_credits": "ارزش هر ۱۰۰۰ اعتبار (دلار)",
             "usd_to_toman": "قیمت یک دلار (تومان)", "fx_mode": "روش به‌روزرسانی نرخ دلار"}
         help_texts = {"initial_credits": "فقط یک بار به حساب هر کاربر اضافه می‌شود.",
             "cache_write_per_million": "فقط با تعداد واقعیِ گزارش‌شده در usage؛ خالی = نرخ ورودی.",
             "cache_write_12h_per_million": "فقط با تفکیک واقعی ۱۲ ساعته؛ خالی = نرخ نوشتن کش معمول.",
             "usd_to_toman": "در حالت خودکار با آخرین نرخ معتبر دلار آزاد جایگزین می‌شود.",
-            "usd_per_1000_credits": "انتخاب فعلی: ۰٫۱ + ۰٫۵ = ۰٫۶ دلار. مستقل از تعرفهٔ مصرف اعتبار."}
+            "embedding_per_million": "صفر یعنی فعلاً هزینه‌ای برای بردارسازی کسر نمی‌شود.",
+            "usd_per_1000_credits": "برای تبدیل هزینهٔ دلاری جست‌وجو به اعتبار و قیمت‌گذاری بسته‌ها استفاده می‌شود."}
 
     def clean(self):
         values = super().clean()

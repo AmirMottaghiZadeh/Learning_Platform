@@ -37,8 +37,8 @@ class WalletTests(TestCase):
         setting=self.settings(AI_LAB_USER_IDS={str(self.alice.pk),str(self.bob.pk)})
         setting.enable();self.addCleanup(setting.disable)
         self.config,_=CreditSettings.objects.update_or_create(pk=1,defaults=dict(enabled=True,initial_credits=100,
-            input_per_million=1000000,cached_input_per_million=500000,output_per_million=2000000,
-            embedding_per_million=500000,model_signature=services.model_signature(),fx_mode="manual"))
+            input_per_million=600,cached_input_per_million=300,output_per_million=1200,
+            embedding_per_million=300,model_signature=services.model_signature(),fx_mode="manual"))
         self.api=APIClient();self.api.force_authenticate(self.alice)
         BillingSettings.objects.update_or_create(pk=1,defaults={"sales_enabled":True})
 
@@ -78,9 +78,39 @@ class WalletTests(TestCase):
 
     def test_pricing_changes_do_not_change_a_running_search_tariff(self):
         res=self.reserve()
-        self.config.input_per_million=999000000;self.config.save()
+        self.config.input_per_million=999000000;self.config.usd_per_1000_credits=1;self.config.save()
         self.attempt(res);services.settle(res.pk)
         res.refresh_from_db();self.assertEqual(res.charged,7)
+
+    def test_known_usage_costs_003_dollars_and_debits_five_credits(self):
+        self.config.input_per_million=Decimal("0.10")
+        self.config.output_per_million=Decimal("0.50")
+        self.config.cached_input_per_million=None
+        self.config.save()
+        res = self.reserve()
+        self.attempt(res, usage={"prompt_tokens":19999, "completion_tokens":1999})
+        self.attempt(res, sequence=2, usage={"prompt_tokens":1, "completion_tokens":1})
+        res = services.settle(res.pk)
+        self.assertEqual(res.input_cost_usd, Decimal("0.002"))
+        self.assertEqual(res.output_cost_usd, Decimal("0.001"))
+        self.assertEqual(res.cost_usd, Decimal("0.003"))
+        self.assertEqual(res.charged, Decimal("5"))
+        self.assertEqual(services.get_wallet(self.alice).balance, Decimal("95"))
+        self.client.force_login(self.admin)
+        dashboard = self.client.get(reverse("ai_wallet_admin:dashboard"))
+        user_wallet = self.client.get(reverse("ai_wallet_admin:user", args=[self.alice.pk]))
+        self.assertContains(dashboard, "$0.003000000000")
+        self.assertContains(user_wallet, "$0.003000000000")
+
+    def test_legacy_reservation_settles_in_credits_without_inventing_dollars(self):
+        res = self.reserve()
+        res.pricing = {"priced": True, "input_per_million": "1000000", "output_per_million": "2000000",
+                       "cached_input_per_million": "500000"}
+        res.save(update_fields=["pricing"])
+        self.attempt(res)
+        res = services.settle(res.pk)
+        self.assertEqual(res.charged, 7)
+        self.assertIsNone(res.cost_usd)
 
     def test_search_finishes_with_negative_balance_then_blocks_until_funded(self):
         self.config.initial_credits=3;self.config.save()
@@ -116,9 +146,9 @@ class WalletTests(TestCase):
             self.assertNotIn("tokens",str(response.data))
 
     def test_explicit_cache_writes_are_billed_as_a_subset_of_input_once(self):
-        self.config.input_per_million=1000;self.config.output_per_million=1000
-        self.config.cached_input_per_million=100
-        self.config.cache_write_per_million=1250;self.config.cache_write_12h_per_million=2500
+        self.config.input_per_million=Decimal("0.60");self.config.output_per_million=Decimal("0.60")
+        self.config.cached_input_per_million=Decimal("0.06")
+        self.config.cache_write_per_million=Decimal("0.75");self.config.cache_write_12h_per_million=Decimal("1.50")
         self.config.save()
         res=self.reserve();ticket=services.start_attempt(res.pk,1,"chat")
         services.finish_attempt(ticket,{"usage":{"prompt_tokens":1000,"completion_tokens":100},

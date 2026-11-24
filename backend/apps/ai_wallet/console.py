@@ -1,9 +1,10 @@
 import uuid
+from datetime import timedelta
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.conf import settings
 from django.utils import timezone
@@ -49,6 +50,12 @@ def dashboard(request):
         wallets = wallets.filter(Q(owner__username__icontains=query)|Q(owner__email__icontains=query)
             |Q(owner__learner_profile__phone__icontains=query)|Q(owner__learner_profile__display_name__icontains=query))
     packages = CreditPackage.objects.all()
+    usage = CreditReservation.objects.filter(created_at__gte=timezone.now()-timedelta(days=30),
+        input_cost_usd__isnull=False).aggregate(searches=Count("pk"), credits=Sum("charged"),
+        input_tokens=Sum("prompt_tokens"), output_tokens=Sum("completion_tokens"),
+        input_usd=Sum("input_cost_usd"), output_usd=Sum("output_cost_usd"), embedding_usd=Sum("embedding_cost_usd"))
+    if usage["searches"]:
+        usage["total_usd"] = usage["input_usd"] + usage["output_usd"] + usage["embedding_usd"]
     return render(request,"ai_wallet/dashboard.html",{"form":form,"packages":packages,"config":config,
         "package_count":packages.filter(active=True).count(),"wallet_count":wallets.count(),
         "reference_luna":settings.AI_LAB_MODEL == "gpt-6-luna", "reference_small":settings.AI_LAB_EMBEDDING_MODEL == "text-embedding-3-small",
@@ -57,7 +64,7 @@ def dashboard(request):
         "pending":CreditReservation.objects.filter(status="pending").select_related("wallet__owner")[:30],
         "pricing_matches":not config.enabled or not pricing_issue,
         "pricing_issue":pricing_issue,"engine_ready":settings.AI_LAB_SEARCH_ENGINE == "hybrid",
-        "review_form":ReviewForm()})
+        "review_form":ReviewForm(), "usage":usage})
 
 
 @require_POST

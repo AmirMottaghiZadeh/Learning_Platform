@@ -9,12 +9,12 @@ from django.utils import timezone
 class CreditSettings(models.Model):
     enabled = models.BooleanField(default=False)
     initial_credits = models.DecimalField(max_digits=22, decimal_places=6, default=100)
-    input_per_million = models.DecimalField(max_digits=22, decimal_places=6, default=1000)
-    cached_input_per_million = models.DecimalField(max_digits=22, decimal_places=6, null=True, blank=True, default=100)
-    cache_write_per_million = models.DecimalField(max_digits=22, decimal_places=6, null=True, blank=True, default=1250)
-    cache_write_12h_per_million = models.DecimalField(max_digits=22, decimal_places=6, null=True, blank=True, default=2500)
-    output_per_million = models.DecimalField(max_digits=22, decimal_places=6, default=1000)
-    embedding_per_million = models.DecimalField(max_digits=22, decimal_places=6, default=200)
+    input_per_million = models.DecimalField(max_digits=22, decimal_places=6, default=Decimal("0.10"))
+    cached_input_per_million = models.DecimalField(max_digits=22, decimal_places=6, null=True, blank=True)
+    cache_write_per_million = models.DecimalField(max_digits=22, decimal_places=6, null=True, blank=True)
+    cache_write_12h_per_million = models.DecimalField(max_digits=22, decimal_places=6, null=True, blank=True)
+    output_per_million = models.DecimalField(max_digits=22, decimal_places=6, default=Decimal("0.50"))
+    embedding_per_million = models.DecimalField(max_digits=22, decimal_places=6, default=0)
     usd_per_1000_credits = models.DecimalField(max_digits=12, decimal_places=6, default=Decimal("0.60"))
     usd_to_toman = models.PositiveBigIntegerField(default=270000)
     fx_mode = models.CharField(max_length=10, choices=[("manual", "نرخ دستی"), ("tgju", "آخرین نرخ دلار آزاد TGJU")], default="tgju")
@@ -71,6 +71,9 @@ class CreditReservation(models.Model):
     wallet = models.ForeignKey(CreditWallet, on_delete=models.PROTECT, related_name="reservations")
     status = models.CharField(max_length=16, default="tracking", choices=[("tracking", "در حال محاسبه"), ("pending", "در انتظار بررسی مصرف"), ("settled", "تسویه‌شده")])
     charged = models.DecimalField(max_digits=22, decimal_places=6, default=0)
+    input_cost_usd = models.DecimalField(max_digits=36, decimal_places=12, null=True)
+    output_cost_usd = models.DecimalField(max_digits=36, decimal_places=12, null=True)
+    embedding_cost_usd = models.DecimalField(max_digits=36, decimal_places=12, null=True)
     pricing = models.JSONField(default=dict)
     prompt_tokens = models.PositiveBigIntegerField(default=0)
     completion_tokens = models.PositiveBigIntegerField(default=0)
@@ -81,6 +84,12 @@ class CreditReservation(models.Model):
     outcome = models.CharField(max_length=16, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     settled_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def cost_usd(self):
+        if self.input_cost_usd is None:
+            return None
+        return self.input_cost_usd + self.output_cost_usd + self.embedding_cost_usd
 
     class Meta:
         ordering = ["-created_at"]

@@ -34,7 +34,7 @@
   <details class="credit-details" {% if form.errors %}open{% endif %}>
     <summary>تعرفهٔ مصرف و هزینهٔ مدل — فقط برای مدیریت</summary>
     <div class="stack credit-detail-body" style="gap:20px">
-      <p class="credit-note">انتخاب فعلی محصول: یک میلیون توکن ورودی یا خروجی، هر کدام ۱۰۰۰ اعتبار. این اعداد تعرفهٔ اعتبار محصول‌اند؛ کاربر هیچ شمارش توکن یا مشخصات مدلی نمی‌بیند.</p>
+      <p class="credit-note">اعتبار مصرفی از تقسیم هزینهٔ دلاری توکن‌های گزارش‌شده بر ارزش دلاری هر اعتبار به دست می‌آید. نرخ ورودی و خروجی جداگانه اعمال می‌شود.</p>
       <div class="credit-fields">{% include "ai_wallet/field.html" with field=form.input_per_million %}{% include "ai_wallet/field.html" with field=form.output_per_million %}{% include "ai_wallet/field.html" with field=form.cached_input_per_million %}{% include "ai_wallet/field.html" with field=form.embedding_per_million %}{% include "ai_wallet/field.html" with field=form.cache_write_per_million %}{% include "ai_wallet/field.html" with field=form.cache_write_12h_per_million %}</div>
       {% if reference_luna %}
       <div class="credit-summary"><b>هزینهٔ مرجع رسمی GPT-6 Luna، دلار برای یک میلیون توکن</b>
@@ -60,7 +60,20 @@
   <div class="scroll-x"><table class="list"><thead><tr><th>کاربر</th><th>موجودی</th><th>قابل استفاده</th><th></th></tr></thead><tbody>{% for wallet in wallets %}<tr><td>{{ wallet.owner.learner_profile.display_name|default:wallet.owner.username }}</td><td>{{ wallet.balance|floatformat:"0"|fa }}</td><td>{{ wallet.available|floatformat:"0"|fa }}</td><td><a class="btn outline small" href="{% url 'ai_wallet_admin:user' wallet.owner_id %}">مدیریت اعتبار</a></td></tr>{% empty %}<tr><td class="empty" colspan="5">کیف هر حساب با اولین مراجعه ساخته می‌شود.</td></tr>{% endfor %}</tbody></table></div>
   <nav class="pager">{% if wallets.has_previous %}<a href="?q={{ q|urlencode }}&page={{ wallets.previous_page_number }}">قبلی</a>{% endif %}<span>صفحهٔ {{ wallets.number|fa }}</span>{% if wallets.has_next %}<a href="?q={{ q|urlencode }}&page={{ wallets.next_page_number }}">بعدی</a>{% endif %}</nav>
 </section>
+<section class="card stack credit-section">
+  <h2>هزینه و مصرف جست‌وجوها در ۳۰ روز اخیر</h2>
+  <p class="credit-note">هزینه بر اساس توکن گزارش‌شده و نرخ زمان جست‌وجو است. در مصرف‌های ناقص، فقط بخش ثبت‌شده شمرده می‌شود.</p>
+  {% if usage.searches %}
+  <div class="scroll-x"><table class="list">
+    <thead><tr><th>جست‌وجو</th><th>ورودی</th><th>خروجی</th><th>بردارسازی</th><th>مجموع دلار</th><th>اعتبار کسرشده</th></tr></thead>
+    <tbody><tr><td>{{ usage.searches|fa }}</td><td>{{ usage.input_tokens|fa }} توکن · <bdi dir="ltr">${{ usage.input_usd|floatformat:"-12u" }}</bdi></td>
+    <td>{{ usage.output_tokens|fa }} توکن · <bdi dir="ltr">${{ usage.output_usd|floatformat:"-12u" }}</bdi></td>
+    <td><bdi dir="ltr">${{ usage.embedding_usd|floatformat:"-12u" }}</bdi></td>
+    <td><bdi dir="ltr">${{ usage.total_usd|floatformat:"-12u" }}</bdi></td><td>{{ usage.credits|floatformat:"-6"|fa }}</td></tr></tbody>
+  </table></div>
+  {% else %}<p class="empty">هنوز جست‌وجویی با تعرفهٔ دلاری ثبت نشده است.</p>{% endif %}
+</section>
 <section class="card stack credit-section"><div><h2>مصرف‌های نیازمند بررسی</h2><p class="credit-note">usage ارائه‌دهنده نامشخص بوده است. پس از بررسی، مجموع مصرف نهایی را تعیین کنید؛ موجودی کاربر در مدت بررسی قفل نیست.</p></div>
-  {% for reservation in pending %}<div class="credit-summary stack"><b>{{ reservation.wallet.owner|default:"حساب حذف‌شده" }}</b><span>مصرف قطعی ثبت‌شده: {{ reservation.charged|floatformat:"0"|fa }}؛ بخش نامشخص بدون قفل موجودی بررسی می‌شود.</span><form method="post" action="{% url 'ai_wallet_admin:review' reservation.pk %}" class="stack">{% csrf_token %}<div class="credit-fields">{% for field in review_form %}{% include "ai_wallet/field.html" %}{% endfor %}</div><button class="btn outline" type="submit">ثبت تسویه</button></form></div>{% empty %}<p class="empty">موردی در انتظار بررسی نیست.</p>{% endfor %}
+  {% for reservation in pending %}<div class="credit-summary stack"><b>{{ reservation.wallet.owner|default:"حساب حذف‌شده" }}</b><span>مصرف قطعی ثبت‌شده: {{ reservation.charged|floatformat:"-6"|fa }}؛ بخش نامشخص بدون قفل موجودی بررسی می‌شود.</span><form method="post" action="{% url 'ai_wallet_admin:review' reservation.pk %}" class="stack">{% csrf_token %}<div class="credit-fields">{% for field in review_form %}{% include "ai_wallet/field.html" %}{% endfor %}</div><button class="btn outline" type="submit">ثبت تسویه</button></form></div>{% empty %}<p class="empty">موردی در انتظار بررسی نیست.</p>{% endfor %}
 </section>
 {% endblock %}

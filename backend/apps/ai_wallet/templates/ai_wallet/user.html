@@ -1,7 +1,20 @@
 {% extends "ai_wallet/base.html" %}{% load billing_extras %}
 {% block title %}اعتبار {{ label }}{% endblock %}
 {% block content %}<header class="credit-heading"><div><span class="eyebrow">اپ / اعتبار سرچ هوشمند</span><h1>اعتبار {{ label }}</h1></div><a class="btn outline" href="{% url 'ai_wallet_admin:dashboard' %}">بازگشت به مدیریت اعتبار</a></header>
-<section class="card stack"><p>موجودی: {{ wallet.balance|floatformat:"0"|fa }} · قابل استفاده: {{ wallet.available|floatformat:"0"|fa }}</p>
+<section class="card stack"><p>موجودی: {{ wallet.balance|floatformat:"-6"|fa }} · قابل استفاده: {{ wallet.available|floatformat:"-6"|fa }}</p>
 <form method="post" class="stack">{% csrf_token %}{% if form.non_field_errors %}<div class="flash error">{{ form.non_field_errors }}</div>{% endif %}<div class="credit-fields">{% for field in form.visible_fields %}{% include "ai_wallet/field.html" %}{% endfor %}</div>{% for field in form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}<div class="credit-actions"><button type="submit" class="btn primary">ثبت اصلاح اعتبار</button></div></form></section>
-<section class="card stack"><h2>گردش اعتبار</h2><div class="scroll-x"><table class="list"><thead><tr><th>زمان</th><th>نوع</th><th>تغییر</th><th>مانده</th><th>توضیح</th></tr></thead><tbody>{% for entry in entries %}<tr><td>{{ entry.created_at|jdate:"time" }}</td><td>{{ entry.get_kind_display }}</td><td>{{ entry.amount|floatformat:"0"|fa }}</td><td>{{ entry.balance_after|floatformat:"0"|fa }}</td><td>{{ entry.note }}</td></tr>{% empty %}<tr><td colspan="5" class="empty">تراکنشی وجود ندارد.</td></tr>{% endfor %}</tbody></table></div></section>
-<section class="card stack"><h2>مصرف جست‌وجوها</h2><div class="scroll-x"><table class="list"><thead><tr><th>زمان</th><th>وضعیت</th><th>کنارگذاشته‌شده</th><th>کسرشده</th><th>توکن ورودی / خروجی / پرسش</th></tr></thead><tbody>{% for item in reservations %}<tr><td>{{ item.created_at|jdate:"time" }}</td><td>{{ item.get_status_display }}</td><td>{{ item.amount|floatformat:"0"|fa }}</td><td>{{ item.charged|floatformat:"0"|fa }}</td><td>{{ item.prompt_tokens|fa }} / {{ item.completion_tokens|fa }} / {{ item.embedding_tokens|fa }}</td></tr>{% empty %}<tr><td colspan="5" class="empty">مصرفی ثبت نشده است.</td></tr>{% endfor %}</tbody></table></div></section>{% endblock %}
+<section class="card stack"><h2>گردش اعتبار</h2><div class="scroll-x"><table class="list"><thead><tr><th>زمان</th><th>نوع</th><th>تغییر</th><th>مانده</th><th>توضیح</th></tr></thead><tbody>{% for entry in entries %}<tr><td>{{ entry.created_at|jdate:"time" }}</td><td>{{ entry.get_kind_display }}</td><td>{{ entry.amount|floatformat:"-6"|fa }}</td><td>{{ entry.balance_after|floatformat:"-6"|fa }}</td><td>{{ entry.note }}</td></tr>{% empty %}<tr><td colspan="5" class="empty">تراکنشی وجود ندارد.</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="card stack">
+  <h2>مصرف جست‌وجوها</h2>
+  <div class="scroll-x"><table class="list">
+    <thead><tr><th>زمان</th><th>وضعیت</th><th>اعتبار کسرشده</th><th>توکن ورودی / خروجی / پرسش</th><th>هزینهٔ ورودی / خروجی / پرسش (دلار)</th><th>مجموع دلار</th></tr></thead>
+    <tbody>{% for item in reservations %}<tr>
+      <td>{{ item.created_at|jdate:"time" }}</td><td>{{ item.get_status_display }}</td><td>{{ item.charged|floatformat:"-6"|fa }}</td>
+      <td>{{ item.prompt_tokens|fa }} / {{ item.completion_tokens|fa }} / {{ item.embedding_tokens|fa }}</td>
+      {% if item.cost_usd is not None %}
+      <td><bdi dir="ltr">{{ item.input_cost_usd|floatformat:"-12u" }} / {{ item.output_cost_usd|floatformat:"-12u" }} / {{ item.embedding_cost_usd|floatformat:"-12u" }}</bdi></td>
+      <td><bdi dir="ltr">${{ item.cost_usd|floatformat:"-12u" }}</bdi></td>
+      {% else %}<td>—</td><td>—</td>{% endif %}
+    </tr>{% empty %}<tr><td colspan="6" class="empty">مصرفی ثبت نشده است.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>{% endblock %}

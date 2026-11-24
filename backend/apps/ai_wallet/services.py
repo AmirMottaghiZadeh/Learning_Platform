@@ -15,6 +15,7 @@ from .models import CreditAttempt, CreditEntry, CreditPackage, CreditReservation
 ZERO = Decimal("0")
 PRECISION = Decimal("0.000001")
 MILLION = Decimal("1000000")
+MAX_CHARGE = Decimal("9999999999999999.999999")
 RATES = ("input_per_million", "cached_input_per_million", "cache_write_per_million",
          "cache_write_12h_per_million", "output_per_million", "embedding_per_million")
 
@@ -51,6 +52,7 @@ def billing_enabled():
 
 def _snapshot(config):
     return {"priced": config.enabled, "revision": config.revision, "model_signature": config.model_signature,
+            "rate_unit": "usd", "usd_per_1000_credits": str(config.usd_per_1000_credits),
             **{key: str(getattr(config, key)) if getattr(config, key) is not None else None for key in RATES}}
 
 
@@ -99,7 +101,8 @@ def start_search(user, job_id):
 
 def _totals(attempts, pricing):
     totals = {"prompt_tokens": 0, "completion_tokens": 0, "embedding_tokens": 0, "cached_tokens": 0, "cache_write_tokens": 0}
-    unknown, cost = 0, ZERO
+    unknown = 0
+    input_cost = output_cost = embedding_cost = ZERO
     input_rate = Decimal(pricing.get("input_per_million") or "0")
     cached_rate = Decimal(pricing.get("cached_input_per_million") or str(input_rate))
     write_rate = Decimal(pricing.get("cache_write_per_million") or str(input_rate))
@@ -112,7 +115,7 @@ def _totals(attempts, pricing):
         prompt = usage.get("prompt_tokens", 0)
         if attempt.kind == "embedding":
             totals["embedding_tokens"] += prompt
-            cost += Decimal(prompt) * Decimal(pricing.get("embedding_per_million") or "0") / MILLION
+            embedding_cost += Decimal(prompt) * Decimal(pricing.get("embedding_per_million") or "0") / MILLION
         else:
             cached = min(prompt, usage.get("cached_tokens", 0))
             written = min(prompt-cached, usage.get("cache_write_tokens", 0))
@@ -122,10 +125,15 @@ def _totals(attempts, pricing):
             totals["completion_tokens"] += completion
             totals["cached_tokens"] += cached
             totals["cache_write_tokens"] += written
-            cost += (Decimal(prompt-cached-written)*input_rate + Decimal(cached)*cached_rate
-                     + Decimal(written-written_12h)*write_rate + Decimal(written_12h)*write_12h_rate
-                     + Decimal(completion)*Decimal(pricing.get("output_per_million") or "0")) / MILLION
-    return totals, unknown, min(cost,Decimal("9999999999999999.999999")).quantize(PRECISION, rounding=ROUND_CEILING)
+            input_cost += (Decimal(prompt-cached-written)*input_rate + Decimal(cached)*cached_rate
+                           + Decimal(written-written_12h)*write_rate + Decimal(written_12h)*write_12h_rate) / MILLION
+            output_cost += Decimal(completion) * Decimal(pricing.get("output_per_million") or "0") / MILLION
+    cost = input_cost + output_cost + embedding_cost
+    if pricing.get("rate_unit") == "usd":
+        totals.update(input_cost_usd=input_cost, output_cost_usd=output_cost, embedding_cost_usd=embedding_cost)
+        cost = cost * 1000 / Decimal(pricing["usd_per_1000_credits"])
+    # Older in-flight reservations already have rates expressed in credits.
+    return totals, unknown, min(cost, MAX_CHARGE).quantize(PRECISION, rounding=ROUND_CEILING)
 
 
 @transaction.atomic
@@ -179,7 +187,7 @@ def settle(job_id, *, outcome="", reviewed_charge=None, actor=None, note=""):
         if actor is None or not billing_admin(actor) or reservation.status != "pending" or not note.strip():
             raise PlatformAPIError("این مصرف قابل تسویهٔ دستی نیست.", code="INVALID", status_code=400)
         charge = Decimal(reviewed_charge)
-        if not charge.is_finite() or not ZERO <= charge <= Decimal("9999999999999999.999999"):
+        if not charge.is_finite() or not ZERO <= charge <= MAX_CHARGE:
             raise PlatformAPIError("مبلغ مصرف معتبر نیست.", code="INVALID", status_code=400)
     wallet = CreditWallet.objects.select_for_update().get(pk=reservation.wallet_id)
     delta = charge - reservation.charged
