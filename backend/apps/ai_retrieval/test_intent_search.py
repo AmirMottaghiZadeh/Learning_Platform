@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
 from apps.ai_lab.test_hybrid_agent import reference
+from apps.ai_lab.workflow import apply_event
 from . import embeddings, intent_search
 
 
@@ -49,3 +50,28 @@ class IntentSearchTests(SimpleTestCase):
                 rows, _, missing = intent_search.collect(request, "query", "question", profile, {}, [])
                 self.assertEqual([row.id for row in rows], ["P1"])
                 self.assertEqual(missing, gap)
+
+    def test_progress_events_are_accepted_by_the_live_workflow(self):
+        # The worker applies every observed event to the job workflow; a sections
+        # milestone for an unannounced article aborted the whole paid search.
+        profile = {"kind": "disease_question", "objectives": ["treatment"], "regimen_requested": False,
+                   "focus": "management", "passage_queries": ["usual management"]}
+        sections = {f"S{n}": SimpleNamespace(pk=f"section-{n}", source_id=f"H{n}", heading="Treatment",
+                                             heading_path=["Treatment"], article=SimpleNamespace(source_id=article))
+                    for n, article in [(1, "10"), (2, "20")]}
+        workflow = []
+        def observe(event):
+            nonlocal workflow
+            workflow = apply_event(workflow, event)
+        for previous in [(), [replace(reference(9), ordinal=1)]]:
+            with self.subTest(followup=bool(previous)), patch.object(intent_search, "candidate_articles", return_value=(
+                    {"10": SimpleNamespace(title="First"), "20": SimpleNamespace(title="Second")}, {"code": None}, 0)), patch.object(
+                    intent_search, "section_options", return_value=(sections, [["S1", "10", "Treatment"], ["S2", "20", "Treatment"]])), patch.object(
+                    intent_search, "paragraph_options", return_value=[replace(reference(1), ordinal=1)]), patch.object(
+                    intent_search, "decide", side_effect=[{"ids": ["10", "20"]}, {"ids": ["S1", "S2"]},
+                    {"ranges": [["R1", "R1"]], "missing_aspect": None}]):
+                intent_search.collect(MagicMock(), "query", "question", profile, {}, [], previous=previous, observe=observe)
+        articles = workflow[0]["articles"]
+        self.assertEqual([(a["id"], a["title"], a["phase"]) for a in articles],
+                         [("10", "First", "sections"), ("20", "Second", "sections")])
+        self.assertEqual([s["heading"] for s in articles[0]["sections"]], ["Treatment"])

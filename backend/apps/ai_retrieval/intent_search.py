@@ -227,6 +227,9 @@ def collect(retriever, query, question, profile, arguments, stages, *, previous=
         headings = [{"id": str(s.pk), "heading": " › ".join(s.heading_path) or s.heading}
                     for s in chosen if s.article.source_id == key]
         if headings:
+            # The job workflow only accepts section milestones for an announced article.
+            observe({"type": "article", "part_index": 0, "question_fa": question, "article_id": key,
+                     "title": titles[key]})
             observe({"type": "sections", "part_index": 0, "question_fa": question, "article_id": key,
                      "sections": headings, "paragraph_count": 0})
     budget = settings.AI_LAB_HYBRID_CONTEXT_TOKENS
