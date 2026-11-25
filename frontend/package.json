@@ -15,6 +15,10 @@
     "test:reference-timing": "node --test scripts/test-reference-timing.cjs",
     "test:reference-answer": "node --test scripts/test-reference-answer.cjs",
     "test:input-zoom": "node scripts/test-input-zoom.cjs",
+    "test:nav-glyph": "node --test scripts/test-nav-glyph.cjs",
+    "test:reference-service-worker": "node --test scripts/test-reference-service-worker.cjs",
+    "test:reference-stream": "node --test scripts/test-reference-stream.cjs",
+    "test:reference-stream:browser": "node scripts/test-reference-stream-browser.cjs",
     "test:reference-answer:browser": "node scripts/test-reference-answer-browser.cjs",
     "benchmark:reference-browser": "node scripts/benchmark-reference-browser.cjs"
   },

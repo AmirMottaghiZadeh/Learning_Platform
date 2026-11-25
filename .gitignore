@@ -99,6 +99,9 @@ celerybeat-schedule
 celerybeat-schedule.*
 celerybeat.pid
 
+# Local code-analysis cache
+.codesight-cache.json
+
 # Playwright MCP browser output (screenshots, snapshots, console logs)
 .playwright-mcp/
 
