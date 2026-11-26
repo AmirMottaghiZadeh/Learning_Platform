@@ -11,6 +11,16 @@ def run_search(job_id):
     execute(job_id)
 
 
+@shared_task(name="ai_lab.promote_queue",max_retries=0,ignore_result=True)
+def promote_queue():
+    """Move waiting searches onto slots that freed up.
+
+    Worker completions call promote() directly; this periodic task is the
+    safety net for a slot freed by a crashed worker or an expired lease."""
+    from .runner import promote
+    return promote()
+
+
 def enqueue_search(job_id):
     """AI is always background work, even when other local tasks run eagerly."""
     from .provider import ProviderError

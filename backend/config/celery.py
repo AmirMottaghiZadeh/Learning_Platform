@@ -39,7 +39,17 @@ def configure_runtime(sender, **kwargs):
     conf.task_routes = {
         "accounts.send_password_reset_email": {"queue": "default"},
         "ai_lab.run_search": {"queue": "ai_search"},
+        "ai_lab.promote_queue": {"queue": "ai_search"},
         "ai_retrieval.build_index": {"queue": "ai_indexing"},
+    }
+    # Drains the waiting queue when a slot frees without a completion event
+    # (crashed worker, expired lease). Deployments without a beat scheduler
+    # still promote on submit and on every finished search.
+    conf.beat_schedule = {
+        "ai-lab-promote-queue": {
+            "task": "ai_lab.promote_queue",
+            "schedule": settings.AI_LAB_QUEUE_PROMOTE_SECONDS,
+        },
     }
 
 

@@ -590,9 +590,21 @@ AI_LAB_HTTP_DRAIN_SECONDS = config("AI_LAB_HTTP_DRAIN_SECONDS", default=1, cast=
 AI_LAB_STREAM_FLUSH_SECONDS = config("AI_LAB_STREAM_FLUSH_SECONDS", default=0.1, cast=float)
 AI_LAB_CANCEL_POLL_SECONDS = config("AI_LAB_CANCEL_POLL_SECONDS", default=0.25, cast=float)
 AI_LAB_QUEUE_MAX_WAIT_SECONDS = config("AI_LAB_QUEUE_MAX_WAIT_SECONDS", default=600, cast=int)
+# A search that finds every slot busy waits here instead of being refused.
+# Past this many waiting searches a new one is told the queue is full.
+AI_LAB_QUEUE_MAX_LENGTH = config("AI_LAB_QUEUE_MAX_LENGTH", default=200, cast=int)
+# Rough seconds per search, used only to tell a waiting reader how long the
+# queue ahead of it takes. Telemetry records the real figure.
+AI_LAB_QUEUE_ETA_SECONDS = config("AI_LAB_QUEUE_ETA_SECONDS", default=20, cast=int)
+# How often the periodic task retries a freed slot for the waiting queue.
+AI_LAB_QUEUE_PROMOTE_SECONDS = config("AI_LAB_QUEUE_PROMOTE_SECONDS", default=5, cast=int)
 AI_LAB_RESPONSE_CACHE_ENABLED = config("AI_LAB_RESPONSE_CACHE_ENABLED", default=True, cast=bool)
 AI_LAB_RESPONSE_CACHE_TTL_SECONDS = config("AI_LAB_RESPONSE_CACHE_TTL_SECONDS", default=300, cast=int)
 AI_LAB_MAX_CONCURRENT_JOBS = config("AI_LAB_MAX_CONCURRENT_JOBS", default=2, cast=int)
+# Hard ceiling on the number of slot names. It used to be the literal 16 in
+# code; a deployment that sizes its workers and provider quota for more can
+# raise it without touching code.
+AI_LAB_MAX_CONCURRENT_SLOTS = config("AI_LAB_MAX_CONCURRENT_SLOTS", default=64, cast=int)
 AI_LAB_ROLLOUT_PERCENT = config("AI_LAB_ROLLOUT_PERCENT", default=0, cast=int)
 AI_LAB_RELEASE_APPROVAL_FILE = config("AI_LAB_RELEASE_APPROVAL_FILE", default="")
 AI_LAB_FRONTEND_BUNDLE_SHA256 = config("AI_LAB_FRONTEND_BUNDLE_SHA256", default="").strip()

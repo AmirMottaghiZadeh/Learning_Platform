@@ -28,7 +28,7 @@ from .models import SearchRun
 from . import telemetry
 from .workflow import apply_event
 
-_executor = ThreadPoolExecutor(max_workers=max(1, min(16, settings.AI_LAB_MAX_CONCURRENT_JOBS)), thread_name_prefix="reference-lab")
+_executor = ThreadPoolExecutor(max_workers=max(1, min(settings.AI_LAB_MAX_CONCURRENT_SLOTS, settings.AI_LAB_MAX_CONCURRENT_JOBS)), thread_name_prefix="reference-lab")
 _instance = uuid4().hex
 TTL = jobs.TTL
 
@@ -333,7 +333,7 @@ class AskView(APIView):
                                    details={"job_id": previous["job_id"]} if previous else {})
         slot = run = None
         try:
-            for n in range(max(1, min(16, settings.AI_LAB_MAX_CONCURRENT_JOBS))):
+            for n in range(max(1, min(settings.AI_LAB_MAX_CONCURRENT_SLOTS, settings.AI_LAB_MAX_CONCURRENT_JOBS))):
                 candidate = f"ai-lab:slot:{n}"
                 persisted = SearchRun.objects.filter(slot=candidate, status__in=["admitting", "queued", "running"]).first()
                 if persisted:

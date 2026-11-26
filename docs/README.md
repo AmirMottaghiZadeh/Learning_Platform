@@ -59,6 +59,8 @@
 | ۴۷ | [47-smart-search-server-step-by-step.fa.md](47-smart-search-server-step-by-step.fa.md) | راهنمای واحد اجرای سرور با وضعیت فعلی، رفع کرش رمز، محل هر دستور و ادامه تا انتقال/آزمون | مالک پروژه، مسئول استقرار |
 | ۴۸ | [48-smart-search-runflare-incidents.fa.md](48-smart-search-runflare-incidents.fa.md) | گزارش رخدادهای رانفلر: رمز و Redis/worker، import کامل، شکست‌های HNSW، سهمیهٔ دیسک، ری‌استارت و ناهماهنگی کاتالوگ PostgreSQL | مالک پروژه، مسئول استقرار و نگهداری |
 | ۴۹ | [49-design-prototype-decisions.fa.md](49-design-prototype-decisions.fa.md) | سند ادغام‌شدهٔ آرشیو طراحی: طرح انتخاب‌شده و کد نهایی برای دوز اطفال، سرچ هوشمند، جدول و پیشنهاد UpToDate، پشتیبانی و مفاهیم سایت | مالک محصول، توسعه‌دهنده |
+| ۵۰ | [50-smart-search-capacity-queue.fa.md](50-smart-search-capacity-queue.fa.md) | ظرفیت هم‌زمان، صف انتظار، اندازهٔ زیرساخت و تست بار سرچ هوشمند |
+| ۵۱ | [51-smart-search-capacity-runbook.fa.md](51-smart-search-capacity-runbook.fa.md) | چک‌لیست گام‌به‌گام اجرای ظرفیت و صف روی سرور |
 | — | [search/README.md](search/README.md) | مسیر جست‌وجوی عادی و هوشمند، گزارش‌های زمان‌گیری و سابقهٔ طرح حذف‌شده | مالک محصول، توسعه‌دهنده |
 | — | [اجرای معماری tagging و پیوندها](search/smart-search-tag-scoped-implementation-2026-11-18.fa.md) | اصلاح مسیر بحرانی، دامنهٔ محدود منابع، نقشهٔ پیوند آماده، استریم و فرمان‌های استقرار | مالک پروژه، توسعه‌دهنده، مسئول انتشار |
 | — | [گلوگاه‌های پیاده‌سازی سرچ هوشمند](search/smart-search-implementation-latency-issues-2026-11-18.fa.md) | فراخوانی‌های سریالی، FTS کند، نگهداشت اتصال، هزینهٔ انتشار استریم و ترتیب اصلاح با شواهد ۱۸ نوامبر | مالک پروژه، توسعه‌دهنده، مسئول نگهداری |

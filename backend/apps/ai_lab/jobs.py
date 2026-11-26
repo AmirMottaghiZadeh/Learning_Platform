@@ -15,7 +15,7 @@ MAX_FINDINGS = 48
 
 def release(job_id, user_id, slot=None):
     cache = caches["throttle"]
-    for key in [f"ai-lab:user:{user_id}", *([slot] if slot else [f"ai-lab:slot:{n}" for n in range(max(1, min(16, settings.AI_LAB_MAX_CONCURRENT_JOBS)))])]:
+    for key in [f"ai-lab:user:{user_id}", *([slot] if slot else [f"ai-lab:slot:{n}" for n in range(max(1, min(settings.AI_LAB_MAX_CONCURRENT_SLOTS, settings.AI_LAB_MAX_CONCURRENT_JOBS)))])]:
         try:
             if cache.get(key) == job_id:
                 cache.delete(key)
@@ -79,7 +79,37 @@ def read(job_id, user_id, *, verify_sql=True):
                 SearchRun.objects.filter(pk=job_id,owner_id=user_id,status__in=["admitting","queued","running"]).update(
                     status="failed",finished_at=timezone.now(),encrypted_result=encode(public(record)))
             release(str(job_id), user_id)
+    if record.get("status") == "running" and record.get("slot") == "" and record.get("stage") == "queued":
+        # A search waiting for capacity: tell the reader where it stands, so
+        # the app can show "third in line, about 40s" instead of a blank spin.
+        record = {**record, **queued_numbers(str(job_id), record.get("created_at"))}
     return record
+
+
+def queued_numbers(job_id, created_at):
+    cache = caches["throttle"]
+    key = f"ai-lab:qpos:{job_id}"
+    try:
+        cached = cache.get(key)
+    except Exception:
+        cached = None
+    if isinstance(cached, dict):
+        return cached
+    from datetime import datetime, timezone as dt_timezone
+    from .models import SearchRun
+    try:
+        created = datetime.fromtimestamp(float(created_at), tz=dt_timezone.utc)
+        position = SearchRun.objects.filter(status="queued", slot="", created_at__lt=created).count() + 1
+    except (TypeError, ValueError, OverflowError):
+        position = 1
+    capacity = max(1, min(settings.AI_LAB_MAX_CONCURRENT_SLOTS, settings.AI_LAB_MAX_CONCURRENT_JOBS))
+    numbers = {"queue_position": position,
+               "eta_seconds": -(-position // capacity) * settings.AI_LAB_QUEUE_ETA_SECONDS}
+    try:
+        cache.set(key, numbers, 3)
+    except Exception:
+        pass
+    return numbers
 
 
 def active(user_id):
@@ -110,7 +140,7 @@ def active(user_id):
 
 
 def public(record, after_revision=None):
-    keys = {"status", "stage", "result", "error", "revision", "findings", "findings_limited", "first_result_ms", "workflow", "stages_seen", "metrics", "feedback_available", "answer_drafts"}
+    keys = {"status", "stage", "result", "error", "revision", "findings", "findings_limited", "first_result_ms", "workflow", "stages_seen", "metrics", "feedback_available", "answer_drafts", "queue_position", "eta_seconds"}
     if record.get("status") == "running" and after_revision is not None and str(record.get("revision")) == after_revision:
         keys -= {"findings", "findings_limited", "workflow", "stages_seen"}
     return {"cancellable": record.get("pipeline") == "hybrid-v1", **{k: v for k, v in record.items() if k in keys}}

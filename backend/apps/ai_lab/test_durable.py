@@ -234,8 +234,12 @@ class DurableSearchTests(TestCase):
         third=get_user_model().objects.create_user("stream-third",is_staff=True,is_superuser=True)
         self.client.force_authenticate(third)
         response=self.submit(request_id="third-request")
-        self.assertEqual(response.status_code,429)
-        self.assertEqual(SearchRun.objects.filter(status__in=["queued","running"]).count(),2)
+        # Past the persisted capacity the search waits in line (202) instead of
+        # being refused; it must not take a slot or reach a worker.
+        self.assertEqual(response.status_code,202)
+        self.assertEqual(response.data["queue_position"],1)
+        self.assertEqual(SearchRun.objects.filter(status__in=["queued","running"],slot__gt="").count(),2)
+        self.assertEqual(SearchRun.objects.filter(status="queued",slot="").count(),1)
         self.assertEqual(self.enqueue.call_count,2)
 
     @override_settings(AI_LAB_LOCAL_LEXICAL_PILOT=True)
