@@ -3,6 +3,8 @@ import { Pressable, ScrollView, View } from "react-native";
 
 import { MedscapeArticleListItem } from "@/api/types";
 import { AppText } from "@/components/primitives/AppText";
+import { LetterBadge } from "@/components/medscape/LetterBadge";
+import { useLang } from "@/i18n/LanguageProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 import { useNavClearance } from "@/components/BottomNav";
 
@@ -60,6 +62,7 @@ export function AlphabeticalArticleList({
 }) {
   const navClearance = useNavClearance();
   const { colors } = useTheme();
+  const { t, n, row } = useLang();
   const scrollRef = useRef<ScrollView>(null);
 
   const sections = useMemo(() => groupAlphabetically(items), [items]);
@@ -81,24 +84,28 @@ export function AlphabeticalArticleList({
   }
 
   return (
-    <View style={{ flex: 1, flexDirection: "row", minHeight: 0 }}>
+    <View style={{ flex: 1, flexDirection: row, minHeight: 0 }}>
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: navClearance + 24, paddingRight: 10 }}
+        contentContainerStyle={{ paddingBottom: navClearance + 24, paddingEnd: 6 }}
         showsVerticalScrollIndicator={false}
       >
         {sections.map((section) => (
           <View key={section.title}>
-            <View style={{ height: SECTION_HEADER_HEIGHT, justifyContent: "center", backgroundColor: colors.appBg }}>
-              <AppText
-                weight="800"
-                size={12}
-                muted
-                style={{ letterSpacing: 0.4, textAlign: "left", writingDirection: "ltr" }}
-              >
-                {section.title}
-              </AppText>
+            <View
+              style={{
+                height: SECTION_HEADER_HEIGHT,
+                justifyContent: "center",
+                backgroundColor: colors.appBg,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <LetterBadge
+                letter={section.title}
+                countLabel={`${n(section.data.length)} ${t("medscapeArticleCount")}`}
+              />
             </View>
             {section.data.map((article) => (
               <Pressable key={article.slug} onPress={() => onPressItem(article.slug)}>
@@ -125,7 +132,7 @@ export function AlphabeticalArticleList({
         ))}
       </ScrollView>
 
-      <View style={{ width: 18, alignItems: "center", paddingTop: 6, gap: 1 }}>
+      <View style={{ width: 20, alignItems: "center", paddingTop: 6, gap: 1, paddingHorizontal: 2 }}>
         {ALPHABET.map((letter) => {
           const enabled = availableLetters.has(letter);
           return (

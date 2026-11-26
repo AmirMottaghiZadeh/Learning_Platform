@@ -220,6 +220,8 @@ export const strings = {
     medscapeRecentlyUpdated: "به‌روزرسانی‌های اخیر",
     medscapeAllArticlesAZ: "همهٔ مقالات · A–Z",
     medscapeTreeUnavailable: "فهرست دسته‌ها بارگذاری نشد.",
+    browseTopics: "موضوع‌ها",
+    browseNew: "تازه‌ها",
 
     articleStartReading: "شروع مطالعه",
     articleContinueFrom: "ادامهٔ مطالعه از بخش",
@@ -692,6 +694,8 @@ export const strings = {
     medscapeRecentlyUpdated: "Recently Updated",
     medscapeAllArticlesAZ: "All Articles · A–Z",
     medscapeTreeUnavailable: "The category list couldn't be loaded.",
+    browseTopics: "Topics",
+    browseNew: "New",
 
     articleStartReading: "Start reading",
     articleContinueFrom: "Continue from section",

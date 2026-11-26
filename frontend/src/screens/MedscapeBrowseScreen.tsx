@@ -1,16 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
-import { TextInput } from "@/components/primitives/TextInput";
 
 import { ReferenceFavorites } from "@/components/article/ReferenceFavorites";
 import { medscapeApi } from "@/api/endpoints";
 import { MedscapeArticleListItem, MedscapeKind } from "@/api/types";
+import { BrowseSearch } from "@/components/medscape/BrowseSearch";
+import { FavoritesChip } from "@/components/medscape/FavoritesChip";
+import { TopicRail } from "@/components/medscape/TopicRail";
 import { LoadFailed } from "@/components/LoadFailed";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
-import { IconImage } from "@/components/primitives/IconImage";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useDebounced } from "@/hooks/useDebounced";
@@ -19,35 +20,27 @@ import { StringKey } from "@/i18n/strings";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { TourTarget, useTour } from "@/tour/TourContext";
-import { fontFamily } from "@/theme/fonts";
 import { spacing } from "@/theme/tokens";
-import { specialtyIcon } from "@/utils/specialtyIcons";
-
-function monogram(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
 
 function titleCase(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** The "diseasesConditions" screen's browse UX: category tabs over a
- * specialty grid. There are ~3200 disease articles, too many to fetch as
- * one list and group client-side (the calculators approach), so the tree
- * (category -> specialty -> count) loads up front; a specialty's own
- * article list loads lazily on its own screen (MedscapeSpecialtyScreen),
- * once that specialty tile is opened, as an A-Z index -- replacing what used
- * to be an inline accordion-of-an-accordion, which turned into an
- * unbounded, un-scannable flat list once a specialty had more than a
- * handful of articles (Dermatology alone has 400+).
+/** The "diseasesConditions" screen's browse UX: search first, then every
+ * specialty of the active category as a topic card. There is no second grid
+ * underneath -- the cards are the list, and tapping one opens that specialty's
+ * own A-Z article screen.
  *
- * Guidelines use a different screen (MedscapeGuidelinesScreen): they have no
- * specialty taxonomy, just three flat content-type buckets, so this
- * category-tabs-over-a-grid shape doesn't apply to them. */
+ * There are ~3200 disease articles, too many to fetch as one list and group
+ * client-side (the calculators approach), so the tree (category -> specialty
+ * -> count) loads up front; a specialty's own article list loads lazily on its
+ * own screen (MedscapeSpecialtyScreen).
+ *
+ * Order of the page follows design option 5 (2026-11-26): the search and the
+ * topics are the reason the reader came, so they sit directly under the header,
+ * and saved articles are a header chip instead of a block above them. */
 export function MedscapeBrowseScreen() {
-  const { t, row } = useLang();
+  const { t, n } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
@@ -58,6 +51,7 @@ export function MedscapeBrowseScreen() {
   const [q, setQ] = useState(typeof initialQuery === "string" ? initialQuery : "");
   const query = useDebounced(q.trim());
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
 
   const { data: tree, isLoading, isError, isFetching: treeFetching, refetch: refetchTree } = useQuery({
     queryKey: ["medscape-tree", kind],
@@ -71,7 +65,7 @@ export function MedscapeBrowseScreen() {
   });
 
   useEffect(() => {
-    if (tree && tree.length > 0 && !tree.some((n) => n.category === activeCategory)) {
+    if (tree && tree.length > 0 && !tree.some((node) => node.category === activeCategory)) {
       setActiveCategory(tree[0].category);
     }
   }, [tree, activeCategory]);
@@ -84,48 +78,37 @@ export function MedscapeBrowseScreen() {
 
   if (isLoading) return <LoadingState />;
 
-  const node = (tree ?? []).find((n) => n.category === activeCategory) ?? (tree ?? [])[0];
+  const node = (tree ?? []).find((item) => item.category === activeCategory) ?? (tree ?? [])[0];
   const specialties = node ? [...node.specialties].sort((a, b) => b.count - a.count) : [];
+  const searching2 = query.length >= 2;
 
   return (
     <Screen>
-      <ScreenChrome title={t(titleKey)} onBack={goBack} tour="diseases" />
-      {!q.trim() ? <ReferenceFavorites kind="disease" /> : null}
+      <ScreenChrome
+        title={t(titleKey)}
+        onBack={goBack}
+        tour="diseases"
+        actions={
+          <FavoritesChip
+            kind="disease"
+            open={favoritesOpen}
+            onToggle={() => setFavoritesOpen((open) => !open)}
+          />
+        }
+      />
 
-      <TourTarget id="dis.search" style={{ marginBottom: spacing.lg }}>
-      <View
-        style={{
-          flexDirection: row,
-          alignItems: "center",
-          gap: 8,
-          backgroundColor: colors.inputBg,
-          boxShadow: colors.cardShadow,
-          borderRadius: 14,
-          paddingHorizontal: 14,
-          paddingVertical: 12,
-        }}
-      >
-        <AppText muted>⌕</AppText>
-        <TextInput
+      {favoritesOpen && !q.trim() ? <ReferenceFavorites kind="disease" /> : null}
+
+      <TourTarget id="dis.search" style={{ marginBottom: spacing.md }}>
+        <BrowseSearch
           value={q}
           onChangeText={setQ}
           placeholder={t("medscapeSearchPlaceholder")}
-          placeholderTextColor={colors.muted}
-          style={{
-            flex: 1,
-            fontFamily: fontFamily("600"),
-            fontSize: 13,
-            color: colors.ink,
-            textAlign: "left",
-            writingDirection: "ltr",
-            padding: 0,
-          }}
+          busy={searching}
         />
-        {searching ? <AppText muted size={12}>…</AppText> : null}
-      </View>
       </TourTarget>
 
-      {query.length >= 2 ? (
+      {searching2 ? (
         !searching && (searchResults?.length ?? 0) === 0 ? (
           <AppText muted weight="600" size={12} style={{ paddingVertical: 8 }}>
             {t("medscapeEmptyTitle")} — {t("medscapeEmptySub")}
@@ -142,11 +125,15 @@ export function MedscapeBrowseScreen() {
       ) : (
         <TourTarget id="dis.specialties" style={{ gap: 14 }}>
           {(tree ?? []).length > 1 ? (
-            <View style={{ flexDirection: row, backgroundColor: colors.pageBg, borderRadius: 12, padding: 3 }}>
-              {(tree ?? []).map((n) => {
-                const active = n.category === activeCategory;
+            <View style={{ flexDirection: "row", backgroundColor: colors.pageBg, borderRadius: 12, padding: 3 }}>
+              {(tree ?? []).map((item) => {
+                const active = item.category === activeCategory;
                 return (
-                  <Pressable key={n.category} onPress={() => setActiveCategory(n.category)} style={{ flex: 1 }}>
+                  <Pressable
+                    key={item.category}
+                    onPress={() => setActiveCategory(item.category)}
+                    style={{ flex: 1 }}
+                  >
                     <View
                       style={{
                         alignItems: "center",
@@ -156,7 +143,7 @@ export function MedscapeBrowseScreen() {
                       }}
                     >
                       <AppText weight={active ? "800" : "700"} size={12} color={active ? colors.onAccent : colors.muted}>
-                        {titleCase(n.category)}
+                        {titleCase(item.category)}
                       </AppText>
                     </View>
                   </Pressable>
@@ -165,58 +152,12 @@ export function MedscapeBrowseScreen() {
             </View>
           ) : null}
 
-          {/* Half-width cells with the gutter as padding: two always share a row.
-              A 48% width plus a fixed gap no longer fits below ~290px (a folded
-              Galaxy Fold, a phone with a large zoom) and drops to one column. */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 10, marginHorizontal: -5 }}>
-            {specialties.map((sp) => (
-              <Pressable
-                key={sp.name}
-                onPress={() => openSpecialty(node!.category, sp.name)}
-                style={{ width: "50%", paddingHorizontal: 5 }}
-              >
-                <View
-                  style={{
-                    backgroundColor: colors.cardBg,
-                    borderRadius: 14,
-                    boxShadow: colors.cardShadow,
-                    padding: 13,
-                    gap: 8,
-                  }}
-                >
-                  {specialtyIcon(sp.name) ? (
-                    <IconImage name={specialtyIcon(sp.name)!} size={34} />
-                  ) : (
-                    <View
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 10,
-                        backgroundColor: colors.accent + "1A",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <AppText weight="800" size={11} color={colors.accent}>
-                        {monogram(sp.name)}
-                      </AppText>
-                    </View>
-                  )}
-                  <AppText
-                    weight="800"
-                    size={12.5}
-                    numberOfLines={2}
-                    style={{ lineHeight: 16, textAlign: "left", writingDirection: "ltr" }}
-                  >
-                    {sp.name}
-                  </AppText>
-                  <AppText muted weight="700" size={11} style={{ textAlign: "left", writingDirection: "ltr" }}>
-                    {sp.count} {t("medscapeArticleCount")}
-                  </AppText>
-                </View>
-              </Pressable>
-            ))}
-          </View>
+          <TopicRail
+            topics={specialties}
+            onSelect={(name) => node && openSpecialty(node.category, name)}
+            label={t("browseTopics")}
+          />
+
         </TourTarget>
       )}
     </Screen>

@@ -1,16 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { TextInput } from "@/components/primitives/TextInput";
 
 import { ReferenceFavorites } from "@/components/article/ReferenceFavorites";
 import { medscapeApi } from "@/api/endpoints";
 import { MedscapeArticleListItem } from "@/api/types";
 import { AlphabeticalArticleList } from "@/components/AlphabeticalArticleList";
+import { BrowseSearch } from "@/components/medscape/BrowseSearch";
+import { FavoritesChip } from "@/components/medscape/FavoritesChip";
+import { TopicRail } from "@/components/medscape/TopicRail";
 import { LoadFailed } from "@/components/LoadFailed";
 import { ScreenChrome } from "@/components/ScreenChrome";
 import { AppText } from "@/components/primitives/AppText";
-import { Input } from "@/components/primitives/Input";
 import { LoadingState } from "@/components/primitives/LoadingState";
 import { Screen } from "@/components/primitives/Screen";
 import { useDebounced } from "@/hooks/useDebounced";
@@ -18,7 +19,6 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { useNav } from "@/store/nav";
 import { useTheme } from "@/theme/ThemeProvider";
 import { TourTarget, useTour } from "@/tour/TourContext";
-import { fontFamily } from "@/theme/fonts";
 import { layout, spacing } from "@/theme/tokens";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -30,20 +30,22 @@ function formatMonthYear(iso: string): string {
 
 /** Guidelines have no specialty taxonomy the way diseases do -- the source
  * gives three flat content-type buckets (Guidelines/Expert Insights/Primary
- * Care Hacks) with no secondary grouping, so the disease browse screen's
- * category-tabs-over-a-specialty-grid doesn't apply here. This screen goes
- * straight from type tabs to one flat A-Z list, with a "Recently Updated"
- * spotlight above it -- the one genuine freshness signal this source gives
- * (about a quarter of guideline-bucket articles carry a dated change-log
- * section), which matters more for guidelines than alphabetical browsing
- * alone. Absent for the other two buckets, which have no such section. */
+ * Care Hacks) with no secondary grouping.
+ *
+ * The screen is list-first (design option 5, 2026-11-26): search, then the
+ * three buckets as topic cards with their article counts, then the A-Z list.
+ * Saved articles are a header chip rather than a block, and the "recently
+ * updated" spotlight is collapsed behind a chip -- both used to sit above the
+ * search and push the list itself below the fold on a phone. */
 export function MedscapeGuidelinesScreen() {
-  const { t, row, isFa } = useLang();
+  const { t, n } = useLang();
   const { colors } = useTheme();
   const goBack = useNav((s) => s.goBack);
   const navigate = useNav((s) => s.navigate);
 
   const [activeSpecialty, setActiveSpecialty] = useState<string | null>(null);
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [showRecent, setShowRecent] = useState(false);
   const initialQuery = useNav((s) => s.params.query);
   const [q, setQ] = useState(typeof initialQuery === "string" ? initialQuery : "");
   const plannedTopic = typeof initialQuery === "string" && initialQuery.trim().length > 0;
@@ -99,11 +101,11 @@ export function MedscapeGuidelinesScreen() {
   useTour("guidelines", !itemsLoading && all.length > 0);
 
   if (plannedTopic) {
-    const placeholder = isFa ? "جست‌وجو در همهٔ گایدلاین‌ها" : "Search all guidelines";
+    const placeholder = t("medscapeSearchPlaceholder");
     return (
       <Screen scroll={false} contentStyle={{ gap: spacing.md }} keyboardShouldPersistTaps="handled">
         <ScreenChrome title={t("guidelinesLabel")} onBack={goBack} />
-        <Input value={q} onChangeText={setQ} accessibilityLabel={placeholder} placeholder={placeholder} />
+        <BrowseSearch value={q} onChangeText={setQ} placeholder={placeholder} busy={topicResults.isFetching} />
         {q.trim().length < 2 ? <AppText muted>{t("resourceLookupShort")}</AppText>
           : q.trim() !== plannedQuery || topicResults.isPending ? <LoadingState />
           : topicResults.isError ? <LoadFailed message={t("loadFailed")} onRetry={() => void topicResults.refetch()} />
@@ -119,7 +121,6 @@ export function MedscapeGuidelinesScreen() {
     return (
       <Screen>
         <ScreenChrome title={t("guidelinesLabel")} onBack={goBack} />
-        {!q.trim() ? <ReferenceFavorites kind="guideline" /> : null}
         <LoadFailed message={t("medscapeTreeUnavailable")} onRetry={() => refetchTree()} busy={treeFetching} />
       </Screen>
     );
@@ -129,109 +130,92 @@ export function MedscapeGuidelinesScreen() {
   return (
     <Screen scroll={false} padded={false}>
       <View style={{ flex: 1, padding: layout.screenPadding, paddingBottom: 0 }}>
-        <ScreenChrome title={t("guidelinesLabel")} onBack={goBack} tour="guidelines" />
+        <ScreenChrome
+          title={t("guidelinesLabel")}
+          onBack={goBack}
+          tour="guidelines"
+          actions={
+            <FavoritesChip
+              kind="guideline"
+              open={favoritesOpen}
+              onToggle={() => setFavoritesOpen((open) => !open)}
+            />
+          }
+        />
 
-        {!q.trim() ? <ScrollView style={{ maxHeight: 180, flexGrow: 0 }}><ReferenceFavorites kind="guideline" /></ScrollView> : null}
-
-        {specialties.length > 1 ? (
-          <TourTarget id="guide.specialties" style={{ marginBottom: spacing.md }}>
-          <View
-            style={{
-              flexDirection: row,
-              backgroundColor: colors.pageBg,
-              borderRadius: 12,
-              padding: 3,
-            }}
-          >
-            {specialties.map((sp) => {
-              const active = sp.name === specialty;
-              return (
-                <Pressable key={sp.name} onPress={() => setActiveSpecialty(sp.name)} style={{ flex: 1 }}>
-                  <View
-                    style={{
-                      alignItems: "center",
-                      paddingVertical: 8,
-                      // keeps a label that wraps on a narrow phone ("Primary
-                      // Care Hacks") off its neighbour's
-                      paddingHorizontal: 4,
-                      borderRadius: 9,
-                      backgroundColor: active ? colors.accent : "transparent",
-                    }}
-                  >
-                    <AppText weight={active ? "800" : "700"} size={11.5} color={active ? colors.onAccent : colors.muted} center>
-                      {sp.name}
-                    </AppText>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-          </TourTarget>
+        {favoritesOpen ? (
+          <ScrollView style={{ maxHeight: 180, flexGrow: 0, marginBottom: spacing.sm }}>
+            <ReferenceFavorites kind="guideline" />
+          </ScrollView>
         ) : null}
 
         <TourTarget id="guide.search" style={{ marginBottom: spacing.md }}>
-        <View
-          style={{
-            flexDirection: row,
-            alignItems: "center",
-            gap: 8,
-            backgroundColor: colors.inputBg,
-            boxShadow: colors.cardShadow,
-            borderRadius: 14,
-            paddingHorizontal: 14,
-            paddingVertical: 12,
-          }}
-        >
-          <AppText muted>⌕</AppText>
-          <TextInput
+          <BrowseSearch
             value={q}
             onChangeText={setQ}
             placeholder={t("medscapeSearchInSpecialty")}
-            placeholderTextColor={colors.muted}
-            style={{
-              flex: 1,
-              fontFamily: fontFamily("600"),
-              fontSize: 13,
-              color: colors.ink,
-              textAlign: "left",
-              writingDirection: "ltr",
-              padding: 0,
-            }}
           />
-        </View>
         </TourTarget>
+
+        <TourTarget id="guide.specialties" style={{ marginBottom: spacing.md }}>
+          <TopicRail
+            topics={specialties}
+            active={specialty}
+            onSelect={setActiveSpecialty}
+            label={t("browseTopics")}
+          />
+        </TourTarget>
+
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <AppText
+            muted
+            weight="800"
+            size={11}
+            style={{ letterSpacing: 0.4, textAlign: "left", writingDirection: "ltr", flex: 1 }}
+          >
+            {query.length === 0 ? t("medscapeAllArticlesAZ") : `${n(filtered.length)} ${t("medscapeArticleCount")}`}
+          </AppText>
+          {(recent?.length ?? 0) > 0 ? (
+            <Pressable
+              onPress={() => setShowRecent((open) => !open)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: showRecent }}
+              hitSlop={6}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                borderRadius: 999,
+                backgroundColor: showRecent ? colors.accent : colors.cardBg,
+                boxShadow: showRecent ? undefined : colors.cardShadow,
+              }}
+            >
+              <AppText size={10} color={showRecent ? colors.onAccent : colors.muted}>◷</AppText>
+              <AppText weight="800" size={10.5} color={showRecent ? colors.onAccent : colors.muted}>
+                {t("browseNew")}
+              </AppText>
+            </Pressable>
+          ) : null}
+        </View>
 
         {itemsLoading ? (
           <LoadingState />
         ) : (
           <View style={{ flex: 1, minHeight: 0 }}>
-            {query.length === 0 && (recent?.length ?? 0) > 0 ? (
-              <>
-                <AppText weight="800" size={13} style={{ marginBottom: 10, textAlign: "left", writingDirection: "ltr" }}>
-                  {t("medscapeRecentlyUpdated")}
-                </AppText>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={{ flexGrow: 0, marginBottom: 16 }}
-                  contentContainerStyle={{ gap: 10 }}
-                >
-                  {(recent ?? []).map((a) => (
-                    <RecentCard key={a.slug} article={a} onPress={() => openArticle(a.slug)} />
-                  ))}
-                </ScrollView>
-                <View style={{ height: 1, backgroundColor: colors.trackBg, marginBottom: 10 }} />
-              </>
+            {showRecent && (recent?.length ?? 0) > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ flexGrow: 0, marginBottom: 10 }}
+                contentContainerStyle={{ gap: 10 }}
+              >
+                {(recent ?? []).map((a) => (
+                  <RecentCard key={a.slug} article={a} onPress={() => openArticle(a.slug)} />
+                ))}
+              </ScrollView>
             ) : null}
-
-            <AppText
-              muted
-              weight="800"
-              size={11}
-              style={{ marginBottom: 6, letterSpacing: 0.4, textAlign: "left", writingDirection: "ltr" }}
-            >
-              {query.length === 0 ? t("medscapeAllArticlesAZ") : `${filtered.length} ${t("medscapeArticleCount")}`}
-            </AppText>
 
             <TourTarget id="guide.list" style={{ flex: 1, minHeight: 0 }}>
               <AlphabeticalArticleList items={filtered} onPressItem={openArticle} emptyText={t("medscapeNoLocalResults")} />

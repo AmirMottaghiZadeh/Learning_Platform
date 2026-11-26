@@ -49,10 +49,6 @@ export function MedscapeSpecialtyScreen() {
       <View style={{ flex: 1, padding: layout.screenPadding, paddingBottom: 0 }}>
         <ScreenChrome title={specialty} onBack={goBack} />
 
-        <AppText muted weight="700" size={12} style={{ marginBottom: 10, textAlign: "left", writingDirection: "ltr" }}>
-          {items.length} {t("medscapeArticleCount")}
-        </AppText>
-
         <View
           style={{
             flexDirection: row,
@@ -83,6 +79,10 @@ export function MedscapeSpecialtyScreen() {
             }}
           />
         </View>
+
+        <AppText muted weight="700" size={12} style={{ marginBottom: 8, textAlign: "left", writingDirection: "ltr" }}>
+          {items.length} {t("medscapeArticleCount")}
+        </AppText>
 
         <AlphabeticalArticleList
           items={filtered}
