@@ -45,3 +45,23 @@ test('calculator page keeps local equations and controls, blocks remote assets a
   assert.ok(!html.includes("'unsafe-eval'"));assert.ok(!html.includes('allow-same-origin'));
   assert.match(html,/background:#0f5c52/);
 });
+
+test('calculator page adds a Calculate control that calls the form refresh function',()=>{
+  const colors={cardBg:'#fff',ink:'#14201d',muted:'#5f6b68',accent:'#0f5c52',onAccent:'#fff',softBg:'#f7f5ef',trackBg:'#e0dbd1'};
+  const raw='<body><form name="F" onkeyup="GuptaPostOpPneumonia_fx();" onsubmit="return false;"><input type="number" name="Age_param"></form></body>';
+  const html=page(raw,colors,'fa');
+  assert.match(html,/"GuptaPostOpPneumonia_fx"/);          // the call source is discovered
+  assert.match(html,/id="calculate"/);                      // and exposed as a button
+  assert.match(html,/محاسبه/);                              // labelled in the app's language
+  assert.match(html,/<html lang="en" dir="ltr">/);          // the imported English table stays ltr
+  assert.match(html,/id="calcbar" dir="rtl"/);              // only the bar follows the app language
+  assert.match(html,/querySelectorAll\("input\[readonly\]/); // only computed values count as a result
+  assert.ok(!html.includes('id^=rr] td'));                   // static threshold tables are not results
+  assert.match(html,/window\.alert=function/);               // source alerts (sandbox blocks modals) reach the bar
+  assert.match(html,/unicode-bidi:plaintext/);               // each message follows its own script
+  assert.ok(!html.includes('onclick="return false"'));
+  const en=page(raw,colors);
+  assert.match(en,/Calculate/);
+  assert.match(en,/Fill in every field/);
+  assert.ok(!html.includes('eval('));                        // CSP keeps eval disabled
+});

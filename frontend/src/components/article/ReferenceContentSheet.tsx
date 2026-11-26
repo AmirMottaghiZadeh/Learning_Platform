@@ -29,7 +29,7 @@ export function ReferenceContentSheet({ article, content, onClose }: {
   const iframe = useRef<HTMLIFrameElement | null>(null);
   const isCalculator = content.kind === "calculator";
   const label = isFa ? isCalculator ? "ابزار محاسبه" : "فهرست موضوعی" : isCalculator ? "Calculator" : "Topic directory";
-  const html = useMemo(() => isCalculator ? referenceCalculatorPage(article.body_html, colors) : "", [article.body_html, colors, isCalculator]);
+  const html = useMemo(() => isCalculator ? referenceCalculatorPage(article.body_html, colors, isFa ? "fa" : "en") : "", [article.body_html, colors, isCalculator, isFa]);
   const openTopic = (id: string, title = "") => { if (/^\d+$/.test(id) && id !== article.id) navigate("uptodateArticle", { id, title }); };
   const receive = (data: string) => {
     try { const message = JSON.parse(data); if (message?.type === "reference-topic" && typeof message.id === "string") openTopic(message.id); }
