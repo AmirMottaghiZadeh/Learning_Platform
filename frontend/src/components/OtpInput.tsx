@@ -53,6 +53,7 @@ export function OtpInput({ value, length, onChangeText, onSubmitEditing, hasErro
         </View>
         <TextInput
           testID="otp-input"
+          {...(Platform.OS === "web" ? ({ id: "otp-input" } as object) : {})}
           accessibilityLabel={label}
           aria-invalid={hasError || undefined}
           aria-describedby={hasError ? "otp-error" : undefined}
@@ -61,6 +62,8 @@ export function OtpInput({ value, length, onChangeText, onSubmitEditing, hasErro
           autoComplete={sms && Platform.OS === "android" ? "sms-otp" : "one-time-code"}
           textContentType="oneTimeCode"
           importantForAutofill="yes"
+          autoCorrect={false}
+          spellCheck={false}
           autoFocus
           caretHidden
           selectionColor="transparent"

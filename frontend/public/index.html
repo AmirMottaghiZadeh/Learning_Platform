@@ -44,13 +44,26 @@
       }
       :root { --app-focus-ring: #0F5C52; }
       :root[data-app-theme="dark"] { --app-focus-ring: #A4E3C0; color-scheme: dark; }
-      :where(button, [role="button"], [role="tab"], [role="radio"], a, input, textarea):focus-visible {
+      :where(button, [role="button"], [role="tab"], [role="radio"], a):focus-visible {
         outline: none;
         box-shadow: inset 0 -2px var(--app-focus-ring);
       }
+      /* Text fields show focus by their own surface change. The inset ring
+         drew a stray rule under the rounded auth fields. */
       input,
       textarea {
         outline: none;
+        box-shadow: none;
+      }
+      /* The OTP field draws the code in its own cells. Chrome's autofill
+         forces its own text colour and background on the real input, which
+         would show the code a second time over the cells; keep it invisible
+         and transparent even when autofilled. */
+      #otp-input:-webkit-autofill,
+      #otp-input:-webkit-autofill:hover,
+      #otp-input:-webkit-autofill:focus {
+        -webkit-text-fill-color: transparent;
+        transition: background-color 9999s ease-out 0s;
       }
     </style>
   </head>

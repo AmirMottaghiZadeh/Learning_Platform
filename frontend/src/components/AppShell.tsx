@@ -10,8 +10,21 @@ const TopInset = createContext<{ claim: () => () => void }>({ claim: () => () =>
 export function useBleedTop(enabled: boolean) {
   const { claim } = useContext(TopInset);
   const insets = useSafeAreaInsets();
-  useLayoutEffect(() => (enabled ? claim() : undefined), [enabled, claim]);
-  return enabled ? insets.top : 0;
+  // The shell draws its own top spacer until this component claims it. Return
+  // the inset only after the claim is applied, so no frame counts the safe
+  // area twice -- that double inset made the top of the lesson list jump on a
+  // new user's first entry.
+  const [claimed, setClaimed] = useState(false);
+  useLayoutEffect(() => {
+    if (!enabled) {
+      setClaimed(false);
+      return undefined;
+    }
+    const release = claim();
+    setClaimed(true);
+    return release;
+  }, [enabled, claim]);
+  return enabled && claimed ? insets.top : 0;
 }
 
 export function AppShell({ children, padBottom = true }: { children: React.ReactNode; padBottom?: boolean }) {

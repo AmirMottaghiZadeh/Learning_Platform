@@ -91,6 +91,8 @@
 - **پشتیبان `console`:** کد را فقط در لاگ می‌نویسد. بدون `SMSIR_API_KEY` همین پشتیبان انتخاب می‌شود.
 
 > برای پر شدن خودکار کد در Chrome اندروید (WebOTP)، آخرین خط پیامک باید دقیقاً `@app.pharmenta.ir #12345` باشد. در قالب sms.ir عبارت `#CODE#` با هر دو `#` جایگزین می‌شود، پس آخرین خط قالب باید `@app.pharmenta.ir ##CODE#` نوشته شود. کد اپ این خط را در `frontend/src/screens/AuthScreen.tsx` می‌خواند.
+>
+> روی بیلد نیتیو، مسیر فرق دارد: اندروید از `autoComplete="sms-otp"` و سرویس autofill خودش استفاده می‌کند و به خط دامنه نیاز ندارد؛ iOS با `textContentType="oneTimeCode"` کد را بالای صفحه‌کلید پیشنهاد می‌دهد. اگر روی اندروید پیشنهادی نیامد، اول `AutofillManager` را در logcat ببینید و بعد فعال‌بودن سرویس autofill دستگاه و به‌روزبودن Google Play services را.
 
 ### رمز عبور
 
