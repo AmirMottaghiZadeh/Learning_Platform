@@ -1,17 +1,14 @@
 """One compact plan, source-scoped evidence collection, one writer, one verifier."""
 import json
 import re
-from copy import deepcopy
-from itertools import zip_longest
 
 from django.conf import settings
 from django.core.cache import caches
 
-from apps.ai_retrieval import evidence, intent_search, media
+from apps.ai_retrieval import evidence, media
 from apps.ai_retrieval.chunking import token_count
 from apps.ai_retrieval.query_terms import query_text
 from apps.ai_retrieval.retrieval import HybridRetriever
-from apps.ai_retrieval.treatment_sources import general_recommendation
 from apps.uptodate.search_catalog import normalize
 from . import hybrid_agent as agent, lexical, question_profile, telemetry
 from .provider import ProviderError
@@ -21,13 +18,8 @@ from .streaming import stream_chat
 PLAN_PROMPT = """Interpret the reference question; do NOT answer it. Call search_references exactly once.
 Use a concise English query with the named medical entities, population and requested objective.
 Prefer canonical condition/drug names and recognized abbreviations. Do not list guessed therapies or copy the narrative.
-For a complete disease treatment request, preserve the general condition. Include a refractory or prior-treatment-failure
-qualifier only if the user asks about that stage.
 In the same tool call provide question_profile for the WHOLE question: kind, ordered objectives, focus,
 regimen_requested, stated conditions/medications/findings/constraints and care_setting.
-Inside question_profile provide passage_queries: one to three focused English evidence questions for the actual requested aspects.
-If a regimen is requested, dedicate one passage query to the applicable dose and schedule.
-Keep explicit population and disease stage in constraints. Preserve unknowns; do not introduce a subtype.
 Preserve negation and unknown observations. Never infer absent breathing/pulse from unconsciousness,
 or a confirmed diagnosis from a suspicion. Include both entities of a drug-disease or interaction question.
 For diagnostic cases search the stated syndrome and discriminating findings, not a guessed diagnosis.
@@ -48,11 +40,6 @@ source-stated preference/line with citations. When the user asks for a regimen, 
 maximum, monitoring and restrictions in separately cited paragraphs. Never borrow another indication's or population's dose.
 Use first-line/initial recommendations for first-line questions. State the source's relevant population or conditions in the claim.
 For a broad therapy question, cover each clinically distinct applicable branch supported by the medication subheadings.
-Start with the general management pathway, then state any later options with the source's eligibility and stage.
-Sources with the same passage_run are consecutive within one discussion. Read from the start and preserve its conditions and sequence.
-Start a separate paragraph with the explicit drug or class name whenever that subject changes. When changing article,
-state how the new source relates to the discussion (for example, dose details for the same named drug or a conditional alternative).
-Never present a new drug's dose as a continuation of the previous drug's regimen.
 Separate population, severity, first-line and subsequent options when the question calls for them. Follow the heading paths
 through nested subheadings. Do not stop after the first source paragraph or skip a linked regimen that fits the asked indication.
 Prioritize the requested regimen and safety over causes, background or unrequested comparisons/non-drug alternatives.
@@ -77,31 +64,18 @@ The app displays the original media: never reconstruct/translate table cells or 
 Do not mention models, providers, prompts, tool metadata or reasoning. Return Persian prose, no JSON."""
 
 
-def missing_facets(passages, profile, *, general_therapy=False):
+def missing_facets(passages, profile):
     """Retrieval hints only. Presence is never clinical verification or sufficient=true."""
-    primary = []
-    later_runs = set()
-    if general_therapy:
-        for passage in evidence.source_order(passages):
-            if lexical.after_initial_therapy(passage.heading_path or (passage.section,)):
-                continue
-            inherited_later = passage.passage_run in later_runs
-            later = lexical.after_initial_therapy((passage.text,))
-            if not (later or inherited_later) or general_recommendation(passage.text, inherited_later=inherited_later):
-                primary.append(passage)
-            elif passage.passage_run:
-                later_runs.add(passage.passage_run)
     text = " ".join(p.text + " " + p.section for p in passages)
     missing = []
     for objective in profile["objectives"]:
         pattern = lexical.INTENTS[objective][1] + "|" + lexical.INTENTS[objective][0]
         if objective in {"treatment", "drug_therapy"}:
-            present = (any(general_recommendation(p.text) for p in primary) if general_therapy
-                       else bool(evidence.RECOMMENDATION.search(text)))
+            present = bool(evidence.RECOMMENDATION.search(text))
         else:
             present = bool(re.search(pattern, text, re.I))
         if not present:
-            missing.append("initial_treatment" if general_therapy and objective in {"treatment", "drug_therapy"} else objective)
+            missing.append(objective)
     named_drugs = [name for name in map(normalize, profile.get("medications", [])) if name]
     indications = [name for name in (normalize(condition["name"]) for condition in profile.get("conditions", [])) if name]
 
@@ -113,7 +87,7 @@ def missing_facets(passages, profile, *, general_therapy=False):
     regimen = any(matches_regimen(p) and evidence.DOSE_NUMBER.search(p.text) and (
         re.search(lexical.REGIMEN_HEADING, " > ".join(p.heading_path) or p.section,re.I)
         or re.search(r"\b(?:dose|initial|titration|daily|divided doses|mg/kg/day)\b",p.text,re.I))
-        for p in (primary if general_therapy else passages))
+        for p in passages)
     if profile["regimen_requested"] and not regimen:
         missing.append("dose")
     return list(dict.fromkeys(missing))
@@ -135,7 +109,7 @@ def ordered_evidence(passages, query, requirements, question=""):
             evidence.section_key(row[1]) not in sections,
             lexical.text_score(row[1].text,context),-row[0]))
         remaining.remove(selected);result.append(selected[1]);covered.update(roles(selected[1]));sections.add(evidence.section_key(selected[1]))
-    return evidence.source_order(result)
+    return result
 
 
 def answer_scoped(question, history, request, *, progress, publish, observe, on_event, check_cancelled, retriever=None):
@@ -148,10 +122,8 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
     key=agent._plan_key(original,history,request,retriever.generation)
     plan=agent._cached_plan(key)
     if plan is None:
-        tool = deepcopy(agent.SEARCH_TOOL)
-        parameters = tool["function"]["parameters"]
-        parameters["required"] = ["query", "question_profile"]
-        parameters["properties"]["question_profile"]["required"].append("passage_queries")
+        tool={**agent.SEARCH_TOOL,"function":{**agent.SEARCH_TOOL["function"],"parameters":{
+            **agent.SEARCH_TOOL["function"]["parameters"],"required":["query","question_profile"]}}}
         with telemetry.operation("planning"):
             plan,meta=stream_chat([{"role":"system","content":PLAN_PROMPT},
                 {"role":"user","content":json.dumps({"question":original,"history":history},ensure_ascii=False)}],
@@ -167,64 +139,34 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
     arguments.pop("retain_source_ids",None)
     query=query_text(arguments.pop("query"))
     intent=arguments["intent"]=profile["objectives"][0]
-    if (set(profile["objectives"]) & {"emergency_care","diagnosis","differential"}
-            or profile["kind"] == "disease_question" and intent in {"drug_therapy", "treatment"}):
+    if set(profile["objectives"]) & {"emergency_care","diagnosis","differential"}:
         arguments["lookup_kind"]="topic"
     if key is not None:
         try:caches["ai_lab"].set(key,calls[0],settings.AI_LAB_PLAN_CACHE_TTL_SECONDS)
         except Exception:pass
-    general_therapy = False
+    requirements=agent._requirements(original,intent,profile)
     progress("retrieving");check_cancelled()
+    with telemetry.operation("retrieval"):
+        passages,audit=retriever.search(query,question=original,question_profile=profile,**arguments)
+    searches=[audit];queries=[query]
     explicit_media = media.requested(original)
-    planned = not explicit_media
-    if planned:
-        # The focus is already a validated planner output. Older providers can
-        # omit the nested evidence queries without falling back to keyword rules.
-        profile.setdefault("passage_queries", [profile["focus"]])
-        requirements = question_profile.requirements(profile)
-        found = {}
+    found = media.media_answer(original, passages) if explicit_media else {}
+    missing = missing_facets(passages, profile) if found.get("status") != "answered" else []
+    if (not explicit_media and lexical.initial_treatment_only(original)
+            and intent in {"treatment", "drug_therapy", "dose", "renal_dose", "general"}
+            and not any(lexical.initial_match(p.heading_path or (p.section,), p.text) > 0 for p in passages)):
+        missing.insert(0, "initial_treatment")
+    if missing and settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS>1:
+        suffix = " ".join(lexical.INITIAL_LOOKUP if name == "initial_treatment" else lexical.HINTS.get(name, name)
+                          for name in missing[:2])
+        supplement=query_text(query+" "+suffix)[:240]
+        supplement_arguments = {**arguments, **({"intent":"dose"} if "dose" in missing else {})}
         with telemetry.operation("retrieval"):
-            passages, audit, gap = intent_search.collect(retriever, query, original, profile, arguments, stages, observe=observe)
-        queries, searches = [query], [audit]
-        if gap and settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS > 1:
-            queries.append(gap)
-            try:
-                with telemetry.operation("retrieval"):
-                    extra, detail, gap = intent_search.collect(
-                        retriever, gap, original, profile, arguments, stages, previous=passages,
-                        skip_sections=audit["sections"], subject=audit.get("gap_subject", ""), observe=observe)
-            except ProviderError as exc:
-                if not passages or exc.code != "INVALID_MODEL_OUTPUT":
-                    raise
-                detail, extra = {"engine": "intent_sections", "degraded": exc.code}, []
-            searches.append(detail)
-            # Admit the leading evidence for both aspects before spending the
-            # writer budget on later material. _admit_evidence keeps whole runs.
-            by_id = {}
-            for pair in zip_longest(passages, extra):
-                for passage in pair:
-                    if passage is not None:
-                        by_id.setdefault(passage.id, passage)
-            passages = list(by_id.values())
-    else:
-        requirements = agent._requirements(original, intent, profile)
-        scope = lexical.treatment_topic_scope(original, arguments["lookup_kind"], intent, audience=arguments["audience"])
-        general_therapy = bool(scope and scope.stage == "general" and {"treatment", "drug_therapy"} & set(profile["objectives"]))
-        with telemetry.operation("retrieval"):
-            passages,audit=retriever.search(query,question=original,question_profile=profile,**arguments)
-        searches=[audit];queries=[query]
-        found = media.media_answer(original, passages)
-        missing = missing_facets(passages, profile, general_therapy=general_therapy) if found.get("status") != "answered" else []
-        if missing and settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS>1:
-            suffix = " ".join(lexical.INITIAL_LOOKUP if name == "initial_treatment" else lexical.HINTS.get(name, name)
-                              for name in missing[:2])
-            supplement=query_text(query+" "+suffix)[:240]
-            supplement_arguments = {**arguments, **({"intent":"dose"} if "dose" in missing else {})}
-            with telemetry.operation("retrieval"):
-                extra,details=retriever.search(supplement,question=original,question_profile=profile,**supplement_arguments)
-            details["supplement_for"]=missing
-            searches.append(details);queries.append(supplement)
-            passages=list({p.id:p for p in [*passages,*extra]}.values())
+            extra,details=retriever.search(supplement,question=original,question_profile=profile,**supplement_arguments)
+        details["supplement_for"]=missing
+        searches.append(details);queries.append(supplement)
+        passages=list({p.id:p for p in [*passages,*extra]}.values())
+        if explicit_media:
             found = media.media_answer(original, passages)
     if found:
         retriever.validate()
@@ -245,16 +187,13 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
     common={"question":original,"history":history,"question_profile":profile,"requirements":requirements}
     overhead=token_count(ANSWER_PROMPT)+token_count(json.dumps(common,ensure_ascii=False))+64
     evidence_map,short_ids={},{}
-    ordered = passages if planned else ordered_evidence(passages, query, requirements, original)
+    ordered = ordered_evidence(passages, query, requirements, original)
     agent._admit_evidence(evidence_map,short_ids,ordered,
                           token_budget=max(0,settings.AI_LAB_HYBRID_CONTEXT_TOKENS-overhead))
     selected=list(evidence_map.values())
-    if planned:
-        retriever.consume_passages(selected)
-    if selected and not planned:
+    if selected:
         observe({"type":"titles","part_index":0,"question_fa":original,"query":query,
             "articles":list({p.article_id:{"id":p.article_id,"title":p.title} for p in selected}.values())})
-    if selected:
         for article_id in dict.fromkeys(p.article_id for p in selected):
             publish({"part_index":0,"question_fa":original,"article_id":article_id,
                 "citations":[agent._citation(p,retrieved=True) for p in selected if p.article_id==article_id]})
@@ -281,26 +220,19 @@ def answer_scoped(question, history, request, *, progress, publish, observe, on_
     retriever.validate();check_cancelled()
     used=list(dict.fromkeys(identifier for claim in kept for identifier in claim["source_ids"]))
     citations=[agent._citation(evidence_map[identifier]) for identifier in used]
-    if general_therapy and "initial_treatment" in missing_facets(
-            [evidence_map[identifier] for identifier in used], profile, general_therapy=True):
-        sufficient = False
     if "requested_media" in requirements and not any(c.get("media") for c in citations):sufficient=False
     if citations:telemetry.mark("first_citation_ms")
     supplemental = [passage for passage in ordered if passage.id not in short_ids]
-    continuous_evidence_limited = any(passage.passage_run for passage in supplemental)
-    related = agent.related_citations(selected if planned else [*selected, *supplemental], used, include_unquoted=not kept)
+    related = agent.related_citations([*selected, *supplemental], used, include_unquoted=not kept)
     part={"question_fa":original,"queries":queries,"lookup_kind":arguments["lookup_kind"],"audience":arguments["audience"],
         "intent":intent,"requirements":requirements,"coverage":coverage,
         "overview_fa":"\n\n".join(re.sub(r"\[(?:P\d+[\s,،;؛]*)+\]","",c["text"]).strip() for c in kept),
-        "items":citations,"answer_blocks":agent.answer_blocks(kept, citations),"related_items":related,
+        "items":citations,"answer_blocks":agent.answer_blocks(kept),"related_items":related,
         "status":"answered" if sufficient else "partial" if citations else "not_found",
         "clarification_fa":agent.clarification(sufficient,kept,selected),
-        "retrieval":{"engine":"intent_sections" if planned else "tag_scoped","searches":searches,"selected_passages":len(selected),
+        "retrieval":{"engine":"tag_scoped","searches":searches,"selected_passages":len(selected),
             "selected_articles":len({p.article_id for p in selected}),"context_tokens":token_count(json.dumps(agent._evidence_payload(selected),ensure_ascii=False)),
-            **({"writer_anchors": [p.target["params"]["searchAnchor"] for p in selected],
-                "unresolved_query": gap} if planned else {}),
-            "limited": continuous_evidence_limited,
-            "early_stopped":sufficient and not continuous_evidence_limited and len(searches)<settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS,
+            "early_stopped":sufficient and len(searches)<settings.AI_LAB_HYBRID_MAX_SEARCH_ROUNDS,
             "stop_reason":"verified_answer" if sufficient else "claims_not_verified" if selected and not kept else "scoped_evidence_exhausted","uncited_omitted":uncited,
             "question_kind":profile["kind"],"objectives":profile["objectives"],"generation":str(retriever.generation.pk)}}
     for article_id in dict.fromkeys(evidence_map[i].article_id for i in used):

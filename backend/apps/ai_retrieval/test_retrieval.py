@@ -68,82 +68,6 @@ class HybridRetrievalTests(TestCase):
         self.assertTrue(any("newly diagnosed" in p.text for p in rows))
         self.assertFalse(any("Differentmed" in p.text for p in rows))
 
-    @override_settings(AI_LAB_TAG_SCOPED_SEARCH=True, AI_LAB_SOURCE_CONTEXT_START_ARTICLES=1)
-    def test_general_treatment_recovers_the_matching_title_outside_a_specialized_tag(self):
-        general = "Treatment of rheumatoid arthritis in adults"
-        refractory = "Treatment of rheumatoid arthritis refractory to initial therapy"
-        pediatric = "Drug treatment of rheumatoid arthritis in children"
-        reference = """<div id="topicText">
-            <p class="headingAnchor" id="H1"><span class="h1">Drug therapy</span></p>
-            <p>For rheumatoid arthritis, we recommend the general source-defined pathway.
-            See <a data-topicid="3852">Treatment of refractory disease</a> and
-            <a data-topicid="3853">Treatment in children</a> for those specific settings.</p></div>"""
-        self.write_article("3851", reference, title=general)
-        self.write_article("3852", fixtures.html("Drug therapy", "Rheumatoid arthritis: special evidence after failure of prior treatment."), title=refractory)
-        self.add_title("3853")
-        self.write_article("3853", fixtures.html("Drug therapy", "Rheumatoid arthritis: special source-defined pediatric considerations."), title=pediatric)
-        self.build_reference(force=True)
-        call_command("build_hybrid_index", stdout=StringIO())
-        self.generation = RetrievalGeneration.objects.latest("created_at")
-        concept = SearchConcept.objects.create(generation=self.generation, source_id="ra", topic_lists=["3852,3853", "", "", "", ""])
-        SearchAlias.objects.create(generation=self.generation, concept=concept, alias="rheumatoid arthritis", weight=100)
-        profile = {"kind": "disease_question", "focus": "Rheumatoid arthritis treatment", "objectives": ["drug_therapy"],
-                   "conditions": [{"name": "rheumatoid arthritis", "status": "reported"}]}
-        query = "rheumatoid arthritis refractory to initial therapy"
-        for question in ("دارودرمانی آرتریت روماتویید", "دارودرمانی کامل آرتریت روماتویید"):
-            with self.subTest(question=question):
-                retriever = self.retriever()
-                passages, audit = retriever.search(query, question=question, intent="drug_therapy", question_profile=profile)
-                self.assertEqual(audit["scope"]["roots"], ["3851"])
-                self.assertTrue(passages)
-                self.assertEqual({p.title for p in passages}, {general})
-                self.assertFalse(retriever.register_related("3851", "3852"))
-                self.assertFalse(retriever.register_related("3851", "3853"))
-        for question, audience, source in (
-            ("دارودرمانی کامل آرتریت روماتویید مقاوم به درمان", "general", "3852"),
-            ("دارودرمانی آرتریت روماتویید در کودکان", "pediatric", "3853"),
-        ):
-            with self.subTest(question=question):
-                _, audit = self.retriever().search("rheumatoid arthritis management", question=question,
-                    audience=audience, intent="drug_therapy", question_profile=profile)
-                self.assertEqual(audit["scope"]["roots"], [source])
-
-    def test_general_treatment_fallback_does_not_swap_diseases_when_general_topic_is_missing(self):
-        self.write_article("3851", fixtures.html("Drug therapy"), title="Treatment of refractory rheumatoid arthritis")
-        self.write_article("3852", fixtures.html("Drug therapy"), title="Treatment of septic arthritis")
-        self.build_reference(force=True)
-        call_command("build_hybrid_index", stdout=StringIO())
-        self.generation = RetrievalGeneration.objects.latest("created_at")
-        concept = SearchConcept.objects.create(generation=self.generation, source_id="ra", topic_lists=["3851", "", "", "", ""])
-        SearchAlias.objects.create(generation=self.generation, concept=concept, alias="rheumatoid arthritis", weight=100)
-        profile = {"kind": "disease_question", "focus": "Rheumatoid arthritis treatment", "objectives": ["drug_therapy"],
-                   "conditions": [{"name": "rheumatoid arthritis", "status": "reported"}]}
-        passages, audit = self.retriever().search("rheumatoid arthritis", question="دارودرمانی آرتریت روماتویید",
-                                                 intent="drug_therapy", question_profile=profile)
-        self.assertEqual(audit["scope"]["roots"], [])
-        self.assertEqual(passages, [])
-
-    @override_settings(AI_LAB_TAG_SCOPED_SEARCH=True, AI_LAB_SOURCE_CONTEXT_START_ARTICLES=1)
-    def test_general_article_is_confirmed_by_its_text_when_both_titles_look_general(self):
-        disease = "rheumatoid arthritis"
-        self.write_article("3851", fixtures.html("Initial treatment", "For rheumatoid arthritis we recommend the source-defined initial treatment."),
-                           title="Management of rheumatoid arthritis")
-        self.write_article("3852", fixtures.html("Treatment after failure of initial therapy",
-            "For rheumatoid arthritis after failure of initial therapy we recommend a distinct option."),
-            title="Management of rheumatoid arthritis in selected adults")
-        self.build_reference(force=True)
-        call_command("build_hybrid_index", stdout=StringIO())
-        self.generation = RetrievalGeneration.objects.latest("created_at")
-        concept = SearchConcept.objects.create(generation=self.generation, source_id="topic", topic_lists=["3852,3851", "", "", "", ""])
-        SearchAlias.objects.create(generation=self.generation, concept=concept, alias=disease, weight=100)
-        profile = {"kind": "disease_question", "focus": disease, "objectives": ["drug_therapy"],
-                   "conditions": [{"name": disease, "status": "reported"}]}
-        rows, audit = self.retriever().search(disease, question="دارودرمانی آرتریت روماتویید",
-                                             intent="drug_therapy", question_profile=profile)
-        self.assertEqual(audit["scope"]["roots"], ["3851"])
-        self.assertTrue(rows)
-        self.assertEqual({p.article_id for p in rows}, {"3851"})
-
     def test_article_quota_is_consumed_only_for_focused_evidence(self):
         def focus(rows,*args,**kwargs):
             selected=[row for row in rows if row.article_id=="3851"]
@@ -154,33 +78,6 @@ class HybridRetrievalTests(TestCase):
         self.assertTrue(passages)
         consumed=[call.kwargs["item"] for call in permission.call_args_list if call.kwargs.get("consume")]
         self.assertEqual(consumed,["3851"])
-
-    def test_intent_reader_checks_access_before_extraction_and_only_charges_admitted_sources(self):
-        from . import intent_search
-        reader = self.retriever()
-        profile = {"kind": "disease_question", "objectives": ["treatment"], "focus": "enuresis treatment",
-                   "regimen_requested": False, "passage_queries": ["enuresis management"]}
-        arguments = {"audience": "general", "intent": "treatment", "lookup_kind": "topic"}
-
-        def choose(stage, prompt, data, stages, retriever):
-            if stage == "article_selection":
-                self.assertNotIn("3852", data["articles"])
-                self.assertIn("3851", data["articles"])
-                return {"ids": ["3851"]}
-            if stage == "section_selection":
-                return {"ids": [data["sections"][0][0]]}
-            return {"ranges": [["R1", "R1"]], "missing_aspect": None}
-
-        with patch.object(reader, "permitted", side_effect=lambda k: k == "3851"), \
-                patch.object(intent_search, "decide", side_effect=choose), \
-                patch("apps.ai_retrieval.retrieval.require_feature") as permission:
-            rows, _, _ = intent_search.collect(reader, "nocturnal enuresis", "enuresis", profile, arguments, [])
-            self.assertTrue(rows)
-            self.assertFalse(any(call.kwargs.get("consume") for call in permission.call_args_list))
-            reader.consume_passages(rows)
-            reader.consume_passages(rows)
-            self.assertEqual([call.kwargs["item"] for call in permission.call_args_list
-                              if call.kwargs.get("consume")], ["3851"])
 
     def test_tag_only_synonym_reaches_article_without_loading_the_snapshot_catalog_at_runtime(self):
         concept = SearchConcept.objects.create(generation=self.generation, source_id="alias", topic_lists=["3851", "", "", "", ""])

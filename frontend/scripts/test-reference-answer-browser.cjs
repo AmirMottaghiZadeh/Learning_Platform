@@ -26,12 +26,7 @@ async function main() {
   let finished = false;
   const initial = { status: 'running', stage: 'answering', findings: [], cancellable: true };
   const complete = { status: 'complete', result: { model: 'luna', pipeline: 'ui-fixture', warnings: [], stages: [], parts: [{
-    question_fa: question, status: 'answered',
-    items: citations.slice(0, 2).map(citation => ({ ...citation, verification: 'verified' })),
-    answer_blocks: [
-      { text_fa: parts.join(''), source_ids: ['P1'], medication_label: 'Fixturemed' },
-      { text_fa: 'توضیح جداگانهٔ داروی دوم.', source_ids: ['P2'], medication_label: 'Optionmed', source_label: 'Source fixture 2' },
-    ],
+    question_fa: question, status: 'answered', overview_fa: parts.join(''), items: [{ ...citations[0], verification: 'verified' }],
   }] } };
   const server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -123,8 +118,8 @@ async function main() {
         : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36', platform: ios ? 'iPhone' : 'Linux x86_64' });
       await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: name !== 'desktop' });
       await send('Page.navigate', { url: origin });
-      await until(() => evaluate(`Boolean(document.querySelector('[data-testid=home-smart-search]'))`));
-      await evaluate(`document.querySelector('[data-testid=home-smart-search]').click()`);
+      await until(() => evaluate(`Boolean([...document.querySelectorAll('[role=button],button')].find(e=>e.textContent.includes('سرچ هوشمند')))`));
+      await evaluate(`[...document.querySelectorAll('[role=button],button')].find(e=>e.textContent.includes('سرچ هوشمند')).click()`);
       await until(() => evaluate(`Boolean(document.querySelector('[data-testid=reference-question]'))`));
       const inputSize = await evaluate(`parseFloat(getComputedStyle(document.querySelector('[data-testid=reference-question]')).fontSize)`);
       assert.equal(inputSize, ios ? 16 : 14);
@@ -135,9 +130,7 @@ async function main() {
       await evaluate(`document.querySelector('[data-testid=reference-send]').click()`);
       await until(() => evaluate(`document.querySelector('[data-testid=reference-answer-draft]')?.textContent.length>600`));
       assert.equal(await evaluate(`document.querySelector('[data-testid=reference-answer-draft]').textContent.includes('**')`), false);
-      assert.equal(await evaluate(`[...document.querySelector('[data-testid=reference-answer-draft]').children].some(e=>{
-        const style=getComputedStyle(e);return e.textContent.includes('بخش برجسته') && (/bold/i.test(style.fontFamily) || Number(style.fontWeight)>=700);
-      })`), true);
+      assert.equal(await evaluate(`Boolean([...document.querySelector('[data-testid=reference-answer-draft]').children].find(e=>getComputedStyle(e).fontFamily.includes('700Bold')))`), true);
       // A streamed chunk can render just before the frame that follows it.
       const visibleTail = async () => {
         const box = await evaluate(geometry);
@@ -152,8 +145,6 @@ async function main() {
       fs.writeFileSync(path.join(output, `${name}-stream.png`), Buffer.from(shot.data, 'base64'), { mode: 0o600 });
       await until(() => evaluate(`Boolean(document.querySelector('[data-testid=reference-final-answer]'))`));
       assert.equal(await evaluate(`document.querySelector('[data-testid=reference-answer-text]').textContent.includes('**')`), false);
-      const finalText = await evaluate(`document.querySelector('[data-testid=reference-answer-text]').textContent`);
-      assert.match(finalText, /Fixturemed[\s\S]*Optionmed[\s\S]*Source fixture 2[\s\S]*توضیح جداگانه/);
       console.log(JSON.stringify({ surface: name, input_font_size: inputSize, streaming_tail_visible: true, bold_rendered: true, pause_resume: true }));
     }
   } catch (error) {

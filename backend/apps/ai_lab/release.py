@@ -55,7 +55,7 @@ def runtime_profile():
         from apps.ai_retrieval.models import RetrievalHead
         head = RetrievalHead.objects.filter(source_identity=stamp.identity).select_related("active").first()
         profile.update(pipeline="hybrid-v1", hybrid_generation=str(head.active_id) if head else None,
-            semantic_ready=bool(head and head.active and embeddings.profile_status(head.active)["ready"]),
+            semantic_ready=bool(head and head.active and head.active.embedding_ready),
             local_lexical_pilot=settings.AI_LAB_LOCAL_LEXICAL_PILOT,
             embedding_profile=embeddings.profile(), top_k=settings.AI_LAB_HYBRID_TOP_K,
             candidates=settings.AI_LAB_HYBRID_CANDIDATES,

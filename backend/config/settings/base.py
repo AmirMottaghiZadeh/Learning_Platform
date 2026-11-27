@@ -577,8 +577,7 @@ AI_LAB_API_KEY = config("AI_LAB_API_KEY", default="")
 AI_LAB_REASONING_EFFORT = config("AI_LAB_REASONING_EFFORT", default=None)
 AI_LAB_LUNA_API_KEY = config("AI_LAB_LUNA_API_KEY", default="")
 AI_LAB_LUNA_REASONING_EFFORT = config("AI_LAB_LUNA_REASONING_EFFORT", default="low").strip().lower()
-AI_LAB_DEFAULT_BASE_URL = "https://api.gapgpt.app/v1"
-AI_LAB_BASE_URL = config("AI_LAB_BASE_URL", default=AI_LAB_DEFAULT_BASE_URL).strip()
+AI_LAB_BASE_URL = config("AI_LAB_BASE_URL", default="https://api.gapgpt.app/v1").strip()
 AI_LAB_TIMEOUT_SECONDS = config("AI_LAB_TIMEOUT_SECONDS", default=90, cast=int)
 # Retained for old jobs and diagnostics; not a deadline for outline-v1 searches.
 AI_LAB_TOTAL_TIMEOUT_SECONDS = config("AI_LAB_TOTAL_TIMEOUT_SECONDS", default=18, cast=float)
@@ -671,10 +670,7 @@ AI_LAB_EMBEDDING_REMOTE_ENABLED = config("AI_LAB_EMBEDDING_REMOTE_ENABLED", defa
 AI_LAB_LOCAL_EMBEDDING_DIR = config("AI_LAB_LOCAL_EMBEDDING_DIR", default="")
 AI_LAB_LOCAL_EMBEDDING_THREADS = config("AI_LAB_LOCAL_EMBEDDING_THREADS", default=3, cast=int)
 AI_LAB_LOCAL_EMBEDDING_BATCH_SIZE = config("AI_LAB_LOCAL_EMBEDDING_BATCH_SIZE", default=4, cast=int)
-# A chat-provider change must not redirect an independent embedding credential.
-AI_LAB_EMBEDDING_BASE_URL = config("AI_LAB_EMBEDDING_BASE_URL", default=(
-    AI_LAB_DEFAULT_BASE_URL if AI_LAB_BASE_URL.rstrip("/") == AI_LAB_DEFAULT_BASE_URL else ""
-)).strip()
+AI_LAB_EMBEDDING_BASE_URL = config("AI_LAB_EMBEDDING_BASE_URL", default=AI_LAB_BASE_URL).strip()
 AI_LAB_EMBEDDING_MODEL = config("AI_LAB_EMBEDDING_MODEL", default="text-embedding-3-small").strip()
 AI_LAB_EMBEDDING_API_KEY = config("AI_LAB_EMBEDDING_API_KEY", default="")
 AI_LAB_EMBEDDING_USE_CHAT_KEY = config("AI_LAB_EMBEDDING_USE_CHAT_KEY", default=False, cast=bool)

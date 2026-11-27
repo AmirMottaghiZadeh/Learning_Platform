@@ -151,25 +151,6 @@ class OutlinePipelineTests(TestCase):
         self.assertEqual(sum(counts),9)
         self.assertEqual(part['retrieval']['reviewed_passages'],9)
 
-    def test_outline_only_offers_general_treatment_for_an_unqualified_disease_question(self):
-        self.write_article("3851", fixtures.html("Treatment"), title="Management of Fixture syndrome")
-        self.add_title("3852")
-        self.write_article("3852", fixtures.html("Treatment after failure"), title="Treatment of refractory Fixture syndrome")
-        self.build()
-
-        def model(alias, prompt, payload, tokens):
-            if prompt == services.PLAN_PROMPT:
-                return {"queries": ["Fixture syndrome treatment"], "intent": "drug_therapy"}, {}
-            if prompt == services.ARTICLE_PROMPT:
-                self.assertEqual([row["id"] for row in payload["articles"]], ["3851"])
-            return self.model(alias, prompt, payload, tokens)
-
-        with patch.object(services, "search_articles", return_value=[{"id": "3852", "title": "refractory"}]), \
-                patch.object(services, "chat", side_effect=model):
-            part = services.answer("دارودرمانی بیماری نمونه", "luna", ["uptodate"], [], None)["parts"][0]
-        self.assertEqual(part["status"], "answered")
-        self.assertEqual({item["target"]["params"]["id"] for item in part["items"]}, {"3851"})
-
     def test_selecting_first_therapy_subheading_retrieves_all_six_branches_and_nested_regimen(self):
         headings = '<p class="headingAnchor" id="H1"><span class="h1">Drug therapy</span></p>'
         outline = '<ul><li><a id="outline-link-H1">Drug therapy</a><ul>'

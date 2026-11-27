@@ -12,13 +12,6 @@ from .provider import ProviderError
 @override_settings(AI_LAB_TAG_SCOPED_SEARCH=True,AI_LAB_PLAN_CACHE_TTL_SECONDS=0,
     AI_LAB_HYBRID_MAX_SEARCH_ROUNDS=3,AI_LAB_HYBRID_CONTEXT_TOKENS=6000)
 class StructuredAgentTests(SimpleTestCase):
-    def setUp(self):
-        self.collect = self.enterContext(patch.object(scoped.intent_search, "collect", side_effect=self.collect_fixture))
-
-    def collect_fixture(self, retriever, query, original, profile, arguments, stages, **kwargs):
-        passages, audit = retriever.search(query, question=original, question_profile=profile, **arguments)
-        return passages, {"sections": [], **audit}, audit.get("gap", "")
-
     def retriever(self, passages):
         r=MagicMock();r.generation=SimpleNamespace(pk="test-generation")
         r.search.return_value=(passages,{"engine":"scoped"})
@@ -30,7 +23,7 @@ class StructuredAgentTests(SimpleTestCase):
         value.update(kwargs)
         return tool("Fixturemed adverse effects",lookup_kind="drug",question_profile=value)
 
-    def test_writer_and_verifier_use_the_collected_passages(self):
+    def test_compact_plan_writer_and_verifier_have_no_intermediate_model_decision(self):
         r=self.retriever([reference(10,"Original important adverse reactions and source-defined qualifications.")])
         calls=[]
         def stream(messages,**kwargs):
@@ -48,19 +41,18 @@ class StructuredAgentTests(SimpleTestCase):
         self.assertEqual(published[0]["citations"][0]["verification"],"retrieved")
         self.assertEqual(result["parts"][0]["items"][0]["quote"],r.search.return_value[0][0].text)
 
-    def test_missing_aspect_uses_one_followup_for_the_planned_query(self):
+    def test_missing_facet_uses_one_local_followup_without_an_extra_model_call(self):
         p=reference(10,"An original source describes the medication's adverse reactions.")
         r=self.retriever([p])
         extra=reference(20,"Monitor source-defined findings at the original monitoring interval.")
-        r.search.side_effect=[([p],{"gap":"Fixturemed monitoring"}),([extra],{})]
+        r.search.side_effect=[([p],{}),([extra],{})]
         with patch.object(scoped,"stream_chat",side_effect=[(self.plan(objectives=["adverse_effects","monitoring"]),{}),
                 ({"content":"عارضه و پایش مطابق منبع. [P1] [P2]"},{})]) as model, \
                 patch.object(agent,"chat",side_effect=approved):
             result=agent.answer_hybrid("عارضه و پایش دارو چیست؟",[],None,retriever=r)
         self.assertEqual(r.search.call_count,2)
         self.assertEqual(model.call_count,2)
-        self.assertEqual(result["parts"][0]["queries"][-1], "Fixturemed monitoring")
-        self.assertEqual(self.collect.call_args.kwargs["previous"], [p])
+        self.assertEqual(result["parts"][0]["retrieval"]["searches"][1]["supplement_for"],["monitoring"])
         self.assertEqual(r.search.call_args_list[0].kwargs["question_profile"],r.search.call_args_list[1].kwargs["question_profile"])
 
     def test_no_source_does_not_spend_on_writer_or_verification(self):
@@ -86,25 +78,6 @@ class StructuredAgentTests(SimpleTestCase):
         rows=[reference(10,"We recommend Fixturemed. The available solution contains 10 mg/mL.")]
         value=profile(kind="disease_question",objectives=["drug_therapy","dose"],regimen_requested=True)
         self.assertIn("dose",scoped.missing_facets(rows,value))
-
-    def test_later_line_recommendation_and_dose_do_not_count_as_general_coverage(self):
-        value = profile(kind="disease_question", objectives=["drug_therapy"], conditions=[], medications=[])
-        p = reference(10, "When disease persists despite treatment, we recommend the synthetic alternate therapy. Its dose is 10 mg daily.")
-        self.assertEqual(scoped.missing_facets([p], value, general_therapy=True), ["initial_treatment", "dose"])
-
-    def test_final_answer_marks_drug_and_article_switch_even_with_linked_parent_citation(self):
-        a = replace(reference(10, "Original important adverse reactions."), title="Fixturemed reference", medication="Fixturemed")
-        b = replace(reference(20, "Original important adverse reactions."), title="Optionmed reference", article_id="20",
-                    medication="Optionmed", target={"screen": "uptodateArticle", "params": {"id": "20", "searchAnchor": "second"}},
-                    relations=({"source_id": a.id, "kind": "article_links", "label": "Optionmed"},))
-        retriever = self.retriever([a, b])
-        with patch.object(scoped, "stream_chat", side_effect=[(self.plan(), {}),
-                ({"content": "عارضهٔ فیکستارمد مستند شده است. [P1]\n\nعارضهٔ آپشن‌مد در منبع دوم گزارش شده است. [P2]"}, {})]), \
-                patch.object(agent, "chat", side_effect=approved) as verify:
-            part = agent.answer_hybrid("عوارض دارو چیست؟", [], None, retriever=retriever)["parts"][0]
-        self.assertEqual([block["medication_label"] for block in part["answer_blocks"]], ["Fixturemed", "Optionmed"])
-        self.assertEqual(part["answer_blocks"][1]["source_label"], "Optionmed reference")
-        self.assertEqual(verify.call_args.args[2]["claims"][1]["direct_source_ids"], ["P2"])
 
     def test_regimen_must_match_both_named_medication_and_indication(self):
         value = profile(kind="drug_question", medications=["Fixturemed"], objectives=["dose"], regimen_requested=True,
@@ -138,7 +111,7 @@ class StructuredAgentTests(SimpleTestCase):
             result=agent.answer_hybrid("بیمار بیهوش است؛ اقدام مناسب چیست؟",[],None,retriever=r)
         self.assertEqual(r.search.call_args.kwargs["lookup_kind"],"topic")
         self.assertEqual(r.search.call_args.kwargs["intent"],"emergency_care")
-        self.assertEqual(verify.call_args.args[2]["question_profile"], {**value, "passage_queries": [value["focus"]]})
+        self.assertEqual(verify.call_args.args[2]["question_profile"],value)
         self.assertNotIn("drug_regimen",result["parts"][0]["requirements"])
         self.assertIn("intervention_safety",result["parts"][0]["requirements"])
 
@@ -160,7 +133,7 @@ class StructuredAgentTests(SimpleTestCase):
         initial = replace(reference(10, "We recommend initial therapy with Fixturemed for this subgroup."),
                           section="Initial therapy", heading_path=("Initial therapy",))
         other = reference(20, "A different passage describes management after failure.")
-        retriever = self.retriever([initial, other])
+        retriever = self.retriever([other, initial])
         proposal = self.plan(kind="disease_question", objectives=["drug_therapy", "dose"], regimen_requested=True)
         raw = "یک ادعای بدون ارجاع.\n\nدرمان اول برای زیرگروه ذکرشده داروی نمونه است [P1]. درمان دیگری هم اضافه کنید [P2]."
         decision = {"supported": ["A1"], "sufficient": True,

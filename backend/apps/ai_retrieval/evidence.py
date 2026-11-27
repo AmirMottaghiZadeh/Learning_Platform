@@ -8,7 +8,7 @@ from apps.ai_lab import lexical
 from .chunking import token_count
 
 
-FOCUS_VERSION = 4
+FOCUS_VERSION = 3
 BACKGROUND = re.compile(r"\b(?:epidemiology|etiology|aetiology|pathogenesis|pathophysiology|historical background|definition|diagnosis|diagnostic evaluation)\b", re.I)
 NON_DRUG = re.compile(r"\b(?:nonpharmacologic\w*|non[ -]drug|behavioral (?:therapy|treatment|interventions)|psychotherapy|surgical treatment)\b", re.I)
 RECOMMENDATION = re.compile(r"\bwe (?:recommend|suggest|prefer|use)\b|\b(?:first[ -]line|initial|preferred) (?:treatment|therapy|medication)|\btreatment of choice\b", re.I)
@@ -17,7 +17,6 @@ DURATION = re.compile(r"\bduration\b|\bcontinue (?:therapy|treatment)\b|\bfor (?
 RESTRICTION = re.compile(r"\b(?:avoid|contraindicat\w*|restrict\w*|caution|must not|should not|do not|not recommended|unless|except)\b", re.I)
 QUALIFIER = re.compile(RESTRICTION.pattern + r"|\b(?:monitor\w*|maximum|titrate|titration)\b", re.I)
 DEPENDENT = re.compile(r"^\s*(?:[-•]\s*)?(?:however\b|unless\b|except\b|only\b|note\b|caution\b|do not\b|avoid\b|this (?:dose|regimen|recommendation|treatment|approach|drug|medication)\b|these (?:doses|patients|recommendations|restrictions)\b|the (?:above|following)\b)", re.I)
-CONTINUATION = re.compile(r"^\s*(?:it (?:is|can|may|should)\b|(?:the|this) (?:same )?(?:dose|regimen|drug|medication|treatment|response)\b)", re.I)
 
 
 def section_key(passage):
@@ -30,58 +29,6 @@ def _identity(passage):
             re.sub(r"\s+", " ", passage.text).strip())
 
 
-def source_order(passages):
-    """Keep retrieval priority across runs and original order inside each run."""
-    groups = {}
-    for passage in passages:
-        groups.setdefault(passage.passage_run or passage.id, []).append(passage)
-    return [passage for group in groups.values()
-            for passage in sorted(group, key=lambda item: item.ordinal if item.ordinal is not None else 0)]
-
-
-def contiguous_passages(passages, seed_ids, context, concepts):
-    """Split one original section at topical stops, preserving the whole hit run."""
-    therapy = set(context.intents) & {"treatment", "drug_therapy", "dose", "renal_dose"}
-    aspects = [lexical.INTENTS[name][1] for name in context.intents if name != "general"]
-    keywords = set(concepts) | set(context.aspects)
-    result, current = [], []
-    current_later = False
-    current_medication = ""
-
-    def close():
-        nonlocal current_later, current_medication
-        if len(current) > 1 and seed_ids.intersection(p.id for p in current):
-            result.append(tuple(current))
-        current.clear()
-        current_later = False
-        current_medication = ""
-
-    for passage in sorted(passages, key=lambda item: item.ordinal):
-        text = passage.text
-        later = lexical.after_initial_therapy([passage.section, text])
-        previous = current[-1] if current else None
-        if previous:
-            labels = {label["ordinal"] for label in passage.context}
-            same_medication = not current_medication or not passage.medication or current_medication == passage.medication
-            same_context = (same_medication and (current_later or not later)
-                            and not (current_later and lexical.initial_match((), text)))
-            if not same_context or any(n not in labels for n in range(previous.ordinal + 1, passage.ordinal)):
-                close()
-        role = bool(therapy and any(pattern.search(text) for pattern in (RECOMMENDATION, DOSE_NUMBER, QUALIFIER, DURATION)))
-        continued = bool(current and (DEPENDENT.search(text) or CONTINUATION.search(text)))
-        topical = bool(keywords.intersection(lexical.tokens(text))) or any(re.search(pattern, text, re.I) for pattern in aspects)
-        if (context.initial_only and later) or (therapy and not role and BACKGROUND.match(re.sub(r"^the\s+", "", text, flags=re.I))):
-            close()
-        elif passage.id in seed_ids or role or continued or topical:
-            current.append(passage)
-            current_later = current_later or later
-            current_medication = current_medication or passage.medication
-        else:
-            close()
-    close()
-    return result
-
-
 def retain_with_context(passages, identifiers):
     """Keep adjacent source qualifications together with their cited evidence.
 
@@ -91,12 +38,9 @@ def retain_with_context(passages, identifiers):
     selected = set(identifiers)
     by_id = {p.id:p for p in passages}
     groups = {}
-    runs = {}
     for passage in passages:
         if passage.ordinal is not None:
             groups.setdefault(section_key(passage), []).append(passage)
-        if passage.passage_run:
-            runs.setdefault(passage.passage_run, set()).add(passage.id)
     for group in groups.values():
         group.sort(key=lambda passage: passage.ordinal)
     changed = True
@@ -105,10 +49,6 @@ def retain_with_context(passages, identifiers):
         for identifier in list(selected):
             passage = by_id.get(identifier)
             if passage is not None:
-                run = runs.get(passage.passage_run, set())
-                if not run.issubset(selected):
-                    selected.update(run)
-                    changed = True
                 for relation in passage.relations:
                     parent = relation["source_id"]
                     if parent in by_id and parent not in selected:
@@ -117,9 +57,6 @@ def retain_with_context(passages, identifiers):
         for group in groups.values():
             for left, right in zip(group, group[1:]):
                 if left.id not in selected and right.id not in selected:
-                    continue
-                if (left.medication and right.medication and left.medication != right.medication
-                        or left.passage_run and right.passage_run and left.passage_run != right.passage_run):
                     continue
                 labels = {label.get("ordinal") for passage in (left, right) for label in passage.context}
                 gap = right.ordinal - left.ordinal
@@ -136,10 +73,8 @@ def retain_with_context(passages, identifiers):
                   and any(r["source_id"] not in selected for r in p.relations)}
         if not broken:
             break
-        for identifier in tuple(broken):
-            broken.update(runs.get(by_id[identifier].passage_run, ()))
         selected -= broken
-    return source_order(passage for passage in passages if passage.id in selected)
+    return [passage for passage in passages if passage.id in selected]
 
 
 def focus_passages(passages, question, query, *, lookup_kind="topic", audience="general", intent="general", keywords=(), question_profile=None):

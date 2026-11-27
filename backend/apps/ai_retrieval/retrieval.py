@@ -25,7 +25,7 @@ from apps.core.exceptions import PlatformAPIError
 from apps.ai_lab import lexical, question_profile as profiles, reference_index, telemetry
 from apps.ai_lab.models import ReferenceArticle, ReferenceParagraph
 from apps.ai_lab.provider import ProviderError
-from apps.ai_lab.retrieval import Passage, source_medication, treatment_topic_titles
+from apps.ai_lab.retrieval import Passage
 from apps.uptodate import services as uptodate
 from apps.uptodate.search_catalog import SearchCatalog, normalize
 from . import embeddings, evidence, indexing, vectors
@@ -33,7 +33,6 @@ from .models import RetrievalHead, SearchAlias, SearchChunk
 from .chunking import token_count
 from .query_terms import query_text
 from .scope import SourceScope
-from .treatment_sources import PROBE_ARTICLES, treatment_coverage
 
 
 def reciprocal_rank_fusion(rankings):
@@ -78,7 +77,6 @@ class HybridRetriever:
     def __init__(self, request, *, generation=None, check_cancelled=lambda:None):
         self.request, self.consumed = request, set()
         self.scope = SourceScope()
-        self._treatment_scope = None
         self.search_count = 0
         self._article_cache = {}
         self._section_cache = {}
@@ -110,21 +108,11 @@ class HybridRetriever:
             return False
 
     def register_related(self, parent, target, *, kind="source_link"):
-        if self._treatment_scope is not None:
-            target = str(target)
-            article = self._article_cache.get(target)
-            if article is None:
-                article = ReferenceArticle.objects.filter(generation_id=self.generation.source_generation,
-                                                          source_id=target).first()
-                if article is not None:
-                    self._article_cache[target] = article
-            if article is not None and not lexical.treatment_title_allowed(article.title, self._treatment_scope):
-                return False
         if not settings.AI_LAB_TAG_SCOPED_SEARCH or not self.scope.established:
             return True
         return self.scope.follow(parent, target, limit=max(1, settings.AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES), kind=kind)
 
-    def _choose_roots(self, identifiers, query, audience, lookup_kind, intent, profile, *, require_treatment_condition=False):
+    def _choose_roots(self, identifiers, query, audience, lookup_kind, intent, profile):
         rows = list(ReferenceArticle.objects.filter(generation_id=self.generation.source_generation,
             source_id__in=list(dict.fromkeys(identifiers))[:200], is_directory=False).only(
                 "source_id", "title", "content_hash", "related_topics", "is_directory", "generation_id"))
@@ -133,15 +121,9 @@ class HybridRetriever:
         entities = [set(lexical.tokens(entity)) - lexical.STOP_WORDS - {"history", "severe", "previous", "prior"}
                     for entity in profiles.entities(profile or {})]
         entities = [words for words in entities if words]
-        if require_treatment_condition and self._treatment_scope and profile:
-            conditions = [set(lexical.tokens(row["name"])) - lexical.STOP_WORDS
-                          for row in profile["conditions"] if row["status"] != "excluded"]
-            conditions = [words for words in conditions if words]
-            if conditions:
-                rows = [row for row in rows if any(words <= set(lexical.tokens(row.title)) for words in conditions)]
         context = query_context(query, lookup_kind=lookup_kind, audience=audience,
                                 intent=intent, question_profile=profile)
-        def source_match(article):
+        def rank(article):
             words = set(lexical.tokens(article.title))
             drug = "drug information" in article.title.lower()
             pediatric = bool(words & {"pediatric", "paediatric", "children"})
@@ -151,24 +133,9 @@ class HybridRetriever:
             overlap = [len(words & entity)/len(entity) for entity in entities]
             return (lookup_kind == "drug" and not drug, lookup_kind == "drug" and not exact_drug,
                 audience == "pediatric" and not pediatric, audience in {"adult", "general"} and pediatric,
-                -max(overlap, default=0), -sum(overlap))
-
-        def rank(article):
-            return (*source_match(article),
-                lexical.treatment_title_priority(article.title, self._treatment_scope),
+                -max(overlap, default=0), -sum(overlap),
                 -lexical.heading_score(article.title, [article.title], context), order.get(article.source_id, 999))
         rows.sort(key=rank)
-        rows = [article for article in rows if lexical.treatment_title_allowed(article.title, self._treatment_scope)]
-        if self._treatment_scope and self._treatment_scope.stage in {"general", "initial"}:
-            admitted = [article for article in rows[:PROBE_ARTICLES] if self.permitted(article.source_id)]
-            coverage = treatment_coverage(self.generation.source_generation,
-                                          [article.source_id for article in admitted], self._treatment_scope, audience)
-            best_match = min((source_match(article) for article in admitted if coverage.get(article.source_id, 0) >= 0), default=None)
-            primary = [article for article in admitted if coverage.get(article.source_id) == 2 and source_match(article) == best_match]
-            if primary:
-                rows = primary
-            else:
-                rows = [article for article in rows if coverage.get(article.source_id, 0) >= 0]
         chosen = []
         for article in rows:
             if self.permitted(article.source_id):
@@ -182,8 +149,6 @@ class HybridRetriever:
         if self.scope.established:
             return
         identifiers = self.catalog_ids(query, audience, intent, lookup_kind, profile)
-        if self._treatment_scope and settings.AI_LAB_INITIAL_SEARCH_FALLBACK:
-            identifiers = self.treatment_title_ids(identifiers, query, profile)
         roots = self._choose_roots(identifiers, query, audience, lookup_kind, intent, profile)
         fallback = not roots and settings.AI_LAB_INITIAL_SEARCH_FALLBACK
         if fallback:
@@ -194,7 +159,7 @@ class HybridRetriever:
             identifiers = list(ReferenceArticle.objects.filter(title_filter,
                 generation_id=self.generation.source_generation, is_directory=False)
                 .values_list("source_id", flat=True)[:120])
-            roots = self._choose_roots(identifiers, query, audience, lookup_kind, intent, profile, require_treatment_condition=True)
+            roots = self._choose_roots(identifiers, query, audience, lookup_kind, intent, profile)
             if not roots:
                 expression = SearchQuery(query, config="english", search_type="websearch")
                 base = SearchChunk.objects.filter(generation=self.generation, search_document=expression)
@@ -207,14 +172,8 @@ class HybridRetriever:
                         ids, _ = pool.submit(copy_context().run, self.semantic_ids, query, audience).result()
                     rows = dict(SearchChunk.objects.filter(pk__in=ids).values_list("pk", "source_id"))
                     identifiers = [rows[i] for i in ids if i in rows]
-                roots = self._choose_roots(identifiers, query, audience, lookup_kind, intent, profile, require_treatment_condition=True)
+                roots = self._choose_roots(identifiers, query, audience, lookup_kind, intent, profile)
         self.scope.bind(roots, fallback=fallback)
-
-    def treatment_title_ids(self, identifiers, query, profile):
-        conditions = [row["name"] for row in (profile or {}).get("conditions", []) if row["status"] != "excluded"]
-        titles = treatment_topic_titles(self.generation.source_generation, [*conditions, query])
-        return list(dict.fromkeys([*identifiers[:120], *(row["id"] for row in titles
-            if lexical.treatment_title_allowed(row["title"], self._treatment_scope))]))
 
     def catalog_ids(self, query, audience, intent="general", lookup_kind="topic", question_profile=None):
         words = normalize(query).split()[:12]
@@ -301,10 +260,6 @@ class HybridRetriever:
             fallback_query = reduce(operator.or_, [SearchQuery(word, config="english") for word in terms])
             relaxed = list(dict.fromkeys([*relaxed, *ranked(base, fallback_query)]))[:count]
         sources = list(self.scope.ids) if scoped else self.catalog_ids(query, audience, intent, lookup_kind, question_profile)
-        if not scoped and self._treatment_scope:
-            if settings.AI_LAB_INITIAL_SEARCH_FALLBACK:
-                sources = self.treatment_title_ids(sources, query, question_profile)
-            sources = self._choose_roots(sources, query, audience, lookup_kind, intent, question_profile)
         curated = []
         if sources:
             tagged = base.filter(source_id__in=sources)
@@ -378,9 +333,6 @@ class HybridRetriever:
         if not isinstance(query, str) or not 2 <= len(query.strip()) <= 240:
             raise ProviderError("INVALID_SEARCH_TOOL_ARGUMENTS")
         query = query.strip()
-        if self.search_count == 0:
-            self._treatment_scope = lexical.treatment_topic_scope(question or f"{query} {audience}", lookup_kind, intent,
-                                                                 audience=audience)
         if settings.AI_LAB_TAG_SCOPED_SEARCH:
             query = query_text(query)
             self._bind_scope(media.catalog_query(query) if media.requested(question or query) else query,
@@ -393,15 +345,12 @@ class HybridRetriever:
         cache = caches["ai_lab"]
         context = query_context(query, question=question, lookup_kind=lookup_kind,
             audience=audience, intent=intent, keywords=keywords, question_profile=question_profile)
-        cache_key = "hybrid-ranking:v8:" + salted_hmac("hybrid-ranking", json.dumps([
+        cache_key = "hybrid-ranking:v6:" + salted_hmac("hybrid-ranking", json.dumps([
             str(getattr(getattr(self.request, "user", None), "pk", "diagnostic")), str(self.generation.pk),
-            embeddings.profile_status(self.generation), query, lookup_kind, audience, intent,
+            self.generation.embedding_profile, self.generation.embedding_ready, query, lookup_kind, audience, intent,
             list(keywords), question_profile, settings.AI_LAB_HYBRID_CANDIDATES,
             self.scope.audit() if settings.AI_LAB_TAG_SCOPED_SEARCH else None, followup,
-            context.first_line_regimen, context.initial_only,
-            (self._treatment_scope.stage, self._treatment_scope.populations, self._treatment_scope.modalities)
-            if self._treatment_scope else None],
-            sort_keys=True)).hexdigest()
+            context.first_line_regimen, context.initial_only], sort_keys=True)).hexdigest()
         try:
             cached = cache.get(cache_key)
         except Exception:
@@ -438,8 +387,7 @@ class HybridRetriever:
             except Exception:
                 pass
         scores = reciprocal_rank_fusion([lexical_ids, semantic, curated])
-        candidates = [row for row in SearchChunk.objects.filter(pk__in=list(scores), generation=self.generation)
-                      if lexical.treatment_title_allowed(row.title, self._treatment_scope)]
+        candidates = list(SearchChunk.objects.filter(pk__in=list(scores), generation=self.generation))
         if lookup_kind == "drug" and intent in {"dose", "renal_dose"}:
             for neighbor, seed_id in self.dose_neighbors(candidates, audience):
                 if neighbor.pk not in scores:
@@ -471,7 +419,7 @@ class HybridRetriever:
             if intent in {"dose", "renal_dose"}:
                 priority += min(7,lexical.regimen_score(row.text,row.heading))*.001
             line = lexical.initial_match(row.heading_path or (row.heading,), row.text) if context.initial_only else 0
-            return -line, lexical.treatment_title_priority(row.title, self._treatment_scope), -(scores[row.pk] + priority), str(row.pk)
+            return -line, -(scores[row.pk] + priority), str(row.pk)
         candidates.sort(key=rank)
         diverse, overflow, section_counts = [], [], {}
         for row in candidates:
@@ -674,29 +622,22 @@ class HybridRetriever:
                 result.append((row,seed.pk))
         return result
 
-    def check_passage_access(self, passages, *, consume=False):
-        identifiers = {p.article_id for p in passages}
-        needed = identifiers - self.consumed if consume else identifiers
+    def consume_passages(self, passages):
+        needed = {passage.article_id for passage in passages} - self.consumed
         if not needed:
             return
         articles = ReferenceArticle.objects.filter(generation_id=self.generation.source_generation, source_id__in=needed)
-        seen = set()
         for article in articles:
+            require_feature(self.request, "uptodate", item=article.source_id, consume=True)
             if self.stamp.backend == "mysql":
                 with reference_index.mysql_source_connection().cursor() as cursor:
                     cursor.execute("SELECT SHA2(gzip,256) AS blob_hash FROM content WHERE id=%s", [article.source_id])
                     current = cursor.fetchone()
                 if not current or current["blob_hash"] != article.blob_hash:
                     raise ProviderError("REFERENCE_INDEX_STALE")
-            require_feature(self.request, "uptodate", item=article.source_id, consume=consume)
-            seen.add(article.source_id)
-            if consume:
-                self.consumed.add(article.source_id)
-        if needed != seen:
+            self.consumed.add(article.source_id)
+        if needed - self.consumed:
             raise ProviderError("REFERENCE_INDEX_STALE")
-
-    def consume_passages(self, passages):
-        self.check_passage_access(passages, consume=True)
 
     def passages(self, chunks, *, consume=True, prefetched=None):
         wanted = {identifier: chunk for chunk in chunks for identifier in chunk.block_ids}
@@ -713,7 +654,6 @@ class HybridRetriever:
             self._label_cache[label.section_id].append(label)
         labels=self._label_cache
         result, seen = [], set()
-        drug_names = drug_name_catalog(self.generation.source_generation) if self._treatment_scope else ()
         for chunk in chunks:
             for identifier in chunk.block_ids:
                 if identifier in seen:
@@ -722,17 +662,13 @@ class HybridRetriever:
                 article = row.article
                 if article.source_id != chunk.source_id or article.content_hash != chunk.content_hash or row.retrieval_number is None:
                     raise ProviderError("REFERENCE_INDEX_STALE")
-                preceding = [label for label in labels.get(row.section_id, []) if label.ordinal < row.ordinal][-4:]
-                heading_path = row.section.heading_path or [row.section.heading]
-                medication = source_medication(article.title, [*heading_path, *(label.text for label in preceding)],
-                                               drug_names)
                 result.append(Passage("P"+str(row.pk),article.source_id,article.title,row.section.heading,row.text,
                     {"screen":"uptodateArticle","params":{"id":article.source_id,"title":article.title,
                      "sectionId":row.section.source_id,"searchAnchor":row.source_anchor,"searchContentHash":article.content_hash}},
                     article.content_hash,heading_path=tuple(row.section.heading_path),context=tuple({
                         "quote":label.text,"source_anchor":label.source_anchor,"ordinal":label.ordinal}
-                        for label in preceding),
-                    ordinal=row.ordinal, medication=medication))
+                        for label in [label for label in labels.get(row.section_id,[]) if label.ordinal<row.ordinal][-4:]),
+                    ordinal=row.ordinal))
                 seen.add(identifier)
         if consume:
             self.consume_passages(result)

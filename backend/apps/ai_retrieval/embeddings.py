@@ -17,8 +17,6 @@ from .chunking import token_count
 
 def base_url():
     base = settings.AI_LAB_EMBEDDING_BASE_URL.strip().rstrip("/")
-    if not base:
-        raise ProviderError("EMBEDDING_BASE_URL_REQUIRED")
     try:
         parsed = urlsplit(base)
         invalid_port = parsed.port is not None and not 1 <= parsed.port <= 65535
@@ -43,20 +41,6 @@ def profile():
              "revision": settings.AI_LAB_EMBEDDING_REVISION, "normalization": "l2-v1"}
     value["id"] = sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
     return value
-
-
-def profile_status(generation):
-    """Safe to log in a worker. Endpoints and model file paths stay private."""
-    try:
-        current = profile()
-    except ProviderError as exc:
-        return {"ready": False, "code": exc.code, "changed_fields": []}
-    stored = generation.embedding_profile or {}
-    changed = sorted(k for k in stored.keys() | current.keys() if stored.get(k) != current.get(k))
-    code = ("HYBRID_EMBEDDINGS_NOT_READY" if not generation.embedding_ready else
-            "EMBEDDING_PROFILE_CHANGED" if changed else None)
-    return {"ready": code is None, "code": code, "changed_fields": changed,
-            "runtime_id": current.get("id"), "index_id": stored.get("id")}
 
 
 @sensitive_variables()

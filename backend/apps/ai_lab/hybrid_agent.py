@@ -52,8 +52,6 @@ For drug-disease/interaction questions, preserve BOTH named entities and the req
 Use a recognized drug-class synonym as a query aid when helpful, while retaining the named drug. It is a retrieval hint, not evidence or a treatment recommendation.
 For interaction searches prefer the interacting entities, class and safety/management aspect over generic words like pain, alternative or patient.
 Keep search queries to the essential concept, population and requested aspect (usually 4 to 14 words).
-For a broad treatment request, use the general condition; include a refractory or prior-treatment-failure qualifier only
-when the user asks about that stage.
 Include critical scenario qualifiers even if that needs a few more words. Do not copy the entire narrative into the query.
 Use keywords for discriminating findings/constraints or a secondary requested aspect, not eight generic synonyms.
 The tool searches original paragraph text, titles, source tagging and semantic matches; do not request title-only article searches.
@@ -72,9 +70,6 @@ Preserve the original question_profile on every complementary search; a changed 
 For a complementary search, set retain_source_ids to ONLY the existing paragraph IDs needed for the actual answer.
 Keep the recommendation, its regimen and necessary restrictions; discard unrelated background, repetitive details and unrequested comparisons.
 The newest tool result contains ALL current evidence. Earlier tool results are superseded; cite only the newest result's source IDs.
-Read consecutive paragraphs carrying the same passage_run in original order, starting at its first paragraph.
-On each change of drug or class, start a new paragraph and explicitly name it. State whether a new linked article
-continues the same drug's regimen or supports a separate conditional option.
 When the question requests drug dosing or a complete regimen, find both the recommendation and the regimen of the SAME recommended drug:
 its dose, route, frequency, and source-stated duration, titration, maximum, monitoring and important restrictions.
 A medication discovered in a returned source may be used in a complementary query to find its missing regimen/safety details.
@@ -126,9 +121,6 @@ They do not independently support a claim or coverage unless the proposed claim 
 Never borrow a dose from another drug or population; do not treat referral, causes or definition as drug therapy.
 First determine supported independently of completeness. Keep every relevant, source-supported claim even when another
 claim is wrong or a requested detail is missing. Faithful Persian paraphrases need not repeat the English wording.
-Verify the drug or class independently for each claim, especially after an article or passage_run changes.
-Reject an ambiguous regimen if it could be read as applying to the prior drug. A source-qualified transition to another
-therapy must state the new drug or class and its applicable conditions in the claim itself.
 Assess sufficient separately using ONLY the supported claims. They alone must answer all explicit parts of the question and supplied requirements.
 A first-line selection can be supported without dosing if the question did not request it. Do not confuse initial care with
 refractory or subsequent care. Preserve any conditions that materially limit a first-line recommendation.
@@ -173,14 +165,6 @@ def _arguments(call):
         value = json.loads(call["function"]["arguments"])
     except (ValueError,KeyError,TypeError):
         raise ProviderError("INVALID_SEARCH_TOOL_ARGUMENTS") from None
-    # Some tool providers lift this nested array to the top level. Normalize only
-    # this equivalent representation, then validate it with the same bounded schema.
-    if isinstance(value, dict) and "passage_queries" in value and isinstance(value.get("question_profile"), dict):
-        profile = value["question_profile"]
-        queries = value.pop("passage_queries")
-        if "passage_queries" in profile and profile["passage_queries"] != queries:
-            raise ProviderError("INVALID_SEARCH_TOOL_ARGUMENTS")
-        profile["passage_queries"] = queries
     if not isinstance(value,dict) or set(value)-{"query","lookup_kind","audience","intent","keywords","retain_source_ids","question_profile"}:
         raise ProviderError("INVALID_SEARCH_TOOL_ARGUMENTS")
     query = value.get("query")
@@ -262,7 +246,6 @@ def _claims(text, passages):
             segment = paragraph[offset:match.start()].strip()
             offset = match.end()
             identifiers = list(dict.fromkeys(re.findall(r"\bP\d+\b", match[0])))
-            direct = identifiers.copy()
             # All literal parent dependencies travel with their linked source.
             for identifier in identifiers:
                 if identifier not in known:
@@ -275,8 +258,7 @@ def _claims(text, passages):
             if match[1] and segment[-1] not in ".!?؟":
                 segment += match[1]
             for sentence in re.split(r"(?<=[.!?؟])\s+", segment):
-                result.append({"id": "A"+str(len(result)+1), "text": sentence, "source_ids": identifiers,
-                               **({"direct_source_ids": direct} if direct != identifiers else {})})
+                result.append({"id": "A"+str(len(result)+1), "text": sentence, "source_ids": identifiers})
         uncited |= bool(paragraph[offset:].strip())
     return result, uncited
 
@@ -291,8 +273,6 @@ def _verify(question, claims, passages, requirements, stages, check_cancelled=la
             "preceding_labels":[row["quote"] for row in by_id[identifier].context],
             "text":by_id[identifier].text,"context_only":identifier not in used,
             "linked_from":list(by_id[identifier].relations),
-            **({"medication": by_id[identifier].medication} if by_id[identifier].medication else {}),
-            **({"passage_run": by_id[identifier].passage_run} if by_id[identifier].passage_run else {}),
             "media":[{"kind":item["kind"],"title":item["title"]} for item in by_id[identifier].media]} for identifier in sorted(review_ids)]},
         max(settings.AI_LAB_VERIFY_MAX_OUTPUT_TOKENS,1000+len(requirements)*100), check_cancelled=check_cancelled)
     stages.append({"stage":"verification",**meta})
@@ -373,26 +353,11 @@ def _citation(passage, *, retrieved=False):
         "section_path":list(passage.heading_path),"quote":passage.text,"target":passage.target,
         "content_hash":passage.content_hash,"summary_fa":"" if retrieved else "متن اصلیِ مرتبط با پاسخ.",
         "context":list(passage.context),"media":list(passage.media),
-        "verification":"retrieved" if retrieved else "verified",
-        **({"medication": passage.medication} if passage.medication else {})}
+        "verification":"retrieved" if retrieved else "verified"}
 
 
-def answer_blocks(claims, citations=()):
-    by_id = {item["source_id"]: item for item in citations}
-    previous_articles, previous_drugs = (), ()
-    blocks = []
-    for claim in claims:
-        sources = [by_id[i] for i in claim.get("direct_source_ids", claim["source_ids"]) if i in by_id]
-        articles = tuple(dict.fromkeys((item["target"]["params"]["id"], item["title"]) for item in sources))
-        drugs = tuple(dict.fromkeys(item["medication"] for item in sources if item.get("medication")))
-        block = {"text_fa": claim["text"], "source_ids": claim["source_ids"]}
-        if drugs and drugs != previous_drugs:
-            block["medication_label"] = " / ".join(drugs)
-        if articles and previous_articles and articles != previous_articles:
-            block["source_label"] = " / ".join(title for _, title in articles)
-        blocks.append(block)
-        previous_articles, previous_drugs = articles, drugs
-    return blocks
+def answer_blocks(claims):
+    return [{"text_fa": claim["text"], "source_ids": claim["source_ids"]} for claim in claims]
 
 
 def related_citations(passages, verified, *, include_unquoted=False):
@@ -434,8 +399,6 @@ def _evidence_payload(passages):
             contexts[key] = {"id":"C"+str(len(contexts)+1),"title":passage.title,
                 "path":list(passage.heading_path),"preceding_labels":[row["quote"] for row in passage.context]}
         sources.append({"id":passage.id,"context":contexts[key]["id"],"text":passage.text,
-            **({"passage_run": passage.passage_run} if passage.passage_run else {}),
-            **({"medication": passage.medication} if passage.medication else {}),
             **({"linked_from":list(passage.relations)} if passage.relations else {}),
             **({"media":[{"kind":item["kind"],"title":item["title"]} for item in passage.media],
                 "media_content_complete":all(item.get("content_complete",False) for item in passage.media)} if passage.media else {})})
@@ -545,8 +508,7 @@ def _answer_agent_loop(question, history, request, *, progress=lambda _:None,pub
                 profile = question_profile.for_question(candidate_profile, original) if candidate_profile else None
                 if profile is not None:
                     arguments["intent"] = profile["objectives"][0]
-                    if (set(profile["objectives"]) & {"emergency_care","diagnosis","differential"}
-                            or profile["kind"] == "disease_question" and arguments["intent"] in {"drug_therapy", "treatment"}):
+                    if set(profile["objectives"]) & {"emergency_care","diagnosis","differential"}:
                         arguments["lookup_kind"] = "topic"
             retained = arguments.pop("retain_source_ids",None)
             if retained is not None:
@@ -648,7 +610,7 @@ def _answer_agent_loop(question, history, request, *, progress=lambda _:None,pub
         overview="\n\n".join(re.sub(r"\[(?:P\d+[\s,،;؛]*)+\]","",claim["text"]).strip() for claim in kept)
         part={"question_fa":original,"queries":queries,"lookup_kind":kind,"audience":audience,"intent":intent,
             "requirements":requirements,"coverage":coverage,"overview_fa":overview,"items":citations,
-            "answer_blocks":answer_blocks(kept,citations),"related_items":related_citations(evidence.values(),used,include_unquoted=not kept),
+            "answer_blocks":answer_blocks(kept),"related_items":related_citations(evidence.values(),used,include_unquoted=not kept),
             "status":"answered" if sufficient else "partial" if citations else "not_found",
             "clarification_fa":clarification(sufficient,kept,evidence),
             "retrieval":{"engine":"hybrid_agent","searches":searches,"selected_passages":len(evidence),

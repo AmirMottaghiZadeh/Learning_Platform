@@ -12,7 +12,7 @@ _current = ContextVar("reference_search_trace", default=None)
 _stage = ContextVar("reference_search_stage", default="unclassified")
 _attempt = ContextVar("reference_search_attempt", default=None)
 STAGES = frozenset({"planning", "article_selection", "search_repair", "retrieval", "lexical_retrieval", "source_context", "source_links", "source_read", "extraction", "index_read",
-                    "section_selection", "answering", "answer_repair", "verification", "embedding", "cache_lookup", "cache_validation", "cache_write", "unclassified"})
+                    "section_selection", "answering", "verification", "embedding", "cache_lookup", "cache_validation", "cache_write", "unclassified"})
 TOKEN_FIELDS = ("prompt_tokens", "completion_tokens", "total_tokens")
 
 

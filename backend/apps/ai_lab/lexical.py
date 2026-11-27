@@ -21,34 +21,6 @@ REGIMEN_NUMBER = r"\d\s*(?:mg|mcg|µg|μg|micrograms?|milligrams?|grams?|mL|unit
 REGIMEN_SCHEDULE = r"\b(?:once|twice|three times|four times) (?:a |per )?(?:daily|day|week)|\bevery \d+ hours?\b|\b(?:oral|topical|intravenous|intramuscular)\b"
 INITIAL_THERAPY = r"\b(?:first[- ‐‑–]line|initial (?:treatment|therapy|management|choice|pharmacotherap\w*|(?:drug|medication) selection)|(?:DMARD|treatment|therapy)[- ‐‑–]na[iï]ve|treatment of choice)\b"
 LATER_THERAPY = r"\b(?:(?:second|third|fourth|later)[- ‐‑–]line|subsequent (?:therapy|treatment)|refractory|(?:treatment|drug)[- ‐‑–]resistant|inadequate response|(?:failure|failed) (?:of |to |with )?(?:first[- ‐‑–]line|initial|prior|previous|treatment|therapy))\b"
-LATER_TREATMENT_TOPIC = re.compile(LATER_THERAPY + r"|\b(?:resistan(?:t|ce) to|no response to|"
-    r"(?:do|did|has|have) not respond(?:ed)? to|after (?:failing|failure (?:of|with))|(?:inadequate |non[- ]?)responders?)\b"
-    r"|\b(?:persistent (?:active )?disease|(?:disease|symptoms?|arthritis) persist\w*|active disease) "
-    r"(?:[\w-]+ ){0,3}despite\b", re.I)
-LATER_TREATMENT_QUESTION = re.compile(
-    r"خط\s*(?:دوم|سوم|چهارم|بعدی|[۲۳۴234])|\bمقاوم\b|مقاومت\s*به\s*(?:درمان|دارو)|"
-    r"شکست\s*(?:درمان|دارو|خط|خورده?)|(?:عدم|نبود)\s*پاسخ|پاسخ\s*(?:ند|نگرف)|"
-    r"جواب\s*(?:ند|نگرف)|بی[\s‌-]*پاسخ"
-)
-TREATMENT_POPULATIONS = (
-    ("pediatric", r"\b(?:pediatric|paediatric|children|infants?|neonates?|adolescents?|juvenile)\b",
-     r"کودک|اطفال|بچه|نوزاد|نوجوان|جوانان"),
-    ("perinatal", r"\b(?:pregnan\w*|breastfeed\w*|lactation|post[ -]?partum)\b",
-     r"باردار|شیرده|پس\s*از\s*زایمان"),
-    ("older", r"\b(?:older adults|elderly|geriatric)\b",
-     r"سالمند|سالخورده"),
-)
-TREATMENT_MODALITIES = (
-    ("topical", r"\btopical\b", r"موضعی"),
-    ("systemic", r"\bsystemic (?:therapy|treatment|medication)\b", r"سیستمیک"),
-    ("biologic", r"\bbiologic(?:al|s)?\b", r"بیولوژیک|زیست[\s‌-]*دارو"),
-    ("surgical", r"\bsurg(?:ery|ical)\b", r"جراحی"),
-)
-GENERAL_TREATMENT_TITLE = re.compile(
-    r"^(?:(?:overview|principles|approach) (?:of |to )?(?:the )?)?"
-    r"(?:(?:general|medical|pharmacologic|drug) )?(?:treatment|management|pharmacotherapy)(?: of| for| in)?\b"
-    r"|:\s*(?:comprehensive |general )?(?:treatment|management|pharmacotherapy)\b"
-    r"|\b(?:overview|principles) of (?:the )?(?:treatment|management)\b", re.I)
 STOP_WORDS = frozenset("a an and are as at be by for from in is it of on or the to with what which how information drug patient adult children treatment management".split())
 
 # Retrieval hints only: they never constitute an answer or a medical assertion.
@@ -118,68 +90,9 @@ def first_line_treatment(question):
 
 
 def initial_treatment_only(question):
-    return first_line_treatment(question) and not asks_about_later_treatment(question)
-
-
-def asks_about_later_treatment(question):
-    return bool(LATER_TREATMENT_TOPIC.search(question) or LATER_TREATMENT_QUESTION.search(question.replace("\u200c", " ")))
-
-
-@dataclass(frozen=True)
-class TreatmentTopicScope:
-    stage: str
-    populations: tuple
-    modalities: tuple
-
-
-def treatment_topic_scope(question, lookup_kind, intent, *, audience="general"):
-    """Use the question itself for stage, independent of the translated query."""
-    if lookup_kind != "topic" or not (
-        intent in {"treatment", "drug_therapy"}
-        or intent in {"dose", "renal_dose", "general"} and (
-            first_line_treatment(question) or asks_about_later_treatment(question)
-            or re.search(INTENTS["treatment"][0] + "|" + INTENTS["drug_therapy"][0], question, re.I))
-    ):
-        return None
-    if asks_about_later_treatment(question):
-        stage = "mixed" if first_line_treatment(question) else "later"
-    else:
-        stage = "initial" if first_line_treatment(question) else "general"
-    stated_age = re.search(r"\d+\s*(?:[- ]years?[- ]old|ساله|سال[\s‌]+سن)", question, re.I)
-    populations = tuple(name for name, english, persian in TREATMENT_POPULATIONS
-                        if re.search(english + "|" + persian, question, re.I) or (name == audience and stated_age))
-    modalities = tuple(name for name, english, persian in TREATMENT_MODALITIES
-                       if re.search(english + "|" + persian, question, re.I))
-    return TreatmentTopicScope(stage, populations, modalities)
-
-
-def treatment_title_allowed(title, scope):
-    if scope is None:
-        return True
-    if scope.stage in {"general", "initial"} and LATER_TREATMENT_TOPIC.search(title):
-        return False
-    combined_ages = re.search(r"\b(?:children and adults|adults and children)\b", title, re.I)
-    return all(name in scope.populations or (name == "pediatric" and combined_ages)
-               or not re.search(english, title, re.I) for name, english, _ in TREATMENT_POPULATIONS)
-
-
-def treatment_title_priority(title, scope):
-    if scope is None:
-        return 0
-    later = bool(LATER_TREATMENT_TOPIC.search(title))
-    if scope.stage == "later":
-        return 0 if later else 1
-    if scope.stage == "initial" and not later and re.search(INITIAL_THERAPY, title, re.I):
-        return 0
-    if not later:
-        modalities = {name for name, english, _ in TREATMENT_MODALITIES if re.search(english, title, re.I)}
-        if modalities.intersection(scope.modalities):
-            return 0
-        if modalities:
-            return 3
-    if not later and not re.search(INITIAL_THERAPY, title, re.I) and GENERAL_TREATMENT_TITLE.search(title):
-        return 1
-    return 3 if later or re.search(INITIAL_THERAPY, title, re.I) else 2
+    return first_line_treatment(question) and not re.search(
+        LATER_THERAPY + r"|خط\s*(?:دوم|سوم|چهارم|بعدی|[۲۳۴234])|مقاوم|عدم پاسخ|شکست|پاسخ\s*ند",
+        question, re.I)
 
 
 def first_line_without_regimen(question):
@@ -189,7 +102,7 @@ def first_line_without_regimen(question):
 
 
 def after_initial_therapy(path):
-    return bool(LATER_TREATMENT_TOPIC.search(" > ".join(path)))
+    return bool(re.search(LATER_THERAPY, " > ".join(path), re.I))
 
 
 def initial_match(path, text=""):

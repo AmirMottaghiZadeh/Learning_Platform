@@ -22,14 +22,13 @@ from .models import ReferenceMedia
 ROUTE_LABEL = re.compile(r"^(?:oral|intravenous|intramuscular|subcutaneous|topical|intranasal|rectal|parenteral|"
                          r"immediate.release|extended.release|children|adolescents|adults|infants|neonates|"
                          r"initial|maintenance|maximum|note)\b", re.I)
-PASSAGE_LOOKAROUND = 48
 
 
 class SourceContext:
     def __init__(self, retriever, query, question, *, audience, intent, concepts, question_profile=None):
         self.r = retriever
         self.audience, self.intent = audience, intent
-        self.context = lexical.search_context(question, [query], audience=audience, intent=intent,
+        self.context = lexical.search_context(question + " " + query, [query], audience=audience, intent=intent,
                                               question_profile=question_profile)
         self.regimen = (intent in {"treatment", "drug_therapy", "dose", "renal_dose"}
                         or bool(question_profile and question_profile.get("regimen_requested")))
@@ -54,10 +53,9 @@ class SourceContext:
         retriever._source_link_maps = self.links
         self.result, self.original = {}, set()
         self.stats = {"neighbors": 0, "subsections": 0, "section_links": 0, "article_links": 0, "graphic_links": 0,
-                      "denied_links": 0, "unavailable_links": 0, "continuous_runs": 0, "limited": False}
+                      "denied_links": 0, "unavailable_links": 0, "limited": False}
         self.visited = set()
         self.articles = {}
-        self.read_sections = set()
 
     def sections(self, article):
         cached = self.r._section_cache.get(article.pk)
@@ -114,8 +112,6 @@ class SourceContext:
         relation = {"source_id": parent.id, "kind": kind, "label": label[:240]}
         if passage.id in self.result:
             old = self.result[passage.id]
-            if old.passage_run and kind in {"neighbors", "subsections"}:
-                return False
             if relation not in old.relations:
                 self.result[passage.id] = replace(old, relations=(*old.relations, relation))
             return False
@@ -141,35 +137,6 @@ class SourceContext:
                 base = ReferenceParagraph.objects.filter(article=article, section_id=original.section_id)
                 rows = self.indication_rows(base, [original])
         self.add_group(self.passages(rows), seed, "neighbors")
-
-    def read_in_order(self, seeds):
-        by_id = {int(seed.id[1:]): seed for seed in seeds if seed.ordinal is not None
-                 and re.fullmatch(r"P\d+", seed.id) and "drug information" not in seed.title.lower()}
-        sections = {}
-        positions = ReferenceParagraph.objects.filter(pk__in=by_id).values_list("pk", "section_id", "ordinal")
-        for pk, section, ordinal in positions:
-            sections.setdefault(section, []).append((by_id[pk].id, ordinal))
-        limit = max(1, settings.AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES)
-        for section, anchors in sections.items():
-            self.r.check_cancelled()
-            window = reduce(operator.or_, [
-                Q(ordinal__gte=max(0, ordinal - PASSAGE_LOOKAROUND), ordinal__lte=ordinal + PASSAGE_LOOKAROUND)
-                for _, ordinal in anchors])
-            rows = ReferenceParagraph.objects.filter(window, section_id=section,
-                retrieval_number__isnull=False).select_related("article", "section").order_by("ordinal")
-            candidates = self.passages(rows)
-            seed_ids = {identifier for identifier, _ in anchors}
-            for group in evidence.contiguous_passages(candidates, seed_ids, self.context, self.concepts):
-                additions = sum(p.id not in self.result for p in group)
-                if len(self.result) + additions > limit:
-                    self.stats["limited"] = True
-                    continue
-                self.read_sections.add(evidence.section_key(group[0]))
-                run_id = "R" + group[0].id[1:]
-                for passage in group:
-                    self.result[passage.id] = replace(self.result.get(passage.id, passage), passage_run=run_id)
-                self.stats["continuous_runs"] += 1
-                self.stats["neighbors"] += additions
 
     def add_group(self, passages, parent, kind, label=""):
         additions = {p.id for p in passages if p.id not in self.result}
@@ -264,8 +231,6 @@ class SourceContext:
                 visited.add(root.pk)
                 rows = self.branch_rows(article, sections, {root.pk})
                 for passage in self.passages(rows):
-                    if evidence.section_key(passage) in self.read_sections and passage.id not in self.result:
-                        continue
                     if self.stats["subsections"] >= budget:
                         self.stats["limited"] = True
                         return
@@ -387,14 +352,9 @@ class SourceContext:
         self.result = {p.id:p for p in seeds}
         self.original = set(self.result)
         leading = list(dict.fromkeys(p.article_id for p in seeds if not p.media))[:settings.AI_LAB_SOURCE_CONTEXT_START_ARTICLES]
-        self.read_in_order([seed for seed in seeds if seed.article_id in leading and not seed.media])
-        before_subsections = set(self.result)
-        self.therapy_subsections([seed for seed in evidence.source_order(self.result.values())
-                                  if seed.article_id in leading and not seed.media])
-        self.read_in_order([p for p in self.result.values() if p.id not in before_subsections
-                            and evidence.section_key(p) not in self.read_sections])
+        self.therapy_subsections([seed for seed in seeds if seed.article_id in leading and not seed.media])
         for seed in seeds:
-            if seed.article_id in leading and "drug information" in seed.title.lower():
+            if seed.article_id in leading:
                 self.neighbors(seed)
         # Resolve local section references first. Their paragraphs can contain
         # the actual drug links (summary -> selection/dosing -> monograph).
@@ -477,7 +437,7 @@ class SourceContext:
             balanced.append((priority,depth,score,order,parent,link))
         for _, _, _, _, parent, link in sorted(balanced, key=lambda row:row[:4]):
             self.follow(parent, link, counts)
-        return evidence.source_order(self.result.values()), self.stats
+        return list(self.result.values()), self.stats
 
 
 def expand(retriever, passages, question, query, *, audience, intent, concepts, question_profile=None):
