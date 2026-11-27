@@ -132,8 +132,14 @@ export function LearningPlanWizard({ initial = DEFAULT_PLAN, bottomInset = 0, is
                     onPress={() => setConfig({ ...config, atc_groups: selected ? config.atc_groups.filter((code) => code !== group.code)
                       : [...config.atc_groups, group.code] })}
                     style={({ pressed }) => [{ width: "48%", minHeight: 56, borderRadius: radius.input, padding: spacing.sm,
-                      flexDirection: row, alignItems: "center", gap: spacing.xs, backgroundColor: selected ? colors.leitnerActiveBg : colors.cardBg,
-                      opacity: pressed ? 0.75 : 1 }, shadows.raisedSm]}>
+                      flexDirection: row, alignItems: "center", gap: spacing.xs,
+                      // Keep the surface opaque: Android draws elevation as a grey
+                      // ring around a translucent background, which made a selected
+                      // box look thickly bordered. The tint is painted on top instead.
+                      backgroundColor: colors.cardBg, opacity: pressed ? 0.75 : 1 }, shadows.raisedSm]}>
+                      {selected ? <View pointerEvents="none"
+                        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0,
+                          borderRadius: radius.input, backgroundColor: colors.leitnerActiveBg }} /> : null}
                       <AppText size={12} weight={selected ? "800" : "600"} style={{ flex: 1 }}>{groupName(group.code)}</AppText>
                       <AppText size={11} weight="800" color={colors.accent} style={{ writingDirection: "ltr" }}>
                         {selected ? `✓ ${group.code}` : group.code}
