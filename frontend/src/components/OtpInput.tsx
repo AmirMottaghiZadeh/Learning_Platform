@@ -35,22 +35,6 @@ export function OtpInput({ value, length, onChangeText, onSubmitEditing, hasErro
     <View style={{ gap: 8 }}>
       <AppText size={14} weight="600">{label}</AppText>
       <View>
-        <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden
-          style={{ flexDirection: "row", gap: length > 6 ? 4 : 8, direction: "ltr" }}>
-          {Array.from({ length }, (_, index) => {
-            const selected = focused && index === activeCell;
-            return (
-              <View key={index} style={{ flex: 1, minHeight: 48, borderRadius: 10,
-                alignItems: "center", justifyContent: "center",
-                backgroundColor: hasError ? colors.denyBg : selected ? colors.trackBg : colors.softBg,
-                }}>
-                <AppText size={21} weight="600" style={{ writingDirection: "ltr", fontVariant: ["tabular-nums"] }}>
-                  {value[index] ? n(value[index]) : ""}
-                </AppText>
-              </View>
-            );
-          })}
-        </View>
         <TextInput
           testID="otp-input"
           {...(Platform.OS === "web" ? ({ id: "otp-input" } as object) : {})}
@@ -78,6 +62,28 @@ export function OtpInput({ value, length, onChangeText, onSubmitEditing, hasErro
             ...(Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : {}),
           }]}
         />
+        {/* Android ignores color:"transparent" on some IMEs and draws the raw
+            digits inside the first cell. Keep the real input behind an opaque
+            panel-coloured layer so only the cells are ever visible; touches and
+            autofill still reach the input beneath. */}
+        <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: colors.cardBg }} />
+        <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden
+          style={{ flexDirection: "row", gap: length > 6 ? 4 : 8, direction: "ltr" }}>
+          {Array.from({ length }, (_, index) => {
+            const selected = focused && index === activeCell;
+            return (
+              <View key={index} style={{ flex: 1, minHeight: 48, borderRadius: 10,
+                alignItems: "center", justifyContent: "center",
+                backgroundColor: hasError ? colors.denyBg : selected ? colors.trackBg : colors.softBg,
+                }}>
+                <AppText size={21} weight="600" style={{ writingDirection: "ltr", fontVariant: ["tabular-nums"] }}>
+                  {value[index] ? n(value[index]) : ""}
+                </AppText>
+              </View>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
