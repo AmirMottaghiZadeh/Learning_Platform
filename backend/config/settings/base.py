@@ -697,6 +697,9 @@ AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES = config("AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES"
 AI_LAB_SOURCE_LINK_CACHE_TTL_SECONDS = config("AI_LAB_SOURCE_LINK_CACHE_TTL_SECONDS", default=86400, cast=int)
 AI_LAB_EVENT_REDIS_URL = config("AI_LAB_EVENT_REDIS_URL", default=REDIS_URL)
 AI_LAB_EXECUTOR = config("AI_LAB_EXECUTOR", default="thread" if ENVIRONMENT == "local" else "celery")
-AI_LAB_STREAM_ANSWER_DRAFTS = config("AI_LAB_STREAM_ANSWER_DRAFTS", default=False, cast=bool)
+# Stream the Persian draft while it is written, then replace it with the
+# verified answer (answer_reset). The UI labels it "draft under review", so
+# the reader sees progress at ~20s instead of waiting for the full verify.
+AI_LAB_STREAM_ANSWER_DRAFTS = config("AI_LAB_STREAM_ANSWER_DRAFTS", default=True, cast=bool)
 AI_LAB_RETRIEVAL_CACHE_TTL_SECONDS = config("AI_LAB_RETRIEVAL_CACHE_TTL_SECONDS", default=120, cast=int)
 AI_LAB_PLAN_CACHE_TTL_SECONDS = config("AI_LAB_PLAN_CACHE_TTL_SECONDS", default=300, cast=int)

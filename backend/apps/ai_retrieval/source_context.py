@@ -353,9 +353,27 @@ class SourceContext:
         self.original = set(self.result)
         leading = list(dict.fromkeys(p.article_id for p in seeds if not p.media))[:settings.AI_LAB_SOURCE_CONTEXT_START_ARTICLES]
         self.therapy_subsections([seed for seed in seeds if seed.article_id in leading and not seed.media])
+        # A drug monograph reached directly (not among the leading articles)
+        # still needs the dose rows that sit below its indication label. Without
+        # them the answer sees the label only and reports "no dose evidence"
+        # while the dose is in the next source paragraph. Bounded by the same
+        # linked-article budget so one question cannot pull every monograph.
+        neighbor_articles = set(leading)
+        extra_articles = max(0, settings.AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES)
         for seed in seeds:
-            if seed.article_id in leading:
+            if seed.media:
+                continue
+            if seed.article_id in neighbor_articles:
                 self.neighbors(seed)
+                continue
+            if not self.regimen or extra_articles <= 0:
+                continue
+            article = self.article(seed.article_id)
+            if article is None or "drug information" not in article.title.lower():
+                continue
+            neighbor_articles.add(seed.article_id)
+            extra_articles -= 1
+            self.neighbors(seed)
         # Resolve local section references first. Their paragraphs can contain
         # the actual drug links (summary -> selection/dosing -> monograph).
         # Only then follow one outward hop; never crawl linked article bodies.

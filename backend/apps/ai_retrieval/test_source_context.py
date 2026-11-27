@@ -285,6 +285,50 @@ class SourceContextIntegrationTests(TestCase):
         self.assertEqual(len(linked),2)
 
 
+class DirectMonographNeighbourTests(TestCase):
+    databases="__all__"
+    setUp_source=fixtures.ReferenceIndexTests.setUp
+    write_article=fixtures.ReferenceIndexTests.write_article
+    add_title=fixtures.ReferenceIndexTests.add_title
+    build_reference=fixtures.ReferenceIndexTests.build
+
+    def setUp(self):
+        self.setUp_source()
+        self.write_article("3851",'<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">Selection</span> — We recommend the source-defined first-line drug therapy for ConditionY.</p></div>',title="ConditionY medical treatment")
+        self.write_article("3860",'<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">Overview</span> — Source overview of ConditionY.</p></div>',title="ConditionY overview")
+        self.write_article("3861",'<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">Diagnosis</span> — Source diagnosis of ConditionY.</p></div>',title="ConditionY diagnosis")
+        self.add_title("3860")
+        self.add_title("3861")
+        self.add_title("3852")
+        self.write_article("3852",'''<div id="topicText">
+          <p class="headingAnchor" id="H1"><span class="h1">Dosing: Adult</span></p>
+          <p>ConditionY, acute treatment (off-label use):</p>
+          <p>Note: For use as monotherapy in the source-defined mild attacks.</p>
+          <p>Oral: Immediate release: 500 to 750 mg once.</p>
+          <p>DifferentCondition:</p><p>Oral:</p><p>DifferentCondition: 999 mg daily.</p></div>''',title="Fixturemed: Drug information")
+        self.build_reference()
+        call_command("build_hybrid_index",stdout=StringIO())
+        self.generation=RetrievalGeneration.objects.latest("created_at")
+        self.r=HybridRetriever(SimpleNamespace(user=SimpleNamespace(pk="direct-monograph-test",is_staff=True,is_authenticated=True)),generation=self.generation)
+
+    def seed_for(self,source_id,contains):
+        row=ReferenceParagraph.objects.filter(article__generation_id=self.generation.source_generation,
+            article__source_id=source_id,text__contains=contains).first()
+        return self.r.passages([SimpleNamespace(source_id=source_id,content_hash=row.article.content_hash,block_ids=[row.pk])],consume=False)
+
+    def test_directly_retrieved_monograph_keeps_the_dose_below_its_indication_label(self):
+        # Four distinct seed articles put the drug monograph outside the
+        # three "leading" articles; its own dose paragraph must still arrive.
+        seeds=[*self.seed_for("3851","We recommend"),*self.seed_for("3860","Source overview"),
+               *self.seed_for("3861","Source diagnosis"),*self.seed_for("3852","ConditionY, acute treatment")]
+        passages,audit=source_context.expand(self.r,seeds,"دارودرمانی ConditionY چیست؟","ConditionY treatment",
+            audience="adult",intent="treatment",concepts=["conditiony"])
+        doses=[p for p in passages if p.article_id=="3852"]
+        self.assertTrue(any("500 to 750 mg" in p.text for p in doses))
+        self.assertFalse(any("999 mg" in p.text for p in doses))
+        self.assertGreater(audit["neighbors"],0)
+
+
 class LinkedEvidenceTests(SimpleTestCase):
     def paragraph(self,number,text,relations=()):
         return Passage("P"+str(number),"10","Source","Treatment",text,
