@@ -703,6 +703,9 @@ AI_LAB_SOURCE_CONTEXT_START_ARTICLES = config("AI_LAB_SOURCE_CONTEXT_START_ARTIC
 AI_LAB_SOURCE_CONTEXT_NEIGHBORS = config("AI_LAB_SOURCE_CONTEXT_NEIGHBORS", default=6, cast=int)
 AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES = config("AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES", default=6, cast=int)
 AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES = config("AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES", default=96, cast=int)
+# How many drug monographs a therapy question may open for the drugs its own
+# evidence names. Each one adds indication-scoped dose rows; no model call.
+AI_LAB_SOURCE_CONTEXT_DOSE_DRUGS = config("AI_LAB_SOURCE_CONTEXT_DOSE_DRUGS", default=10, cast=int)
 AI_LAB_SOURCE_LINK_CACHE_TTL_SECONDS = config("AI_LAB_SOURCE_LINK_CACHE_TTL_SECONDS", default=86400, cast=int)
 AI_LAB_EVENT_REDIS_URL = config("AI_LAB_EVENT_REDIS_URL", default=REDIS_URL)
 AI_LAB_EXECUTOR = config("AI_LAB_EXECUTOR", default="thread" if ENVIRONMENT == "local" else "celery")

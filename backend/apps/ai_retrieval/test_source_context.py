@@ -158,6 +158,45 @@ class SourceContextIntegrationTests(TestCase):
         self.assertTrue(any("10 mg" in p.text for p in doses))
         self.assertFalse(any("777 mg" in p.text for p in doses))
 
+    def test_short_monograph_dose_line_is_evidence_for_its_indication(self):
+        # The indexer drops paragraphs under 40 characters, so a real dose line
+        # ("Oral: 400 to 600 mg once") and its indication label carry no
+        # retrieval_number. A source link into the monograph must still read it.
+        self.write_article("3851",'''<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">Treatment</span>
+            We recommend <a class="drug" data-topicid="3852">Fixturemed</a> for ConditionY attacks in adults.</p></div>''',
+            title="ConditionY acute treatment")
+        self.write_article("3852",'''<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">Dosing: Adult</span></p>
+            <p>ConditionY, acute treatment:</p>
+            <p>Note: limit use to the source-defined maximum per month.</p>
+            <p>Oral: 400 to 600 mg once (Ref).</p>
+            <p>DifferentCondition:</p><p>Oral: 999 mg daily.</p></div>''',title="Fixturemed: Drug information")
+        self.build_reference(force=True)
+        call_command("build_hybrid_index",stdout=StringIO())
+        self.generation=RetrievalGeneration.objects.latest("created_at")
+        self.r=HybridRetriever(self.r.request,generation=self.generation)
+        passages,_=self.expand()
+        doses=[p for p in passages if p.article_id=="3852"]
+        self.assertTrue(any("400 to 600 mg" in p.text for p in doses))
+        self.assertFalse(any("999 mg" in p.text for p in doses))
+        self.assertTrue(any(any(label["quote"]=="ConditionY, acute treatment:" for label in p.context) for p in doses))
+
+    def test_unlinked_drug_named_in_the_evidence_still_gets_its_dose(self):
+        # The treatment topic names a drug without a link (or its link lost the
+        # budget). The monograph is where the asked indication's dose lives, so
+        # the evidence's own wording opens it.
+        self.write_article("3851",'''<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">Treatment</span>
+            We recommend simple analgesics such as Fixturemed for ConditionY attacks in adults.</p></div>''',
+            title="ConditionY acute treatment")
+        self.write_article("3852",'''<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">Dosing: Adult</span></p>
+            <p>ConditionY, acute treatment:</p><p>Oral: 400 to 600 mg once (Ref).</p></div>''',
+            title="Fixturemed: Drug information")
+        self.build_reference(force=True)
+        call_command("build_hybrid_index",stdout=StringIO())
+        self.generation=RetrievalGeneration.objects.latest("created_at")
+        self.r=HybridRetriever(self.r.request,generation=self.generation)
+        passages,_=self.expand()
+        self.assertTrue(any(p.article_id=="3852" and "400 to 600 mg" in p.text for p in passages))
+
     def test_denied_linked_article_is_not_read_or_exposed(self):
         allowed=self.r.permitted
         with patch.object(self.r,"permitted",side_effect=lambda identifier:identifier!="3852" and allowed(identifier)):
@@ -280,7 +319,10 @@ class SourceContextIntegrationTests(TestCase):
         seed=self.r.passages([SimpleNamespace(source_id="3851",content_hash=row.article.content_hash,block_ids=[row.pk])],consume=False)
         passages,_=source_context.expand(self.r,seed,"دارودرمانی ConditionY","ConditionY treatment",
             audience="adult",intent="drug_therapy",concepts=["conditiony"])
-        linked={p.article_id for p in passages if p.article_id!="3851"}
+        # The dose sweep may add monographs of its own; this asserts the link
+        # budget itself, which is what AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES caps.
+        linked={p.article_id for p in passages if p.article_id!="3851"
+                and any(relation["kind"]=="article_links" for relation in p.relations)}
         self.assertIn("3855",linked)
         self.assertEqual(len(linked),2)
 

@@ -10,6 +10,20 @@ from apps.uptodate.text import plain_title
 
 FORMAT_VERSION = 1
 MAX_RELATED_TOPICS = 8
+DOSE_TEXT = re.compile(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|units?|mL|mEq)\b", re.I)
+
+
+def keeps_short_dose(text, title, heading):
+    """A dose line is short by nature; dropping it removes the answer.
+
+    A monograph's dosing section puts the indication on one line ("Migraine,
+    acute treatment:") and the dose on the next ("Oral: 400 to 600 mg once").
+    Both fall under the generic length floor, so they are kept for drug
+    monographs only; a topic's short fragments stay excluded.
+    """
+    return ("drug information" in (title or "").lower()
+            and bool(re.search(r"dosing|dosage", heading or "", re.I))
+            and bool(DOSE_TEXT.search(text or "")))
 
 
 class FormulationLinks(HTMLParser):
@@ -121,8 +135,9 @@ def prepare_document(identifier, article, *, blob_hash=""):
     blocks, retrieval_number, retrieval_order, limited = [], 0, 0, False
     for ordinal, block in enumerate(extracted.blocks):
         group = section(block.section_id, block.section_title)
+        short = len(block.text) < 40 and not keeps_short_dose(block.text, article.get("title", ""), group["heading"])
         reason = ("navigation" if related else "complex_table" if block.table_context_status == "complex_review"
-                  else "too_short" if len(block.text) < 40 else "too_long" if len(block.text) > 6000 else "")
+                  else "too_short" if short else "too_long" if len(block.text) > 6000 else "")
         number = None
         if not reason:
             retrieval_number += 1

@@ -34,8 +34,11 @@ AI_LAB_SOURCE_CONTEXT_START_ARTICLES=3
 AI_LAB_SOURCE_CONTEXT_NEIGHBORS=6
 AI_LAB_SOURCE_CONTEXT_LINKED_ARTICLES=6
 AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES=96
+AI_LAB_SOURCE_CONTEXT_DOSE_DRUGS=10
 AI_LAB_SOURCE_LINK_CACHE_TTL_SECONDS=86400
 ```
+
+`AI_LAB_SOURCE_CONTEXT_DOSE_DRUGS` سقف مونوگراف‌هایی است که برای داروهای نام‌برده در شاهد باز می‌شود تا خط دوز همان اندیکاسیون خوانده شود؛ جزئیات در [۵۲](52-smart-search-latency-and-evidence.fa.md).
 
 این سقف‌ها فقط توسعهٔ اضافی را کنترل می‌کنند، نه پوشش جست‌وجوی اولیه. حداکثر چهار ارجاع محلیِ دارای شواهد تازه و دو پیوند رسانه دنبال می‌شود. بعد از ارجاع‌های محلی، یک گام به مقالهٔ دیگر انجام می‌شود؛ مقاله‌های مقصد دوباره کل پایگاه را پیمایش نمی‌کنند. صفحهٔ صرفاً ناوبری می‌تواند یک سطح دیگر به مقصد مشخص خود هدایت شود.
 

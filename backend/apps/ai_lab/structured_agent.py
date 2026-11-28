@@ -38,6 +38,8 @@ Do not cite context IDs. Keep each paragraph to one point and one or two sentenc
 For drug therapy/first-line treatment, begin with ONE sentence naming only the primary recommended drug/class and its
 source-stated preference/line with citations. When the user asks for a regimen, put its actual dose, route, frequency and source-stated duration, titration,
 maximum, monitoring and restrictions in separately cited paragraphs. Never borrow another indication's or population's dose.
+A drug monograph's dose row is read together with the indication label printed above it; give it for that indication and
+say when the label names a different one.
 Use first-line/initial recommendations for first-line questions. State the source's relevant population or conditions in the claim.
 For a broad therapy question, cover each clinically distinct applicable branch supported by the medication subheadings.
 Separate population, severity, first-line and subsequent options when the question calls for them. Follow the heading paths

@@ -15,6 +15,7 @@ from apps.ai_lab import lexical, telemetry
 from apps.ai_lab.models import ReferenceArticle, ReferenceParagraph, ReferenceSection
 from apps.ai_lab.provider import ProviderError
 from apps.ai_lab.section_tree import balanced_paragraphs, expand_sections, therapy_root
+from apps.uptodate.search_catalog import normalize
 from . import evidence, media, source_links
 from .chunking import source_metadata
 from .models import ReferenceMedia
@@ -22,6 +23,17 @@ from .models import ReferenceMedia
 ROUTE_LABEL = re.compile(r"^(?:oral|intravenous|intramuscular|subcutaneous|topical|intranasal|rectal|parenteral|"
                          r"immediate.release|extended.release|children|adolescents|adults|infants|neonates|"
                          r"initial|maintenance|maximum|note)\b", re.I)
+# A monograph's dose line ("Oral: 400 to 600 mg once") is shorter than the
+# indexer's 40-character floor, so it carries no retrieval_number. It is still
+# the most specific evidence the source holds for an indication, and it is only
+# read when a source link leads into that monograph -- never by free-text search.
+DOSE_TEXT = re.compile(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|microgram|g|gram|units?|mL|mEq|%)\b", re.I)
+DOSING_HEADING = re.compile(r"dosing|dosage", re.I)
+# A catalog root inside a longer clinical phrase is not a drug mention:
+# "calcitonin gene-related peptide" is not calcitonin, "dopamine antagonists"
+# is not dopamine. Skip a match the next word turns into a class or a pathway.
+CLASS_FOLLOW = {"antagonist", "antagonists", "agonist", "agonists", "receptor", "receptors",
+                "gene", "genes", "pathway", "pathways", "blocker", "blockers"}
 
 
 class SourceContext:
@@ -53,7 +65,10 @@ class SourceContext:
         retriever._source_link_maps = self.links
         self.result, self.original = {}, set()
         self.stats = {"neighbors": 0, "subsections": 0, "section_links": 0, "article_links": 0, "graphic_links": 0,
-                      "denied_links": 0, "unavailable_links": 0, "limited": False}
+                      "dose_sweep": 0, "denied_links": 0, "unavailable_links": 0, "limited": False}
+        # Headroom the dose sweep may use past the passage cap, so link-following
+        # cannot crowd out the dose rows a therapy answer needs.
+        self.reserve = 0
         self.visited = set()
         self.articles = {}
 
@@ -81,11 +96,28 @@ class SourceContext:
         self.articles[identifier] = article
         return article
 
+    def retrievable(self, row):
+        """A numbered paragraph, or a short dose line from a drug monograph.
+
+        The indexer excludes paragraphs under 40 characters, which is exactly
+        the length of a monograph's dose line ("Oral: 400 to 600 mg once") and
+        of its indication label. Those lines are read only through a source
+        link into the monograph, never by free-text search, so they are let
+        through here instead of requiring a full index rebuild.
+        """
+        if row.retrieval_number is not None:
+            return True
+        if not DOSE_TEXT.search(row.text or ""):
+            return False
+        if "drug information" not in (row.article.title or "").lower():
+            return False
+        return bool(DOSING_HEADING.search(" > ".join(row.section.heading_path or [row.section.heading])))
+
     def passages(self, rows, *, audience=None):
         audience = audience or self.audience
         grouped = {}
         for row in rows:
-            if row.retrieval_number is not None:
+            if self.retrievable(row):
                 actual, _ = source_metadata(row.article.title, row.section.heading_path or [row.section.heading])
                 if ((audience == "pediatric" and actual == "adult")
                         or (audience == "adult" and actual == "pediatric")):
@@ -94,7 +126,8 @@ class SourceContext:
         chunks = [SimpleNamespace(source_id=items[0].article.source_id,
                   content_hash=items[0].article.content_hash, block_ids=[row.pk for row in items])
                   for items in grouped.values()]
-        return self.r.passages(chunks, consume=False, prefetched=[row for items in grouped.values() for row in items])
+        return self.r.passages(chunks, consume=False,
+            prefetched=[row for items in grouped.values() for row in items], allow_unretrievable=True)
 
     def add(self, passage, parent, kind, label=""):
         if passage.id in self.original or passage.id == parent.id:
@@ -115,7 +148,7 @@ class SourceContext:
             if relation not in old.relations:
                 self.result[passage.id] = replace(old, relations=(*old.relations, relation))
             return False
-        if len(self.result) >= max(1, settings.AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES):
+        if len(self.result) >= max(1, settings.AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES) + self.reserve:
             self.stats["limited"] = True
             return False
         self.result[passage.id] = replace(passage, relations=(*passage.relations, relation))
@@ -140,7 +173,7 @@ class SourceContext:
 
     def add_group(self, passages, parent, kind, label=""):
         additions = {p.id for p in passages if p.id not in self.result}
-        if len(self.result) + len(additions) > max(1, settings.AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES):
+        if len(self.result) + len(additions) > max(1, settings.AI_LAB_SOURCE_CONTEXT_MAX_PASSAGES) + self.reserve:
             self.stats["limited"] = True
             return
         for passage in passages:
@@ -164,7 +197,7 @@ class SourceContext:
                     break
                 if row.pk not in matched and row.text.endswith(":") and not ROUTE_LABEL.search(row.text):
                     break
-                if row.retrieval_number is not None:
+                if self.retrievable(row):
                     selected[row.pk] = row
         return sorted(selected.values(), key=lambda row:row.ordinal)[:24]
 
@@ -205,9 +238,17 @@ class SourceContext:
 
     def branch_rows(self, article, sections, roots):
         allowed = expand_sections(sections, roots)
-        rows = ReferenceParagraph.objects.filter(article=article, section_id__in=allowed,
-            retrieval_number__isnull=False).select_related("article", "section")
-        return balanced_paragraphs(rows, 24)
+        rows = ReferenceParagraph.objects.filter(article=article, section_id__in=allowed)
+        if "drug information" in (article.title or "").lower():
+            # Keep the short dose lines and indication labels of dosing
+            # branches; elsewhere in the article they are only labels.
+            dosing = {section.pk for section in sections if DOSING_HEADING.search(section.heading or "")}
+            short = set(expand_sections(sections, dosing)) & set(allowed)
+            rows = rows.filter(Q(retrieval_number__isnull=False)
+                               | Q(section_id__in=short, exclusion_reason="too_short"))
+        else:
+            rows = rows.filter(retrieval_number__isnull=False)
+        return balanced_paragraphs(rows.select_related("article", "section"), 24)
 
     def therapy_subsections(self, seeds):
         if not self.regimen:
@@ -236,7 +277,7 @@ class SourceContext:
                         return
                     self.add(passage, seed, "subsections", root.heading)
 
-    def linked_article(self, article, parent, link, *, depth=0):
+    def linked_article(self, article, parent, link, *, depth=0, kind="article_links"):
         audience = self.audience
         if audience == "general":
             inherited, _ = source_metadata(parent.title, parent.heading_path or [parent.section])
@@ -290,7 +331,7 @@ class SourceContext:
             else:
                 rows = balanced_paragraphs(base.filter(retrieval_number__isnull=False)
                     .select_related("article", "section"), 16)
-        self.add_group(self.passages(rows,audience=audience), parent, "article_links", link["label"])
+        self.add_group(self.passages(rows,audience=audience), parent, kind, link["label"])
 
     def follow(self, parent, link, counts):
         kind = link["kind"]
@@ -347,6 +388,80 @@ class SourceContext:
         if new_related and not any(p.article_id == identifier for p in self.result.values()) \
                 and not any(row["parent"] == identifier for row in self.r.scope.related.values()):
             self.r.scope.related.pop(identifier,None)
+
+    def sweep_drug_doses(self):
+        """Open the monographs of drugs the evidence itself names.
+
+        A topic can name a drug without linking it, or its link can lose the
+        budget to a comparator. The monograph is where the dose for the asked
+        indication lives, so those drugs are opened directly, after the link
+        path, through the same indication-aware path as a followed link.
+        Bounded by AI_LAB_SOURCE_CONTEXT_DOSE_DRUGS; no model call is made.
+        """
+        if not self.regimen:
+            return
+        from .retrieval import drug_name_catalog
+        names = drug_name_catalog(self.r.generation.source_generation)
+        present = {p.article_id for p in self.result.values()}
+        added = 0
+        limit = max(0, settings.AI_LAB_SOURCE_CONTEXT_DOSE_DRUGS)
+        self.reserve = limit * 6
+
+        def preferred(entries):
+            adult = [row for row in entries if row[1].lower().endswith(": drug information")]
+            pediatric = [row for row in entries if "pediatric" in row[1].lower()]
+            return (pediatric or adult or entries) if self.audience == "pediatric" else (adult or entries)
+
+        # Count mentions across the whole evidence first: a drug the answer will
+        # discuss appears in several selected paragraphs, while an incidental
+        # name (an interacting drug in a warning) appears once.
+        counts, parents, order = {}, {}, {}
+        for passage in list(self.result.values()):
+            if passage.media:
+                continue
+            parent = self.article(passage.article_id)
+            if parent is None or "drug information" in parent.title.lower():
+                continue
+            path = " > ".join(passage.heading_path) or passage.section
+            if re.search(r"to avoid|contraindicat", path, re.I):
+                continue
+            words = normalize(passage.text).split()[:400]
+            found = set()
+            for position in range(len(words)):
+                for size in range(min(6, len(words) - position), 0, -1):
+                    name = tuple(words[position:position + size])
+                    if name in names and (position + size >= len(words)
+                                          or words[position + size] not in CLASS_FOLLOW):
+                        found.add(name)
+            for name in found:
+                counts[name] = counts.get(name, 0) + 1
+                order.setdefault(name, len(order))
+                parents.setdefault(name, passage)
+
+        per_section = {}
+        for name in sorted(counts, key=lambda key: (-counts[key], order[key])):
+            if added >= limit:
+                break
+            section = parents[name].section
+            # Three monographs per source section: one section (triptans) would
+            # otherwise take the whole budget and leave the NSAID branch bare.
+            if per_section.get(section, 0) >= 3:
+                continue
+            options = [identifier for identifier, _ in preferred(names[name])]
+            if not options or options[0] in present:
+                continue
+            identifier = options[0]
+            passage = parents[name]
+            monograph = self.article(identifier)
+            if monograph is None or not self.r.register_related(passage.article_id, identifier,
+                                                                kind="source_mention"):
+                continue
+            present.add(identifier)
+            self.linked_article(monograph, passage, {"kind": "article", "target_id": identifier,
+                "section_id": "", "drug": True, "label": " ".join(name)}, kind="dose_sweep")
+            added += 1
+            per_section[section] = per_section.get(section, 0) + 1
+        self.reserve = 0
 
     def expand(self, seeds):
         self.result = {p.id:p for p in seeds}
@@ -455,6 +570,9 @@ class SourceContext:
             balanced.append((priority,depth,score,order,parent,link))
         for _, _, _, _, parent, link in sorted(balanced, key=lambda row:row[:4]):
             self.follow(parent, link, counts)
+        # The linked sections name drugs the seeds never mentioned (a NSAID
+        # list inside the treatment topic). Sweep again over the whole set.
+        self.sweep_drug_doses()
         return list(self.result.values()), self.stats
 
 

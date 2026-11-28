@@ -639,7 +639,7 @@ class HybridRetriever:
         if needed - self.consumed:
             raise ProviderError("REFERENCE_INDEX_STALE")
 
-    def passages(self, chunks, *, consume=True, prefetched=None):
+    def passages(self, chunks, *, consume=True, prefetched=None, allow_unretrievable=False):
         wanted = {identifier: chunk for chunk in chunks for identifier in chunk.block_ids}
         rows = ({row.pk:row for row in prefetched} if prefetched is not None else
             {row.pk: row for row in ReferenceParagraph.objects.filter(pk__in=list(wanted),
@@ -660,7 +660,8 @@ class HybridRetriever:
                     continue
                 row = rows[identifier]
                 article = row.article
-                if article.source_id != chunk.source_id or article.content_hash != chunk.content_hash or row.retrieval_number is None:
+                if article.source_id != chunk.source_id or article.content_hash != chunk.content_hash \
+                        or (row.retrieval_number is None and not allow_unretrievable):
                     raise ProviderError("REFERENCE_INDEX_STALE")
                 result.append(Passage("P"+str(row.pk),article.source_id,article.title,row.section.heading,row.text,
                     {"screen":"uptodateArticle","params":{"id":article.source_id,"title":article.title,

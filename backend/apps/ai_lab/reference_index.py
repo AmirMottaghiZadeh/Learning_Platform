@@ -34,7 +34,8 @@ def mysql_source_connection():
             pass
     if source_connection is not None and source_connection.open:
         source_connection.close()
-    source_connection = pymysql.connect(**utd.mysql_config(), autocommit=True, read_timeout=10, write_timeout=10)
+    source_connection = pymysql.connect(**{**utd.mysql_config(), "read_timeout": 10, "write_timeout": 10},
+                                       autocommit=True)
     _source_local.connection, _source_local.configuration = source_connection, configuration
     return source_connection
 

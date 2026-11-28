@@ -212,6 +212,20 @@ class ReferenceIndexTests(TestCase):
         self.assertEqual(ReferenceParagraph.objects.count(), 3)
         self.assertEqual(retrieval.read_sections(["3851"], None, {}), legacy)
 
+    def test_short_dose_line_in_a_monograph_keeps_its_retrieval_number(self):
+        # A monograph's dose line and its indication label are shorter than the
+        # generic 40-character floor; only the dose keeps a retrieval_number.
+        body = ('<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">Dosing: Adult</span></p>'
+                '<p>ConditionY:</p><p>Oral: 400 to 600 mg once (Ref).</p></div>')
+        self.write_article("3851", body, title="Fixturemed: Drug information")
+        self.build()
+        dose = ReferenceParagraph.objects.get(text="Oral: 400 to 600 mg once (Ref).")
+        self.assertIsNotNone(dose.retrieval_number)
+        self.assertEqual(dose.exclusion_reason, "")
+        label = ReferenceParagraph.objects.get(text="ConditionY:")
+        self.assertIsNone(label.retrieval_number)
+        self.assertEqual(label.exclusion_reason, "too_short")
+
     def test_retrieval_order_follows_first_eligible_block_not_structural_order(self):
         body = '<div id="topicText"><p class="headingAnchor" id="H1"><span class="h1">First</span></p><p>Short</p>' \
                '<p class="headingAnchor" id="H2"><span class="h1">Second</span></p><p>' + TEXT + '</p>' \
