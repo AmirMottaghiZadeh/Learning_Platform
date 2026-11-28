@@ -154,7 +154,7 @@ def submit(request, payload):
         slot=_acquire_slot(job_id)
         quota=f"ai-lab:budget:{request.user.pk}:{timezone.now():%Y%m%d%H}"
         cache.add(quota,0,3700)
-        if cache.incr(quota)>20:
+        if cache.incr(quota)>settings.AI_LAB_HOURLY_LIMIT:
             raise PlatformAPIError("سقف جست‌وجوی ساعتی پر شده است.",code="AI_LAB_LIMIT",status_code=429)
         if slot:
             run.slot=slot

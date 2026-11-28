@@ -356,8 +356,8 @@ class AskView(APIView):
             from django.utils import timezone
             quota = f"ai-lab:budget:{request.user.pk}:{timezone.now():%Y%m%d%H}"
             cache.add(quota, 0, 3700)
-            if cache.incr(quota) > 20:
-                raise PlatformAPIError("سقف ۲۰ جست‌وجو در ساعت پر شده است.", code="AI_LAB_LIMIT", status_code=429)
+            if cache.incr(quota) > settings.AI_LAB_HOURLY_LIMIT:
+                raise PlatformAPIError("سقف جست‌وجوی ساعتی پر شده است.", code="AI_LAB_LIMIT", status_code=429)
             payload = serializer.validated_data
             try:
                 with transaction.atomic():

@@ -604,6 +604,9 @@ AI_LAB_MAX_CONCURRENT_JOBS = config("AI_LAB_MAX_CONCURRENT_JOBS", default=2, cas
 # code; a deployment that sizes its workers and provider quota for more can
 # raise it without touching code.
 AI_LAB_MAX_CONCURRENT_SLOTS = config("AI_LAB_MAX_CONCURRENT_SLOTS", default=64, cast=int)
+# Accepted searches per account per clock hour; past it the API answers 429
+# AI_LAB_LIMIT. It counts admissions, so a queued search uses one unit of the cap.
+AI_LAB_HOURLY_LIMIT = config("AI_LAB_HOURLY_LIMIT", default=20, cast=int)
 AI_LAB_ROLLOUT_PERCENT = config("AI_LAB_ROLLOUT_PERCENT", default=0, cast=int)
 AI_LAB_RELEASE_APPROVAL_FILE = config("AI_LAB_RELEASE_APPROVAL_FILE", default="")
 AI_LAB_FRONTEND_BUNDLE_SHA256 = config("AI_LAB_FRONTEND_BUNDLE_SHA256", default="").strip()

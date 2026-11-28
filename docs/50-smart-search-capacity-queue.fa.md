@@ -46,6 +46,7 @@ python manage.py promote_ai_search_queue
 | `AI_LAB_QUEUE_ETA_SECONDS` | ۲۰ | تخمین زمان هر دور صف برای نمایش به کاربر |
 | `AI_LAB_QUEUE_PROMOTE_SECONDS` | ۵ | فاصلهٔ تسک دوره‌ای ارتقا |
 | `AI_LAB_QUEUE_MAX_WAIT_SECONDS` | ۶۰۰ | حداکثر انتظار در صف |
+| `AI_LAB_HOURLY_LIMIT` | ۲۰ | سقف جست‌وجوی پذیرفته‌شدهٔ هر حساب در هر ساعت (پس از آن ۴۲۹ `AI_LAB_LIMIT`) |
 
 مقدار اسلات باید روی **همهٔ** سرویس‌هایی که آن را می‌خوانند یکسان باشد (وب + ورکر Celery)، وگرنه `jobs.release` بعضی اسلات‌ها را جا می‌گذارد.
 
