@@ -60,8 +60,10 @@ for (const key of ["chapter", "lesson-drug"]) {
 // UpToDate and Lexicomp read the package on this device first (see
 // src/offline/sources.ts), so they must run with no network as well: React
 // Query would otherwise park them as "paused" until it sees a connection.
+// One retry: a dropped mirror connection used to leave the screen in its error
+// state until the reader left and came back, which only helped by asking again.
 for (const key of ["uptodate-search-page", "uptodate-topic", "uptodate-graphic-html", "lexicomp-search"]) {
-  queryClient.setQueryDefaults([key], { networkMode: "always" });
+  queryClient.setQueryDefaults([key], { networkMode: "always", retry: 1 });
 }
 
 // --- persistence across app restarts ---------------------------------------

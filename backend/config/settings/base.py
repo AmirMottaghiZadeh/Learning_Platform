@@ -367,6 +367,12 @@ UPTODATE_DB_DIR = config(
 # MySQL database instead of the local SQLite files above -- see
 # apps.uptodate.migrate_to_mysql for how it's populated.
 UPTODATE_MYSQL_URL = config("UPTODATE_MYSQL_URL", default="")
+# Socket timeouts for that mirror. Without them a stalled query blocks the
+# worker until the OS gives up (minutes); with them it fails fast and retries.
+UPTODATE_MYSQL_TIMEOUT_SECONDS = config("UPTODATE_MYSQL_TIMEOUT_SECONDS", default=15, cast=int)
+# Connections one web worker may hold at once. Searches used to serialise on a
+# single connection behind a process-wide lock; a small pool removes that.
+UPTODATE_MYSQL_POOL_SIZE = config("UPTODATE_MYSQL_POOL_SIZE", default=4, cast=int)
 
 # Directory holding the Lexicomp drug-interactions snapshot (interact.db,
 # info.json). The /lexicomp/ endpoints answer 503 when it is not present.

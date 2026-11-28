@@ -98,7 +98,9 @@ export function UptodateScreen() {
       return last.results.length && loaded < last.total ? loaded : undefined;
     },
     enabled: ready,
-    retry: false,
+    // The same query, typed again within a minute, paints from the cache; the
+    // default (retry: 1) lives in src/api/queryClient.ts for these keys.
+    staleTime: 60_000,
   });
 
   const locked = error instanceof ApiError && error.status === 503;

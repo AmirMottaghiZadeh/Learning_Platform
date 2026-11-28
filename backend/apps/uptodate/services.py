@@ -33,7 +33,6 @@ import logging
 import re
 import sqlite3
 import threading
-import time
 import zlib
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -52,8 +51,12 @@ logger = logging.getLogger(__name__)
 
 _LOCK = threading.Lock()
 _CONNS: dict[str, sqlite3.Connection] = {}
-_MYSQL_CONN: pymysql.connections.Connection | None = None
-_MYSQL_LAST_USED = 0.0
+# A small pool of MySQL connections, one per exchange in flight. The previous
+# design kept a single connection and held a process-wide lock for the whole
+# exchange, so one stalled query blocked every UpToDate request in the worker.
+_MYSQL_IDLE: list[pymysql.connections.Connection] = []
+_MYSQL_POOL_LOCK = threading.Lock()
+_MYSQL_SLOTS: threading.BoundedSemaphore | None = None
 
 # Only real topic articles (type 1); type 2/3 are outline/section fragments.
 TOPIC_TYPE = 1
@@ -101,40 +104,126 @@ def mysql_config() -> dict:
         "ssl_verify_cert": False,
         "ssl_verify_identity": False,
         "connect_timeout": 10,
+        # A stalled socket used to block the exchange (and the lock) until the
+        # OS gave up, minutes later. These turn it into a fast, retryable error.
+        "read_timeout": _mysql_timeout(),
+        "write_timeout": _mysql_timeout(),
     }
+
+
+def _mysql_timeout() -> int:
+    return max(1, int(getattr(settings, "UPTODATE_MYSQL_TIMEOUT_SECONDS", 15)))
+
+
+def _mysql_pool_size() -> int:
+    return max(1, int(getattr(settings, "UPTODATE_MYSQL_POOL_SIZE", 4)))
+
+
+def _mysql_slots() -> threading.BoundedSemaphore:
+    global _MYSQL_SLOTS
+    if _MYSQL_SLOTS is None:
+        with _MYSQL_POOL_LOCK:
+            if _MYSQL_SLOTS is None:
+                _MYSQL_SLOTS = threading.BoundedSemaphore(_mysql_pool_size())
+    return _MYSQL_SLOTS
+
+
+def _mysql_borrow() -> pymysql.connections.Connection:
+    """An idle pooled connection, pinged first, or a fresh one."""
+    with _MYSQL_POOL_LOCK:
+        conn = _MYSQL_IDLE.pop() if _MYSQL_IDLE else None
+    if conn is None:
+        return pymysql.connect(**mysql_config())
+    try:
+        conn.ping(reconnect=True)
+        return conn
+    except (pymysql.err.InterfaceError, pymysql.err.OperationalError):
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return pymysql.connect(**mysql_config())
+
+
+def _mysql_give_back(conn, broken: bool) -> None:
+    if broken:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return
+    with _MYSQL_POOL_LOCK:
+        if len(_MYSQL_IDLE) < _mysql_pool_size():
+            _MYSQL_IDLE.append(conn)
+            return
+    try:
+        conn.close()
+    except Exception:
+        pass
 
 
 @contextmanager
 def _mysql_cursor():
-    """Own the entire exchange on the shared connection, not just its ping."""
-    global _MYSQL_CONN, _MYSQL_LAST_USED
-    with _LOCK:
+    """Borrow one connection for this exchange only.
+
+    Nothing is shared between exchanges, so a slow query no longer blocks the
+    other requests in this worker. A socket that fails mid-exchange is thrown
+    away instead of being reused.
+    """
+    slots = _mysql_slots()
+    slots.acquire()
+    conn = None
+    broken = False
+    try:
+        conn = _mysql_borrow()
         try:
-            if _MYSQL_CONN is None:
-                _MYSQL_CONN = pymysql.connect(**mysql_config())
-            elif time.monotonic() - _MYSQL_LAST_USED >= 30:
-                _MYSQL_CONN.ping(reconnect=True)
-            with _MYSQL_CONN.cursor() as cursor:
+            with conn.cursor() as cursor:
                 yield cursor
         except (pymysql.err.InterfaceError, pymysql.err.OperationalError):
-            if _MYSQL_CONN is not None:
-                if _MYSQL_CONN.open:
-                    _MYSQL_CONN.close()
-                _MYSQL_CONN = None
+            broken = True
             raise
+    finally:
+        try:
+            if conn is not None:
+                _mysql_give_back(conn, broken)
         finally:
-            _MYSQL_LAST_USED = time.monotonic()
+            slots.release()
+
+
+def _mysql_rows(sql: str, params=()) -> list[dict]:
+    """Rows for one read query, retrying once on a dropped connection.
+
+    The mirror closes idle connections; a fresh connection usually answers the
+    same query, so one retry hides that class of failure from the reader.
+    """
+    for attempt in (1, 2):
+        try:
+            with _mysql_cursor() as cur:
+                cur.execute(sql, params)
+                return cur.fetchall()
+        except (pymysql.err.InterfaceError, pymysql.err.OperationalError):
+            if attempt == 2:
+                raise
+    return []
+
+
+def _mysql_row(sql: str, params=()) -> dict | None:
+    rows = _mysql_rows(sql, params)
+    return rows[0] if rows else None
 
 
 def close_all() -> None:
-    global _MYSQL_CONN
     with _LOCK:
         for conn in _CONNS.values():
             conn.close()
         _CONNS.clear()
-        if _MYSQL_CONN is not None:
-            _MYSQL_CONN.close()
-            _MYSQL_CONN = None
+    with _MYSQL_POOL_LOCK:
+        idle, _MYSQL_IDLE[:] = list(_MYSQL_IDLE), []
+    for conn in idle:
+        try:
+            conn.close()
+        except Exception:
+            pass
     snapshot_version.cache_clear()
     _title_index.cache_clear()
     _term.cache_clear()
@@ -150,10 +239,8 @@ def close_all() -> None:
 def snapshot_version() -> str:
     if _using_mysql():
         try:
-            with _mysql_cursor() as cur:
-                cur.execute("SELECT value FROM meta WHERE `key` = 'version'")
-                row = cur.fetchone()
-                return str(row["value"]) if row else ""
+            row = _mysql_row("SELECT value FROM meta WHERE `key` = 'version'")
+            return str(row["value"]) if row else ""
         except Exception:
             return ""
     try:
@@ -218,9 +305,7 @@ def _toc_rows(sql_sqlite: str, sql_mysql: str, ids: list) -> list[dict]:
     for at in range(0, len(ids), _SECTION_BATCH):
         part = ids[at:at + _SECTION_BATCH]
         if _using_mysql():
-            with _mysql_cursor() as cur:
-                cur.execute(sql_mysql.format(marks=",".join(["%s"] * len(part))), part)
-                rows.extend(cur.fetchall())
+            rows.extend(_mysql_rows(sql_mysql.format(marks=",".join(["%s"] * len(part))), part))
         else:
             rows.extend(dict(r) for r in _sqlite_conn("toc").execute(
                 sql_sqlite.format(marks=",".join(["?"] * len(part))), part
@@ -352,12 +437,8 @@ def _letters(word: str) -> int:
 @lru_cache(maxsize=1)
 def _title_index(version: str) -> TitleIndex:
     if _using_mysql():
-        with _mysql_cursor() as cur:
-            cur.execute(
-                "SELECT rowid, contentId, title FROM fts WHERE type = %s ORDER BY rowid",
-                (TOPIC_TYPE,),
-            )
-            rows = [(r["rowid"], r["contentId"], r["title"]) for r in cur.fetchall()]
+        rows = [(r["rowid"], r["contentId"], r["title"]) for r in _mysql_rows(
+            "SELECT rowid, contentId, title FROM fts WHERE type = %s ORDER BY rowid", (TOPIC_TYPE,))]
     else:
         rows = _sqlite_conn("fts").execute(
             "SELECT rowid, contentId, title FROM fts WHERE type = ? ORDER BY rowid",
@@ -527,12 +608,10 @@ def _updated_dates(index: TitleIndex, positions: list[int]) -> None:
         return
     marks = ",".join(["%s" if _using_mysql() else "?"] * len(missing))
     if _using_mysql():
-        with _mysql_cursor() as cur:
-            cur.execute(
-                f"SELECT rowid, LEFT(content, %s) AS head FROM fts WHERE rowid IN ({marks})",
-                (SNIPPET_SOURCE_CHARS, *missing),
-            )
-            rows = cur.fetchall()
+        rows = _mysql_rows(
+            f"SELECT rowid, LEFT(content, %s) AS head FROM fts WHERE rowid IN ({marks})",
+            (SNIPPET_SOURCE_CHARS, *missing),
+        )
     else:
         rows = _sqlite_conn("fts").execute(
             f"SELECT rowid, substr(content, 1, ?) AS head FROM fts WHERE rowid IN ({marks})",
@@ -548,12 +627,11 @@ def _search_catalog(version: str) -> SearchCatalog:
         return SearchCatalog([], {})
     try:
         if _using_mysql():
-            with _mysql_cursor() as cur:
-                cur.execute("SELECT id, word, weight FROM search_query ORDER BY rowid")
-                queries = [(r["id"], r["word"], r["weight"]) for r in cur.fetchall()]
-                cur.execute("SELECT id, x_topic_hits, a_topic_hits, p_topic_hits, i_topic_hits FROM search_query_topic")
-                topics = [(r["id"], r["x_topic_hits"], r["a_topic_hits"], r["p_topic_hits"], r["i_topic_hits"])
-                          for r in cur.fetchall()]
+            queries = [(r["id"], r["word"], r["weight"])
+                       for r in _mysql_rows("SELECT id, word, weight FROM search_query ORDER BY rowid")]
+            topics = [(r["id"], r["x_topic_hits"], r["a_topic_hits"], r["p_topic_hits"], r["i_topic_hits"])
+                      for r in _mysql_rows("SELECT id, x_topic_hits, a_topic_hits, p_topic_hits, i_topic_hits "
+                                           "FROM search_query_topic")]
         else:
             conn = _sqlite_conn("search")
             queries = conn.execute("SELECT id, word, weight FROM query ORDER BY rowid").fetchall()
@@ -687,9 +765,7 @@ def search_topics(query: str, limit: int = 25) -> list[dict]:
 def get_topic(content_id: str, *, include_memberships: bool = True) -> dict | None:
     content_id = str(content_id)
     if _using_mysql():
-        with _mysql_cursor() as cur:
-            cur.execute("SELECT gzip, version FROM content WHERE id = %s", (content_id,))
-            row = cur.fetchone()
+        row = _mysql_row("SELECT gzip, version FROM content WHERE id = %s", (content_id,))
     else:
         row = _sqlite_conn("content").execute(
             "SELECT gzip, version FROM content WHERE id = ?", (content_id,)
@@ -739,9 +815,7 @@ _IMAGE_TYPES = {"png", "jpeg", "gif", "webp"}
 def get_image(image_id: str) -> dict | None:
     image_id = str(image_id)
     if _using_mysql():
-        with _mysql_cursor() as cur:
-            cur.execute("SELECT `binary`, type FROM images WHERE id = %s", (image_id,))
-            row = cur.fetchone()
+        row = _mysql_row("SELECT `binary`, type FROM images WHERE id = %s", (image_id,))
     else:
         try:
             conn = _sqlite_conn("images")

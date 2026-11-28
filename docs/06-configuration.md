@@ -160,6 +160,8 @@
 | متغیر | پیش‌فرض | رانفلر | کار |
 |---|---|---|---|
 | `UPTODATE_MYSQL_URL` | خالی | **راز**؛ رشتهٔ اتصال MySQL نسخهٔ UpToDate | اگر باشد، UpToDate از MySQL خوانده می‌شود |
+| `UPTODATE_MYSQL_TIMEOUT_SECONDS` | ۱۵ | — | مهلت خواندن/نوشتن سوکت؛ بدون آن یک کوئری معلق کل ورکر را دقیقه‌ها قفل می‌کرد |
+| `UPTODATE_MYSQL_POOL_SIZE` | ۴ | — | تعداد اتصال هم‌زمان هر پروسهٔ وب؛ قبلاً یک اتصال با قفل سراسری بود |
 | `UPTODATE_DB_DIR` | `/home/amir/Documents/UpToDate` | — (با MySQL استفاده نمی‌شود) | پوشهٔ SQLite؛ برای volume سرور در `/sd/uptodate`، متغیر سرویس را صریحاً روی همان مسیر تنظیم کنید؛ [راهنما](27-smart-search-preprocessing.fa.md#مسیر-منبع-روی-سرور-دارای-volume) |
 | `LEXICOMP_DB_DIR` | `/home/amir/Documents/Lexicomp_Drug_Interactions` | مسیر پوشه روی دیسک سرویس بک‌اند | `interact.db` و `info.json` |
 

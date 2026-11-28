@@ -80,6 +80,13 @@ run python manage.py seed_website
 # has no manifest -> admin / browsable API / Swagger UI 500 without this).
 run python manage.py collectstatic --no-input
 
+# Build the UpToDate search caches in the background: the first search after a
+# deploy otherwise pays to read the whole fts table from the remote mirror while
+# every other UpToDate request waits behind it. Never blocks or fails the boot.
+if [ -n "${UPTODATE_MYSQL_URL:-}" ] || [ -n "${UPTODATE_DB_DIR:-}" ]; then
+    ( timeout 120 python manage.py warm_uptodate_search >/dev/null 2>&1 || true ) &
+fi
+
 if [ "${SERVICE_ROLE:-web}" = "web-with-ai-worker" ]; then
     exec python "$(dirname "$0")/container_runtime.py"
 fi
