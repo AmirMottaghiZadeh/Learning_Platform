@@ -1,0 +1,39 @@
+<!--
+  GA4 starter snippet for public Django website pages.
+  Replace REPLACE_WITH_REAL_GA4_ID with the Web stream measurement ID.
+  Read seo-plan.fa.md before installation; this does not implement consent.
+  Turn off Enhanced Measurement initially and validate event payloads.
+  Query-string visits (including UTM campaigns) are deliberately excluded.
+  This does not instrument the Expo web app, signup, downloads, or purchases.
+-->
+<script>
+(function () {
+  var measurementId = 'REPLACE_WITH_REAL_GA4_ID';
+  if (!/^G-[A-Z0-9]+$/.test(measurementId)) return;
+  if (/^\/(account|checkout|pay|panel|ops)(\/|$)/.test(location.pathname)) return;
+  if (location.search) return;
+
+  var referrer = '';
+  try {
+    if (document.referrer) {
+      var source = new URL(document.referrer);
+      referrer = source.origin + '/';
+    }
+  } catch (error) {}
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+  window.gtag('js', new Date());
+  window.gtag('config', measurementId, {
+    page_location: location.origin + location.pathname,
+    page_referrer: referrer,
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false
+  });
+
+  var script = document.createElement('script');
+  script.async = true;
+  script.src = 'https://www.googletagmanager.com/gtag/js?id=' + measurementId;
+  document.head.appendChild(script);
+})();
+</script>

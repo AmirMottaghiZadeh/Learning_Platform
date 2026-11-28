@@ -1,0 +1,9 @@
+<div class="credit-field">
+  {% if field.field.widget.input_type == 'checkbox' %}
+    <label class="credit-toggle" for="{{ field.id_for_label }}">{{ field }}<span><b>{{ field.label }}</b>{% if field.help_text %}<span class="help">{{ field.help_text }}</span>{% endif %}</span></label>
+  {% else %}
+    <label class="lbl" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+    {% if field.help_text %}<span class="help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</span>{% endif %}
+  {% endif %}
+  {{ field.errors }}
+</div>

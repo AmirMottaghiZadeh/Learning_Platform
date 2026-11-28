@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+.venv/
+.private/
+__pycache__/
+*.py[cod]
+db.sqlite3
+db.sqlite3-*
+exports/
+backups/
+staticfiles/
+media/
+*.log

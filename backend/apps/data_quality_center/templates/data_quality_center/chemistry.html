@@ -1,0 +1,51 @@
+{% extends "data_quality_center/base.html" %}
+{% load dqc_extras %}
+{% block title %}اطلاعات شیمیایی · {{ ingredient.name }}{% endblock %}
+{% block head %}
+<style>
+.chemistry-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;margin-top:20px}
+.chemistry-panel{padding:20px;min-width:0}.chemistry-panel p{overflow-wrap:anywhere}.chemistry-image{width:100%;height:250px;background:white;border-radius:12px;object-fit:contain}
+.chemistry-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.chemistry-actions .btn,.chemistry-panel input{min-height:44px}
+@media(max-width:760px){.chemistry-grid{grid-template-columns:1fr}.chemistry-panel{padding:16px}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1 class="page-title">اطلاعات شیمیایی</h1><p class="page-sub"><b class="ltr">{{ ingredient.name }}</b> · RxCUI {{ ingredient.rxcui }}</p></div></div>
+<a href="{% url 'data_quality_center:workspace' ingredient.slug %}{% querystring browse_query %}">بازگشت به بازبینی دارو</a>
+<div class="chemistry-grid">
+  <section class="card chemistry-panel">
+    <h2>تطبیق مادهٔ مؤثره</h2>
+    <p>فرمول و ساختار معتبر به‌صورت پیش‌فرض در اپ نمایش داده می‌شود. نام، شکل نمک یا استر و ساختار را بررسی کنید؛ رد تطبیق، آن را از اپ پنهان می‌کند. دریافت خودکار یا تأیید کلی دارو به معنی تأیید بازبینی شیمیایی نیست.</p>
+    <p>وضعیت: <strong>{% if chemistry %}{{ chemistry.get_status_display }}{% else %}هنوز دریافت نشده{% endif %}</strong></p>
+    {% if chemistry.pubchem_cid and not chemistry_identity_current %}<p role="alert">هویت دارو پس از دریافت تغییر کرده است؛ اطلاعات را دوباره دریافت و بررسی کنید. این ساختار در اپ نمایش داده نمی‌شود.</p>{% endif %}
+    {% if chemistry.pubchem_cid %}
+      <p dir="ltr">{{ chemistry.matched_name }} · CID {{ chemistry.pubchem_cid }}</p>
+      <p dir="ltr" style="font-size:26px;overflow-wrap:anywhere">{{ chemistry.molecular_formula }}</p>
+      <p><a href="{{ chemistry.source_url }}" target="_blank" rel="noopener noreferrer">بررسی منبع در PubChem</a></p>
+      <p class="muted">زمان دریافت: {{ chemistry.fetched_at|date:"Y-m-d H:i" }}</p>
+      <details><summary>شناسه و ساختار متنی</summary><p dir="ltr">{{ chemistry.inchikey }}</p><p dir="ltr">{{ chemistry.smiles }}</p></details>
+    {% endif %}
+    {% if chemistry.status == 'ambiguous' %}<p>بیش از یک ترکیب یافت شد. پس از بررسی، شناسهٔ صحیح را وارد کنید.</p><p dir="ltr">{{ chemistry.candidates|join:", " }}</p>{% endif %}
+    {% if chemistry.status == 'not_found' %}<p>تطبیق خودکار پیدا نشد. برای ترکیبات مخلوط یا فرآورده‌های زیستی، وجود فرمول واحد تضمین نمی‌شود.</p>{% endif %}
+    {% if can_fetch_chemistry %}
+    <form method="post" class="chemistry-actions">{% csrf_token %}<input type="hidden" name="version" value="{{ chemistry_version }}"><input type="hidden" name="action" value="fetch">
+      <label for="chem-cid">شناسهٔ PubChem (اختیاری)<input class="input" id="chem-cid" name="cid" type="text" inputmode="numeric" pattern="[0-9]+" maxlength="12" placeholder="جست‌وجوی خودکار با نام دارو" dir="ltr"></label>
+      <button class="btn outline" type="submit">دریافت اطلاعات</button>
+    </form>
+    {% endif %}
+    {% if can_approve and chemistry.pubchem_cid %}
+    <form method="post" class="chemistry-actions">{% csrf_token %}<input type="hidden" name="version" value="{{ chemistry_version }}">
+      {% if chemistry.status == 'pending' and chemistry_identity_current %}<button class="btn" name="action" value="approve">تأیید بازبینی اطلاعات شیمیایی</button>{% endif %}
+      {% if chemistry.status != 'rejected' %}<button class="btn outline" name="action" value="reject">رد تطبیق و پنهان کردن در اپ</button>{% endif %}
+    </form>
+    {% endif %}
+  </section>
+  <section class="card chemistry-panel"><h2>ساختار دوبعدی</h2>
+    {% if chemistry.structure_svg %}<img class="chemistry-image" src="data:image/svg+xml;base64,{{ chemistry_image }}" alt="ساختار دوبعدی {{ ingredient.name }}">
+    {% else %}<p class="muted">پس از دریافت ترکیب معتبر، ساختار در این قسمت نمایش داده می‌شود.</p>{% endif %}
+    {% if chemistry.reviewed_at %}<p>آخرین تصمیم: {{ chemistry.reviewed_by }} · {{ chemistry.reviewed_at|date:"Y-m-d H:i" }}</p>{% endif %}
+    <h2 style="margin-top:24px">تاریخچهٔ بازبینی</h2>
+    {% for event in chemistry_reviews %}<p>{{ event.actor }} · {{ event.action }} · {{ event.created_at|date:"Y-m-d H:i" }} <span dir="ltr">CID {{ event.snapshot.cid|default:"—" }}</span></p>{% empty %}<p class="muted">هنوز رویدادی ثبت نشده است.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# App signing credentials are handled separately by EAS, not source uploads.
+*.jks
+*.keystore
+credentials.json
+frontend/credentials/
+play-service-account*.json
+/docs/15-android-signing.local.md
+
+# Backend
+backend/
+
+# Frontend outputs
+frontend/node_modules
+frontend/dist
+frontend/coverage
+frontend/.expo
+
+# Python
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+
+# Local support Web Push signing keys
+backend/.private/

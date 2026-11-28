@@ -1,0 +1,293 @@
+from io import StringIO
+import time
+from unittest.mock import patch
+from django.test import TestCase, override_settings
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+from django.core.cache import caches
+from . import services, reference_index, test_reference_index as fixtures, jobs
+from .models import ReferenceArticle
+from .outline import OutlineReader
+from .provider import ProviderError
+
+
+@override_settings(AI_LAB_SEARCH_ENGINE="outline")
+class OutlinePipelineTests(TestCase):
+    setUp = fixtures.ReferenceIndexTests.setUp
+    write_article = fixtures.ReferenceIndexTests.write_article
+    add_title = fixtures.ReferenceIndexTests.add_title
+    build = fixtures.ReferenceIndexTests.build
+
+    def prepare(self):
+        self.write_article('3851', fixtures.html(heading='Treatment'))
+        self.build()
+
+    def test_explicit_media_search_uses_inline_graphics_and_related_topics_before_text_selection(self):
+        from apps.ai_retrieval.media import citation_valid
+        from apps.uptodate import services as sources
+        from apps.uptodate.media import resolve_one
+
+        self.write_article("3851", '''<div id="topicText"><p>See
+            <a onclick='doOperation({contentIds:["9001", "9002"]})'>Table 2</a>.</p></div>''',
+            title="Fixture syndrome overview", outline='''
+            <section id="outlineRelatedGraphicsLinks"><div class="relatedGraphicsHeading">Algorithms</div>
+            <a onclick='doOperation({contentId:"9002"})'>Decision pathway</a></section>
+            <section id="outlineRelatedTopicsLinks"><a data-topicid="3852">Fixture syndrome follow-up</a></section>''')
+        self.add_title("3852")
+        self.write_article("3852", '''<div id="topicText">
+            <figure><img src="diagram.png" alt="Follow-up illustration"></figure>
+            <img src="diagram.png" alt="Alternative caption"><img src="pathway.png" alt="Original pathway">
+            <table><tr><th>Source</th></tr>
+            <tr><td>Original table cell</td></tr></table></div>''',
+                           title="Fixture syndrome follow-up")
+        self.write_article("9001", '<table><tr><th>Source</th></tr><tr><td>Original table cell</td></tr></table>', title="Source table")
+        self.write_article("9002", '<img src="pathway.png" alt="Original pathway">', title="Decision pathway")
+        self.build()
+
+        def model(alias, system, payload, tokens):
+            if system == services.PLAN_PROMPT:
+                return {"queries": ["Fixture syndrome algorithm"], "intent": "general"}, {}
+            if system == services.ARTICLE_PROMPT:
+                return {"article_ids": ["3851"]}, {}
+            self.fail("Explicit original-media lookup must not depend on selecting or paraphrasing a paragraph.")
+
+        def catalog(queries, request, audit):
+            return [{"id": "3851", "title": "Fixture syndrome overview"}] if queries == ["Fixture syndrome"] else []
+
+        with patch.object(services, "search_articles", side_effect=catalog), patch.object(services, "chat", side_effect=model):
+            part = services.answer("جدول و تصویر و الگوریتم Fixture syndrome را نشان بده", "luna", ["uptodate"], [], None)["parts"][0]
+        self.assertEqual(part["status"], "answered")
+        self.assertEqual(len(part["items"]), 2)
+        self.assertEqual(len({item["media"][0]["asset_id"] for item in part["items"]}), 2)
+        self.assertEqual({item["media"][0]["kind"] for item in part["items"]}, {"table", "image"})
+        self.assertIn("3851", {item["target"]["params"]["id"] for item in part["items"]})
+        self.assertTrue(any(item["media"][0]["is_algorithm"] for item in part["items"]))
+        for item in part["items"]:
+            params = item["target"]["params"]
+            original = resolve_one(sources.get_topic(params["id"]), params["mediaKey"])
+            self.assertIsNotNone(original)
+            self.assertTrue(citation_valid(item))
+
+    def test_requested_table_explanation_uses_original_cells_and_retains_original_viewer_target(self):
+        from . import hybrid_agent
+        from apps.ai_retrieval import media
+
+        self.write_article("3851", """<div id="topicText"><p>See
+            <a data-graphic-id="9001">Reference values table</a>.</p></div>""",
+            title="Fixture syndrome")
+        self.write_article("9001", """<table>
+            <thead><tr><th scope="col" rowspan="2">Population</th><th scope="col">Fixture value</th></tr></thead>
+            <tbody><tr><td>Group A only</td><td>42 units</td></tr></tbody>
+            <tfoot><tr><td colspan="2">Source footnote</td></tr></tfoot></table>
+            <table><tr><td>Sibling table content</td></tr></table>""", title="Fixture syndrome reference values table")
+        self.build()
+
+        def choose(alias, prompt, payload, tokens):
+            if prompt == services.PLAN_PROMPT:
+                return {"queries": ["Fixture syndrome table"], "intent": "general"}, {}
+            self.assertEqual(prompt, services.ARTICLE_PROMPT)
+            return {"article_ids": ["3851"]}, {}
+
+        def explain(alias, prompt, payload, tokens, **kwargs):
+            if prompt == media.TABLE_PROMPT:
+                table = payload["tables"][0]["table"]
+                self.assertEqual(table["rows"][0]["cells"][0]["rowspan"], "2")
+                self.assertEqual(table["rows"][1]["cells"][1]["text"], "42 units")
+                self.assertEqual(table["rows"][2]["group"], "tfoot")
+                self.assertNotIn("Sibling table content", str(table))
+                return {"answer": "عدد مرجع برای گروه الف ۴۲ واحد است. [P1]"}, {}
+            self.assertEqual(prompt, hybrid_agent.AGGREGATE_VERIFY)
+            return {"supported": ["A1"], "sufficient": True,
+                    "coverage": [{"requirement": "requested_aspects", "status": "supported", "source_ids": ["P1"]}]}, {}
+
+        with patch.object(services, "search_articles", return_value=[{"id": "3851", "title": "Fixture syndrome"}]), \
+                patch.object(services, "chat", side_effect=choose), patch.object(hybrid_agent, "chat", side_effect=explain) as model:
+            part = services.answer("جدول Fixture syndrome را بخوان و توضیح بده", "luna", ["uptodate"], [], None)["parts"][0]
+        self.assertEqual(model.call_count, 2, part)
+        self.assertEqual(part["status"], "answered")
+        self.assertIn("۴۲ واحد", part["overview_fa"])
+        item = part["items"][0]
+        self.assertEqual(part["answer_blocks"][0]["source_ids"], [item["source_id"]])
+        self.assertTrue(media.citation_valid(item))
+
+    def model(self, alias, system, payload, tokens):
+        if system == services.PLAN_PROMPT:
+            return {'queries': ['concept'], 'intent': 'adverse_effects', 'requirements': ['adverse_effects']}, {}
+        if system == services.ARTICLE_PROMPT:
+            self.assertEqual(set(payload['articles'][0]), {'id', 'title'})
+            return {'article_ids': [a['id'] for a in payload['articles'][:3]]}, {}
+        if system == services.TITLE_PROMPT:
+            self.assertTrue(all(set(s) == {'id','article_id','title','path'} for s in payload['sections']))
+            return {'section_ids': [s['id'] for s in payload['sections'][:3]]}, {}
+        if 'paragraphs' in payload:
+            return {'items': [{'source_id': p['id'], 'summary_fa': 'توضیح فارسی بر اساس پاراگراف اصلی'} for p in payload['paragraphs']]}, {}
+        ids = [p['id'] for p in payload['items']]
+        return {'supported': ids, 'sufficient': True, 'answer_source_ids': ids,
+                'coverage': [{'requirement': r, 'status':'supported', 'source_ids':ids} for r in payload['requirements']]}, {}
+
+    def test_outline_queries_no_paragraph_table_until_selection_and_reads_only_selected_sections(self):
+        self.write_article('3851', fixtures.html()[:-6] + '<p class="headingAnchor" id="other"><span class="h1">Other section</span></p><p>Unselected source text that must not be sent as evidence to the model.</p></div>')
+        self.build()
+        with CaptureQueriesContext(connection) as queries:
+            reader = OutlineReader(None)
+            candidates = reader.candidates([{'id':'3851','title':'original'}])
+            headings = reader.headings(candidates)
+        self.assertFalse(any('ai_lab_referenceparagraph' in q['sql'].lower() for q in queries))
+        self.assertTrue(headings)
+        passages = reader.passages([headings[0]['id']])
+        self.assertEqual(len(passages), 1)
+        self.assertEqual(passages[0].text, fixtures.TEXT)
+        self.assertTrue(passages[0].target['params']['searchAnchor'])
+
+    def test_coverage_does_not_skip_remaining_paragraphs_in_selected_section(self):
+        body=fixtures.html()[:-6]+''.join(f'<p>{fixtures.TEXT} Distinct paragraph {n}.</p>' for n in range(8))+'</div>'
+        self.write_article('3851',body);self.build()
+        counts=[]
+        def model(*args):
+            if 'paragraphs' in args[2]:counts.append(len(args[2]['paragraphs']))
+            return self.model(*args)
+        with patch.object(services,'search_articles',return_value=[{'id':'3851','title':'original'}]),patch.object(services,'chat',side_effect=model):
+            part=services.answer('عارضه دارو چیست؟','luna',['uptodate'],[],None)['parts'][0]
+        self.assertEqual(sum(counts),9)
+        self.assertEqual(part['retrieval']['reviewed_passages'],9)
+
+    def test_selecting_first_therapy_subheading_retrieves_all_six_branches_and_nested_regimen(self):
+        headings = '<p class="headingAnchor" id="H1"><span class="h1">Drug therapy</span></p>'
+        outline = '<ul><li><a id="outline-link-H1">Drug therapy</a><ul>'
+        for number in range(1, 7):
+            headings += (f'<p class="headingAnchor" id="H{number + 1}"><span class="h2">Branch {number}</span></p>'
+                         f'<p>Distinct original evidence for therapy branch {number}.</p>')
+            outline += f'<li><a id="outline-link-H{number + 1}">Branch {number}</a>'
+            if number == 6:
+                outline += '<ul><li><a id="outline-link-H8">Fixturemed regimen</a></li></ul>'
+            outline += '</li>'
+        headings += ('<p class="headingAnchor" id="H8"><span class="h3">Fixturemed regimen</span></p>'
+                     '<p>The source gives a distinct Fixturemed regimen for ConditionY.</p>')
+        self.write_article('3851', '<div id="topicText">' + headings + '</div>', outline=outline + '</ul></li></ul>')
+        self.build()
+
+        def model(alias, system, payload, tokens):
+            if system == services.PLAN_PROMPT:
+                return {'queries': ['ConditionY'], 'intent': 'drug_therapy', 'requirements': ['drug_names']}, {}
+            if system == services.TITLE_PROMPT:
+                return {'section_ids': [h['id'] for h in payload['sections'] if h['title'] == 'Branch 1']}, {}
+            if 'paragraphs' in payload:
+                return {'items': [{'source_id': p['id'], 'summary_fa': f'توضیح مستند برای {p["section"]}'}
+                                  for p in payload['paragraphs']]}, {}
+            return self.model(alias, system, payload, tokens)
+
+        with patch.object(services, 'search_articles', return_value=[{'id': '3851', 'title': 'ConditionY'}]), \
+                patch.object(services, 'chat', side_effect=model):
+            part = services.answer('دارودرمانی ConditionY چیست؟', 'luna', ['uptodate'], [], None)['parts'][0]
+        self.assertEqual(part['status'], 'answered')
+        self.assertEqual({item['section'] for item in part['items']},
+                         {f'Branch {n}' for n in range(1, 7)} | {'Fixturemed regimen'})
+        self.assertEqual([block['source_ids'] for block in part['answer_blocks']],
+                         [[item['source_id']] for item in part['items']])
+        self.assertTrue(all(item['target']['params']['searchAnchor'] for item in part['items']))
+
+    def test_dosing_follows_original_related_topic_and_includes_only_matching_media(self):
+        first = fixtures.html(heading='Drug therapy', text='The source lists a comparison drug for ConditionY.')
+        self.write_article('3851', first, outline='''<section id="outlineRelatedTopicsLinks">
+            <a onclick="doOperation({contentId:'3852'})">Fixturemed for ConditionY</a></section>''')
+        self.add_title('3852')
+        followup = fixtures.html(heading='ConditionY regimen',
+            text='The original source gives a Fixturemed regimen specifically for ConditionY.')[:-6]
+        self.write_article('3852', followup + '''<table><caption>Fixturemed regimen for ConditionY</caption>
+            <tr><th>Item</th><th>Original notes</th></tr><tr><td>A</td><td>Fixture-specific details</td></tr></table>
+            <img src="reference.png" alt="Fixturemed for ConditionY diagram">
+            <img src="unrelated.png" alt="DifferentTopic diagram"></div>''')
+        self.build()
+
+        def model(alias, system, payload, tokens):
+            if system == services.PLAN_PROMPT:
+                return {'queries': ['Fixturemed ConditionY'], 'intent': 'dose', 'requirements': ['dose']}, {}
+            if 'paragraphs' in payload:
+                return {'items': [{'source_id': p['id'], 'summary_fa': 'رژیم مستند برای داروی پرسش'}
+                                  for p in payload['paragraphs'] if 'gives a Fixturemed regimen' in p['text']]}, {}
+            return self.model(alias, system, payload, tokens)
+
+        with patch.object(services, 'search_articles', return_value=[{'id': '3851', 'title': 'ConditionY'}]), \
+                patch.object(services, 'chat', side_effect=model):
+            part = services.answer('دوز Fixturemed برای ConditionY چیست؟', 'luna', ['uptodate'], [], None)['parts'][0]
+        self.assertEqual(part['status'], 'answered')
+        self.assertEqual({item['target']['params']['id'] for item in part['items']}, {'3852'})
+        media_items = [item['media'][0] for item in part['related_items']]
+        self.assertEqual({item['kind'] for item in media_items}, {'table', 'image'})
+        self.assertTrue(all(item['article_id'] == '3852' and 'Fixturemed' in item['title'] for item in media_items))
+
+    def test_old_selection_flags_cannot_reactivate_body_first_selection(self):
+        self.prepare()
+        with override_settings(AI_LAB_LEXICAL_ENABLED=False,AI_LAB_LOCAL_SELECTION_ENABLED=False),patch.object(services,'search_articles',return_value=[{'id':'3851','title':'original'}]),patch.object(services,'chat',side_effect=self.model):
+            part=services.answer('عارضه دارو چیست؟','luna',['uptodate'],[],None)['parts'][0]
+        self.assertEqual(part['retrieval']['selection_engine'],'model_titles_only')
+
+    def test_formulation_directories_resolve_using_metadata_not_article_bodies(self):
+        self.add_title('3852');self.write_article('3852',fixtures.html());self.build()
+        ReferenceArticle.objects.filter(source_id='3851').update(is_directory=True,related_topics=[{'id':'3852','title':'Related drug monograph'}])
+        with CaptureQueriesContext(connection) as queries:
+            candidates=OutlineReader(None).candidates([{'id':'3851','title':'Drug directory'}])
+        self.assertEqual([a['id'] for a in candidates],['3852'])
+        self.assertFalse(any('ai_lab_referenceparagraph' in q['sql'].lower() for q in queries))
+
+    @patch.object(services, 'search_articles')
+    def test_order_is_plan_article_titles_section_titles_then_answer_and_verification(self, search):
+        self.prepare(); search.return_value=[{'id':'3851','title':'original'}]
+        calls=[]
+        def model(*args):
+            calls.append(args)
+            return self.model(*args)
+        with patch.object(services, 'chat', side_effect=model):
+            result=services.answer('عارضه دارو چیست؟','luna',['uptodate'],[],None)
+        self.assertEqual(result['parts'][0]['status'],'answered')
+        self.assertEqual(len(calls),5)
+        self.assertEqual([c[1] for c in calls[:3]], [services.PLAN_PROMPT, services.ARTICLE_PROMPT, services.TITLE_PROMPT])
+        self.assertNotIn(fixtures.TEXT, str([c[2] for c in calls[:3]]))
+        self.assertEqual(calls[3][2]['paragraphs'][0]['text'],fixtures.TEXT)
+
+    @patch.object(services, 'search_articles')
+    def test_global_three_section_limit_and_multiple_article_citations(self, search):
+        for identifier in ['3852','3853']:
+            self.add_title(identifier);self.write_article(identifier,fixtures.html())
+        self.build()
+        search.return_value=[{'id':i,'title':'original'} for i in ['3851','3852','3853']]
+        with patch.object(services,'chat',side_effect=self.model):
+            part=services.answer('عارضه دارو چیست؟','luna',['uptodate'],[],None)['parts'][0]
+        self.assertEqual(part['retrieval']['selected_sections'],3)
+        self.assertEqual({i['target']['params']['id'] for i in part['items']},{'3851','3852','3853'})
+        self.assertEqual(len({i['source_id'] for i in part['items']}),3)
+
+    @patch.object(services, 'search_articles')
+    def test_unknown_or_more_than_three_selections_fail_before_reading_body(self, search):
+        self.prepare();search.return_value=[{'id':'3851','title':'original'}]
+        for ids in [['invented'],['3851']*4]:
+            def model(alias,system,payload,tokens):
+                return ({'article_ids':ids},{}) if system==services.ARTICLE_PROMPT else self.model(alias,system,payload,tokens)
+            with self.subTest(ids=ids),patch.object(services,'chat',side_effect=model),patch.object(OutlineReader,'passages') as body:
+                with self.assertRaises(ProviderError):services.answer('عارضه دارو چیست؟','luna',['uptodate'],[],None)
+                body.assert_not_called()
+
+    @patch.object(services, 'search_articles')
+    def test_elapsed_time_over_old_deadline_does_not_abort_new_pipeline(self,search):
+        self.prepare();search.return_value=[{'id':'3851','title':'original'}]
+        with patch.object(services,'chat',side_effect=self.model),patch('apps.ai_lab.telemetry.Trace.elapsed',return_value=90000):
+            result=services.answer('عارضه دارو چیست؟','luna',['uptodate'],[],None)
+        self.assertEqual(result['parts'][0]['status'],'answered')
+
+    def test_live_new_job_is_not_expired_by_old_total_time(self):
+        cache=caches['throttle'];key='ai-lab:job:outline-old'
+        cache.set(key,{'user_id':7,'status':'running','pipeline':'outline-v1','created_at':time.time()-10000,
+            'heartbeat_at':time.time(),'model':'luna','sources':['uptodate']},60)
+        self.addCleanup(cache.delete,key)
+        self.assertEqual(jobs.read('outline-old',7)['status'],'running')
+
+    def test_missing_requirement_keeps_supported_answer_partial(self):
+        self.prepare()
+        def model(*args):
+            value,meta=self.model(*args)
+            if 'coverage' in value:value['coverage'][0]['status']='missing'
+            return value,meta
+        with patch.object(services,'search_articles',return_value=[{'id':'3851','title':'original'}]),patch.object(services,'chat',side_effect=model):
+            part=services.answer('عارضه دارو چیست؟','luna',['uptodate'],[],None)['parts'][0]
+        self.assertEqual(part['status'],'partial')
+        self.assertTrue(part['items'])

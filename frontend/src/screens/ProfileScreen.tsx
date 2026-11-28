@@ -1,0 +1,180 @@
+import { useQuery } from "@tanstack/react-query";
+import React from "react";
+import { Pressable, ScrollView, View } from "react-native";
+
+import { meApi } from "@/api/endpoints";
+import { HeaderMesh } from "@/components/HeaderMesh";
+import { LangToggleButton } from "@/components/ScreenChrome";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+import { AppText } from "@/components/primitives/AppText";
+import { Card } from "@/components/primitives/Card";
+import { IconImage, IconName } from "@/components/primitives/IconImage";
+import { SubscriptionCard } from "@/components/profile/SubscriptionCard";
+import { useLang } from "@/i18n/LanguageProvider";
+import { useAuth } from "@/store/auth";
+import { useNav } from "@/store/nav";
+import { useTheme } from "@/theme/ThemeProvider";
+import { useNavClearance } from "@/components/BottomNav";
+import { SupportLink } from "@/components/SupportSettings";
+
+export function ProfileScreen() {
+  const navClearance = useNavClearance();
+  const { t, n, row } = useLang();
+  const { colors, shadows } = useTheme();
+  const user = useAuth((s) => s.user);
+  const signOut = useAuth((s) => s.signOut);
+  const navigate = useNav((s) => s.navigate);
+
+  const { data: stats } = useQuery({ queryKey: ["statistics"], queryFn: meApi.statistics });
+  const { data: dash } = useQuery({ queryKey: ["dashboard"], queryFn: meApi.dashboard });
+
+  const name = user?.profile.display_name || user?.first_name || user?.username || "";
+  const initial = name.trim().charAt(0) || "؟";
+
+  const tiles = [
+    { value: n(dash?.xp ?? 0), label: t("xpLabel"), icon: "stat-xp" as IconName, color: colors.accent, bg: colors.softBg },
+    { value: n(dash?.streak_days ?? 0), label: t("streakLabel"), icon: "stat-streak" as IconName, color: colors.cautLabel, bg: colors.cautBg },
+    { value: `${n(stats?.accuracy_pct ?? 0)}%`, label: t("profileStatsAccuracy"), icon: "stat-accuracy" as IconName, color: colors.accent, bg: colors.leitnerActiveBg },
+    { value: n(stats?.quizzes ?? 0), label: t("profileStatsQuizzes"), icon: "stat-quizzes" as IconName, color: colors.ink, bg: colors.softBg },
+  ];
+
+  const Row = ({
+    label,
+    onPress,
+    danger,
+    icon,
+    glyph,
+  }: {
+    label: string;
+    onPress?: () => void;
+    danger?: boolean;
+    icon?: IconName;
+    /** a character in place of an icon, for a row with no icon of its own */
+    glyph?: string;
+  }) => (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={[
+        {
+          height: 52,
+          borderRadius: 14,
+          flexDirection: row,
+          alignItems: "center",
+          gap: 12,
+          paddingHorizontal: 14,
+          backgroundColor: danger ? "rgba(214,88,88,0.08)" : colors.cardBg,
+        },
+        !danger && shadows.raisedSm,
+      ]}
+    >
+      {icon ? (
+        <IconImage name={icon} size={26} />
+      ) : (
+        <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: `${colors.accent}1A`, alignItems: "center", justifyContent: "center" }}>
+          <AppText weight="800" size={15} color={colors.accent} style={{ lineHeight: 20 }}>
+            {glyph}
+          </AppText>
+        </View>
+      )}
+      <AppText weight="700" size={14} color={danger ? "#D65858" : colors.ink}>
+        {label}
+      </AppText>
+    </Pressable>
+  );
+
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.appBg }}
+      contentContainerStyle={{ paddingBottom: navClearance + 24 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={{ borderBottomLeftRadius: 28, borderBottomRightRadius: 28, overflow: "hidden" }}>
+        <HeaderMesh bleedTop>
+          <View style={{ padding: 20, paddingBottom: 44 }}>
+            <View style={{ flexDirection: row, justifyContent: "space-between", alignItems: "center" }}>
+              <AppText weight="800" size={17} color="#fff">
+                {t("profileTitle")}
+              </AppText>
+              <View style={{ flexDirection: row, gap: 8, alignItems: "center" }}>
+                <ThemeToggleButton />
+                <LangToggleButton variant="chip" />
+              </View>
+            </View>
+
+            <View style={{ alignItems: "center", marginTop: 14 }}>
+              <View
+                style={{
+                  width: 74,
+                  height: 74,
+                  borderRadius: 37,
+                  backgroundColor: "rgba(255,255,255,0.16)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <AppText weight="800" size={26} color="#fff">
+                  {initial}
+                </AppText>
+              </View>
+              <AppText weight="800" size={17} color="#fff" style={{ marginTop: 10 }}>
+                {name}
+              </AppText>
+              <AppText weight="600" size={12} color="rgba(255,255,255,0.75)" style={{ marginTop: 2 }}>
+                {user?.email}
+              </AppText>
+            </View>
+          </View>
+        </HeaderMesh>
+      </View>
+
+      <View style={{ marginHorizontal: 20, marginTop: -28 }}>
+        <Card style={{ flexDirection: row, flexWrap: "wrap", gap: 10 }} raised>
+          {tiles.map((tile) => (
+            <View
+              key={tile.label}
+              style={{
+                width: "47%",
+                backgroundColor: tile.bg,
+                borderRadius: 14,
+                padding: 12,
+                alignItems: "center",
+              }}
+            >
+              <IconImage name={tile.icon} size={30} style={{ marginBottom: 4 }} />
+              <AppText weight="900" size={20} color={tile.color}>
+                {tile.value}
+              </AppText>
+              <AppText weight="700" size={12} muted style={{ marginTop: 2 }}>
+                {tile.label}
+              </AppText>
+            </View>
+          ))}
+        </Card>
+      </View>
+
+      {user?.is_guest ? null : (
+        <View style={{ marginHorizontal: 20, marginTop: 14 }}>
+          <SubscriptionCard />
+        </View>
+      )}
+
+      <View style={{ paddingHorizontal: 20, paddingTop: 18, gap: 8 }}>
+        <SupportLink />
+        {user?.is_guest ? null : <Row label={t("profileBuySubscription")} icon="profile-subscription" onPress={() => navigate("plans")} />}
+        <Row label={t("profileFullStats")} icon="profile-full-stats" onPress={() => navigate("statistics")} />
+        <Row label={t("profilePlanning")} icon="profile-planning" onPress={() => navigate("planning")} />
+        <Row label={t("mistakesTitle")} icon="edu-mistakes" onPress={() => navigate("mistakes")} />
+        <Row label={t("offlineTitle")} icon="profile-downloads" onPress={() => navigate("downloads")} />
+        <Row label={t("settingsTitle")} glyph="⚙" onPress={() => navigate("settings")} />
+        <Row label={t("devicesTitle")} glyph="▣" onPress={() => navigate("devices")} />
+        {user?.is_guest ? (
+          // A guest has no account to log out of: this leads to the sign-in screen.
+          <Row label={t("profileGuestSignIn")} icon="profile-logout" onPress={signOut} />
+        ) : (
+          <Row label={t("profileLogout")} icon="profile-logout" danger onPress={signOut} />
+        )}
+      </View>
+    </ScrollView>
+  );
+}

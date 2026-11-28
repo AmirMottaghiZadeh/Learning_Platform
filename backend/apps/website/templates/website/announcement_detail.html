@@ -1,0 +1,6 @@
+{% extends "website/base.html" %}
+{% load billing_extras %}
+{% block content %}
+<div class="wrap"><nav class="crumbs" aria-label="مسیر"><a href="{% url 'site:home' %}">خانه</a> ‹ <a href="{% url 'site:announcements' %}">اطلاعیه‌ها</a></nav>
+  <article class="page"><span class="pill {{ item.level }}">{{ item.get_level_display }}</span><h1 style="margin-top:10px">{{ item.title }}</h1><div class="meta">{{ item.published_at|jdate:"long" }}</div><div class="prose" style="margin-top:20px">{{ item.body_html|safe }}</div></article></div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "data_quality_center/base.html" %}
+{% load dqc_extras %}
+{% block title %}درخواست‌های من{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="grow">
+    <h1 class="page-title">درخواست‌های من</h1>
+    <p class="page-sub">پیش‌نویس‌ها، درخواست‌های در انتظار و آن‌هایی که برای اصلاح برگشته‌اند.</p>
+  </div>
+</div>
+<div class="pills" style="margin-bottom: 14px">
+  {% for key, label in tabs.items %}<a class="pill {% if tab == key %}on{% endif %}" href="?tab={{ key }}">{{ label }}</a>{% endfor %}
+</div>
+<div class="card" style="overflow: hidden">
+  {% if page.object_list %}
+  <table class="table">
+    <thead><tr><th>#</th><th>ماده و بخش</th><th>وضعیت</th><th>یادداشت بررسی</th><th>آخرین تغییر</th><th></th></tr></thead>
+    <tbody>
+    {% for r in page %}
+      <tr>
+        <td class="faint">{{ r.pk|fa_digits }}</td>
+        <td><span class="ltr" style="font-weight: 800">{{ r.ingredient_name }}</span> · {{ r.field_label }}</td>
+        <td><span class="chip tone-{{ r.status|status_tone }}">{{ r.status|status_label }}</span></td>
+        <td class="muted" style="max-width: 280px">{{ r.review_note|truncatechars:90|default:"—" }}</td>
+        <td class="muted">{{ r.updated_at|ago }}</td>
+        <td style="text-align: left"><a class="btn outline" style="padding: 5px 12px; font-size: 12.5px" href="{% url 'data_quality_center:workspace' r.section.ingredient.slug %}?field={{ r.field }}">باز کردن</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty"><b>درخواستی نیست</b>از صف ویرایش یک ماده را باز کنید.</div>
+  {% endif %}
+</div>
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a class="btn ghost" href="?tab={{ tab }}&page={{ page.previous_page_number }}">→ قبلی</a>{% endif %}
+  <span>صفحهٔ {{ page.number|fa_digits }} از {{ page.paginator.num_pages|fa_digits }}</span>
+  {% if page.has_next %}<a class="btn ghost" href="?tab={{ tab }}&page={{ page.next_page_number }}">بعدی ←</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

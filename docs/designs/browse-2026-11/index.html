@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پنج مدل صفحهٔ بیماری‌ها و گایدلاین‌ها</title>
+<style>
+@font-face{font-family:Vazirmatn;src:url(fonts/Vazirmatn_400Regular.ttf);font-weight:400}
+@font-face{font-family:Vazirmatn;src:url(fonts/Vazirmatn_700Bold.ttf);font-weight:700}
+@font-face{font-family:Vazirmatn;src:url(fonts/Vazirmatn_800ExtraBold.ttf);font-weight:800}
+
+:root{
+  --page:#E7E4DC; --app:#EFECE4; --card:#FFFFFF; --ink:#14201D; --muted:#5F6B68;
+  --soft:#F7F5EF; --track:#E0DBD1; --line:rgba(20,32,29,.07);
+  --accent:#0F5C52; --accent2:#14746A; --on-accent:#FFFFFF;
+  --accent-soft:rgba(15,92,82,.08); --shadow:0 4px 12px rgba(20,32,29,.10); --shadow-lg:0 18px 40px rgba(20,32,29,.16);
+}
+html[data-theme="dark"]{
+  --page:#101814; --app:#141F1B; --card:#1D2A24; --ink:#EDF6F0; --muted:#B3C8BB;
+  --soft:#24332C; --track:#3C5246; --line:rgba(157,212,184,.18);
+  --accent:#9DD4B8; --accent2:#7EC7A8; --on-accent:#17251E;
+  --accent-soft:rgba(157,212,184,.14); --shadow:0 4px 12px rgba(0,0,0,.32); --shadow-lg:0 18px 40px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.6 Vazirmatn,-apple-system,"Segoe UI",sans-serif}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit}
+
+/* ---------- gallery chrome ---------- */
+.topbar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;
+  padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.topbar h1{font-size:15px;font-weight:800;margin:0;white-space:nowrap}
+.tabs{display:flex;gap:4px;background:var(--soft);border-radius:12px;padding:4px}
+.tabs button{padding:6px 12px;border-radius:9px;font-weight:700;font-size:12.5px;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+.toggles{display:flex;gap:6px;margin-inline-start:auto}
+.toggle{padding:6px 12px;border:1px solid var(--line);border-radius:999px;font-weight:700;font-size:12px;background:var(--soft)}
+.toggle[data-on="1"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+.stage{display:flex;justify-content:center;gap:28px;padding:26px 20px 60px;align-items:flex-start;flex-wrap:wrap}
+.view-single .stage{padding-top:26px}
+.column{display:flex;flex-direction:column;gap:14px;align-items:center}
+.caption{max-width:390px;background:var(--card);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);font-size:13px}
+.caption h2{margin:0 0 6px;font-size:14.5px}
+.caption p{margin:0 0 8px;color:var(--muted);line-height:1.75}
+.caption ul{margin:0;padding-inline-start:18px;color:var(--muted);line-height:1.8;font-size:12.5px}
+.caption b{color:var(--ink)}
+
+/* ---------- phone ---------- */
+.phone{position:relative;width:390px;height:844px;flex:0 0 auto;background:var(--app);border-radius:38px;padding:10px;
+  box-shadow:var(--shadow-lg);border:1px solid var(--line)}
+.screen-wrap{width:100%;height:100%}
+.screen{position:relative;width:100%;height:100%;background:var(--app);border-radius:30px;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth}
+.screen::-webkit-scrollbar{width:0}
+.grid .phone{transform:scale(.46);transform-origin:top center;margin-bottom:-456px;width:390px}
+.grid .column{width:390px}
+
+/* ---------- shared app chrome ---------- */
+.chrome{position:sticky;top:0;z-index:8;display:flex;align-items:center;gap:10px;padding:14px 18px 10px;
+  background:var(--app);border-bottom:1px solid transparent}
+.chrome.solid{background:var(--card);border-bottom-color:var(--line);box-shadow:0 6px 14px rgba(20,32,29,.05)}
+.glyph{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--card);box-shadow:var(--shadow);font-size:15px;flex:0 0 auto}
+.chrome h3{margin:0;font-size:16px;font-weight:800;flex:1}
+.chip-mini{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:var(--card);
+  box-shadow:var(--shadow);font-size:12px;font-weight:700;color:var(--muted)}
+.chip-mini b{color:var(--ink)}
+
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:14px;padding:11px 14px;box-shadow:var(--shadow)}
+.search input{flex:1;border:0;outline:0;background:none;color:var(--ink);font-weight:700;font-size:13px;padding:0;min-width:0}
+.search input::placeholder{color:var(--muted);font-weight:600}
+.search .x{color:var(--muted);font-size:13px}
+
+.pad{padding:0 18px 28px}
+.seg{display:flex;gap:4px;background:var(--soft);border-radius:13px;padding:4px}
+.seg button{flex:1;padding:8px 6px;border-radius:10px;font-weight:700;font-size:12px;color:var(--muted);white-space:nowrap}
+.seg button[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+
+.pills{display:flex;gap:8px;overflow-x:auto;padding:2px 18px 10px;scrollbar-width:none}
+.pills::-webkit-scrollbar{display:none}
+.pill{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:var(--card);box-shadow:var(--shadow);
+  font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
+.pill[aria-selected="true"]{background:var(--accent);color:var(--on-accent);box-shadow:none}
+
+.row{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;padding:13px 15px;
+  box-shadow:var(--shadow);margin-bottom:8px}
+.row .t{flex:1;font-size:13px;font-weight:700;line-height:1.45;direction:ltr;text-align:left}
+.row .chev{color:var(--muted);font-size:12px;flex:0 0 auto;opacity:.65}
+.row .date{font-size:10px;font-weight:800;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 7px;flex:0 0 auto}
+.row.saved .star{color:var(--accent);font-size:13px}
+.empty{color:var(--muted);font-size:12.5px;padding:18px 4px;text-align:center}
+.meta{color:var(--muted);font-size:11px;font-weight:700;margin:2px 0 8px}
+
+/* ===== model 1: letter chip sticky ===== */
+.m1-head{position:sticky;top:0;z-index:9;background:var(--app);padding-bottom:2px;border-bottom:1px solid transparent}
+.m1-head .chrome{background:var(--app)}
+.m1 .letter{position:sticky;top:var(--stick,160px);z-index:5;display:flex;align-items:center;gap:8px;padding:8px 0 8px;background:var(--app)}
+.m1 .letter .badge{width:30px;height:30px;border-radius:10px;background:var(--accent);color:var(--on-accent);
+  display:grid;place-items:center;font-weight:800;font-size:13px;box-shadow:var(--shadow)}
+.m1 .letter .count{font-size:10.5px;font-weight:800;color:var(--accent);background:var(--card);border-radius:999px;
+  padding:3px 8px;box-shadow:var(--shadow)}
+.m1 .letter .rule{flex:1;height:1px;background:var(--track)}
+
+/* ===== model 2: index rail ===== */
+.m2 .screen{overflow:hidden;display:flex;flex-direction:column}
+.m2 .body{flex:1;overflow-y:auto;padding:0 18px 26px;padding-inline-end:38px}
+.m2 .rail{position:absolute;inset-inline-end:4px;top:132px;bottom:40px;display:flex;flex-direction:column;
+  justify-content:flex-start;gap:0;z-index:6;padding:2px}
+.m2 .rail button{line-height:1}
+.m2 .rail button{width:22px;height:15px;font-size:9.5px;font-weight:800;color:var(--muted);border-radius:6px}
+.m2 .rail button.has{color:var(--accent)}
+.m2 .rail button:active{background:var(--accent-soft)}
+.m2 .letter{position:sticky;top:0;z-index:4;padding:10px 0 6px;background:linear-gradient(var(--app) 70%,transparent);
+  display:flex;align-items:baseline;gap:8px}
+.m2 .letter b{font-size:24px;font-weight:800;color:var(--accent);line-height:1}
+.m2 .letter span{font-size:10.5px;color:var(--muted);font-weight:700}
+.m2 .quick{display:flex;gap:8px;padding:4px 0 12px}
+
+/* ===== model 3: banded groups ===== */
+.m3 .band{display:flex;align-items:center;gap:10px;background:var(--accent-soft);border-inline-start:3px solid var(--accent);
+  border-radius:4px 10px 10px 4px;padding:7px 11px;margin:16px 0 8px}
+.m3 .band b{font-size:16px;font-weight:800;color:var(--accent);min-width:16px}
+.m3 .band span{font-size:11px;color:var(--muted);font-weight:700}
+.m3 .band .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.5}
+.m3 .top-actions{display:flex;gap:8px;padding:2px 18px 12px}
+.m3 .top-actions .act{flex:1;display:flex;align-items:center;gap:8px;background:var(--card);border-radius:14px;
+  padding:11px 13px;box-shadow:var(--shadow);font-size:12px;font-weight:700}
+.m3 .top-actions .act b{margin-inline-start:auto;color:var(--accent);font-size:12.5px}
+
+/* ===== model 4: timeline letters + bottom search ===== */
+.m4 .letter{display:flex;align-items:center;gap:10px;margin:16px 0 10px}
+.m4 .letter i{width:26px;height:26px;border-radius:50%;border:2px solid var(--accent);color:var(--accent);
+  display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11.5px;background:var(--card)}
+.m4 .letter span{font-size:10.5px;font-weight:800;letter-spacing:.6px;color:var(--muted);text-transform:uppercase}
+.m4 .letter .line{flex:1;height:1px;background:var(--track)}
+.m4{display:flex;flex-direction:column;overflow:hidden}
+.m4 .m4-body{flex:1;overflow-y:auto;padding:0 18px 96px;min-height:0}
+.overlay{position:absolute;inset-inline:18px;bottom:22px;z-index:9}
+.overlay .search{box-shadow:var(--shadow-lg);border:1px solid var(--line)}
+.m4 .m4-body{padding-bottom:24px}
+.m4 .fade{height:64px}
+
+/* ===== model 5: outlined square letters + topic cards ===== */
+.m5 .topics{display:flex;gap:10px;overflow-x:auto;padding:2px 18px 14px;scrollbar-width:none}
+.m5 .topics::-webkit-scrollbar{display:none}
+.m5 .topic{flex:0 0 auto;width:132px;background:var(--card);border-radius:16px;padding:12px;box-shadow:var(--shadow)}
+.m5 .topic .mono{width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent);
+  display:grid;place-items:center;font-weight:800;font-size:11px;margin-bottom:8px}
+.m5 .topic .name{font-size:12px;font-weight:800;line-height:1.4;direction:ltr;text-align:left}
+.m5 .topic .n{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;direction:ltr;text-align:left}
+.m5 .letter{display:flex;align-items:center;gap:10px;margin:16px 0 8px}
+.m5 .letter i{width:24px;height:24px;border-radius:7px;border:1.5px dashed var(--accent);color:var(--accent);
+  display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11px;background:var(--card)}
+.m5 .letter em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--muted)}
+.m5 .more{display:block;width:100%;text-align:center;padding:11px;border-radius:13px;border:1px dashed var(--track);
+  color:var(--accent);font-weight:800;font-size:12.5px;margin-top:6px}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body class="view-single">
+
+<div class="topbar">
+  <h1>بیماری‌ها و گایدلاین‌ها — پنج مدل</h1>
+  <div class="tabs" role="tablist" id="modelTabs">
+    <button role="tab" data-model="1" aria-selected="true">۱ جست‌وجو اول</button>
+    <button role="tab" data-model="2">۲ نوار حروف</button>
+    <button role="tab" data-model="3" aria-selected="false">۳ دسته‌بندی اول</button>
+    <button role="tab" data-model="4">۴ تب‌دار + جست‌وجوی شناور</button>
+    <button role="tab" data-model="5">۵ کارت موضوعی</button>
+    <button role="tab" data-model="0">همه در یک نگاه</button>
+  </div>
+  <div class="toggles">
+    <button class="toggle" id="langBtn" data-on="0">EN</button>
+    <button class="toggle" id="themeBtn" data-on="0">تیره</button>
+    <button class="toggle" id="ctxBtn" data-on="0">گایدلاین‌ها</button>
+  </div>
+</div>
+
+<div class="stage" id="stage"></div>
+
+<script>
+const T = {
+  fa: {disease:"بیماری‌ها و شرایط", guideline:"گایدلاین‌ها", all:"همه", saved:"ذخیره‌شده", fresh:"تازه‌ها",
+    search:"جست‌وجو در مقاله‌ها", recent:"به‌تازگی به‌روز شده", a2z:"همهٔ مقاله‌ها A–Z", n:["مقاله","مقاله‌ها"],
+    showAll:"نمایش همهٔ مقاله‌ها", empty:"مقاله‌ای پیدا نشد", savedEmpty:"هنوز مقاله‌ای ذخیره نکرده‌اید",
+    topics:"موضوع‌ها", types:["گایدلاین","بینش متخصص","ترفند مراقبت اولیه"]},
+  en: {disease:"Diseases & Conditions", guideline:"Guidelines", all:"All", saved:"Saved", fresh:"New",
+    search:"Search articles", recent:"Recently updated", a2z:"All articles A–Z", n:["article","articles"],
+    showAll:"Show all articles", empty:"No articles found", savedEmpty:"Nothing saved yet",
+    topics:"Topics", types:["Guideline","Expert Insights","Primary Care Hacks"]}
+};
+
+const ART = {
+  disease: [
+    ["Acute Coronary Syndromes","Cardiology"],["Acute Kidney Injury","Nephrology"],["Anaphylaxis","Allergy & Immunology"],
+    ["Bacterial Meningitis","Infectious Diseases"],["Benign Prostatic Hyperplasia","Urology"],
+    ["Chronic Kidney Disease","Nephrology"],["Cirrhosis","Gastroenterology"],["Community-Acquired Pneumonia","Infectious Diseases"],
+    ["COPD","Pulmonology"],["Deep Vein Thrombosis","Cardiology"],["Diabetic Ketoacidosis","Endocrinology"],
+    ["Epilepsy","Neurology"],["Gout","Rheumatology"],["Heart Failure","Cardiology"],["Hypertension","Cardiology"],
+    ["Migraine","Neurology"],["Multiple Sclerosis","Neurology"],["Peptic Ulcer Disease","Gastroenterology"],
+    ["Psoriasis","Dermatology"],["Sepsis","Critical Care"],["Stroke","Neurology"],["Tuberculosis","Infectious Diseases"],
+    ["Type 2 Diabetes Mellitus","Endocrinology"],["Urinary Tract Infection","Urology"]
+  ],
+  guideline: [
+    ["Acute Pain Management","Guideline"],["Asthma: Diagnosis and Monitoring","Guideline"],
+    ["Chronic Heart Failure in Adults","Guideline"],["CKD: Early Identification","Primary Care Hacks"],
+    ["Depression in Adults","Guideline"],["Diabetes in Primary Care","Expert Insights"],
+    ["Eczema in Children","Guideline"],["Gastro-oesophageal Reflux in Children","Expert Insights"],
+    ["Hypertension in Adults","Guideline"],["Low Back Pain","Primary Care Hacks"],
+    ["Menopause: Management","Guideline"],["Obesity: Prevention and Lifestyle","Expert Insights"],
+    ["Palliative Care: General Issues","Guideline"],["Rheumatoid Arthritis in Adults","Guideline"],
+    ["Sepsis: Recognition and Early Management","Guideline"],["Stroke and TIA","Guideline"],
+    ["Urinary Incontinence in Women","Primary Care Hacks"]
+  ]
+};
+const FAV = {disease:["Heart Failure","Sepsis","Type 2 Diabetes Mellitus"], guideline:["Hypertension in Adults","Sepsis: Recognition and Early Management","Palliative Care: General Issues"]};
+const RECENT = {disease:["Acute Kidney Injury","Sepsis","Stroke","Psoriasis"], guideline:["CKD: Early Identification","Stroke and TIA","Palliative Care: General Issues","Depression in Adults"]};
+
+const state = {model:1, lang:"fa", theme:"light", ctx:"disease", q:"", mode:{1:"all",4:"all"}, topic:{3:"all",5:"all"}};
+const t = () => T[state.lang];
+
+function articleList(){
+  return ART[state.ctx].map(([title, tag]) => ({title, tag}));
+}
+function filtered(){
+  const q = state.q.trim().toLowerCase();
+  return articleList().filter(a => !q || a.title.toLowerCase().includes(q) || a.tag.toLowerCase().includes(q));
+}
+function groups(items){
+  const map = new Map();
+  for (const it of [...items].sort((a,b)=>a.title.localeCompare(b.title))){
+    const L = it.title.trim()[0].toUpperCase();
+    if (!map.has(L)) map.set(L, []);
+    map.get(L).push(it);
+  }
+  return [...map.entries()];
+}
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+
+function row(a, opts={}){
+  const saved = FAV[state.ctx].includes(a.title) || opts.saved;
+  return `<div class="row${saved?" saved":""}">
+    <span class="t">${esc(a.title)}</span>
+    ${opts.date ? `<span class="date">${opts.date}</span>` : ""}
+    ${saved ? `<span class="star">★</span>` : ""}
+    <span class="chev">›</span>
+  </div>`;
+}
+function rowsFor(items, opts){ return items.map(a => row(a, opts)).join(""); }
+function savedItems(){ return articleList().filter(a => FAV[state.ctx].includes(a.title)); }
+function recentItems(){ return articleList().filter(a => RECENT[state.ctx].includes(a.title)); }
+function modeItems(mode){
+  if (mode === "saved") return savedItems();
+  if (mode === "fresh") return recentItems();
+  return filtered();
+}
+function chrome(extra=""){
+  return `<div class="chrome">
+    <span class="glyph">${state.lang === "fa" ? "›" : "‹"}</span>
+    <h3>${t()[state.ctx]}</h3>${extra}
+  </div>`;
+}
+function searchBox(id){
+  return `<div class="search">
+    <span style="color:var(--muted)">⌕</span>
+    <input id="${id}" data-search placeholder="${t().search}" value="${esc(state.q)}" autocomplete="off">
+    <button class="x" data-clear aria-label="clear">✕</button>
+  </div>`;
+}
+function letterCount(items){ return state.lang === "fa" ? `${items.length} مقاله` : `${items.length} article${items.length===1?"":"s"}`; }
+
+/* ---------- model 1 ---------- */
+function m1(){
+  const mode = state.mode[1];
+  const items = modeItems(mode);
+  const body = items.length === 0
+    ? `<div class="empty">${mode==="saved"?t().savedEmpty:t().empty}</div>`
+    : (mode === "fresh"
+        ? rowsFor(items, {date:"Nov 2026"})
+        : groups(items).map(([L, list]) =>
+            `<div class="letter"><span class="badge">${L}</span><span class="count">${letterCount(list)}</span><span class="rule"></span></div>`
+            + rowsFor(list)).join(""));
+  const seg = ["all","saved","fresh"].map(k =>
+    `<button role="tab" data-mode="1:${k}" aria-selected="${mode===k}">${t()[k]}${k==="saved"?` · ${savedItems().length}`:(k==="fresh"?` · ${recentItems().length}`:"")}</button>`).join("");
+  return `<div class="screen m1">
+    <div class="m1-head">
+      ${chrome()}
+      <div class="pad" style="padding-bottom:10px">${searchBox("q1")}</div>
+      <div class="pad" style="padding-bottom:8px"><div class="seg" role="tablist">${seg}</div></div>
+    </div>
+    <div class="pad">${body}</div>
+  </div>`;
+}
+
+/* ---------- model 2 ---------- */
+function m2(){
+  const items = filtered();
+  const gs = groups(items);
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").concat("#");
+  const have = new Set(gs.map(([L]) => L));
+  const rail = letters.map(L => `<button class="${have.has(L)?"has":""}" data-jump="2:${L}">${L}</button>`).join("");
+  const body = gs.length === 0 ? `<div class="empty">${t().empty}</div>`
+    : gs.map(([L, list]) => `<div class="letter" id="g2-${L}"><b>${L}</b><span>${letterCount(list)}</span></div>` + rowsFor(list)).join("");
+  return `<div class="screen m2">
+    ${chrome(`<span class="chip-mini">★ <b>${savedItems().length}</b></span><span class="glyph">⌕</span>`)}
+    <div class="body">
+      <div class="quick"><span class="chip-mini">${t().a2z} · <b>${items.length}</b></span></div>
+      ${state.q ? `<div style="padding-bottom:12px">${searchBox("q2")}</div>` : ""}
+      ${body}
+    </div>
+    <div class="rail">${rail}</div>
+  </div>`;
+}
+
+/* ---------- model 3 ---------- */
+function m3(){
+  const items = filtered();
+  const topics = [...new Set(articleList().map(a => a.tag))].sort();
+  const chips = [`<button class="pill" data-topic="3:all" aria-selected="${state.topic[3]==="all"}">${t().all}</button>`]
+    .concat(topics.map(x => `<button class="pill" data-topic="3:${esc(x)}" aria-selected="${state.topic[3]===x}">${esc(x)}</button>`)).join("");
+  const shown = state.topic[3] === "all" ? items : items.filter(a => a.tag === state.topic[3]);
+  const body = shown.length === 0 ? `<div class="empty">${t().empty}</div>`
+    : groups(shown).map(([L, list]) =>
+        `<div class="band"><b>${L}</b><span class="dot"></span><span>${letterCount(list)}</span></div>` + rowsFor(list)).join("");
+  return `<div class="screen m3">
+    ${chrome()}
+    <div class="top-actions">
+      <button class="act" data-mode="3:saved">★ ${t().saved}<b>${savedItems().length}</b></button>
+      <button class="act" data-mode="3:fresh">◷ ${t().fresh}<b>${recentItems().length}</b></button>
+    </div>
+    <div class="pad" style="padding-bottom:8px">${searchBox("q3")}</div>
+    <div class="pills">${chips}</div>
+    <div class="pad">${body}</div>
+  </div>`;
+}
+
+/* ---------- model 4 ---------- */
+function m4(){
+  const mode = state.mode[4];
+  const items = modeItems(mode);
+  const body = items.length === 0 ? `<div class="empty">${mode==="saved"?t().savedEmpty:t().empty}</div>`
+    : (mode === "fresh"
+        ? rowsFor(items, {date:"Nov 2026"})
+        : groups(items).map(([L, list]) =>
+            `<div class="letter"><i>${L}</i><span>${letterCount(list)}</span><span class="line"></span></div>` + rowsFor(list)).join(""));
+  const seg = ["all","saved","fresh"].map(k =>
+    `<button role="tab" data-mode="4:${k}" aria-selected="${mode===k}">${t()[k]}</button>`).join("");
+  return `<div class="screen m4">
+    ${chrome()}
+    <div class="pad" style="padding-bottom:8px"><div class="seg" role="tablist">${seg}</div></div>
+    <div class="m4-body">${body}<div class="fade"></div></div>
+  </div>`;
+}
+
+/* ---------- model 5 ---------- */
+function m5(){
+  const topics = [...new Set(articleList().map(a => a.tag))];
+  const cards = topics.slice(0, 6).map(x => {
+    const n = articleList().filter(a => a.tag === x).length;
+    const mono = x.split(/\s+/).filter(w => /^[A-Za-z]/.test(w)).map(w => w[0]).join("").slice(0,2).toUpperCase();
+    return `<button class="topic" data-topic="5:${esc(x)}"><div class="mono">${mono}</div><div class="name">${esc(x)}</div><div class="n">${n} ${t().n[n===1?0:1]}</div></button>`;
+  }).join("");
+  const items = filtered();
+  const full = state.expanded || state.topic[5] !== "all";
+  const shown = state.topic[5] === "all" ? (full ? items : items.slice(0, 8)) : items.filter(a => a.tag === state.topic[5]);
+  const body = shown.length === 0 ? `<div class="empty">${t().empty}</div>`
+    : groups(shown).map(([L, list]) =>
+        `<div class="letter"><i>${L}</i><em>${letterCount(list)}</em></div>` + rowsFor(list)).join("");
+  return `<div class="screen m5">
+    ${chrome(`<span class="chip-mini">★ <b>${savedItems().length}</b></span>`)}
+    <div class="pad" style="padding-bottom:12px">${searchBox("q5")}</div>
+    <div class="meta" style="padding:0 18px 6px">${t().topics}</div>
+    <div class="topics">${cards}</div>
+    <div class="pad">
+      ${body}
+      ${state.topic[5]==="all" && !state.expanded && items.length > 8 ? `<button class="more" data-expand="5">${t().showAll} · ${items.length}</button>` : ""}
+    </div>
+  </div>`;
+}
+
+const MODELS = {1:["جست‌وجو اول — ابزار اصلی بالای صفحه","جست‌وجو مستقیم زیر سربرگ می‌نشیند و روی صفحه می‌چسبد. علاقه‌مندی‌ها و تازه‌ها به دو تب تبدیل شده‌اند، پس هیچ‌کدام جای فهرست را نمی‌گیرند.",
+  ["فهرست مقاله‌ها از همان لحظهٔ ورود دیده می‌شود","حرف دسته به شکل نشان سبز پر با شمار مقاله، که هنگام اسکرول بالای صفحه می‌ماند","علاقه‌مندی و تازه‌ها فقط با یک لمس، بدون بیرون راندن فهرست"]],
+  2:["نوار حروف — مرور سریع الفبایی","جست‌وجو کوچک و اختیاری شده؛ کل صفحه به فهرست A–Z و نوار حروف کنار لبه تعلق دارد.",
+  ["نوار حرف‌ها روی لبهٔ صفحه، فقط حروف موجود پر رنگ‌اند","سربرگ هر حرف عدد بزرگ سبز با خط جداکننده است","ذخیره‌شده‌ها شمارندهٔ کوچک در سربرگ دارند، نه بلوک جدا"]],
+  3:["دسته‌بندی اول — موضوع بعد مقاله","دو دکمهٔ کوچک ذخیره‌شده و تازه‌ها در ردیف اول؛ بعد موضوع‌ها به‌صورت چیپ؛ بعد فهرست با نوار حرف.",
+  ["تب‌های موضوعی افقی، قابل اسکرول","حرف دسته نوار کم‌رنگ تمام‌عرض است، کاملاً جدا از کارت مقاله","جست‌وجو زیر دکمه‌های ذخیره/تازه و بالای موضوع‌ها"]],
+  4:["تب‌دار + جست‌وجوی شناور","سه تب تمام‌عرض (همه/ذخیره‌شده/تازه‌ها) و جست‌وجو به‌صورت قرص شناور پایین صفحه، در دسترس انگشت شست.",
+  ["حرف دسته دایرهٔ توخالی روی خط زمان عمودی","جست‌وجو همیشه پایین صفحه می‌ماند","تب‌ها حالت‌اند، نه بلوک روی بلوک"]],
+  5:["کارت موضوعی — انتخاب موضوع قبل از فهرست","جست‌وجو بالا، کارت‌های موضوع با شمار مقاله، بعد پیش‌نمایش فهرست و دکمهٔ «نمایش همه».",
+  ["حرف دسته مربع خط‌چین سبز است، کاملاً متمایز از ردیف مقاله","پیش‌نمایش کوتاه، فهرست کامل پشت یک دکمه","کارت موضوع جای گریدِ دوستونهٔ فعلی را می‌گیرد"]]
+};
+
+function render(){
+  const stage = document.getElementById("stage");
+  const activeId = document.activeElement?.dataset?.search !== undefined ? document.activeElement.id : null;
+  const caret = activeId ? document.activeElement.selectionStart : null;
+  document.documentElement.dataset.theme = state.theme;
+  document.documentElement.lang = state.lang;
+  document.documentElement.dir = state.lang === "fa" ? "rtl" : "ltr";
+  const list = state.model === 0 ? [1,2,3,4,5] : [state.model];
+  stage.innerHTML = list.map(n => {
+    const [name, desc, bullets] = MODELS[n];
+    return `<div class="column" data-col="${n}">
+      <div class="phone"><div class="screen-wrap">${({1:m1,2:m2,3:m3,4:m4,5:m5})[n]()}</div>${n===4?`<div class="overlay">${searchBox("q4")}</div>`:""}</div>
+      <div class="caption"><h2>مدل ${n} — ${name}</h2><p>${desc}</p><ul>${bullets.map(b=>`<li>${b}</li>`).join("")}</ul></div>
+    </div>`;
+  }).join("");
+  for (const el of stage.querySelectorAll("input[data-search]")) {
+    el.addEventListener("input", e => {
+      state.q = e.target.value;
+      state.expanded = false;
+      render();
+    });
+  }
+  // The sticky letter rows sit directly under the measured sticky header.
+  for (const head of stage.querySelectorAll(".m1-head")) {
+    head.closest(".screen").style.setProperty("--stick", head.offsetHeight + "px");
+  }
+  if (activeId){
+    const again = document.getElementById(activeId);
+    if (again){ again.focus(); try { again.setSelectionRange(caret, caret); } catch (_) {} }
+  }
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.model !== undefined){
+    state.model = Number(b.dataset.model);
+    document.body.classList.toggle("grid", state.model === 0);
+    document.body.classList.toggle("view-single", state.model !== 0);
+    document.querySelectorAll("#modelTabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+    render(); return;
+  }
+  if (b.dataset.mode){ const [m, k] = b.dataset.mode.split(":"); state.mode[m] = k; render(); return; }
+  if (b.dataset.topic){ const [m, k] = b.dataset.topic.split(":"); state.topic[m] = k; state.expanded = false; render(); return; }
+  if (b.dataset.expand){ state.expanded = true; render(); return; }
+  if (b.dataset.clear){ state.q = ""; render(); return; }
+  if (b.dataset.jump){
+    const [m, L] = b.dataset.jump.split(":");
+    const col = document.querySelector(`.column[data-col="${m}"]`);
+    const target = col?.querySelector(`#g${m}-${L}`);
+    const body = col?.querySelector(".body");
+    if (target && body) body.scrollTo({top: target.offsetTop - 8, behavior:"smooth"});
+    return;
+  }
+});
+document.getElementById("langBtn").addEventListener("click", e => {
+  state.lang = state.lang === "fa" ? "en" : "fa";
+  e.currentTarget.dataset.on = state.lang === "en" ? "1" : "0";
+  e.currentTarget.textContent = state.lang === "fa" ? "EN" : "فا";
+  render();
+});
+document.getElementById("themeBtn").addEventListener("click", e => {
+  state.theme = state.theme === "light" ? "dark" : "light";
+  e.currentTarget.dataset.on = state.theme === "dark" ? "1" : "0";
+  e.currentTarget.textContent = state.theme === "dark" ? "روشن" : "تیره";
+  render();
+});
+document.getElementById("ctxBtn").addEventListener("click", e => {
+  state.ctx = state.ctx === "disease" ? "guideline" : "disease";
+  e.currentTarget.dataset.on = state.ctx === "guideline" ? "1" : "0";
+  e.currentTarget.textContent = state.ctx === "disease" ? "گایدلاین‌ها" : "بیماری‌ها";
+  state.q = ""; render();
+});
+render();
+
+/* Deep links: ?model=3&theme=dark&lang=en&ctx=guideline */
+(() => {
+  const p = new URLSearchParams(location.search);
+  if (p.get("theme") === "dark"){ state.theme = "dark"; const b = document.getElementById("themeBtn"); b.dataset.on="1"; b.textContent="روشن"; }
+  if (p.get("lang") === "en"){ state.lang = "en"; const b = document.getElementById("langBtn"); b.dataset.on="1"; b.textContent="فا"; }
+  if (p.get("ctx") === "guideline"){ state.ctx = "guideline"; const b = document.getElementById("ctxBtn"); b.dataset.on="1"; b.textContent="بیماری‌ها"; }
+  const m = Number(p.get("model") ?? 1);
+  state.model = m;
+  document.body.classList.toggle("grid", m === 0);
+  document.body.classList.toggle("view-single", m !== 0);
+  document.querySelectorAll("#modelTabs button").forEach(x => x.setAttribute("aria-selected", Number(x.dataset.model) === m));
+  render();
+})();
+</script>
+</body>
+</html>

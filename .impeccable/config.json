@@ -1,0 +1,53 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "frontend/src/components/article/ClinicalArticleReader.tsx"
+        ],
+        "createdAt": "2026-11-22T18:47:44.502Z",
+        "reason": "Agent: the reported src is part of a regular expression matching reference image IDs; the reader resolves them before rendering."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "backend/apps/website/static/website/site.css"
+        ],
+        "createdAt": "2026-11-22T20:22:13.055Z",
+        "reason": "Agent: both reported leading rules identify content structure, a semantic blockquote and a nested comment reply."
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "backend/apps/website/static/website/site.css"
+        ],
+        "createdAt": "2026-11-22T20:22:13.091Z",
+        "reason": "Agent: the only reported rule is a text-link underline on .more-link a, with no rounded card surface."
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "var(--spring)",
+        "files": [
+          "backend/apps/website/static/website/site.css"
+        ],
+        "createdAt": "2026-11-22T20:22:13.124Z",
+        "reason": "Agent: the download hero deliberately fans decorative plates out behind the phone. The reduced-motion rule disables the entrance."
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(.3, 1.35, .5, 1)",
+        "files": [
+          "backend/apps/website/static/website/site.css"
+        ],
+        "createdAt": "2026-11-22T20:22:13.155Z",
+        "reason": "Agent: this explicit spring curve implements the documented tactile motion and yields to prefers-reduced-motion."
+      }
+    ]
+  }
+}

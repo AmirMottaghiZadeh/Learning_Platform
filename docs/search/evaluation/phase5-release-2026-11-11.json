@@ -1,0 +1,248 @@
+{
+  "schema": 1,
+  "phase": 5,
+  "date": "2026-11-11",
+  "scope": "local real provider/source, authenticated two-worker API and Chrome; not production deployment or clinical approval",
+  "configuration": {
+    "model": "gpt-6-luna",
+    "reasoning_effort": "none",
+    "total_timeout_seconds": 18,
+    "api_concurrency": 2,
+    "observed_api_workers": 2,
+    "shared_redis": true,
+    "polling_seconds": 1
+  },
+  "suite": {
+    "total_cases": 100,
+    "medical": {
+      "samples": 95,
+      "machine_complete": 63,
+      "machine_complete_under_20s": 63,
+      "machine_success_rate": 0.6632,
+      "machine_complete_latency_ms": {
+        "p50": 10412.877,
+        "p95": 15951.396
+      },
+      "status_counts": {
+        "complete": 68,
+        "failed": 27
+      },
+      "errors": {
+        "EXPERIMENT_TIMEOUT": 27
+      },
+      "citation_integrity_valid": 63,
+      "expected_source_matches": 40
+    },
+    "partial_medical": 5,
+    "nonmedical_abstentions": 5,
+    "all_attempt_provider_requests": 410,
+    "selected_rows_provider_requests": 407,
+    "selected_rows_known_usage": {
+      "prompt_tokens": 323285,
+      "completion_tokens": 19836,
+      "total_tokens": 343121
+    },
+    "selected_rows_unknown_usage_requests": 19,
+    "categories": {
+      "adult_treatment": {
+        "cases": 48,
+        "failed": 11,
+        "machine_complete": 35
+      },
+      "compound": {
+        "cases": 5,
+        "failed": 5,
+        "machine_complete": 0
+      },
+      "drug_information": {
+        "cases": 5,
+        "failed": 2,
+        "machine_complete": 2
+      },
+      "drug_safety": {
+        "cases": 12,
+        "failed": 1,
+        "machine_complete": 10
+      },
+      "emergency": {
+        "cases": 4,
+        "failed": 0,
+        "machine_complete": 4
+      },
+      "out_of_scope": {
+        "cases": 5,
+        "failed": 0,
+        "machine_complete": 0
+      },
+      "pediatric": {
+        "cases": 9,
+        "failed": 5,
+        "machine_complete": 3
+      },
+      "pharmacology": {
+        "cases": 5,
+        "failed": 1,
+        "machine_complete": 4
+      },
+      "pregnancy": {
+        "cases": 1,
+        "failed": 0,
+        "machine_complete": 1
+      },
+      "renal_dosing": {
+        "cases": 6,
+        "failed": 2,
+        "machine_complete": 4
+      }
+    },
+    "provenance": {
+      "initial_rows": 95,
+      "coverage_completion_rows": 6,
+      "replaced_only_budget_interrupted_case": "compound-05",
+      "initial_budget_exhausted": true
+    }
+  },
+  "http": {
+    "cold": {
+      "samples": 20,
+      "machine_complete": 14,
+      "machine_complete_under_20s": 14,
+      "machine_success_rate": 0.7,
+      "machine_complete_latency_ms": {
+        "p50": 10577.022,
+        "p95": 17753.328
+      },
+      "status_counts": {
+        "complete": 14,
+        "failed": 6
+      },
+      "errors": {
+        "EXPERIMENT_TIMEOUT": 6
+      },
+      "citation_integrity_valid": 14,
+      "expected_source_matches": 9
+    },
+    "hit": {
+      "samples": 14,
+      "machine_complete": 13,
+      "machine_complete_under_20s": 13,
+      "machine_success_rate": 0.9286,
+      "machine_complete_latency_ms": {
+        "p50": 102.126,
+        "p95": 1293.896
+      },
+      "status_counts": {
+        "complete": 13,
+        "failed": 1
+      },
+      "errors": {
+        "AUTHENTICATION_FAILED": 1
+      },
+      "citation_integrity_valid": 13,
+      "expected_source_matches": 9
+    }
+  },
+  "browser": {
+    "cold": {
+      "samples": 10,
+      "machine_complete": 7,
+      "machine_complete_under_20s": 7,
+      "machine_success_rate": 0.7,
+      "machine_complete_latency_ms": {
+        "p50": 12537.6,
+        "p95": 15606.1
+      },
+      "status_counts": {
+        "complete": 8,
+        "failed": 2
+      },
+      "errors": {
+        "EXPERIMENT_TIMEOUT": 2
+      },
+      "citation_integrity_valid": 7,
+      "expected_source_matches": 5
+    },
+    "hit": {
+      "samples": 10,
+      "machine_complete": 7,
+      "machine_complete_under_20s": 7,
+      "machine_success_rate": 0.7,
+      "machine_complete_latency_ms": {
+        "p50": 1176.3,
+        "p95": 1189.7
+      },
+      "status_counts": {
+        "complete": 7,
+        "skipped": 3
+      },
+      "errors": {
+        "NO_COMPLETE_COLD_ANSWER": 3
+      },
+      "citation_integrity_valid": 7,
+      "expected_source_matches": 5
+    }
+  },
+  "human_review": {
+    "owner": "project owner",
+    "primary_cases_pending": 100,
+    "unique_case_response_pairs_pending": 133,
+    "approved": 0
+  },
+  "release": {
+    "schema": 1,
+    "decision": "blocked",
+    "blockers": [
+      "QUALITY_AND_SERVICE_TARGET_NOT_MET",
+      "INDEPENDENT_REVIEW_REQUIRED",
+      "ABSTENTION_CHECK_FAILED",
+      "API_COLD_TARGET_NOT_MET",
+      "API_HIT_TARGET_NOT_MET",
+      "API_HIT_COVERAGE_REQUIRED",
+      "BROWSER_COLD_TARGET_NOT_MET",
+      "BROWSER_HIT_TARGET_NOT_MET"
+    ],
+    "frontend_bundle_digest": "cd419d6f8a89596109fdd125fc879bbb0d8829800e6871ad7218520cffa21c5b",
+    "runtime_profile_digest": "c813b337ee734dc39b5d47d85281581777de6935d54e2c1811b90532ccf4e455",
+    "suite_cases": 100,
+    "expected_cases": 100,
+    "answerable_cases": 95,
+    "quality_verified_under_20s": 0,
+    "pending_reviews": 100,
+    "traffic": {
+      "api": {
+        "cold": {
+          "samples": 20,
+          "qualified_under_20s": 0,
+          "p95_machine_complete_ms": 17753.328
+        },
+        "hit": {
+          "samples": 14,
+          "qualified_under_20s": 0,
+          "p95_machine_complete_ms": 1293.896
+        }
+      },
+      "browser": {
+        "cold": {
+          "samples": 10,
+          "qualified_under_20s": 0,
+          "p95_machine_complete_ms": 15606.09999999404
+        },
+        "hit": {
+          "samples": 10,
+          "qualified_under_20s": 0,
+          "p95_machine_complete_ms": 1189.7000000029802
+        }
+      }
+    },
+    "release_slo_verified": false
+  },
+  "notes": [
+    "p50/p95 include only machine-complete answers; success rates retain all scenario samples including failures/skips. Machine completeness and valid citations do not imply clinical correctness.",
+    "Five medical jobs completed with partial answers; all 27 failed medical jobs timed out; none count as complete success.",
+    "Two contaminated HTTP cold pairs were replaced with fresh-account cold/hit measurements under identical runtime; originals remain private. One measured hit failed authentication and is retained.",
+    "Browser hit rows include three skipped requests after incomplete cold results; seven actual hits succeeded.",
+    "410 suite provider requests include the replaced budget-interrupted attempt; selected 100 rows use 407 requests. Known token totals exclude that replaced attempt and unknown provider usage. This is not a billing total.",
+    "An early HTTP tooling 202-status bug caused two additional unobserved jobs and rejections; raw diagnostics are retained privately and excluded from scored scenarios. No total billed usage is asserted.",
+    "Browser bundle SHA binds the diagnostic export served throughout measurement. Normal local export is restored after the measurement; production requires its own measured build/runtime."
+  ]
+}

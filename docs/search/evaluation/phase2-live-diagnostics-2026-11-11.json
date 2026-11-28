@@ -1,0 +1,181 @@
+{
+  "schema": 1,
+  "kind": "phase2_live_diagnostics",
+  "scope": "development_iterations_not_controlled_final_suite",
+  "clinical_quality_assessed": false,
+  "release_slo_verified": false,
+  "iterations": [
+    {
+      "iteration": "initial_three_cases",
+      "configuration": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "none",
+        "pipeline_code_digest": "b8c81d364db617da1bfbf9312542ce598298f980c6ad7ddf10ee4e2a5bf6e34c",
+        "prompt_digest": "c4e0f3bf0ae0475a6372c766a11aa0189620d10eb0950ff8d34a7e6261305f6f",
+        "lexical_version": 1,
+        "lexical_limits": {
+          "sections": 16,
+          "passages": 18,
+          "characters": 24000
+        }
+      },
+      "runs": [
+        {
+          "case_id": "drug-aripiprazole-adverse",
+          "status": "complete",
+          "server_elapsed_ms": 13199.935,
+          "provider_requests": 4,
+          "known_usage": {
+            "prompt_tokens": 3917,
+            "completion_tokens": 183,
+            "total_tokens": 4100
+          },
+          "unknown_usage_requests": 0,
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 1,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        },
+        {
+          "case_id": "topic-enuresis-treatment",
+          "status": "complete",
+          "server_elapsed_ms": 14129.451,
+          "provider_requests": 4,
+          "known_usage": {
+            "prompt_tokens": 4231,
+            "completion_tokens": 332,
+            "total_tokens": 4563
+          },
+          "unknown_usage_requests": 0,
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 3,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        },
+        {
+          "case_id": "topic-psoriasis-first-line",
+          "status": "complete",
+          "server_elapsed_ms": 31956.107,
+          "provider_requests": 8,
+          "known_usage": {
+            "prompt_tokens": 7939,
+            "completion_tokens": 572,
+            "total_tokens": 8511
+          },
+          "unknown_usage_requests": 0,
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": false,
+            "source_matches": [
+              false
+            ],
+            "abstained": false,
+            "citation_count": 3,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        }
+      ]
+    },
+    {
+      "iteration": "overview_priority_followup",
+      "configuration": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "none",
+        "pipeline_code_digest": "b064b535cf15277f67576cf9fd71319a366c1b949db0198aa4f34da525def21b",
+        "prompt_digest": "c4e0f3bf0ae0475a6372c766a11aa0189620d10eb0950ff8d34a7e6261305f6f",
+        "lexical_version": 1,
+        "lexical_limits": {
+          "sections": 16,
+          "passages": 18,
+          "characters": 24000
+        }
+      },
+      "runs": [
+        {
+          "case_id": "topic-psoriasis-first-line",
+          "status": "complete",
+          "server_elapsed_ms": 29697.476,
+          "provider_requests": 8,
+          "known_usage": {
+            "prompt_tokens": 6851,
+            "completion_tokens": 424,
+            "total_tokens": 7275
+          },
+          "unknown_usage_requests": 0,
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": true,
+            "source_matches": [
+              true
+            ],
+            "abstained": false,
+            "citation_count": 1,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        }
+      ]
+    },
+    {
+      "iteration": "recommendation_priority_followup",
+      "configuration": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "none",
+        "pipeline_code_digest": "86ad2e543cc442f9f10061e860b95736a96e7d021b0aa90fc528c9417b64d0df",
+        "prompt_digest": "c4e0f3bf0ae0475a6372c766a11aa0189620d10eb0950ff8d34a7e6261305f6f",
+        "lexical_version": 1,
+        "lexical_limits": {
+          "sections": 16,
+          "passages": 18,
+          "characters": 24000
+        }
+      },
+      "runs": [
+        {
+          "case_id": "topic-psoriasis-first-line",
+          "status": "complete",
+          "server_elapsed_ms": 14662.455,
+          "provider_requests": 4,
+          "known_usage": {
+            "prompt_tokens": 3499,
+            "completion_tokens": 172,
+            "total_tokens": 3671
+          },
+          "unknown_usage_requests": 0,
+          "assessment": {
+            "machine_complete": true,
+            "citation_integrity": true,
+            "expected_sources_matched": false,
+            "source_matches": [
+              false
+            ],
+            "abstained": false,
+            "citation_count": 1,
+            "clinical_review": "pending",
+            "correct_and_sufficient": null
+          }
+        }
+      ]
+    }
+  ],
+  "total_provider_requests": 28
+}

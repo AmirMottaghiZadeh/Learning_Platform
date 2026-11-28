@@ -1,0 +1,2837 @@
+{
+  "created_at_utc": "2026-11-18T11:54:07.589502+00:00",
+  "scope": "real_direct_local_service_sequential_cold_account_not_remote_http_or_browser",
+  "configuration": {
+    "AI_LAB_MODEL": "gpt-6-luna",
+    "AI_LAB_BASE_URL": "https://api.gapgpt.app/v1",
+    "AI_LAB_REASONING_EFFORT": "none",
+    "AI_LAB_STREAM_ANSWER_DRAFTS": true,
+    "AI_LAB_TIMEOUT_SECONDS": 90,
+    "AI_LAB_HYBRID_MAX_SEARCH_ROUNDS": 3,
+    "AI_LAB_HYBRID_CONTEXT_TOKENS": 6000,
+    "AI_LAB_VERIFY_MAX_OUTPUT_TOKENS": 2400,
+    "AI_LAB_HYBRID_TOP_K": 8,
+    "AI_LAB_HYBRID_CANDIDATES": 40,
+    "AI_LAB_EMBEDDING_MODEL": "text-embedding-3-small",
+    "AI_LAB_EMBEDDING_DIMENSIONS": 1536,
+    "AI_LAB_OUTLINE_MAX_PROVIDER_REQUESTS": 0
+  },
+  "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b",
+  "preflight_ms": 109.638,
+  "diagnostic_limits_per_case": {
+    "max_provider_requests": 12,
+    "max_seconds": 240
+  },
+  "queue_and_client_network_measured": false,
+  "clinical_review": "not_performed",
+  "runs": [
+    {
+      "id": "aripiprazole-adverse",
+      "question": "عوارض مهم آریپیپرازول چیست؟",
+      "chat_calls": [
+        {
+          "stage": "planning",
+          "started_ms": 262.86,
+          "input_chars": 10426,
+          "first_sse_ms": 4379.815,
+          "first_tool_delta_ms": 4380.258,
+          "status": "ok",
+          "usage": {
+            "completion_tokens": 112,
+            "prompt_tokens": 2704,
+            "total_tokens": 2816
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 1,
+          "returned_content_chars": 0,
+          "finished_ms": 4929.384,
+          "duration_ms": 4666.524
+        },
+        {
+          "stage": "answering",
+          "started_ms": 7848.421,
+          "input_chars": 16204,
+          "first_sse_ms": 10622.562,
+          "first_tool_delta_ms": 10622.926,
+          "status": "ok",
+          "usage": {
+            "completion_tokens": 149,
+            "prompt_tokens": 4226,
+            "total_tokens": 4375
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 1,
+          "returned_content_chars": 0,
+          "finished_ms": 11039.479,
+          "duration_ms": 3191.058
+        },
+        {
+          "stage": "answering",
+          "started_ms": 22502.095,
+          "input_chars": 18024,
+          "first_sse_ms": 24964.461,
+          "first_raw_content_ms": 24965.012,
+          "last_raw_content_ms": 26966.484,
+          "raw_content_chunks": 227,
+          "first_forwarded_content_ms": 25407.027,
+          "last_forwarded_content_ms": 26976.528,
+          "status": "ok",
+          "usage": {
+            "completion_tokens": 230,
+            "prompt_tokens": 4901,
+            "total_tokens": 5131
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 0,
+          "returned_content_chars": 599,
+          "finished_ms": 26976.766,
+          "duration_ms": 4474.671
+        },
+        {
+          "stage": "verification",
+          "started_ms": 26980.751,
+          "input_chars": 10874,
+          "first_sse_ms": 31103.511,
+          "first_raw_content_ms": 31103.66,
+          "last_raw_content_ms": 31714.322,
+          "raw_content_chunks": 58,
+          "first_forwarded_content_ms": 31105.553,
+          "last_forwarded_content_ms": 31715.399,
+          "status": "ok",
+          "usage": {
+            "prompt_tokens": 2486,
+            "completion_tokens": 64,
+            "total_tokens": 2550
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 0,
+          "returned_content_chars": 171,
+          "finished_ms": 31715.501,
+          "duration_ms": 4734.75
+        }
+      ],
+      "details": [
+        {
+          "operation": "retriever_init",
+          "started_ms": 16.965,
+          "finished_ms": 36.618,
+          "duration_ms": 19.653
+        },
+        {
+          "operation": "retriever_init",
+          "started_ms": 241.463,
+          "finished_ms": 260.25,
+          "duration_ms": 18.787
+        },
+        {
+          "operation": "retrieval_round",
+          "started_ms": 4934.496,
+          "query": "aripiprazole important adverse effects adults",
+          "audit": {
+            "engine": "hybrid",
+            "lexical_candidates": 40,
+            "semantic_candidates": 40,
+            "tagging_candidates": 40,
+            "selected_chunks": 8,
+            "selected_passages": 10,
+            "context_tokens": 682,
+            "degraded": null,
+            "embedding": {
+              "cache_hit": false,
+              "requests": 1,
+              "latency_ms": 1093,
+              "inputs": 1,
+              "estimated_input_tokens": 9,
+              "usage": {
+                "prompt_tokens": 9,
+                "total_tokens": 9
+              }
+            },
+            "model_passages_after_search": 10,
+            "model_context_tokens_after_search": 1339
+          },
+          "finished_ms": 7838.999,
+          "duration_ms": 2904.503
+        },
+        {
+          "operation": "semantic_including_embedding",
+          "started_ms": 4942.492,
+          "finished_ms": 6944.592,
+          "duration_ms": 2002.1
+        },
+        {
+          "operation": "lexical_and_catalog",
+          "started_ms": 4944.301,
+          "finished_ms": 5584.08,
+          "duration_ms": 639.779
+        },
+        {
+          "operation": "embedding_http",
+          "started_ms": 4952.385,
+          "metadata": {
+            "latency_ms": 1093,
+            "inputs": 1,
+            "estimated_input_tokens": 9,
+            "usage": {
+              "prompt_tokens": 9,
+              "total_tokens": 9
+            }
+          },
+          "finished_ms": 6370.525,
+          "duration_ms": 1418.14
+        },
+        {
+          "operation": "vector_database",
+          "started_ms": 6374.343,
+          "finished_ms": 6944.186,
+          "duration_ms": 569.843
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7005.252,
+          "finished_ms": 7067.123,
+          "duration_ms": 61.871
+        },
+        {
+          "operation": "connected_source_expansion",
+          "started_ms": 7076.03,
+          "finished_ms": 7825.381,
+          "duration_ms": 749.351
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7093.924,
+          "finished_ms": 7102.418,
+          "duration_ms": 8.494
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7113.131,
+          "finished_ms": 7120.615,
+          "duration_ms": 7.484
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7131.624,
+          "finished_ms": 7139.062,
+          "duration_ms": 7.438
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7153.009,
+          "finished_ms": 7163.219,
+          "duration_ms": 10.21
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7177.338,
+          "finished_ms": 7187.219,
+          "duration_ms": 9.881
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7201.551,
+          "finished_ms": 7212.751,
+          "duration_ms": 11.2
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7226.784,
+          "finished_ms": 7237.286,
+          "duration_ms": 10.502
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7254.375,
+          "finished_ms": 7267.746,
+          "duration_ms": 13.371
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7282.378,
+          "finished_ms": 7292.961,
+          "duration_ms": 10.583
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7311.178,
+          "finished_ms": 7318.197,
+          "duration_ms": 7.019
+        },
+        {
+          "operation": "retrieval_round",
+          "started_ms": 11040.56,
+          "query": "aripiprazole akathisia extrapyramidal symptoms neuroleptic malignant syndrome tardive dyskinesia adverse effects",
+          "audit": {
+            "engine": "hybrid",
+            "lexical_candidates": 40,
+            "semantic_candidates": 40,
+            "tagging_candidates": 40,
+            "selected_chunks": 8,
+            "selected_passages": 12,
+            "context_tokens": 847,
+            "degraded": null,
+            "embedding": {
+              "cache_hit": false,
+              "requests": 1,
+              "latency_ms": 2438,
+              "inputs": 1,
+              "estimated_input_tokens": 26,
+              "usage": {
+                "prompt_tokens": 26,
+                "total_tokens": 26
+              }
+            },
+            "model_passages_after_search": 15,
+            "model_context_tokens_after_search": 1855
+          },
+          "finished_ms": 22489.555,
+          "duration_ms": 11448.995
+        },
+        {
+          "operation": "semantic_including_embedding",
+          "started_ms": 11046.706,
+          "finished_ms": 13795.703,
+          "duration_ms": 2748.997
+        },
+        {
+          "operation": "lexical_and_catalog",
+          "started_ms": 11047.773,
+          "finished_ms": 22102.739,
+          "duration_ms": 11054.966
+        },
+        {
+          "operation": "embedding_http",
+          "started_ms": 11054.101,
+          "metadata": {
+            "latency_ms": 2438,
+            "inputs": 1,
+            "estimated_input_tokens": 26,
+            "usage": {
+              "prompt_tokens": 26,
+              "total_tokens": 26
+            }
+          },
+          "finished_ms": 13492.318,
+          "duration_ms": 2438.217
+        },
+        {
+          "operation": "vector_database",
+          "started_ms": 13495.494,
+          "finished_ms": 13795.295,
+          "duration_ms": 299.801
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22162.27,
+          "finished_ms": 22189.128,
+          "duration_ms": 26.858
+        },
+        {
+          "operation": "connected_source_expansion",
+          "started_ms": 22201.049,
+          "finished_ms": 22473.988,
+          "duration_ms": 272.939
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22219.095,
+          "finished_ms": 22231.434,
+          "duration_ms": 12.339
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22247.723,
+          "finished_ms": 22259.518,
+          "duration_ms": 11.795
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22273.394,
+          "finished_ms": 22286.956,
+          "duration_ms": 13.562
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22311.295,
+          "finished_ms": 22321.627,
+          "duration_ms": 10.332
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22332.787,
+          "finished_ms": 22341.864,
+          "duration_ms": 9.077
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22351.524,
+          "finished_ms": 22359.759,
+          "duration_ms": 8.235
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22371.209,
+          "finished_ms": 22378.202,
+          "duration_ms": 6.993
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22388.765,
+          "finished_ms": 22395.536,
+          "duration_ms": 6.771
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22407.539,
+          "finished_ms": 22414.348,
+          "duration_ms": 6.809
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22427.765,
+          "finished_ms": 22438.729,
+          "duration_ms": 10.964
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22448.53,
+          "finished_ms": 22456.877,
+          "duration_ms": 8.347
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 22464.916,
+          "finished_ms": 22472.908,
+          "duration_ms": 7.992
+        },
+        {
+          "operation": "retriever_init",
+          "started_ms": 31733.925,
+          "finished_ms": 31762.725,
+          "duration_ms": 28.8
+        }
+      ],
+      "progress": [
+        {
+          "stage": "planning",
+          "at_ms": 262.776
+        },
+        {
+          "stage": "retrieving",
+          "at_ms": 4934.44
+        },
+        {
+          "stage": "answering",
+          "at_ms": 7848.393
+        },
+        {
+          "stage": "retrieving",
+          "at_ms": 11040.512
+        },
+        {
+          "stage": "answering",
+          "at_ms": 22502.025
+        },
+        {
+          "stage": "verifying",
+          "at_ms": 26979.991
+        }
+      ],
+      "milestones": {
+        "first_source_callback_ms": 7847.065,
+        "first_answer_callback_ms": 25407.054,
+        "last_answer_callback_ms": 26976.567,
+        "verified_answer_ready_ms": 31721.923
+      },
+      "draft_resets": 2,
+      "result": {
+        "pipeline": "uptodate-hybrid-v1",
+        "parts": [
+          {
+            "status": "partial",
+            "citation_count": 7,
+            "answer_chars": 430,
+            "queries": [
+              "aripiprazole important adverse effects adults",
+              "aripiprazole akathisia extrapyramidal symptoms neuroleptic malignant syndrome tardive dyskinesia adverse effects"
+            ],
+            "requirements": [
+              "requested_aspects"
+            ],
+            "coverage": [
+              {
+                "requirement": "requested_aspects",
+                "status": "missing",
+                "source_ids": [
+                  "P11",
+                  "P18",
+                  "P3",
+                  "P15",
+                  "P16",
+                  "P2"
+                ]
+              }
+            ],
+            "retrieval_summary": {
+              "question_kind": "drug_question",
+              "objectives": [
+                "adverse_effects"
+              ],
+              "selected_passages": 15,
+              "reviewed_passages": 18,
+              "selected_articles": 2,
+              "context_tokens": 1936,
+              "evidence_context_tokens_sent": 3356,
+              "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b"
+            }
+          }
+        ]
+      },
+      "status": "partial",
+      "budget_used": 6,
+      "elapsed_ms": 31723.322,
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 31723.058,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 31723.058,
+        "machine_answer_complete": false,
+        "final_answer_ms": null,
+        "first_titles_ms": 7846.99,
+        "first_sections_ms": null,
+        "first_citation_ms": 31721.688,
+        "model_attempts": 6,
+        "provider_requests": 6,
+        "provider_elapsed_ms": 20921.799,
+        "known_usage": {
+          "prompt_tokens": 14352,
+          "completion_tokens": 555,
+          "total_tokens": 14907
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "cache_lookup": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 151.473
+          },
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4666.646
+          },
+          "embedding": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 3856.579
+          },
+          "source_links": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 505.295
+          },
+          "source_context": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 1042.993
+          },
+          "retrieval": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 14353.602
+          },
+          "answering": {
+            "count": 2,
+            "failed": 0,
+            "elapsed_ms": 7666.111
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4735.233
+          },
+          "cache_write": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 0.039
+          }
+        },
+        "attempts_limited": false,
+        "response_cache": "miss",
+        "first_source_ms": 7847.061,
+        "first_answer_delta_ms": 25407.028,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 1,
+            "usage": {
+              "prompt_tokens": 2704,
+              "completion_tokens": 112,
+              "total_tokens": 2816
+            },
+            "cached_prompt_tokens": 2546,
+            "cache_write_prompt_tokens": 25,
+            "elapsed_ms": 4665.951
+          },
+          {
+            "stage": "embedding",
+            "sent": true,
+            "status": "ok",
+            "sequence": 2,
+            "usage": {
+              "prompt_tokens": 9,
+              "completion_tokens": 0,
+              "total_tokens": 9
+            },
+            "elapsed_ms": 1418.189
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 3,
+            "usage": {
+              "prompt_tokens": 4226,
+              "completion_tokens": 149,
+              "total_tokens": 4375
+            },
+            "cached_prompt_tokens": 2676,
+            "cache_write_prompt_tokens": 1547,
+            "elapsed_ms": 3190.77
+          },
+          {
+            "stage": "embedding",
+            "sent": true,
+            "status": "ok",
+            "sequence": 4,
+            "usage": {
+              "prompt_tokens": 26,
+              "completion_tokens": 0,
+              "total_tokens": 26
+            },
+            "elapsed_ms": 2438.271
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 5,
+            "usage": {
+              "prompt_tokens": 4901,
+              "completion_tokens": 230,
+              "total_tokens": 5131
+            },
+            "cached_prompt_tokens": 2676,
+            "cache_write_prompt_tokens": 2222,
+            "elapsed_ms": 4474.265
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 6,
+            "usage": {
+              "prompt_tokens": 2486,
+              "completion_tokens": 64,
+              "total_tokens": 2550
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 2483,
+            "elapsed_ms": 4734.353
+          }
+        ]
+      }
+    },
+    {
+      "id": "psoriasis-first-line",
+      "question": "درمان دارویی خط اول پسوریازیس پلاکی خفیف در بزرگسالان چیست و رژیم مصرف آن چگونه است؟",
+      "chat_calls": [
+        {
+          "stage": "planning",
+          "started_ms": 124.83,
+          "input_chars": 10483,
+          "first_sse_ms": 3639.032,
+          "first_tool_delta_ms": 3639.275,
+          "status": "ok",
+          "usage": {
+            "completion_tokens": 126,
+            "prompt_tokens": 2720,
+            "total_tokens": 2846
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 1,
+          "returned_content_chars": 0,
+          "finished_ms": 4052.486,
+          "duration_ms": 3927.656
+        },
+        {
+          "stage": "answering",
+          "started_ms": 7524.496,
+          "input_chars": 30106,
+          "first_sse_ms": 10401.703,
+          "first_raw_content_ms": 10402.18,
+          "last_raw_content_ms": 12042.068,
+          "raw_content_chunks": 207,
+          "first_forwarded_content_ms": 11011.455,
+          "last_forwarded_content_ms": 12042.851,
+          "status": "ok",
+          "usage": {
+            "completion_tokens": 210,
+            "prompt_tokens": 7356,
+            "total_tokens": 7566
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 0,
+          "returned_content_chars": 544,
+          "finished_ms": 12042.945,
+          "duration_ms": 4518.449
+        },
+        {
+          "stage": "verification",
+          "started_ms": 12043.879,
+          "input_chars": 8796,
+          "first_sse_ms": 15039.591,
+          "first_raw_content_ms": 15039.81,
+          "last_raw_content_ms": 15621.527,
+          "raw_content_chunks": 98,
+          "first_forwarded_content_ms": 15041.763,
+          "last_forwarded_content_ms": 15622.482,
+          "status": "ok",
+          "usage": {
+            "prompt_tokens": 1916,
+            "completion_tokens": 104,
+            "total_tokens": 2020
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 0,
+          "returned_content_chars": 378,
+          "finished_ms": 15622.577,
+          "duration_ms": 3578.698
+        }
+      ],
+      "details": [
+        {
+          "operation": "retriever_init",
+          "started_ms": 38.697,
+          "finished_ms": 89.288,
+          "duration_ms": 50.591
+        },
+        {
+          "operation": "retriever_init",
+          "started_ms": 109.034,
+          "finished_ms": 123.016,
+          "duration_ms": 13.982
+        },
+        {
+          "operation": "retrieval_round",
+          "started_ms": 4063.226,
+          "query": "Adult mild plaque psoriasis first-line topical therapy regimen",
+          "audit": {
+            "engine": "hybrid",
+            "lexical_candidates": 18,
+            "semantic_candidates": 40,
+            "tagging_candidates": 40,
+            "selected_chunks": 8,
+            "selected_passages": 23,
+            "context_tokens": 3190,
+            "degraded": null,
+            "embedding": {
+              "cache_hit": false,
+              "requests": 1,
+              "latency_ms": 1815,
+              "inputs": 1,
+              "estimated_input_tokens": 10,
+              "usage": {
+                "prompt_tokens": 10,
+                "total_tokens": 10
+              }
+            },
+            "model_passages_after_search": 23,
+            "model_context_tokens_after_search": 4580
+          },
+          "finished_ms": 7472.874,
+          "duration_ms": 3409.648
+        },
+        {
+          "operation": "semantic_including_embedding",
+          "started_ms": 4069.813,
+          "finished_ms": 6117.28,
+          "duration_ms": 2047.467
+        },
+        {
+          "operation": "lexical_and_catalog",
+          "started_ms": 4070.866,
+          "finished_ms": 4302.915,
+          "duration_ms": 232.049
+        },
+        {
+          "operation": "embedding_http",
+          "started_ms": 4077.698,
+          "metadata": {
+            "latency_ms": 1815,
+            "inputs": 1,
+            "estimated_input_tokens": 10,
+            "usage": {
+              "prompt_tokens": 10,
+              "total_tokens": 10
+            }
+          },
+          "finished_ms": 5893.052,
+          "duration_ms": 1815.354
+        },
+        {
+          "operation": "vector_database",
+          "started_ms": 5904.703,
+          "finished_ms": 6116.818,
+          "duration_ms": 212.115
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6419.254,
+          "finished_ms": 6454.002,
+          "duration_ms": 34.748
+        },
+        {
+          "operation": "connected_source_expansion",
+          "started_ms": 6477.735,
+          "finished_ms": 7414.489,
+          "duration_ms": 936.754
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6492.799,
+          "finished_ms": 6504.059,
+          "duration_ms": 11.26
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6512.265,
+          "finished_ms": 6523.231,
+          "duration_ms": 10.966
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6531.336,
+          "finished_ms": 6542.127,
+          "duration_ms": 10.791
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6550.973,
+          "finished_ms": 6563.883,
+          "duration_ms": 12.91
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6572.266,
+          "finished_ms": 6584.482,
+          "duration_ms": 12.216
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6591.392,
+          "finished_ms": 6601.139,
+          "duration_ms": 9.747
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6609.236,
+          "finished_ms": 6617.489,
+          "duration_ms": 8.253
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6624.594,
+          "finished_ms": 6633.56,
+          "duration_ms": 8.966
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6641.989,
+          "finished_ms": 6654.17,
+          "duration_ms": 12.181
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6663.954,
+          "finished_ms": 6676.72,
+          "duration_ms": 12.766
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6683.599,
+          "finished_ms": 6694.831,
+          "duration_ms": 11.232
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6702.042,
+          "finished_ms": 6715.541,
+          "duration_ms": 13.499
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6863.864,
+          "finished_ms": 6876.895,
+          "duration_ms": 13.031
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6891.643,
+          "finished_ms": 6897.368,
+          "duration_ms": 5.725
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6911.747,
+          "finished_ms": 6916.189,
+          "duration_ms": 4.442
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6931.628,
+          "finished_ms": 6936.888,
+          "duration_ms": 5.26
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6953.184,
+          "finished_ms": 6968.557,
+          "duration_ms": 15.373
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 6995.231,
+          "finished_ms": 7011.593,
+          "duration_ms": 16.362
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7024.022,
+          "finished_ms": 7029.342,
+          "duration_ms": 5.32
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7046.898,
+          "finished_ms": 7059.246,
+          "duration_ms": 12.348
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7299.737,
+          "finished_ms": 7315.442,
+          "duration_ms": 15.705
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7336.031,
+          "finished_ms": 7350.38,
+          "duration_ms": 14.349
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7367.06,
+          "finished_ms": 7376.491,
+          "duration_ms": 9.431
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7384.307,
+          "finished_ms": 7394.846,
+          "duration_ms": 10.539
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7405.243,
+          "finished_ms": 7414.348,
+          "duration_ms": 9.105
+        },
+        {
+          "operation": "retriever_init",
+          "started_ms": 15632.912,
+          "finished_ms": 15646.212,
+          "duration_ms": 13.3
+        }
+      ],
+      "progress": [
+        {
+          "stage": "planning",
+          "at_ms": 124.784
+        },
+        {
+          "stage": "retrieving",
+          "at_ms": 4063.135
+        },
+        {
+          "stage": "answering",
+          "at_ms": 7524.402
+        },
+        {
+          "stage": "verifying",
+          "at_ms": 12043.28
+        }
+      ],
+      "milestones": {
+        "first_source_callback_ms": 7519.193,
+        "first_answer_callback_ms": 11011.476,
+        "last_answer_callback_ms": 12042.864,
+        "verified_answer_ready_ms": 15627.189
+      },
+      "draft_resets": 1,
+      "result": {
+        "pipeline": "uptodate-hybrid-v1",
+        "parts": [
+          {
+            "status": "partial",
+            "citation_count": 3,
+            "answer_chars": 461,
+            "queries": [
+              "Adult mild plaque psoriasis first-line topical therapy regimen"
+            ],
+            "requirements": [
+              "requested_aspects",
+              "treatment_selection",
+              "drug_regimen",
+              "important_restrictions"
+            ],
+            "coverage": [
+              {
+                "requirement": "requested_aspects",
+                "status": "supported",
+                "source_ids": [
+                  "P7",
+                  "P11",
+                  "P9"
+                ]
+              },
+              {
+                "requirement": "treatment_selection",
+                "status": "supported",
+                "source_ids": [
+                  "P7"
+                ]
+              },
+              {
+                "requirement": "drug_regimen",
+                "status": "supported",
+                "source_ids": [
+                  "P11"
+                ]
+              },
+              {
+                "requirement": "important_restrictions",
+                "status": "missing",
+                "source_ids": []
+              }
+            ],
+            "retrieval_summary": {
+              "question_kind": "disease_question",
+              "objectives": [
+                "drug_therapy",
+                "dose"
+              ],
+              "selected_passages": 23,
+              "reviewed_passages": 23,
+              "selected_articles": 1,
+              "context_tokens": 4697,
+              "evidence_context_tokens_sent": 4697,
+              "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b"
+            }
+          }
+        ]
+      },
+      "status": "partial",
+      "budget_used": 4,
+      "elapsed_ms": 15627.91,
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 15627.788,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 15627.788,
+        "machine_answer_complete": false,
+        "final_answer_ms": null,
+        "first_titles_ms": 7519.028,
+        "first_sections_ms": null,
+        "first_citation_ms": 15627.065,
+        "model_attempts": 4,
+        "provider_requests": 4,
+        "provider_elapsed_ms": 13839.389,
+        "known_usage": {
+          "prompt_tokens": 12002,
+          "completion_tokens": 440,
+          "total_tokens": 12442
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "cache_lookup": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 91.122
+          },
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3927.757
+          },
+          "embedding": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1815.473
+          },
+          "source_links": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 129.455
+          },
+          "source_context": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 960.427
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3409.716
+          },
+          "answering": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4518.556
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3579.282
+          },
+          "cache_write": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 0.017
+          }
+        },
+        "attempts_limited": false,
+        "response_cache": "miss",
+        "first_source_ms": 7519.188,
+        "first_answer_delta_ms": 11011.451,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 1,
+            "usage": {
+              "prompt_tokens": 2720,
+              "completion_tokens": 126,
+              "total_tokens": 2846
+            },
+            "cached_prompt_tokens": 2546,
+            "cache_write_prompt_tokens": 41,
+            "elapsed_ms": 3927.379
+          },
+          {
+            "stage": "embedding",
+            "sent": true,
+            "status": "ok",
+            "sequence": 2,
+            "usage": {
+              "prompt_tokens": 10,
+              "completion_tokens": 0,
+              "total_tokens": 10
+            },
+            "elapsed_ms": 1815.411
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 3,
+            "usage": {
+              "prompt_tokens": 7356,
+              "completion_tokens": 210,
+              "total_tokens": 7566
+            },
+            "cached_prompt_tokens": 2676,
+            "cache_write_prompt_tokens": 4677,
+            "elapsed_ms": 4518.12
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 4,
+            "usage": {
+              "prompt_tokens": 1916,
+              "completion_tokens": 104,
+              "total_tokens": 2020
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 1913,
+            "elapsed_ms": 3578.479
+          }
+        ]
+      }
+    },
+    {
+      "id": "enuresis-treatment",
+      "question": "درمان دارویی شب‌ادراری اولیه در کودکان چیست و دوز و احتیاط‌های مهم آن کدام‌اند؟",
+      "chat_calls": [
+        {
+          "stage": "planning",
+          "started_ms": 119.939,
+          "input_chars": 10478,
+          "first_sse_ms": 2432.119,
+          "first_tool_delta_ms": 2432.185,
+          "status": "ok",
+          "usage": {
+            "prompt_tokens": 2719,
+            "completion_tokens": 149,
+            "total_tokens": 2868
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 1,
+          "returned_content_chars": 0,
+          "finished_ms": 3202.157,
+          "duration_ms": 3082.218
+        },
+        {
+          "stage": "answering",
+          "started_ms": 8519.6,
+          "input_chars": 28878,
+          "first_sse_ms": 10879.994,
+          "first_raw_content_ms": 10880.254,
+          "last_raw_content_ms": 13388.756,
+          "raw_content_chunks": 309,
+          "first_forwarded_content_ms": 10884.465,
+          "last_forwarded_content_ms": 13389.684,
+          "status": "ok",
+          "usage": {
+            "prompt_tokens": 7685,
+            "completion_tokens": 312,
+            "total_tokens": 7997
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 0,
+          "returned_content_chars": 885,
+          "finished_ms": 13389.801,
+          "duration_ms": 4870.201
+        },
+        {
+          "stage": "verification",
+          "started_ms": 13392.797,
+          "input_chars": 14450,
+          "first_sse_ms": 17277.416,
+          "first_raw_content_ms": 17277.841,
+          "last_raw_content_ms": 17886.239,
+          "raw_content_chunks": 168,
+          "first_forwarded_content_ms": 17280.405,
+          "last_forwarded_content_ms": 17886.934,
+          "status": "ok",
+          "usage": {
+            "completion_tokens": 174,
+            "prompt_tokens": 3592,
+            "total_tokens": 3766
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 0,
+          "returned_content_chars": 554,
+          "finished_ms": 17887.008,
+          "duration_ms": 4494.211
+        }
+      ],
+      "details": [
+        {
+          "operation": "retriever_init",
+          "started_ms": 47.072,
+          "finished_ms": 84.897,
+          "duration_ms": 37.825
+        },
+        {
+          "operation": "retriever_init",
+          "started_ms": 103.441,
+          "finished_ms": 117.702,
+          "duration_ms": 14.261
+        },
+        {
+          "operation": "retrieval_round",
+          "started_ms": 3212.722,
+          "query": "pediatric primary nocturnal enuresis drug treatment desmopressin dose precautions",
+          "audit": {
+            "engine": "hybrid",
+            "lexical_candidates": 40,
+            "semantic_candidates": 40,
+            "tagging_candidates": 40,
+            "selected_chunks": 8,
+            "selected_passages": 32,
+            "context_tokens": 2602,
+            "degraded": null,
+            "embedding": {
+              "cache_hit": false,
+              "requests": 1,
+              "latency_ms": 995,
+              "inputs": 1,
+              "estimated_input_tokens": 17,
+              "usage": {
+                "prompt_tokens": 17,
+                "total_tokens": 17
+              }
+            },
+            "model_passages_after_search": 32,
+            "model_context_tokens_after_search": 4718
+          },
+          "finished_ms": 8399.074,
+          "duration_ms": 5186.352
+        },
+        {
+          "operation": "semantic_including_embedding",
+          "started_ms": 3222.204,
+          "finished_ms": 4502.979,
+          "duration_ms": 1280.775
+        },
+        {
+          "operation": "lexical_and_catalog",
+          "started_ms": 3223.5,
+          "finished_ms": 7061.383,
+          "duration_ms": 3837.883
+        },
+        {
+          "operation": "embedding_http",
+          "started_ms": 3229.21,
+          "metadata": {
+            "latency_ms": 995,
+            "inputs": 1,
+            "estimated_input_tokens": 17,
+            "usage": {
+              "prompt_tokens": 17,
+              "total_tokens": 17
+            }
+          },
+          "finished_ms": 4225.287,
+          "duration_ms": 996.077
+        },
+        {
+          "operation": "vector_database",
+          "started_ms": 4228.342,
+          "finished_ms": 4498.23,
+          "duration_ms": 269.888
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7181.547,
+          "finished_ms": 7215.054,
+          "duration_ms": 33.507
+        },
+        {
+          "operation": "connected_source_expansion",
+          "started_ms": 7226.399,
+          "finished_ms": 8336.085,
+          "duration_ms": 1109.686
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7239.656,
+          "finished_ms": 7249.028,
+          "duration_ms": 9.372
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7254.906,
+          "finished_ms": 7264.11,
+          "duration_ms": 9.204
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7271.988,
+          "finished_ms": 7281.797,
+          "duration_ms": 9.809
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7290.514,
+          "finished_ms": 7304.926,
+          "duration_ms": 14.412
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7312.791,
+          "finished_ms": 7324.474,
+          "duration_ms": 11.683
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7329.792,
+          "finished_ms": 7341.512,
+          "duration_ms": 11.72
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7347.403,
+          "finished_ms": 7358.295,
+          "duration_ms": 10.892
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7365.586,
+          "finished_ms": 7376.507,
+          "duration_ms": 10.921
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7385.226,
+          "finished_ms": 7397.045,
+          "duration_ms": 11.819
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7406.329,
+          "finished_ms": 7418.957,
+          "duration_ms": 12.628
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7426.618,
+          "finished_ms": 7439.88,
+          "duration_ms": 13.262
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7464.396,
+          "finished_ms": 7475.318,
+          "duration_ms": 10.922
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7492.111,
+          "finished_ms": 7502.386,
+          "duration_ms": 10.275
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7906.176,
+          "finished_ms": 7909.144,
+          "duration_ms": 2.968
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7923.981,
+          "finished_ms": 7935.946,
+          "duration_ms": 11.965
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7951.553,
+          "finished_ms": 7960.155,
+          "duration_ms": 8.602
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7972.499,
+          "finished_ms": 7982.993,
+          "duration_ms": 10.494
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 7996.001,
+          "finished_ms": 8005.823,
+          "duration_ms": 9.822
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 8043.416,
+          "finished_ms": 8054.447,
+          "duration_ms": 11.031
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 8203.276,
+          "finished_ms": 8207.701,
+          "duration_ms": 4.425
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 8224.604,
+          "finished_ms": 8228.385,
+          "duration_ms": 3.781
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 8243.251,
+          "finished_ms": 8247.656,
+          "duration_ms": 4.405
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 8272.202,
+          "finished_ms": 8282.9,
+          "duration_ms": 10.698
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 8296.507,
+          "finished_ms": 8299.763,
+          "duration_ms": 3.256
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 8309.943,
+          "finished_ms": 8323.208,
+          "duration_ms": 13.265
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 8331.422,
+          "finished_ms": 8335.94,
+          "duration_ms": 4.518
+        },
+        {
+          "operation": "retriever_init",
+          "started_ms": 17900.54,
+          "finished_ms": 17914.825,
+          "duration_ms": 14.285
+        }
+      ],
+      "progress": [
+        {
+          "stage": "planning",
+          "at_ms": 119.862
+        },
+        {
+          "stage": "retrieving",
+          "at_ms": 3212.628
+        },
+        {
+          "stage": "answering",
+          "at_ms": 8519.528
+        },
+        {
+          "stage": "verifying",
+          "at_ms": 13390.382
+        }
+      ],
+      "milestones": {
+        "first_source_callback_ms": 8510.483,
+        "first_answer_callback_ms": 10884.484,
+        "last_answer_callback_ms": 13389.7,
+        "verified_answer_ready_ms": 17893.402
+      },
+      "draft_resets": 1,
+      "result": {
+        "pipeline": "uptodate-hybrid-v1",
+        "parts": [
+          {
+            "status": "partial",
+            "citation_count": 10,
+            "answer_chars": 844,
+            "queries": [
+              "pediatric primary nocturnal enuresis drug treatment desmopressin dose precautions"
+            ],
+            "requirements": [
+              "requested_aspects",
+              "intervention_safety",
+              "treatment_selection",
+              "drug_regimen",
+              "important_restrictions"
+            ],
+            "coverage": [
+              {
+                "requirement": "requested_aspects",
+                "status": "supported",
+                "source_ids": [
+                  "P11",
+                  "P1",
+                  "P2",
+                  "P14",
+                  "P20",
+                  "P22",
+                  "P4",
+                  "P13",
+                  "P28"
+                ]
+              },
+              {
+                "requirement": "intervention_safety",
+                "status": "supported",
+                "source_ids": [
+                  "P22",
+                  "P4",
+                  "P20"
+                ]
+              },
+              {
+                "requirement": "treatment_selection",
+                "status": "supported",
+                "source_ids": [
+                  "P11",
+                  "P22",
+                  "P7"
+                ]
+              },
+              {
+                "requirement": "drug_regimen",
+                "status": "missing",
+                "source_ids": []
+              },
+              {
+                "requirement": "important_restrictions",
+                "status": "supported",
+                "source_ids": [
+                  "P20",
+                  "P22",
+                  "P4",
+                  "P13",
+                  "P28"
+                ]
+              }
+            ],
+            "retrieval_summary": {
+              "question_kind": "disease_question",
+              "objectives": [
+                "drug_therapy",
+                "dose",
+                "contraindications"
+              ],
+              "selected_passages": 32,
+              "reviewed_passages": 32,
+              "selected_articles": 4,
+              "context_tokens": 4850,
+              "evidence_context_tokens_sent": 4850,
+              "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b"
+            }
+          }
+        ]
+      },
+      "status": "partial",
+      "budget_used": 4,
+      "elapsed_ms": 17894.31,
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 17894.177,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 17894.177,
+        "machine_answer_complete": false,
+        "final_answer_ms": null,
+        "first_titles_ms": 8510.232,
+        "first_sections_ms": null,
+        "first_citation_ms": 17893.208,
+        "model_attempts": 4,
+        "provider_requests": 4,
+        "provider_elapsed_ms": 13441.755,
+        "known_usage": {
+          "prompt_tokens": 14013,
+          "completion_tokens": 635,
+          "total_tokens": 14648
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "cache_lookup": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 87.323
+          },
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3082.319
+          },
+          "embedding": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 996.2
+          },
+          "source_links": {
+            "count": 3,
+            "failed": 0,
+            "elapsed_ms": 382.699
+          },
+          "source_context": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1120.944
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 5186.426
+          },
+          "answering": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4870.338
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4494.858
+          },
+          "cache_write": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 0.018
+          }
+        },
+        "attempts_limited": false,
+        "response_cache": "miss",
+        "first_source_ms": 8510.5,
+        "first_answer_delta_ms": 10884.466,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 1,
+            "usage": {
+              "prompt_tokens": 2719,
+              "completion_tokens": 149,
+              "total_tokens": 2868
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 2586,
+            "elapsed_ms": 3081.918
+          },
+          {
+            "stage": "embedding",
+            "sent": true,
+            "status": "ok",
+            "sequence": 2,
+            "usage": {
+              "prompt_tokens": 17,
+              "completion_tokens": 0,
+              "total_tokens": 17
+            },
+            "elapsed_ms": 996.137
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 3,
+            "usage": {
+              "prompt_tokens": 7685,
+              "completion_tokens": 312,
+              "total_tokens": 7997
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 7682,
+            "elapsed_ms": 4869.825
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 4,
+            "usage": {
+              "prompt_tokens": 3592,
+              "completion_tokens": 174,
+              "total_tokens": 3766
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 3589,
+            "elapsed_ms": 4493.875
+          }
+        ]
+      }
+    },
+    {
+      "id": "metformin-renal",
+      "question": "در بیمار مبتلا به دیابت نوع دو با eGFR برابر ۲۵، آیا ادامه متفورمین مناسب است؟",
+      "chat_calls": [
+        {
+          "stage": "planning",
+          "started_ms": 109.797,
+          "input_chars": 10477,
+          "first_sse_ms": 4478.564,
+          "first_tool_delta_ms": 4478.624,
+          "status": "ok",
+          "usage": {
+            "prompt_tokens": 2719,
+            "completion_tokens": 140,
+            "total_tokens": 2859
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 1,
+          "returned_content_chars": 0,
+          "finished_ms": 5092.881,
+          "duration_ms": 4983.084
+        },
+        {
+          "stage": "answering",
+          "started_ms": 16374.182,
+          "input_chars": 19091,
+          "first_sse_ms": 19637.282,
+          "first_raw_content_ms": 19637.408,
+          "last_raw_content_ms": 19672.517,
+          "raw_content_chunks": 90,
+          "first_forwarded_content_ms": 19639.823,
+          "last_forwarded_content_ms": 19673.209,
+          "status": "ok",
+          "usage": {
+            "prompt_tokens": 5473,
+            "completion_tokens": 93,
+            "total_tokens": 5566
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 0,
+          "returned_content_chars": 259,
+          "finished_ms": 19673.292,
+          "duration_ms": 3299.11
+        },
+        {
+          "stage": "verification",
+          "started_ms": 19674.156,
+          "input_chars": 7868,
+          "first_sse_ms": 25162.586,
+          "first_raw_content_ms": 25162.789,
+          "last_raw_content_ms": 26012.04,
+          "raw_content_chunks": 104,
+          "first_forwarded_content_ms": 25166.379,
+          "last_forwarded_content_ms": 26013.057,
+          "status": "ok",
+          "usage": {
+            "prompt_tokens": 1827,
+            "completion_tokens": 110,
+            "total_tokens": 1937
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 0,
+          "returned_content_chars": 435,
+          "finished_ms": 26013.131,
+          "duration_ms": 6338.975
+        }
+      ],
+      "details": [
+        {
+          "operation": "retriever_init",
+          "started_ms": 35.148,
+          "finished_ms": 75.27,
+          "duration_ms": 40.122
+        },
+        {
+          "operation": "retriever_init",
+          "started_ms": 94.712,
+          "finished_ms": 108.203,
+          "duration_ms": 13.491
+        },
+        {
+          "operation": "retrieval_round",
+          "started_ms": 5094.915,
+          "query": "metformin eGFR 25 continue chronic kidney disease contraindication",
+          "audit": {
+            "engine": "hybrid",
+            "lexical_candidates": 40,
+            "semantic_candidates": 40,
+            "tagging_candidates": 40,
+            "selected_chunks": 8,
+            "selected_passages": 29,
+            "context_tokens": 1065,
+            "degraded": null,
+            "embedding": {
+              "cache_hit": false,
+              "requests": 1,
+              "latency_ms": 1764,
+              "inputs": 1,
+              "estimated_input_tokens": 16,
+              "usage": {
+                "prompt_tokens": 16,
+                "total_tokens": 16
+              }
+            },
+            "model_passages_after_search": 29,
+            "model_context_tokens_after_search": 2484
+          },
+          "finished_ms": 16346.667,
+          "duration_ms": 11251.752
+        },
+        {
+          "operation": "semantic_including_embedding",
+          "started_ms": 5102.63,
+          "finished_ms": 7261.983,
+          "duration_ms": 2159.353
+        },
+        {
+          "operation": "lexical_and_catalog",
+          "started_ms": 5104.007,
+          "finished_ms": 15292.302,
+          "duration_ms": 10188.295
+        },
+        {
+          "operation": "embedding_http",
+          "started_ms": 5110.592,
+          "metadata": {
+            "latency_ms": 1764,
+            "inputs": 1,
+            "estimated_input_tokens": 16,
+            "usage": {
+              "prompt_tokens": 16,
+              "total_tokens": 16
+            }
+          },
+          "finished_ms": 6875.468,
+          "duration_ms": 1764.876
+        },
+        {
+          "operation": "vector_database",
+          "started_ms": 6878.669,
+          "finished_ms": 7261.61,
+          "duration_ms": 382.941
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15379.741,
+          "finished_ms": 15420.536,
+          "duration_ms": 40.795
+        },
+        {
+          "operation": "connected_source_expansion",
+          "started_ms": 15430.92,
+          "finished_ms": 16331.955,
+          "duration_ms": 901.035
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15453.226,
+          "finished_ms": 15464.495,
+          "duration_ms": 11.269
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15475.181,
+          "finished_ms": 15485.92,
+          "duration_ms": 10.739
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15496.718,
+          "finished_ms": 15506.942,
+          "duration_ms": 10.224
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15521.35,
+          "finished_ms": 15530.135,
+          "duration_ms": 8.785
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15540.376,
+          "finished_ms": 15547.977,
+          "duration_ms": 7.601
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15557.468,
+          "finished_ms": 15566.101,
+          "duration_ms": 8.633
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15575.418,
+          "finished_ms": 15584.256,
+          "duration_ms": 8.838
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15598.235,
+          "finished_ms": 15606.302,
+          "duration_ms": 8.067
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15615.049,
+          "finished_ms": 15622.177,
+          "duration_ms": 7.128
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15633.369,
+          "finished_ms": 15640.923,
+          "duration_ms": 7.554
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15650.038,
+          "finished_ms": 15656.271,
+          "duration_ms": 6.233
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15666.8,
+          "finished_ms": 15674.41,
+          "duration_ms": 7.61
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15690.817,
+          "finished_ms": 15700.492,
+          "duration_ms": 9.675
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15710.014,
+          "finished_ms": 15719.901,
+          "duration_ms": 9.887
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15726.385,
+          "finished_ms": 15734.856,
+          "duration_ms": 8.471
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15743.298,
+          "finished_ms": 15753.262,
+          "duration_ms": 9.964
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 15761.321,
+          "finished_ms": 15771.075,
+          "duration_ms": 9.754
+        },
+        {
+          "operation": "retriever_init",
+          "started_ms": 26027.702,
+          "finished_ms": 26052.254,
+          "duration_ms": 24.552
+        }
+      ],
+      "progress": [
+        {
+          "stage": "planning",
+          "at_ms": 109.747
+        },
+        {
+          "stage": "retrieving",
+          "at_ms": 5094.854
+        },
+        {
+          "stage": "answering",
+          "at_ms": 16374.151
+        },
+        {
+          "stage": "verifying",
+          "at_ms": 19673.538
+        }
+      ],
+      "milestones": {
+        "first_source_callback_ms": 16371.826,
+        "first_answer_callback_ms": 19639.837,
+        "last_answer_callback_ms": 19673.219,
+        "verified_answer_ready_ms": 26018.168
+      },
+      "draft_resets": 1,
+      "result": {
+        "pipeline": "uptodate-hybrid-v1",
+        "parts": [
+          {
+            "status": "partial",
+            "citation_count": 1,
+            "answer_chars": 102,
+            "queries": [
+              "metformin eGFR 25 continue chronic kidney disease contraindication"
+            ],
+            "requirements": [
+              "requested_aspects",
+              "intervention_safety",
+              "entity_relationship",
+              "drug_regimen",
+              "important_restrictions"
+            ],
+            "coverage": [
+              {
+                "requirement": "requested_aspects",
+                "status": "supported",
+                "source_ids": [
+                  "P3"
+                ]
+              },
+              {
+                "requirement": "intervention_safety",
+                "status": "supported",
+                "source_ids": [
+                  "P3"
+                ]
+              },
+              {
+                "requirement": "entity_relationship",
+                "status": "supported",
+                "source_ids": [
+                  "P3"
+                ]
+              },
+              {
+                "requirement": "drug_regimen",
+                "status": "missing",
+                "source_ids": []
+              },
+              {
+                "requirement": "important_restrictions",
+                "status": "supported",
+                "source_ids": [
+                  "P3"
+                ]
+              }
+            ],
+            "retrieval_summary": {
+              "question_kind": "drug_disease",
+              "objectives": [
+                "contraindications",
+                "renal_dose"
+              ],
+              "selected_passages": 29,
+              "reviewed_passages": 29,
+              "selected_articles": 6,
+              "context_tokens": 2632,
+              "evidence_context_tokens_sent": 2632,
+              "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b"
+            }
+          }
+        ]
+      },
+      "status": "partial",
+      "budget_used": 4,
+      "elapsed_ms": 26018.979,
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 26018.825,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 26018.825,
+        "machine_answer_complete": false,
+        "final_answer_ms": null,
+        "first_titles_ms": 16371.762,
+        "first_sections_ms": null,
+        "first_citation_ms": 26018.052,
+        "model_attempts": 4,
+        "provider_requests": 4,
+        "provider_elapsed_ms": 16385.333,
+        "known_usage": {
+          "prompt_tokens": 10035,
+          "completion_tokens": 343,
+          "total_tokens": 10378
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "cache_lookup": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 77.395
+          },
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 4983.179
+          },
+          "embedding": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1765.005
+          },
+          "source_links": {
+            "count": 3,
+            "failed": 0,
+            "elapsed_ms": 559.367
+          },
+          "source_context": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 911.343
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 11251.863
+          },
+          "answering": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3299.202
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 6339.297
+          },
+          "cache_write": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 0.013
+          }
+        },
+        "attempts_limited": false,
+        "response_cache": "miss",
+        "first_source_ms": 16371.82,
+        "first_answer_delta_ms": 19639.819,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 1,
+            "usage": {
+              "prompt_tokens": 2719,
+              "completion_tokens": 140,
+              "total_tokens": 2859
+            },
+            "cache_write_prompt_tokens": 2586,
+            "elapsed_ms": 4982.764
+          },
+          {
+            "stage": "embedding",
+            "sent": true,
+            "status": "ok",
+            "sequence": 2,
+            "usage": {
+              "prompt_tokens": 16,
+              "completion_tokens": 0,
+              "total_tokens": 16
+            },
+            "elapsed_ms": 1764.941
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 3,
+            "usage": {
+              "prompt_tokens": 5473,
+              "completion_tokens": 93,
+              "total_tokens": 5566
+            },
+            "cache_write_prompt_tokens": 5470,
+            "elapsed_ms": 3298.915
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 4,
+            "usage": {
+              "prompt_tokens": 1827,
+              "completion_tokens": 110,
+              "total_tokens": 1937
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 1824,
+            "elapsed_ms": 6338.713
+          }
+        ]
+      }
+    },
+    {
+      "id": "warfarin-ibuprofen",
+      "question": "مصرف همزمان وارفارین و ایبوپروفن چه تداخلی دارد و اقدام مناسب چیست؟",
+      "chat_calls": [
+        {
+          "stage": "planning",
+          "started_ms": 116.9,
+          "input_chars": 10466,
+          "first_sse_ms": 2847.608,
+          "first_tool_delta_ms": 2847.871,
+          "status": "ok",
+          "usage": {
+            "completion_tokens": 103,
+            "prompt_tokens": 2717,
+            "total_tokens": 2820
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 1,
+          "returned_content_chars": 0,
+          "finished_ms": 3298.472,
+          "duration_ms": 3181.572
+        },
+        {
+          "stage": "answering",
+          "started_ms": 13335.446,
+          "input_chars": 28938,
+          "first_sse_ms": 15545.788,
+          "first_raw_content_ms": 15546.166,
+          "last_raw_content_ms": 16570.848,
+          "raw_content_chunks": 167,
+          "first_forwarded_content_ms": 16023.598,
+          "last_forwarded_content_ms": 16572.063,
+          "status": "ok",
+          "usage": {
+            "completion_tokens": 170,
+            "prompt_tokens": 7492,
+            "total_tokens": 7662
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 0,
+          "returned_content_chars": 469,
+          "finished_ms": 16572.185,
+          "duration_ms": 3236.739
+        },
+        {
+          "stage": "verification",
+          "started_ms": 16573.084,
+          "input_chars": 7860,
+          "first_sse_ms": 18702.114,
+          "first_raw_content_ms": 18702.371,
+          "last_raw_content_ms": 18771.503,
+          "raw_content_chunks": 64,
+          "first_forwarded_content_ms": 18705.116,
+          "last_forwarded_content_ms": 18772.543,
+          "status": "ok",
+          "usage": {
+            "completion_tokens": 70,
+            "prompt_tokens": 1719,
+            "total_tokens": 1789
+          },
+          "reported_model": "gpt-6-luna",
+          "returned_tool_calls": 0,
+          "returned_content_chars": 274,
+          "finished_ms": 18772.653,
+          "duration_ms": 2199.569
+        }
+      ],
+      "details": [
+        {
+          "operation": "retriever_init",
+          "started_ms": 41.009,
+          "finished_ms": 89.015,
+          "duration_ms": 48.006
+        },
+        {
+          "operation": "retriever_init",
+          "started_ms": 103.739,
+          "finished_ms": 115.297,
+          "duration_ms": 11.558
+        },
+        {
+          "operation": "retrieval_round",
+          "started_ms": 3309.205,
+          "query": "warfarin ibuprofen interaction bleeding risk management",
+          "audit": {
+            "engine": "hybrid",
+            "lexical_candidates": 40,
+            "semantic_candidates": 40,
+            "tagging_candidates": 40,
+            "selected_chunks": 8,
+            "selected_passages": 31,
+            "context_tokens": 2730,
+            "degraded": null,
+            "embedding": {
+              "cache_hit": false,
+              "requests": 1,
+              "latency_ms": 1092,
+              "inputs": 1,
+              "estimated_input_tokens": 10,
+              "usage": {
+                "prompt_tokens": 10,
+                "total_tokens": 10
+              }
+            },
+            "model_passages_after_search": 31,
+            "model_context_tokens_after_search": 4727
+          },
+          "finished_ms": 13269.416,
+          "duration_ms": 9960.211
+        },
+        {
+          "operation": "semantic_including_embedding",
+          "started_ms": 3316.234,
+          "finished_ms": 4906.271,
+          "duration_ms": 1590.037
+        },
+        {
+          "operation": "lexical_and_catalog",
+          "started_ms": 3317.747,
+          "finished_ms": 12152.705,
+          "duration_ms": 8834.958
+        },
+        {
+          "operation": "embedding_http",
+          "started_ms": 3323.772,
+          "metadata": {
+            "latency_ms": 1092,
+            "inputs": 1,
+            "estimated_input_tokens": 10,
+            "usage": {
+              "prompt_tokens": 10,
+              "total_tokens": 10
+            }
+          },
+          "finished_ms": 4416.347,
+          "duration_ms": 1092.575
+        },
+        {
+          "operation": "vector_database",
+          "started_ms": 4420.162,
+          "finished_ms": 4905.953,
+          "duration_ms": 485.791
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12234.041,
+          "finished_ms": 12263.51,
+          "duration_ms": 29.469
+        },
+        {
+          "operation": "connected_source_expansion",
+          "started_ms": 12274.633,
+          "finished_ms": 13232.165,
+          "duration_ms": 957.532
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12295.823,
+          "finished_ms": 12305.618,
+          "duration_ms": 9.795
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12319.67,
+          "finished_ms": 12328.32,
+          "duration_ms": 8.65
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12338.133,
+          "finished_ms": 12347.139,
+          "duration_ms": 9.006
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12354.523,
+          "finished_ms": 12364.623,
+          "duration_ms": 10.1
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12377.363,
+          "finished_ms": 12387.64,
+          "duration_ms": 10.277
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12394.729,
+          "finished_ms": 12407.799,
+          "duration_ms": 13.07
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12415.412,
+          "finished_ms": 12426.012,
+          "duration_ms": 10.6
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12433.556,
+          "finished_ms": 12441.513,
+          "duration_ms": 7.957
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12448.349,
+          "finished_ms": 12454.829,
+          "duration_ms": 6.48
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12459.12,
+          "finished_ms": 12467.765,
+          "duration_ms": 8.645
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 12950.462,
+          "finished_ms": 12958.201,
+          "duration_ms": 7.739
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 13022.332,
+          "finished_ms": 13034.481,
+          "duration_ms": 12.149
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 13053.566,
+          "finished_ms": 13066.34,
+          "duration_ms": 12.774
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 13095.948,
+          "finished_ms": 13105.674,
+          "duration_ms": 9.726
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 13139.289,
+          "finished_ms": 13150.833,
+          "duration_ms": 11.544
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 13184.143,
+          "finished_ms": 13192.789,
+          "duration_ms": 8.646
+        },
+        {
+          "operation": "read_source_passages",
+          "started_ms": 13221.354,
+          "finished_ms": 13231.83,
+          "duration_ms": 10.476
+        }
+      ],
+      "progress": [
+        {
+          "stage": "planning",
+          "at_ms": 116.859
+        },
+        {
+          "stage": "retrieving",
+          "at_ms": 3309.128
+        },
+        {
+          "stage": "answering",
+          "at_ms": 13335.393
+        },
+        {
+          "stage": "verifying",
+          "at_ms": 16572.523
+        }
+      ],
+      "milestones": {
+        "first_source_callback_ms": 13328.709,
+        "first_answer_callback_ms": 16023.622,
+        "last_answer_callback_ms": 16572.081,
+        "verified_answer_ready_ms": 18778.666
+      },
+      "draft_resets": 1,
+      "result": {
+        "pipeline": "uptodate-hybrid-v1",
+        "parts": [
+          {
+            "status": "partial",
+            "citation_count": 2,
+            "answer_chars": 249,
+            "queries": [
+              "warfarin ibuprofen interaction bleeding risk management"
+            ],
+            "requirements": [
+              "requested_aspects",
+              "intervention_safety",
+              "entity_relationship"
+            ],
+            "coverage": [
+              {
+                "requirement": "requested_aspects",
+                "status": "missing",
+                "source_ids": []
+              },
+              {
+                "requirement": "intervention_safety",
+                "status": "missing",
+                "source_ids": []
+              },
+              {
+                "requirement": "entity_relationship",
+                "status": "missing",
+                "source_ids": []
+              }
+            ],
+            "retrieval_summary": {
+              "question_kind": "drug_interaction",
+              "objectives": [
+                "interaction",
+                "contraindications"
+              ],
+              "selected_passages": 31,
+              "reviewed_passages": 31,
+              "selected_articles": 11,
+              "context_tokens": 4828,
+              "evidence_context_tokens_sent": 4828,
+              "generation": "73f89df9-d447-4cb7-a32c-f8296b81fa4b"
+            }
+          }
+        ]
+      },
+      "status": "partial",
+      "budget_used": 4,
+      "elapsed_ms": 18779.674,
+      "metrics": {
+        "schema": 1,
+        "scope": "server_worker",
+        "outcome": "complete",
+        "worker_elapsed_ms": 18779.552,
+        "queue_wait_ms": 0,
+        "server_elapsed_ms": 18779.552,
+        "machine_answer_complete": false,
+        "final_answer_ms": null,
+        "first_titles_ms": 13328.614,
+        "first_sections_ms": null,
+        "first_citation_ms": 18778.516,
+        "model_attempts": 4,
+        "provider_requests": 4,
+        "provider_elapsed_ms": 9709.776,
+        "known_usage": {
+          "prompt_tokens": 11938,
+          "completion_tokens": 343,
+          "total_tokens": 12281
+        },
+        "unknown_usage_requests": 0,
+        "operations": {
+          "cache_lookup": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 91.074
+          },
+          "planning": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3181.681
+          },
+          "embedding": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 1092.798
+          },
+          "source_links": {
+            "count": 3,
+            "failed": 0,
+            "elapsed_ms": 459.526
+          },
+          "source_context": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 968.593
+          },
+          "retrieval": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 9960.256
+          },
+          "answering": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 3236.87
+          },
+          "verification": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 2199.971
+          },
+          "cache_write": {
+            "count": 1,
+            "failed": 0,
+            "elapsed_ms": 0.018
+          }
+        },
+        "attempts_limited": false,
+        "response_cache": "miss",
+        "first_source_ms": 13328.708,
+        "first_answer_delta_ms": 16023.6,
+        "attempts": [
+          {
+            "stage": "planning",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 1,
+            "usage": {
+              "prompt_tokens": 2717,
+              "completion_tokens": 103,
+              "total_tokens": 2820
+            },
+            "cached_prompt_tokens": 2546,
+            "cache_write_prompt_tokens": 38,
+            "elapsed_ms": 3181.303
+          },
+          {
+            "stage": "embedding",
+            "sent": true,
+            "status": "ok",
+            "sequence": 2,
+            "usage": {
+              "prompt_tokens": 10,
+              "completion_tokens": 0,
+              "total_tokens": 10
+            },
+            "elapsed_ms": 1092.705
+          },
+          {
+            "stage": "answering",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 3,
+            "usage": {
+              "prompt_tokens": 7492,
+              "completion_tokens": 170,
+              "total_tokens": 7662
+            },
+            "cached_prompt_tokens": 2676,
+            "cache_write_prompt_tokens": 4813,
+            "elapsed_ms": 3236.478
+          },
+          {
+            "stage": "verification",
+            "sent": true,
+            "status": "ok",
+            "max_completion_tokens": 2400,
+            "sequence": 4,
+            "usage": {
+              "prompt_tokens": 1719,
+              "completion_tokens": 70,
+              "total_tokens": 1789
+            },
+            "cached_prompt_tokens": 0,
+            "cache_write_prompt_tokens": 1716,
+            "elapsed_ms": 2199.29
+          }
+        ]
+      }
+    }
+  ],
+  "read_only_sql_replay": {
+    "scope": "read_only_lexical_replay_general_audience_without_question_profile_not_exact_original_request",
+    "query": "aripiprazole akathisia extrapyramidal symptoms neuroleptic malignant syndrome tardive dyskinesia adverse effects",
+    "elapsed_ms": 9594.909,
+    "query_count": 6,
+    "query_durations_ms": [
+      72.276,
+      9.96,
+      9349.409,
+      33.173,
+      43.428,
+      43.859
+    ],
+    "provider_requests": 0,
+    "slowest_query": {
+      "duration_ms": 9349.409,
+      "sql": "SELECT \"ai_retrieval_searchchunk\".\"id\" FROM \"ai_retrieval_searchchunk\" WHERE (\"ai_retrieval_searchchunk\".\"generation_id\" = %s AND \"ai_retrieval_searchchunk\".\"search_document\" @@ ((((((((plainto_tsquery(%s::regconfig, %s) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s))) ORDER BY ts_rank_cd(\"ai_retrieval_searchchunk\".\"search_document\", ((((((((plainto_tsquery(%s::regconfig, %s) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)) || plainto_tsquery(%s::regconfig, %s)), %s) DESC, \"ai_retrieval_searchchunk\".\"id\" ASC LIMIT 40",
+      "params": [
+        "73f89df9-d447-4cb7-a32c-f8296b81fa4b",
+        "english",
+        "aripiprazole",
+        "english",
+        "akathisia",
+        "english",
+        "extrapyramidal",
+        "english",
+        "symptoms",
+        "english",
+        "neuroleptic",
+        "english",
+        "malignant",
+        "english",
+        "syndrome",
+        "english",
+        "tardive",
+        "english",
+        "dyskinesia",
+        "english",
+        "aripiprazole",
+        "english",
+        "akathisia",
+        "english",
+        "extrapyramidal",
+        "english",
+        "symptoms",
+        "english",
+        "neuroleptic",
+        "english",
+        "malignant",
+        "english",
+        "syndrome",
+        "english",
+        "tardive",
+        "english",
+        "dyskinesia",
+        "32"
+      ],
+      "plan": [
+        {
+          "Plan": {
+            "Node Type": "Limit",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 244704.79,
+            "Total Cost": 244709.46,
+            "Plan Rows": 40,
+            "Plan Width": 20,
+            "Plans": [
+              {
+                "Node Type": "Gather Merge",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 244704.79,
+                "Total Cost": 261032.03,
+                "Plan Rows": 139938,
+                "Plan Width": 20,
+                "Workers Planned": 2,
+                "Plans": [
+                  {
+                    "Node Type": "Sort",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Startup Cost": 243704.77,
+                    "Total Cost": 243879.69,
+                    "Plan Rows": 69969,
+                    "Plan Width": 20,
+                    "Sort Key": [
+                      "(ts_rank_cd(search_document, '''aripiprazol'' | ''akathisia'' | ''extrapyramid'' | ''symptom'' | ''neurolept'' | ''malign'' | ''syndrom'' | ''tardiv'' | ''dyskinesia'''::tsquery, 32)) DESC",
+                      "id"
+                    ],
+                    "Plans": [
+                      {
+                        "Node Type": "Seq Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": true,
+                        "Async Capable": false,
+                        "Relation Name": "ai_retrieval_searchchunk",
+                        "Alias": "ai_retrieval_searchchunk",
+                        "Startup Cost": 0.0,
+                        "Total Cost": 241493.07,
+                        "Plan Rows": 69969,
+                        "Plan Width": 20,
+                        "Filter": "((search_document @@ '''aripiprazol'' | ''akathisia'' | ''extrapyramid'' | ''symptom'' | ''neurolept'' | ''malign'' | ''syndrom'' | ''tardiv'' | ''dyskinesia'''::tsquery) AND (generation_id = '73f89df9-d447-4cb7-a32c-f8296b81fa4b'::uuid))"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "JIT": {
+            "Functions": 5,
+            "Options": {
+              "Inlining": false,
+              "Optimization": false,
+              "Expressions": true,
+              "Deforming": true
+            }
+          }
+        }
+      ]
+    }
+  }
+}

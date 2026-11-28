@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <!-- viewport-fit=cover: without it iOS reports every safe-area inset as
+         0, so the app can't keep its bars clear of the Dynamic Island and the
+         home indicator; AppShell and BottomNav pad for them instead. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+    <title>%WEB_TITLE%</title>
+
+    <!-- Installable web app (PWA). Paths are relative so they resolve under the
+         GitHub Pages sub-path (/Learning_Platform/) as well as at / locally. -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="favicon.png?v=2" />
+    <!-- iOS (Safari, and Chrome on iOS, both WebKit) ignores most of the
+         manifest: "Add to Home Screen" reads these tags instead. -->
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Pharmenta" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+        /* The app's own background, so launching from the home screen
+           doesn't flash white before the first render. */
+        background-color: #efece4;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+      :root { --app-focus-ring: #0F5C52; }
+      :root[data-app-theme="dark"] { --app-focus-ring: #A4E3C0; color-scheme: dark; }
+      :where(button, [role="button"], [role="tab"], [role="radio"], a):focus-visible {
+        outline: none;
+        box-shadow: inset 0 -2px var(--app-focus-ring);
+      }
+      /* Text fields show focus by their own surface change. The inset ring
+         drew a stray rule under the rounded auth fields. */
+      input,
+      textarea {
+        outline: none;
+        box-shadow: none;
+      }
+      /* The OTP field draws the code in its own cells. Chrome's autofill
+         forces its own text colour and background on the real input, which
+         would show the code a second time over the cells; keep it invisible
+         and transparent even when autofilled. */
+      #otp-input:-webkit-autofill,
+      #otp-input:-webkit-autofill:hover,
+      #otp-input:-webkit-autofill:focus {
+        -webkit-text-fill-color: transparent;
+        transition: background-color 9999s ease-out 0s;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <!-- The root element for your Expo app. -->
+    <!-- React Native rows mirror in the app; keep their physical layout stable. -->
+    <div id="root" dir="ltr"></div>
+  </body>
+</html>

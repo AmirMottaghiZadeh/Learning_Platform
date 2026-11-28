@@ -1,0 +1,32 @@
+{% extends "website/base.html" %}
+{% load billing_extras %}
+{% block content %}
+<div class="wrap"><div class="center-card">
+  <h1>خرید اشتراک</h1><p class="sub">{{ price.plan.name_fa }} · {{ price.duration_label }}</p>
+  <table class="sumtbl"><tr><td>مبلغ</td><td class="num">{{ amount|toman }}</td></tr>{% if off %}<tr><td>تخفیف</td><td class="num" style="color:var(--ok)">− {{ off|toman }}</td></tr>{% endif %}<tr class="tot"><td>قابل پرداخت</td><td class="num">{{ payable|toman }}</td></tr></table>
+  <form method="post">{% csrf_token %}
+    <div class="form-row"><label for="dc">کد تخفیف (اختیاری)</label><div style="display:flex;gap:8px"><input class="input" id="dc" name="discount_code" value="{{ code }}" dir="ltr"><button class="btn" type="submit" name="action" value="quote">اعمال</button></div>{% if error %}<p style="color:var(--danger);font-size:14px">{{ error }}</p>{% endif %}</div>
+    {% if payable %}
+      {% if gateways %}
+        <fieldset class="gw"><legend>درگاه پرداخت</legend>{% for g in gateways %}<label><input type="radio" name="gateway" value="{{ g.kind }}"{% if forloop.first %} checked{% endif %}><span>{{ g.name }}</span></label>{% endfor %}</fieldset>
+      {% else %}
+        <div class="flash error" role="alert">در حال حاضر هیچ درگاه پرداخت فعالی در دسترس نیست.</div>
+      {% endif %}
+    {% endif %}
+    <button class="btn p block" type="submit" name="action" value="pay"{% if payable and not gateways %} disabled aria-disabled="true"{% endif %}>{% if payable == 0 %}فعال‌سازی{% else %}پرداخت امن با درگاه{% endif %}</button>
+  </form>
+  {% if payable and has_zibal %}
+    <div style="display:flex;justify-content:center;min-height:85px;margin-top:10px" aria-label="نشان اعتماد پرداخت زیبال">
+      <script>
+        (function () {
+          var dark = document.documentElement.getAttribute("data-theme") === "dark";
+          var script = document.createElement("script");
+          script.src = "https://zibal.ir/trust/scripts/zibal-trust-v4.js" + (dark ? "?theme=dark" : "");
+          document.currentScript.parentNode.insertBefore(script, document.currentScript.nextSibling);
+        }());
+      </script>
+    </div>
+  {% endif %}
+  <p style="color:var(--muted);font-size:13px;margin-top:14px">پس از پرداخت موفق، اشتراک فوراً روی حساب شما در اپ و وب فعال می‌شود.</p>
+</div></div>
+{% endblock %}

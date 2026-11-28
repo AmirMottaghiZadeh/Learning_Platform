@@ -1,0 +1,23 @@
+{% extends "website/base.html" %}
+{% load static billing_extras website_extras %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'website/home.css' %}">
+<script src="{% static 'website/home.js' %}" defer></script>
+{% endblock %}
+{% block content %}
+{% include "website/_home_story.html" %}
+
+{% if blocks.stat %}
+<section class="band" id="stats" aria-label="{{ site.site_name }} در چند عدد"><div class="wrap">
+  {% for s in blocks.stat|slice:":4" %}<div class="rv" style="--d:{{ forloop.counter0 }}00ms"><b class="num" data-count>{{ s.title }}</b><span>{{ s.text }}</span></div>{% endfor %}
+</div></section>
+{% endif %}
+
+{% if announcement %}
+<div class="wrap"><a class="news rv" href="{{ announcement.get_absolute_url }}"><span class="pill {{ announcement.level }}">{{ announcement.get_level_display }}</span><b>{{ announcement.title }}</b><span class="sum">{{ announcement.summary|truncatechars:90 }}</span><span class="more">بیشتر ‹</span></a></div>
+{% endif %}
+
+{% include "website/_home_study.html" %}
+
+{% include "website/_home_end.html" %}
+{% endblock %}

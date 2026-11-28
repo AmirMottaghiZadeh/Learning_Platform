@@ -1,0 +1,34 @@
+{% load billing_extras website_extras %}
+<div class="{% if homepage %}plan-grid{% else %}plans{% endif %}">
+{% for card in cards %}{% with plan=card.plan %}
+<article class="{% if homepage %}plan-card{% if plan.slug == 'plus' %} plan-plus{% elif plan.slug == 'pro' %} plan-pro{% endif %}{% else %}pl{% if plan.slug == site.featured_plan_slug %} f{% endif %}{% endif %}" data-plan{% if homepage %} data-plan-tier="{{ plan.slug }}"{% endif %}>
+  {% if plan.badge_fa %}<span class="badge">{{ plan.badge_fa }}</span>{% elif not homepage and plan.slug == site.featured_plan_slug %}<span class="badge">پیشنهادی</span>{% endif %}
+  <h3>{{ plan.name_fa }}</h3>
+  {% if plan.tagline_fa %}<p class="tag">{{ plan.tagline_fa }}</p>{% endif %}
+  {% if plan.description_fa %}<p class="desc">{{ plan.description_fa|linebreaksbr }}</p>{% endif %}
+  {% if plan.is_free %}
+    <div class="{% if homepage %}plan-price{% else %}price{% endif %} num"><b>۰</b> <small>تومان</small></div>
+  {% elif card.prices %}
+    {% with first=card.prices.0 %}<div class="{% if homepage %}plan-price{% else %}price{% endif %} num" data-price aria-live="polite">{% if first.compare_at_toman and first.compare_at_toman > first.price_toman %}<s class="was">{{ first.compare_at_toman|num }}</s> {% endif %}<b>{{ first.price_toman|num }}</b> <small>تومان / {{ first.duration_label }}</small>{% if first.label_fa %} <span class="plabel">{{ first.label_fa }}</span>{% endif %}</div>{% endwith %}
+    {% if card.prices|length > 1 %}
+    <div class="{% if homepage %}plan-options{% else %}chips{% endif %}" role="group" aria-label="مدت اشتراک {{ plan.name_fa }}">
+      {% for pr in card.prices %}<a class="{% if homepage %}plan-option{% else %}chip{% endif %}{% if forloop.first %} on{% endif %}" href="{% url 'site:checkout' pr.pk %}" aria-current="{{ forloop.first|yesno:'true,false' }}" data-opt data-amount="{{ pr.price_toman|num }}" data-label="{{ pr.duration_label }}"{% if pr.compare_at_toman and pr.compare_at_toman > pr.price_toman %} data-was="{{ pr.compare_at_toman|num }}"{% endif %}{% if pr.label_fa %} data-tag="{{ pr.label_fa }}"{% endif %}>{{ pr.duration_label }}</a>{% endfor %}
+    </div>
+    {% endif %}
+  {% else %}
+    <div class="{% if homepage %}plan-price{% else %}price{% endif %}"><small>به‌زودی</small></div>
+  {% endif %}
+  <ul>
+    {% for f in card.features %}<li><span dir="rtl">{% if f.label %}{{ f.label|isolate_latin }}{% else %}{{ f.name|isolate_latin }}{% if f.limit is not None %} <bdi dir="rtl">· {{ f.limit|num }} {{ f.unit }} {{ f.period }}</bdi>{% endif %}{% endif %}</span></li>{% empty %}{% if not card.extra %}<li><span>دسترسی به بخش‌های رایگان اپ</span></li>{% endif %}{% endfor %}
+    {% for line in card.extra %}<li><span dir="rtl">{{ line|isolate_latin }}</span></li>{% endfor %}
+  </ul>
+  {% if plan.is_free %}
+    <a class="{% if homepage %}plan-action{% else %}btn block{% endif %}" href="{{ site.app_url }}">شروع رایگان</a>
+  {% elif card.prices %}
+    <a class="{% if homepage %}plan-action{% else %}btn p block{% endif %}" href="{% url 'site:checkout' card.prices.0.pk %}" data-buy>{{ plan.cta_label_fa|default:"خرید اشتراک" }}</a>
+  {% endif %}
+</article>
+{% endwith %}{% empty %}
+<p class="hd2">پلن‌ها به‌زودی اعلام می‌شود.</p>
+{% endfor %}
+</div>

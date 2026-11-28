@@ -1,0 +1,156 @@
+/* Pharmenta web app service worker: keeps the app's own files so the
+ * installed PWA opens without internet (and can then read the offline
+ * UpToDate/Lexicomp packages). API calls go to another origin and are never
+ * touched here; the offline packages live in the origin-private file
+ * system, not in these caches.
+ *
+ * - The page itself: network first, so a deploy shows up as soon as the
+ *   app is opened online; the last copy when offline.
+ * - Content-hashed bundles and assets (_expo/, assets/): cache first --
+ *   their names change whenever their content does.
+ * - The few unhashed files (icons, manifest): network first, cached copy
+ *   when offline.
+ */
+
+const CACHE = "pharmenta-shell-v2";
+const SCOPE = new URL(self.registration.scope);
+const INDEX = new URL("index.html", SCOPE).href;
+const MAX_HASHED = 400;
+
+const inScope = (url) => url.origin === SCOPE.origin && url.pathname.startsWith(SCOPE.pathname);
+const isHashed = (url) => {
+  const path = url.pathname.slice(SCOPE.pathname.length);
+  return path.startsWith("_expo/") || path.startsWith("assets/");
+};
+
+/** The bundles an index.html names, so the shell is complete offline even
+ * before the app has been opened twice. */
+function referencedFiles(html) {
+  const found = new Set();
+  for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
+    const url = new URL(match[1], SCOPE);
+    if (inScope(url)) found.add(url.href);
+  }
+  return [...found];
+}
+
+async function storeShell(response) {
+  const cache = await caches.open(CACHE);
+  const html = await response.clone().text();
+  await cache.put(INDEX, response.clone());
+  const files = referencedFiles(html);
+  await Promise.all(files.map((href) => cache.add(href).catch(() => undefined)));
+  // Drop bundles of earlier deploys the new page no longer names.
+  const keep = new Set(files);
+  for (const request of await cache.keys()) {
+    const url = new URL(request.url);
+    if (url.pathname.includes("/_expo/static/") && !keep.has(url.href)) await cache.delete(request);
+  }
+}
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    fetch(INDEX, { cache: "no-store" })
+      .then((res) => (res.ok ? storeShell(res) : undefined))
+      .catch(() => undefined)
+      .then(() => self.skipWaiting()),
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((names) => Promise.all(names.filter((n) => n.startsWith("pharmenta-shell-") && n !== CACHE).map((n) => caches.delete(n))))
+      .then(() => self.clients.claim()),
+  );
+});
+
+async function trim(cache) {
+  const keys = await cache.keys();
+  for (const request of keys.slice(0, Math.max(0, keys.length - MAX_HASHED))) await cache.delete(request);
+}
+
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.method !== "GET") return;
+  const url = new URL(request.url);
+  if (!inScope(url)) return;
+  // API may share the app origin behind a reverse proxy. Authenticated
+  // responses and long-lived streams must never be copied into shell cache.
+  if (url.pathname.startsWith("/api/") || request.headers.has("authorization")
+      || request.headers.get("accept")?.includes("application/x-ndjson")) return;
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res.ok) event.waitUntil(storeShell(res.clone()));
+          return res;
+        })
+        .catch(async () => (await caches.match(INDEX)) || Response.error()),
+    );
+    return;
+  }
+
+  if (isHashed(url)) {
+    event.respondWith(
+      caches.match(request).then(
+        (hit) =>
+          hit ||
+          fetch(request).then((res) => {
+            if (res.ok) {
+              const copy = res.clone();
+              event.waitUntil(caches.open(CACHE).then((c) => c.put(request, copy).then(() => trim(c))));
+            }
+            return res;
+          }),
+      ),
+    );
+    return;
+  }
+
+  event.respondWith(
+    fetch(request)
+      .then((res) => {
+        if (res.ok) {
+          const copy = res.clone();
+          event.waitUntil(caches.open(CACHE).then((c) => c.put(request, copy)));
+        }
+        return res;
+      })
+      .catch(async () => (await caches.match(request)) || Response.error()),
+  );
+});
+
+// Support notifications are delivered independently of the app shell cache.
+self.addEventListener("push", (event) => {
+  let data;
+  try { data = event.data?.json(); } catch { return; }
+  if (!data || !/^[a-f0-9-]{36}$/i.test(data.conversation_id || "")) return;
+  event.waitUntil(self.registration.showNotification("پشتیبانی فارمنتا", {
+    body: "یک پاسخ تازه از تیم پشتیبانی دارید.",
+    tag: "support-" + data.conversation_id,
+    data: { conversationId: data.conversation_id },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const id = event.notification.data?.conversationId;
+  if (typeof id !== "string" || !/^[a-f0-9-]{36}$/i.test(id)) return;
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of windows) {
+      const url = new URL(client.url);
+      if (inScope(url)) {
+        await client.focus();
+        client.postMessage({ type: "support-open", conversationId: id });
+        return;
+      }
+    }
+    const url = new URL(SCOPE);
+    url.searchParams.set("supportThread", id);
+    await self.clients.openWindow(url.href);
+  })());
+});

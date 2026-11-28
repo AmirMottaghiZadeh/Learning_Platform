@@ -1,0 +1,6 @@
+FROM redis:7-alpine
+COPY deploy/runflare/redis-start.sh /usr/local/bin/pharmenta-redis-start
+RUN chmod 755 /usr/local/bin/pharmenta-redis-start
+ENTRYPOINT ["/usr/local/bin/pharmenta-redis-start"]
+HEALTHCHECK --interval=10s --timeout=5s --retries=10 \
+    CMD REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping | grep -q PONG
