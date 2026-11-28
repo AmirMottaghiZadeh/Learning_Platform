@@ -66,8 +66,22 @@ export function UptodateScreen() {
       rootRef.current?.measureInWindow((_rootX, rootY, _rootWidth, rootHeight) => {
         const visibleBottom = Platform.OS === "web" && window.visualViewport
           ? window.visualViewport.height + window.visualViewport.offsetTop : Infinity;
-        setMenuPosition({ top: top + height + 8, left, width,
-          maxHeight: Math.max(120, Math.min(400, Math.min(rootY + rootHeight - navClearance, keyboardTop.current, visibleBottom) - rootY - top - height - 16)) });
+        // Read the keyboard live. keyboardDidShow can arrive after the menu has
+        // opened, and the ref's stale Infinity then let the list run under the
+        // keyboard until the reader dismissed it.
+        const keyboardY = Platform.OS === "web" ? Infinity : Keyboard.metrics()?.screenY ?? keyboardTop.current;
+        const floor = Math.min(rootY + rootHeight - navClearance, keyboardY, visibleBottom);
+        const gap = 8;
+        const below = floor - (rootY + top + height + gap);
+        // Not enough room under the field (small screen, tall keyboard): open
+        // upwards instead of running off the visible area.
+        if (below < 120 && top > below) {
+          const maxHeight = Math.min(400, Math.max(0, top - gap));
+          setMenuPosition({ top: Math.max(0, top - gap - maxHeight), left, width, maxHeight });
+          return;
+        }
+        setMenuPosition({ top: top + height + gap, left, width,
+          maxHeight: Math.min(400, Math.max(0, below)) });
       });
     });
   }, [navClearance]);
@@ -339,7 +353,11 @@ export function UptodateScreen() {
         <>
           <Pressable accessible={false} focusable={false} onPress={dismissSuggestions}
             style={{ position: "absolute", inset: 0, zIndex: 10 }} />
-          <View style={{ position: "absolute", top: menuPosition.top, left: menuPosition.left, width: menuPosition.width, zIndex: 30 }}>
+          <View style={{ position: "absolute", top: menuPosition.top, left: menuPosition.left, width: menuPosition.width,
+            zIndex: 30,
+            // Android orders overlapping siblings by elevation, not zIndex:
+            // the result cards (shadows.raised) were drawing over this menu.
+            elevation: 30 }}>
             <UptodateSuggestionMenu query={q} suggestions={suggestions} filter={suggestionFilter}
               onFilter={(filter) => { setSuggestionFilter(filter); setActiveSuggestion(-1); }}
               active={activeSuggestion} onActive={setActiveSuggestion} onSelect={selectSuggestion}
